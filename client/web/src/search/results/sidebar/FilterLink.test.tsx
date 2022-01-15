@@ -3,9 +3,8 @@ import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
+import { SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-
-import { SearchScope } from '../../../schema/settings.schema'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 

@@ -3,7 +3,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { Settings } from '../../schema/settings.schema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 
 /**
  * Common props for extend point component for rendering extension views section.

@@ -2,9 +2,8 @@ import LinkIcon from 'mdi-react/LinkIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-
-import { Settings } from '../../../schema/settings.schema'
 
 import styles from './SearchSidebarSection.module.scss'
 

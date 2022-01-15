@@ -6,12 +6,12 @@ import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'
-import { Settings } from '../../../schema/settings.schema'
 
 import { deleteBatchChange as _deleteBatchChange } from './backend'
 

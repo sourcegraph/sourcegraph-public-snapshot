@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import React from 'react'
 
-import { QuickLink } from '../../../schema/settings.schema'
+import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 
 import { getQuickLinks } from './QuickLink'
 

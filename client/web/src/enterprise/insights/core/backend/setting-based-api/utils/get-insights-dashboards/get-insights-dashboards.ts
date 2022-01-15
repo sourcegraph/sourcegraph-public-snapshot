@@ -1,7 +1,7 @@
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ConfiguredSubjectOrError } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings } from '../../../../../../../schema/settings.schema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { InsightDashboard } from '../../../../types'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../../types/dashboard/virtual-dashboard'
 import { isSubjectInsightSupported } from '../../../../types/subjects'

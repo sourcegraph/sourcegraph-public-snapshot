@@ -8,7 +8,10 @@ import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHos
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings, InsightDashboard as InsightDashboardConfiguration } from '../../../../../schema/settings.schema'
+import {
+    Settings,
+    InsightDashboard as InsightDashboardConfiguration,
+} from '@sourcegraph/shared/src/schema/settings.schema'
 import { createSanitizedDashboard } from '../../../pages/dashboards/creation/utils/dashboard-sanitizer'
 import { getReachableInsights } from '../../../pages/dashboards/dashboard-page/components/add-insight-modal/utils/get-reachable-insights'
 import { findDashboardByUrlId } from '../../../pages/dashboards/dashboard-page/components/dashboards-content/utils/find-dashboard-by-url-id'

@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { Settings } from '../schema/settings.schema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 
 export function logCodeInsightsChanges(
     oldSettingsOrError: Settings | ErrorLike,
