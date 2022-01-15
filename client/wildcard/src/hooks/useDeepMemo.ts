@@ -1,7 +1,11 @@
 import { isEqual } from 'lodash'
 import { useRef } from 'react'
 
-export function useDistinctValue<Value>(value: Value): Value {
+/**
+ * Returns memoized value that is checked with lodash deep memo
+ * equal helper.
+ */
+export function useDeepMemo<Value>(value: Value): Value {
     const previousValueReference = useRef<Value>(value)
 
     if (!isEqual(previousValueReference.current, value)) {
