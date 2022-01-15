@@ -1,6 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+// We need to import `create` to make a mock store just for this story.
+// eslint-disable-next-line no-restricted-imports
+import create from 'zustand'
 
+import { SearchQueryState } from '@sourcegraph/search'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -19,12 +23,28 @@ const { add } = storiesOf('web/search/results/sidebar/SearchSidebar', module).ad
     chromatic: { viewports: [544, 577, 993] },
 })
 
+const mockUseQueryState = create<SearchQueryState>((set, get) => ({
+    queryState: { query: '' },
+    searchCaseSensitivity: false,
+    searchPatternType: SearchPatternType.literal,
+    searchQueryFromURL: '',
+    setQueryState: queryStateUpdate => {
+        if (typeof queryStateUpdate === 'function') {
+            set({ queryState: queryStateUpdate(get().queryState) })
+        } else {
+            set({ queryState: queryStateUpdate })
+        }
+    },
+    submitSearch: () => {},
+}))
+
 const defaultProps: SearchSidebarProps = {
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    useQueryState: mockUseQueryState,
 }
 
 const quicklinks: QuickLink[] = [
