@@ -5,13 +5,13 @@ import React from 'react'
 import create from 'zustand'
 
 import { SearchQueryState } from '@sourcegraph/search'
+import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
 import { SearchPatternType } from '../../../graphql-operations'
-import { QuickLink, SearchScope } from '../../../schema/settings.schema'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 

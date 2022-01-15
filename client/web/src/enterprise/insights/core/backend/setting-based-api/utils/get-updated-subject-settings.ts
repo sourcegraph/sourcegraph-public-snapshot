@@ -1,7 +1,7 @@
 import { isErrorLike } from '@sourcegraph/common'
 import { ConfiguredSubjectOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings } from '../../../../../../schema/settings.schema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     AddInsight,
     AddInsightToDashboard,

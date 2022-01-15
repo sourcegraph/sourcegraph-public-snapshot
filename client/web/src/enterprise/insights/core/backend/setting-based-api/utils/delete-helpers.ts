@@ -3,7 +3,7 @@ import { get } from 'lodash'
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings } from '../../../../../../schema/settings.schema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     RemoveInsight,
     RemoveInsightFromDashboard,

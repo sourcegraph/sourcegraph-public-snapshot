@@ -1,8 +1,7 @@
 import React from 'react'
 
+import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
-
-import { QuickLink } from '../../../schema/settings.schema'
 
 import { getQuickLinks } from './QuickLink'
 

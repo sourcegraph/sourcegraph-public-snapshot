@@ -5,11 +5,11 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
-import { Settings } from '../schema/settings.schema'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {

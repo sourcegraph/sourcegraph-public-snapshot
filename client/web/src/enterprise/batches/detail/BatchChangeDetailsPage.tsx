@@ -4,6 +4,7 @@ import React, { useEffect, useMemo } from 'react'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ErrorMessage } from '@sourcegraph/web/src/components/alerts'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -16,7 +17,6 @@ import {
     BatchChangeByNamespaceVariables,
     BatchChangeFields,
 } from '../../../graphql-operations'
-import { Settings } from '../../../schema/settings.schema'
 import { Description } from '../Description'
 
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'

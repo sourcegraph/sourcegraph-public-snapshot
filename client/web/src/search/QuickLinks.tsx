@@ -2,9 +2,8 @@ import classNames from 'classnames'
 import LinkIcon from 'mdi-react/LinkIcon'
 import React from 'react'
 
+import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Link } from '@sourcegraph/wildcard'
-
-import { QuickLink } from '../schema/settings.schema'
 
 import styles from './QuickLinks.module.scss'
 

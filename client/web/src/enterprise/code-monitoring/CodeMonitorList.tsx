@@ -10,7 +10,7 @@ import { Button, Container, Link } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
-import { Settings } from '../../schema/settings.schema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 
 import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'

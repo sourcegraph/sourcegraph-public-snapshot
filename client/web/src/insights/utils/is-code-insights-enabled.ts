@@ -1,7 +1,7 @@
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
-import { SettingsExperimentalFeatures } from '../../schema/settings.schema'
+import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 
 /**
  * Code insights display location setting to check setting for particular view

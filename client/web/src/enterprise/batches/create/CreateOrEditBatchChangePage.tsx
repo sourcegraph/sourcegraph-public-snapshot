@@ -6,6 +6,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsCascadeProps,
     SettingsOrgSubject,
@@ -28,7 +29,6 @@ import {
     Scalars,
     BatchSpecWorkspaceResolutionState,
 } from '../../../graphql-operations'
-import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
