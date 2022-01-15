@@ -68,6 +68,7 @@
     &__cta {
         &-container {
             flex: 1;
+            background-color: var(--vscode-textCodeBlock-background) !important;
         }
 
         &-title {
@@ -81,8 +82,8 @@
 
     &__btn {
         font-size: var(--vscode-font-size) !important;
-        background-color: var(--primary);
-        color: var(--white);
+        background-color: var(--vscode-button-background) !important;
+        color: var(--vscode-button-foreground) !important;
     }
 
     &__text {

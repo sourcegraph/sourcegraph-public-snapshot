@@ -38,8 +38,7 @@
 .row {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.5rem;
     height: 100%;
     flex: 1 0 auto;
@@ -51,6 +50,8 @@
     flex-direction: column;
     justify-content: space-between;
     align-self: stretch;
+    margin-right: 1rem;
+    margin-bottom: 0.5rem;
 
     :global(.alert) {
         margin-bottom: 0.5rem;
@@ -119,7 +120,6 @@
 
     max-width: var(--media-xl);
 }
-
 
 .section {
     width: 100%;

@@ -40,6 +40,10 @@ export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps
                 </a>
             </p>
         </div>
-        {!onDesktop && <p>IMPORTANT: Please add Access Token and CORS to use Sourcegraph on VS Code Web.</p>}
+        {!onDesktop && (
+            <p>
+                IMPORTANT: Access Token and CORS might be required to use Sourcegraph Private Instance on VS Code Web.
+            </p>
+        )}
     </div>
 )

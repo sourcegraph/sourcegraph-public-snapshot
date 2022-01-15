@@ -44,13 +44,15 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
             </div>
             <div className={styles.searchExamples}>
                 {examples.map(example => (
-                    <div key={example.query} className={styles.searchExampleCardWrapper}>
+                    <div key={example.query} className="search-example-card-wrapper">
                         <Link
                             to={example.to}
                             className={classNames('card', styles.searchExampleCard)}
                             onClick={searchExampleClicked(example.trackEventName, example.query)}
                         >
-                            <div className={classNames(styles.searchExampleIcon)}>{icon}</div>
+                            <div className={classNames('search-example-example-icons', styles.searchExampleIcon)}>
+                                {icon}
+                            </div>
                             <div className={styles.searchExampleQueryWrapper}>
                                 <div className={styles.searchExampleQuery}>
                                     <SyntaxHighlightedSearchQuery query={example.query} />

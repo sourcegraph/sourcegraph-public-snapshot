@@ -175,13 +175,11 @@ export const SearchResults = React.memo<SearchResultsProps>(
                             revision: result.commit,
                             path: result.path,
                             position: {
-                                line: lineNumber,
+                                line: lineNumber + 1,
                                 character: start,
                             },
                         })
                         const uriToOpen = sourcegraphUri.uri + sourcegraphUri.positionSuffix()
-
-                        console.log({ uriToOpen, result })
 
                         return sourcegraphVSCodeExtensionAPI.openFile(uriToOpen)
                     }
@@ -207,7 +205,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
             return (
                 <button
                     type="button"
-                    className="btn btn-sm btn-outline-secondary text-decoration-none"
+                    className="btn btn-sm btn-outline-secondary infobar-button-link text-decoration-none"
                     onClick={props.onNonExperimentalLinkClick}
                     disabled={props.isNonExperimentalLinkDisabled}
                 >
@@ -260,7 +258,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
             )
 
             return (
-                <div className={classNames('flex-grow-1 result-container', styles.searchResultsInfoBar)}>
+                <div className={classNames('flex-grow-1', styles.searchResultsInfoBar)}>
                     <div className={styles.row}>
                         <small>{results?.results.length} results found</small>
                         <div className={styles.expander} />
@@ -274,7 +272,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                                     onClick={onShareResultsClick}
                                 >
                                     <ShareOutlineIcon className="icon-inline mr-1" />
-                                    <small>Share</small>
+                                    Share
                                 </button>
                             </li>
                         </ul>

@@ -39,9 +39,11 @@ code {
     font-family: var(--vscode-editor-font-family) !important;
     font-weight: var(--vscode-editor-font-weight) !important;
     font-size: var(--vscode-editor-font-size) !important;
+    color: var(--vscode-editor-foreground) !important;
 }
 
-a, .infobar-button-link {
+a,
+.infobar-button-link {
     color: var(--vscode-textLink-foreground) !important;
 }
 
@@ -52,5 +54,97 @@ a, .infobar-button-link {
 
     &:hover {
         background-color: var(--vscode-button-hoverBackground) !important;
+    }
+}
+
+.btn-link {
+    color: var(--vscode-textLink-foreground) !important;
+}
+
+.test-file-match-children-item-wrapper {
+    background-color: var(--vscode-textCodeBlock-background) !important;
+}
+
+.textarea {
+    background-color: var(--vscode-input-background) !important;
+}
+
+.card {
+    background-color: var(--vscode-textCodeBlock-background) !important;
+}
+
+.mtk13 {
+    color: var(--vscode-textLink-foreground) !important;
+}
+
+.search-filter-keyword {
+    color: var(--vscode-textLink-foreground) !important;
+
+    &:hover {
+        color: var(--vscode-button-background) !important;
+        background-color: var(--vscode-button-foreground) !important;
+    }
+}
+
+.search-example-example-icons {
+    color: var(--vscode-button-foreground) !important;
+
+    &:hover {
+        color: var(--vscode-button-background) !important;
+        background-color: var(--vscode-button-foreground) !important;
+    }
+}
+
+.search-example-card-wrapper {
+    margin-bottom: 0.5rem;
+
+    &:hover {
+        .search-example-icons {
+            color: var(--vscode-button-background) !important;
+            background-color: var(--vscode-button-foreground) !important;
+        }
+
+        a {
+            text-decoration: underline;
+        }
+    }
+}
+
+.btn-link-sm {
+    color: var(--vscode-textLink-foreground) !important;
+}
+
+.test-file-match-children-item-wrapper {
+    a {
+        background-color: var(--vscode-textCodeBlock-background) !important;
+    }
+
+    td {
+        color: var(--vscode-editorLineNumber-activeForeground) !important;
+    }
+}
+
+.result-container {
+    div {
+        background-color: var(--vscode-textCodeBlock-background);
+    }
+}
+
+.result-container__header {
+    background-color: transparent !important;
+
+    div {
+        background-color: transparent !important;
+    }
+}
+
+.selection-highlight,
+.selection-highlight-sticky {
+    background-color: var(--vscode-editorError-foreground) !important;
+}
+
+.btn-link-sm {
+    svg {
+        color: var(--vscode-textLink-foreground) !important;
     }
 }

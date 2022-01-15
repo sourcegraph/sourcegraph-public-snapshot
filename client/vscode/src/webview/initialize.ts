@@ -59,7 +59,7 @@ export async function initializeSearchPanelWebview({
     // Specific scripts to run using nonce
     const nonce = getNonce()
 
-    panel.iconPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview', 'logo.svg')
+    panel.iconPath = vscode.Uri.joinPath(extensionUri, 'images', 'logo.svg')
 
     // Apply Content-Security-Policy
     // panel.webview.cspSource comes from the webview object

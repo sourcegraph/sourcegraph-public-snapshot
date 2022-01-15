@@ -36,32 +36,32 @@
       {
         "command": "sourcegraph.search",
         "category": "Sourcegraph",
-        "title": "Sourcegraph: Open search tab"
+        "title": "Open Sourcegraph Search Tab"
       },
       {
         "command": "extension.openFile",
         "category": "Sourcegraph",
-        "title": "Sourcegraph: Open Sourcegraph Remote File"
+        "title": "Open Remote File in Sourcegraph"
       },
       {
         "command": "sourcegraph.copyFileLink",
         "category": "Sourcegraph",
-        "title": "Sourcegraph: Copy link to file"
+        "title": "Copy file link to Sourcegraph Web"
       },
       {
         "command": "sourcegraph.openInBrowser",
         "category": "Sourcegraph",
-        "title": "Sourcegraph: Open File in Browser"
+        "title": "Open File in Sourcegraph Web"
       },
       {
         "command": "sourcegraph.searchInSourcegraph",
         "category": "Sourcegraph",
-        "title": "Sourcegraph: Search Selected Text"
+        "title": "Search Selected Text in Sourcegraph"
       },
       {
         "command": "sourcegraph.searchOnSourcegraph",
         "category": "Sourcegraph",
-        "title": "Sourcegraph: Search Selected Text in Browser"
+        "title": "Search Selected Text in Sourcegraph Web"
       }
     ],
     "viewsContainers": {
@@ -111,21 +111,37 @@
             "string"
           ],
           "default": "https://sourcegraph.com",
-          "description": "The base URL of the Sourcegraph instance to use."
+          "description": "The base URL of the Sourcegraph instance to use.",
+          "examples": [ "https://sourcegraph.com"]
         },
         "sourcegraph.accessToken": {
           "type": [
             "string"
           ],
           "default": "",
-          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens"
+          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens",
+          "examples": [ "https://sourcegraph.com"]
         },
-        "sourcegraph.corsUrl": {
+        "sourcegraph.corsURL": {
           "type": [
             "string"
           ],
           "default": "",
-          "description": "CORS headers are necessary for the extension to fetch data when using VS Code Web."
+          "description": "CORS headers are necessary for the extension to fetch data when using VS Code Web with instances on version under 3.35.2."
+        },
+        "sourcegraph.defaultBranch": {
+          "type": [
+            "string"
+          ],
+          "default": "",
+          "description": "Always open files in the default branch"
+        },
+        "sourcegraph.remoteUrlReplacements": {
+          "type": [
+            "string"
+          ],
+          "default": "",
+          "description": "Replace strings in the remote URL. It takes objects, where each `key` is replaced by `value` in the remote url."
         }
       }
     },
@@ -161,7 +177,8 @@
   },
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
-    "build": "webpack --config-name extension:node --config-name webviews",
+    "build": "webpack --config-name extension:node --config-name extension:node --config-name webviews",
+    "build:node": "webpack --config-name extension:node --config-name webviews",
     "build:web": "webpack --config-name extension:webworker --config-name webviews",
     "dev": "webpack --mode=development --config-name extension:node --config-name webviews",
     "dev:web": "webpack --mode=development --config-name extension:webworker --config-name webviews",
