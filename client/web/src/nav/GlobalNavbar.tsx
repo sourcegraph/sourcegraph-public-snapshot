@@ -8,6 +8,7 @@ import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
@@ -36,7 +37,6 @@ import {
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { Settings } from '../schema/settings.schema'
-import { isSearchContextSpecAvailable, SearchContextInputProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
@@ -127,9 +127,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                       // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
                       // user selects a search context from the dropdown.
                       // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
-                      isSearchContextSpecAvailable(globalSearchContextSpec.spec).pipe(startWith(true))
+                      isSearchContextSpecAvailable({
+                          spec: globalSearchContextSpec.spec,
+                          platformContext: props.platformContext,
+                      }).pipe(startWith(true))
                     : of(false),
-            [globalSearchContextSpec, searchContextsEnabled]
+            [globalSearchContextSpec, searchContextsEnabled, props.platformContext]
         )
     )
 

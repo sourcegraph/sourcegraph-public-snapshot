@@ -2,11 +2,12 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
+import { SearchContextInputProps } from '@sourcegraph/search'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { SubmitSearchProps } from '../helpers'
@@ -18,7 +19,8 @@ import { SearchContextMenu } from './SearchContextMenu'
 export interface SearchContextDropdownProps
     extends SearchContextInputProps,
         TelemetryProps,
-        Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
+        Partial<Pick<SubmitSearchProps, 'submitSearch'>>,
+        PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null

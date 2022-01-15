@@ -2,14 +2,15 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
+import { ListSearchContextsResult } from '@sourcegraph/search'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
-import { ListSearchContextsResult } from '../../graphql-operations'
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
@@ -73,6 +74,7 @@ const defaultProps: SearchContextMenuProps = {
     closeMenu: () => {},
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     searchContextsEnabled: true,
+    platformContext: NOOP_PLATFORM_CONTEXT,
 }
 
 const emptySearchContexts = {

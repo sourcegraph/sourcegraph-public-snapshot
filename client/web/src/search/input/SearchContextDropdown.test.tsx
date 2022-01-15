@@ -12,6 +12,7 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
 import { SourcegraphContext } from '../../jscontext'
@@ -35,6 +36,7 @@ describe('SearchContextDropdown', () => {
         isSourcegraphDotCom: false,
         authenticatedUser: null,
         searchContextsEnabled: true,
+        platformContext: NOOP_PLATFORM_CONTEXT,
     }
     const RealIntersectionObserver = window.IntersectionObserver
     let clock: sinon.SinonFakeTimers

@@ -4,13 +4,15 @@ import React, { useCallback, useState, useEffect } from 'react'
 import shallow from 'zustand/shallow'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
-import { SearchContextInputProps, parseSearchURLQuery } from '..'
+import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
@@ -20,7 +22,13 @@ import { SubmitSearchParameters } from '../helpers'
 
 import { SearchBox } from './SearchBox'
 
-interface Props extends ActivationProps, SettingsCascadeProps, ThemeProps, SearchContextInputProps, TelemetryProps {
+interface Props
+    extends ActivationProps,
+        SettingsCascadeProps,
+        ThemeProps,
+        SearchContextInputProps,
+        TelemetryProps,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

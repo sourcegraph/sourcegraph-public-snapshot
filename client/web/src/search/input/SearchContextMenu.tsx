@@ -14,12 +14,12 @@ import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { SearchContextInputProps, SearchContextFields } from '@sourcegraph/search'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { Badge, Button, useObservable, Link } from '@sourcegraph/wildcard'
 
-import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { SearchContextFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
@@ -72,9 +72,10 @@ export const SearchContextMenuItem: React.FunctionComponent<{
 
 export interface SearchContextMenuProps
     extends Omit<
-        SearchContextInputProps,
-        'setSelectedSearchContextSpec' | 'hasUserAddedRepositories' | 'hasUserAddedExternalServices'
-    > {
+            SearchContextInputProps,
+            'setSelectedSearchContextSpec' | 'hasUserAddedRepositories' | 'hasUserAddedExternalServices'
+        >,
+        PlatformContextProps<'requestGraphQL'> {
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
     closeMenu: (isEscapeKey?: boolean) => void
@@ -108,6 +109,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     fetchSearchContexts,
     closeMenu,
     showSearchContextManagement,
+    platformContext,
 }) => {
     const inputElement = useRef<HTMLInputElement | null>(null)
 
@@ -182,6 +184,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                             query,
                             after: cursor,
                             namespaces: getUserSearchContextNamespaces(authenticatedUser),
+                            platformContext,
                         }),
                     ])
                 ),
@@ -211,11 +214,13 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         setLastPageInfo,
         getUserSearchContextNamespaces,
         fetchSearchContexts,
+        platformContext,
     ])
 
     const autoDefinedSearchContexts = useObservable(
-        useMemo(() => fetchAutoDefinedSearchContexts().pipe(catchError(error => [asError(error)])), [
+        useMemo(() => fetchAutoDefinedSearchContexts(platformContext).pipe(catchError(error => [asError(error)])), [
             fetchAutoDefinedSearchContexts,
+            platformContext,
         ])
     )
     const filteredAutoDefinedSearchContexts = useMemo(

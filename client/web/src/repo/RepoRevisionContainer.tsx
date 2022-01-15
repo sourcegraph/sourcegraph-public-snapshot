@@ -6,6 +6,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Popover } from 'reactstrap'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -31,7 +32,7 @@ import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
-import { SearchContextProps, SearchStreamingProps } from '../search'
+import { SearchStreamingProps } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
 

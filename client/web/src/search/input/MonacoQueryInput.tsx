@@ -3,6 +3,13 @@ import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
+import {
+    QueryChangeSource,
+    QueryState,
+    CaseSensitivityProps,
+    SearchPatternTypeProps,
+    SearchContextProps,
+} from '@sourcegraph/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
@@ -11,10 +18,8 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import { QueryChangeSource, QueryState } from '../helpers'
 import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
