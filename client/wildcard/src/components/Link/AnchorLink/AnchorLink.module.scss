@@ -1,8 +1,4 @@
-:root {
-    --link-hover-decoration: underline;
-}
-
-// To fix TS build error
+// We need this to make tsm recognize `anchorLink` prop otherwise it won't generate .d.ts file
 .anchor-link {
     --link-hover-decoration: underline;
 }
