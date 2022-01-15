@@ -8,12 +8,12 @@ import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '..'
