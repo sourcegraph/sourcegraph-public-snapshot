@@ -4,7 +4,7 @@ import React, { useCallback, useState, useEffect } from 'react'
 import shallow from 'zustand/shallow'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { SearchContextInputProps } from '@sourcegraph/search'
+import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -18,7 +18,6 @@ import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
-import { SubmitSearchParameters } from '../helpers'
 
 import { SearchBox } from './SearchBox'
 

@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { SearchContextInputProps } from '@sourcegraph/search'
+import { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
@@ -10,7 +10,6 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { AuthenticatedUser } from '../../auth'
-import { SubmitSearchProps } from '../helpers'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import styles from './SearchContextDropdown.module.scss'

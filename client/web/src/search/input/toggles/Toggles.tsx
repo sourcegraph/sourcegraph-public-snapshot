@@ -10,6 +10,7 @@ import {
     CaseSensitivityProps,
     SearchContextProps,
     SearchPatternTypeMutationProps,
+    SubmitSearchProps,
 } from '@sourcegraph/search'
 import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
@@ -18,7 +19,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { SearchPatternType } from '../../../graphql-operations'
-import { SubmitSearchProps } from '../../helpers'
 
 import { CopyQueryButton } from './CopyQueryButton'
 import { QueryInputToggle } from './QueryInputToggle'
