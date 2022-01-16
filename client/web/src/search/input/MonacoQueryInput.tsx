@@ -17,10 +17,10 @@ import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { observeResize } from '@sourcegraph/shared/src/util/dom'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
-import { observeResize } from '../../util/dom'
 
 import styles from './MonacoQueryInput.module.scss'
 
