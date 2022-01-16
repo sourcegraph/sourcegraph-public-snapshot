@@ -1,11 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
-
-import { AuthenticatedUser } from '../../auth'
 
 import styles from './SearchContextCtaPrompt.module.scss'
 
@@ -13,17 +12,19 @@ export interface SearchContextCtaPromptProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     hasUserAddedExternalServices: boolean
     onDismiss: () => void
+    /** Set in JSContext only available to the web app. */
+    isExternalServicesUserModeAll?: boolean
 }
 
 export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPromptProps> = ({
     authenticatedUser,
     hasUserAddedExternalServices,
     telemetryService,
+    isExternalServicesUserModeAll,
     onDismiss,
 }) => {
     const repositoriesVisibility =
-        window.context.externalServicesUserMode === 'all' ||
-        authenticatedUser?.tags.includes('AllowUserExternalServicePrivate')
+        isExternalServicesUserModeAll || authenticatedUser?.tags.includes('AllowUserExternalServicePrivate')
             ? 'repositories'
             : 'public repositories'
 

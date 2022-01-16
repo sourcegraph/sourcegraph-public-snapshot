@@ -152,6 +152,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
                         autoFocus={props.showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
+                        isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />

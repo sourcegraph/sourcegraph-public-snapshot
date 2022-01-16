@@ -3,6 +3,7 @@ import React from 'react'
 import { Observable, of } from 'rxjs'
 
 import { ListSearchContextsResult } from '@sourcegraph/search'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -75,6 +76,7 @@ const defaultProps: SearchContextMenuProps = {
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     searchContextsEnabled: true,
     platformContext: NOOP_PLATFORM_CONTEXT,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 const emptySearchContexts = {

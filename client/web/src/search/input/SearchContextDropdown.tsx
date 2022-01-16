@@ -3,13 +3,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-
-import { AuthenticatedUser } from '../../auth'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import styles from './SearchContextDropdown.module.scss'
@@ -26,6 +25,7 @@ export interface SearchContextDropdownProps
     query: string
     className?: string
     onEscapeMenuClose?: () => void
+    isExternalServicesUserModeAll?: boolean
 }
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
@@ -44,6 +44,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         telemetryService,
         onEscapeMenuClose,
         showSearchContextManagement,
+        isExternalServicesUserModeAll,
     } = props
 
     const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
@@ -148,6 +149,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                         authenticatedUser={authenticatedUser}
                         hasUserAddedExternalServices={hasUserAddedExternalServices}
                         onDismiss={onCtaDismissed}
+                        isExternalServicesUserModeAll={isExternalServicesUserModeAll}
                     />
                 )}
             </DropdownMenu>
