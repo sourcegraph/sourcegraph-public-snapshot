@@ -64,6 +64,11 @@ export interface SubmitSearchProps {
     submitSearch: (parameters: Partial<Omit<SubmitSearchParameters, 'query'>>) => void
 }
 
+export function canSubmitSearch(query: string, selectedSearchContextSpec?: string): boolean {
+    // A standalone context: filter is also a valid search query
+    return query !== '' || !!selectedSearchContextSpec
+}
+
 /**
  * Returns the index that a given search scope occurs in a given search query.
  * Attempts to not match a scope that is a substring of another scope.

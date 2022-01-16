@@ -5,7 +5,7 @@ import StickyBox from 'react-sticky-box'
 import { UseStore } from 'zustand'
 import shallow from 'zustand/shallow'
 
-import { QueryUpdate, SearchQueryState } from '@sourcegraph/search'
+import { QueryUpdate, SearchQueryState, SubmitSearchParameters } from '@sourcegraph/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -16,7 +16,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { OnboardingTour } from '../../../onboarding-tour/OnboardingTour'
 import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
-import { SubmitSearchParameters } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'

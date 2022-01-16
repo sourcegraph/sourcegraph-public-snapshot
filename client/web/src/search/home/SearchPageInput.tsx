@@ -4,7 +4,13 @@ import { Form } from 'reactstrap'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
-import { SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/search'
+import {
+    SearchContextInputProps,
+    CaseSensitivityProps,
+    SearchPatternTypeProps,
+    SubmitSearchParameters,
+    canSubmitSearch,
+} from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -22,7 +28,7 @@ import {
     setSearchPatternType,
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
-import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
+import { submitSearch } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'

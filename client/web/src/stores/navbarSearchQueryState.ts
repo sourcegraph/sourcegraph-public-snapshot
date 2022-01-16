@@ -5,13 +5,13 @@
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
 import create from 'zustand'
 
-import { BuildSearchQueryURLParameters, SearchQueryState, updateQuery } from '@sourcegraph/search'
+import { BuildSearchQueryURLParameters, canSubmitSearch, SearchQueryState, updateQuery } from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { parseSearchURL } from '../search'
-import { submitSearch, canSubmitSearch } from '../search/helpers'
+import { submitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
 
 export interface NavbarQueryState extends SearchQueryState {}
