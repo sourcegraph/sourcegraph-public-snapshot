@@ -1,7 +1,6 @@
 import { Optional } from 'utility-types'
 
-import { SectionID as NoResultsSectionID } from '../../search/results/NoResultsPage'
-import { SectionID } from '../../search/results/sidebar/SearchSidebar'
+import { SectionID, NoResultsSectionID } from './searchSidebar'
 
 /**
  * Schema for temporary settings.

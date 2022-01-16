@@ -1,7 +1,7 @@
 import { isDefined } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     CustomInsightDashboard,
     InsightDashboard,

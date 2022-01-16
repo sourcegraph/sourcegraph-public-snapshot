@@ -7,12 +7,13 @@ import { SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
-import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { useExperimentalFeatures } from '../../stores'
 import { ModalVideo } from '../documentation/ModalVideo'
 import searchBoxStyle from '../input/SearchBox.module.scss'
@@ -21,13 +22,6 @@ import { Toggles } from '../input/toggles/Toggles'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 import styles from './NoResultsPage.module.scss'
-
-export enum SectionID {
-    SEARCH_BAR = 'search-bar',
-    LITERAL_SEARCH = 'literal-search',
-    COMMON_PROBLEMS = 'common-problems',
-    VIDEOS = 'videos',
-}
 
 const noop = (): void => {}
 

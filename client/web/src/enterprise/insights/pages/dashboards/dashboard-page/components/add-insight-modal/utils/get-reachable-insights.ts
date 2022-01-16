@@ -1,7 +1,7 @@
 import { isErrorLike, isDefined } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { ReachableInsight } from '../../../../../../core/backend/code-insights-backend-types'
 import { parseInsightFromSubject } from '../../../../../../core/backend/setting-based-api/utils/find-insight-by-id'
 import { getDashboardOwnerInfo } from '../../../../../../core/backend/setting-based-api/utils/get-insights-dashboards/utils'
