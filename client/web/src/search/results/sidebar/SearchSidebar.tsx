@@ -9,11 +9,12 @@ import { QueryUpdate, SearchQueryState } from '@sourcegraph/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
+import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { OnboardingTour } from '../../../onboarding-tour/OnboardingTour'
-import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
-import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 import { SubmitSearchParameters } from '../../helpers'
 
@@ -40,16 +41,6 @@ export interface SearchSidebarProps
      * for search.
      */
     useQueryState: UseStore<SearchQueryState>
-}
-
-export enum SectionID {
-    SEARCH_REFERENCE = 'reference',
-    SEARCH_TYPES = 'types',
-    DYNAMIC_FILTERS = 'filters',
-    REPOSITORIES = 'repositories',
-    SEARCH_SNIPPETS = 'snippets',
-    QUICK_LINKS = 'quicklinks',
-    REVISIONS = 'revisions',
 }
 
 const selectFromQueryState = ({

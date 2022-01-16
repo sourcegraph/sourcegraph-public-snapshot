@@ -6,10 +6,10 @@ import { SearchContextInputProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { AuthenticatedUser } from '../../auth'
-import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { SubmitSearchProps } from '../helpers'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'

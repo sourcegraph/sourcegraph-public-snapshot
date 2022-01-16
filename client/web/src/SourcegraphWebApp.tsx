@@ -39,6 +39,8 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
+import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import {
     // This is the root Tooltip usage
     // eslint-disable-next-line no-restricted-imports
@@ -80,8 +82,6 @@ import { parseSearchURL } from './search'
 import { fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SearchStack } from './search/SearchStack'
-import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
-import { TemporarySettingsStorage } from './settings/temporary/TemporarySettingsStorage'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'

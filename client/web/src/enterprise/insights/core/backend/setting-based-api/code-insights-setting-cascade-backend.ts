@@ -6,12 +6,12 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 import { isErrorLike, isDefined } from '@sourcegraph/common'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-
 import {
     Settings,
     InsightDashboard as InsightDashboardConfiguration,
 } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+
 import { createSanitizedDashboard } from '../../../pages/dashboards/creation/utils/dashboard-sanitizer'
 import { getReachableInsights } from '../../../pages/dashboards/dashboard-page/components/add-insight-modal/utils/get-reachable-insights'
 import { findDashboardByUrlId } from '../../../pages/dashboards/dashboard-page/components/dashboards-content/utils/find-dashboard-by-url-id'
