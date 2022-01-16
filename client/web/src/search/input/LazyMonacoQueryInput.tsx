@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { Suspense } from 'react'
 
-import { lazyComponent } from '../../util/lazyComponent'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import styles from './LazyMonacoQueryInput.module.scss'
 import { MonacoQueryInputProps } from './MonacoQueryInput'

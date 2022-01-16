@@ -8,12 +8,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 import { CodeInsightsContextProps } from '../../insights/types'
-import { lazyComponent } from '../../util/lazyComponent'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
