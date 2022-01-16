@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
@@ -16,7 +17,6 @@ import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
-import { lazyComponent } from './util/lazyComponent'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')

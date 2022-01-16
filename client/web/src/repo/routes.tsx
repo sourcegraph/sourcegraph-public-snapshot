@@ -4,6 +4,7 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { isErrorLike } from '@sourcegraph/common'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
     appendLineRangeQueryParameter,
     isLegacyFragment,
@@ -14,7 +15,6 @@ import {
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { lazyComponent } from '../util/lazyComponent'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
