@@ -93,7 +93,6 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
     const hasAppliedFilters = hasActiveFilters(originalFiltersValue)
 
     return (
-        // eslint-disable-next-line react/forbid-elements
         <form ref={ref} className={classNames(className, 'd-flex flex-column')} onSubmit={handleSubmit}>
             <header className="d-flex align-items-baseline px-3 py-2 mt-1">
                 <h4 className="mb-0">Filter repositories</h4>
@@ -115,8 +114,6 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
             <hr className="w-100 m-0 mt-1" />
 
             <fieldset className="px-3 mt-3">
-                <h4 className="mb-3">Regular expression</h4>
-
                 <FormInput
                     as={DrillDownRegExpInput}
                     autoFocus={true}
@@ -127,7 +124,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                         </LabelWithReset>
                     }
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
-                    className="mb-4"
+                    className="mb-3"
                     valid={includeRegex.meta.dirty && includeRegex.meta.validState === 'VALID'}
                     error={includeRegex.meta.dirty && includeRegex.meta.error}
                     {...includeRegex.input}
@@ -144,12 +141,10 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
                     valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
                     error={excludeRegex.meta.dirty && excludeRegex.meta.error}
-                    className="mb-4"
+                    className="mb-3"
                     {...excludeRegex.input}
                 />
             </fieldset>
-
-            <hr className="w-100 m-0" />
 
             <footer className="px-3 d-flex flex-wrap py-3">
                 {formAPI.submitErrors?.[FORM_ERROR] && (

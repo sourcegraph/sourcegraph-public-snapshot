@@ -1,15 +1,12 @@
-import React, { useRef, useState } from 'react'
+import React, { useState } from 'react'
 
-import { Button, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Button, ProductStatusBadge, Popover, PopoverTrigger, PopoverContent } from '@sourcegraph/wildcard'
 
 import { FeedbackPromptContent } from '../../../../nav/Feedback'
-import { flipRightPosition } from '../context-menu/utils'
-import { Popover } from '../popover/Popover'
 
 import styles from './BetaFeedbackPanel.module.scss'
 
 export const BetaFeedbackPanel: React.FunctionComponent = () => {
-    const buttonReference = useRef<HTMLButtonElement>(null)
     const [isVisible, setVisibility] = useState(false)
 
     return (
@@ -18,22 +15,18 @@ export const BetaFeedbackPanel: React.FunctionComponent = () => {
                 <ProductStatusBadge status="beta" className="text-uppercase" />
             </a>
 
-            <Button ref={buttonReference} variant="link" size="sm">
-                Share feedback
-            </Button>
+            <Popover open={isVisible} onOpenChange={event => setVisibility(event.isOpen)}>
+                <PopoverTrigger as={Button} variant="link" size="sm">
+                    Share feedback
+                </PopoverTrigger>
 
-            <Popover
-                isOpen={isVisible}
-                target={buttonReference}
-                position={flipRightPosition}
-                onVisibilityChange={setVisibility}
-                className={styles.feedbackPrompt}
-            >
-                <FeedbackPromptContent
-                    closePrompt={() => setVisibility(false)}
-                    textPrefix="Code Insights: "
-                    routeMatch="/insights/dashboards"
-                />
+                <PopoverContent className={styles.feedbackPrompt}>
+                    <FeedbackPromptContent
+                        closePrompt={() => setVisibility(false)}
+                        textPrefix="Code Insights: "
+                        routeMatch="/insights/dashboards"
+                    />
+                </PopoverContent>
             </Popover>
         </div>
     )
