@@ -1,4 +1,4 @@
-import classNames from 'classnames';
+import classNames from 'classnames'
 import { noop } from 'lodash'
 import React, {
     createContext,
@@ -117,7 +117,15 @@ interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marke
 }
 
 const PopoverContent = forwardRef((props, reference) => {
-    const { open, children, focusLocked = true, as: Component = 'div', role = 'dialog', 'aria-modal': ariaModel = true, ...otherProps } = props
+    const {
+        open,
+        children,
+        focusLocked = true,
+        as: Component = 'div',
+        role = 'dialog',
+        'aria-modal': ariaModel = true,
+        ...otherProps
+    } = props
 
     const { isOpen, targetElement, anchor, setOpen } = useContext(PopoverContext)
 

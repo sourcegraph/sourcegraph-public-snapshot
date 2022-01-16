@@ -317,7 +317,10 @@ export const WithControlledState = () => {
 export const WithNestedScrollParents = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.root}>
         <div className={styles.spreadContentBlock}>
-            <ScrollCenterBox title="Sub scroll block" className={classNames(styles.container, styles.containerAsSubRoot)}>
+            <ScrollCenterBox
+                title="Sub scroll block"
+                className={classNames(styles.container, styles.containerAsSubRoot)}
+            >
                 <div className={styles.content}>
                     <Popover.Root>
                         <div className={styles.triggerAnchor}>
@@ -327,11 +330,11 @@ export const WithNestedScrollParents = () => (
                         </div>
 
                         <Popover.Content position={Position.rightStart} className={styles.floating}>
-                            Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
-                            Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
-                            career and his mother was a homemaker.[6] In the early years of his life his family moved to
-                            Kharkiv in the Ukrainian SSR, where Limonov grew up. He studied at the H.S. Skovoroda Kharkiv
-                            National Pedagogical University.
+                            Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast
+                            (now Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state
+                            security career and his mother was a homemaker.[6] In the early years of his life his family
+                            moved to Kharkiv in the Ukrainian SSR, where Limonov grew up. He studied at the H.S.
+                            Skovoroda Kharkiv National Pedagogical University.
                             <div className="mt-2 d-flex" style={{ gap: 10 }}>
                                 <Button variant="secondary">Action 1</Button>
                                 <Button variant="secondary">Action 2</Button>
