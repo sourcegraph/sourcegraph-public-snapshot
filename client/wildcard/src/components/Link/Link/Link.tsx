@@ -1,10 +1,18 @@
 import * as H from 'history'
 import React from 'react'
 
-export type LinkProps = { to: string | H.LocationDescriptor<any>; ref?: React.Ref<HTMLAnchorElement> } & Pick<
-    React.AnchorHTMLAttributes<HTMLAnchorElement>,
-    Exclude<keyof React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>
->
+export interface LinkProps
+    extends Pick<
+        React.AnchorHTMLAttributes<HTMLAnchorElement>,
+        Exclude<keyof React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>
+    > {
+    to: string | H.LocationDescriptor<any>
+    ref?: React.Ref<HTMLAnchorElement>
+    /**
+     * If the Link should use branded styles. Defaults to true.
+     */
+    branded?: boolean
+}
 
 /**
  * The component used to render a link. All shared code must use this component for links—not <a>, <Link>, etc.

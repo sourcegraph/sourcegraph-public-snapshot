@@ -7,21 +7,21 @@ import type { LinkProps } from '../Link'
 import styles from './AnchorLink.module.scss'
 
 export type AnchorLinkProps = LinkProps & {
-    to: string | H.LocationDescriptor<any>
-    ref?: React.Ref<HTMLAnchorElement>
     as?: LinkComponent
 }
 
 export type LinkComponent = React.FunctionComponent<LinkProps>
 
 export const AnchorLink: React.FunctionComponent<AnchorLinkProps> = React.forwardRef(
-    ({ to, as: Component, children, className, ...rest }: AnchorLinkProps, reference) => {
+    ({ to, as: Component, children, branded = true, className, ...rest }: AnchorLinkProps, reference) => {
+        const brandedClassName = branded && styles.anchorLink
+
         if (!Component) {
             return (
                 <a
                     href={to && typeof to !== 'string' ? H.createPath(to) : to}
                     {...rest}
-                    className={classNames(styles.anchorLink, className)}
+                    className={classNames(brandedClassName, className)}
                     ref={reference}
                 >
                     {children}
@@ -30,7 +30,7 @@ export const AnchorLink: React.FunctionComponent<AnchorLinkProps> = React.forwar
         }
 
         return (
-            <Component to={to} {...rest} className={classNames(styles.anchorLink, className)} ref={reference}>
+            <Component to={to} {...rest} className={classNames(brandedClassName, className)} ref={reference}>
                 {children}
             </Component>
         )
