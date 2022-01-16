@@ -8,6 +8,7 @@ import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
 import { SearchContextProps } from '@sourcegraph/search'
+import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
@@ -19,7 +20,6 @@ import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
-import { useQueryDiagnostics } from '../useQueryIntelligence'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'

@@ -10,6 +10,7 @@ import {
     SearchPatternTypeProps,
     SearchContextProps,
 } from '@sourcegraph/search'
+import { useQueryIntelligence, useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
@@ -20,7 +21,6 @@ import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
 
