@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { useDistinctValue } from '../../../hooks/use-distinct-value'
+import { useDeepMemo } from './useDeepMemo'
 
 interface UseKeyboardProps {
     detectKeys: (string | number)[]
@@ -9,7 +9,7 @@ interface UseKeyboardProps {
 
 export function useKeyboard(props: UseKeyboardProps, callback: (event: Event) => void): void {
     const { keyevent = 'keyup', detectKeys } = props
-    const keys = useDistinctValue(detectKeys)
+    const keys = useDeepMemo(detectKeys)
 
     useEffect(() => {
         const handleEvent = (event: KeyboardEvent): void => {

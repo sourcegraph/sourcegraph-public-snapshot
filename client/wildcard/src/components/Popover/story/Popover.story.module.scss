@@ -1,0 +1,179 @@
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+
+.root {
+    background: var(--color-bg-3);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+}
+
+.container {
+    background: var(--gray-03);
+    height: 100%;
+    overflow: auto;
+    position: relative;
+    border: 1px solid #000000;
+
+    &--as-sub-root {
+        height: 24rem;
+        width: 32rem;
+        flex-shrink: 0;
+    }
+}
+
+.spread-content-block {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32rem;
+}
+
+.content {
+    width: 100rem;
+    height: 100rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mouse-zone {
+    flex: 1;
+    margin: 8rem;
+    border: 1px solid #000000;
+    background: var(--gray-01);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.target {
+    height: 10rem;
+}
+
+.floating {
+    max-width: 12rem;
+    padding: 0.5rem;
+    margin: 0;
+
+    &--tooltip-like {
+        min-width: auto;
+        padding: 0.5rem;
+    }
+
+    &--with-scroll {
+        max-height: 8rem;
+        overflow: auto;
+    }
+
+    &--with-non-events {
+        pointer-events: none;
+    }
+}
+
+.scrollbox {
+    position: relative;
+}
+
+.scrollbox-title {
+    position: sticky;
+    top: 0;
+    left: 0;
+    padding: 0.5rem;
+}
+
+.trigger-anchor {
+    border: 1px solid #000000;
+    padding: 3rem;
+}
+
+.positions-container {
+    width: 25rem;
+    height: 25rem;
+    position: relative;
+    padding: 10rem;
+}
+
+.positions-target {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--secondary);
+}
+
+.position-marker {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: var(--secondary);
+    position: absolute;
+    border: 2px solid var(--primary);
+
+    &--active {
+        border: 2px solid var(--alert-border-color);
+        background-color: var(--primary);
+    }
+
+    &--top {
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+
+        &-start {
+            left: calc(50% - 4rem);
+        }
+
+        &-end {
+            left: calc(50% + 4rem);
+        }
+    }
+
+    &--right {
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+
+        &-start {
+            top: calc(50% - 4rem);
+        }
+
+        &-end {
+            top: calc(50% + 4rem);
+        }
+    }
+
+    &--bottom {
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+
+        &-start {
+            left: calc(50% - 4rem);
+        }
+
+        &-end {
+            left: calc(50% + 4rem);
+        }
+    }
+
+    &--left {
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+
+        &-start {
+            top: calc(50% - 4rem);
+        }
+
+        &-end {
+            top: calc(50% + 4rem);
+        }
+    }
+}
