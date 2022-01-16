@@ -6,6 +6,7 @@ import shallow from 'zustand/shallow'
 
 import { SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
@@ -14,7 +15,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
-import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import {
     useExperimentalFeatures,
     useNavbarQueryState,

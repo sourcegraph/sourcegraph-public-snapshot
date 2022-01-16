@@ -11,13 +11,13 @@ import {
     SearchContextProps,
     SearchPatternTypeMutationProps,
 } from '@sourcegraph/search'
+import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { SearchPatternType } from '../../../graphql-operations'
-import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { SubmitSearchProps } from '../../helpers'
 
 import { CopyQueryButton } from './CopyQueryButton'
