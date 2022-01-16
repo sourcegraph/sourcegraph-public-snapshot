@@ -2,6 +2,8 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { WebStory } from '../../components/WebStory'
 
 import { SearchContextMenuItem } from './SearchContextMenu'
@@ -30,6 +32,7 @@ add(
                     isDefault={true}
                     selectSearchContextSpec={noop}
                     onKeyDown={noop}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             )}
         </WebStory>
@@ -51,6 +54,7 @@ add(
                     isDefault={false}
                     selectSearchContextSpec={noop}
                     onKeyDown={noop}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             )}
         </WebStory>

@@ -3,12 +3,11 @@ import * as Monaco from 'monaco-editor'
 import React, { useCallback, useState } from 'react'
 
 import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-
-import { AuthenticatedUser } from '../../auth'
 
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import styles from './SearchBox.module.scss'
@@ -47,6 +46,9 @@ export interface SearchBoxProps
     hideHelpButton?: boolean
 
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
+
+    /** Set in JSContext only available to the web app. */
+    isExternalServicesUserModeAll?: boolean
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
@@ -85,7 +87,12 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     />
                 </div>
             </div>
-            <SearchButton hideHelpButton={props.hideHelpButton} className={styles.searchBoxButton} />
+            <SearchButton
+                hideHelpButton={props.hideHelpButton}
+                className={styles.searchBoxButton}
+                telemetryService={props.telemetryService}
+                isSourcegraphDotCom={props.isSourcegraphDotCom}
+            />
         </div>
     )
 }

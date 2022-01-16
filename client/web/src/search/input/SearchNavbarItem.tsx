@@ -122,6 +122,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
                 onHandleFuzzyFinder={setIsFuzzyFinderVisible}
+                isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
             <Shortcut
                 {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}

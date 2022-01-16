@@ -13,12 +13,11 @@ import {
     SubmitSearchProps,
 } from '@sourcegraph/search'
 import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
-
-import { SearchPatternType } from '../../../graphql-operations'
 
 import { CopyQueryButton } from './CopyQueryButton'
 import { QueryInputToggle } from './QueryInputToggle'
@@ -40,6 +39,8 @@ export interface TogglesProps
      * being disabled, because the buttons still render normally.
      */
     interactive?: boolean
+    /** Comes from JSContext only set in the web app. */
+    structuralSearchDisabled?: boolean
 }
 
 export const getFullQuery = (
@@ -69,9 +70,8 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         selectedSearchContextSpec,
         submitSearch,
         showCopyQueryButton = true,
+        structuralSearchDisabled,
     } = props
-
-    const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
 
     const submitOnToggle = useCallback(
         (args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean }): void => {

@@ -8,6 +8,7 @@ import sinon from 'sinon'
 
 import { ListSearchContextsResult, SearchContextFields } from '@sourcegraph/search'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { mockGetUserSearchContextNamespaces } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
@@ -113,6 +114,7 @@ describe('SearchContextMenu', () => {
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         searchContextsEnabled: true,
         platformContext: NOOP_PLATFORM_CONTEXT,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 
     const RealIntersectionObserver = window.IntersectionObserver
