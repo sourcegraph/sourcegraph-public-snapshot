@@ -12,9 +12,9 @@ import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilt
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { isMacPlatform } from '../../util'
 import { QueryState } from '../helpers'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
