@@ -1,5 +1,8 @@
 import { Menu as ReachMenu, MenuProps as ReachMenuProps } from '@reach/menu-button'
+import { isFunction } from 'lodash'
 import React from 'react'
+
+import { Popover } from '../Popover'
 
 export type MenuProps = ReachMenuProps
 
@@ -12,4 +15,12 @@ export type MenuProps = ReachMenuProps
  * @see — Building accessible menus: https://www.w3.org/TR/wai-aria-practices/examples/menu-button/menu-button-links.html
  * @see — Docs https://reach.tech/menu-button#menu
  */
-export const Menu: React.FunctionComponent<ReachMenuProps> = props => <ReachMenu {...props} />
+export const Menu: React.FunctionComponent<ReachMenuProps> = ({ children, ...props }) => (
+    <ReachMenu {...props}>
+        {({ isExpanded }) => (
+            <Popover open={isExpanded}>
+                {isFunction(children) ? children({ isExpanded, isOpen: isExpanded }) : children}
+            </Popover>
+        )}
+    </ReachMenu>
+)
