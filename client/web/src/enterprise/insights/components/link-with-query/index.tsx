@@ -1,8 +1,7 @@
 import React from 'react'
 import { useLocation } from 'react-router-dom'
 
-import { Link } from '@sourcegraph/wildcard'
-import type { LinkProps } from '@sourcegraph/wildcard/src/components/Link'
+import { Link, LinkProps } from '@sourcegraph/wildcard'
 
 export interface LinkWithQueryProps extends Omit<LinkProps, 'to'> {
     to: string

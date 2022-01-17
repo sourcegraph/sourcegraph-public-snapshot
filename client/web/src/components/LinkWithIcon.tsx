@@ -3,8 +3,7 @@ import { kebabCase, omit } from 'lodash'
 import React from 'react'
 import { NavLink, NavLinkProps } from 'react-router-dom'
 
-import { Link } from '@sourcegraph/wildcard'
-import type { LinkProps } from '@sourcegraph/wildcard/src/components/Link'
+import { Link, LinkProps } from '@sourcegraph/wildcard'
 
 interface Props extends LinkProps, Pick<NavLinkProps, 'activeClassName'> {
     text: string
