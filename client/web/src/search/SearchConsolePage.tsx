@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
+import { StreamingSearchResultsList, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { useQueryIntelligence, useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
@@ -19,7 +20,6 @@ import { useExperimentalFeatures } from '../stores'
 import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
 import { LATEST_VERSION } from './results/StreamingSearchResults'
-import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
 import styles from './SearchConsolePage.module.scss'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'

@@ -8,6 +8,7 @@ import { Popover } from 'reactstrap'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -33,7 +34,6 @@ import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
-import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
 
 import { CopyPathAction } from './actions/CopyPathAction'

@@ -10,6 +10,7 @@ import { Observable } from 'rxjs'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { SearchResult } from '@sourcegraph/search-ui/src/components/SearchResult'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -26,8 +27,6 @@ import {
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-
-import { AuthenticatedUser } from '../../auth'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
