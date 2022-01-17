@@ -219,7 +219,13 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
 			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
-			{name: "rosetta", check: checkCommandExitCode("pgrep oahd", 0), instructionsCommands: `softwareupdate --install-rosetta --agree-to-license`},
+			{
+				name: "rosetta",
+				check: anyChecks(
+					checkCommandOutputContains("uname -m", "x86_64"), // will return true on non-m1 macs
+					checkCommandExitCode("pgrep oahd", 0)),           // oahd is the process running rosetta
+				instructionsCommands: `softwareupdate --install-rosetta --agree-to-license`,
+			},
 			{
 				name:                 "docker",
 				check:                wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
