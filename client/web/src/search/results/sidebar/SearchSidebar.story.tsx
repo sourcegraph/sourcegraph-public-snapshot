@@ -4,11 +4,12 @@ import React from 'react'
 // eslint-disable-next-line no-restricted-imports
 import create from 'zustand'
 
-import { SearchQueryState } from '@sourcegraph/search'
+import { BuildSearchQueryURLParameters, SearchQueryState } from '@sourcegraph/search'
 import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { WebStory } from '../../../components/WebStory'
 import { SearchPatternType } from '../../../graphql-operations'
@@ -45,6 +46,17 @@ const defaultProps: SearchSidebarProps = {
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     useQueryState: mockUseQueryState,
+    buildSearchURLQueryFromQueryState: (parameters: BuildSearchQueryURLParameters) => {
+        const currentState = mockUseQueryState.getState()
+
+        return buildSearchURLQuery(
+            parameters.query,
+            parameters.patternType ?? currentState.searchPatternType,
+            parameters.caseSensitive ?? currentState.searchCaseSensitivity,
+            parameters.searchContextSpec,
+            parameters.searchParametersList
+        )
+    },
 }
 
 const quicklinks: QuickLink[] = [

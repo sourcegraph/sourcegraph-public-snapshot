@@ -1,14 +1,13 @@
 import classNames from 'classnames'
 import React, { ReactElement, useCallback } from 'react'
 
-import { QueryChangeSource, QueryState, SearchContextProps } from '@sourcegraph/search'
+import { BuildSearchQueryURLParameters, QueryChangeSource, QueryState, SearchContextProps } from '@sourcegraph/search'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
 import { Button } from '@sourcegraph/wildcard'
 
-import { buildSearchURLQueryFromQueryState } from '../../../stores'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '../../helpers/queryExample'
 import { SearchType } from '../StreamingSearchResults'
 
@@ -17,6 +16,7 @@ import styles from './SearchSidebarSection.module.scss'
 export interface SearchTypeLinksProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string
     onNavbarQueryChange: (queryState: QueryState) => void
+    buildSearchURLQueryFromQueryState: (queryParameters: BuildSearchQueryURLParameters) => string
 }
 
 interface SearchTypeLinkProps extends SearchTypeLinksProps {
@@ -33,6 +33,7 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     query,
     selectedSearchContextSpec,
     children,
+    buildSearchURLQueryFromQueryState,
 }) => {
     const builtURLQuery = buildSearchURLQueryFromQueryState({
         query: updateFilter(query, FilterType.type, type as string),
