@@ -4,7 +4,6 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
@@ -213,26 +212,6 @@ export function deleteSavedSearch(id: Scalars['ID']): Observable<void> {
         map(() => undefined)
     )
 }
-
-export const highlightCode = memoizeObservable(
-    (context: { code: string; fuzzyLanguage: string; disableTimeout: boolean }): Observable<string> =>
-        queryGraphQL(
-            gql`
-                query highlightCode($code: String!, $fuzzyLanguage: String!, $disableTimeout: Boolean!) {
-                    highlightCode(code: $code, fuzzyLanguage: $fuzzyLanguage, disableTimeout: $disableTimeout)
-                }
-            `,
-            context
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.highlightCode) {
-                    throw createAggregateError(errors)
-                }
-                return data.highlightCode
-            })
-        ),
-    context => `${context.code}:${context.fuzzyLanguage}:${String(context.disableTimeout)}`
-)
 
 export interface EventLogResult {
     totalCount: number

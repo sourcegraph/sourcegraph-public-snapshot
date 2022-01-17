@@ -11,6 +11,7 @@ import { SearchContextProps } from '@sourcegraph/search'
 import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -39,7 +40,8 @@ interface SearchNotebookQueryBlockProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         ThemeProps,
         SettingsCascadeProps,
-        TelemetryProps {
+        TelemetryProps,
+        PlatformContextProps<'requestGraphQL'> {
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     sourcegraphSearchLanguageId: string
@@ -191,6 +193,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             showSearchContext={showSearchContext}
                             assetsRoot={window.context?.assetsRoot || ''}
                             renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
+                            platformContext={props.platformContext}
                         />
                     </div>
                 )}

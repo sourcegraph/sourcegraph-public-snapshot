@@ -14,7 +14,7 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 

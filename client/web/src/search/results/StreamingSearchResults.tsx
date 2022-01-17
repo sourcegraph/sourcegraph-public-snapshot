@@ -45,7 +45,7 @@ export interface StreamingSearchResultsProps
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
         TelemetryProps,
         ThemeProps,
         CodeInsightsProps,

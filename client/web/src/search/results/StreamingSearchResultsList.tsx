@@ -9,10 +9,12 @@ import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 
 import { SearchContextProps } from '@sourcegraph/search'
+import { SearchResult } from '@sourcegraph/search-ui/src/components/SearchResult'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     AggregateStreamingSearchResults,
     ContentMatch,
@@ -26,7 +28,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
-import { SearchResult } from '../../components/SearchResult'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
@@ -37,7 +38,8 @@ export interface StreamingSearchResultsListProps
     extends ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'searchContextsEnabled'> {
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
     location: H.Location
@@ -65,6 +67,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     showSearchContext,
     assetsRoot,
     renderSearchUserNeedsCodeHost,
+    platformContext,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
@@ -98,7 +101,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             icon={SourceCommitIcon}
                             result={result}
                             repoName={result.repository}
-                            telemetryService={telemetryService}
+                            platformContext={platformContext}
                         />
                     )
                 case 'repo':
@@ -107,7 +110,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             icon={SourceRepositoryIcon}
                             result={result}
                             repoName={result.repository}
-                            telemetryService={telemetryService}
+                            platformContext={platformContext}
                         />
                     )
             }
@@ -119,6 +122,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
+            platformContext,
         ]
     )
 

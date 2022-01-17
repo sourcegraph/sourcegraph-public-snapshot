@@ -4,7 +4,7 @@ import React from 'react'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
 import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
-import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
 
