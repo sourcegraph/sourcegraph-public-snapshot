@@ -21,6 +21,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
     >
       <div>
         <div
+          class="modalContainer"
           data-reach-dialog-overlay=""
         >
           <div
