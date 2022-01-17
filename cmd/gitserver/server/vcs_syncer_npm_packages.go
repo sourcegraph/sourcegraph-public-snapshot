@@ -49,12 +49,12 @@ func NewNPMPackagesSyncer(
 	connection schema.NPMPackagesConnection,
 	dbStore repos.NPMPackagesRepoStore,
 	customClient npm.Client,
-) NPMPackagesSyncer {
+) *NPMPackagesSyncer {
 	var client = customClient
 	if client == nil {
 		client = npm.NewHTTPClient(connection.Registry, connection.RateLimit)
 	}
-	return NPMPackagesSyncer{connection, dbStore, client}
+	return &NPMPackagesSyncer{connection, dbStore, client}
 }
 
 var _ VCSSyncer = &NPMPackagesSyncer{}
