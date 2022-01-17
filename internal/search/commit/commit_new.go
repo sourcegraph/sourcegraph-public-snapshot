@@ -303,20 +303,18 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
 	var (
 		markdown       result.MatchedString
-		diffPreview    *result.HighlightedString
-		messagePreview *result.HighlightedString
+		diffPreview    *result.MatchedString
+		messagePreview *result.MatchedString
 	)
 
 	if diff {
-		hls := in.Diff.ToHighlightedString()
-		diffPreview = &hls
+		diffPreview = &in.Diff
 		markdown = result.MatchedString{
 			Content:       "```diff\n" + in.Diff.Content + "\n```",
 			MatchedRanges: in.Diff.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```diff\n")}),
 		}
 	} else {
-		hls := in.Message.ToHighlightedString()
-		messagePreview = &hls
+		messagePreview = &in.Message
 		markdown = result.MatchedString{
 			Content:       "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```",
 			MatchedRanges: in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}),
@@ -342,7 +340,7 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		Repo:           repo,
 		MessagePreview: messagePreview,
 		DiffPreview:    diffPreview,
-		Body:           markdown.ToHighlightedString(),
+		Body:           markdown,
 	}
 }
 

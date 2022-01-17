@@ -553,11 +553,9 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 }
 
 func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventCommitMatch {
-	content := commit.Body.Value
-
-	highlights := commit.Body.Highlights
-	ranges := make([][3]int32, len(highlights))
-	for i, h := range highlights {
+	hls := commit.Body.ToHighlightedString()
+	ranges := make([][3]int32, len(hls.Highlights))
+	for i, h := range hls.Highlights {
 		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
 	}
 
@@ -567,7 +565,7 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 		URL:        commit.URL().String(),
 		Detail:     commit.Detail(),
 		Repository: string(commit.Repo.Name),
-		Content:    content,
+		Content:    hls.Value,
 		Ranges:     ranges,
 	}
 

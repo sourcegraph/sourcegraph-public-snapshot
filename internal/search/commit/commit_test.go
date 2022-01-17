@@ -10,8 +10,8 @@ import (
 func TestCommitSearchResult_Limit(t *testing.T) {
 	f := func(nHighlights []int, limitInput uint32) bool {
 		cr := &result.CommitMatch{
-			Body: result.HighlightedString{
-				Highlights: make([]result.HighlightedRange, len(nHighlights)),
+			Body: result.MatchedString{
+				MatchedRanges: make([]result.MatchedRange, len(nHighlights)),
 			},
 		}
 
