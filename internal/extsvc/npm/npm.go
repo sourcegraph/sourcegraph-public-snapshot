@@ -78,9 +78,6 @@ func FetchSources(ctx context.Context, client Client, dependency reposource.NPMD
 }
 
 func Exists(ctx context.Context, client Client, dependency reposource.NPMDependency) (err error) {
-	if operations == nil {
-		fmt.Println("operations is nil!")
-	}
 	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
