@@ -900,10 +900,9 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 
 			if valid() {
 				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
-					args.RepoOptions = repoOptions
 					jobs = append(jobs, &run.RepoSearch{
-						Args:  &args,
-						Limit: r.MaxResults(),
+						RepoOptions: repoOptions,
+						Limit:       r.MaxResults(),
 					})
 				}
 			}

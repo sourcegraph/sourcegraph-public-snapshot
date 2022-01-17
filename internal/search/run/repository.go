@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"math"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -19,8 +20,8 @@ import (
 )
 
 type RepoSearch struct {
-	Args  *search.TextParameters
-	Limit int
+	RepoOptions search.RepoOptions
+	Limit       int
 
 	IsRequired bool
 }
@@ -33,15 +34,13 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 	}()
 
 	tr.LogFields(
-		otlog.String("pattern", s.Args.PatternInfo.Pattern),
+		otlog.String("filters", strings.Join(s.RepoOptions.RepoFilters, ",")),
 		otlog.Int("limit", s.Limit))
-
-	opts := s.Args.RepoOptions // copy
 
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
 	defer cleanup()
 
-	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+	err = repos.Paginate(ctx, &s.RepoOptions, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 
 		stream.Send(streaming.SearchEvent{
