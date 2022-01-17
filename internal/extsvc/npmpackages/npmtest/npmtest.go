@@ -11,8 +11,9 @@ import (
 )
 
 type MockClient struct {
-	TarballMap              map[string]string
-	DoesDependencyExistFunc func(_ context.Context, dep reposource.NPMDependency) (exists bool, err error)
+	// TarballMap is a map from dependency (in package manager syntax)
+	// to optional tarball paths.
+	TarballMap map[string]string
 }
 
 var _ npm.Client = &MockClient{}
@@ -25,7 +26,7 @@ func (m *MockClient) AvailablePackageVersions(_ context.Context, pkg reposource.
 			return versions, err
 		}
 		if pkg == dep.Package {
-			versions[dep.PackageManagerSyntax()] = struct{}{}
+			versions[dep.Version] = struct{}{}
 		}
 	}
 	if len(versions) == 0 {
@@ -35,9 +36,6 @@ func (m *MockClient) AvailablePackageVersions(_ context.Context, pkg reposource.
 }
 
 func (m *MockClient) DoesDependencyExist(ctx context.Context, dep reposource.NPMDependency) (exists bool, err error) {
-	if m.DoesDependencyExistFunc != nil {
-		return m.DoesDependencyExistFunc(ctx, dep)
-	}
 	_, found := m.TarballMap[dep.PackageManagerSyntax()]
 	return found, nil
 }

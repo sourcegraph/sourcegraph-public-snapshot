@@ -132,7 +132,7 @@ func (client *HTTPClient) AvailablePackageVersions(ctx context.Context, pkg repo
 	if err := json.Unmarshal(jsonBytes, &pkgInfo); err != nil {
 		return nil, err
 	}
-	if len(pkgInfo.Versions) != 0 {
+	if len(pkgInfo.Versions) == 0 {
 		return nil, fmt.Errorf("NPM returned empty list of versions")
 	}
 	versions = map[string]struct{}{}

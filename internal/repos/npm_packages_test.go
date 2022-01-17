@@ -108,10 +108,13 @@ func TestListRepos(t *testing.T) {
 	require.Nil(t, err)
 	packageSource.SetDB(db)
 	packageSource.client = &npmtest.MockClient{
-		DoesDependencyExistFunc: func(_ context.Context, dep reposource.NPMDependency) (exists bool, err error) {
-			i := sort.SearchStrings(dependencies, dep.PackageManagerSyntax())
-			return i < len(dependencies) && dependencies[i] == dep.PackageManagerSyntax(), nil
-		},
+		TarballMap: func() map[string]string {
+			m := map[string]string{}
+			for _, dep := range dependencies {
+				m[dep] = ""
+			}
+			return m
+		}(),
 	}
 	results := make(chan SourceResult, 10)
 	go func() {
