@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 )
 
 type MockClient struct {
