@@ -52,7 +52,7 @@ export interface HoverOverlayProps
     useBrandedLogo?: boolean
 
     /** Show Sourcegraph branded badges */
-    useBrandedBadge?: boolean
+    useBrandedStyles?: boolean
 }
 
 const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']): CSSProperties =>
@@ -90,7 +90,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         onAlertDismissed,
 
         useBrandedLogo,
-        useBrandedBadge,
+        useBrandedStyles,
     } = props
 
     useLogTelemetryEvent(props)
@@ -118,7 +118,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}
-                    useBrandedBadge={useBrandedBadge}
+                    useBrandedStyles={useBrandedStyles}
                     badgeClassName={badgeClassName}
                     errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
                     contentClassName={contentClassName}

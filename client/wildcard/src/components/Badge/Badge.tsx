@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { Link } from '../Link'
+
 import styles from './Badge.module.scss'
 import { BADGE_VARIANTS } from './constants'
 
@@ -57,14 +59,15 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
     const commonProps = {
         'data-tooltip': tooltip,
         className: classNames(brandedClassName, className),
+        branded,
         ...otherProps,
     }
 
     if (href) {
         return (
-            <a href={href} rel="noopener" target="_blank" {...commonProps}>
+            <Link to={href} rel="noopener" target="_blank" {...commonProps}>
                 {children}
-            </a>
+            </Link>
         )
     }
 

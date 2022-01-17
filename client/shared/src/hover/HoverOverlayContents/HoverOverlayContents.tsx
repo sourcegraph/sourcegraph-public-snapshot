@@ -12,7 +12,7 @@ import { HoverOverlayContent } from './HoverOverlayContent'
 
 interface HoverOverlayContentsProps extends Pick<HoverOverlayBaseProps, 'hoverOrError'> {
     iconClassName?: string
-    useBrandedBadge?: boolean
+    useBrandedStyles?: boolean
     badgeClassName?: string
     errorAlertClassName?: string
     contentClassName?: string
@@ -24,7 +24,7 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
         iconClassName,
         errorAlertClassName,
         badgeClassName,
-        useBrandedBadge,
+        useBrandedStyles,
         contentClassName,
     } = props
 
@@ -64,7 +64,7 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
                     content={content}
                     aggregatedBadges={hoverOrError.aggregatedBadges}
                     errorAlertClassName={errorAlertClassName}
-                    useBrandedBadge={useBrandedBadge}
+                    useBrandedStyles={useBrandedStyles}
                     badgeClassName={badgeClassName}
                     contentClassName={contentClassName}
                 />
