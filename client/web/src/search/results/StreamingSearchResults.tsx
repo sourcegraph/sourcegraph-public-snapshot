@@ -27,6 +27,7 @@ import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { useExperimentalFeatures, useNavbarQueryState, useSearchStack } from '../../stores'
+import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
@@ -335,6 +336,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     allExpanded={allExpanded}
                     showSearchContext={showSearchContext}
                     assetsRoot={window.context?.assetsRoot || ''}
+                    renderSearchUserNeedsCodeHost={user => (
+                        <SearchUserNeedsCodeHost user={user} orgSearchContext={props.selectedSearchContextSpec} />
+                    )}
                 />
             </div>
         </div>

@@ -16,6 +16,7 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
+import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
 import { LATEST_VERSION } from './results/StreamingSearchResults'
 import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
@@ -170,6 +171,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                                 results={results}
                                 showSearchContext={showSearchContext}
                                 assetsRoot={window.context?.assetsRoot || ''}
+                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                             />
                         ))}
                 </div>

@@ -27,18 +27,17 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
 import { SearchResult } from '../../components/SearchResult'
-import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
 import { NoResultsPage } from './NoResultsPage'
-import styles from './StreamingSearchResults.module.scss'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
+import styles from './StreamingSearchResultsList.module.scss'
 import { useItemsToShow } from './use-items-to-show'
 
 export interface StreamingSearchResultsListProps
     extends ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'searchContextsEnabled' | 'selectedSearchContextSpec'> {
+        Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
     location: H.Location
@@ -48,6 +47,8 @@ export interface StreamingSearchResultsListProps
     showSearchContext: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
+    /** Render prop for `<SearchUserNeedsCodeHost>`  */
+    renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -60,10 +61,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
-    selectedSearchContextSpec,
     authenticatedUser,
     showSearchContext,
     assetsRoot,
+    renderSearchUserNeedsCodeHost,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
@@ -123,23 +124,15 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
 
     return (
         <>
-            <div
-                className={classNames(
-                    styles.streamingSearchResultsContentCentered,
-                    'd-flex flex-column align-items-center'
-                )}
-            >
+            <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
                 <div className="align-self-stretch">
-                    {isSourcegraphDotCom &&
+                    {renderSearchUserNeedsCodeHost &&
+                        isSourcegraphDotCom &&
                         searchContextsEnabled &&
                         authenticatedUser &&
                         results?.state === 'complete' &&
-                        results?.results.length === 0 && (
-                            <SearchUserNeedsCodeHost
-                                user={authenticatedUser}
-                                orgSearchContext={selectedSearchContextSpec}
-                            />
-                        )}
+                        results?.results.length === 0 &&
+                        renderSearchUserNeedsCodeHost(authenticatedUser)}
                 </div>
             </div>
             <VirtualList<SearchMatch>
