@@ -1,7 +1,6 @@
 package commit
 
 import (
-	"bufio"
 	"context"
 	"regexp"
 	"strings"
@@ -303,25 +302,22 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
 	var (
-		matchBody       string
-		matchHighlights []result.HighlightedRange
-		diffPreview     *result.HighlightedString
-		messagePreview  *result.HighlightedString
+		markdown       result.MatchedString
+		diffPreview    *result.MatchedString
+		messagePreview *result.MatchedString
 	)
 
 	if diff {
-		matchBody = "```diff\n" + in.Diff.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Diff.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```diff\n")}))
-		diffPreview = &result.HighlightedString{
-			Value:      in.Diff.Content,
-			Highlights: searchRangesToHighlights(in.Diff.Content, in.Diff.MatchedRanges),
+		diffPreview = &in.Diff
+		markdown = result.MatchedString{
+			Content:       "```diff\n" + in.Diff.Content + "\n```",
+			MatchedRanges: in.Diff.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```diff\n")}),
 		}
 	} else {
-		matchBody = "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
-		messagePreview = &result.HighlightedString{
-			Value:      in.Message.Content,
-			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.MatchedRanges),
+		messagePreview = &in.Message
+		markdown = result.MatchedString{
+			Content:       "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```",
+			MatchedRanges: in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}),
 		}
 	}
 
@@ -344,57 +340,8 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		Repo:           repo,
 		MessagePreview: messagePreview,
 		DiffPreview:    diffPreview,
-		Body: result.HighlightedString{
-			Value:      matchBody,
-			Highlights: matchHighlights,
-		},
+		Body:           markdown,
 	}
-}
-
-func searchRangesToHighlights(s string, ranges []result.Range) []result.HighlightedRange {
-	res := make([]result.HighlightedRange, 0, len(ranges))
-	for _, r := range ranges {
-		res = append(res, searchRangeToHighlights(s, r)...)
-	}
-	return res
-}
-
-// searchRangeToHighlight converts a Range (which can cross multiple lines)
-// into HighlightedRange, which is scoped to one line. In order to do this
-// correctly, we need the string that is being highlighted in order to identify
-// line-end boundaries within multi-line ranges.
-// TODO(camdencheek): push the Range format up the stack so we can be smarter about multi-line highlights.
-func searchRangeToHighlights(s string, r result.Range) []result.HighlightedRange {
-	var res []result.HighlightedRange
-
-	// Use a scanner to handle \r?\n
-	scanner := bufio.NewScanner(strings.NewReader(s[r.Start.Offset:r.End.Offset]))
-	lineNum := r.Start.Line
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		character := 0
-		if lineNum == r.Start.Line {
-			character = r.Start.Column
-		}
-
-		length := len(line)
-		if lineNum == r.End.Line {
-			length = r.End.Column - character
-		}
-
-		if length > 0 {
-			res = append(res, result.HighlightedRange{
-				Line:      int32(lineNum),
-				Character: int32(character),
-				Length:    int32(length),
-			})
-		}
-
-		lineNum++
-	}
-
-	return res
 }
 
 func newReposLimitError(limit int, hasTimeFilter bool, resultType string) error {
