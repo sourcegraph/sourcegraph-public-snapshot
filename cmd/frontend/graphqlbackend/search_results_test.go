@@ -14,6 +14,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
@@ -889,41 +890,28 @@ func TestIsGlobalSearch(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	tts := []struct {
-		name        string
-		searchQuery string
-		patternType query.SearchType
-		mode        search.GlobalSearchMode
-	}{
-		{name: "user search context", searchQuery: "foo context:@userA", mode: search.DefaultMode},
-		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, mode: search.DefaultMode},
-		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", mode: search.DefaultMode},
-		{name: "repohasfile", searchQuery: "foo repohasfile:bar", mode: search.DefaultMode},
-		{name: "global search context", searchQuery: "foo context:global", mode: search.ZoektGlobalSearch},
-		{name: "global search", searchQuery: "foo", mode: search.ZoektGlobalSearch},
+	test := func(input string) string {
+		q, _ := query.ParseLiteral(input)
+		resolver := searchResolver{
+			SearchInputs: &run.SearchInputs{
+				Query:        q,
+				UserSettings: &schema.Settings{},
+				PatternType:  query.SearchTypeLiteral,
+			},
+		}
+		jobs, _, _, _ := resolver.toSearchInputs(q)
+		var jobNames []string
+		for _, j := range jobs {
+			jobNames = append(jobNames, j.Name())
+		}
+		return strings.Join(jobNames, ",")
 	}
 
-	for _, tt := range tts {
-		t.Run(tt.name, func(t *testing.T) {
-			qinfo, err := query.ParseLiteral(tt.searchQuery)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			resolver := searchResolver{
-				SearchInputs: &run.SearchInputs{
-					Query:        qinfo,
-					UserSettings: &schema.Settings{},
-					PatternType:  tt.patternType,
-				},
-			}
-
-			p, _, _ := resolver.toSearchInputs(resolver.Query)
-			if p.Mode != tt.mode {
-				t.Fatalf("got %+v, want %+v", p.Mode, tt.mode)
-			}
-		})
-	}
+	autogold.Want("user search context", "RepoSubsetText,Repo").Equal(t, test(`foo context:@userA`))
+	autogold.Want("universal (AKA global) search context", "RepoUniverseText,Repo").Equal(t, test(`foo context:global`))
+	autogold.Want("universal (AKA global) search", "RepoUniverseText,Repo").Equal(t, test(`foo`))
+	autogold.Want("nonglobal repo", "RepoSubsetText,Repo").Equal(t, test(`foo repo:sourcegraph/sourcegraph`))
+	autogold.Want("nonglobal repo contains", "RepoSubsetText,Repo").Equal(t, test(`foo repo:contains(bar)`))
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {

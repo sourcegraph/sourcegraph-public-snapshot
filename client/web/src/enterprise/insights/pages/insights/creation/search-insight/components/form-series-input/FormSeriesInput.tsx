@@ -4,7 +4,6 @@ import { noop } from 'rxjs'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../../../../../../../graphql-operations'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
@@ -12,6 +11,8 @@ import { InsightQueryInput } from '../../../../../../components/form/query-input
 import { createRequiredValidator } from '../../../../../../components/form/validators'
 import { EditableDataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
+
+import { getQueryPatternTypeFilter } from './get-pattern-type-filter'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 const validQuery = createRequiredValidator('Query is a required field for data series.')
@@ -136,7 +137,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 title="Search query"
                 required={true}
                 as={InsightQueryInput}
-                patternType={SearchPatternType.literal}
+                patternType={getQueryPatternTypeFilter(queryField.input.value)}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={<QueryFieldDescription isSearchQueryDisabled={isSearchQueryDisabled} />}
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
