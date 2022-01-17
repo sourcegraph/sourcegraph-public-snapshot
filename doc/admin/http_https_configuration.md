@@ -183,16 +183,20 @@ In https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-c
       
 
 3. In Volumes section of the compose file uncomment the following line: 
+
 ```
 - '../caddy/builtins/https.custom-cert.Caddyfile:/etc/caddy/Caddyfile' 
 ``` 
 
-4. In Volumes section of the compose file uncomment and update the following line with your custom cert path: 
+4. In Volumes section of the compose file uncomment and update the following line with your custom cert path:
+
 ```
 - '/LOCAL/CERT/PATH.pem:/sourcegraph.pem'
 ```
 
-5. In Volumes section of the compose file uncomment and update the following line with your custom cert path: 
+5. In Volumes section of the compose file uncomment and update the following line with your custom cert path:
+
+
 ```
 - '/LOCAL/KEY/PATH.key:/sourcegraph.key'
 ```
