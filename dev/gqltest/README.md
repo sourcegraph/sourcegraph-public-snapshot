@@ -7,7 +7,7 @@ This directory contains API-based integration tests in the form of standard Go t
 Tests use environment variables to accept credentials of different external services involved, it is suggested to use [direnv](https://direnv.net/) to persist those credentials for your convenience. Here is a comprehensive example `.envrc` file (you're free to use any other means, e.g. `.profile` or `.bashrc`):
 
 ```sh
-# Your GitHub personal access token, this token needs to have scope to access private
+# Your GitHub personal access token on ghe.sgdev.org, this token needs to have scope to access private
 # repositories of "sgtest" organization. If you haven't joined "sgtest" organization,
 # please post a message on #dev-chat to ask for an invite.
 export GITHUB_TOKEN=<REDACTED>
