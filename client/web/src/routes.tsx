@@ -80,12 +80,15 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.SearchConsole,
-        render: props =>
-            getExperimentalFeatures().showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} />
+        render: props => {
+            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
+
+            return showMultilineSearchConsole ? (
+                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
-            ),
+            )
+        },
         exact: true,
     },
     {
@@ -105,12 +108,15 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Notebook,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <SearchNotebookPage {...props} />
+        render: props => {
+            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
+
+            return showSearchNotebook ? (
+                <SearchNotebookPage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
-            ),
+            )
+        },
         exact: true,
     },
     {
