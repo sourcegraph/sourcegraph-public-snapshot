@@ -154,7 +154,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	for _, call := range mockLSIFStore.DiagnosticsFunc.History() {
 		limits = append(limits, call.Arg3)
 	}
-	if diff := cmp.Diff([]int{5, 4, 1, 0}, limits); diff != "" {
+	if diff := cmp.Diff([]int{5, 5, 2, 2}, limits); diff != "" {
 		t.Errorf("unexpected limits (-want +got):\n%s", diff)
 	}
 }
