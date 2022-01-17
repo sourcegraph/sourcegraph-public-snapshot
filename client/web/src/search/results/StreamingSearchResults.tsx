@@ -78,6 +78,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     } = props
 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
@@ -328,7 +329,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     </div>
                 )}
 
-                <StreamingSearchResultsList {...props} results={results} allExpanded={allExpanded} />
+                <StreamingSearchResultsList
+                    {...props}
+                    results={results}
+                    allExpanded={allExpanded}
+                    showSearchContext={showSearchContext}
+                    assetsRoot={window.context?.assetsRoot || ''}
+                />
             </div>
         </div>
     )

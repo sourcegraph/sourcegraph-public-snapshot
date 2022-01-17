@@ -15,6 +15,7 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
 
 import { LATEST_VERSION } from './results/StreamingSearchResults'
 import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
@@ -60,6 +61,8 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         streamSearch,
         extensionsController: { extHostAPI: extensionHostAPI },
     } = props
+
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -161,7 +164,13 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         (results.state === 'loading' ? (
                             <LoadingSpinner />
                         ) : (
-                            <StreamingSearchResultsList {...props} allExpanded={false} results={results} />
+                            <StreamingSearchResultsList
+                                {...props}
+                                allExpanded={false}
+                                results={results}
+                                showSearchContext={showSearchContext}
+                                assetsRoot={window.context?.assetsRoot || ''}
+                            />
                         ))}
                 </div>
             </div>

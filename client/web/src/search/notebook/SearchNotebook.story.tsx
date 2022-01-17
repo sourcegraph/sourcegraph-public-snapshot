@@ -55,6 +55,7 @@ add('default', () => (
                 fetchRepository={fetchRepository}
                 resolveRevision={resolveRevision}
                 authenticatedUser={null}
+                showSearchContext={true}
             />
         )}
     </WebStory>
@@ -80,6 +81,7 @@ add('default read-only', () => (
                 fetchRepository={fetchRepository}
                 resolveRevision={resolveRevision}
                 authenticatedUser={null}
+                showSearchContext={true}
             />
         )}
     </WebStory>

@@ -7,11 +7,11 @@ import { Link } from 'react-router-dom'
 import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, LoadingSpinner, FeedbackText, Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../components/alerts'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'

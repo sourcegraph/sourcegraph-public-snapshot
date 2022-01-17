@@ -5,6 +5,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation } from 'react-router'
 import { NavLink as RouterLink } from 'react-router-dom'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -16,7 +17,6 @@ import { Button, LoadingSpinner, PageHeader, FeedbackBadge } from '@sourcegraph/
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
-import { ErrorAlert } from '../../../components/alerts'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { Duration } from '../../../components/time/Duration'

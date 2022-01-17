@@ -14,7 +14,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../stores'
 import { ModalVideo } from '../documentation/ModalVideo'
 import searchBoxStyle from '../input/SearchBox.module.scss'
 import searchContextDropDownStyles from '../input/SearchContextDropdown.module.scss'
@@ -167,6 +166,9 @@ const videos = [
 
 interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
+    showSearchContext: boolean
+    /** Available to web app through JS Context */
+    assetsRoot?: string
 }
 
 export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
@@ -174,9 +176,10 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
     isLightTheme,
     telemetryService,
     isSourcegraphDotCom,
+    showSearchContext,
+    assetsRoot,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
 
     const onClose = useCallback(
         sectionID => {
@@ -221,6 +224,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                                             telemetryService.log('NoResultsVideoPlayed', { video: video.title })
                                         }
                                     }}
+                                    assetsRoot={assetsRoot}
                                 />
                             ))}
                         </Container>

@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'

@@ -11,6 +11,7 @@ import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
@@ -22,7 +23,6 @@ import {
 import { Link } from '../../../shared/src/components/Link'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { requestGraphQL } from '../backend/graphql'
-import { ErrorAlert } from '../components/alerts'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
 import { queryExternalServices } from '../components/externalServices/backend'
 import { StatusMessagesResult } from '../graphql-operations'

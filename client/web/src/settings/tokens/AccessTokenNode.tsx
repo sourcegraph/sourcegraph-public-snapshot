@@ -3,12 +3,12 @@ import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { map, mapTo } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { ErrorAlert } from '../../components/alerts'
 import { Timestamp } from '../../components/time/Timestamp'
 import {
     AccessTokenFields,

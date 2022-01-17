@@ -10,12 +10,12 @@ import { Link } from 'react-router-dom'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { ErrorAlert } from '../components/alerts'
 import { CopyableText } from '../components/CopyableText'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'

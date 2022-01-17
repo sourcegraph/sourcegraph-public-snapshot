@@ -2,13 +2,13 @@ import classNames from 'classnames'
 import React, { useMemo, useState } from 'react'
 import { Omit } from 'utility-types'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Container, PageHeader, ProductStatusBadge, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { ErrorAlert } from '../components/alerts'
 import { NamespaceProps } from '../namespaces'
 
 import styles from './SavedSearchForm.module.scss'

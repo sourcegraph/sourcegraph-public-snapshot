@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Badge, Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { Timestamp } from '../../../components/time/Timestamp'
 import {
     DeleteExternalAccountResult,
