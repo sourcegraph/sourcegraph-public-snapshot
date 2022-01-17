@@ -303,22 +303,27 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
 	var (
-		matchBody       string
-		matchHighlights []result.HighlightedRange
-		diffPreview     *result.HighlightedString
-		messagePreview  *result.HighlightedString
+		matchBody      result.HighlightedString
+		diffPreview    *result.HighlightedString
+		messagePreview *result.HighlightedString
 	)
 
 	if diff {
-		matchBody = "```diff\n" + in.Diff.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Diff.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```diff\n")}))
+		matchBodyValue := "```diff\n" + in.Diff.Content + "\n```"
+		matchBody = result.HighlightedString{
+			Value:      matchBodyValue,
+			Highlights: searchRangesToHighlights(matchBodyValue, in.Diff.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```diff\n")})),
+		}
 		diffPreview = &result.HighlightedString{
 			Value:      in.Diff.Content,
 			Highlights: searchRangesToHighlights(in.Diff.Content, in.Diff.MatchedRanges),
 		}
 	} else {
-		matchBody = "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
+		matchBodyValue := "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```"
+		matchBody = result.HighlightedString{
+			Value:      matchBodyValue,
+			Highlights: searchRangesToHighlights(matchBodyValue, in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")})),
+		}
 		messagePreview = &result.HighlightedString{
 			Value:      in.Message.Content,
 			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.MatchedRanges),
@@ -344,10 +349,7 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		Repo:           repo,
 		MessagePreview: messagePreview,
 		DiffPreview:    diffPreview,
-		Body: result.HighlightedString{
-			Value:      matchBody,
-			Highlights: matchHighlights,
-		},
+		Body:           matchBody,
 	}
 }
 
