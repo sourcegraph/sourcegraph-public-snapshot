@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -66,6 +65,7 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 		return
 	}
 	totalDBFetched, totalDBResolved, lastID := 0, 0, 0
+	pkgVersions := map[string]map[string]struct{}{}
 	for {
 		dbDeps, err := s.dbStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
 			After: lastID,
@@ -87,8 +87,22 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 				continue
 			}
 			npmDependency := reposource.NPMDependency{Package: *parsedDbPackage, Version: dbDep.Version}
-			if err = npm.Exists(ctx, s.client, npmDependency); err != nil {
-				log15.Warn("failed to resolve npm dependency", "package", npmDependency.PackageManagerSyntax(), "message", err)
+			pkgKey := npmDependency.Package.PackageSyntax()
+			versions, found := pkgVersions[pkgKey]
+			if !found {
+				versions, err = s.client.AvailablePackageVersions(ctx, npmDependency.Package)
+				if err != nil {
+					pkgVersions[pkgKey] = map[string]struct{}{}
+					log15.Warn("npm package not found in registry", "package", pkgKey, "err", err)
+					continue
+				}
+				pkgVersions[pkgKey] = versions
+			}
+			if _, hasVersion := versions[npmDependency.Version]; !hasVersion {
+				if len(versions) != 0 { // We must've already logged a package not found earlier if len is 0.
+					log15.Warn("npm dependency does not exist",
+						"dependency", npmDependency.PackageManagerSyntax())
+				}
 				continue
 			}
 			repo := s.makeRepo(npmDependency.Package)
