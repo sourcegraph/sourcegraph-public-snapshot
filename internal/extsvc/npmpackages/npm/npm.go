@@ -7,50 +7,53 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"regexp"
-	"strings"
+	"io"
+	"math"
+	"net/http"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// Sourced from https://docs.npmjs.com/cli/v8/using-npm/config
+type Client interface {
+	// AvailablePackageVersions lists the available versions for an NPM package.
+	//
+	// It is preferable to use this method instead of calling DoesDependencyExist
+	// in a loop, if different dependencies may share the same underlying package.
+	//
+	// If err is nil, versions should be non-empty.
+	AvailablePackageVersions(ctx context.Context, pkg reposource.NPMPackage) (versions map[string]struct{}, err error)
 
-const (
-	npmConfigCacheEnvVar        = "NPM_CONFIG_CACHE"
-	npmConfigFetchTimeoutEnvVar = "NPM_CONFIG_FETCH_TIMEOUT"
-	npmConfigRegistryEnvVar     = "NPM_CONFIG_REGISTRY"
-)
+	// DoesDependencyExist checks if a particular dependency exists on a particular registry.
+	//
+	// exists should be checked even if err is nil.
+	DoesDependencyExist(ctx context.Context, dep reposource.NPMDependency) (exists bool, err error)
+
+	// FetchTarball fetches the sources in .tar.gz format for a dependency.
+	//
+	// The caller should close the returned reader after reading.
+	//
+	// The return value is an io.ReadSeekCloser instead of an io.ReadCloser
+	// to allow callers to iterate over the reader multiple times if needed.
+	FetchTarball(ctx context.Context, dep reposource.NPMDependency) (io.ReadSeekCloser, error)
+}
 
 var (
-	NPMBinary = "npm"
-
-	// Register all npm config variables we use for testing.
-	npmUsedConfigVars = []string{
-		npmConfigCacheEnvVar,
-		npmConfigFetchTimeoutEnvVar,
-		npmConfigRegistryEnvVar,
-	}
-	npmCacheDir        string
 	observationContext *observation.Context
 	operations         *Operations
-	invocTimeout, _    = time.ParseDuration(
-		env.Get("SRC_NPM_TIMEOUT", "30s", "Time limit per NPM invocation, which is used to resolve NPM dependencies."))
-	incorrectTarballNameRegex = regexp.MustCompile("^@" + reposource.NPMScopeRegexString + "/")
 )
 
 func init() {
@@ -61,38 +64,19 @@ func init() {
 	}
 	operations = NewOperations(observationContext)
 
-	// Should only be set for gitserver for persistence, repo-updater will use ephemeral storage.
-	// repo-updater only performs existence checks which doesnt involve downloading any JARs (except for JDK),
-	// only POM files which are much lighter.
-	if reposDir := os.Getenv("SRC_REPOS_DIR"); reposDir != "" {
-		npmCacheDir = filepath.Join(reposDir, "npm")
-		if err := os.MkdirAll(npmCacheDir, os.ModePerm); err != nil {
-			log.Fatalf("failed to create npm cache dir in %s: %s", npmCacheDir, err)
-		}
-	}
+	// The HTTP client will transparently handle caching,
+	// so we don't need to set up any on-disk caching here.
 }
 
-func FetchSources(ctx context.Context, connection schema.NPMPackagesConnection, dependency reposource.NPMDependency) (filename string, err error) {
+func FetchSources(ctx context.Context, client Client, dependency reposource.NPMDependency) (tarball io.ReadSeekCloser, err error) {
 	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
-
-	npmJsonOutput, err := runNPMCommand(ctx, connection, "pack", dependency.PackageManagerSyntax(), "--json")
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to fetch sources for %s", dependency.PackageManagerSyntax())
-	}
-	// [ { "id": "packageName@version", ..., "filename": "tarball.tgz", ... } ]
-	var parsedJson interface{}
-	err = json.Unmarshal([]byte(npmJsonOutput), &parsedJson)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse npm pack's output '%s'", npmJsonOutput)
-	}
-	output, err := parseNPMPackOutput(npmJsonOutput)
-	return output, err
+	return client.FetchTarball(ctx, dependency)
 }
 
-func Exists(ctx context.Context, connection schema.NPMPackagesConnection, dependency reposource.NPMDependency) (err error) {
+func Exists(ctx context.Context, client Client, dependency reposource.NPMDependency) (err error) {
 	if operations == nil {
 		fmt.Println("operations is nil!")
 	}
@@ -101,93 +85,157 @@ func Exists(ctx context.Context, connection schema.NPMPackagesConnection, depend
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := runNPMCommand(
-		ctx,
-		connection,
-		"view",
-		dependency.PackageManagerSyntax())
+	exists, err := client.DoesDependencyExist(ctx, dependency)
 	if err != nil {
 		return errors.Wrapf(err, "tried to check if npm package %s exists but failed", dependency.PackageManagerSyntax())
 	}
-	// Ideally, checking the exit code would be enough, but it's not, due to an
-	// NPM bug https://github.com/npm/cli/issues/3184#issuecomment-963387099 😔
-	if len(out) == 0 || (strings.TrimSpace(out) == "") {
+	if !exists {
 		return errors.Newf("npm package %s does not exist", dependency.PackageManagerSyntax())
 	}
 	return nil
 }
 
-func runNPMCommand(ctx context.Context, connection schema.NPMPackagesConnection, args ...string) (output string, err error) {
-	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
-	defer cancel()
+// TODO: [npm-package-support-credentials] We need to keep track of credentials
+// and use them when making requests.
 
-	ctx, trace, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("registry", connection.Registry),
-		otlog.String("args", strings.Join(args, ", ")),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	cmd := exec.CommandContext(ctx, NPMBinary, args...)
-	// Make sure node is usable, but don't copy the full environment.
-	// See also: forwardedHostEnvVars
-	cmd.Env = []string{}
-	cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s", os.Getenv("HOME")))
-	cmd.Env = append(cmd.Env, fmt.Sprintf("PATH=%s", os.Getenv("PATH")))
-	// TODO: [npm-package-support-credentials] Unlike Coursier where credentials are passed directly,
-	// npm's API involves login/logout commands. My instinct is that doing a login+logout for every command
-	// is a bad idea. Maybe we can hoist out the login and logout operations? Say something like:
-	//     npmLoginToken, err := npm.Login(...)
-	//     if err != nil { ... }
-	//     defer func(){ errLogout := npmLoginToken.Logout(); if err == nil { err = errLogout } }()
-	//     npmLoginToken.doStuff(...)
-
-	registry := connection.Registry
-	if len(registry) != 0 {
-		cmd.Env = append(
-			cmd.Env, fmt.Sprintf("%s=%s", npmConfigRegistryEnvVar, registry))
-	}
-
-	if npmCacheDir != "" {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", npmConfigCacheEnvVar, npmCacheDir))
-	}
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return "", errors.Wrapf(err, "npm command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
-	}
-	trace.Log(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
-
-	return stdout.String(), nil
+type HTTPClient struct {
+	registryURL string
+	doer        httpcli.Doer
+	limiter     rate.Limiter
 }
 
-type npmPackOutput = []struct {
-	Filename string `json:"filename"`
-}
-
-func parseNPMPackOutput(output string) (filename string, err error) {
-	var parsedJson npmPackOutput
-	var errInfo string
-	if err = json.Unmarshal([]byte(output), &parsedJson); err != nil {
-		errInfo = err.Error()
-	} else if len(parsedJson) != 1 {
-		errInfo = "expected output array to have 1 element"
-	} else if parsedJson[0].Filename == "" {
-		errInfo = "expected non-empty filename field in first object"
+func NewHTTPClient(registryURL string, rateLimit *schema.NPMRateLimit) *HTTPClient {
+	var requestsPerHour float64
+	if rateLimit == nil || !rateLimit.Enabled {
+		requestsPerHour = math.Inf(1)
 	} else {
-		filename = parsedJson[0].Filename
-		// [NOTE: npm-tarball-filename-workaround]
-		// For scoped packages, npm gives the wrong output
-		// (tested with 7.20.1 and 8.1.2). The actual file will
-		// be saved at scope-package-version.tgz, but the
-		// filename field is @scope/package-version.tgz
-		//
-		// See https://github.com/npm/cli/issues/3405
-		if filename[0] == '@' {
-			filename = incorrectTarballNameRegex.ReplaceAllString(filename, "$1-")
-		}
-		return filename, nil
+		requestsPerHour = rateLimit.RequestsPerHour
 	}
-	return "", errors.Errorf("failed to parse npm pack's JSON output (%s): %s", errInfo, output)
+	return &HTTPClient{
+		registryURL,
+		httpcli.ExternalDoer,
+		*rate.NewLimiter(rate.Limit(requestsPerHour/3600.0), 100),
+	}
 }
+
+type packageInfo struct {
+	Versions map[string]interface{} `json:"versions"`
+}
+
+func (client *HTTPClient) AvailablePackageVersions(ctx context.Context, pkg reposource.NPMPackage) (versions map[string]struct{}, err error) {
+	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PackageSyntax())
+	jsonBytes, err := client.makeGetRequest(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+	var pkgInfo packageInfo
+	if err := json.Unmarshal(jsonBytes, &pkgInfo); err != nil {
+		return nil, err
+	}
+	if len(pkgInfo.Versions) != 0 {
+		return nil, fmt.Errorf("NPM returned empty list of versions")
+	}
+	versions = map[string]struct{}{}
+	for k := range pkgInfo.Versions {
+		versions[k] = struct{}{}
+	}
+	return versions, nil
+}
+
+type npmDependencyDist struct {
+	TarballURL string `json:"tarball"`
+}
+
+type npmDependencyInfo struct {
+	Dist npmDependencyDist `json:"dist"`
+}
+
+type illFormedJSONError struct {
+	url string
+}
+
+func (i illFormedJSONError) Error() string {
+	return fmt.Sprintf("unexpected JSON output from NPM request: url=%s", i.url)
+}
+
+func (client *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Response, error) {
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
+		req.WithContext(ctx),
+		nethttp.OperationName("NPM"),
+		nethttp.ClientTrace(false))
+	defer ht.Finish()
+	startWait := time.Now()
+	if err := client.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+	if d := time.Since(startWait); d > 200*time.Millisecond {
+		log15.Warn("NPM self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
+	}
+	return client.doer.Do(req)
+}
+
+func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.do(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	var bodyBuffer bytes.Buffer
+	if _, err := io.Copy(&bodyBuffer, resp.Body); err != nil {
+		return nil, err
+	}
+	if err := resp.Body.Close(); err != nil {
+		return nil, err
+	}
+	return bodyBuffer.Bytes(), nil
+}
+
+func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep reposource.NPMDependency) (info npmDependencyInfo, err error) {
+	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getpackageversion
+	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.Package.PackageSyntax(), dep.Version)
+	respBytes, err := client.makeGetRequest(ctx, url)
+	if err != nil {
+		return info, err
+	}
+	if json.Unmarshal(respBytes, &info) != nil {
+		return info, illFormedJSONError{url: url}
+	}
+	return info, nil
+}
+
+func (client *HTTPClient) DoesDependencyExist(ctx context.Context, dep reposource.NPMDependency) (exists bool, err error) {
+	_, err = client.getDependencyInfo(ctx, dep)
+	var e illFormedJSONError
+	if errors.As(err, &e) {
+		log15.Warn("received ill-formed JSON payload from NPM Registry API", "error", e)
+		return false, nil
+	}
+	return err == nil, err
+}
+
+func (client *HTTPClient) FetchTarball(ctx context.Context, dep reposource.NPMDependency) (io.ReadSeekCloser, error) {
+	info, err := client.getDependencyInfo(ctx, dep)
+	if err != nil {
+		return nil, err
+	}
+	respBytes, err := client.makeGetRequest(ctx, info.Dist.TarballURL)
+	if err != nil {
+		return nil, err
+	}
+	return &NopSeekCloser{bytes.NewReader(respBytes)}, nil
+}
+
+var _ Client = &HTTPClient{}
+
+type NopSeekCloser struct {
+	io.ReadSeeker
+}
+
+func (n *NopSeekCloser) Close() error {
+	return nil
+}
+
+var _ io.ReadSeekCloser = &NopSeekCloser{}

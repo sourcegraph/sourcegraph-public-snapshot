@@ -28,6 +28,7 @@ type NPMPackagesSource struct {
 	svc        *types.ExternalService
 	connection schema.NPMPackagesConnection
 	dbStore    NPMPackagesRepoStore
+	client     npm.Client
 }
 
 // NewNPMPackagesSource returns a new NPMSource from the given external
@@ -37,7 +38,7 @@ func NewNPMPackagesSource(svc *types.ExternalService) (*NPMPackagesSource, error
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return &NPMPackagesSource{svc: svc, connection: c /*dbStore initialized in SetDB */}, nil
+	return &NPMPackagesSource{svc: svc, connection: c /*dbStore initialized in SetDB */, client: npm.NewHTTPClient(c.Registry, c.RateLimit)}, nil
 }
 
 var _ Source = &NPMPackagesSource{}
@@ -86,7 +87,7 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 				continue
 			}
 			npmDependency := reposource.NPMDependency{Package: *parsedDbPackage, Version: dbDep.Version}
-			if err = npm.Exists(ctx, s.connection, npmDependency); err != nil {
+			if err = npm.Exists(ctx, s.client, npmDependency); err != nil {
 				log15.Warn("failed to resolve npm dependency", "package", npmDependency.PackageManagerSyntax(), "message", err)
 				continue
 			}
