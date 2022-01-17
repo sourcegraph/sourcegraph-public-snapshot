@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { NEVER, of } from 'rxjs'
+import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -44,7 +44,7 @@ describe('StreamingSearchResults', () => {
             subjects: null,
             final: null,
         },
-        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
+        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER, requestGraphQL: () => EMPTY },
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 

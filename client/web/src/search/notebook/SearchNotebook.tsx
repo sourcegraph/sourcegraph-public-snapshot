@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { startWith, switchMap, tap } from 'rxjs/operators'
 
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { useQueryIntelligence } from '@sourcegraph/search/src/useQueryIntelligence'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
@@ -15,7 +16,6 @@ import { useEventObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
 import { SearchNotebookFileBlock } from './fileBlock/SearchNotebookFileBlock'
 import { FileBlockValidationFunctions } from './fileBlock/useFileBlockInputValidation'
