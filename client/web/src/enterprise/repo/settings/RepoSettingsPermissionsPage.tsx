@@ -1,8 +1,7 @@
 import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'

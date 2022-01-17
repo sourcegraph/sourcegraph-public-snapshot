@@ -6,8 +6,7 @@ import React, { useState, useEffect } from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'

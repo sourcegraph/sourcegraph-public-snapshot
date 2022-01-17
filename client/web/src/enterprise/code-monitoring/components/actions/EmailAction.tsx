@@ -5,8 +5,7 @@ import { delay, startWith, tap, mergeMap, catchError } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button } from '@sourcegraph/wildcard'
+import { useEventObservable, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { MonitorEmailPriority } from '../../../../graphql-operations'

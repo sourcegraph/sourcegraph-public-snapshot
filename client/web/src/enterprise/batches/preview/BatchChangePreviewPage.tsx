@@ -3,8 +3,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'

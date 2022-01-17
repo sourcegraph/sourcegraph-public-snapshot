@@ -13,8 +13,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, ProductStatusBadge, LoadingSpinner, Button } from '@sourcegraph/wildcard'
+import { Container, ProductStatusBadge, LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'

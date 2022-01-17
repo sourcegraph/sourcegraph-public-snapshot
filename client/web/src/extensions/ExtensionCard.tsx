@@ -15,7 +15,7 @@ import {
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
+import { useTimeoutManager } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 

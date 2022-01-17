@@ -12,7 +12,7 @@ import { asError } from '@sourcegraph/common'
 import { GraphQLResult } from '@sourcegraph/http-client'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { fetchSite } from '../../shared/backend/server'
 import { initSentry } from '../../shared/sentry'

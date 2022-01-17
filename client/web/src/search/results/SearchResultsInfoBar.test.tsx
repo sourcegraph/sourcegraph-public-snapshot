@@ -5,7 +5,7 @@ import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { SearchPatternType } from '../../graphql-operations'
 

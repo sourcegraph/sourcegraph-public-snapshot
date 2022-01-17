@@ -9,8 +9,7 @@ import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 

@@ -4,8 +4,7 @@ import { Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 
