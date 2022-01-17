@@ -195,9 +195,6 @@ The `migrator` container in the `docker-compose.yaml` file will automatically ru
 To execute the database migrations independently, run the following command (substituting in the version you'd like to migrate to):
 
 ```bash
-export SOURCEGRAPH_VERSION="the version you're upgrading to"
-
-# This will output the current migration version for the frontend db
 docker exec -it pgsql psql -U sg -c "SELECT * FROM schema_migrations;" 
 ##   version   | dirty 
 ## ------------+-------
@@ -206,31 +203,42 @@ docker exec -it pgsql psql -U sg -c "SELECT * FROM schema_migrations;"
 
 # This will output the current migration version for the codeintel db
 docker exec -it codeintel-db psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
-##  version   | dirty 
-##------------+-------
-## 1000000030 | f
-##(1 row)
+##   version   | dirty 
+## ------------+-------
+##  1000000030 | f
+## (1 row)
 
-export SOURCEGRAPH_VERSION="122149_2021-12-17_1f7179c"
+# This will output the current migration version for the codeinsights db
+docker exec -it codeinsights-db psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
+##   version   | dirty 
+## ------------+-------
+##  1000000024 | f
+## (1 row)
 
-for DATABASE in frontend codeintel; do
-	docker run --rm --name migrator_$SOURCEGRAPH_VERSION \
-		-e PGHOST='pgsql' \
-		-e PGPORT='5432' \
-		-e PGUSER='sg' \
-		-e PGPASSWORD='sg' \
-		-e PGDATABASE='sg' \
-		-e PGSSLMODE='disable' \
-		-e CODEINTEL_PGHOST='codeintel-db' \
-		-e CODEINTEL_PGPORT='5432' \
-		-e CODEINTEL_PGUSER='sg' \
-		-e CODEINTEL_PGPASSWORD='sg' \
-		-e CODEINTEL_PGDATABASE='sg' \
-		-e CODEINTEL_PGSSLMODE='disable' \
-		--network=docker-compose_sourcegraph \
+export SOURCEGRAPH_VERSION="The version you are upgrading to"
+
+docker run --rm --name migrator_$SOURCEGRAPH_VERSION \
+	-e PGHOST='pgsql' \
+	-e PGPORT='5432' \
+	-e PGUSER='sg' \
+	-e PGPASSWORD='sg' \
+	-e PGDATABASE='sg' \
+	-e PGSSLMODE='disable' \
+	-e CODEINTEL_PGHOST='codeintel-db' \
+	-e CODEINTEL_PGPORT='5432' \
+	-e CODEINTEL_PGUSER='sg' \
+	-e CODEINTEL_PGPASSWORD='sg' \
+	-e CODEINTEL_PGDATABASE='sg' \
+	-e CODEINTEL_PGSSLMODE='disable' \
+	-e CODEINSIGHTS_PGHOST='codeinsights-db' \
+	-e CODEINSIGHTS_PGPORT='5432' \
+	-e CODEINSIGHTS_PGUSER='postgres' \
+	-e CODEINSIGHTS_PGPASSWORD='password' \
+	-e CODEINSIGHTS_PGDATABASE='postgres' \
+	-e CODEINSIGHTS_PGSSLMODE='disable' \
+	--network=docker-compose_sourcegraph \
 	sourcegraph/migrator:$SOURCEGRAPH_VERSION \
-	up -db $DATABASE;
-done
+	up
 ```
 
 > NOTE: These values will work for a standard docker-compose deployment of Sourcegraph. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables accordingly.
