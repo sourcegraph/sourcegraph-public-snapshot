@@ -37,7 +37,7 @@ op get item 5q5lnpirajegt7uifngeabrak4 | jq -r '.details.sections[] | .fields[] 
 
 ## How to run tests
 
-GraphQL-based integration tests are running against a live Sourcegraph instance, the eaiset way to make one is by booting up a single Docker container:
+GraphQL-based integration tests are running against a live Sourcegraph instance, the easiest way to make one is by booting up a single Docker container:
 
 ```sh
 # For easier testing, run Sourcegraph instance without volume,
