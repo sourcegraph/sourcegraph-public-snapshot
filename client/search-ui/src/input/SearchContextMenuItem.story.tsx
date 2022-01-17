@@ -7,7 +7,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { SearchContextMenuItem } from './SearchContextMenu'
 
-const { add } = storiesOf('web/searchContexts/SearchContextMenuItem', module)
+const { add } = storiesOf('search-ui/searchContexts/SearchContextMenuItem', module)
     .addParameters({
         chromatic: { viewports: [1200] },
     })

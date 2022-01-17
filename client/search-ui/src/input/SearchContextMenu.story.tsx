@@ -14,7 +14,7 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
-const { add } = storiesOf('web/search/input/SearchContextMenu', module)
+const { add } = storiesOf('search-ui/search/input/SearchContextMenu', module)
     .addParameters({
         chromatic: { viewports: [500] },
         design: {

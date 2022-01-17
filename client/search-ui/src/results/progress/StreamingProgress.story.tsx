@@ -7,7 +7,7 @@ import { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgress } from './StreamingProgress'
 
-const { add } = storiesOf('web/search/results/progress/StreamingProgress', module)
+const { add } = storiesOf('search-ui/search/results/progress/StreamingProgress', module)
     .addParameters({
         design: {
             type: 'figma',

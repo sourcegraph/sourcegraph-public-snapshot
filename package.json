@@ -37,6 +37,7 @@
     "storybook:browser": "yarn workspace @sourcegraph/browser run storybook",
     "storybook:shared": "yarn workspace @sourcegraph/shared run storybook",
     "storybook:web": "yarn workspace @sourcegraph/web run storybook",
+    "storybook:search-ui": "yarn workspace @sourcegraph/search-ui run storybook",
     "storybook:wildcard": "yarn workspace @sourcegraph/wildcard run storybook",
     "build-storybook": "yarn workspace @sourcegraph/storybook run build",
     "cover-storybook": "nyc --hook-require=false yarn jest client/storybook/src/coverage",

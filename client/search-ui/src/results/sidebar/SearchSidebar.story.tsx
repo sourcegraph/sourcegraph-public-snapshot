@@ -14,7 +14,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 
-const { add } = storiesOf('web/search/results/sidebar/SearchSidebar', module).addParameters({
+const { add } = storiesOf('search-ui/search/results/sidebar/SearchSidebar', module).addParameters({
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',

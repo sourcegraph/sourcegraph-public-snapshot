@@ -13,7 +13,7 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
-const { add } = storiesOf('web/search/input/SearchBox', module)
+const { add } = storiesOf('search-ui/search/input/SearchBox', module)
     .addParameters({ chromatic: { viewports: [575, 700] } })
     .addDecorator(story => <div className="w-100 d-flex">{story()}</div>)
 

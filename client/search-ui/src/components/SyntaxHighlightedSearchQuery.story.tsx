@@ -5,7 +5,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 
-const { add } = storiesOf('web/SyntaxHighlightedSearchQuery', module).addParameters({
+const { add } = storiesOf('search-ui/SyntaxHighlightedSearchQuery', module).addParameters({
     chromatic: { viewports: [480] },
 })
 
