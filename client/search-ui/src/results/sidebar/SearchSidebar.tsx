@@ -22,7 +22,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
-import { RevisionsProps } from './Revisions'
+import { RevisionsProps } from './revisions'
 import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'

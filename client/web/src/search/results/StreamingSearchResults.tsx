@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
-import { StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { SearchSidebar, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -43,7 +43,6 @@ import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { getRevisions } from './sidebar/Revisions'
-import { SearchSidebar } from './sidebar/SearchSidebar'
 import styles from './StreamingSearchResults.module.scss'
 
 export interface StreamingSearchResultsProps
