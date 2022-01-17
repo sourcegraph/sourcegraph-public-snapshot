@@ -71,10 +71,18 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
 
-    const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
+    const logSearchResultClicked = useCallback(
+        (index: number, type: string) => {
+            telemetryService.log('SearchResultClicked')
+
+            // This data ends up in Prometheus and is not part of the ping payload.
+            telemetryService.log('search.ranking.result-clicked', { index, type })
+        },
+        [telemetryService]
+    )
 
     const renderResult = useCallback(
-        (result: SearchMatch): JSX.Element => {
+        (result: SearchMatch, index: number): JSX.Element => {
             switch (result.type) {
                 case 'content':
                 case 'path':
@@ -85,7 +93,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
                             result={result}
-                            onSelect={logSearchResultClicked}
+                            onSelect={() => logSearchResultClicked(index, 'fileMatch')}
                             expanded={false}
                             showAllMatches={false}
                             allExpanded={allExpanded}
@@ -101,6 +109,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             result={result}
                             repoName={result.repository}
                             platformContext={platformContext}
+                            onSelect={() => logSearchResultClicked(index, 'commit')}
                         />
                     )
                 case 'repo':
@@ -110,6 +119,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             result={result}
                             repoName={result.repository}
                             platformContext={platformContext}
+                            onSelect={() => logSearchResultClicked(index, 'repo')}
                         />
                     )
             }
