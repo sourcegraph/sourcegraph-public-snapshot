@@ -4,7 +4,7 @@ import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
-import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
 

@@ -5,7 +5,7 @@ import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/schema'
-import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
