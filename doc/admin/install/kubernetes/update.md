@@ -123,7 +123,10 @@ kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath="{.items[0].me
 export SOURCEGRAPH_VERSION="the version you're upgrading to"
 yq eval -i '.spec.template.spec.containers[0].image = strenv(SOURCEGRAPH_VERSION)' base/migrator/migrator.Job.yaml
 
-./kubectl-apply-all
+# These commands are from `kubectl-apply-all.sh`.
+kubectl delete -f base/migrator/migrator.Job.yaml --ignore-not-found=true
+kubectl apply -f base/migrator/migrator.Job.yaml
+kubectl wait -f base/migrator/migrator.job.yaml --for=condition=complete --timeout=3h
 ```
 
 You should see something that looks like:
@@ -140,9 +143,9 @@ The log output of the `migrator` container should look like:
 > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
 > t=2022-01-14T23:47:47+0000 lvl=info msg="Upgrading schema" schema=codeinsights
 
+showing migrations being performed. The specific version numbers may not match what is shown here.
 
-You are now safe to upgrade Sourcegraph.
-
+If you see an error message, please re-run the three prior `psql` commands to determine your DB migration status and contact support at support@sourcegraph.com for further assistance. Your database may not have been migrated correctly. Otherwise, you are now safe to upgrade Sourcegraph.
 
 
 ### Troubleshooting
