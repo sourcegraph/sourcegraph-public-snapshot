@@ -14,7 +14,7 @@ import { pluralize } from '../util/strings'
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
 import { LineRanking } from './ranking/LineRanking'
-import { MatchGroup, MatchItem, PerFileResultRanking } from './ranking/PerFileResultRanking'
+import { MatchGroup, MatchItem } from './ranking/PerFileResultRanking'
 import { ZoektRanking } from './ranking/ZoektRanking'
 import { RepoFileLink } from './RepoFileLink'
 import { RepoIcon } from './RepoIcon'
@@ -72,13 +72,13 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
-    let ranking: PerFileResultRanking = new ZoektRanking()
-    if (
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade?.final?.experimentalFeatures?.clientSearchResultRanking == BY_LINE_RANKING
-    ) {
-        ranking = new LineRanking()
-    }
+    const settings = props.settingsCascade.final
+    const ranking = useMemo(() => {
+        if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
+            return new LineRanking()
+        }
+        return new ZoektRanking()
+    }, [settings])
     const renderTitle = (): JSX.Element => (
         <>
             <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
