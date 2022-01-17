@@ -13,7 +13,7 @@ import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import styles from './SearchBox.module.scss'
 import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
-import { Toggles, TogglesProps } from './toggles/Toggles'
+import { Toggles, TogglesProps } from './toggles'
 
 export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,

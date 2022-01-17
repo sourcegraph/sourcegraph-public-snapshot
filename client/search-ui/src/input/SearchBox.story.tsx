@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchAutoDefinedSearchContexts,
@@ -8,9 +10,6 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
-
-import { WebStory } from '../../components/WebStory'
-import { SearchPatternType } from '../../graphql-operations'
 
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
@@ -51,18 +50,18 @@ const defaultProps: SearchBoxProps = {
 
 add(
     'default',
-    () => <WebStory>{props => <SearchBox {...defaultProps} isLightTheme={props.isLightTheme} />}</WebStory>,
+    () => <BrandedStory>{props => <SearchBox {...defaultProps} isLightTheme={props.isLightTheme} />}</BrandedStory>,
     {}
 )
 
 add(
     'regexp enabled',
     () => (
-        <WebStory>
+        <BrandedStory>
             {props => (
                 <SearchBox {...defaultProps} patternType={SearchPatternType.regexp} isLightTheme={props.isLightTheme} />
             )}
-        </WebStory>
+        </BrandedStory>
     ),
     {}
 )
@@ -70,7 +69,7 @@ add(
 add(
     'structural enabled',
     () => (
-        <WebStory>
+        <BrandedStory>
             {props => (
                 <SearchBox
                     {...defaultProps}
@@ -78,7 +77,7 @@ add(
                     isLightTheme={props.isLightTheme}
                 />
             )}
-        </WebStory>
+        </BrandedStory>
     ),
     {}
 )
@@ -86,9 +85,9 @@ add(
 add(
     'case sensitivity enabled',
     () => (
-        <WebStory>
+        <BrandedStory>
             {props => <SearchBox {...defaultProps} caseSensitive={true} isLightTheme={props.isLightTheme} />}
-        </WebStory>
+        </BrandedStory>
     ),
     {}
 )
@@ -96,7 +95,7 @@ add(
 add(
     'with search contexts',
     () => (
-        <WebStory>
+        <BrandedStory>
             {props => (
                 <SearchBox
                     {...defaultProps}
@@ -105,7 +104,7 @@ add(
                     selectedSearchContextSpec="global"
                 />
             )}
-        </WebStory>
+        </BrandedStory>
     ),
     {}
 )
@@ -113,7 +112,7 @@ add(
 add(
     'with search contexts, user context selected',
     () => (
-        <WebStory>
+        <BrandedStory>
             {props => (
                 <SearchBox
                     {...defaultProps}
@@ -122,7 +121,7 @@ add(
                     selectedSearchContextSpec="@username/test-version-1.5"
                 />
             )}
-        </WebStory>
+        </BrandedStory>
     ),
     {}
 )
@@ -130,7 +129,7 @@ add(
 add(
     'with search contexts, disabled based on query',
     () => (
-        <WebStory>
+        <BrandedStory>
             {props => (
                 <SearchBox
                     {...defaultProps}
@@ -140,7 +139,7 @@ add(
                     selectedSearchContextSpec="@username"
                 />
             )}
-        </WebStory>
+        </BrandedStory>
     ),
     {}
 )

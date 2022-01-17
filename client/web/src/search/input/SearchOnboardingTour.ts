@@ -9,6 +9,7 @@ import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
 import { QueryState } from '@sourcegraph/search'
+import { MonacoQueryInputProps } from '@sourcegraph/search-ui/src/input/MonacoQueryInput'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
@@ -17,7 +18,6 @@ import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { MonacoQueryInputProps } from './MonacoQueryInput'
 import styles from './SearchOnboardingTour.module.scss'
 import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
 

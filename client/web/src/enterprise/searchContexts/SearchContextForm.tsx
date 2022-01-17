@@ -7,6 +7,7 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
+import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import {
     Scalars,
     SearchContextInput,
@@ -21,7 +22,6 @@ import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/Aw
 import { Container, Button, RadioButton, TextArea, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { LazyMonacoQueryInput } from '../../search/input/LazyMonacoQueryInput'
 import { getExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'

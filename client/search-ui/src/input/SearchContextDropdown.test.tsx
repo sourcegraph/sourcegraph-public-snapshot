@@ -4,6 +4,7 @@ import React from 'react'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
@@ -14,8 +15,6 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
-
-import { AuthenticatedUser } from '../../auth'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
