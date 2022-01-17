@@ -1,10 +1,9 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
-
-import { ErrorAlert } from '../../components/alerts'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 import styles from './StreamingSearchResults.module.scss'

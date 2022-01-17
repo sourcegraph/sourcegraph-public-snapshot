@@ -45,6 +45,9 @@ export interface StreamingSearchResultsListProps
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
+    showSearchContext: boolean
+    /** Available to web app through JS Context */
+    assetsRoot?: string
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -59,6 +62,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     searchContextsEnabled,
     selectedSearchContextSpec,
     authenticatedUser,
+    showSearchContext,
+    assetsRoot,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
@@ -156,6 +161,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
+                                showSearchContext={showSearchContext}
+                                assetsRoot={assetsRoot}
                             />
                         )}
                     </>

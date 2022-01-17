@@ -2,11 +2,11 @@ import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { ErrorMessage } from '@sourcegraph/web/src/components/alerts'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'

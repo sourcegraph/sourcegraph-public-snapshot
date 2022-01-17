@@ -148,6 +148,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                         isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
                                     )
                                 }
+                                assetsRoot={window.context?.assetsRoot || ''}
                             />
                         </div>
 
@@ -197,6 +198,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                         isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
                                     )
                                 }
+                                assetsRoot={window.context?.assetsRoot || ''}
                             />
                         </div>
                     </div>

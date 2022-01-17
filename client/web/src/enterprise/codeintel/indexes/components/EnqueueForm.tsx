@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useCallback, useState } from 'react'
 import { Subject } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'
 
 import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
