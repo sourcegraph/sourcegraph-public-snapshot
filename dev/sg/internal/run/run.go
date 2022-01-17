@@ -41,24 +41,24 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 
 	wg := sync.WaitGroup{}
 	failures := make(chan failedRun, len(cmds))
+	installed := make(chan string, len(cmds))
+	okayToStart := make(chan struct{})
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	cmdNames := make(map[string]struct{}, len(cmds))
-	for _, c := range cmds {
-		cmdNames[c.Name] = struct{}{}
-	}
-	installDone := make(chan string, len(cmds))
-	okayToStart := make(chan struct{})
 
 	for i, cmd := range cmds {
+		cmdNames[cmd.Name] = struct{}{}
+
 		wg.Add(1)
 
 		go func(cmd Command, ch <-chan struct{}) {
 			defer wg.Done()
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
-				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose, installDone, okayToStart); err != nil {
+				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose, installed, okayToStart); err != nil {
 					if errors.Is(err, ctx.Err()) { // if error caused by context, terminate
 						return
 					}
@@ -76,7 +76,11 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 		}(cmd, chs[i])
 	}
 
-	waitForInstallation(cmdNames, installDone, okayToStart)
+	err = waitForInstallation(cmdNames, installed, failures, okayToStart)
+	if err != nil {
+		return err
+	}
+
 	wg.Wait()
 
 	select {
@@ -88,7 +92,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 	}
 }
 
-func waitForInstallation(cmdNames map[string]struct{}, installDone chan string, okayToStart chan struct{}) {
+func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
 	stdout.Out.Write("")
 	stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Waiting for %d commands to finish installation...", len(cmdNames)))
 	stdout.Out.Write("")
@@ -108,15 +112,25 @@ func waitForInstallation(cmdNames map[string]struct{}, installDone chan string, 
 	const tickInterval = 15 * time.Second
 	ticker := time.NewTicker(tickInterval)
 
-outer:
 	for {
 		select {
-		case cmdName := <-installDone:
+		case cmdName := <-installed:
 			ticker.Reset(tickInterval)
 			delete(cmdNames, cmdName)
+
+			// Everything installed!
 			if len(cmdNames) == 0 {
-				break outer
+				stdout.Out.Write("")
+				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
+				stdout.Out.Write("")
+				close(okayToStart)
+				return nil
 			}
+
+		case failure := <-failures:
+			// Something went wrong with an installation, no need to wait for the others
+			printCmdError(stdout.Out, failure.cmdName, failure.err)
+			return failure
 
 		case <-ticker.C:
 			names := []string{}
@@ -133,11 +147,6 @@ outer:
 			messageCount += 1
 		}
 	}
-
-	stdout.Out.Write("")
-	stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system! Hold on to your butts!"))
-	stdout.Out.Write("")
-	close(okayToStart)
 
 }
 
@@ -280,6 +289,7 @@ func runWatch(
 			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
+					installDone <- cmd.Name
 					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				} else {
 					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})
