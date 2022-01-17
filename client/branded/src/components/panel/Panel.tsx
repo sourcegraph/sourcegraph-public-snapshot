@@ -174,9 +174,11 @@ export const Panel = React.memo<Props>(props => {
                                     )
                                     .map((panelView: PanelViewWithComponent) => {
                                         const locationProviderID = panelView.component?.locationProvider
+                                        const maxLocations = panelView.component?.maxLocationResults
                                         if (locationProviderID) {
                                             const panelViewWithProvider: PanelViewWithComponent = {
                                                 ...panelView,
+                                                maxLocationResults: maxLocations,
                                                 locationProvider: wrapRemoteObservable(
                                                     extensionHostAPI.getActiveCodeEditorPosition()
                                                 ).pipe(
