@@ -2327,6 +2327,71 @@ Query: ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign
 
 <br />
 
+### Frontend: Organisation GraphQL API requests
+
+#### frontend: org_members_rate
+
+<p class="subtitle">Rate of API requests to list organisation members</p>
+
+Rate (QPS) of requests to list organisation members
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101700` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: org_members_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to list organisation members</p>
+
+99 percentile of org-members latency
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101701` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrganizationMembers"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: org_members_error_rate
+
+<p class="subtitle">Percentage of API requests to list organisation members that return an error</p>
+
+Percentage of org-members API requests that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101702` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))*100`
+
+</details>
+
+<br />
+
 ### Frontend: Cloud KMS and cache
 
 #### frontend: cloudkms_cryptographic_requests
@@ -2335,7 +2400,7 @@ Query: ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-cloudkms-cryptographic-requests) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101700` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2356,7 +2421,7 @@ Query: `sum(increase(src_cloudkms_cryptographic_total[1m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101701` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101801` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2377,7 +2442,7 @@ Query: `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101702` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101802` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2398,7 +2463,7 @@ Query: `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m])
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101800` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101900` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2417,7 +2482,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="frontend"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101801` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101901` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2436,7 +2501,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="frontend"})`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101810` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101910` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2455,7 +2520,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="frontend"})
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101811` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101911` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2474,7 +2539,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="frontend"})`
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101820` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101920` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2493,7 +2558,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101830` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101930` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2512,7 +2577,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101831` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101931` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2531,7 +2596,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101832` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101932` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2562,7 +2627,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101900` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2581,7 +2646,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegr
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101901` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2600,7 +2665,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegr
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101902` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102002` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2622,7 +2687,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101903` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102003` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -2643,7 +2708,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^(frontend|sourcegrap
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2662,7 +2727,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2681,7 +2746,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102010` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102110` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2700,7 +2765,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(fro
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102011` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102111` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2723,7 +2788,7 @@ A high value here indicates a possible goroutine leak.
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-goroutines) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2742,7 +2807,7 @@ Query: `max by(instance) (go_goroutines{job=~".*(frontend|sourcegraph-frontend)"
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-gc-duration-seconds) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2763,7 +2828,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*(frontend|sourcegraph-f
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
@@ -2786,7 +2851,7 @@ Mean search duration for all successful sentinel queries
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2807,7 +2872,7 @@ Mean time to first result for all successful streaming sentinel queries
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2828,7 +2893,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102310` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102410` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2849,7 +2914,7 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_respo
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-1h30m) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102311` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102411` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2870,7 +2935,7 @@ Mean search duration for successful sentinel queries, broken down by query. Usef
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102320` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102420` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2891,7 +2956,7 @@ Mean time to first result for successful streaming sentinel queries, broken down
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102321` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102421` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2912,7 +2977,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102330` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102430` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2933,7 +2998,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102331` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102431` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2954,7 +3019,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102340` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102440` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2975,7 +3040,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102350` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102450` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -2996,7 +3061,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102351` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102451` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3017,7 +3082,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102360` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102460` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
@@ -3038,7 +3103,7 @@ The rate of unsuccessful sentinel queries, broken down by failure type.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102370` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102470` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
