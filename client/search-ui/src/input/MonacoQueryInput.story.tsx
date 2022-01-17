@@ -1,8 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { WebStory } from '../../components/WebStory'
-import { SearchPatternType } from '../../graphql-operations'
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 
 import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
 
@@ -29,6 +29,8 @@ const defaultProps: MonacoQueryInputProps = {
 
 add(
     'default',
-    () => <WebStory>{props => <MonacoQueryInput {...defaultProps} isLightTheme={props.isLightTheme} />}</WebStory>,
+    () => (
+        <BrandedStory>{props => <MonacoQueryInput {...defaultProps} isLightTheme={props.isLightTheme} />}</BrandedStory>
+    ),
     {}
 )

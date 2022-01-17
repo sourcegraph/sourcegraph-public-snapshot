@@ -2,6 +2,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { ListSearchContextsResult } from '@sourcegraph/search'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -10,8 +11,6 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
-
-import { WebStory } from '../../components/WebStory'
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
@@ -84,12 +83,18 @@ const emptySearchContexts = {
     fetchSearchContexts: mockFetchSearchContexts,
 }
 
-add('default', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})
+add('default', () => <BrandedStory>{() => <SearchContextMenu {...defaultProps} />}</BrandedStory>, {})
 
-add('empty', () => <WebStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</WebStory>, {})
+add(
+    'empty',
+    () => <BrandedStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</BrandedStory>,
+    {}
+)
 
 add(
     'with manage link',
-    () => <WebStory>{() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} />}</WebStory>,
+    () => (
+        <BrandedStory>{() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} />}</BrandedStory>
+    ),
     {}
 )

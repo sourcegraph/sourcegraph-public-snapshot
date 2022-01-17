@@ -2,9 +2,8 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-
-import { WebStory } from '../../components/WebStory'
 
 import { SearchContextMenuItem } from './SearchContextMenu'
 
@@ -21,7 +20,7 @@ const { add } = storiesOf('web/searchContexts/SearchContextMenuItem', module)
 add(
     'selected default item',
     () => (
-        <WebStory>
+        <BrandedStory>
             {() => (
                 <SearchContextMenuItem
                     spec="@user/test"
@@ -35,7 +34,7 @@ add(
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             )}
-        </WebStory>
+        </BrandedStory>
     ),
     {}
 )
@@ -43,7 +42,7 @@ add(
 add(
     'highlighted item',
     () => (
-        <WebStory>
+        <BrandedStory>
             {() => (
                 <SearchContextMenuItem
                     spec="@user/test"
@@ -57,7 +56,7 @@ add(
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             )}
-        </WebStory>
+        </BrandedStory>
     ),
     {}
 )

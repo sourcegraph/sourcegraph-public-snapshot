@@ -11,6 +11,7 @@ import {
     SubmitSearchParameters,
     canSubmitSearch,
 } from '@sourcegraph/search'
+import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -29,7 +30,6 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { SearchBox } from '../input/SearchBox'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
 
