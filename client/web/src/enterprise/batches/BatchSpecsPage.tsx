@@ -19,7 +19,7 @@ import {
 import { BatchSpecNode, BatchSpecNodeProps } from './BatchSpecNode'
 import styles from './BatchSpecsPage.module.scss'
 
-export interface BatchSpecsPageProps extends BatchSpecListProps {}
+export interface BatchSpecsPageProps extends Omit<BatchSpecListProps, 'currentSpecID'> {}
 
 export const BatchSpecsPage: React.FunctionComponent<BatchSpecsPageProps> = props => (
     <>
