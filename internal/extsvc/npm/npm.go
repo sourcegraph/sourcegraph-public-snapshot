@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -101,7 +102,7 @@ func Exists(ctx context.Context, client Client, dependency reposource.NPMDepende
 type HTTPClient struct {
 	registryURL string
 	doer        httpcli.Doer
-	limiter     rate.Limiter
+	limiter     *rate.Limiter
 }
 
 func NewHTTPClient(registryURL string, rateLimit *schema.NPMRateLimit) *HTTPClient {
@@ -111,10 +112,12 @@ func NewHTTPClient(registryURL string, rateLimit *schema.NPMRateLimit) *HTTPClie
 	} else {
 		requestsPerHour = rateLimit.RequestsPerHour
 	}
+	defaultLimiter := rate.NewLimiter(rate.Limit(requestsPerHour/3600.0), 100)
+	cachedLimiter := ratelimit.DefaultRegistry.GetOrSet(registryURL, defaultLimiter)
 	return &HTTPClient{
 		registryURL,
 		httpcli.ExternalDoer,
-		*rate.NewLimiter(rate.Limit(requestsPerHour/3600.0), 100),
+		cachedLimiter,
 	}
 }
 
