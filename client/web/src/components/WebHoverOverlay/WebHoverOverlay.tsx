@@ -103,7 +103,7 @@ export const WebHoverOverlay: React.FunctionComponent<
     return (
         <HoverOverlay
             {...propsToUse}
-            useBrandedBadge={true}
+            useBrandedStyles={true}
             className={classNames('card', styles.webHoverOverlay)}
             actionItemClassName="btn btn-sm btn-secondary border-0"
             onAlertDismissed={onAlertDismissed}
