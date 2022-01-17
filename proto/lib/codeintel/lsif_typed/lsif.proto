@@ -25,8 +25,8 @@ message Index {
   Metadata metadata = 1;
   // Documents that belong to this index.
   repeated Document document = 2;
-  // Symbols that are referenced from this index and not defined in this index.
-  repeated SymbolInformation external_symbols = 3;
+  // Symbols that are referenced and defined in this index.
+  repeated SymbolInformation symbols = 3;
 }
 
 message Metadata {
@@ -70,8 +70,6 @@ message Document {
   string relative_path = 1;
   // Occurrences that appear in this file.
   repeated Occurrence occurrences = 2;
-  // Symbols that are defined within this document.
-  repeated SymbolInformation symbols = 3;
 }
 
 // SymbolInformation defines metadata about a symbol, such as the symbol's
