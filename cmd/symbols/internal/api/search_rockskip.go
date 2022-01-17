@@ -168,14 +168,19 @@ func (g Gitserver) LogReverse(commit string, n int) ([]rockskip.LogEntry, error)
 	return rockskip.ParseLogReverse(bytes.NewReader(stdout))
 }
 
-func (g Gitserver) RevList(commit string) ([]string, error) {
+func (g Gitserver) RevListEach(commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	command := gitserver.DefaultClient.Command("git", rockskip.RevListArgs(commit)...)
 	command.Repo = api.RepoName(g.repo)
-	stdout, err := command.Output(context.Background())
+	stdout, err := gitserver.StdoutReader(ctx, command)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return rockskip.ParseRevList(bytes.NewReader(stdout))
+	defer stdout.Close()
+
+	return rockskip.RevListEach(stdout, onCommit)
 }
 
 func (g Gitserver) CatFile(commit string, path string) ([]byte, error) {

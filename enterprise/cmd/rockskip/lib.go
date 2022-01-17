@@ -19,7 +19,7 @@ import (
 
 type Git interface {
 	LogReverse(commit string, n int) ([]LogEntry, error)
-	RevList(commit string) ([]string, error)
+	RevListEach(commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
 	CatFile(commit string, path string) ([]byte, error)
 }
 
@@ -164,25 +164,24 @@ var TASKLOG = NewTaskLog()
 func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) error {
 	tipCommit := NULL
 	tipHeight := 0
+
 	missingCount := 0
-	TASKLOG.Start("RevList")
-	revs, err := git.RevList(givenCommit)
-	TASKLOG.Start("idle")
-	if err != nil {
-		return errors.Wrap(err, "RevList")
-	}
-	for _, commit := range revs {
-		TASKLOG.Start("GetCommit")
+	TASKLOG.Start("RevList + GetCommit")
+	err := git.RevListEach(givenCommit, func(commit string) (shouldContinue bool, err error) {
 		_, height, present, err := GetCommit(db, commit)
-		TASKLOG.Start("idle")
 		if err != nil {
-			return errors.Wrap(err, "GetCommit")
+			return false, errors.Wrap(err, "GetCommit")
 		} else if present {
 			tipCommit = commit
 			tipHeight = height
-			break
+			return false, nil
 		}
 		missingCount += 1
+		return true, nil
+	})
+	TASKLOG.Start("idle")
+	if err != nil {
+		return errors.Wrap(err, "RevList")
 	}
 
 	pathToBlobIdCache := map[string]int{}
@@ -414,17 +413,17 @@ func (git SubprocessGit) LogReverse(givenCommit string, n int) (logEntries []Log
 	return ParseLogReverse(output)
 }
 
-func (git SubprocessGit) RevList(givenCommit string) (commits []string, returnError error) {
+func (git SubprocessGit) RevListEach(givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
 	revList := exec.Command("git", RevListArgs(givenCommit)...)
 	revList.Dir = "/Users/chrismwendt/" + git.repo
 	output, err := revList.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = revList.Start()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer func() {
 		err = revList.Wait()
@@ -433,7 +432,7 @@ func (git SubprocessGit) RevList(givenCommit string) (commits []string, returnEr
 		}
 	}()
 
-	return ParseRevList(output)
+	return RevListEach(output, onCommit)
 }
 
 func (git SubprocessGit) CatFile(commit string, path string) ([]byte, error) {
@@ -829,7 +828,7 @@ func RevListArgs(givenCommit string) []string {
 	return []string{"rev-list", "--first-parent", givenCommit}
 }
 
-func ParseRevList(stdout io.Reader) (commits []string, returnError error) {
+func RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
 	reader := bufio.NewReader(stdout)
 
 	for {
@@ -837,13 +836,16 @@ func ParseRevList(stdout io.Reader) (commits []string, returnError error) {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return nil, err
+			return err
 		}
 		commit = commit[:len(commit)-1] // Drop the trailing newline
-		commits = append(commits, commit)
+		shouldContinue, err := onCommit(commit)
+		if !shouldContinue {
+			return err
+		}
 	}
 
-	return commits, nil
+	return nil
 }
 
 type Queryable interface {
