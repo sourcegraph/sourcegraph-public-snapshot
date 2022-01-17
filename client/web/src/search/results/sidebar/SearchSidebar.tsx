@@ -5,7 +5,12 @@ import StickyBox from 'react-sticky-box'
 import { UseStore } from 'zustand'
 import shallow from 'zustand/shallow'
 
-import { QueryUpdate, SearchQueryState, SubmitSearchParameters } from '@sourcegraph/search'
+import {
+    BuildSearchQueryURLParameters,
+    QueryUpdate,
+    SearchQueryState,
+    SubmitSearchParameters,
+} from '@sourcegraph/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -13,8 +18,6 @@ import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSide
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-
-import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -49,16 +52,18 @@ export interface SearchSidebarProps
      * Content to render inside sidebar, but before other sections.
      */
     prefixContent?: JSX.Element
+
+    buildSearchURLQueryFromQueryState: (queryParameters: BuildSearchQueryURLParameters) => string
 }
 
 const selectFromQueryState = ({
     queryState: { query },
     setQueryState,
     submitSearch,
-}: NavbarQueryState): {
+}: SearchQueryState): {
     query: string
-    setQueryState: NavbarQueryState['setQueryState']
-    submitSearch: NavbarQueryState['submitSearch']
+    setQueryState: SearchQueryState['setQueryState']
+    submitSearch: SearchQueryState['submitSearch']
 } => ({
     query,
     setQueryState,
@@ -146,6 +151,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         onNavbarQueryChange: setQueryState,
                         query,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
+                        buildSearchURLQueryFromQueryState: props.buildSearchURLQueryFromQueryState,
                     })}
                 </SearchSidebarSection>
                 <SearchSidebarSection

@@ -27,7 +27,12 @@ import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useExperimentalFeatures, useNavbarQueryState, useSearchStack } from '../../stores'
+import {
+    useExperimentalFeatures,
+    useNavbarQueryState,
+    useSearchStack,
+    buildSearchURLQueryFromQueryState,
+} from '../../stores'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
@@ -256,6 +261,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         <OnboardingTour className="mb-1" telemetryService={props.telemetryService} />
                     ) : undefined
                 }
+                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
             />
 
             <SearchResultsInfoBar
