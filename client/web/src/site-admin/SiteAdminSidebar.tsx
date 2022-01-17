@@ -8,8 +8,6 @@ import { BatchChangesProps } from '../batches'
 import { SidebarGroup, SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'
 import { NavGroupDescriptor } from '../util/contributions'
 
-import styles from './SiteAdminSidebar.module.scss'
-
 export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
 }
@@ -49,13 +47,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                         </ListGroupItem>
                     ) : (
                         <ListGroupItem className="p-0" key={items[0].label}>
-                            <Link
-                                to={items[0].to}
-                                className={classNames(
-                                    'bg-2 border-0 d-flex list-group-item-action p-2 w-100',
-                                    styles.actionLink
-                                )}
-                            >
+                            <Link to={items[0].to} className="bg-2 border-0 d-flex list-group-item-action p-2 w-100">
                                 <span>
                                     {header?.icon && <header.icon className="sidebar__icon icon-inline mr-1" />}{' '}
                                     {items[0].label}
