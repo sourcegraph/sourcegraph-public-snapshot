@@ -5,8 +5,7 @@ import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { deleteNotebook as _deleteNotebook } from './backend'
 

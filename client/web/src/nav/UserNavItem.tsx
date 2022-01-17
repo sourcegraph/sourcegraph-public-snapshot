@@ -10,7 +10,7 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Tooltip } f
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
+import { useTimeoutManager } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { KEYBOARD_SHORTCUT_SHOW_HELP } from '../keyboardShortcuts/keyboardShortcuts'

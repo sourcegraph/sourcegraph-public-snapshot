@@ -4,8 +4,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'

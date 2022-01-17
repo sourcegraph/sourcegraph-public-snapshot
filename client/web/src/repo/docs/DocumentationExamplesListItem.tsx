@@ -11,7 +11,7 @@ import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { RepositoryFields } from '../../graphql-operations'

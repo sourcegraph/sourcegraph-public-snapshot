@@ -4,8 +4,7 @@ import { combineLatest, concat, EMPTY, Observable, of, ReplaySubject, zip } from
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
-
-import { useEventObservable } from './useObservable'
+import { useEventObservable } from '@sourcegraph/wildcard'
 
 /**
  * Configuration used by `useInputValidation`

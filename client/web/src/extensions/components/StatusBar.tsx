@@ -12,8 +12,7 @@ import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge, Button } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
