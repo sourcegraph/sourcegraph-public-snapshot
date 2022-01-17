@@ -5,10 +5,7 @@ import (
 	"context"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
-
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -17,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -63,12 +61,7 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 		return err
 	}
 
-	var (
-		wg       sync.WaitGroup
-		errMux   sync.Mutex
-		multiErr *multierror.Error
-	)
-
+	bounded := goroutine.NewBounded(8)
 	for _, repoRev := range repoRevs {
 		repoRev := repoRev // we close over repoRev in onMatches
 
@@ -95,10 +88,7 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 			})
 		}
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
+		bounded.Go(func() error {
 			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
@@ -106,14 +96,11 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 				},
 			})
 
-			errMux.Lock()
-			multiErr = multierror.Append(multiErr, err)
-			errMux.Unlock()
-		}()
+			return err
+		})
 	}
 
-	wg.Wait()
-	return multiErr.ErrorOrNil()
+	return bounded.Wait()
 }
 
 func (j CommitSearch) Name() string {
