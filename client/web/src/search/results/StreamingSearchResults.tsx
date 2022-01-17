@@ -64,9 +64,6 @@ export interface StreamingSearchResultsProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-/** All values that are valid for the `type:` filter. `null` represents default code search. */
-export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
-
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
 // and will therefore default to V1.

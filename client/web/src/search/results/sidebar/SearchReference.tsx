@@ -7,7 +7,7 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
-import { QueryChangeSource } from '@sourcegraph/search'
+import { QueryChangeSource, SearchQueryState } from '@sourcegraph/search'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
@@ -16,7 +16,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
-import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample, QueryExample } from '../../helpers/queryExample'
 
 import styles from './SearchReference.module.scss'
@@ -462,7 +461,7 @@ const FilterInfoList = ({ filters, onClick, onExampleClick }: FilterInfoListProp
     </ul>
 )
 
-export interface SearchReferenceProps extends TelemetryProps, Pick<NavbarQueryState, 'setQueryState'> {
+export interface SearchReferenceProps extends TelemetryProps, Pick<SearchQueryState, 'setQueryState'> {
     filter: string
 }
 
