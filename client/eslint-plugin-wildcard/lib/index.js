@@ -27,6 +27,10 @@ module.exports = {
                 element: 'textarea',
                 message: 'Use the <TextArea /> component from @sourcegraph/wildcard instead.',
               },
+              {
+                element: 'link',
+                message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
+              },
             ],
           },
         ],
