@@ -56,14 +56,14 @@ func (r *CommitSearchResultResolver) MessagePreview() *highlightedStringResolver
 	if r.CommitMatch.MessagePreview == nil {
 		return nil
 	}
-	return &highlightedStringResolver{(*r.CommitMatch.MessagePreview).ToHighlightedString()}
+	return &highlightedStringResolver{r.CommitMatch.MessagePreview.ToHighlightedString()}
 }
 
 func (r *CommitSearchResultResolver) DiffPreview() *highlightedStringResolver {
 	if r.CommitMatch.DiffPreview == nil {
 		return nil
 	}
-	return &highlightedStringResolver{(*r.CommitMatch.DiffPreview).ToHighlightedString()}
+	return &highlightedStringResolver{r.CommitMatch.DiffPreview.ToHighlightedString()}
 }
 
 func (r *CommitSearchResultResolver) Label() Markdown {
