@@ -334,8 +334,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		syncer := server.NewNPMPackagesSyncer(c, codeintelDB, nil)
-		return &syncer, nil
+		return server.NewNPMPackagesSyncer(c, codeintelDB, nil), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }
