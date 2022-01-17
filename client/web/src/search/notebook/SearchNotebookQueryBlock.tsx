@@ -20,6 +20,7 @@ import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures } from '../../stores'
+import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
@@ -189,6 +190,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             authenticatedUser={props.authenticatedUser}
                             showSearchContext={showSearchContext}
                             assetsRoot={window.context?.assetsRoot || ''}
+                            renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                         />
                     </div>
                 )}

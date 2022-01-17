@@ -6,13 +6,13 @@ import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
-import styles from './StreamingSearchResults.module.scss'
+import styles from './StreamingSearchResultsList.module.scss'
 
 export const StreamingSearchResultFooter: React.FunctionComponent<{
     results?: AggregateStreamingSearchResults
     children?: React.ReactChild | React.ReactChild[]
 }> = ({ results, children }) => (
-    <div className={classNames(styles.streamingSearchResultsContentCentered, 'd-flex flex-column align-items-center')}>
+    <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
         {(!results || results?.state === 'loading') && (
             <div className="text-center my-4" data-testid="loading-container">
                 <LoadingSpinner />
