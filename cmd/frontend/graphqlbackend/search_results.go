@@ -827,10 +827,40 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 		}
 
 		if args.ResultTypes.Has(result.TypeRepo) {
-			jobs = append(jobs, &run.RepoSearch{
-				Args:  &args,
-				Limit: r.MaxResults(),
-			})
+			valid := func() bool {
+				fieldAllowlist := map[string]struct{}{
+					query.FieldRepo:               {},
+					query.FieldContext:            {},
+					query.FieldType:               {},
+					query.FieldDefault:            {},
+					query.FieldIndex:              {},
+					query.FieldCount:              {},
+					query.FieldTimeout:            {},
+					query.FieldFork:               {},
+					query.FieldArchived:           {},
+					query.FieldVisibility:         {},
+					query.FieldCase:               {},
+					query.FieldRepoHasFile:        {},
+					query.FieldRepoHasCommitAfter: {},
+					query.FieldPatternType:        {},
+					query.FieldSelect:             {},
+				}
+
+				// Don't run a repo search if the search contains fields that aren't on the allowlist.
+				for field := range args.Query.Fields() {
+					if _, ok := fieldAllowlist[field]; !ok {
+						return false
+					}
+				}
+				return true
+			}
+
+			if valid() {
+				jobs = append(jobs, &run.RepoSearch{
+					Args:  &args,
+					Limit: r.MaxResults(),
+				})
+			}
 		}
 	}
 
