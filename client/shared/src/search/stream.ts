@@ -9,6 +9,9 @@ import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
 
+/** All values that are valid for the `type:` filter. `null` represents default code search. */
+export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
+
 export type SearchEvent =
     | { type: 'matches'; data: SearchMatch[] }
     | { type: 'progress'; data: Progress }

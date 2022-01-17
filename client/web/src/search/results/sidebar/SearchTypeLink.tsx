@@ -6,10 +6,10 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
+import { SearchType } from '@sourcegraph/shared/src/search/stream'
 import { Button } from '@sourcegraph/wildcard'
 
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '../../helpers/queryExample'
-import { SearchType } from '../StreamingSearchResults'
 
 import styles from './SearchSidebarSection.module.scss'
 
