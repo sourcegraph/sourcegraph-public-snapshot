@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import React, { useEffect, useRef, useState } from 'react'
 
-import { useOnClickOutside } from '@sourcegraph/shared/src/util/useOnClickOutside'
+import { useOnClickOutside } from '@sourcegraph/wildcard'
 
 import styles from './NotebookTitle.module.scss'
 

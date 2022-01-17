@@ -3,13 +3,12 @@ import React, { useCallback, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
 } from '@sourcegraph/web/src/components/FilteredConnection'
-import { Badge, Link } from '@sourcegraph/wildcard'
+import { Badge, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import {

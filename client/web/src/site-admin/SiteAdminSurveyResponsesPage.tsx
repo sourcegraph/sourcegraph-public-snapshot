@@ -4,8 +4,7 @@ import React, { useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Badge, Button, Link } from '@sourcegraph/wildcard'
+import { Badge, Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
 import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
 
 import { FilteredConnection } from '../components/FilteredConnection'

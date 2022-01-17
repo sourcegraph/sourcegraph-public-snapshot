@@ -11,9 +11,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { AlertLink } from '@sourcegraph/wildcard'
+import { AlertLink, useLocalStorage, useEventObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import {

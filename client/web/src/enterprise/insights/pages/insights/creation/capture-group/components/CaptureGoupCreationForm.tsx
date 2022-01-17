@@ -178,6 +178,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
+                    numberOfPoints={7}
                 />
             </FormGroup>
 

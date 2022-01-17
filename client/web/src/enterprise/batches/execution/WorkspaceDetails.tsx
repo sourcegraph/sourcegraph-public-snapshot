@@ -15,8 +15,18 @@ import { delay, repeatWhen } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button, Badge, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Link } from '@sourcegraph/wildcard'
+import {
+    useObservable,
+    Badge,
+    LoadingSpinner,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    Button,
+    Link,
+} from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Collapsible } from '../../../components/Collapsible'

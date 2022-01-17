@@ -9,7 +9,7 @@ import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-ro
 
 import { ContentMatch } from '../search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../util/searchTestHelpers'
+import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../testing/searchTestHelpers'
 
 import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatch, limitGroup } from './FileMatch'

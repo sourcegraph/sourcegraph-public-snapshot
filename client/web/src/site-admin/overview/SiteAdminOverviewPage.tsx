@@ -10,8 +10,7 @@ import { ActivationChecklist } from '@sourcegraph/shared/src/components/activati
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner, Link, Button } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'

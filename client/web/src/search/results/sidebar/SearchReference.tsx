@@ -13,8 +13,7 @@ import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
 import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 import { QueryChangeSource } from '../../helpers'

@@ -7,8 +7,8 @@ import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { mockGetUserSearchContextNamespaces } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
 import { ListSearchContextsResult, SearchContextFields } from '../../graphql-operations'
 

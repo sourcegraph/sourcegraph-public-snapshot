@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { BehaviorSubject } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
 
