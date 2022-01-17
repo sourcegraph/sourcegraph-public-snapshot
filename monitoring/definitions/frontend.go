@@ -527,6 +527,40 @@ func Frontend() *monitoring.Container {
 					},
 				}},
 			{
+				Title:  "Organisation GraphQL API requests",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:           "org_members_rate",
+							Description:    "rate of API requests to list organisation members",
+							Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `Rate (QPS) of requests to list organisation members`,
+						},
+						{
+							Name:           "org_members_latency_p99",
+							Description:    "99 percentile latency of API requests to list organisation members",
+							Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrganizationMembers"}[5m])) by (le))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `99 percentile of org-members latency`,
+						},
+						{
+							Name:           "org_members_error_rate",
+							Description:    "percentage of API requests to list organisation members that return an error",
+							Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))*100`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `Percentage of org-members API requests that return an error`,
+						},
+					},
+				}},
+			{
 				Title:  "Cloud KMS and cache",
 				Hidden: true,
 				Rows: []monitoring.Row{
