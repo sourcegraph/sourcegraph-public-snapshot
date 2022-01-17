@@ -34,32 +34,6 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 		tr.Finish()
 	}()
 
-	fieldAllowlist := map[string]struct{}{
-		query.FieldRepo:               {},
-		query.FieldContext:            {},
-		query.FieldType:               {},
-		query.FieldDefault:            {},
-		query.FieldIndex:              {},
-		query.FieldCount:              {},
-		query.FieldTimeout:            {},
-		query.FieldFork:               {},
-		query.FieldArchived:           {},
-		query.FieldVisibility:         {},
-		query.FieldCase:               {},
-		query.FieldRepoHasFile:        {},
-		query.FieldRepoHasCommitAfter: {},
-		query.FieldPatternType:        {},
-		query.FieldSelect:             {},
-	}
-	// Don't return repo results if the search contains fields that aren't on the allowlist.
-	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
-	for field := range s.Args.Query.Fields() {
-		if _, ok := fieldAllowlist[field]; !ok {
-			tr.LazyPrintf("contains dissallowed field: %s", field)
-			return nil
-		}
-	}
-
 	tr.LogFields(
 		otlog.String("pattern", s.Args.PatternInfo.Pattern),
 		otlog.Int("limit", s.Limit))
