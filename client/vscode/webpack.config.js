@@ -147,6 +147,15 @@ const webviewConfig = {
         'alias',
         'RepoFileLink'
       ),
+      './FileMatchChildren': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'FileMatchChildren'),
+      '@sourcegraph/shared/src/components/FileMatchChildren': path.resolve(
+        __dirname,
+        'src',
+        'webview',
+        'search-panel',
+        'alias',
+        'FileMatchChildren'
+      ),
     },
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],

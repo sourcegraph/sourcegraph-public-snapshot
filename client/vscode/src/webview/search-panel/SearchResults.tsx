@@ -59,7 +59,9 @@ export const SearchResults = React.memo<SearchResultsProps>(
         const patternType = useQueryState(({ state }) => state.patternType)
         const caseSensitive = useQueryState(({ state }) => state.caseSensitive)
         const searchActions = useQueryState(({ actions }) => actions)
+        const selectedResultPositionSuffix = useQueryState(({ state }) => state.selectedResultPositionSuffix)
         const [openSavedSearchCreateForm, setOpenSavedSearchCreateForm] = useState<boolean>(false)
+        const [fileMatchResultUri, setFileMatchResultUri] = useState<string | undefined>(undefined)
         const [savedSearchFields, setSavedSearchFields] = useState<Omit<SavedQueryFields, 'id'> | undefined>(undefined)
         const fetchHighlightedFileLineRangesWithContext = useCallback(
             (parameters: FetchFileParameters) => fetchHighlightedFileLineRanges({ ...parameters, platformContext }),
@@ -91,7 +93,29 @@ export const SearchResults = React.memo<SearchResultsProps>(
                     }
                 })().catch(error => console.error(error))
             }
-        }, [authenticatedUser, platformContext, savedSearchFields])
+            // Open file match result at the selected position that is set in FileMatchChildren
+            if (fileMatchResultUri !== undefined) {
+                let uri = fileMatchResultUri
+                if (selectedResultPositionSuffix) {
+                    uri = fileMatchResultUri + selectedResultPositionSuffix
+                }
+                sourcegraphVSCodeExtensionAPI
+                    .openFile(uri)
+                    .then(() => {
+                        setFileMatchResultUri(undefined)
+                        searchActions.setSelectedResultPositionSuffix(undefined)
+                    })
+                    .catch(() => {})
+            }
+        }, [
+            authenticatedUser,
+            fileMatchResultUri,
+            platformContext,
+            savedSearchFields,
+            searchActions,
+            selectedResultPositionSuffix,
+            sourcegraphVSCodeExtensionAPI,
+        ])
 
         if (!searchResults) {
             // TODO this component should only be rendered when there are results, update props.
@@ -167,7 +191,6 @@ export const SearchResults = React.memo<SearchResultsProps>(
                         // TODO we will have to pass SearchMatch to onSelect from within the FileMatchChildren component
                         // to be able to determine which line match to open to.
                         // For preview we open the first match.
-
                         const { lineNumber, offsetAndLengths } = result.lineMatches[0]
                         const [start] = offsetAndLengths[0]
 
@@ -175,13 +198,11 @@ export const SearchResults = React.memo<SearchResultsProps>(
                             revision: result.commit,
                             path: result.path,
                             position: {
-                                line: lineNumber + 1,
+                                line: lineNumber,
                                 character: start,
                             },
                         })
-                        const uriToOpen = sourcegraphUri.uri + sourcegraphUri.positionSuffix()
-
-                        return sourcegraphVSCodeExtensionAPI.openFile(uriToOpen)
+                        return setFileMatchResultUri(sourcegraphUri.uri)
                     }
                 }
             })().catch(error => {
@@ -293,7 +314,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
             notifySlack: false,
             slackWebhookURL: null,
         }
-        console.log(results)
+
         return (
             <div className={styles.streamingSearchResultsContainer}>
                 {/* TODO: This is a temporary searchResultsInfoBar */}

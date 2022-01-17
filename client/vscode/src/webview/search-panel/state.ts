@@ -20,6 +20,7 @@ const initialSearchState: SearchState = {
     },
     searchResults: null,
     selectedSearchContextSpec: DEFAULT_SEARCH_CONTEXT_SPEC,
+    selectedResultPositionSuffix: undefined,
 }
 
 interface SearchState {
@@ -32,6 +33,7 @@ interface SearchState {
     queryToRun: QueryState
     searchResults: SearchResult | null
     selectedSearchContextSpec: string | undefined
+    selectedResultPositionSuffix: string | undefined
 }
 
 export interface State {
@@ -43,6 +45,7 @@ export interface State {
         setCaseSensitivity: (caseSensitive: boolean) => void
         setPatternType: (patternType: SearchPatternType) => void
         setSelectedSearchContextSpec: (selectedSearchContextSpec: string | undefined) => void
+        setSelectedResultPositionSuffix: (selectedResultPositionSuffix: string | undefined) => void
     }
 }
 
@@ -72,6 +75,9 @@ export function createUseQueryState(vsCodeApi: VsCodeApi<State['state']>): UseSt
             },
             setSelectedSearchContextSpec: selectedSearchContextSpec => {
                 set(({ state }) => ({ state: { ...state, selectedSearchContextSpec } }))
+            },
+            setSelectedResultPositionSuffix: selectedResultPositionSuffix => {
+                set(({ state }) => ({ state: { ...state, selectedResultPositionSuffix } }))
             },
         },
     }))

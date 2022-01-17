@@ -38,10 +38,10 @@ async function openCompareUri(uri: SourcegraphUri, compareRange: CompareRange): 
 
 function getSelection(uri: SourcegraphUri, textDocument: vscode.TextDocument): vscode.Range | undefined {
     if (typeof uri?.position?.line !== 'undefined' && typeof uri?.position?.character !== 'undefined') {
-        return offsetRange(uri.position.line - 1, uri.position.character)
+        return offsetRange(uri.position.line, uri.position.character)
     }
     if (typeof uri?.position?.line !== 'undefined') {
-        return offsetRange(uri.position.line - 1, 0)
+        return offsetRange(uri.position.line, 0)
     }
 
     // There's no explicitly provided line number. Instead of focusing on the
