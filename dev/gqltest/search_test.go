@@ -368,15 +368,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/mux$`,
 			},
 			{
-				name:  "repohasfile returns results for global search",
-				query: "repohasfile:README",
-			},
-			{
-				name:       "multiple repohasfile returns no results if one doesn't match",
-				query:      "repohasfile:README repohasfile:thisfiledoesnotexist_1571751",
-				zeroResult: true,
-			},
-			{
 				name:  "repo search by name, nonzero result",
 				query: "repo:go-diff$",
 			},
@@ -616,11 +607,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  "diff search, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:diff main`,
-			},
-			// Repohascommitafter
-			{
-				name:  `Repohascommitafter, nonzero result`,
-				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"2019-01-01" test patterntype:literal`,
 			},
 			// Regex text search
 			{

@@ -830,21 +830,19 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 		if args.ResultTypes.Has(result.TypeRepo) {
 			valid := func() bool {
 				fieldAllowlist := map[string]struct{}{
-					query.FieldRepo:               {},
-					query.FieldContext:            {},
-					query.FieldType:               {},
-					query.FieldDefault:            {},
-					query.FieldIndex:              {},
-					query.FieldCount:              {},
-					query.FieldTimeout:            {},
-					query.FieldFork:               {},
-					query.FieldArchived:           {},
-					query.FieldVisibility:         {},
-					query.FieldCase:               {},
-					query.FieldRepoHasFile:        {},
-					query.FieldRepoHasCommitAfter: {},
-					query.FieldPatternType:        {},
-					query.FieldSelect:             {},
+					query.FieldRepo:        {},
+					query.FieldContext:     {},
+					query.FieldType:        {},
+					query.FieldDefault:     {},
+					query.FieldIndex:       {},
+					query.FieldCount:       {},
+					query.FieldTimeout:     {},
+					query.FieldFork:        {},
+					query.FieldArchived:    {},
+					query.FieldVisibility:  {},
+					query.FieldCase:        {},
+					query.FieldPatternType: {},
+					query.FieldSelect:      {},
 				}
 
 				// Don't run a repo search if the search contains fields that aren't on the allowlist.
