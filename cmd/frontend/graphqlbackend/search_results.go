@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -855,11 +856,58 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 				return true
 			}
 
+			// returns an updated RepoOptions if the pattern part of a query can be used to
+			// search repos. A problematic case we check for is when the pattern contains `@`,
+			// which may confuse downstream logic to interpret it as part of `repo@rev` syntax.
+			addPatternAsRepoFilter := func(pattern string, opts search.RepoOptions) (search.RepoOptions, bool) {
+				if pattern == "" {
+					return opts, true
+				}
+
+				opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
+				opts.CaseSensitiveRepoFilters = args.Query.IsCaseSensitive()
+
+				patternPrefix := strings.SplitN(pattern, "@", 2)
+				if len(patternPrefix) == 1 {
+					// No "@" in pattern? We're good.
+					opts.RepoFilters = append(opts.RepoFilters, pattern)
+					return opts, true
+				}
+
+				if patternPrefix[0] != "" {
+					// Extend the repo search using the pattern value, but
+					// since the pattern contains @, only search the part
+					// prefixed by the first @. This because downstream
+					// logic will get confused by the presence of @ and try
+					// to resolve repo revisions. See #27816.
+					if _, err := regexp.Compile(patternPrefix[0]); err != nil {
+						// Prefix is not valid regexp, so just reject it. This can happen for patterns where we've automatically added `(...).*?(...)`
+						// such as `foo @bar` which becomes `(foo).*?(@bar)`, which when stripped becomes `(foo).*?(` which is unbalanced and invalid.
+						// Why is this a mess? Because validation for everything, including repo values, should be done up front so far possible, not downtsream
+						// after possible modifications. By the time we reach this code, the pattern should already have been considered valid to continue with
+						// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
+						return search.RepoOptions{}, false
+					}
+					opts.RepoFilters = append(opts.RepoFilters, patternPrefix[0])
+					return opts, true
+				}
+
+				// This pattern starts with @, of the form "@thing". We can't
+				// consistently handle search repos of this form, because
+				// downstream logic will attempt to interpret "thing" as a repo
+				// revision, may fail, and cause us to raise an alert for any
+				// non `type:repo` search. Better to not attempt a repo search.
+				return search.RepoOptions{}, false
+			}
+
 			if valid() {
-				jobs = append(jobs, &run.RepoSearch{
-					Args:  &args,
-					Limit: r.MaxResults(),
-				})
+				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
+					args.RepoOptions = repoOptions
+					jobs = append(jobs, &run.RepoSearch{
+						Args:  &args,
+						Limit: r.MaxResults(),
+					})
+				}
 			}
 		}
 	}
