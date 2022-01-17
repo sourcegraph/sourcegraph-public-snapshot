@@ -17,21 +17,22 @@ import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { parseSearchURLQuery, SearchContextProps } from '../../search'
+import { parseSearchURLQuery } from '../../search'
+import { createSearchContext as _createSearchContext } from '../../search/backend'
 
 import { SearchContextForm } from './SearchContextForm'
 
-export interface CreateSearchContextPageProps
-    extends RouteComponentProps,
-        ThemeProps,
-        TelemetryProps,
-        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'> {
+export interface CreateSearchContextPageProps extends RouteComponentProps, ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    /**
+     * createSearchContext is exposed for testing purposes
+     */
+    createSearchContext?: typeof _createSearchContext
 }
 
 export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
-    const { authenticatedUser, createSearchContext } = props
+    const { authenticatedUser, createSearchContext = _createSearchContext } = props
 
     const query = parseSearchURLQuery(props.location.search)
 

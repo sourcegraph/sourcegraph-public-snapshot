@@ -9,7 +9,12 @@ import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/que
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { SearchPatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchPatternTypeMutationProps } from '../..'
+import {
+    SearchPatternTypeProps,
+    CaseSensitivityProps,
+    SearchContextProps2,
+    SearchPatternTypeMutationProps,
+} from '../..'
 import { SearchPatternType } from '../../../graphql-operations'
 import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { isMacPlatform } from '../../../util'
@@ -24,7 +29,7 @@ export interface TogglesProps
         SearchPatternTypeMutationProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps2, 'selectedSearchContextSpec'>,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     navbarSearchQuery: string
     className?: string

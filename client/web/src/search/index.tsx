@@ -156,13 +156,14 @@ export interface CaseSensitivityProps {
     setCaseSensitivity: (caseSensitive: boolean) => void
 }
 
-export interface SearchContextProps {
+export interface SearchContextProps2 {
     searchContextsEnabled: boolean
+    selectedSearchContextSpec?: string
+}
+
+export interface SearchContextProps {
     hasUserAddedRepositories: boolean
     hasUserAddedExternalServices: boolean
-    defaultSearchContextSpec: string
-    selectedSearchContextSpec?: string
-    setSelectedSearchContextSpec: (spec: string) => void
     getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
     fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
     fetchSearchContexts: typeof fetchSearchContexts
@@ -176,16 +177,16 @@ export interface SearchContextProps {
 
 export type SearchContextInputProps = Pick<
     SearchContextProps,
-    | 'searchContextsEnabled'
     | 'hasUserAddedRepositories'
     | 'hasUserAddedExternalServices'
-    | 'defaultSearchContextSpec'
-    | 'selectedSearchContextSpec'
-    | 'setSelectedSearchContextSpec'
     | 'fetchAutoDefinedSearchContexts'
     | 'fetchSearchContexts'
     | 'getUserSearchContextNamespaces'
->
+> & {
+    defaultSearchContextSpec: string
+    searchContextsEnabled: boolean
+    setSelectedSearchContextSpec: (spec: string) => void
+}
 
 export interface HomePanelsProps {
     fetchSavedSearches: () => Observable<ISavedSearch[]>

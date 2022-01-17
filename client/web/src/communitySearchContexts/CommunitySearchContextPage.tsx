@@ -23,10 +23,9 @@ import { Button, useObservable } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { SearchContextInputProps, SearchContextProps } from '../search'
-import { submitSearch } from '../search/helpers'
+import { fetchSearchContextBySpec } from '../search/backend'
 import { SearchPageInput } from '../search/home/SearchPageInput'
-import { useNavbarQueryState } from '../stores'
+import { submitSearchWithGlobalQueryState } from '../stores/navbarSearchQueryState'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -41,9 +40,7 @@ export interface CommunitySearchContextPageProps
         TelemetryProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        SearchContextInputProps,
-        Pick<SearchContextProps, 'fetchSearchContextBySpec'> {
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -66,11 +63,8 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
             props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`),
         [props.communitySearchContextMetadata.spec, props.telemetryService]
     )
-    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
-
     const contextQuery = `context:${props.communitySearchContextMetadata.spec}`
 
-    const { fetchSearchContextBySpec } = props
     const searchContextOrError = useObservable(
         useMemo(
             () =>
@@ -78,7 +72,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [props.communitySearchContextMetadata.spec, fetchSearchContextBySpec]
+            [props.communitySearchContextMetadata.spec]
         )
     )
 
@@ -87,7 +81,13 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
     ): void => {
         eventLogger.log('CommunitySearchContextSuggestionClicked')
         event?.preventDefault()
-        submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
+        submitSearchWithGlobalQueryState({
+            source: 'communitySearchContextPage',
+            query,
+            patternType,
+            history: props.history,
+            selectedSearchContextSpec: props.communitySearchContextMetadata.spec,
+        })
     }
 
     return (
@@ -143,10 +143,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                         <Button
                                             className={styles.searchButton}
                                             aria-label="Search"
-                                            onClick={onSubmitExample(
-                                                `${contextQuery} ${example.query}`,
-                                                example.patternType
-                                            )}
+                                            onClick={onSubmitExample(example.query, example.patternType)}
                                             variant="secondary"
                                             size="sm"
                                         >

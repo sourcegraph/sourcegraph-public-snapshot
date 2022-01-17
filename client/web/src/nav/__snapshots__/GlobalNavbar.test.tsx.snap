@@ -245,14 +245,12 @@ exports[`GlobalNavbar default 1`] = `
       class="pb-2 border-bottom"
     >
       <searchnavbaritem
-        defaultsearchcontextspec=""
         extensionscontroller="[object Object]"
         history="[object Object]"
         keyboardshortcuts=""
         location="[object Object]"
         platformcontext="[object Object]"
         routes=""
-        selectedsearchcontextspec=""
         settingscascade="[object Object]"
         telemetryservice="[object Object]"
         themepreference="light"
@@ -507,14 +505,12 @@ exports[`GlobalNavbar low-profile 1`] = `
       class="pb-2 border-bottom"
     >
       <searchnavbaritem
-        defaultsearchcontextspec=""
         extensionscontroller="[object Object]"
         history="[object Object]"
         keyboardshortcuts=""
         location="[object Object]"
         platformcontext="[object Object]"
         routes=""
-        selectedsearchcontextspec=""
         settingscascade="[object Object]"
         telemetryservice="[object Object]"
         themepreference="light"

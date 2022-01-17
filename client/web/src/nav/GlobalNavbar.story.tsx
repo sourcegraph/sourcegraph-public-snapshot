@@ -4,11 +4,6 @@ import { SuiteFunction } from 'mocha'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    mockFetchAutoDefinedSearchContexts,
-    mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
-} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -46,22 +41,13 @@ const defaultProps = (
     globbing: false,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    selectedSearchContextSpec: '',
-    setSelectedSearchContextSpec: () => undefined,
-    defaultSearchContextSpec: '',
     isLightTheme: props.isLightTheme,
     isExtensionAlertAnimating: false,
-    searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
     batchChangesWebhookLogsEnabled: true,
     activation: undefined,
     routes: [],
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
-    fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
-    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     extensionViews: () => null,
 })
 

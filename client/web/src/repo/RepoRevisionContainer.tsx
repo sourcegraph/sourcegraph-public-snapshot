@@ -31,7 +31,7 @@ import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
-import { SearchContextProps, SearchStreamingProps } from '../search'
+import { SearchStreamingProps } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
 
@@ -59,7 +59,6 @@ export interface RepoRevisionContainerContext
         HoverThresholdProps,
         ActivationProps,
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -94,7 +93,6 @@ interface RepoRevisionContainerProps
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,

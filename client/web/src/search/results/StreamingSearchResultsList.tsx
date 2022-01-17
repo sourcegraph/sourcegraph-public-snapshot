@@ -24,7 +24,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchContextProps } from '..'
+import { SearchContextProps2 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { SearchResult } from '../../components/SearchResult'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
@@ -38,7 +38,7 @@ export interface StreamingSearchResultsListProps
     extends ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'searchContextsEnabled' | 'selectedSearchContextSpec'> {
+        Pick<SearchContextProps2, 'selectedSearchContextSpec'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
     location: H.Location
@@ -56,7 +56,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     telemetryService,
     isLightTheme,
     isSourcegraphDotCom,
-    searchContextsEnabled,
     selectedSearchContextSpec,
     authenticatedUser,
 }) => {
@@ -126,7 +125,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             >
                 <div className="align-self-stretch">
                     {isSourcegraphDotCom &&
-                        searchContextsEnabled &&
                         authenticatedUser &&
                         results?.state === 'complete' &&
                         results?.results.length === 0 && (
@@ -152,7 +150,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
-                                searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}

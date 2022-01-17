@@ -22,7 +22,7 @@ import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { SearchContextProps, SearchStreamingProps } from '../../search'
+import { SearchStreamingProps } from '../../search'
 import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
 import { toTreeURL } from '../../util/url'
@@ -56,7 +56,6 @@ interface Props
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History

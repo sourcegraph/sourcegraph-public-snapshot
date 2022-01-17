@@ -23,8 +23,6 @@ import {
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 // This is the root Tooltip usage
@@ -58,25 +56,8 @@ import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
-import {
-    parseSearchURL,
-    getAvailableSearchContextSpecOrDefault,
-    isSearchContextSpecAvailable,
-    SearchContextProps,
-} from './search'
-import {
-    fetchSavedSearches,
-    fetchRecentSearches,
-    fetchRecentFileViews,
-    fetchAutoDefinedSearchContexts,
-    fetchSearchContexts,
-    fetchSearchContext,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
-    getUserSearchContextNamespaces,
-    fetchSearchContextBySpec,
-} from './search/backend'
+import { SearchContextInputProps } from './search'
+import { fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SearchStack } from './search/SearchStack'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
@@ -90,8 +71,9 @@ import {
     setQueryStateFromSettings,
     setQueryStateFromURL,
     setExperimentalFeaturesFromSettings,
-    getExperimentalFeatures,
+    useNavbarQueryState,
 } from './stores'
+import { initSelectedSearchContext } from './stores/navbarSearchQueryState'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -107,7 +89,7 @@ export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        Pick<SearchContextInputProps, 'searchContextsEnabled'>,
         KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -148,12 +130,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     viewerSubject: LayoutProps['viewerSubject']
 
-    selectedSearchContextSpec?: string
-    defaultSearchContextSpec: string
-    hasUserAddedRepositories: boolean
-    hasUserSyncedPublicRepositories: boolean
-    hasUserAddedExternalServices: boolean
-
     /**
      * Whether globbing is enabled for filters.
      */
@@ -172,8 +148,6 @@ const notificationClassNames = {
     [NotificationType.Warning]: 'alert alert-warning',
     [NotificationType.Error]: 'alert alert-danger',
 }
-
-const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
 
 setLinkComponent(RouterLinkOrAnchor)
 
@@ -211,25 +185,18 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
         )
 
-        setQueryStateFromURL(window.location.search)
-
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
-            defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
-            hasUserAddedRepositories: false,
-            hasUserSyncedPublicRepositories: false,
-            hasUserAddedExternalServices: false,
             globbing: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
 
     public componentDidMount(): void {
-        const parsedSearchURL = parseSearchURL(window.location.search)
-        const parsedSearchQuery = parsedSearchURL.query || ''
-
         document.documentElement.classList.add('theme')
+
+        setQueryStateFromURL(window.location.search, true)
 
         getWebGraphQLClient()
             .then(graphqlClient => {
@@ -286,7 +253,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     if (!isErrorLike(result) && result !== null) {
                         const [userRepositoriesResult, externalServicesResult] = result
 
-                        this.setState({
+                        useNavbarQueryState.setState({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
                         })
@@ -323,22 +290,18 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
         )
 
-        if (parsedSearchQuery && !filterExists(parsedSearchQuery, FilterType.context)) {
-            // If a context filter does not exist in the query, we have to switch the selected context
-            // to global to match the UI with the backend semantics (if no context is specified in the query,
-            // the query is run in global context).
-            this.setSelectedSearchContextSpec('global')
-        }
-        if (!parsedSearchQuery) {
-            // If no query is present (e.g. search page, settings page), select the last saved
-            // search context from localStorage as currently selected search context.
-            const lastSelectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
-            this.setSelectedSearchContextSpec(lastSelectedSearchContextSpec)
-        }
+        this.subscriptions.add(
+            useNavbarQueryState.subscribe(
+                state => state.selectedSearchContext,
+                selectedSearchContext => {
+                    this.setWorkspaceSearchContext(selectedSearchContext).catch(error => {
+                        console.error('Error sending search context to extensions!', error)
+                    })
+                }
+            )
+        )
 
-        this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
-            console.error('Error sending search context to extensions!', error)
-        })
+        initSelectedSearchContext(this.props.searchContextsEnabled)
 
         this.userRepositoriesUpdates.next()
     }
@@ -412,23 +375,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         extensionsController={this.extensionsController}
                                                         telemetryService={eventLogger}
                                                         isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                        searchContextsEnabled={this.props.searchContextsEnabled}
-                                                        hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                                        hasUserAddedExternalServices={
-                                                            this.state.hasUserAddedExternalServices
-                                                        }
-                                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                                                        fetchSearchContexts={fetchSearchContexts}
-                                                        fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                                        fetchSearchContext={fetchSearchContext}
-                                                        createSearchContext={createSearchContext}
-                                                        updateSearchContext={updateSearchContext}
-                                                        deleteSearchContext={deleteSearchContext}
-                                                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                                        defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                                         globbing={this.state.globbing}
                                                         isCodeInsightsGqlApiEnabled={
                                                             window.context.codeInsightsGqlApiEnabled
@@ -470,42 +416,16 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         externalServicesCount: number,
         userRepoCount: number
     ): void => {
-        this.setState({
+        useNavbarQueryState.setState({
             hasUserAddedExternalServices: externalServicesCount > 0,
             hasUserAddedRepositories: userRepoCount > 0,
         })
     }
 
     private onSyncedPublicRepositoriesUpdate = (publicReposCount: number): void => {
-        this.setState({
+        useNavbarQueryState.setState({
             hasUserSyncedPublicRepositories: publicReposCount > 0,
         })
-    }
-
-    private hasUserAddedRepositories = (): boolean =>
-        this.state.hasUserAddedRepositories || this.state.hasUserSyncedPublicRepositories
-
-    private getSelectedSearchContextSpec = (): string | undefined =>
-        getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined
-
-    private setSelectedSearchContextSpec = (spec: string): void => {
-        if (!this.props.searchContextsEnabled) {
-            return
-        }
-
-        const { defaultSearchContextSpec } = this.state
-        this.subscriptions.add(
-            getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
-                availableSearchContextSpecOrDefault => {
-                    this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
-                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
-
-                    this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
-                        console.error('Error sending search context to extensions', error)
-                    })
-                }
-            )
-        )
     }
 
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {

@@ -47,7 +47,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
-import { SearchContextProps } from '../../search'
 import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -116,7 +115,6 @@ interface Props
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */

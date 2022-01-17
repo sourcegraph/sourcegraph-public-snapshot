@@ -93,7 +93,6 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             preventNewLine={false}
             onChange={({ query }) => onChange(query)}
             patternType={patternType}
-            caseSensitive={false}
             globbing={true}
             height="auto"
             placeholder={placeholder}

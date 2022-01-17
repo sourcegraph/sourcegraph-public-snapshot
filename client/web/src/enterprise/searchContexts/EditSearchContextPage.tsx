@@ -19,23 +19,38 @@ import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { SearchContextProps } from '../../search'
+import {
+    updateSearchContext as _updateSearchContext,
+    fetchSearchContextBySpec as _fetchSearchContextBySpec,
+} from '../../search/backend'
 
 import { SearchContextForm } from './SearchContextForm'
 
 export interface EditSearchContextPageProps
     extends RouteComponentProps<{ spec: Scalars['ID'] }>,
         ThemeProps,
-        TelemetryProps,
-        Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'> {
+        TelemetryProps {
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+
+    /**
+     * updateSearchContext is exposed for testing purposes
+     */
+    updateSearchContext?: typeof _updateSearchContext
+    /**
+     * fetchSearchContextBySpec is exposed for testing purposes
+     */
+    fetchSearchContextBySpec?: typeof _fetchSearchContextBySpec
 }
 
 export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
-    const { match, updateSearchContext, fetchSearchContextBySpec } = props
+    const {
+        match,
+        updateSearchContext = _updateSearchContext,
+        fetchSearchContextBySpec = _fetchSearchContextBySpec,
+    } = props
     const onSubmit = useCallback(
         (
             id: Scalars['ID'] | undefined,

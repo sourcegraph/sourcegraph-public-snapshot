@@ -3,9 +3,7 @@ import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import React, { useEffect, useMemo } from 'react'
-import { of } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import React, { useMemo } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
@@ -14,12 +12,10 @@ import { ActivationDropdown } from '@sourcegraph/shared/src/components/activatio
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge, useObservable, Button } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -37,7 +33,6 @@ import {
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { Settings } from '../schema/settings.schema'
-import { isSearchContextSpecAvailable, SearchContextInputProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
@@ -62,7 +57,6 @@ interface Props
         ThemePreferenceProps,
         ExtensionAlertAnimationProps,
         ActivationProps,
-        SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps {
     history: H.History
@@ -104,15 +98,10 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     isSourcegraphDotCom,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
-    searchContextsEnabled,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
-
-    const query = useNavbarQueryState(state => state.searchQueryFromURL)
-
-    const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
 
     // UI includes repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
@@ -120,54 +109,10 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         ? userExternalServicesEnabledFromTags(props.authenticatedUser.tags)
         : false
 
-    const isSearchContextAvailable = useObservable(
-        useMemo(
-            () =>
-                globalSearchContextSpec && searchContextsEnabled
-                    ? // While we wait for the result of the `isSearchContextSpecAvailable` call, we assume the context is available
-                      // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
-                      // user selects a search context from the dropdown.
-                      // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
-                      isSearchContextSpecAvailable(globalSearchContextSpec.spec).pipe(startWith(true))
-                    : of(false),
-            [globalSearchContextSpec, searchContextsEnabled]
-        )
-    )
-
-    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
-
-    useEffect(() => {
-        // On a non-search related page or non-repo page, we clear the query in
-        // the main query input to avoid misleading users
-        // that the query is relevant in any way on those pages.
-        if (!showSearchBox) {
-            onNavbarQueryChange({ query: '' })
-            return
-        }
-        // Do nothing if there is no query in the URL
-        if (!query) {
-            return
-        }
-
-        // If a global search context spec is available to the user, we omit it from the
-        // query and move it to the search contexts dropdown
-        const finalQuery =
-            globalSearchContextSpec && isSearchContextAvailable && showSearchContext
-                ? omitFilter(query, globalSearchContextSpec.filter)
-                : query
-
-        onNavbarQueryChange({ query: finalQuery })
-    }, [
-        showSearchBox,
-        onNavbarQueryChange,
-        query,
-        globalSearchContextSpec,
-        isSearchContextAvailable,
-        showSearchContext,
-    ])
+    const searchContextsEnabled = useNavbarQueryState(state => state.searchContextsEnabled)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
@@ -180,7 +125,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             history={history}
             isLightTheme={isLightTheme}
             isSourcegraphDotCom={isSourcegraphDotCom}
-            searchContextsEnabled={searchContextsEnabled}
             isRepositoryRelatedPage={isRepositoryRelatedPage}
         />
     )

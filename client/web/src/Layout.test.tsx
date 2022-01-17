@@ -2,6 +2,7 @@ import { render } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
+import { ScrollManager } from 'react-scroll-manager'
 import { NEVER } from 'rxjs'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -19,6 +20,8 @@ jest.mock('./theme', () => ({
     }),
 }))
 
+jest.mock('./search/input/SearchBox.tsx', () => ({ SearchBox: () => <span /> }))
+
 describe('Layout', () => {
     const defaultProps: LayoutProps = ({
         // Parsed query components
@@ -28,7 +31,7 @@ describe('Layout', () => {
         setCaseSensitivity: () => {},
 
         // Other minimum props required to render
-        routes: [],
+        routes: [{ path: '/search', exact: true, render: () => {} }],
         navbarSearchQueryState: { query: '' },
         onNavbarQueryChange: () => {},
         settingsCascade: {
@@ -52,15 +55,17 @@ describe('Layout', () => {
 
     it('should update patternType if different between URL and context', () => {
         const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
+        history.replace({ pathname: '/search', search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
 
         useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
 
         render(
             <MockedTestProvider>
-                <BrowserRouter>
-                    <Layout {...defaultProps} history={history} location={history.location} />
-                </BrowserRouter>
+                <ScrollManager history={history}>
+                    <BrowserRouter>
+                        <Layout {...defaultProps} history={history} location={history.location} />
+                    </BrowserRouter>
+                </ScrollManager>
             </MockedTestProvider>
         )
 
@@ -69,14 +74,16 @@ describe('Layout', () => {
 
     it('should not update patternType if query is empty', () => {
         const history = createBrowserHistory()
-        history.replace({ search: 'q=&patternType=regexp' })
+        history.replace({ pathname: '/search', search: 'q=&patternType=regexp' })
 
         useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
 
         render(
             <MockedTestProvider>
                 <BrowserRouter>
-                    <Layout {...defaultProps} history={history} location={history.location} />
+                    <ScrollManager history={history}>
+                        <Layout {...defaultProps} history={history} location={history.location} />
+                    </ScrollManager>
                 </BrowserRouter>
             </MockedTestProvider>
         )
@@ -86,14 +93,16 @@ describe('Layout', () => {
 
     it('should update caseSensitive if different between URL and context', () => {
         const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis case:yes' })
+        history.replace({ pathname: '/search', search: 'q=r:golang/oauth2+test+f:travis case:yes' })
 
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
             <MockedTestProvider>
                 <BrowserRouter>
-                    <Layout {...defaultProps} history={history} location={history.location} />
+                    <ScrollManager history={history}>
+                        <Layout {...defaultProps} history={history} location={history.location} />
+                    </ScrollManager>
                 </BrowserRouter>
             </MockedTestProvider>
         )
@@ -103,14 +112,16 @@ describe('Layout', () => {
 
     it('should not update caseSensitive if query is empty', () => {
         const history = createBrowserHistory()
-        history.replace({ search: 'q=case:yes' })
+        history.replace({ pathname: '/search', search: 'q=case:yes' })
 
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
             <MockedTestProvider>
                 <BrowserRouter>
-                    <Layout {...defaultProps} history={history} location={history.location} />
+                    <ScrollManager history={history}>
+                        <Layout {...defaultProps} history={history} location={history.location} />
+                    </ScrollManager>
                 </BrowserRouter>
             </MockedTestProvider>
         )

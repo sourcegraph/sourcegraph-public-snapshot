@@ -18,7 +18,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button } from '@sourcegraph/wildcard'
 
-import { SearchStreamingProps, SearchContextProps } from '..'
+import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
@@ -41,7 +41,6 @@ import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<ActivationProps, 'activation'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
@@ -80,6 +79,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
+    const selectedSearchContext = useNavbarQueryState(state => state.selectedSearchContext)
 
     // Log view event on first load
     useEffect(
@@ -171,10 +171,10 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                           query,
                           caseSensitive,
                           patternType,
-                          searchContext: props.selectedSearchContextSpec,
+                          searchContext: selectedSearchContext,
                       }
                     : null,
-            [results, query, patternType, caseSensitive, props.selectedSearchContextSpec]
+            [results, query, patternType, caseSensitive, selectedSearchContext]
         )
     )
 
@@ -243,7 +243,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 patternType={patternType}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
+                selectedSearchContextSpec={selectedSearchContext}
                 className={classNames(
                     styles.streamingSearchResultsSidebar,
                     showSidebar && styles.streamingSearchResultsSidebarShow
@@ -279,7 +279,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 query={query}
                 patternType={patternType}
                 caseSensitive={caseSensitive}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
+                selectedSearchContextSpec={selectedSearchContext}
             />
 
             <div className={styles.streamingSearchResultsContainer}>

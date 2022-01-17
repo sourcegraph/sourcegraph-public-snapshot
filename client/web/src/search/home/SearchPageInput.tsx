@@ -1,7 +1,6 @@
 import * as H from 'history'
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { Form } from 'reactstrap'
-import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -10,7 +9,6 @@ import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/s
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
@@ -21,8 +19,14 @@ import {
     setSearchCaseSensitivity,
     setSearchPatternType,
 } from '../../stores'
+import {
+    NavbarQueryState,
+    setSelectedSearchContext,
+    submitSearchWithGlobalQueryState,
+} from '../../stores/navbarSearchQueryState'
 import { ThemePreferenceProps } from '../../theme'
-import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
+import { fetchAutoDefinedSearchContexts, fetchSearchContexts, getUserSearchContextNamespaces } from '../backend'
+import { SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
@@ -37,8 +41,8 @@ interface Props
         KeyboardShortcutsProps,
         TelemetryProps,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        Pick<SubmitSearchParameters, 'source'>,
-        SearchContextInputProps {
+        Pick<SubmitSearchParameters, 'source'> {
+    selectedSearchContextSpec?: string
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -55,9 +59,25 @@ interface Props
 
 const queryStateSelector = (
     state: NavbarQueryState
-): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps => ({
-    caseSensitive: state.searchCaseSensitivity,
-    patternType: state.searchPatternType,
+): Pick<
+    NavbarQueryState,
+    | 'searchCaseSensitivity'
+    | 'searchPatternType'
+    | 'selectedSearchContext'
+    | 'defaultSearchContext'
+    | 'searchContextsEnabled'
+    | 'hasUserAddedRepositories'
+    | 'hasUserAddedExternalServices'
+    | 'hasUserSyncedPublicRepositories'
+> => ({
+    searchCaseSensitivity: state.searchCaseSensitivity,
+    searchPatternType: state.searchPatternType,
+    selectedSearchContext: state.selectedSearchContext,
+    defaultSearchContext: state.defaultSearchContext,
+    searchContextsEnabled: state.searchContextsEnabled,
+    hasUserAddedExternalServices: state.hasUserAddedExternalServices,
+    hasUserAddedRepositories: state.hasUserAddedRepositories,
+    hasUserSyncedPublicRepositories: state.hasUserSyncedPublicRepositories,
 })
 
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
@@ -65,7 +85,17 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const [userQueryState, setUserQueryState] = useState({
         query: props.queryPrefix ? props.queryPrefix : '',
     })
-    const { caseSensitive, patternType } = useNavbarQueryState(queryStateSelector, shallow)
+    const {
+        selectedSearchContext,
+        searchContextsEnabled,
+        hasUserAddedExternalServices,
+        hasUserAddedRepositories,
+        hasUserSyncedPublicRepositories,
+        defaultSearchContext,
+        searchCaseSensitivity,
+        searchPatternType,
+    } = useNavbarQueryState(queryStateSelector, shallow)
+
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
@@ -93,23 +123,17 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
                 : userQueryState.query
 
-            if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
-                submitSearch({
-                    source: 'home',
-                    query,
-                    history: props.history,
-                    patternType,
-                    caseSensitive,
-                    activation: props.activation,
-                    selectedSearchContextSpec: props.selectedSearchContextSpec,
-                    ...parameters,
-                })
-            }
+            submitSearchWithGlobalQueryState({
+                source: 'home',
+                query,
+                history: props.history,
+                activation: props.activation,
+                selectedSearchContextSpec: props.selectedSearchContextSpec,
+                ...parameters,
+            })
         },
         [
             props.history,
-            patternType,
-            caseSensitive,
             props.activation,
             props.selectedSearchContextSpec,
             props.hiddenQueryPrefix,
@@ -137,8 +161,17 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         {...onboardingTourQueryInputProps}
                         showSearchContext={showSearchContext}
                         showSearchContextManagement={showSearchContextManagement}
-                        caseSensitive={caseSensitive}
-                        patternType={patternType}
+                        searchContextsEnabled={searchContextsEnabled}
+                        selectedSearchContext={props.selectedSearchContextSpec || selectedSearchContext}
+                        hasUserAddedRepositories={hasUserAddedRepositories || hasUserSyncedPublicRepositories}
+                        defaultSearchContextSpec={defaultSearchContext}
+                        hasUserAddedExternalServices={hasUserAddedExternalServices}
+                        setSelectedSearchContextSpec={setSelectedSearchContext}
+                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                        fetchSearchContexts={fetchSearchContexts}
+                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                        caseSensitive={searchCaseSensitivity}
+                        patternType={searchPatternType}
                         setPatternType={setSearchPatternType}
                         setCaseSensitivity={setSearchCaseSensitivity}
                         submitSearchOnToggle={submitSearchOnChange}

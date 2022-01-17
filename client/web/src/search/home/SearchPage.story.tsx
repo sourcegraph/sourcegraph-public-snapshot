@@ -4,11 +4,6 @@ import { createMemoryHistory } from 'history'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    mockFetchAutoDefinedSearchContexts,
-    mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
-} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -36,20 +31,11 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     globbing: false,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    searchContextsEnabled: true,
-    selectedSearchContextSpec: '',
-    setSelectedSearchContextSpec: () => {},
-    defaultSearchContextSpec: '',
     isLightTheme: props.isLightTheme,
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
     now: () => parseISO('2020-09-16T23:15:01Z'),
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
-    fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
-    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     featureFlags: new Map(),
     extensionViews: () => null,
 })

@@ -20,13 +20,16 @@ import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
-import { SearchContextProps } from '../../search'
+import { fetchSearchContextBySpec as _fetchSearchContextBySpec } from '../../search/backend'
 
 import styles from './SearchContextPage.module.scss'
 
-export interface SearchContextPageProps
-    extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'>,
-        Pick<SearchContextProps, 'fetchSearchContextBySpec'> {}
+export interface SearchContextPageProps extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'> {
+    /**
+     * fetchSearchContextBySpec is exposed for testing purposes
+     */
+    fetchSearchContextBySpec?: typeof _fetchSearchContextBySpec
+}
 
 const initialRepositoriesToShow = 15
 const incrementalRepositoriesToShow = 10
@@ -129,7 +132,7 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
 export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
-    const { match, fetchSearchContextBySpec } = props
+    const { match, fetchSearchContextBySpec = _fetchSearchContextBySpec } = props
 
     const searchContextOrError = useObservable(
         React.useMemo(

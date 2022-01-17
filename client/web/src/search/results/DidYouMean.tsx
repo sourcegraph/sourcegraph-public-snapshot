@@ -9,7 +9,7 @@ import { createLiteral, Pattern, Token } from '@sourcegraph/shared/src/search/qu
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps2 } from '..'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import styles from './DidYouMean.module.scss'
@@ -118,7 +118,7 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
 interface DidYouMeanProps
     extends SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps2, 'selectedSearchContextSpec'>,
         TelemetryProps {
     query: string
 }

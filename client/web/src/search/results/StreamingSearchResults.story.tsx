@@ -60,7 +60,6 @@ const defaultProps: StreamingSearchResultsProps = {
     featureFlags: EMPTY_FEATURE_FLAGS,
     extensionViews: () => null,
     isSourcegraphDotCom: false,
-    searchContextsEnabled: true,
 }
 
 const { add } = storiesOf('web/search/results/StreamingSearchResults', module)
@@ -69,7 +68,10 @@ const { add } = storiesOf('web/search/results/StreamingSearchResults', module)
     })
     .addDecorator(Story => {
         useExperimentalFeatures.setState({ codeMonitoring: true, showSearchContext: true })
-        useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
+        useNavbarQueryState.setState({
+            searchContextsEnabled: true,
+            searchQueryFromURL: 'r:golang/oauth2 test f:travis',
+        })
         return <Story />
     })
 

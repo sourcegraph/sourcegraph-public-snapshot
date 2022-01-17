@@ -76,6 +76,7 @@ export interface SearchContextMenuProps
         SearchContextInputProps,
         'setSelectedSearchContextSpec' | 'hasUserAddedRepositories' | 'hasUserAddedExternalServices'
     > {
+    selectedSearchContextSpec?: string
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
     closeMenu: (isEscapeKey?: boolean) => void

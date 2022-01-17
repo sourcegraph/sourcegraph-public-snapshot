@@ -3,14 +3,13 @@ import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
+import { SearchPatternTypeProps, SearchContextProps2 } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
@@ -54,9 +53,8 @@ export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstruction
 
 export interface MonacoQueryInputProps
     extends ThemeProps,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
         SearchPatternTypeProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
+        Pick<SearchContextProps2, 'selectedSearchContextSpec'> {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
@@ -67,7 +65,6 @@ export interface MonacoQueryInputProps
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     onEditorCreated?: (editor: Monaco.editor.IStandaloneCodeEditor) => void
     autoFocus?: boolean
-    keyboardShortcutForFocus?: KeyboardShortcut
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -166,8 +163,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     editorOptions,
     onHandleFuzzyFinder,
     editorClassName,
-    caseSensitive,
-    keyboardShortcutForFocus,
     onEditorCreated: onEditorCreatedCallback,
     placeholder,
 }) => {

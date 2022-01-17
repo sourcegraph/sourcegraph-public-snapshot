@@ -13,6 +13,7 @@ import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
 import { useTemporarySetting } from '../settings/temporary/useTemporarySetting'
+import { setSelectedSearchContext } from '../stores/navbarSearchQueryState'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
@@ -31,7 +32,6 @@ interface PostSignUpPage {
     context: Pick<SourcegraphContext, 'authProviders'>
     telemetryService: TelemetryService
     onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
-    setSelectedSearchContextSpec: (spec: string) => void
 }
 
 interface Step {
@@ -56,7 +56,6 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     context,
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
-    setSelectedSearchContextSpec,
 }) => {
     const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting(
         'signup.finishedWelcomeFlow',
@@ -199,7 +198,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                 onUserExternalServicesOrRepositoriesUpdate={
                                                     onUserExternalServicesOrRepositoriesUpdate
                                                 }
-                                                setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                                                setSelectedSearchContextSpec={setSelectedSearchContext}
                                                 onError={onError}
                                             />
                                         </StepPanel>

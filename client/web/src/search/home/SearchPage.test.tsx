@@ -4,11 +4,6 @@ import React from 'react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    mockFetchAutoDefinedSearchContexts,
-    mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
-} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { useExperimentalFeatures } from '../../stores'
@@ -52,19 +47,10 @@ describe('SearchPage', () => {
         globbing: false,
         platformContext: {} as any,
         keyboardShortcuts: [],
-        searchContextsEnabled: true,
-        selectedSearchContextSpec: '',
-        setSelectedSearchContextSpec: () => {},
-        defaultSearchContextSpec: '',
         isLightTheme: true,
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
-        fetchSearchContexts: mockFetchSearchContexts,
-        hasUserAddedRepositories: false,
-        hasUserAddedExternalServices: false,
-        getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         featureFlags: new Map(),
         extensionViews: () => null,
     }

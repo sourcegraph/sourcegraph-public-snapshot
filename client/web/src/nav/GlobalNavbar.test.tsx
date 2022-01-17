@@ -4,14 +4,9 @@ import React from 'react'
 import { MemoryRouter } from 'react-router'
 
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
-import {
-    mockFetchAutoDefinedSearchContexts,
-    mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
-} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { useExperimentalFeatures } from '../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -38,19 +33,10 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     telemetryService: {} as any,
     isExtensionAlertAnimating: false,
     showSearchBox: true,
-    selectedSearchContextSpec: '',
-    setSelectedSearchContextSpec: () => undefined,
-    defaultSearchContextSpec: '',
     variant: 'default',
     globbing: false,
     branding: undefined,
     routes: [],
-    searchContextsEnabled: true,
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
-    fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
-    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     extensionViews: () => null,
 }
 
@@ -59,6 +45,7 @@ describe('GlobalNavbar', () => {
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
     beforeEach(() => {
         useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
+        useNavbarQueryState.setState({ searchContextsEnabled: true })
     })
 
     test('default', () => {

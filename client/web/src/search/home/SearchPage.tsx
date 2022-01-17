@@ -9,14 +9,14 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { HomePanelsProps, SearchContextInputProps } from '..'
+import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
@@ -34,7 +34,6 @@ export interface SearchPageProps
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings'>,
-        SearchContextInputProps,
         HomePanelsProps,
         CodeInsightsProps,
         FeatureFlagProps {
@@ -54,8 +53,6 @@ export interface SearchPageProps
 export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const { extensionViews: ExtensionViewsSection } = props
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
-    const onboardingTourEnabled = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
-    const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL) !== ''
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
     return (
@@ -71,11 +68,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                     [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
                 })}
             >
-                <SearchPageInput
-                    {...props}
-                    showOnboardingTour={onboardingTourEnabled && !hasSearchQuery}
-                    source="home"
-                />
+                <SearchPageInput {...props} source="home" />
                 <ExtensionViewsSection
                     className="mt-5"
                     telemetryService={props.telemetryService}

@@ -155,7 +155,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     telemetryService={props.telemetryService}
                     context={window.context}
                     onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
-                    setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (
                 <Redirect to={PageRoutes.Search} />

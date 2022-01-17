@@ -19,6 +19,7 @@ export interface SearchContextDropdownProps
     extends SearchContextInputProps,
         TelemetryProps,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
+    selectedSearchContextSpec?: string
     isSourcegraphDotCom: boolean
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null

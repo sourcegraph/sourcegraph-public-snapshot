@@ -3,18 +3,23 @@
 // application of this library is not recommended at this point.
 // It is used here because it solves a very real performance issue
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
-import create from 'zustand'
+import create, { GetState, SetState } from 'zustand'
+import { StoreApiWithSubscribeWithSelector, subscribeWithSelector } from 'zustand/middleware'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { appendFilter, omitFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { parseSearchURL } from '../search'
+import { SettingsExperimentalFeatures } from '../schema/settings.schema'
+import { getAvailableSearchContextSpecOrDefault, parseSearchURL } from '../search'
 import { QueryState, SubmitSearchParameters, submitSearch, toggleSubquery, canSubmitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
+
+import { useExperimentalFeatures } from './experimentalFeatures'
 
 type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)
 
@@ -48,6 +53,8 @@ export type QueryUpdate =
           value: string
       }
 
+const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
+
 function updateQuery(query: string, updates: QueryUpdate[]): string {
     return updates.reduce((query, update) => {
         switch (update.type) {
@@ -76,7 +83,39 @@ export interface NavbarQueryState {
     queryState: QueryState
     searchCaseSensitivity: boolean
     searchPatternType: SearchPatternType
+    /**
+     * The currently active/submitted query.
+     */
     searchQueryFromURL: string
+    /**
+     * The currently selected search context. Don't read this value directly
+     * from the store, use the `useSelectedSearchContext` hook instead. This
+     * hook also takes into account whether search contexts are enabled or not.
+     */
+    selectedSearchContext: string
+    defaultSearchContext: string
+    /**
+     * Used to determine whether or not search contexts are available at all.
+     * Should be set at app initialization time.
+     */
+    searchContextsEnabled: boolean
+
+    /**
+     * Used for determining whether or not show the search context CTA. Set in
+     * the application root.
+     */
+    hasUserAddedRepositories: boolean
+
+    /**
+     * Used for determining whether or not show the search context CTA. Set in
+     * the application root.
+     */
+    hasUserSyncedPublicRepositories: boolean
+
+    /**
+     * Used in the search context CTA. Set in the application root.
+     */
+    hasUserAddedExternalServices: boolean
 
     // ACTIONS
     /**
@@ -91,37 +130,81 @@ export interface NavbarQueryState {
      * Note that this won't update `queryState` directly.
      */
     submitSearch: (
-        parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive' | 'patternType'>,
+        parameters: Omit<
+            SubmitSearchParameters,
+            'query' | 'caseSensitive' | 'patternType' | 'selectedSearchContextSpec'
+        >,
         updates?: QueryUpdate[]
     ) => void
 }
 
-export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
-    queryState: { query: '' },
-    searchCaseSensitivity: false,
-    searchPatternType: SearchPatternType.literal,
-    searchQueryFromURL: '',
+export const useNavbarQueryState = create<
+    NavbarQueryState,
+    SetState<NavbarQueryState>,
+    GetState<NavbarQueryState>,
+    StoreApiWithSubscribeWithSelector<NavbarQueryState>
+>(
+    subscribeWithSelector(
+        (set, get): NavbarQueryState => ({
+            queryState: { query: '' },
+            searchCaseSensitivity: false,
+            searchPatternType: SearchPatternType.literal,
+            searchQueryFromURL: '',
+            searchContextsEnabled: false,
+            defaultSearchContext: 'global', // users will be able to set the default in the future
+            selectedSearchContext: '',
 
-    setQueryState: queryStateUpdate => {
-        if (typeof queryStateUpdate === 'function') {
-            set({ queryState: queryStateUpdate(get().queryState) })
-        } else {
-            set({ queryState: queryStateUpdate })
-        }
-    },
+            hasUserAddedRepositories: false,
+            hasUserSyncedPublicRepositories: false,
+            hasUserAddedExternalServices: false,
 
-    submitSearch: (parameters, updates = []) => {
-        const {
-            queryState: { query },
-            searchCaseSensitivity: caseSensitive,
-            searchPatternType: patternType,
-        } = get()
-        const updatedQuery = updateQuery(query, updates)
-        if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
-            submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType })
-        }
-    },
-}))
+            setQueryState: queryStateUpdate => {
+                if (typeof queryStateUpdate === 'function') {
+                    set({ queryState: queryStateUpdate(get().queryState) })
+                } else {
+                    set({ queryState: queryStateUpdate })
+                }
+            },
+
+            submitSearch: (parameters, updates = []) => {
+                const {
+                    queryState: { query },
+                    searchCaseSensitivity: caseSensitive,
+                    searchPatternType: patternType,
+                    selectedSearchContext,
+                } = get()
+                const updatedQuery = updateQuery(query, updates)
+                if (canSubmitSearch(query, selectedSearchContext)) {
+                    submitSearch({
+                        ...parameters,
+                        query: updatedQuery,
+                        caseSensitive,
+                        patternType,
+                        selectedSearchContextSpec: selectedSearchContext,
+                    })
+                }
+            },
+        })
+    )
+)
+
+const featureSelector = (features: SettingsExperimentalFeatures): boolean => features.showSearchContext ?? false
+const contextSelector = (state: NavbarQueryState): NavbarQueryState['selectedSearchContext'] =>
+    state.selectedSearchContext
+const contextEnabledSelector = (state: NavbarQueryState): NavbarQueryState['searchContextsEnabled'] =>
+    state.searchContextsEnabled
+
+export const useSelectedSearchContext = (): string | undefined => {
+    const showSearchContext = useExperimentalFeatures(featureSelector)
+    const selectedSearchContext = useNavbarQueryState(contextSelector)
+    const searchContextEnabled = useNavbarQueryState(contextEnabledSelector)
+
+    return searchContextEnabled && showSearchContext ? selectedSearchContext : undefined
+}
+
+export function setQuery(query: string): void {
+    useNavbarQueryState.setState({ queryState: { query } })
+}
 
 export function setSearchPatternType(searchPatternType: SearchPatternType): void {
     useNavbarQueryState.setState({ searchPatternType })
@@ -131,14 +214,50 @@ export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
     useNavbarQueryState.setState({ searchCaseSensitivity })
 }
 
+export function setSelectedSearchContext(spec: string): void {
+    const { searchContextsEnabled, defaultSearchContext } = useNavbarQueryState.getState()
+
+    if (!searchContextsEnabled) {
+        return
+    }
+
+    getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContext }).subscribe(
+        availableSearchContextSpecOrDefault => {
+            useNavbarQueryState.setState({ selectedSearchContext: availableSearchContextSpecOrDefault })
+            localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+        }
+    )
+}
+
+/**
+ * initSelectedSearchContext restores the previously selected search context
+ * from local storage. It should be called when the application is initialized.
+ */
+export function initSelectedSearchContext(searchContextsEnabled: boolean): void {
+    if (searchContextsEnabled) {
+        setSelectedSearchContext(
+            localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) ?? useNavbarQueryState.getState().defaultSearchContext
+        )
+        useNavbarQueryState.setState({ searchContextsEnabled: true })
+    }
+}
+
 /**
  * Update or initialize query state related data from URL search parameters
  */
-export function setQueryStateFromURL(urlParameters: string): void {
+export function setQueryStateFromURL(urlParameters: string, showSearchContext: boolean): void {
     // This will be updated with the default in settings when the web app mounts.
     const newState: Partial<
-        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL'>
+        Pick<
+            NavbarQueryState,
+            | 'queryState'
+            | 'searchPatternType'
+            | 'searchCaseSensitivity'
+            | 'searchQueryFromURL'
+            | 'selectedSearchContext'
+        >
     > = {}
+    const { searchContextsEnabled, selectedSearchContext, defaultSearchContext } = useNavbarQueryState.getState()
 
     const parsedSearchURL = parseSearchURL(urlParameters)
 
@@ -150,7 +269,50 @@ export function setQueryStateFromURL(urlParameters: string): void {
         }
     }
 
-    newState.searchQueryFromURL = parsedSearchURL.query ?? ''
+    const query = parsedSearchURL.query ?? ''
+    newState.searchQueryFromURL = query
+    newState.queryState = { query }
+
+    if (showSearchContext && searchContextsEnabled && parsedSearchURL.query) {
+        const newSearchContext = getGlobalSearchContextFilter(query)
+
+        if (newSearchContext) {
+            const queryWithoutContext = omitFilter(query, newSearchContext.filter)
+
+            // While we wait for the result of the
+            // `getAvailableSearchContextSpecOrDefault` call, we assume the context
+            // is available to prevent flashing and moving content in the query bar.
+            // This optimizes for the most common use case where user selects a
+            // search context from the dropdown. See
+            // https://github.com/sourcegraph/sourcegraph/issues/19918 for more
+            // info.
+            newState.queryState.query = queryWithoutContext
+
+            if (newSearchContext.spec !== selectedSearchContext) {
+                getAvailableSearchContextSpecOrDefault({
+                    spec: newSearchContext.spec,
+                    defaultSpec: defaultSearchContext,
+                }).subscribe(availableSearchContextSpecOrDefault => {
+                    newState.queryState = {
+                        // If a global search context spec is available to the user, we omit it from the
+                        // query and move it to the search contexts dropdown.
+                        query:
+                            availableSearchContextSpecOrDefault === newSearchContext.spec ? queryWithoutContext : query,
+                    }
+
+                    newState.selectedSearchContext = availableSearchContextSpecOrDefault
+
+                    useNavbarQueryState.setState(newState as any)
+                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+                })
+            }
+        } else {
+            // If a context filter does not exist in the query, we have to switch the selected context
+            // to global to match the UI with the backend semantics (if no context is specified in the query,
+            // the query is run in global context).
+            newState.selectedSearchContext = 'global'
+        }
+    }
 
     // The way Zustand is designed makes it difficult to build up a partial new
     // state object, hence the cast to any here.
@@ -199,7 +361,28 @@ export function buildSearchURLQueryFromQueryState(parameters: BuildSearchQueryUR
         parameters.query,
         parameters.patternType ?? currentState.searchPatternType,
         parameters.caseSensitive ?? currentState.searchCaseSensitivity,
-        parameters.searchContextSpec,
+        parameters.searchContextSpec ?? currentState.selectedSearchContext,
         parameters.searchParametersList
     )
+}
+
+type SubmitSearchParametersFromState = 'query' | 'caseSensitive' | 'patternType' | 'selectedSearchContextSpec'
+
+export function submitSearchWithGlobalQueryState(
+    parameters: Partial<Pick<SubmitSearchParameters, SubmitSearchParametersFromState>> &
+        Omit<SubmitSearchParameters, SubmitSearchParametersFromState>
+): void {
+    const currentState = useNavbarQueryState.getState()
+
+    const completeParameters: SubmitSearchParameters = {
+        query: currentState.queryState.query,
+        caseSensitive: currentState.searchCaseSensitivity,
+        patternType: currentState.searchPatternType,
+        selectedSearchContextSpec: currentState.selectedSearchContext,
+        ...parameters,
+    }
+
+    if (canSubmitSearch(completeParameters.query, completeParameters.selectedSearchContextSpec)) {
+        submitSearch(completeParameters)
+    }
 }

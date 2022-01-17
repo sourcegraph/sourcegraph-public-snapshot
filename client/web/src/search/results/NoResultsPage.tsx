@@ -10,10 +10,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
-import { SearchContextProps } from '..'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
-import { useExperimentalFeatures } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { ModalVideo } from '../documentation/ModalVideo'
 import searchBoxStyle from '../input/SearchBox.module.scss'
 import searchContextDropDownStyles from '../input/SearchContextDropdown.module.scss'
@@ -172,18 +171,18 @@ const videos = [
     },
 ]
 
-interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
+interface NoResultsPageProps extends ThemeProps, TelemetryProps {
     isSourcegraphDotCom: boolean
 }
 
 export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
-    searchContextsEnabled,
     isLightTheme,
     telemetryService,
     isSourcegraphDotCom,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const searchContextsEnabled = useNavbarQueryState(state => state.searchContextsEnabled)
 
     const onClose = useCallback(
         sectionID => {

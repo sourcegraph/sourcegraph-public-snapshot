@@ -16,7 +16,6 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { SearchContextProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
 import { useQueryDiagnostics } from '../useQueryIntelligence'
@@ -34,7 +33,6 @@ import { BlockProps, QueryBlock } from '.'
 interface SearchNotebookQueryBlockProps
     extends BlockProps,
         QueryBlock,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps {
@@ -175,7 +173,6 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                     <div className={styles.results}>
                         <StreamingSearchResultsList
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            searchContextsEnabled={props.searchContextsEnabled}
                             location={location}
                             allExpanded={false}
                             results={searchResults}

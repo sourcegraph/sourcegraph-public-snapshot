@@ -19,7 +19,7 @@ import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/Aw
 import { Container, Button, RadioButton, TextArea, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SearchContextProps } from '../../search'
+import { deleteSearchContext as _deleteSearchContext } from '../../search/backend'
 import { LazyMonacoQueryInput } from '../../search/input/LazyMonacoQueryInput'
 import { getExperimentalFeatures } from '../../stores'
 
@@ -89,11 +89,7 @@ function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searc
 
 const LOADING = 'loading' as const
 
-export interface SearchContextFormProps
-    extends RouteComponentProps,
-        ThemeProps,
-        TelemetryProps,
-        Pick<SearchContextProps, 'deleteSearchContext'> {
+export interface SearchContextFormProps extends RouteComponentProps, ThemeProps, TelemetryProps {
     searchContext?: ISearchContext
     query?: string
     authenticatedUser: AuthenticatedUser
@@ -104,6 +100,11 @@ export interface SearchContextFormProps
         searchContext: SearchContextInput,
         repositories: SearchContextRepositoryRevisionsInput[]
     ) => Observable<ISearchContext>
+
+    /**
+     * deleteSearchContext is exposed for testing purposes
+     */
+    deleteSearchContext?: typeof _deleteSearchContext
 }
 
 const searchContextVisibility = (searchContext: ISearchContext): SelectedVisibility =>
@@ -120,7 +121,13 @@ type RepositoriesParseResult =
       }
 
 export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
-    const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom } = props
+    const {
+        authenticatedUser,
+        onSubmit,
+        searchContext,
+        deleteSearchContext = _deleteSearchContext,
+        isSourcegraphDotCom,
+    } = props
     const history = useHistory()
     const experimentalFeatures = getExperimentalFeatures()
 
@@ -403,7 +410,6 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                caseSensitive={true}
                                 queryState={{ query }}
                                 onChange={({ query }) => setQuery(query)}
                                 onSubmit={() => {}}

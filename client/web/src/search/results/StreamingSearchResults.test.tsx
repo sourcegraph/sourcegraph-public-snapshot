@@ -53,7 +53,6 @@ describe('StreamingSearchResults', () => {
         featureFlags: EMPTY_FEATURE_FLAGS,
         extensionViews: () => null,
         isSourcegraphDotCom: false,
-        searchContextsEnabled: true,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
@@ -78,6 +77,7 @@ describe('StreamingSearchResults', () => {
         useNavbarQueryState.setState({
             searchCaseSensitivity: false,
             searchQueryFromURL: 'r:golang/oauth2 test f:travis',
+            searchContextsEnabled: true,
         })
         useExperimentalFeatures.setState({ showSearchContext: true, codeMonitoring: false })
     })

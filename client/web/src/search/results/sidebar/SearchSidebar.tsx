@@ -138,7 +138,6 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     {getSearchTypeLinks({
                         onNavbarQueryChange: setQueryState,
                         query,
-                        selectedSearchContextSpec: props.selectedSearchContextSpec,
                     })}
                 </SearchSidebarSection>
                 <SearchSidebarSection

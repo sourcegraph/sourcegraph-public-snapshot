@@ -9,15 +9,15 @@ import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SearchContextProps } from '../../search'
+import {
+    fetchAutoDefinedSearchContexts,
+    fetchSearchContexts,
+    getUserSearchContextNamespaces,
+} from '../../search/backend'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
 
-export interface SearchContextsListPageProps
-    extends Pick<
-        SearchContextProps,
-        'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
-    > {
+export interface SearchContextsListPageProps {
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
@@ -112,7 +112,14 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         </div>
                     </div>
                 </div>
-                {selectedTab === 'list' && <SearchContextsListTab {...props} />}
+                {selectedTab === 'list' && (
+                    <SearchContextsListTab
+                        {...props}
+                        fetchSearchContexts={fetchSearchContexts}
+                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                    />
+                )}
             </Page>
         </div>
     )

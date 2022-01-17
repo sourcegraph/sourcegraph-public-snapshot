@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -8,7 +8,6 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
@@ -49,16 +48,10 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
 import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
 import { Settings } from './schema/settings.schema'
-import {
-    parseSearchURLQuery,
-    HomePanelsProps,
-    SearchStreamingProps,
-    parseSearchURL,
-    SearchContextProps,
-} from './search'
+import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { setQueryStateFromURL } from './stores'
+import { setQueryStateFromURL, useExperimentalFeatures } from './stores'
 import { useThemeProps } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -75,7 +68,6 @@ export interface LayoutProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ActivationProps,
-        SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
         UserExternalServicesOrRepositoriesUpdateProps,
@@ -129,24 +121,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
+    const { location } = props
+
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
 
     // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
-    const { history, selectedSearchContextSpec, location, setSelectedSearchContextSpec } = props
-
-    useEffect(() => setQueryStateFromURL(location.search), [location.search])
-
-    const { query = '' } = useMemo(() => parseSearchURL(location.search), [location.search])
-
-    const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
-
     useEffect(() => {
-        // Only override filters from URL if there is a search query
-        if (query) {
-            if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
-                setSelectedSearchContextSpec(searchContextSpec)
-            }
-        }
-    }, [history, selectedSearchContextSpec, query, setSelectedSearchContextSpec, searchContextSpec])
+        setQueryStateFromURL(location.search, showSearchContext)
+    }, [location.search, showSearchContext])
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
