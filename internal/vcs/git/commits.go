@@ -89,10 +89,7 @@ func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt Reso
 		N:                1,
 		NoEnsureRevision: opt.NoEnsureRevision,
 	}
-	if checker != nil && checker.Enabled() {
-		// If sub-repo permissions enabled, must fetch files modified w/ commits to determine if user has access to view this commit
-		commitOptions.NameOnly = true
-	}
+	commitOptions = addOpts(commitOptions, checker)
 
 	commits, err := commitLog(ctx, repo, commitOptions, checker)
 	if err != nil {
@@ -136,11 +133,7 @@ func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
-
-	if checker != nil && checker.Enabled() {
-		// If sub-repo permissions enabled, must fetch files modified w/ commits to determine if user has access to view this commit
-		opt.NameOnly = true
-	}
+	opt = addOpts(opt, checker)
 	return commitLog(ctx, repo, opt, checker)
 }
 
@@ -188,6 +181,7 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 // commits on {branchName} not also on the tip of the default branch. If the
 // supplied branch name is the default branch, then this method instead returns
 // all commits reachable from HEAD.
+// TODO: sub-repo
 func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
 	args := []string{"log", "--pretty=format:%H:%cI"}
 	if maxAge != nil {
@@ -367,6 +361,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // CommitCount returns the number of commits that would be returned by Commits.
+// TODO: sub-repo filtering
 func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
@@ -394,7 +389,8 @@ func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (ui
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error) {
+// TODO: sub-repo filtering
+func FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit")
 	defer span.Finish()
 
@@ -406,12 +402,12 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit,
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
 	id := api.CommitID(bytes.TrimSpace(out))
-	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, nil)
+	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
 }
 
 // CommitExists determines if the given commit exists in the given repository.
-func CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool, error) {
-	c, err := getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, nil)
+func CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID, checker authz.SubRepoPermissionChecker) (bool, error) {
+	c, err := getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
 	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		return false, nil
 	}
@@ -705,4 +701,12 @@ func CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions
 	}
 
 	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
+}
+
+func addOpts(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {
+	if checker != nil && checker.Enabled() {
+		// If sub-repo permissions enabled, must fetch files modified w/ commits to determine if user has access to view this commit
+		opt.NameOnly = true
+	}
+	return opt
 }

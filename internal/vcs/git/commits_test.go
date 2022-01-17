@@ -16,6 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
+var (
+	fileWithAccess    = "file-with-access"
+	fileWithoutAccess = "file-without-access"
+)
+
 func TestRepository_GetCommit(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
@@ -25,14 +30,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
-	gitCommandsWithFiles := []string{
-		"touch file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"touch file2",
-		"git add file2",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	}
+	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
 
 	oldRunCommitLog := runCommitLog
 
@@ -110,7 +108,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	}
 	// Run basic tests w/o sub-repo permissions checker
 	runGetCommitTests(nil, tests)
-	checker := getTestSubRepoPermsChecker("file2")
+	checker := getTestSubRepoPermsChecker(fileWithoutAccess)
 	// Add test cases with file names for sub-repo permissions testing
 	tests["with sub-repo permissions and access to file"] = testCase{
 		repo: MakeGitRepository(t, gitCommandsWithFiles...),
@@ -210,6 +208,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	}
 }
 
+// TODO: sub-repo
 func TestRepository_FirstEverCommit(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -242,7 +241,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 		}
 
 		repo := MakeGitRepository(t, gitCommands...)
-		gotCommit, err := FirstEverCommit(ctx, repo)
+		gotCommit, err := FirstEverCommit(ctx, repo, nil) // TODO
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -253,6 +252,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	}
 }
 
+// TODO: sub-repo
 func TestHead(t *testing.T) {
 	t.Parallel()
 
@@ -277,29 +277,42 @@ func TestHead(t *testing.T) {
 
 func TestCommitExists(t *testing.T) {
 	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+
+	testCommitExists := func(label string, gitCommands []string, commitID, nonExistentCommitID api.CommitID, checker authz.SubRepoPermissionChecker) {
+		t.Run(label, func(t *testing.T) {
+			repo := MakeGitRepository(t, gitCommands...)
+
+			exists, err := CommitExists(ctx, repo, commitID, checker)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !exists {
+				t.Fatal("Should exist")
+			}
+
+			exists, err = CommitExists(ctx, repo, NonExistentCommitID, checker)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if exists {
+				t.Fatal("Should not exist")
+			}
+		})
+	}
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
-	repo := MakeGitRepository(t, gitCommands...)
-	ctx := context.Background()
-
-	wantCommit := api.CommitID("ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8")
-	exists, err := CommitExists(ctx, repo, wantCommit)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !exists {
-		t.Fatal("Should exist")
-	}
-
-	exists, err = CommitExists(ctx, repo, NonExistentCommitID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if exists {
-		t.Fatal("Should not exist")
-	}
+	testCommitExists("basic", gitCommands, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", NonExistentCommitID, nil)
+	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
+	commitIDWithAccess := api.CommitID("da50eed82c8ff3c17bb642000d8aad9d434283c1")
+	commitIDWithoutAccess := api.CommitID("ee7773505e98390e809cbf518b2a92e4748b0187")
+	// Test that the commit ID the user has access to exists, and CommitExists returns false for the commit ID the user
+	// doesn't have access to (since a file was modified in the commit that the user doesn't have permissions to view)
+	testCommitExists("with sub-repo permissions filtering", gitCommandsWithFiles, commitIDWithAccess, commitIDWithoutAccess, getTestSubRepoPermsChecker(fileWithoutAccess))
 }
 
 func TestRepository_Commits(t *testing.T) {
@@ -859,4 +872,15 @@ func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermission
 		return authz.Read, nil
 	})
 	return checker
+}
+
+func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
+	return []string{
+		fmt.Sprintf("touch %s", fileName1),
+		fmt.Sprintf("git add %s", fileName1),
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		fmt.Sprintf("touch %s", fileName2),
+		fmt.Sprintf("git add %s", fileName2),
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
 }
