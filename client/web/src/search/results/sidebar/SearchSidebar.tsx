@@ -14,7 +14,6 @@ import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/Te
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { OnboardingTour } from '../../../onboarding-tour/OnboardingTour'
 import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
@@ -45,6 +44,11 @@ export interface SearchSidebarProps
      * Not yet implemented in the VS Code extension (blocked on Apollo Client integration).
      * */
     getRevisions?: (revisionsProps: Omit<RevisionsProps, 'query'>) => (query: string) => JSX.Element
+
+    /**
+     * Content to render inside sidebar, but before other sections.
+     */
+    prefixContent?: JSX.Element
 }
 
 const selectFromQueryState = ({
@@ -224,7 +228,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
-            {props.showOnboardingTour && <OnboardingTour className="mb-1" telemetryService={props.telemetryService} />}
+            {props.prefixContent}
             {body}
         </div>
     )

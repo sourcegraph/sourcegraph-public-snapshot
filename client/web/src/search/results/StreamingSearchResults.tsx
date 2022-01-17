@@ -25,6 +25,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
+import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { useExperimentalFeatures, useNavbarQueryState, useSearchStack } from '../../stores'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
@@ -236,11 +237,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
             <SearchSidebar
                 activation={props.activation}
-                showOnboardingTour={
-                    props.isSourcegraphDotCom &&
-                    !props.authenticatedUser &&
-                    props.featureFlags.get('getting-started-tour')
-                }
                 caseSensitive={caseSensitive}
                 patternType={patternType}
                 settingsCascade={props.settingsCascade}
@@ -253,6 +249,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 filters={results?.filters}
                 useQueryState={useNavbarQueryState}
                 getRevisions={getRevisions}
+                prefixContent={
+                    props.isSourcegraphDotCom &&
+                    !props.authenticatedUser &&
+                    props.featureFlags.get('getting-started-tour') ? (
+                        <OnboardingTour className="mb-1" telemetryService={props.telemetryService} />
+                    ) : undefined
+                }
             />
 
             <SearchResultsInfoBar
