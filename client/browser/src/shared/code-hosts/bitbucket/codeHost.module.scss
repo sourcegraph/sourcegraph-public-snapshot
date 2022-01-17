@@ -124,14 +124,6 @@
     & + & {
         margin-left: 0.25rem !important;
     }
-
-    // use !important with sync css color from aui-button
-    color: #344563 !important;
-
-    &:hover {
-        color: #344563 !important;
-        text-decoration: none !important;
-    }
 }
 
 .btn-icon {
