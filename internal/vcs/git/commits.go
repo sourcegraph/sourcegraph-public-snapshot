@@ -55,7 +55,7 @@ var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
+func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (_ *gitdomain.Commit, err error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
 	}
@@ -89,12 +89,19 @@ func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt Reso
 		N:                1,
 		NoEnsureRevision: opt.NoEnsureRevision,
 	}
+	if checker != nil && checker.Enabled() {
+		// If sub-repo permissions enabled, must fetch files modified w/ commits to determine if user has access to view this commit
+		commitOptions.NameOnly = true
+	}
 
-	commits, err := commitLog(ctx, repo, commitOptions, nil)
+	commits, err := commitLog(ctx, repo, commitOptions, checker)
 	if err != nil {
 		return nil, err
 	}
 
+	if len(commits) == 0 {
+		return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
+	}
 	if len(commits) != 1 {
 		return nil, errors.Errorf("git log: expected 1 commit, got %d", len(commits))
 	}
@@ -108,12 +115,12 @@ func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt Reso
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error) {
+func GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
-	return getCommit(ctx, repo, id, opt)
+	return getCommit(ctx, repo, id, opt, checker)
 }
 
 // Commits returns all commits matching the options.
@@ -399,12 +406,12 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit,
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
 	id := api.CommitID(bytes.TrimSpace(out))
-	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
+	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, nil)
 }
 
 // CommitExists determines if the given commit exists in the given repository.
 func CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool, error) {
-	c, err := getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
+	c, err := getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, nil)
 	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		return false, nil
 	}

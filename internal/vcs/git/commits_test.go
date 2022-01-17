@@ -17,12 +17,76 @@ import (
 )
 
 func TestRepository_GetCommit(t *testing.T) {
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
+	gitCommandsWithFiles := []string{
+		"touch file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"touch file2",
+		"git add file2",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	oldRunCommitLog := runCommitLog
+
+	type testCase struct {
+		repo                  api.RepoName
+		id                    api.CommitID
+		wantCommit            *gitdomain.Commit
+		noEnsureRevision      bool
+		revisionNotFoundError bool
+	}
+
+	runGetCommitTests := func(checker authz.SubRepoPermissionChecker, tests map[string]testCase) {
+		for label, test := range tests {
+			t.Run(label, func(t *testing.T) {
+				var noEnsureRevision bool
+				t.Cleanup(func() {
+					runCommitLog = oldRunCommitLog
+				})
+				runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*wrappedCommit, error) {
+					// Track the value of NoEnsureRevision we pass to gitserver
+					noEnsureRevision = opt.NoEnsureRevision
+					return oldRunCommitLog(ctx, cmd, opt)
+				}
+
+				resolveRevisionOptions := ResolveRevisionOptions{
+					NoEnsureRevision: test.noEnsureRevision,
+				}
+				commit, err := GetCommit(ctx, test.repo, test.id, resolveRevisionOptions, checker)
+				if err != nil {
+					if test.revisionNotFoundError {
+						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+							t.Errorf("%s: GetCommit: expected a RevisionNotFoundError, got %s", label, err)
+						}
+						return
+					}
+					t.Errorf("%s: GetCommit: %s", label, err)
+				}
+
+				if !CommitsEqual(commit, test.wantCommit) {
+					t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
+				}
+
+				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
+				if _, err := GetCommit(ctx, test.repo, NonExistentCommitID, resolveRevisionOptions, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
+				}
+
+				if noEnsureRevision != test.noEnsureRevision {
+					t.Fatalf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
+				}
+			})
+		}
+	}
+
 	wantGitCommit := &gitdomain.Commit{
 		ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
 		Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
@@ -30,12 +94,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		Message:   "bar",
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
-	tests := map[string]struct {
-		repo             api.RepoName
-		id               api.CommitID
-		wantCommit       *gitdomain.Commit
-		noEnsureRevision bool
-	}{
+	tests := map[string]testCase{
 		"git cmd with NoEnsureRevision false": {
 			repo:             MakeGitRepository(t, gitCommands...),
 			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
@@ -49,42 +108,30 @@ func TestRepository_GetCommit(t *testing.T) {
 			noEnsureRevision: true,
 		},
 	}
-
-	oldRunCommitLog := runCommitLog
-
-	for label, test := range tests {
-		var noEnsureRevision bool
-		t.Cleanup(func() {
-			runCommitLog = oldRunCommitLog
-		})
-		runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*wrappedCommit, error) {
-			// Track the value of NoEnsureRevision we pass to gitserver
-			noEnsureRevision = opt.NoEnsureRevision
-			return oldRunCommitLog(ctx, cmd, opt)
-		}
-
-		resolveRevisionOptions := ResolveRevisionOptions{
-			NoEnsureRevision: test.noEnsureRevision,
-		}
-		commit, err := GetCommit(ctx, test.repo, test.id, resolveRevisionOptions)
-		if err != nil {
-			t.Errorf("%s: GetCommit: %s", label, err)
-			continue
-		}
-
-		if !CommitsEqual(commit, test.wantCommit) {
-			t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
-		}
-
-		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := GetCommit(ctx, test.repo, NonExistentCommitID, resolveRevisionOptions); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
-		}
-
-		if noEnsureRevision != test.noEnsureRevision {
-			t.Fatalf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
-		}
+	// Run basic tests w/o sub-repo permissions checker
+	runGetCommitTests(nil, tests)
+	checker := getTestSubRepoPermsChecker("file2")
+	// Add test cases with file names for sub-repo permissions testing
+	tests["with sub-repo permissions and access to file"] = testCase{
+		repo: MakeGitRepository(t, gitCommandsWithFiles...),
+		id:   "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
+		wantCommit: &gitdomain.Commit{
+			ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
+			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message:   "commit1",
+		},
+		noEnsureRevision: true,
 	}
+	tests["with sub-repo permissions and NO access to file"] = testCase{
+		repo:                  MakeGitRepository(t, gitCommandsWithFiles...),
+		id:                    "2ba4dd2b9a27ec125fea7d72e12b9824ead18631",
+		wantCommit:            &gitdomain.Commit{},
+		noEnsureRevision:      true,
+		revisionNotFoundError: true,
+	}
+	// Run test w/ sub-repo permissions filtering
+	runGetCommitTests(checker, tests)
 }
 
 func TestRepository_HasCommitAfter(t *testing.T) {
@@ -798,12 +845,17 @@ func checkCommits(t *testing.T, label string, commits, wantCommits []*gitdomain.
 }
 
 // get a test sub-repo permissions checker which allows access to all files (so should be a no-op)
-func getTestSubRepoPermsChecker() authz.SubRepoPermissionChecker {
+func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermissionChecker {
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
 	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		for _, noAccessPath := range noAccessPaths {
+			if content.Path == noAccessPath {
+				return authz.None, nil
+			}
+		}
 		return authz.Read, nil
 	})
 	return checker
