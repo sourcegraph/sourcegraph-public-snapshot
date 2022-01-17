@@ -112,9 +112,9 @@ func TestRepository_GetCommit(t *testing.T) {
 	// Add test cases with file names for sub-repo permissions testing
 	tests["with sub-repo permissions and access to file"] = testCase{
 		repo: MakeGitRepository(t, gitCommandsWithFiles...),
-		id:   "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
+		id:   "da50eed82c8ff3c17bb642000d8aad9d434283c1",
 		wantCommit: &gitdomain.Commit{
-			ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
+			ID:        "da50eed82c8ff3c17bb642000d8aad9d434283c1",
 			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "commit1",
@@ -123,7 +123,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	}
 	tests["with sub-repo permissions and NO access to file"] = testCase{
 		repo:                  MakeGitRepository(t, gitCommandsWithFiles...),
-		id:                    "2ba4dd2b9a27ec125fea7d72e12b9824ead18631",
+		id:                    "ee7773505e98390e809cbf518b2a92e4748b0187",
 		wantCommit:            &gitdomain.Commit{},
 		noEnsureRevision:      true,
 		revisionNotFoundError: true,
@@ -208,7 +208,6 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	}
 }
 
-// TODO: sub-repo
 func TestRepository_FirstEverCommit(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -241,7 +240,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 		}
 
 		repo := MakeGitRepository(t, gitCommands...)
-		gotCommit, err := FirstEverCommit(ctx, repo, nil) // TODO
+		gotCommit, err := FirstEverCommit(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -252,7 +251,6 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	}
 }
 
-// TODO: sub-repo
 func TestHead(t *testing.T) {
 	t.Parallel()
 
