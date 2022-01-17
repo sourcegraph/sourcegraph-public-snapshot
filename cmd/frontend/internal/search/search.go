@@ -597,7 +597,7 @@ func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
 var metricLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_search_streaming_latency_seconds",
 	Help:    "Histogram with time to first result in seconds",
-	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
 }, []string{"source"})
 
 var searchBlitzUserAgentRegexp = lazyregexp.New(`^SearchBlitz \(([^\)]+)\)$`)
