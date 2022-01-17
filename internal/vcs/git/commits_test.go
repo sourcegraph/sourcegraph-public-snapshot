@@ -257,7 +257,9 @@ func TestCommitExists(t *testing.T) {
 
 func TestRepository_Commits(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	// TODO(sqs): test CommitsOptions.Base
 
@@ -313,8 +315,7 @@ func TestRepository_Commits(t *testing.T) {
 
 func TestCommits_SubRepoPerms(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
 	checker := authz.NewMockSubRepoPermissionChecker()
@@ -344,6 +345,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	tests := map[string]struct {
 		repo        api.RepoName
 		wantCommits []*gitdomain.Commit
+		opt         CommitsOptions
 		wantTotal   uint
 	}{
 		"if no read perms on file should filter out commit": {
@@ -358,10 +360,35 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 				},
 			},
 		},
+		"sub-repo perms with path (w/ no access) specified should return no commits": {
+			repo:      MakeGitRepository(t, gitCommands...),
+			wantTotal: 1,
+			opt: CommitsOptions{
+				//Range: "master",
+				Path: "file2",
+			},
+			wantCommits: []*gitdomain.Commit{},
+		},
+		"sub-repo perms with path (w/ access) specified should return that commit": {
+			repo:      MakeGitRepository(t, gitCommands...),
+			wantTotal: 1,
+			opt: CommitsOptions{
+				//Range: "master",
+				Path: "file1",
+			},
+			wantCommits: []*gitdomain.Commit{
+				{
+					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Message:   "commit1",
+				},
+			},
+		},
 	}
 
 	for label, test := range tests {
-		commits, err := Commits(ctx, test.repo, CommitsOptions{}, checker)
+		commits, err := Commits(ctx, test.repo, test.opt, checker)
 		if err != nil {
 			t.Errorf("%s: Commits(): %s", label, err)
 			return
@@ -455,7 +482,9 @@ func TestRepository_Commits_options(t *testing.T) {
 
 func TestRepository_Commits_options_path(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -775,7 +804,7 @@ func getTestSubRepoPermsChecker() authz.SubRepoPermissionChecker {
 		return true
 	})
 	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		return authz.None, nil
+		return authz.Read, nil
 	})
 	return checker
 }

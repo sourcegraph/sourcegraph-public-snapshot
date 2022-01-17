@@ -350,12 +350,11 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.Range != "" {
 		args = append(args, opt.Range)
 	}
-
-	if opt.Path != "" {
-		args = append(args, "--", opt.Path)
-	}
 	if opt.NameOnly {
 		args = append(args, "--name-only")
+	}
+	if opt.Path != "" {
+		args = append(args, "--", opt.Path)
 	}
 	return args, nil
 }
