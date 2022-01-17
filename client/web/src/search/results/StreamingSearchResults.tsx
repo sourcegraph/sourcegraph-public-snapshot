@@ -35,6 +35,7 @@ import { DidYouMean } from './DidYouMean'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
+import { getRevisions } from './sidebar/Revisions'
 import { SearchSidebar } from './sidebar/SearchSidebar'
 import styles from './StreamingSearchResults.module.scss'
 
@@ -251,6 +252,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
                 filters={results?.filters}
                 useQueryState={useNavbarQueryState}
+                getRevisions={getRevisions}
             />
 
             <SearchResultsInfoBar

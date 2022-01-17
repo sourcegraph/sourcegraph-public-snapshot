@@ -20,7 +20,7 @@ import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
-import { getRevisions } from './Revisions'
+import { RevisionsProps } from './Revisions'
 import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
@@ -40,6 +40,11 @@ export interface SearchSidebarProps
      * for search.
      */
     useQueryState: UseStore<SearchQueryState>
+
+    /**
+     * Not yet implemented in the VS Code extension (blocked on Apollo Client integration).
+     * */
+    getRevisions?: (revisionsProps: Omit<RevisionsProps, 'query'>) => (query: string) => JSX.Element
 }
 
 const selectFromQueryState = ({
@@ -166,7 +171,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         {repoFilterLinks}
                     </SearchSidebarSection>
                 ) : null}
-                {repoName ? (
+                {props.getRevisions && repoName ? (
                     <SearchSidebarSection
                         sectionId={SectionID.REVISIONS}
                         className={styles.searchSidebarItem}
@@ -176,7 +181,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         showSearch={true}
                         clearSearchOnChange={repoName}
                     >
-                        {getRevisions({ repoName, onFilterClick: submitQueryWithProps })}
+                        {props.getRevisions({ repoName, onFilterClick: submitQueryWithProps })}
                     </SearchSidebarSection>
                 ) : null}
                 <SearchSidebarSection
