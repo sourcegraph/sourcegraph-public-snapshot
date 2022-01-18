@@ -4,6 +4,10 @@ import { Constraint, Flipping, Overlapping, Position } from '../models/tether-mo
 import { getScrollParents } from './tether-browser'
 import { Tether, TetherLayout } from './types'
 
+/**
+ * Collects all information about current layout (tether and popover elements rectangle),
+ * constrains rectangles (viewport and scrollable parent elements).
+ */
 export function getLayout(tether: Tether): TetherLayout {
     const {
         position = Position.top,

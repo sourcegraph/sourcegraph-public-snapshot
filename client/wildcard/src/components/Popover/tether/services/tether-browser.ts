@@ -25,8 +25,6 @@ export function getScrollPositions(element: Element): ScrollPositions {
 
 /**
  * Returns list of all parent elements that have scroll.
- *
- * @param element
  */
 export function getScrollParents(element: Element): HTMLElement[] {
     const containers: HTMLElement[] = []
@@ -63,14 +61,14 @@ export function setScrollPositions(positions: ScrollPositions): void {
  * visible.
  */
 export function isVisible(element: HTMLElement | null): boolean {
-    if (element === null) {
-        return true
-    }
-    if (element.hidden !== null && element.hidden) {
-        return false
-    }
-    if (element.parentElement !== null) {
-        return isVisible(element.parentElement)
+    let current = element
+
+    while (current) {
+        if (current.hidden !== null && current.hidden) {
+            return false
+        }
+
+        current = current.parentElement
     }
     return true
 }

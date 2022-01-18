@@ -44,7 +44,7 @@ export const createRectangleFromPoints = (a: Point, b: Point): Rectangle => {
  * Returns intersection of two rectangles. Returns empty rectangle in case
  * if input rectangles don't have any intersection area.
  */
-export function intersection(a: Rectangle, b: Rectangle): Rectangle {
+export function getIntersection(a: Rectangle, b: Rectangle): Rectangle {
     const xStart = Math.max(a.left, b.left)
     const xEnd = Math.min(a.left + a.width, b.left + b.width)
 

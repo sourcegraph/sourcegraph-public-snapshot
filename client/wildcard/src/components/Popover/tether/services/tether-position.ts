@@ -1,5 +1,5 @@
 import { createPoint, Point } from '../models/geometry/point'
-import { intersection, intersects, Rectangle } from '../models/geometry/rectangle'
+import { getIntersection, intersects, Rectangle } from '../models/geometry/rectangle'
 import { Position } from '../models/tether-models'
 
 import {
@@ -49,7 +49,7 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
     const { markerAngle, markerOrigin, rotatedMarker } = getMarkerRotation(marker, position)
 
     // Apply overflow constraints to target element
-    const overflowedTarget = intersection(target, overflow)
+    const overflowedTarget = getIntersection(target, overflow)
 
     // Force tooltip layout hide in case if target is outside of overflow constraint.
     if (!isElementVisible(overflowedTarget)) {

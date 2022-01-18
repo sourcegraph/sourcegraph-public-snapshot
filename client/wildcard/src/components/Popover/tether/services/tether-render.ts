@@ -21,7 +21,7 @@ import { Tether } from './types'
 export function render(tether: Tether, eventTarget: HTMLElement | null): void {
     const positions = getScrollPositions(tether.element)
 
-    if (!positions.points.has(<Element>eventTarget)) {
+    if (!positions.points.has(eventTarget as Element)) {
         setMaxSize(tether.element, null)
     }
 
@@ -42,7 +42,7 @@ export function render(tether: Tether, eventTarget: HTMLElement | null): void {
     setTransform(tether.element, 0, state.elementOffset)
     setTransform(tether.marker ?? null, state.markerAngle, state.markerOffset)
 
-    if (!positions.points.has(<Element>eventTarget)) {
+    if (!positions.points.has(eventTarget as Element)) {
         setMaxSize(tether.element, state.elementBounds)
         setScrollPositions(positions)
     }

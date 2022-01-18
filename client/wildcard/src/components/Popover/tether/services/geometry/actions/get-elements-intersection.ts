@@ -1,5 +1,10 @@
 import { createPoint } from '../../../models/geometry/point'
-import { createRectangle, createRectangleFromPoints, intersection, Rectangle } from '../../../models/geometry/rectangle'
+import {
+    createRectangle,
+    createRectangleFromPoints,
+    getIntersection,
+    Rectangle,
+} from '../../../models/geometry/rectangle'
 import { Constraint, Padding } from '../../../models/tether-models'
 
 import { getRoundedElement } from './rectangle-position-helpers'
@@ -25,7 +30,7 @@ export function getElementsIntersection(constraints: Constraint[]): Rectangle {
         const content = getContentElement(element, constraint.padding)
 
         constrainedArea = constrainedArea ?? content
-        constrainedArea = intersection(constrainedArea, content)
+        constrainedArea = getIntersection(constrainedArea, content)
     }
 
     return constrainedArea ?? createRectangle(0, 0, 0, 0)

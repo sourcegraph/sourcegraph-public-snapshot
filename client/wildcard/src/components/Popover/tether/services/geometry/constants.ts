@@ -101,4 +101,4 @@ export const POSITION_VARIANTS = {
         targetAttachments: createPoint(0, 1),
         targetOffset: createPoint(1, 0),
     },
-}
+} as const
