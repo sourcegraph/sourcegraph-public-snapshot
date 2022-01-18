@@ -1,11 +1,12 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
-import { Modal } from 'reactstrap'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { KeyboardShortcutsProps } from './keyboardShortcuts'
+import styles from './KeyboardShortcutsHelp.module.scss'
 
 interface Props extends KeyboardShortcutsProps {
     /** The keyboard shortcut to show this modal. */
@@ -24,6 +25,8 @@ const LEGACY_KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     },
 ]
 
+const MODAL_LABEL_ID = 'keyboard-shortcuts-help-modal-title'
+
 export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
     keyboardShortcutForShow,
     keyboardShortcuts,
@@ -36,14 +39,20 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
             {keyboardShortcutForShow.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
             ))}
-            <Modal isOpen={isOpen} toggle={toggleIsOpen} centered={true} autoFocus={true} keyboard={true} fade={false}>
-                <div className="modal-header">
-                    <h4 className="modal-title">Keyboard shortcuts</h4>
-                    <Button className="btn-icon" data-dismiss="modal" aria-label="Close" onClick={toggleIsOpen}>
-                        <span aria-hidden="true">&times;</span>
+            <Modal
+                position="center"
+                isOpen={isOpen}
+                onDismiss={toggleIsOpen}
+                aria-labelledby={MODAL_LABEL_ID}
+                containerClassName={styles.modalContainer}
+            >
+                <div className={styles.modalHeader}>
+                    <h4 id={MODAL_LABEL_ID}>Keyboard shortcuts</h4>
+                    <Button className="btn-icon" aria-label="Close" onClick={toggleIsOpen}>
+                        <CloseIcon className="icon-inline" />
                     </Button>
                 </div>
-                <div className="modal-body modal-body--full">
+                <div>
                     <ul className="list-group list-group-flush">
                         {[...keyboardShortcuts, ...LEGACY_KEYBOARD_SHORTCUTS]
                             .filter(({ hideInHelp }) => !hideInHelp)

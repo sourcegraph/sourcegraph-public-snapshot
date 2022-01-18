@@ -13,8 +13,6 @@ if [ -n "$POSTGRES_PASSWORD" ]; then
   export PGPASSWORD="$POSTGRES_PASSWORD"
 fi
 
-PGHOST="$(hostname)"
-export PGHOST
 export PGUSER="$POSTGRES_USER"
 export PGDATABASE="$POSTGRES_DB"
 export PGCONNECT_TIMEOUT=10

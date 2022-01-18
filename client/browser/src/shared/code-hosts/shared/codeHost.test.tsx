@@ -22,8 +22,8 @@ import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { IQuery } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 import { subtypeOf, allOf, check, isTaggedUnionMember } from '@sourcegraph/shared/src/util/types'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 

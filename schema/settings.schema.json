@@ -177,7 +177,6 @@
         "fuzzyFinder": {
           "description": "Enables fuzzy finder with keyboard shortcut `t`.",
           "type": "boolean",
-          "default": true,
           "!go": {
             "pointer": true
           }

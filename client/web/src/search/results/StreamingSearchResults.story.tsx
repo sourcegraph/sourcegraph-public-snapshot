@@ -11,7 +11,7 @@ import {
     HIGHLIGHTED_FILE_LINES_LONG,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULTS_WITH_METADATA,
-} from '@sourcegraph/shared/src/util/searchTestHelpers'
+} from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'

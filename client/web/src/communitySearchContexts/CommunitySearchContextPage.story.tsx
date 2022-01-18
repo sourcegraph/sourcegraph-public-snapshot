@@ -12,7 +12,7 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 

@@ -324,6 +324,7 @@ function mockCommonGraphQLResponses(
                     username: 'bob',
                 },
                 currentSpec: {
+                    id: 'specID1',
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                     codeHostsWithoutWebhooks: {

@@ -1,12 +1,10 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback } from 'react'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useEventObservable, Modal } from '@sourcegraph/wildcard'
 
 import { deleteNotebook as _deleteNotebook } from './backend'
 
@@ -47,12 +45,7 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> =
     )
 
     return (
-        <Dialog
-            isOpen={isOpen}
-            className="modal-body modal-body--centered p-4 rounded border"
-            onDismiss={toggleDeleteModal}
-            aria-labelledby={deleteLabelId}
-        >
+        <Modal isOpen={isOpen} position="center" onDismiss={toggleDeleteModal} aria-labelledby={deleteLabelId}>
             <h3 className="text-danger" id={deleteLabelId}>
                 Delete the notebook?
             </h3>
@@ -76,6 +69,6 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> =
                 </div>
             )}
             {deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
-        </Dialog>
+        </Modal>
     )
 }

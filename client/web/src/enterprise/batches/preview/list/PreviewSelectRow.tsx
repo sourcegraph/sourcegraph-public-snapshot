@@ -3,8 +3,7 @@ import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { useMemo, useContext } from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchSpecApplyPreviewVariables, Scalars } from '../../../../graphql-operations'
 import { Action, DropdownButton } from '../../DropdownButton'

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -442,7 +443,7 @@ func hasBatchIgnoreFile(ctx context.Context, r *RepoRevision) (_ bool, err error
 	}()
 
 	const path = ".batchignore"
-	stat, err := git.Stat(ctx, r.Repo.Name, r.Commit, path)
+	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil

@@ -9,7 +9,9 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
@@ -55,7 +57,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		t.Cleanup(func() {
 			runCommitLog = oldRunCommitLog
 		})
-		runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*gitdomain.Commit, error) {
+		runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*wrappedCommit, error) {
 			// Track the value of NoEnsureRevision we pass to gitserver
 			noEnsureRevision = opt.NoEnsureRevision
 			return oldRunCommitLog(ctx, cmd, opt)
@@ -255,7 +257,9 @@ func TestCommitExists(t *testing.T) {
 
 func TestRepository_Commits(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	// TODO(sqs): test CommitsOptions.Base
 
@@ -292,45 +296,109 @@ func TestRepository_Commits(t *testing.T) {
 			wantTotal:   2,
 		},
 	}
+	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
+		for label, test := range tests {
+			t.Run(label, func(t *testing.T) {
+				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantTotal, test.wantCommits, t)
+
+				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
+				if _, err := Commits(ctx, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}, nil); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
+				}
+			})
+		}
+	}
+	runCommitsTests(nil)
+	checker := getTestSubRepoPermsChecker()
+	runCommitsTests(checker)
+}
+
+func TestCommits_SubRepoPerms(t *testing.T) {
+	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if content.Path == "file2" || content.Path == "file3" {
+			return authz.None, nil
+		}
+		return authz.Read, nil
+	})
+	gitCommands := []string{
+		"touch file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"touch file2",
+		"git add file2",
+		"touch file2.2",
+		"git add file2.2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
+		"touch file3",
+		"git add file3",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
+	}
+
+	tests := map[string]struct {
+		repo        api.RepoName
+		wantCommits []*gitdomain.Commit
+		opt         CommitsOptions
+		wantTotal   uint
+	}{
+		"if no read perms on file should filter out commit": {
+			repo:      MakeGitRepository(t, gitCommands...),
+			wantTotal: 1,
+			wantCommits: []*gitdomain.Commit{
+				{
+					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Message:   "commit1",
+				},
+			},
+		},
+		"sub-repo perms with path (w/ no access) specified should return no commits": {
+			repo:      MakeGitRepository(t, gitCommands...),
+			wantTotal: 1,
+			opt: CommitsOptions{
+				//Range: "master",
+				Path: "file2",
+			},
+			wantCommits: []*gitdomain.Commit{},
+		},
+		"sub-repo perms with path (w/ access) specified should return that commit": {
+			repo:      MakeGitRepository(t, gitCommands...),
+			wantTotal: 1,
+			opt: CommitsOptions{
+				//Range: "master",
+				Path: "file1",
+			},
+			wantCommits: []*gitdomain.Commit{
+				{
+					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Message:   "commit1",
+				},
+			},
+		},
+	}
 
 	for label, test := range tests {
-		commits, err := Commits(ctx, test.repo, CommitsOptions{Range: string(test.id)})
+		commits, err := Commits(ctx, test.repo, test.opt, checker)
 		if err != nil {
-			t.Errorf("%s: Commits: %s", label, err)
-			continue
-		}
-
-		total, err := CommitCount(ctx, test.repo, CommitsOptions{Range: string(test.id)})
-		if err != nil {
-			t.Errorf("%s: CommitCount: %s", label, err)
-			continue
-		}
-
-		if total != test.wantTotal {
-			t.Errorf("%s: got %d total commits, want %d", label, total, test.wantTotal)
+			t.Errorf("%s: Commits(): %s", label, err)
+			return
 		}
 
 		if len(commits) != len(test.wantCommits) {
 			t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
 		}
 
-		for i := 0; i < len(commits) || i < len(test.wantCommits); i++ {
-			var gotC, wantC *gitdomain.Commit
-			if i < len(commits) {
-				gotC = commits[i]
-			}
-			if i < len(test.wantCommits) {
-				wantC = test.wantCommits[i]
-			}
-			if !CommitsEqual(gotC, wantC) {
-				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
-			}
-		}
-
-		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := Commits(ctx, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
-		}
+		checkCommits(t, label, commits, test.wantCommits)
 	}
 }
 
@@ -400,46 +468,23 @@ func TestRepository_Commits_options(t *testing.T) {
 			wantTotal: 1,
 		},
 	}
-
-	for label, test := range tests {
-		commits, err := Commits(ctx, test.repo, test.opt)
-		if err != nil {
-			t.Errorf("%s: Commits(): %s", label, err)
-			continue
-		}
-
-		total, err := CommitCount(ctx, test.repo, test.opt)
-		if err != nil {
-			t.Errorf("%s: CommitCount(): %s", label, err)
-			continue
-		}
-
-		if total != test.wantTotal {
-			t.Errorf("%s: got %d total commits, want %d", label, total, test.wantTotal)
-		}
-
-		if len(commits) != len(test.wantCommits) {
-			t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
-		}
-
-		for i := 0; i < len(commits) || i < len(test.wantCommits); i++ {
-			var gotC, wantC *gitdomain.Commit
-			if i < len(commits) {
-				gotC = commits[i]
-			}
-			if i < len(test.wantCommits) {
-				wantC = test.wantCommits[i]
-			}
-			if !CommitsEqual(gotC, wantC) {
-				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
-			}
+	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
+		for label, test := range tests {
+			t.Run(label, func(t *testing.T) {
+				testCommits(ctx, label, test.repo, test.opt, checker, test.wantTotal, test.wantCommits, t)
+			})
 		}
 	}
+	runCommitsTests(nil)
+	checker := getTestSubRepoPermsChecker()
+	runCommitsTests(checker)
 }
 
 func TestRepository_Commits_options_path(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -484,40 +529,16 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		},
 	}
 
-	for label, test := range tests {
-		commits, err := Commits(ctx, test.repo, test.opt)
-		if err != nil {
-			t.Errorf("%s: Commits(): %s", label, err)
-			continue
-		}
-
-		total, err := CommitCount(ctx, test.repo, test.opt)
-		if err != nil {
-			t.Errorf("%s: CommitCount: %s", label, err)
-			continue
-		}
-
-		if total != test.wantTotal {
-			t.Errorf("%s: got %d total commits, want %d", label, total, test.wantTotal)
-		}
-
-		if len(commits) != len(test.wantCommits) {
-			t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
-		}
-
-		for i := 0; i < len(commits) || i < len(test.wantCommits); i++ {
-			var gotC, wantC *gitdomain.Commit
-			if i < len(commits) {
-				gotC = commits[i]
-			}
-			if i < len(test.wantCommits) {
-				wantC = test.wantCommits[i]
-			}
-			if !CommitsEqual(gotC, wantC) {
-				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
-			}
+	runCommitsTest := func(checker authz.SubRepoPermissionChecker) {
+		for label, test := range tests {
+			t.Run(label, func(t *testing.T) {
+				testCommits(ctx, label, test.repo, test.opt, checker, test.wantTotal, test.wantCommits, t)
+			})
 		}
 	}
+	runCommitsTest(nil)
+	checker := getTestSubRepoPermsChecker()
+	runCommitsTest(checker)
 }
 
 func TestMessage(t *testing.T) {
@@ -736,4 +757,54 @@ func TestParseRefDescriptions(t *testing.T) {
 	if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
 		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
 	}
+}
+
+func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
+	t.Helper()
+	commits, err := Commits(ctx, repo, opt, checker)
+	if err != nil {
+		t.Errorf("%s: Commits(): %s", label, err)
+		return
+	}
+
+	total, err := CommitCount(ctx, repo, opt)
+	if err != nil {
+		t.Errorf("%s: CommitCount(): %s", label, err)
+		return
+	}
+	if total != wantTotal {
+		t.Errorf("%s: got %d total commits, want %d", label, total, wantTotal)
+	}
+	if len(commits) != len(wantCommits) {
+		t.Errorf("%s: got %d commits, want %d", label, len(commits), len(wantCommits))
+	}
+	checkCommits(t, label, commits, wantCommits)
+}
+
+func checkCommits(t *testing.T, label string, commits, wantCommits []*gitdomain.Commit) {
+	t.Helper()
+	for i := 0; i < len(commits) || i < len(wantCommits); i++ {
+		var gotC, wantC *gitdomain.Commit
+		if i < len(commits) {
+			gotC = commits[i]
+		}
+		if i < len(wantCommits) {
+			wantC = wantCommits[i]
+		}
+		if !CommitsEqual(gotC, wantC) {
+			t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
+		}
+	}
+}
+
+// get a test sub-repo permissions checker which allows access to all files (so should be a no-op)
+func getTestSubRepoPermsChecker() authz.SubRepoPermissionChecker {
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		return authz.Read, nil
+	})
+	return checker
 }

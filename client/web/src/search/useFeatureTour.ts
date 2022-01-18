@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import Shepherd from 'shepherd.js'
 
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import styles from './FeatureTour.module.scss'
 import { defaultTourOptions } from './input/tour-options'
