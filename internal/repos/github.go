@@ -149,7 +149,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		c.GithubAppInstallationID != "" &&
 		dotcomConfig != nil &&
 		dotcomConfig.GithubAppCloud != nil &&
-		dotcomConfig.GithubAppCloud.AppID == "" &&
+		dotcomConfig.GithubAppCloud.AppID != "" &&
 		dotcomConfig.GithubAppCloud.PrivateKey != "" {
 		privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
 		if err != nil {
