@@ -245,6 +245,7 @@ func makeURL(base, password string, path ...string) (*url.URL, error) {
 		return nil, err
 	}
 
+	// TODO
 	u.User = url.UserPassword("sourcegraph", password)
 	return u, nil
 }

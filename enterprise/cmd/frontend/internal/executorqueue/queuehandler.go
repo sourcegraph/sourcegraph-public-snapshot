@@ -51,6 +51,7 @@ func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handle
 // in which a shared key exchange can be done so safely.
 func basicAuthMiddleware(accessToken func() string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO
 		// We don't care about the username. Only the password matters here.
 		_, password, ok := r.BasicAuth()
 		if !ok {
