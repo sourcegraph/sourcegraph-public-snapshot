@@ -3,6 +3,7 @@
 // application of this library is not recommended at this point.
 // It is used here because it solves a very real performance issue
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
+import { Subscription } from 'rxjs'
 import create, { GetState, SetState } from 'zustand'
 import { StoreApiWithSubscribeWithSelector, subscribeWithSelector } from 'zustand/middleware'
 
@@ -15,7 +16,7 @@ import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settin
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SettingsExperimentalFeatures } from '../schema/settings.schema'
-import { getAvailableSearchContextSpecOrDefault, parseSearchURL } from '../search'
+import { getAvailableSearchContextSpecOrDefault, ParsedSearchURL, parseSearchURL } from '../search'
 import { QueryState, SubmitSearchParameters, submitSearch, toggleSubquery, canSubmitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
 
@@ -70,6 +71,20 @@ function updateQuery(query: string, updates: QueryUpdate[]): string {
         }
         return query
     }, query)
+}
+
+let subscription: Subscription | null = null
+/**
+ * Helper function to validate a given search context and keeps track of
+ * previous requests so that they can be cancelled.
+ */
+function getAvailableSearchContext(
+    spec: string,
+    defaultSpec: string,
+    callback: (availableSearchContextSpecOrDefault: string) => void
+): void {
+    subscription?.unsubscribe()
+    subscription = getAvailableSearchContextSpecOrDefault({ spec, defaultSpec }).subscribe(callback)
 }
 
 export interface NavbarQueryState {
@@ -221,31 +236,38 @@ export function setSelectedSearchContext(spec: string): void {
         return
     }
 
-    getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContext }).subscribe(
-        availableSearchContextSpecOrDefault => {
-            useNavbarQueryState.setState({ selectedSearchContext: availableSearchContextSpecOrDefault })
-            localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
-        }
-    )
+    getAvailableSearchContext(spec, defaultSearchContext, availableSearchContextSpecOrDefault => {
+        useNavbarQueryState.setState({ selectedSearchContext: availableSearchContextSpecOrDefault })
+        localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+    })
 }
 
 /**
- * initSelectedSearchContext restores the previously selected search context
- * from local storage. It should be called when the application is initialized.
+ * initQueryState restores the previously selected search context
+ * from local storage and initializes the query state from the passed query
+ * string.
+ * It should be called when the application is initialized.
  */
-export function initSelectedSearchContext(searchContextsEnabled: boolean): void {
-    if (searchContextsEnabled) {
-        setSelectedSearchContext(
-            localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) ?? useNavbarQueryState.getState().defaultSearchContext
-        )
-        useNavbarQueryState.setState({ searchContextsEnabled: true })
+export function initQueryState(urlParameters: string, searchContextsEnabled: boolean): void {
+    useNavbarQueryState.setState({ searchContextsEnabled })
+
+    const parsedSearchURL = parseSearchURL(urlParameters)
+
+    if (parsedSearchURL.query) {
+        setQueryStateFromURL(parsedSearchURL, searchContextsEnabled)
+    } else {
+        // If no query is present (e.g. search page, settings page), select the last saved
+        // search context from localStorage as currently selected search context.
+        useNavbarQueryState.setState({
+            selectedSearchContext: localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global',
+        })
     }
 }
 
 /**
  * Update or initialize query state related data from URL search parameters
  */
-export function setQueryStateFromURL(urlParameters: string, showSearchContext: boolean): void {
+export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, showSearchContext: boolean): void {
     // This will be updated with the default in settings when the web app mounts.
     const newState: Partial<
         Pick<
@@ -259,58 +281,60 @@ export function setQueryStateFromURL(urlParameters: string, showSearchContext: b
     > = {}
     const { searchContextsEnabled, selectedSearchContext, defaultSearchContext } = useNavbarQueryState.getState()
 
-    const parsedSearchURL = parseSearchURL(urlParameters)
+    const query = parsedSearchURL.query ?? ''
+    newState.searchQueryFromURL = query
 
-    if (parsedSearchURL.query) {
+    if (query) {
+        newState.queryState = { query }
+
         // Only update flags if the URL contains a search query.
         newState.searchCaseSensitivity = parsedSearchURL.caseSensitive
         if (parsedSearchURL.patternType !== undefined) {
             newState.searchPatternType = parsedSearchURL.patternType
         }
-    }
 
-    const query = parsedSearchURL.query ?? ''
-    newState.searchQueryFromURL = query
-    newState.queryState = { query }
+        if (showSearchContext && searchContextsEnabled) {
+            const newSearchContext = getGlobalSearchContextFilter(query)
 
-    if (showSearchContext && searchContextsEnabled && parsedSearchURL.query) {
-        const newSearchContext = getGlobalSearchContextFilter(query)
+            if (newSearchContext) {
+                const queryWithoutContext = omitFilter(query, newSearchContext.filter)
 
-        if (newSearchContext) {
-            const queryWithoutContext = omitFilter(query, newSearchContext.filter)
+                // While we wait for the result of the
+                // `getAvailableSearchContext` call, we assume the context
+                // is available to prevent flashing and moving content in the query bar.
+                // This optimizes for the most common use case where user selects a
+                // search context from the dropdown. See
+                // https://github.com/sourcegraph/sourcegraph/issues/19918 for more
+                // info.
+                newState.queryState.query = queryWithoutContext
 
-            // While we wait for the result of the
-            // `getAvailableSearchContextSpecOrDefault` call, we assume the context
-            // is available to prevent flashing and moving content in the query bar.
-            // This optimizes for the most common use case where user selects a
-            // search context from the dropdown. See
-            // https://github.com/sourcegraph/sourcegraph/issues/19918 for more
-            // info.
-            newState.queryState.query = queryWithoutContext
+                if (newSearchContext.spec !== selectedSearchContext) {
+                    getAvailableSearchContext(
+                        newSearchContext.spec,
+                        defaultSearchContext,
+                        availableSearchContextSpecOrDefault => {
+                            newState.queryState = {
+                                // If a global search context spec is available to the user, we omit it from the
+                                // query and move it to the search contexts dropdown.
+                                query:
+                                    availableSearchContextSpecOrDefault === newSearchContext.spec
+                                        ? queryWithoutContext
+                                        : query,
+                            }
 
-            if (newSearchContext.spec !== selectedSearchContext) {
-                getAvailableSearchContextSpecOrDefault({
-                    spec: newSearchContext.spec,
-                    defaultSpec: defaultSearchContext,
-                }).subscribe(availableSearchContextSpecOrDefault => {
-                    newState.queryState = {
-                        // If a global search context spec is available to the user, we omit it from the
-                        // query and move it to the search contexts dropdown.
-                        query:
-                            availableSearchContextSpecOrDefault === newSearchContext.spec ? queryWithoutContext : query,
-                    }
+                            newState.selectedSearchContext = availableSearchContextSpecOrDefault
 
-                    newState.selectedSearchContext = availableSearchContextSpecOrDefault
-
-                    useNavbarQueryState.setState(newState as any)
-                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
-                })
+                            useNavbarQueryState.setState(newState as any)
+                            localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+                        }
+                    )
+                }
+            } else {
+                // If a context filter does not exist in the query, we have to switch the selected context
+                // to global to match the UI with the backend semantics (if no context is specified in the query,
+                // the query is run in global context).
+                newState.selectedSearchContext = 'global'
             }
-        } else {
-            // If a context filter does not exist in the query, we have to switch the selected context
-            // to global to match the UI with the backend semantics (if no context is specified in the query,
-            // the query is run in global context).
-            newState.selectedSearchContext = 'global'
         }
     }
 

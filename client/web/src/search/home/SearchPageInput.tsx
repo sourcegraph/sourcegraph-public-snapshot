@@ -100,6 +100,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
     )
+    const selectedSearchContextSpec = props.selectedSearchContextSpec ?? selectedSearchContext
+
     useEffect(() => {
         setUserQueryState({ query: props.queryPrefix || '' })
     }, [props.queryPrefix])
@@ -128,17 +130,11 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 query,
                 history: props.history,
                 activation: props.activation,
-                selectedSearchContextSpec: props.selectedSearchContextSpec,
+                selectedSearchContextSpec,
                 ...parameters,
             })
         },
-        [
-            props.history,
-            props.activation,
-            props.selectedSearchContextSpec,
-            props.hiddenQueryPrefix,
-            userQueryState.query,
-        ]
+        [props.history, props.activation, selectedSearchContextSpec, props.hiddenQueryPrefix, userQueryState.query]
     )
 
     const onSubmit = useCallback(
@@ -162,7 +158,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         showSearchContext={showSearchContext}
                         showSearchContextManagement={showSearchContextManagement}
                         searchContextsEnabled={searchContextsEnabled}
-                        selectedSearchContext={props.selectedSearchContextSpec || selectedSearchContext}
+                        selectedSearchContextSpec={selectedSearchContextSpec}
                         hasUserAddedRepositories={hasUserAddedRepositories || hasUserSyncedPublicRepositories}
                         defaultSearchContextSpec={defaultSearchContext}
                         hasUserAddedExternalServices={hasUserAddedExternalServices}

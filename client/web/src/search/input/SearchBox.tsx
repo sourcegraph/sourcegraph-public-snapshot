@@ -21,7 +21,7 @@ export interface SearchBoxProps
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps {
-    selectedSearchContext?: string
+    selectedSearchContextSpec?: string
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean

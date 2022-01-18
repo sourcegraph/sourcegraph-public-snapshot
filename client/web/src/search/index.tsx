@@ -167,7 +167,6 @@ export interface SearchContextProps {
     getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
     fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
     fetchSearchContexts: typeof fetchSearchContexts
-    isSearchContextSpecAvailable: typeof isSearchContextSpecAvailable
     fetchSearchContext: typeof fetchSearchContext
     fetchSearchContextBySpec: typeof fetchSearchContextBySpec
     createSearchContext: typeof createSearchContext
@@ -203,11 +202,6 @@ export interface SearchStreamingProps {
         options: StreamSearchOptions
     ) => Observable<AggregateStreamingSearchResults>
 }
-
-export const isSearchContextSpecAvailable = memoizeObservable(
-    (spec: string) => isSearchContextAvailable(spec),
-    parameters => parameters
-)
 
 export const getAvailableSearchContextSpecOrDefault = memoizeObservable(
     ({ spec, defaultSpec }: { spec: string; defaultSpec: string }) =>

@@ -42,7 +42,6 @@ const queryStateSelector = (
     NavbarQueryState,
     | 'queryState'
     | 'setQueryState'
-    | 'selectedSearchContext'
     | 'searchContextsEnabled'
     | 'hasUserAddedRepositories'
     | 'hasUserAddedExternalServices'
@@ -51,12 +50,13 @@ const queryStateSelector = (
     caseSensitive: NavbarQueryState['searchCaseSensitivity']
     patternType: NavbarQueryState['searchPatternType']
     defaultSearchContextSpec: NavbarQueryState['defaultSearchContext']
+    selectedSearchContextSpec: NavbarQueryState['selectedSearchContext']
 } => ({
     queryState: state.queryState,
     setQueryState: state.setQueryState,
     caseSensitive: state.searchCaseSensitivity,
     patternType: state.searchPatternType,
-    selectedSearchContext: state.selectedSearchContext,
+    selectedSearchContextSpec: state.selectedSearchContext,
     defaultSearchContextSpec: state.defaultSearchContext,
     searchContextsEnabled: state.searchContextsEnabled,
     hasUserAddedExternalServices: state.hasUserAddedExternalServices,

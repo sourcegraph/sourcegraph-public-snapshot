@@ -48,7 +48,7 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
 import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
 import { Settings } from './schema/settings.schema'
-import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps } from './search'
+import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps, parseSearchURL } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { setQueryStateFromURL, useExperimentalFeatures } from './stores'
@@ -127,7 +127,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
     useEffect(() => {
-        setQueryStateFromURL(location.search, showSearchContext)
+        setQueryStateFromURL(parseSearchURL(location.search), showSearchContext)
     }, [location.search, showSearchContext])
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)

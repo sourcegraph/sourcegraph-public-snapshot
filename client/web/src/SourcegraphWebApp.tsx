@@ -67,13 +67,8 @@ import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import styles from './SourcegraphWebApp.module.scss'
-import {
-    setQueryStateFromSettings,
-    setQueryStateFromURL,
-    setExperimentalFeaturesFromSettings,
-    useNavbarQueryState,
-} from './stores'
-import { initSelectedSearchContext } from './stores/navbarSearchQueryState'
+import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
+import { initQueryState } from './stores/navbarSearchQueryState'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -196,8 +191,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     public componentDidMount(): void {
         document.documentElement.classList.add('theme')
 
-        setQueryStateFromURL(window.location.search, true)
-
         getWebGraphQLClient()
             .then(graphqlClient => {
                 this.setState({
@@ -301,7 +294,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             )
         )
 
-        initSelectedSearchContext(this.props.searchContextsEnabled)
+        initQueryState(location.search, this.props.searchContextsEnabled)
 
         this.userRepositoriesUpdates.next()
     }

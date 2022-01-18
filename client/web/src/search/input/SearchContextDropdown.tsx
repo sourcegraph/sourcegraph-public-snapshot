@@ -71,6 +71,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         },
         [submitSearch, setSelectedSearchContextSpec]
     )
+    console.log('searchcontext', selectedSearchContextSpec)
 
     useEffect(() => {
         if (isOpen && authenticatedUser) {
