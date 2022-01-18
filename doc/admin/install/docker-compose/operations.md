@@ -305,17 +305,6 @@ If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `
         condition: service_healthy
 ```
 
-1. Update the `sourcegraph-frontend-internal` service's `depends_on` section to look like:
-
-```yaml
-
-    depends_on:
-      migrator-frontend:
-        condition: service_completed_successfully
-      migrator-codeintel:
-        condition: service_completed_successfully
-```
-
 ## Monitoring
 
 You can monitor the health of a deployment in several ways:
