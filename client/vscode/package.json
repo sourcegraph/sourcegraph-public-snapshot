@@ -80,7 +80,14 @@
           "id": "sourcegraph.searchSidebar",
           "name": "Sourcegraph Search",
           "visibility": "visible",
-          "when": "!sourcegraph.showFileTree || !sourcegraph.canFocusActiveDocument"
+          "when": "sourcegraph.activeSearchPanel && !sourcegraph.showFileTree && !sourcegraph.canFocusActiveDocument"
+        },
+        {
+          "type": "webview",
+          "id": "sourcegraph.historySidebar",
+          "name": "Search History",
+          "visibility": "visible",
+          "when": "sourcegraph.searchHistoryFound && !sourcegraph.activeSearchPanel "
         },
         {
           "id": "sourcegraph.files",

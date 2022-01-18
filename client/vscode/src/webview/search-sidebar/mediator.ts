@@ -117,7 +117,7 @@ export function createSearchSidebarMediator(disposables: vscode.Disposable[]): S
             if (activeSearchWebviewPanel.value) {
                 try {
                     const { sourcegraphVSCodeSearchWebviewAPI } = activeSearchWebviewPanel.value
-
+                    await vscode.commands.executeCommand('setContext', 'sourcegraph.activeSearchPanel', true)
                     await sourcegraphVSCodeSearchWebviewAPI.submitSearch(queryState)
                 } catch (error) {
                     console.error(error)

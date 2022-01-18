@@ -3,6 +3,7 @@ import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
 import ShareOutlineIcon from 'mdi-react/ShareOutlineIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { StreamingProgress } from '@sourcegraph/branded/src/search/results/progress/StreamingProgress'
 import { StreamingSearchResultsList } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
@@ -228,7 +229,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
             return (
                 <button
                     type="button"
-                    className="btn btn-sm btn-outline-secondary infobar-button-link text-decoration-none"
+                    className="btn btn-sm btn-outline-secondary text-decoration-none"
                     onClick={props.onNonExperimentalLinkClick}
                     disabled={props.isNonExperimentalLinkDisabled}
                 >
@@ -283,7 +284,13 @@ export const SearchResults = React.memo<SearchResultsProps>(
             return (
                 <div className={classNames('flex-grow-1', styles.searchResultsInfoBar)}>
                     <div className={styles.row}>
-                        <small>{results?.results.length} results found</small>
+                        <StreamingProgress
+                            progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
+                            state={results?.state || 'loading'}
+                            // TODO IMPLEMENT ONSEARCHAGAIN
+                            onSearchAgain={() => console.log('Search Again')}
+                            showTrace={false}
+                        />
                         <div className={styles.expander} />
                         <ul className="nav align-items-center">
                             <li className={styles.divider} aria-hidden="true" />
@@ -291,7 +298,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                             <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
                                 <button
                                     type="button"
-                                    className="btn btn-sm infobar-button-link btn-outline-secondary text-decoration-none"
+                                    className="btn btn-sm btn-outline-secondary text-decoration-none"
                                     onClick={onShareResultsClick}
                                 >
                                     <ShareOutlineIcon className="icon-inline mr-1" />

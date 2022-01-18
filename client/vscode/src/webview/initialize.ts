@@ -10,6 +10,7 @@ import {
     SourcegraphVSCodeExtensionHostAPI,
     SourcegraphVSCodeSearchSidebarAPI,
     SourcegraphVSCodeSearchWebviewAPI,
+    SourcegraphVSCodeHistorySidebarAPI,
 } from './contract'
 import { createEndpointsForWebview } from './platform/extensionEndpoint'
 
@@ -197,6 +198,63 @@ export function initializeExtensionHostWebview({
     </html>`
 
     return { sourcegraphVSCodeExtensionHostAPI }
+}
+
+export function initializeHistorySidebarWebview({
+    extensionUri,
+    sourcegraphVSCodeExtensionAPI,
+    webviewView,
+}: SourcegraphWebviewConfig & {
+    webviewView: vscode.WebviewView
+}): {
+    sourcegraphVSCodeHistorySidebarAPI: Comlink.Remote<SourcegraphVSCodeHistorySidebarAPI>
+} {
+    webviewView.webview.options = {
+        enableScripts: true,
+    }
+
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
+
+    const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'historySidebar.js'))
+
+    const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'historySidebar.css'))
+
+    const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
+
+    const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
+
+    // Get a proxy for the Sourcegraph Webview API to communicate with the Webview.
+    const sourcegraphVSCodeHistorySidebarAPI = Comlink.wrap<SourcegraphVSCodeHistorySidebarAPI>(proxy)
+
+    // Expose the Sourcegraph VS Code Extension API to the Webview.
+    Comlink.expose(sourcegraphVSCodeExtensionAPI, expose)
+
+    // Specific scripts to run using nonce
+    const nonce = getNonce()
+
+    // Apply Content-Security-Policy
+    // panel.webview.cspSource comes from the webview object
+    webviewView.webview.html = `<!DOCTYPE html>
+    <html lang="en" data-panel-id="${panelId}">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-webview: vscode-resource: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
+        webviewView.webview.cspSource
+    } vscode-resource: http: https: data:; connect-src 'self' http: https:; font-src: https: vscode-resource: vscode-webview:;">
+        <title>Sourcegraph Search</title>
+        <link rel="stylesheet" href="${styleSource.toString()}" />
+        <link rel="stylesheet" href="${cssModuleSource.toString()}" />
+    </head>
+    <body>
+        <div id="root" />
+        <script nonce="${nonce}" src="${scriptSource.toString()}"></script>
+    </body>
+    </html>`
+
+    return {
+        sourcegraphVSCodeHistorySidebarAPI,
+    }
 }
 
 export function getNonce(): string {

@@ -34,6 +34,7 @@ import {
     initializeExtensionHostWebview,
     initializeSearchPanelWebview,
     initializeSearchSidebarWebview,
+    initializeHistorySidebarWebview,
 } from './webview/initialize'
 import { createSearchSidebarMediator } from './webview/search-sidebar/mediator'
 
@@ -145,6 +146,7 @@ export function activate(context: vscode.ExtensionContext): void {
         // Show File Tree
         displayFileTree: (setting: boolean) =>
             vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', setting),
+        hasActivePanel: () => vscode.commands.executeCommand('setContext', 'sourcegraph.activeSearchPanel', true),
     }
 
     // Track current active webview panel to make sure only one panel exists at a time
@@ -171,6 +173,12 @@ export function activate(context: vscode.ExtensionContext): void {
                 webviewPanel.onDidDispose(() => {
                     sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
                     currentActiveWebviewPanel = undefined
+                    vscode.commands.executeCommand('setContext', 'sourcegraph.activeSearchPanel', false).then(
+                        () => {},
+                        error => {
+                            console.error(error)
+                        }
+                    )
                     vscode.commands.executeCommand('workbench.view.explorer').then(
                         () => {},
                         error => {
@@ -181,7 +189,6 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         })
     )
-
     // Trigger initialization of extension host, bring search sidebar into view.
     vscode.commands.executeCommand('sourcegraph.searchSidebar.focus').then(
         () => {},
@@ -189,6 +196,19 @@ export function activate(context: vscode.ExtensionContext): void {
             console.error(error)
         }
     )
+    // Check if searches have been performed before
+    vscode.commands
+        .executeCommand(
+            'setContext',
+            'sourcegraph.searchHistoryFound',
+            storageManager.getLocalRecentSearch().length > 0
+        )
+        .then(
+            () => {},
+            error => {
+                console.error(error)
+            }
+        )
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
@@ -200,7 +220,6 @@ export function activate(context: vscode.ExtensionContext): void {
                         sourcegraphVSCodeExtensionAPI,
                         webviewView,
                     })
-
                     // Bring search panel back if it was previously closed on sidebar visibility change
                     webviewView.onDidChangeVisibility(() => {
                         if (webviewView.visible) {
@@ -214,6 +233,36 @@ export function activate(context: vscode.ExtensionContext): void {
                     })
                     webviewView.onDidDispose(() => {
                         sourcegraphVSCodeSearchSidebarAPI[releaseProxy]()
+                    })
+                },
+            },
+            { webviewOptions: { retainContextWhenHidden: true } }
+        )
+    )
+
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            'sourcegraph.historySidebar',
+            {
+                resolveWebviewView: (webviewView, _context, _token) => {
+                    const { sourcegraphVSCodeHistorySidebarAPI } = initializeHistorySidebarWebview({
+                        extensionUri: context.extensionUri,
+                        sourcegraphVSCodeExtensionAPI,
+                        webviewView,
+                    })
+                    // Bring search panel back if it was previously closed on sidebar visibility change
+                    webviewView.onDidChangeVisibility(() => {
+                        if (webviewView.visible) {
+                            vscode.commands.executeCommand('sourcegraph.search').then(
+                                () => {},
+                                error => {
+                                    console.error(error)
+                                }
+                            )
+                        }
+                    })
+                    webviewView.onDidDispose(() => {
+                        sourcegraphVSCodeHistorySidebarAPI[releaseProxy]()
                     })
                 },
             },

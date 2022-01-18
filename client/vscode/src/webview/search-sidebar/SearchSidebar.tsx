@@ -7,18 +7,11 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { SearchQueryState, updateQuery } from '@sourcegraph/shared/src/search/searchQueryState'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import {
-    AuthenticatedUser,
-    CurrentAuthStateResult,
-    CurrentAuthStateVariables,
-    SearchPatternType,
-} from '../../graphql-operations'
-import { LocalRecentSeachProps } from '../contract'
+import { CurrentAuthStateResult, CurrentAuthStateVariables, SearchPatternType } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 import { currentAuthStateQuery } from '../search-panel/queries'
 
 import { OpenSearchPanelCta } from './OpenSearchPanelCta'
-import { SearchHistoryPanel } from './SearchHistoryPanel'
 import styles from './SearchSidebar.module.scss'
 import { SidebarAuthCheck } from './SidebarAuthCheck'
 interface SearchSidebarProps extends WebviewPageProps {}
@@ -37,8 +30,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
     const [hasAccount, setHasAccount] = useState(false)
     const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
     const [validAccessToken, setValidAccessToken] = useState<boolean | undefined>(undefined)
-    const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
-    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
     // Search Query
     const [patternType, setPatternType] = useState<SearchPatternType>(SearchPatternType.literal)
     const [caseSensitive, setCaseSensitive] = useState<boolean>(false)
@@ -101,14 +92,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
             setCaseSensitive(activeQueryState.caseSensitive)
             if (activeQueryState.executed) {
                 setActiveSearchPanel(true)
-                sourcegraphVSCodeExtensionAPI
-                    .getLocalRecentSearch()
-                    .then(response => {
-                        setLocalRecentSearches(response)
-                    })
-                    .catch(() => {
-                        // TODO error handling
-                    })
             } else {
                 setActiveSearchPanel(false)
             }
@@ -140,15 +123,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     setHasAccount(response)
                 })
                 .catch(() => setHasAccessToken(false))
-            // Get Local Search History
-            sourcegraphVSCodeExtensionAPI
-                .getLocalRecentSearch()
-                .then(response => {
-                    setLocalRecentSearches(response)
-                })
-                .catch(() => {
-                    // TODO error handling
-                })
         }
         if (hasAccessToken === false) {
             setValidAccessToken(false)
@@ -165,7 +139,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     .toPromise()
                 // If user is detected, set valid access token to true
                 if (currentUser.data) {
-                    setAuthenticatedUser(currentUser.data.currentUser)
                     setValidAccessToken(true)
                 } else {
                     setValidAccessToken(false)
@@ -182,7 +155,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         hasAccount,
         platformContext,
         setHasAccessToken,
-        localRecentSearches,
     ])
 
     // On submit, validate access token and update VS Code settings through API.
@@ -219,15 +191,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
     ) {
         return activeSearchPanel || validAccessToken ? (
             <>
-                {/* HISTORY SIDEBAR */}
-                <SearchHistoryPanel
-                    localRecentSearches={localRecentSearches}
-                    telemetryService={platformContext.telemetryService}
-                    authenticatedUser={authenticatedUser}
-                    platformContext={platformContext}
-                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                    theme={theme}
-                />
                 <BrandedSearchSidebar
                     forceButton={true}
                     className={styles.sidebarContainer}
@@ -260,6 +223,5 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
             </>
         )
     }
-    console.log({ validating, hasAccessToken, validAccessToken, activeSearchPanel })
     return <LoadingSpinner />
 }

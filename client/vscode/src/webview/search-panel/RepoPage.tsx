@@ -63,7 +63,7 @@ export const RepoPage: React.FunctionComponent<RepoPageProps> = ({
         <section className={classNames('test-tree-entries mb-3 p-2')}>
             <button
                 type="button"
-                className="btn btn-sm infobar-button-link btn-outline-secondary text-decoration-none"
+                className="btn btn-sm infobar-button-link btn-outline-secondary text-decoration-none border-0"
                 onClick={backToSearchResultPage}
             >
                 <ArrowLeftIcon className="icon-inline mr-1" />

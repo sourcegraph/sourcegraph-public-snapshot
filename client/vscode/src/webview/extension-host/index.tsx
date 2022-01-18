@@ -73,5 +73,5 @@ const extensionsController = createExtensionsController({
 
 setLinkComponent(AnchorLink)
 
-const Main: React.FC = () => <div />
+const Main: React.FC = () => <small className="text">Keep this panel open to use Code Intel</small>
 render(<Main />, document.querySelector('#root'))

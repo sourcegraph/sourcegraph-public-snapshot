@@ -84,6 +84,7 @@ const getCSSLoaders = (...loaders) => [
 
 const searchPanelWebviewPath = path.resolve(webviewSourcePath, 'search-panel')
 const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'search-sidebar')
+const historySidebarWebviewPath = path.resolve(webviewSourcePath, 'history-sidebar')
 const extensionHostWebviewPath = path.resolve(webviewSourcePath, 'extension-host')
 
 const extensionHostWorker = /main\.worker\.ts$/
@@ -96,6 +97,7 @@ const webviewConfig = {
   entry: {
     searchPanel: [path.resolve(searchPanelWebviewPath, 'index.tsx')],
     searchSidebar: [path.resolve(searchSidebarWebviewPath, 'index.tsx')],
+    historySidebar: [path.resolve(historySidebarWebviewPath, 'index.tsx')],
     extensionHost: [path.resolve(extensionHostWebviewPath, 'index.tsx')],
     style: path.join(webviewSourcePath, 'index.scss'),
   },

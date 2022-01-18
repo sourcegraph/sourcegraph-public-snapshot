@@ -26,10 +26,14 @@ body,
     min-width: 0;
 }
 
+small {
+    color: var(--vscode-foreground) !important;
+}
+
 // Adapt to VS Code appearance.
 body {
     background-color: transparent;
-    color: var(--vscode-textPreformat-foreground);
+    // color: var(--vscode-textPreformat-foreground);
     font-family: var(--vscode-font-family);
     font-weight: var(--vscode-font-weight);
     font-size: var(--vscode-font-size);
@@ -110,6 +114,18 @@ a,
         a {
             text-decoration: underline;
         }
+    }
+}
+
+.text {
+    color: var(--vscode-foreground);
+}
+
+.btn-outline-secondary {
+    color: var(--vscode-foreground) !important;
+
+    &:hover {
+        background: transparent !important;
     }
 }
 

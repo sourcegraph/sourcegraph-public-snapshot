@@ -62,6 +62,7 @@ export interface SourcegraphVSCodeExtensionAPI
     setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => Promise<boolean>
     // Display File Tree when repo is clicked
     displayFileTree: (setting: boolean) => void
+    hasActivePanel: () => void
     // For extension host sidebar
     // mainThreadAPI methods
 }
@@ -84,6 +85,8 @@ export interface QueryStateWithInputProps {
 }
 
 export interface SourcegraphVSCodeSearchSidebarAPI {}
+
+export interface SourcegraphVSCodeHistorySidebarAPI {}
 
 /**
  * A subset of the Sourcegraph extension host API that is used by the VS Code extension.

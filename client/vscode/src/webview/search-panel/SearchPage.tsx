@@ -293,6 +293,13 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 }
             }
 
+            sourcegraphVSCodeExtensionAPI
+                .hasActivePanel()
+                .then(response => {
+                    console.log('Search Performed', response)
+                }) // TODO error handling
+                .catch(error => console.log(error))
+
             const subscription = platformContext
                 .requestGraphQL<SearchResult, SearchVariables>({
                     request: searchQuery,
