@@ -33,10 +33,9 @@ export function observeActiveExtensions(
     ]).pipe(
         tap(([activeLanguages, enabledExtensions]) => {
             const activeExtensions = extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
+            activatedExtensionIDs.clear()
             for (const extension of activeExtensions) {
-                if (!activatedExtensionIDs.has(extension.id)) {
-                    activatedExtensionIDs.add(extension.id)
-                }
+                activatedExtensionIDs.add(extension.id)
             }
         }),
         map(([, extensions]) =>
