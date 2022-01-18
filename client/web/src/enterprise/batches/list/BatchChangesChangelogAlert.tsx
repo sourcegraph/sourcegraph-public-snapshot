@@ -20,7 +20,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                             rel="noopener"
                             target="_blank"
                         >
-                            Batch Changes now supports forks for changesets.
+                            Batch Changes now supports pushing changesets to forked repositories.
                         </a>
                     </li>
                 </ul>
