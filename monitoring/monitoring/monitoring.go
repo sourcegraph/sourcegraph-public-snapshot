@@ -31,11 +31,6 @@ type Container struct {
 	// container, such as instances or shards.
 	Variables []ContainerVariable
 
-	// RawVariables exposes the underlying Grafana API to define
-	// variables that can be applied to the dashboard for this container,
-	// such as instances or shards.
-	RawVariables []sdk.TemplateVar
-
 	// Groups of observable information about the container.
 	Groups []Group
 
@@ -92,7 +87,6 @@ func (c *Container) renderDashboard() *sdk.Board {
 	for _, variable := range c.Variables {
 		board.Templating.List = append(board.Templating.List, variable.toGrafanaTemplateVar())
 	}
-	board.Templating.List = append(board.Templating.List, c.RawVariables...)
 	board.Annotations.List = []sdk.Annotation{{
 		Name:       "Alert events",
 		Datasource: StringPtr("Prometheus"),
