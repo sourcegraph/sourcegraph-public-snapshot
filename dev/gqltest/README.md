@@ -8,7 +8,7 @@ Tests use environment variables to accept credentials of different external serv
 
 ```sh
 # Your GitHub personal access token, this token needs to have scope to access private
-# repositories of "sgtest" organization on ghe.sgdev.org. If you haven't joined "sgtest" organization,
+# repositories of "sgtest" organization on `ghe.sgdev.org`. If you haven't joined "sgtest" organization,
 # please post a message on #dev-chat to ask for an invite.
 export GITHUB_TOKEN=<REDACTED>
 
