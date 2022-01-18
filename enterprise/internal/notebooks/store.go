@@ -25,6 +25,7 @@ const (
 	NotebooksOrderByID NotebooksOrderByOption = iota
 	NotebooksOrderByUpdatedAt
 	NotebooksOrderByCreatedAt
+	NotebooksOrderByStarsCount
 )
 
 type ListNotebooksPageOptions struct {
@@ -32,9 +33,15 @@ type ListNotebooksPageOptions struct {
 	After int64
 }
 
+type ListNotebookStarsPageOptions struct {
+	First int32
+	After int64
+}
+
 type ListNotebooksOptions struct {
 	Query             string
 	CreatorUserID     int32
+	StarredByUserID   int32
 	OrderBy           NotebooksOrderByOption
 	OrderByDescending bool
 }
@@ -58,12 +65,18 @@ func Notebooks(db dbutil.DB) NotebooksStore {
 
 type NotebooksStore interface {
 	basestore.ShareableStore
-	GetNotebook(context.Context, int64) (*Notebook, error)
-	CreateNotebook(context.Context, *Notebook) (*Notebook, error)
-	UpdateNotebook(context.Context, *Notebook) (*Notebook, error)
-	DeleteNotebook(context.Context, int64) error
-	ListNotebooks(context.Context, ListNotebooksPageOptions, ListNotebooksOptions) ([]*Notebook, error)
-	CountNotebooks(context.Context, ListNotebooksOptions) (int64, error)
+	GetNotebook(ctx context.Context, notebookID int64) (*Notebook, error)
+	CreateNotebook(ctx context.Context, notebook *Notebook) (*Notebook, error)
+	UpdateNotebook(ctx context.Context, notebook *Notebook) (*Notebook, error)
+	DeleteNotebook(ctx context.Context, notebookID int64) error
+	ListNotebooks(ctx context.Context, pageOpts ListNotebooksPageOptions, opts ListNotebooksOptions) ([]*Notebook, error)
+	CountNotebooks(ctx context.Context, opts ListNotebooksOptions) (int64, error)
+
+	GetNotebookStar(ctx context.Context, notebookID int64, userID int32) (*NotebookStar, error)
+	CreateNotebookStar(ctx context.Context, notebookID int64, userID int32) (*NotebookStar, error)
+	DeleteNotebookStar(ctx context.Context, notebookID int64, userID int32) error
+	ListNotebookStars(ctx context.Context, pageOpts ListNotebookStarsPageOptions, notebookID int64) ([]*NotebookStar, error)
+	CountNotebookStars(ctx context.Context, notebookID int64) (int64, error)
 }
 
 type notebooksStore struct {
@@ -110,17 +123,20 @@ func notebooksPermissionsCondition(ctx context.Context) *sqlf.Query {
 const listNotebooksFmtStr = `
 SELECT %s
 FROM notebooks
+%s -- optional JOIN clauses
 WHERE
 	(%s) -- permission conditions
 	AND (%s) -- query conditions
+%s -- optional GROUP BY clause
 ORDER BY %s
 LIMIT %d
 OFFSET %d
 `
 
 const countNotebooksFmtStr = `
-SELECT COUNT(*)
+SELECT COUNT(DISTINCT notebooks.id)
 FROM notebooks
+%s -- optional JOIN clauses
 WHERE
 	(%s) -- permission conditions
 	AND (%s) -- query conditions
@@ -138,8 +154,24 @@ func getNotebooksOrderByClause(orderBy NotebooksOrderByOption, descending bool) 
 		return sqlf.Sprintf("notebooks.updated_at " + orderDirection)
 	case NotebooksOrderByID:
 		return sqlf.Sprintf("notebooks.id " + orderDirection)
+	case NotebooksOrderByStarsCount:
+		return sqlf.Sprintf("(SELECT COUNT(*) FROM notebook_stars WHERE notebook_id = notebooks.id) " + orderDirection)
 	}
 	panic("invalid NotebooksOrderByOption option")
+}
+
+func getNotebooksJoins(opts ListNotebooksOptions) *sqlf.Query {
+	if opts.StarredByUserID != 0 {
+		return sqlf.Sprintf("LEFT JOIN notebook_stars ON notebooks.id = notebook_stars.notebook_id")
+	}
+	return sqlf.Sprintf("")
+}
+
+func getNotebooksGroupByClause(opts ListNotebooksOptions) *sqlf.Query {
+	if opts.StarredByUserID != 0 {
+		return sqlf.Sprintf("GROUP BY notebooks.id")
+	}
+	return sqlf.Sprintf("")
 }
 
 func scanNotebook(scanner dbutil.Scanner) (*Notebook, error) {
@@ -190,6 +222,9 @@ func getNotebooksQueryCondition(opts ListNotebooksOptions) *sqlf.Query {
 	if opts.CreatorUserID != 0 {
 		conds = append(conds, sqlf.Sprintf("notebooks.creator_user_id = %d", opts.CreatorUserID))
 	}
+	if opts.StarredByUserID != 0 {
+		conds = append(conds, sqlf.Sprintf("notebook_stars.user_id = %d", opts.StarredByUserID))
+	}
 	if opts.Query != "" {
 		conds = append(
 			conds,
@@ -208,8 +243,10 @@ func (s *notebooksStore) ListNotebooks(ctx context.Context, pageOpts ListNoteboo
 		sqlf.Sprintf(
 			listNotebooksFmtStr,
 			sqlf.Join(notebookColumns, ","),
+			getNotebooksJoins(opts),
 			notebooksPermissionsCondition(ctx),
 			getNotebooksQueryCondition(opts),
+			getNotebooksGroupByClause(opts),
 			getNotebooksOrderByClause(opts.OrderBy, opts.OrderByDescending),
 			pageOpts.First,
 			pageOpts.After,
@@ -227,6 +264,7 @@ func (s *notebooksStore) CountNotebooks(ctx context.Context, opts ListNotebooksO
 	err := s.QueryRow(ctx,
 		sqlf.Sprintf(
 			countNotebooksFmtStr,
+			getNotebooksJoins(opts),
 			notebooksPermissionsCondition(ctx),
 			getNotebooksQueryCondition(opts),
 		),
@@ -243,8 +281,10 @@ func (s *notebooksStore) GetNotebook(ctx context.Context, id int64) (*Notebook, 
 		sqlf.Sprintf(
 			listNotebooksFmtStr,
 			sqlf.Join(notebookColumns, ","),
+			sqlf.Sprintf(""), // joins
 			notebooksPermissionsCondition(ctx),
 			sqlf.Sprintf("notebooks.id = %d", id),
+			sqlf.Sprintf(""), // group by
 			getNotebooksOrderByClause(NotebooksOrderByID, false),
 			1, // limit
 			0, // offset
@@ -305,6 +345,77 @@ func (s *notebooksStore) UpdateNotebook(ctx context.Context, n *Notebook) (*Note
 		sqlf.Sprintf(updateNotebookFmtStr, n.Title, n.Blocks, n.Public, n.ID, sqlf.Join(notebookColumns, ",")),
 	)
 	return scanNotebook(row)
+}
+
+func scanNotebookStar(scanner dbutil.Scanner) (*NotebookStar, error) {
+	star := &NotebookStar{}
+	err := scanner.Scan(&star.NotebookID, &star.UserID, &star.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return star, nil
+}
+
+const getNotebookStarFmtStr = `SELECT notebook_id, user_id, created_at FROM notebook_stars WHERE user_id = %d AND notebook_id = %d`
+
+// 🚨 SECURITY: The caller must ensure that the actor has permission to create the star for the notebook.
+func (s *notebooksStore) GetNotebookStar(ctx context.Context, notebookID int64, userID int32) (*NotebookStar, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(getNotebookStarFmtStr, userID, notebookID))
+	return scanNotebookStar(row)
+}
+
+const insertNotebookStarFmtStr = `INSERT INTO notebook_stars (user_id, notebook_id) VALUES (%d, %d) RETURNING notebook_id, user_id, created_at`
+
+// 🚨 SECURITY: The caller must ensure that the actor has permission to create the star for the notebook.
+func (s *notebooksStore) CreateNotebookStar(ctx context.Context, notebookID int64, userID int32) (*NotebookStar, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(insertNotebookStarFmtStr, userID, notebookID))
+	return scanNotebookStar(row)
+}
+
+const deleteNotebookStarFmtStr = `DELETE FROM notebook_stars WHERE user_id = %d AND notebook_id = %d`
+
+// 🚨 SECURITY: The caller must ensure that the actor has permission to delete the star for the notebook.
+func (s *notebooksStore) DeleteNotebookStar(ctx context.Context, notebookID int64, userID int32) error {
+	return s.Exec(ctx, sqlf.Sprintf(deleteNotebookStarFmtStr, userID, notebookID))
+}
+
+const listNotebookStarsFmtStr = `
+SELECT notebook_id, user_id, created_at
+FROM notebook_stars
+WHERE notebook_id = %d
+ORDER BY created_at DESC
+LIMIT %d
+OFFSET %d
+`
+
+// 🚨 SECURITY: The caller must ensure that the actor has permission to access the notebook.
+func (s *notebooksStore) ListNotebookStars(ctx context.Context, pageOpts ListNotebookStarsPageOptions, notebookID int64) ([]*NotebookStar, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(listNotebookStarsFmtStr, notebookID, pageOpts.First, pageOpts.After))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var notebookStars []*NotebookStar
+	for rows.Next() {
+		star, err := scanNotebookStar(rows)
+		if err != nil {
+			return nil, err
+		}
+		notebookStars = append(notebookStars, star)
+	}
+	return notebookStars, nil
+}
+
+const countNotebookStarsFmtStr = `SELECT COUNT(*) FROM notebook_stars WHERE notebook_id = %d`
+
+// 🚨 SECURITY: The caller must ensure that the actor has permission to access the notebook.
+func (s *notebooksStore) CountNotebookStars(ctx context.Context, notebookID int64) (int64, error) {
+	var count int64
+	err := s.QueryRow(ctx, sqlf.Sprintf(countNotebookStarsFmtStr, notebookID)).Scan(&count)
+	if err != nil {
+		return -1, err
+	}
+	return count, nil
 }
 
 func nullInt32Column(n int32) *int32 {
