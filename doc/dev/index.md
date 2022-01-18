@@ -47,10 +47,10 @@ body.theme-dark .markdown-body ul li:before {
    Run through the <b>step by step guide</b> and get your local environment ready.
   </a>
 
-  <a href="setup/how-to" class="btn" alt="How-to guides">
+  <a href="../dev/how-to" class="btn" alt="How-to guides">
    <span>How-to guides</span>
    </br>
-  <b>Context specific</b> guides: debugging live code, Apple M1 workarounds, ...
+  <b>Context specific</b> guides: debugging live code
   </a>
 
   <a href="setup/troubleshooting" class="btn" alt="Troubleshooting">

@@ -549,7 +549,7 @@ commands:
 
       chmod +x "${target}"
     env:
-      JAEGER_VERSION: 1.18.1
+      JAEGER_VERSION: 1.30.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
       JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger
