@@ -210,7 +210,9 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 
 func TestRepository_FirstEverCommit(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	testCases := []struct {
 		commitDates []string
@@ -233,22 +235,54 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			want: "2007-01-02T15:04:05Z",
 		},
 	}
-	for _, tc := range testCases {
-		gitCommands := make([]string, len(tc.commitDates))
-		for i, date := range tc.commitDates {
-			gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
-		}
+	t.Run("basic", func(t *testing.T) {
+		for _, tc := range testCases {
+			gitCommands := make([]string, len(tc.commitDates))
+			for i, date := range tc.commitDates {
+				gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+			}
 
-		repo := MakeGitRepository(t, gitCommands...)
-		gotCommit, err := FirstEverCommit(ctx, repo)
-		if err != nil {
-			t.Fatal(err)
+			repo := MakeGitRepository(t, gitCommands...)
+			gotCommit, err := FirstEverCommit(ctx, repo, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := gotCommit.Committer.Date.Format(time.RFC3339)
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
 		}
-		got := gotCommit.Committer.Date.Format(time.RFC3339)
-		if got != tc.want {
-			t.Errorf("got %q, want %q", got, tc.want)
+	})
+
+	t.Run("with sub-repo permissions", func(t *testing.T) {
+		checkerWithoutAccessFirstCommit := getTestSubRepoPermsChecker("file0")
+		checkerWithAccessFirstCommit := getTestSubRepoPermsChecker("file1")
+		for _, tc := range testCases {
+			gitCommands := make([]string, 0, len(tc.commitDates))
+			for i, date := range tc.commitDates {
+				fileName := fmt.Sprintf("file%d", i)
+				gitCommands = append(gitCommands, fmt.Sprintf("touch %s", fileName))
+				gitCommands = append(gitCommands, fmt.Sprintf("git add %s", fileName))
+				gitCommands = append(gitCommands, fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit -m foo --author='a <a@a.com>'", date))
+			}
+
+			repo := MakeGitRepository(t, gitCommands...)
+			// Try to get first commit when user doesn't have permission to view
+			_, err := FirstEverCommit(ctx, repo, checkerWithoutAccessFirstCommit)
+			if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				t.Errorf("expected a RevisionNotFoundError since the user does not have access to view this commit, got :%s", err)
+			}
+			// Try to get first commit when user does have permission to view, should succeed
+			gotCommit, err := FirstEverCommit(ctx, repo, checkerWithAccessFirstCommit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := gotCommit.Committer.Date.Format(time.RFC3339)
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
 		}
-	}
+	})
 }
 
 func TestHead(t *testing.T) {

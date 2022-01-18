@@ -390,8 +390,7 @@ func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (ui
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-// TODO: sub-repo filtering
-func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit, error) {
+func FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit")
 	defer span.Finish()
 
@@ -403,7 +402,7 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit,
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
 	id := api.CommitID(bytes.TrimSpace(out))
-	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, nil)
+	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
 }
 
 // CommitExists determines if the given commit exists in the given repository.
