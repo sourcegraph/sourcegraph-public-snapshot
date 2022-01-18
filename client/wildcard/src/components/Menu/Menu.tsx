@@ -18,7 +18,7 @@ export type MenuProps = ReachMenuProps
 export const Menu: React.FunctionComponent<ReachMenuProps> = ({ children, ...props }) => (
     <ReachMenu {...props}>
         {({ isExpanded }) => (
-            <Popover open={isExpanded}>
+            <Popover isOpen={isExpanded}>
                 {isFunction(children) ? children({ isExpanded, isOpen: isExpanded }) : children}
             </Popover>
         )}
