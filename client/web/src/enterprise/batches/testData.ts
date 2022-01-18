@@ -1,6 +1,6 @@
 import { subSeconds } from 'date-fns'
 
-import { BatchSpecListFields, BatchSpecState } from '../../../graphql-operations'
+import { BatchSpecListFields, BatchSpecState } from '../../graphql-operations'
 
 const COMMON_NODE_FIELDS = {
     __typename: 'BatchSpec',
