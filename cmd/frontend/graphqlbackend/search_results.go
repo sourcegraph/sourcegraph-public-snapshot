@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -377,7 +378,7 @@ var (
 	searchLatencyHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_search_response_latency_seconds",
 		Help:    "Search response latencies in seconds that have ended in the given status (success, error, timeout, partial_timeout).",
-		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
 	}, []string{"status", "alert_type", "source", "request_name"})
 )
 
@@ -827,10 +828,87 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 		}
 
 		if args.ResultTypes.Has(result.TypeRepo) {
-			jobs = append(jobs, &run.RepoSearch{
-				Args:  &args,
-				Limit: r.MaxResults(),
-			})
+			valid := func() bool {
+				fieldAllowlist := map[string]struct{}{
+					query.FieldRepo:               {},
+					query.FieldContext:            {},
+					query.FieldType:               {},
+					query.FieldDefault:            {},
+					query.FieldIndex:              {},
+					query.FieldCount:              {},
+					query.FieldTimeout:            {},
+					query.FieldFork:               {},
+					query.FieldArchived:           {},
+					query.FieldVisibility:         {},
+					query.FieldCase:               {},
+					query.FieldRepoHasFile:        {},
+					query.FieldRepoHasCommitAfter: {},
+					query.FieldPatternType:        {},
+					query.FieldSelect:             {},
+				}
+
+				// Don't run a repo search if the search contains fields that aren't on the allowlist.
+				for field := range args.Query.Fields() {
+					if _, ok := fieldAllowlist[field]; !ok {
+						return false
+					}
+				}
+				return true
+			}
+
+			// returns an updated RepoOptions if the pattern part of a query can be used to
+			// search repos. A problematic case we check for is when the pattern contains `@`,
+			// which may confuse downstream logic to interpret it as part of `repo@rev` syntax.
+			addPatternAsRepoFilter := func(pattern string, opts search.RepoOptions) (search.RepoOptions, bool) {
+				if pattern == "" {
+					return opts, true
+				}
+
+				opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
+				opts.CaseSensitiveRepoFilters = args.Query.IsCaseSensitive()
+
+				patternPrefix := strings.SplitN(pattern, "@", 2)
+				if len(patternPrefix) == 1 {
+					// No "@" in pattern? We're good.
+					opts.RepoFilters = append(opts.RepoFilters, pattern)
+					return opts, true
+				}
+
+				if patternPrefix[0] != "" {
+					// Extend the repo search using the pattern value, but
+					// since the pattern contains @, only search the part
+					// prefixed by the first @. This because downstream
+					// logic will get confused by the presence of @ and try
+					// to resolve repo revisions. See #27816.
+					if _, err := regexp.Compile(patternPrefix[0]); err != nil {
+						// Prefix is not valid regexp, so just reject it. This can happen for patterns where we've automatically added `(...).*?(...)`
+						// such as `foo @bar` which becomes `(foo).*?(@bar)`, which when stripped becomes `(foo).*?(` which is unbalanced and invalid.
+						// Why is this a mess? Because validation for everything, including repo values, should be done up front so far possible, not downtsream
+						// after possible modifications. By the time we reach this code, the pattern should already have been considered valid to continue with
+						// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
+						return search.RepoOptions{}, false
+					}
+					opts.RepoFilters = append(opts.RepoFilters, patternPrefix[0])
+					return opts, true
+				}
+
+				// This pattern starts with @, of the form "@thing". We can't
+				// consistently handle search repos of this form, because
+				// downstream logic will attempt to interpret "thing" as a repo
+				// revision, may fail, and cause us to raise an alert for any
+				// non `type:repo` search. Better to not attempt a repo search.
+				return search.RepoOptions{}, false
+			}
+
+			if valid() {
+				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
+					args.RepoOptions = repoOptions
+					jobs = append(jobs, &run.RepoSearch{
+						Args:  &args,
+						Limit: r.MaxResults(),
+					})
+				}
+			}
 		}
 	}
 
@@ -870,18 +948,6 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 		}
 	}
 	return jobs, repoOptions, args.Timeout, nil
-}
-
-// evaluateLeaf performs a single search operation and corresponds to the
-// evaluation of leaf expression in a query.
-func (r *searchResolver) evaluateLeaf(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (_ *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "evaluateLeaf", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	return r.resultsWithTimeoutSuggestion(ctx, jobs, repoOptions, timeout)
 }
 
 // intersect returns the intersection of two sets of search result content
@@ -1104,14 +1170,14 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateLeaf(ctx, jobs, repoOptions, timeout)
+			return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
 		}
 	case query.Pattern:
 		jobs, repoOptions, timeout, err := r.toSearchInputs(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateLeaf(ctx, jobs, repoOptions, timeout)
+		return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -1127,7 +1193,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchRe
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateLeaf(ctx, jobs, repoOptions, timeout)
+		return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -1458,10 +1524,17 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 	return nodes, nil
 }
 
-// resultsWithTimeoutSuggestion calls doResults, and in case of deadline
-// exceeded returns a search alert with a did-you-mean link for the same
+// evaluateJobs is a toplevel function that runs search jobs to yield results.
+// Search jobs represent terminal nodes in the evaluation tree. If the deadline
+// is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (*SearchResults, error) {
+func (r *searchResolver) evaluateJobs(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (_ *SearchResults, err error) {
+	tr, ctx := trace.New(ctx, "evaluateJobs", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	start := time.Now()
 	rr, err := r.doResults(ctx, jobs, repoOptions, timeout)
 

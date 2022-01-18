@@ -30,7 +30,7 @@ func TestDeduper(t *testing.T) {
 			Commit: gitdomain.Commit{
 				ID: api.CommitID(id),
 			},
-			DiffPreview: &HighlightedString{},
+			DiffPreview: &MatchedString{},
 		}
 	}
 

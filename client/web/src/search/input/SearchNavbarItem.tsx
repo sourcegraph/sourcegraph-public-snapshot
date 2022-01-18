@@ -87,9 +87,12 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         }
     }, [isSearchPage, isFuzzyFinderVisible])
 
-    const { fuzzyFinder, fuzzyFinderCaseInsensitiveFileCountThreshold } = getExperimentalFeatures(
-        props.settingsCascade.final
-    )
+    let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
+    if (fuzzyFinder === undefined) {
+        // Happens even when `"default": true` is defined in
+        // settings.schema.json.
+        fuzzyFinder = true
+    }
 
     return (
         <Form
@@ -125,7 +128,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
             />
             {props.isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
                 <FuzzyFinder
-                    caseInsensitiveFileCountThreshold={fuzzyFinderCaseInsensitiveFileCountThreshold}
                     setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
                     isVisible={isFuzzyFinderVisible}
                     telemetryService={props.telemetryService}

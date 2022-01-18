@@ -9,7 +9,7 @@ import {
     MULTIPLE_MATCH_RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
-} from '../util/searchTestHelpers'
+} from '../testing/searchTestHelpers'
 
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'

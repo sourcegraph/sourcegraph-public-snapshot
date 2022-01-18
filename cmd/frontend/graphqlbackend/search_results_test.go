@@ -885,13 +885,13 @@ func TestSearchContext(t *testing.T) {
 	}
 }
 
-func TestIsGlobalSearch(t *testing.T) {
+func Test_toSearchInputs(t *testing.T) {
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	test := func(input string) string {
-		q, _ := query.ParseLiteral(input)
+	test := func(input string, parser func(string) (query.Q, error)) string {
+		q, _ := parser(input)
 		resolver := searchResolver{
 			SearchInputs: &run.SearchInputs{
 				Query:        q,
@@ -907,11 +907,18 @@ func TestIsGlobalSearch(t *testing.T) {
 		return strings.Join(jobNames, ",")
 	}
 
-	autogold.Want("user search context", "RepoSubsetText,Repo").Equal(t, test(`foo context:@userA`))
-	autogold.Want("universal (AKA global) search context", "RepoUniverseText,Repo").Equal(t, test(`foo context:global`))
-	autogold.Want("universal (AKA global) search", "RepoUniverseText,Repo").Equal(t, test(`foo`))
-	autogold.Want("nonglobal repo", "RepoSubsetText,Repo").Equal(t, test(`foo repo:sourcegraph/sourcegraph`))
-	autogold.Want("nonglobal repo contains", "RepoSubsetText,Repo").Equal(t, test(`foo repo:contains(bar)`))
+	// Job generation for global vs non-global search
+	autogold.Want("user search context", "RepoSubsetText,Repo").Equal(t, test(`foo context:@userA`, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search context", "RepoUniverseText,Repo").Equal(t, test(`foo context:global`, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search", "RepoUniverseText,Repo").Equal(t, test(`foo`, query.ParseLiteral))
+	autogold.Want("nonglobal repo", "RepoSubsetText,Repo").Equal(t, test(`foo repo:sourcegraph/sourcegraph`, query.ParseLiteral))
+	autogold.Want("nonglobal repo contains", "RepoSubsetText,Repo").Equal(t, test(`foo repo:contains(bar)`, query.ParseLiteral))
+
+	// Job generation support for implied `type:repo` queries.
+	autogold.Want("supported Repo job", "RepoUniverseText,Repo").Equal(t, test("ok ok", query.ParseRegexp))
+	autogold.Want("supportedRepo job literal", "RepoUniverseText,Repo").Equal(t, test("ok @thing", query.ParseLiteral))
+	autogold.Want("unsupported Repo job prefix", "RepoUniverseText").Equal(t, test("@nope", query.ParseRegexp))
+	autogold.Want("unsupported Repo job regexp", "RepoUniverseText").Equal(t, test("foo @bar", query.ParseRegexp))
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {

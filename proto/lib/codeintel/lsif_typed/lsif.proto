@@ -77,8 +77,18 @@ message Document {
 // SymbolInformation defines metadata about a symbol, such as the symbol's
 // docstring or what package it's defined it.
 message SymbolInformation {
-  // The unique dentifier of this symbol, which can be referenced from
-  // `Occurence.symbol`.
+  // Identifier of this symbol, which can be referenced from `Occurence.symbol`.
+  // The string must be formatted as `"$SCHEME:$ID` where:
+  //
+  // - `SCHEME`: the value `local` for document-local symbols or an
+  //   indexer-specific identifier for global symbols.  Document-local symbols
+  //   are symbols that cannot be referenced outside the document, for example
+  //   local variables.
+  // - `ID`: an opaque identifier that uniquely determines this symbol within
+  //   the defined scheme. For global symbols, the ID must be stable between
+  //   different invocations of the indexer against unchanged code.  For
+  //   document-local symbols, any string value that uniquely identifies the
+  //   symbol within the document it belong to (ideally stable between runs).
   string symbol = 1;
   // (optional, but strongly recommended) The markdown-formatted documentation
   // for this symbol. This field is repeated to allow different kinds of
@@ -186,10 +196,11 @@ message Occurrence {
   // work with in some programming languages but we hope the performance
   // improvements make up for it.
   repeated int32 range = 1;
-  // (optional) References the `Symbol.uri` field. Can be empty if this is only
-  // a highlighting occurrence.
-  string symbol_uri = 2;
-  // (optional) Is the symbol_uri defined or referenced at this occurrence?
+  // (optional) The symbol that appears at this position. See
+  // `SymbolInformation.symbol` for how to format symbols as strings.
+  string symbol = 2;
+  // (optional) Bitmask for what `SymbolRole` apply to this occurrence. See
+  // `SymbolRole` for how to read and write this field.
   int32 symbol_roles = 3;
   // (optional) Markdown-formatted documentation for this specific range.  If
   // empty, the `Symbol.documentation` field is used instead. One example

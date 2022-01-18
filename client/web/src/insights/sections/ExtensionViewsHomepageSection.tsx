@@ -3,7 +3,7 @@ import { EMPTY, from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { StaticView, ViewGrid } from '../../views'
 import { isCodeInsightsEnabled } from '../utils/is-code-insights-enabled'
