@@ -64,7 +64,7 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 		resp := httptest.NewRecorder()
 		h.ServeHTTP(resp, req)
 
-		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, http.StatusForbidden, resp.Code)
 		assert.Equal(t, "Sourcegraph Cloud GitHub App setup is not enabled for the authenticated user", resp.Body.String())
 	})
 	featureFlags.GetUserFlagsFunc.SetDefaultReturn(map[string]bool{"github-app-cloud": true}, nil)
