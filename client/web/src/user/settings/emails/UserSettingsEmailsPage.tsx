@@ -3,7 +3,7 @@ import React, { FunctionComponent, useEffect, useState, useCallback } from 'reac
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -81,10 +81,10 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
             <PageHeader headingElement="h2" path={[{ text: 'Emails' }]} className="mb-3" />
 
             {flags && !flags.sendsEmailVerificationEmails && (
-                <div className="alert alert-warning">
+                <Alert variant="warning">
                     Sourcegraph is not configured to send email verifications. Newly added email addresses must be
                     manually verified by a site admin.
-                </div>
+                </Alert>
             )}
 
             {isErrorLike(emailActionError) && <ErrorAlert className="mt-2" error={emailActionError} />}
