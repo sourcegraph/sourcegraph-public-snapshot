@@ -65,7 +65,7 @@ func NewMiddleware(mws ...Middleware) Middleware {
 	}
 }
 
-// A Opt configures an aspect of a given *http.Client,
+// Opt configures an aspect of a given *http.Client,
 // returning an error in case of failure.
 type Opt func(*http.Client) error
 

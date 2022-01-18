@@ -1,0 +1,42 @@
+.align {
+    &--left {
+        text-align: left;
+    }
+    &--center {
+        text-align: center;
+    }
+    &--right {
+        text-align: right;
+    }
+}
+
+.font-weight-regular {
+    font-weight: 400;
+}
+
+.font-weight-medium {
+    font-weight: 500;
+}
+
+.font-weight-bold {
+    font-weight: 600;
+}
+
+.single-line {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.break-word {
+    word-break: break-all;
+}
+
+// Body / Small / Regular
+.small {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    // Bootstrap applies `font-weight: 400;` to `small` element,
+    // but we want to control `font-weight` only with `strong` or `.font-weight-medium`.
+    font-weight: inherit;
+}

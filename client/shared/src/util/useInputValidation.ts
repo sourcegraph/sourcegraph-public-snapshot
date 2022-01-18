@@ -4,8 +4,7 @@ import { combineLatest, concat, EMPTY, Observable, of, ReplaySubject, zip } from
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
-
-import { useEventObservable } from './useObservable'
+import { useEventObservable } from '@sourcegraph/wildcard'
 
 /**
  * Configuration used by `useInputValidation`
@@ -77,7 +76,7 @@ export function useInputValidation(
     options: ValidationOptions
 ): [
     InputValidationState,
-    (changeEvent: React.ChangeEvent<HTMLInputElement>) => void,
+    (eventOrValue: React.ChangeEvent<HTMLInputElement> | string) => void,
     (inputElement: ValidatingHTMLElement | null) => void,
     (override: InputValidationEvent) => void
 ] {
@@ -124,11 +123,17 @@ export function useInputValidation(
     const [nextInputValidationEvent] = useEventObservable(validationPipeline)
 
     // "Adapter" for React change events to input validation events
-    const nextReactChangeEvent = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>): void => {
-            event.preventDefault()
+    const nextChangeEvent = useCallback(
+        (eventOrValue: React.ChangeEvent<HTMLInputElement> | string): void => {
+            let value
+            if (typeof eventOrValue === 'string') {
+                value = eventOrValue
+            } else {
+                eventOrValue.preventDefault()
+                value = eventOrValue.target.value
+            }
             // Always validate on change events
-            nextInputValidationEvent({ value: event.target.value, validate: true })
+            nextInputValidationEvent({ value, validate: true })
         },
         [nextInputValidationEvent]
     )
@@ -141,7 +146,7 @@ export function useInputValidation(
         [nextInputValidationEvent]
     )
 
-    return [inputState, nextReactChangeEvent, nextInputReference, overrideState]
+    return [inputState, nextChangeEvent, nextInputReference, overrideState]
 }
 
 /**

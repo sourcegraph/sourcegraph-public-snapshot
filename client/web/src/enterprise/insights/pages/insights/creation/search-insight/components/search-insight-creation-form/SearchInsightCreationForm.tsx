@@ -196,6 +196,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
+                    numberOfPoints={allReposMode.input.value ? 12 : 7}
                 />
             </FormGroup>
 

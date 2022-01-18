@@ -1,12 +1,10 @@
-import Dialog from '@reach/dialog'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useContext, useMemo } from 'react'
 
 import { asError } from '@sourcegraph/common'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Modal } from '@sourcegraph/wildcard'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
@@ -71,14 +69,14 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
 
     if (insights === undefined) {
         return (
-            <Dialog className={styles.modal} aria-label="Add insights to dashboard modal">
+            <Modal className={styles.modal} aria-label="Add insights to dashboard modal">
                 <LoadingSpinner inline={false} />
-            </Dialog>
+            </Modal>
         )
     }
 
     return (
-        <Dialog className={styles.modal} onDismiss={onClose} aria-label="Add insights to dashboard modal">
+        <Modal className={styles.modal} onDismiss={onClose} aria-label="Add insights to dashboard modal">
             <Button className={classNames('btn-icon', styles.closeButton)} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
                 <CloseIcon />
@@ -98,7 +96,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
                     onSubmit={handleSubmit}
                 />
             )}
-        </Dialog>
+        </Modal>
     )
 }
 

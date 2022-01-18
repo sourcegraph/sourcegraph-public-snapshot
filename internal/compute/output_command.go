@@ -65,7 +65,7 @@ func resultContent(ctx context.Context, r result.Match) (string, bool, error) {
 	case *result.CommitMatch:
 		var content string
 		if m.DiffPreview != nil {
-			content = m.DiffPreview.Value
+			content = m.DiffPreview.Content
 		} else {
 			content = string(m.Commit.Message)
 		}

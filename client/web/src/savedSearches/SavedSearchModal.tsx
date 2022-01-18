@@ -1,10 +1,9 @@
-import Dialog from '@reach/dialog'
 import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternTypeProps } from '../search'
@@ -52,7 +51,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             this.props.authenticatedUser && (
-                <Dialog
+                <Modal
                     aria-labelledby={MODAL_LABEL_ID}
                     className={styles.savedSearchModalForm}
                     onDismiss={this.props.onDidCancel}
@@ -99,7 +98,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
                             Save query
                         </Button>
                     </Form>
-                </Dialog>
+                </Modal>
             )
         )
     }

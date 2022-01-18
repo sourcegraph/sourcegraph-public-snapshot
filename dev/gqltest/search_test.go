@@ -967,6 +967,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("And/Or search expression queries", func(t *testing.T) {
+		t.Skip("Flakey test https://github.com/sourcegraph/sourcegraph/issues/29828")
+
 		tests := []struct {
 			name            string
 			query           string

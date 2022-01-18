@@ -2,18 +2,6 @@ import { useEffect, useState, useMemo } from 'react'
 import { Observable, Observer, Subject } from 'rxjs'
 
 /**
- * Returns a function that will trigger an error on the next render,
- * which can be caught by an ErrorBoundary higher up in the component tree.
- */
-export function useError(): (error: any) => void {
-    const [error, setError] = useState<any>()
-    if (error) {
-        throw error
-    }
-    return setError
-}
-
-/**
  * React hook to get the latest value of an Observable.
  * Will return `undefined` if the Observable didn't emit yet.
  * If the Observable errors, will throw an error that can be caught with `try`/`catch` or with a React error boundary.

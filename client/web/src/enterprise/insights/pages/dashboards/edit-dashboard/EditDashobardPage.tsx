@@ -5,8 +5,7 @@ import { useHistory } from 'react-router'
 import { Link } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge, Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
