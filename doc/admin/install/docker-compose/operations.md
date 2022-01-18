@@ -190,7 +190,7 @@ You can see what's changed in the [Sourcegraph changelog](../../../CHANGELOG.md)
 
 > NOTE: This feature is only available in versions `3.36` and later
 
-The `migrator` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required, however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
+The `migrator` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
 
 To execute the database migrations independently, run the following command (substituting in the version you'd like to migrate to):
 
@@ -243,6 +243,8 @@ docker run --rm --name migrator_$SOURCEGRAPH_VERSION \
 
 > NOTE: These values will work for a standard docker-compose deployment of Sourcegraph. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables accordingly.
 
+> NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
+
 Once the `migrator` has run, you should see output similar to:
 > sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Checked current version" schema=frontend version=1528395959 dirty=false
 > sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Upgrading schema" schema=frontend
@@ -250,6 +252,69 @@ Once the `migrator` has run, you should see output similar to:
 > sourcegraph-migrator exited with code 0
 
 You are now safe to upgrade Sourcegraph.
+
+### Migrating Without Code Insights
+If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the default migration process will fail. To work around this, the `docker-compose.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph-docker/docker-compose/docker-compose.yaml`:
+
+1. Remove the `migrator` service and replace it with the following two services:
+
+```yaml
+
+  migrator-frontend:
+    container_name: migrator-frontend
+    image: 'index.docker.io/sourcegraph/migrator:YOUR-VERSION-HERE'
+    cpus: 4
+    mem_limit: '8g'
+    command:
+      ["up", "-db", "frontend"]
+    environment:
+      - PGHOST=pgsql
+      - PGPORT=5432
+      - PGUSER=sg
+      - PGPASSWORD=sg
+      - PGDATABASE=sg
+      - PGSSLMODE=disable
+
+    restart: "on-failure"
+    networks: 
+      - sourcegraph
+    depends_on:
+      pgsql:
+        condition: service_healthy
+
+  migrator-codeintel:
+    container_name: migrator-codeintel
+    image: 'index.docker.io/sourcegraph/migrator:YOUR-VERSION-HERE'
+    cpus: 4
+    mem_limit: '8g'
+    command:
+      ["up", "-db", "codeintel"]
+    environment:
+      - CODEINTEL_PGHOST=codeintel-db
+      - CODEINTEL_PGPORT=5432
+      - CODEINTEL_PGUSER=sg
+      - CODEINTEL_PGPASSWORD=sg
+      - CODEINTEL_PGDATABASE=sg
+      - CODEINTEL_PGSSLMODE=disable
+
+    restart: "on-failure"
+    networks: 
+      - sourcegraph
+    depends_on:
+      codeintel-db:
+        condition: service_healthy
+```
+
+1. Update the `sourcegraph-frontend-internal` service's `depends_on` section to look like:
+
+```yaml
+
+    depends_on:
+      migrator-frontend:
+        condition: service_completed_successfully
+      migrator-codeintel:
+        condition: service_completed_successfully
+```
 
 ## Monitoring
 
