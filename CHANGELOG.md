@@ -33,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Issue preventing searches from completing when certain patterns contain `@`. [#29489](https://github.com/sourcegraph/sourcegraph/pull/29489)
 - The grafana dashboard for "successful search request duration" reports the time for streaming search which is used by the browser. Previously it reported the GraphQL time which the browser no longer uses. [#29625](https://github.com/sourcegraph/sourcegraph/pull/29625)
+- Renaming repositories now removes the old indexes on Zoekt's disks. This did not affect search results, only wasted disk space. This was a regression introduced in Sourcegraph 3.33. [#29685](https://github.com/sourcegraph/sourcegraph/issues/29685)
 
 ### Removed
 
