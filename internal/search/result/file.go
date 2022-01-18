@@ -143,14 +143,19 @@ func (fm *FileMatch) Limit(limit int) int {
 
 func (fm *FileMatch) Key() Key {
 	k := Key{
-		TypeRank: rankFileMatch,
-		Repo:     fm.Repo.Name,
-		Commit:   fm.CommitID,
-		Path:     fm.Path,
+		Repo:   fm.Repo.Name,
+		Commit: fm.CommitID,
+		Path:   fm.Path,
 	}
 
 	if fm.InputRev != nil {
 		k.Rev = *fm.InputRev
+	}
+
+	if len(fm.Symbols) > 0 || len(fm.LineMatches) > 0 {
+		k.TypeRank = rankFileMatch
+	} else {
+		k.TypeRank = rankFilePathMatch
 	}
 
 	return k
