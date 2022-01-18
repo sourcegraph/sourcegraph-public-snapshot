@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
-import { UseStore } from 'zustand'
 import shallow from 'zustand/shallow'
 
 import {
@@ -10,6 +9,7 @@ import {
     QueryUpdate,
     SearchQueryState,
     SubmitSearchParameters,
+    useSearchQueryStateStoreContext,
 } from '@sourcegraph/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
@@ -35,13 +35,6 @@ export interface SearchSidebarProps
     filters?: Filter[]
     className?: string
     showOnboardingTour?: boolean
-
-    /**
-     * Zustand store. Passed as a prop because there may be different global stores across clients
-     * (e.g. VS Code extension, web app), so the sidebar expects a store with the minimal interface
-     * for search.
-     */
-    useQueryState: UseStore<SearchQueryState>
 
     /**
      * Not yet implemented in the VS Code extension (blocked on Apollo Client integration).
@@ -73,7 +66,11 @@ const selectFromQueryState = ({
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
-    const { query, setQueryState, submitSearch } = props.useQueryState(selectFromQueryState, shallow)
+
+    // The zustand store for search query state is referenced through context
+    // because there may be different global stores across clients
+    // (e.g. VS Code extension, web app)
+    const { query, setQueryState, submitSearch } = useSearchQueryStateStoreContext()(selectFromQueryState, shallow)
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const submitQueryWithProps = useCallback(

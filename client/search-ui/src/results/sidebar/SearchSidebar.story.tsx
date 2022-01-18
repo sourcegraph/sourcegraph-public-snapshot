@@ -5,7 +5,12 @@ import React from 'react'
 import create from 'zustand'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { BuildSearchQueryURLParameters, SearchPatternType, SearchQueryState } from '@sourcegraph/search'
+import {
+    BuildSearchQueryURLParameters,
+    SearchPatternType,
+    SearchQueryState,
+    SearchQueryStateStoreProvider,
+} from '@sourcegraph/search'
 import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -43,7 +48,6 @@ const defaultProps: SearchSidebarProps = {
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    useQueryState: mockUseQueryState,
     buildSearchURLQueryFromQueryState: (parameters: BuildSearchQueryURLParameters) => {
         const currentState = mockUseQueryState.getState()
 
@@ -141,16 +145,26 @@ const filters: Filter[] = [
     })),
 ]
 
-add('empty sidebar', () => <BrandedStory>{() => <SearchSidebar {...defaultProps} />}</BrandedStory>)
+add('empty sidebar', () => (
+    <BrandedStory>
+        {() => (
+            <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
+                <SearchSidebar {...defaultProps} />
+            </SearchQueryStateStoreProvider>
+        )}
+    </BrandedStory>
+))
 
 add('with everything', () => (
     <BrandedStory>
         {() => (
-            <SearchSidebar
-                {...defaultProps}
-                settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
-                filters={filters}
-            />
+            <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
+                <SearchSidebar
+                    {...defaultProps}
+                    settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
+                    filters={filters}
+                />
+            </SearchQueryStateStoreProvider>
         )}
     </BrandedStory>
 ))

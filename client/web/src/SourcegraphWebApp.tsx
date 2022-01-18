@@ -24,6 +24,7 @@ import {
     deleteSearchContext,
     isSearchContextSpecAvailable,
     getAvailableSearchContextSpecOrDefault,
+    SearchQueryStateStoreProvider,
 } from '@sourcegraph/search'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
@@ -92,6 +93,7 @@ import {
     setQueryStateFromURL,
     setExperimentalFeaturesFromSettings,
     getExperimentalFeatures,
+    useNavbarQueryState,
 } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
@@ -390,89 +392,95 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         <WildcardThemeContext.Provider value={WILDCARD_THEME}>
                             <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                                 <SearchResultsCacheProvider>
-                                    <ScrollManager history={history}>
-                                        <Router history={history} key={0}>
-                                            <FeatureFlagsAgent />
-                                            <Route
-                                                path="/"
-                                                render={routeComponentProps => (
-                                                    <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
-                                                        <LayoutWithActivation
-                                                            {...props}
-                                                            {...routeComponentProps}
-                                                            authenticatedUser={authenticatedUser}
-                                                            viewerSubject={this.state.viewerSubject}
-                                                            settingsCascade={this.state.settingsCascade}
-                                                            batchChangesEnabled={this.props.batchChangesEnabled}
-                                                            batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                                                this.state.settingsCascade
-                                                            )}
-                                                            batchChangesWebhookLogsEnabled={
-                                                                window.context.batchChangesWebhookLogsEnabled
-                                                            }
-                                                            // Search query
-                                                            fetchHighlightedFileLineRanges={
-                                                                fetchHighlightedFileLineRanges
-                                                            }
-                                                            // Extensions
-                                                            platformContext={this.platformContext}
-                                                            extensionsController={this.extensionsController}
-                                                            telemetryService={eventLogger}
-                                                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                            searchContextsEnabled={this.props.searchContextsEnabled}
-                                                            hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                                            hasUserAddedExternalServices={
-                                                                this.state.hasUserAddedExternalServices
-                                                            }
-                                                            selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                                            setSelectedSearchContextSpec={
-                                                                this.setSelectedSearchContextSpec
-                                                            }
-                                                            getUserSearchContextNamespaces={
-                                                                getUserSearchContextNamespaces
-                                                            }
-                                                            fetchAutoDefinedSearchContexts={
-                                                                fetchAutoDefinedSearchContexts
-                                                            }
-                                                            fetchSearchContexts={fetchSearchContexts}
-                                                            fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                                            fetchSearchContext={fetchSearchContext}
-                                                            createSearchContext={createSearchContext}
-                                                            updateSearchContext={updateSearchContext}
-                                                            deleteSearchContext={deleteSearchContext}
-                                                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                                            defaultSearchContextSpec={
-                                                                this.state.defaultSearchContextSpec
-                                                            }
-                                                            globbing={this.state.globbing}
-                                                            isCodeInsightsGqlApiEnabled={
-                                                                window.context.codeInsightsGqlApiEnabled
-                                                            }
-                                                            fetchSavedSearches={fetchSavedSearches}
-                                                            fetchRecentSearches={fetchRecentSearches}
-                                                            fetchRecentFileViews={fetchRecentFileViews}
-                                                            streamSearch={aggregateStreamingSearch}
-                                                            onUserExternalServicesOrRepositoriesUpdate={
-                                                                this.onUserExternalServicesOrRepositoriesUpdate
-                                                            }
-                                                            onSyncedPublicRepositoriesUpdate={
-                                                                this.onSyncedPublicRepositoriesUpdate
-                                                            }
-                                                            featureFlags={this.state.featureFlags}
-                                                        />
-                                                    </CodeHostScopeProvider>
-                                                )}
-                                            />
-                                            <SearchStack />
-                                        </Router>
-                                    </ScrollManager>
-                                    <Tooltip key={1} />
-                                    <Notifications
-                                        key={2}
-                                        extensionsController={this.extensionsController}
-                                        notificationClassNames={notificationClassNames}
-                                    />
-                                    <UserSessionStores />
+                                    <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                                        <ScrollManager history={history}>
+                                            <Router history={history} key={0}>
+                                                <FeatureFlagsAgent />
+                                                <Route
+                                                    path="/"
+                                                    render={routeComponentProps => (
+                                                        <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
+                                                            <LayoutWithActivation
+                                                                {...props}
+                                                                {...routeComponentProps}
+                                                                authenticatedUser={authenticatedUser}
+                                                                viewerSubject={this.state.viewerSubject}
+                                                                settingsCascade={this.state.settingsCascade}
+                                                                batchChangesEnabled={this.props.batchChangesEnabled}
+                                                                batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                                                    this.state.settingsCascade
+                                                                )}
+                                                                batchChangesWebhookLogsEnabled={
+                                                                    window.context.batchChangesWebhookLogsEnabled
+                                                                }
+                                                                // Search query
+                                                                fetchHighlightedFileLineRanges={
+                                                                    fetchHighlightedFileLineRanges
+                                                                }
+                                                                // Extensions
+                                                                platformContext={this.platformContext}
+                                                                extensionsController={this.extensionsController}
+                                                                telemetryService={eventLogger}
+                                                                isSourcegraphDotCom={
+                                                                    window.context.sourcegraphDotComMode
+                                                                }
+                                                                searchContextsEnabled={this.props.searchContextsEnabled}
+                                                                hasUserAddedRepositories={this.hasUserAddedRepositories()}
+                                                                hasUserAddedExternalServices={
+                                                                    this.state.hasUserAddedExternalServices
+                                                                }
+                                                                selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                                                setSelectedSearchContextSpec={
+                                                                    this.setSelectedSearchContextSpec
+                                                                }
+                                                                getUserSearchContextNamespaces={
+                                                                    getUserSearchContextNamespaces
+                                                                }
+                                                                fetchAutoDefinedSearchContexts={
+                                                                    fetchAutoDefinedSearchContexts
+                                                                }
+                                                                fetchSearchContexts={fetchSearchContexts}
+                                                                fetchSearchContextBySpec={fetchSearchContextBySpec}
+                                                                fetchSearchContext={fetchSearchContext}
+                                                                createSearchContext={createSearchContext}
+                                                                updateSearchContext={updateSearchContext}
+                                                                deleteSearchContext={deleteSearchContext}
+                                                                isSearchContextSpecAvailable={
+                                                                    isSearchContextSpecAvailable
+                                                                }
+                                                                defaultSearchContextSpec={
+                                                                    this.state.defaultSearchContextSpec
+                                                                }
+                                                                globbing={this.state.globbing}
+                                                                isCodeInsightsGqlApiEnabled={
+                                                                    window.context.codeInsightsGqlApiEnabled
+                                                                }
+                                                                fetchSavedSearches={fetchSavedSearches}
+                                                                fetchRecentSearches={fetchRecentSearches}
+                                                                fetchRecentFileViews={fetchRecentFileViews}
+                                                                streamSearch={aggregateStreamingSearch}
+                                                                onUserExternalServicesOrRepositoriesUpdate={
+                                                                    this.onUserExternalServicesOrRepositoriesUpdate
+                                                                }
+                                                                onSyncedPublicRepositoriesUpdate={
+                                                                    this.onSyncedPublicRepositoriesUpdate
+                                                                }
+                                                                featureFlags={this.state.featureFlags}
+                                                            />
+                                                        </CodeHostScopeProvider>
+                                                    )}
+                                                />
+                                                <SearchStack />
+                                            </Router>
+                                        </ScrollManager>
+                                        <Tooltip key={1} />
+                                        <Notifications
+                                            key={2}
+                                            extensionsController={this.extensionsController}
+                                            notificationClassNames={notificationClassNames}
+                                        />
+                                        <UserSessionStores />
+                                    </SearchQueryStateStoreProvider>
                                 </SearchResultsCacheProvider>
                             </TemporarySettingsProvider>
                         </WildcardThemeContext.Provider>
