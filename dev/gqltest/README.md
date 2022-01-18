@@ -67,13 +67,14 @@ You will need to run your local instance in `enterprise` mode in order for tests
 1. Clear your database: `./dev/drop-entire-local-database-and-redis.sh`
 2. Delete your `~/.sourcegraph` directory
 3. Add the following to your `sg.config.overwrite.yaml`
- 
+
 ```yaml
-    commands:
-      enterprise-frontend:
-        env:
-          EXTSVC_CONFIG_FILE: ''
+commands:
+  enterprise-frontend:
+    env:
+      EXTSVC_CONFIG_FILE: ''
 ```
+
 4. Start your instance by running `sg start enterprise`
 5. Create the admin account so that it matches the credentials passed to tests as above
 
