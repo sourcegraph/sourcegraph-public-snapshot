@@ -43,7 +43,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsRe
 			srs.srsErr = err
 			return
 		}
-		results, err := srs.sr.doResults(ctx, jobs, repoOptions, timeout)
+		results, err := srs.sr.doResults(ctx, jobs, repoOptions, timeout, srs.sr.stream)
 		if err != nil {
 			srs.srsErr = err
 			return

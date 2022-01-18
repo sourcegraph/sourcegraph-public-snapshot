@@ -969,7 +969,7 @@ func intersect(left, right *SearchResults) *SearchResults {
 // and likely yields fewer than N results). If the intersection does not yield N
 // results, and is not exhaustive for every expression, we rerun the search by
 // doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic, stream streaming.Sender) (*SearchResults, error) {
 	start := time.Now()
 
 	// Invariant: this function is only reachable from callers that
@@ -1011,7 +1011,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 	var exhausted bool
 	for {
 		q = q.MapCount(tryCount)
-		result, err = r.evaluatePatternExpression(ctx, q.MapPattern(operands[0]))
+		result, err = r.evaluatePatternExpression(ctx, q.MapPattern(operands[0]), stream)
 		if err != nil {
 			return nil, err
 		}
@@ -1033,7 +1033,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			default:
 			}
 
-			termResult, err = r.evaluatePatternExpression(ctx, q.MapPattern(term))
+			termResult, err = r.evaluatePatternExpression(ctx, q.MapPattern(term), stream)
 			if err != nil {
 				return nil, err
 			}
@@ -1069,7 +1069,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 // expressions that are ORed together by searching for each subexpression. If
 // the maximum number of results are reached after evaluating a subexpression,
 // we shortcircuit and return results immediately.
-func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic, stream streaming.Sender) (*SearchResults, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more operands.
 	operands := q.Pattern.(query.Operator).Operands
@@ -1100,7 +1100,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 
 			defer sem.Release(1)
 
-			new, err := r.evaluatePatternExpression(ctx, q.MapPattern(term))
+			new, err := r.evaluatePatternExpression(ctx, q.MapPattern(term), stream)
 			if err != nil || new == nil {
 				return err
 			}
@@ -1153,7 +1153,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
-func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.Basic, stream streaming.Sender) (*SearchResults, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
@@ -1162,22 +1162,22 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 
 		switch term.Kind {
 		case query.And:
-			return r.evaluateAnd(ctx, q)
+			return r.evaluateAnd(ctx, q, stream)
 		case query.Or:
-			return r.evaluateOr(ctx, q)
+			return r.evaluateOr(ctx, q, stream)
 		case query.Concat:
 			jobs, repoOptions, timeout, err := r.toSearchInputs(q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
+			return r.evaluateJobs(ctx, jobs, repoOptions, timeout, stream)
 		}
 	case query.Pattern:
 		jobs, repoOptions, timeout, err := r.toSearchInputs(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
+		return r.evaluateJobs(ctx, jobs, repoOptions, timeout, stream)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -1187,15 +1187,15 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 }
 
 // evaluate evaluates all expressions of a search query.
-func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluate(ctx context.Context, q query.Basic, stream streaming.Sender) (*SearchResults, error) {
 	if q.Pattern == nil {
 		jobs, repoOptions, timeout, err := r.toSearchInputs(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
+		return r.evaluateJobs(ctx, jobs, repoOptions, timeout, stream)
 	}
-	return r.evaluatePatternExpression(ctx, q)
+	return r.evaluatePatternExpression(ctx, q, stream)
 }
 
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
@@ -1257,7 +1257,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	sr, err := r.resultsRecursive(ctx, r.Plan)
+	sr, err := r.resultsRecursive(ctx, r.Plan, nil)
 	srr := r.resultsToResolver(sr)
 	r.logBatch(ctx, srr, start, err)
 	return srr, err
@@ -1268,11 +1268,9 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		// The query is not streaming compatible, but we still want to
 		// use the streaming endpoint. Run a batch search then send the
 		// results back on the stream.
-		endpoint := r.stream
-		r.stream = nil // Disables streaming: backends may not use the endpoint.
 		srr, err := r.resultsBatch(ctx)
 		if srr != nil {
-			endpoint.Send(streaming.SearchEvent{
+			r.stream.Send(streaming.SearchEvent{
 				Results: srr.Matches,
 				Stats:   srr.Stats,
 			})
@@ -1284,7 +1282,7 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		selectPath, _ := filter.SelectPathFromString(sp) // Invariant: error already checked
 		r.stream = streaming.WithSelect(r.stream, selectPath)
 	}
-	sr, err := r.resultsRecursive(ctx, r.Plan)
+	sr, err := r.resultsRecursive(ctx, r.Plan, r.stream)
 	srr := r.resultsToResolver(sr)
 	return srr, err
 }
@@ -1327,7 +1325,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 	}
 }
 
-func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (_ *SearchResults, err error) {
+func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan, stream streaming.Sender) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
@@ -1361,17 +1359,14 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 			defer sem.Release(1)
 
 			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
-				// Disable streaming for subqueries so we can use
-				// the results rather than sending them back to the caller
-				orig := r.stream
-				r.stream = nil
-				defer func() { r.stream = orig }()
-
 				plan, err := pred.Plan(q)
 				if err != nil {
 					return nil, err
 				}
-				return r.resultsRecursive(ctx, plan)
+
+				// Disable streaming for subqueries so we can use
+				// the results rather than sending them back to the caller
+				return r.resultsRecursive(ctx, plan, nil)
 			})
 			if errors.Is(err, ErrPredicateNoResults) {
 				return nil
@@ -1384,9 +1379,9 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 			var newResult *SearchResults
 			if predicatePlan != nil {
 				// If a predicate filter generated a new plan, evaluate that plan.
-				newResult, err = r.resultsRecursive(ctx, predicatePlan)
+				newResult, err = r.resultsRecursive(ctx, predicatePlan, stream)
 			} else {
-				newResult, err = r.evaluate(ctx, q)
+				newResult, err = r.evaluate(ctx, q, stream)
 			}
 
 			if err != nil || newResult == nil {
@@ -1528,7 +1523,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // Search jobs represent terminal nodes in the evaluation tree. If the deadline
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) evaluateJobs(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateJobs(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration, stream streaming.Sender) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "evaluateJobs", "")
 	defer func() {
 		tr.SetError(err)
@@ -1536,7 +1531,7 @@ func (r *searchResolver) evaluateJobs(ctx context.Context, jobs []run.Job, repoO
 	}()
 
 	start := time.Now()
-	rr, err := r.doResults(ctx, jobs, repoOptions, timeout)
+	rr, err := r.doResults(ctx, jobs, repoOptions, timeout, stream)
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1721,7 +1716,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.doResults(ctx, jobs, repoOptions, timeout)
+		results, err := r.doResults(ctx, jobs, repoOptions, timeout, r.stream)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1812,7 +1807,7 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (res *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration, stream streaming.Sender) (res *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1843,8 +1838,6 @@ func (r *searchResolver) doResults(ctx context.Context, jobs []run.Job, repoOpti
 	// For streaming search we want to limit based on all results, not just
 	// per backend. This works better than batch based since we have higher
 	// defaults.
-	stream := r.stream
-
 	if stream != nil {
 		var cancelOnLimit context.CancelFunc
 		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
