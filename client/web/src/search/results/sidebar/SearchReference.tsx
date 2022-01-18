@@ -1,4 +1,3 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
@@ -14,7 +13,7 @@ import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { Button, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 import { QueryChangeSource } from '../../helpers'
@@ -531,7 +530,7 @@ const SearchReference = React.memo(
                     filterList
                 ) : (
                     <Tabs index={selectedTab} onChange={setSelectedTab}>
-                        <TabList className={styles.tablist}>
+                        <TabList>
                             <Tab>Common</Tab>
                             <Tab>All filters</Tab>
                             <Tab>Operators</Tab>
