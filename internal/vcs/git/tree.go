@@ -60,21 +60,7 @@ func ReadDir(
 	commit api.CommitID,
 	path string,
 	recurse bool,
-) (files []fs.FileInfo, err error) {
-	defer func() {
-		if err != nil || !checker.Enabled() {
-			return
-		}
-		a := actor.FromContext(ctx)
-		filtered, filteringErr := authz.FilterActorFileInfos(ctx, checker, a, repo, files)
-		if filteringErr != nil {
-			err = errors.Wrap(err, "filtering paths")
-			files = nil
-			return
-		}
-		files = filtered
-	}()
-
+) ([]fs.FileInfo, error) {
 	if Mocks.ReadDir != nil {
 		return Mocks.ReadDir(commit, path, recurse)
 	}
@@ -94,7 +80,19 @@ func ReadDir(
 		// to list the dir's tree entry in its parent dir).
 		path = filepath.Clean(util.Rel(path)) + "/"
 	}
-	return lsTree(ctx, repo, commit, path, recurse)
+	files, err := lsTree(ctx, repo, commit, path, recurse)
+
+	if err != nil || checker == nil || !checker.Enabled() {
+		return files, err
+	}
+
+	a := actor.FromContext(ctx)
+	filtered, filteringErr := authz.FilterActorFileInfos(ctx, checker, a, repo, files)
+	if filteringErr != nil {
+		return nil, errors.Wrap(err, "filtering paths")
+	} else {
+		return filtered, nil
+	}
 }
 
 // LsFiles returns the output of `git ls-files`
@@ -125,24 +123,7 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 
 // lStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
 // returned FileInfo describes the symbolic link.  lStat makes no attempt to follow the link.
-func lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (file fs.FileInfo, err error) {
-	defer func() {
-		if err != nil || !checker.Enabled() {
-			return
-		}
-		// Applying sub-repo permissions
-		a := actor.FromContext(ctx)
-		include, filteringErr := authz.FilterActorFileInfo(ctx, checker, a, repo, file)
-		if filteringErr != nil || !include {
-			if filteringErr != nil {
-				err = errors.Wrap(err, "filtering paths")
-			} else {
-				err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
-			}
-			file = nil
-		}
-	}()
-
+func lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -171,7 +152,22 @@ func lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api
 		return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 	}
 
-	return fis[0], nil
+	if checker == nil || !checker.Enabled() {
+		return fis[0], nil
+	}
+	// Applying sub-repo permissions
+	a := actor.FromContext(ctx)
+	include, filteringErr := authz.FilterActorFileInfo(ctx, checker, a, repo, fis[0])
+	if include && filteringErr == nil {
+		return fis[0], nil
+	} else {
+		if filteringErr != nil {
+			err = errors.Wrap(err, "filtering paths")
+		} else {
+			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
+		}
+		return nil, err
+	}
 }
 
 // lsTreeRootCache caches the result of running `git ls-tree ...` on a repository's root path
