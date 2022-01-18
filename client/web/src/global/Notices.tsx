@@ -4,12 +4,14 @@ import * as React from 'react'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { Alert } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Notice, Settings } from '../schema/settings.schema'
 
 import styles from './Notices.module.scss'
 
+// TODO: Remove classNames
 const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string; testId?: string }> = ({
     notice,
     className = '',
@@ -27,9 +29,9 @@ const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string;
             {content}
         </DismissibleAlert>
     ) : (
-        <div data-testid={testId} className={classNames('alert', baseClassName, className)}>
+        <Alert data-testid={testId} className={classNames(baseClassName, className)}>
             {content}
-        </div>
+        </Alert>
     )
 }
 
