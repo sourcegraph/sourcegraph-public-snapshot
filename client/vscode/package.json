@@ -1,0 +1,54 @@
+{
+  "private": true,
+  "name": "sourcegraph-preview",
+  "displayName": "Sourcegraph - preview",
+  "version": "0.0.2",
+  "description": "Sourcegraph for VS Code",
+  "publisher": "kandalatj",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "icon": "images/logo.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph.git"
+  },
+  "engines": {
+    "vscode": "^1.61.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./dist/node/extension.js",
+  "browser": "./dist/webworker/extension.js",
+  "contributes": {
+    "commands": [
+    ],
+    "viewsContainers": {
+    },
+    "views": {
+    },
+    "viewsWelcome": [
+    ],
+    "configuration": {
+    },
+    "keybindings": [
+    ],
+    "menus": {
+      "editor/context": [
+      ]
+    }
+  },
+  "scripts": {
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "test": "echo \"No tests exist yet\" && exit 1",
+    "package": "echo \"package script not implemented yet\" && exit 1",
+    "build": "webpack --mode=development --config-name extension:node --config-name extension:webworker",
+    "build:node": "webpack --mode=development --config-name extension:node",
+    "build:web": "webpack --mode=development --config-name extension:webworker",
+    "watch:node": "webpack --mode=development --watch --config-name extension:node",
+    "watch:web": "webpack --mode=development --watch --config-name extension:node"
+  }
+}
