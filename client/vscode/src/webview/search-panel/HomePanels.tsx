@@ -7,9 +7,10 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { QueryState } from '@sourcegraph/shared/src/search/helpers'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { DynamicWebFonts } from '@sourcegraph/web/src/search/home/DynamicWebFonts'
-import { SearchExample, exampleQueries, fonts } from '@sourcegraph/web/src/search/home/LoggedOutHomepage.constants'
-import styles from '@sourcegraph/web/src/search/home/LoggedOutHomepage.module.scss'
+
+import styles from './index.module.scss'
+import { SearchExample, exampleQueries } from './SearchExamples'
+
 export interface HomePanelsProps extends TelemetryProps, ThemeProps {
     setQuery: (newState: QueryState) => void
 }
@@ -68,8 +69,8 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
 }
 
 export const HomePanels: React.FunctionComponent<HomePanelsProps> = props => (
-    <DynamicWebFonts fonts={fonts}>
-        <div className={styles.loggedOutHomepage}>
+    <>
+        <div className={styles.vsceSearchHomepage}>
             <div className={styles.helpContent}>
                 <SearchExamples
                     title="Search examples"
@@ -117,7 +118,7 @@ export const HomePanels: React.FunctionComponent<HomePanelsProps> = props => (
                 </div>
             </div>
         </div>
-    </DynamicWebFonts>
+    </>
 )
 
 const MagnifyingGlassSearchIcon = React.memo(() => (

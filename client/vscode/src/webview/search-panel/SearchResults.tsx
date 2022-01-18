@@ -4,6 +4,7 @@ import ShareOutlineIcon from 'mdi-react/ShareOutlineIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { StreamingSearchResultsList } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import {
@@ -16,19 +17,21 @@ import {
     SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
-import {
-    CreateSavedSearchResult,
-    CreateSavedSearchVariables,
-    TreeEntriesVariables,
-} from '@sourcegraph/web/src/graphql-operations'
-import { BookmarkRadialGradientIcon } from '@sourcegraph/web/src/search/CtaIcons'
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from '@sourcegraph/web/src/search/results/ButtonDropdownCta'
 
 import { SourcegraphUri } from '../../file-system/SourcegraphUri'
-import { CommitSearchResultFields, FileMatchFields, RepositoryFields, SearchResult } from '../../graphql-operations'
+import {
+    CommitSearchResultFields,
+    FileMatchFields,
+    RepositoryFields,
+    SearchResult,
+    TreeEntriesVariables,
+    CreateSavedSearchResult,
+    CreateSavedSearchVariables,
+} from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 
+import { BookmarkRadialGradientIcon } from './icons'
 import { createSavedSearchQuery } from './queries'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 import styles from './SearchResults.module.scss'
@@ -188,9 +191,8 @@ export const SearchResults = React.memo<SearchResultsProps>(
                         )
                     }
                     case 'content': {
-                        // TODO we will have to pass SearchMatch to onSelect from within the FileMatchChildren component
+                        // Get selected position onSelect from within the FileMatchChildren component
                         // to be able to determine which line match to open to.
-                        // For preview we open the first match.
                         const { lineNumber, offsetAndLengths } = result.lineMatches[0]
                         const [start] = offsetAndLengths[0]
 

@@ -1,12 +1,16 @@
 import classNames from 'classnames'
+import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
 import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { TreeEntriesVariables } from '@sourcegraph/web/src/graphql-operations'
+import { PageHeader } from '@sourcegraph/wildcard'
 
+import { TreeEntriesVariables } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 
 import styles from './SearchResults.module.scss'
@@ -18,6 +22,7 @@ interface RepoPageProps extends WebviewPageProps {
     instanceHostname: Promise<string>
     getFiles: (variables: TreeEntriesVariables) => void
     selectedRepoName: string
+    backToSearchResultPage: () => void
 }
 
 export const RepoPage: React.FunctionComponent<RepoPageProps> = ({
@@ -26,6 +31,7 @@ export const RepoPage: React.FunctionComponent<RepoPageProps> = ({
     sourcegraphVSCodeExtensionAPI,
     getFiles,
     selectedRepoName,
+    backToSearchResultPage,
 }) => {
     const searchActions = useQueryState(({ actions }) => actions)
 
@@ -55,8 +61,21 @@ export const RepoPage: React.FunctionComponent<RepoPageProps> = ({
     }
     return (
         <section className={classNames('test-tree-entries mb-3 p-2')}>
-            <h2>Files and directories</h2>
-            <div className={classNames('test-tree-entries mb-3 py-2', styles.section, styles.filesContainer)}>
+            <button
+                type="button"
+                className="btn btn-sm infobar-button-link btn-outline-secondary text-decoration-none"
+                onClick={backToSearchResultPage}
+            >
+                <ArrowLeftIcon className="icon-inline mr-1" />
+                Back to Search Result
+            </button>
+            <PageHeader
+                path={[{ icon: SourceRepositoryIcon, text: displayRepoName(selectedRepoName) }]}
+                className="mb-1 test-tree-page-title"
+            />
+            <p className="mt-0 description-text">Universal code search (self-hosted)</p>
+            <div className={classNames('test-tree-entries p-2 mt-3', styles.section, styles.filesContainer)}>
+                <h4>Files and directories</h4>
                 <div
                     className={classNames(
                         'pr-2',
@@ -85,8 +104,12 @@ export const RepoPage: React.FunctionComponent<RepoPageProps> = ({
                                 )}
                             >
                                 <span>
-                                    {entry.isDirectory && <FolderOutlineIcon className="icon-inline mr-1" />}
-                                    {!entry.isDirectory && <FileDocumentOutlineIcon className="icon-inline mr-1" />}
+                                    {entry.isDirectory && (
+                                        <FolderOutlineIcon className="icon-inline mr-1 description-text" />
+                                    )}
+                                    {!entry.isDirectory && (
+                                        <FileDocumentOutlineIcon className="icon-inline mr-1 description-text" />
+                                    )}
                                     {entry.name}
                                     {entry.isDirectory && '/'}
                                 </span>

@@ -3,12 +3,11 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useEffect, useState } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { EventLogsDataResult, EventLogsDataVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { EventLogResult } from '@sourcegraph/shared/src/search/backend'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
-import { ShowMoreButton } from '@sourcegraph/web/src/search/panels/ShowMoreButton'
 
 import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
@@ -156,3 +155,14 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
 
     return recentSearches
 }
+
+const ShowMoreButton: React.FunctionComponent<{ onClick: () => void; className?: string }> = ({
+    onClick,
+    className,
+}) => (
+    <div className="text-center py-3">
+        <button type="button" className={classNames('btn btn-link', className)} onClick={onClick}>
+            Show more
+        </button>
+    </div>
+)

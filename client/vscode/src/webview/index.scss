@@ -65,11 +65,14 @@ a,
     background-color: var(--vscode-textCodeBlock-background) !important;
 }
 
+.description-text {
+    color: var(--vscode-descriptionForeground) !important;
+}
 .textarea {
     background-color: var(--vscode-input-background) !important;
 }
 
-.card {
+.cta-card {
     background-color: var(--vscode-textCodeBlock-background) !important;
 }
 
@@ -126,7 +129,7 @@ a,
 
 .result-container {
     div {
-        background-color: var(--vscode-textCodeBlock-background);
+        background-color: transparent !important;
     }
 }
 

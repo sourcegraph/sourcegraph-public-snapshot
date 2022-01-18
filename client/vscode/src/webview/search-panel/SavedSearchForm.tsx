@@ -7,9 +7,11 @@ import { Badge } from '@sourcegraph/branded/src/components/Badge'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
-import styles from '@sourcegraph/web/src/savedSearches/SavedSearchForm.module.scss'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
+
+import { AuthenticatedUser } from '../../graphql-operations'
+
+import styles from './SearchResults.module.scss'
 
 export interface SavedQueryFields {
     id: Scalars['ID']

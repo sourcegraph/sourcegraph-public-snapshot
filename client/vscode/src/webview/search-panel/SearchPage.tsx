@@ -7,8 +7,6 @@ import { catchError, map } from 'rxjs/operators'
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { getFullQuery } from '@sourcegraph/branded/src/search/input/toggles/Toggles'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
-import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { getAvailableSearchContextSpecOrDefault } from '@sourcegraph/shared/src/search'
@@ -22,17 +20,23 @@ import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
-import { TreeEntriesResult, TreeEntriesVariables } from '@sourcegraph/web/src/graphql-operations'
-import { SearchBetaIcon } from '@sourcegraph/web/src/search/CtaIcons'
 
-import { SearchResult, SearchVariables } from '../../graphql-operations'
+import {
+    AuthenticatedUser,
+    CurrentAuthStateResult,
+    CurrentAuthStateVariables,
+    SearchResult,
+    SearchVariables,
+    TreeEntriesResult,
+    TreeEntriesVariables,
+} from '../../graphql-operations'
 import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
 
 import { HomePanels } from './HomePanels'
+import { SearchBetaIcon } from './icons'
 import styles from './index.module.scss'
-import { searchQuery, treeEntriesQuery } from './queries'
+import { currentAuthStateQuery, searchQuery, treeEntriesQuery } from './queries'
 import { RepoPage } from './RepoPage'
 import { convertGQLSearchToSearchMatches, SearchResults } from './SearchResults'
 import { DEFAULT_SEARCH_CONTEXT_SPEC } from './state'
@@ -82,10 +86,31 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         (event?: React.FormEvent): void => {
             event?.preventDefault()
             // close file tree when a new search has been performed
-            setOpenRepoFileTree(false)
+            sourcegraphVSCodeExtensionAPI
+                .displayFileTree(false)
+                .then(() => {
+                    setOpenRepoFileTree(false)
+                })
+                // TODO error handling
+                .catch(() => {})
             searchActions.submitQuery()
         },
-        [searchActions]
+        [searchActions, sourcegraphVSCodeExtensionAPI]
+    )
+
+    const backToSearchResults = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            // close file tree when a new search has been performed
+            sourcegraphVSCodeExtensionAPI
+                .displayFileTree(false)
+                .then(() => {
+                    setOpenRepoFileTree(false)
+                })
+                // TODO error handling
+                .catch(() => {})
+        },
+        [sourcegraphVSCodeExtensionAPI]
     )
 
     const fetchSuggestions = useCallback(
@@ -301,16 +326,15 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         validAccessToken,
         openRepoFileTree,
     ])
-
+    const themeProperty = theme === 'theme-light' ? 'light' : 'dark'
     return (
         <div>
             {!queryToRun.query ? (
                 <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
-                    <BrandLogo
-                        className={styles.logo}
-                        isLightTheme={theme === 'theme-light'}
-                        variant="logo"
-                        assetsRoot="https://sourcegraph.com/.assets"
+                    <img
+                        className={classNames(styles.logo)}
+                        src={`https://sourcegraph.com/.assets/img/sourcegraph-logo-${themeProperty}.svg`}
+                        alt="Sourcegraph logo"
                     />
                     <div className="text-muted text-center font-italic mt-3">
                         Search your code and 2M+ open source repositories
@@ -438,6 +462,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                     instanceHostname={instanceHostname}
                                     sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                                     selectedRepoName={fileVariables.repoName}
+                                    backToSearchResultPage={backToSearchResults}
                                 />
                             )}
                             {fullQuery && !openRepoFileTree && (
@@ -475,7 +500,7 @@ export const SearchPageCta: React.FunctionComponent<SearchPageCtaProps> = ({
     buttonText,
     onClickAction,
 }) => (
-    <div className="card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
+    <div className="cta-card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
         <div className="mr-md-3">{icon}</div>
         <div className={classNames('flex-1 my-md-0 my-2', styles.streamingSearchResultsCtaContainer)}>
             <div className={classNames('mb-1', styles.streamingSearchResultsCtaTitle)}>

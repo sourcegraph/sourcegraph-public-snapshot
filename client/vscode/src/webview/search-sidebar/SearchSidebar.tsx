@@ -4,17 +4,18 @@ import create, { UseStore } from 'zustand'
 import { SearchSidebar as BrandedSearchSidebar } from '@sourcegraph/branded/src/search/results/sidebar/SearchSidebar'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
-import {
-    CurrentAuthStateResult,
-    CurrentAuthStateVariables,
-    SearchPatternType,
-} from '@sourcegraph/shared/src/graphql-operations'
 import { SearchQueryState, updateQuery } from '@sourcegraph/shared/src/search/searchQueryState'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
+import {
+    AuthenticatedUser,
+    CurrentAuthStateResult,
+    CurrentAuthStateVariables,
+    SearchPatternType,
+} from '../../graphql-operations'
 import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
+import { currentAuthStateQuery } from '../search-panel/queries'
 
 import { OpenSearchPanelCta } from './OpenSearchPanelCta'
 import { SearchHistoryPanel } from './SearchHistoryPanel'

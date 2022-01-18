@@ -80,7 +80,7 @@
           "id": "sourcegraph.searchSidebar",
           "name": "Sourcegraph Search",
           "visibility": "visible",
-          "when": "!sourcegraph.canFocusActiveDocument"
+          "when": "!sourcegraph.showFileTree || !sourcegraph.canFocusActiveDocument"
         },
         {
           "id": "sourcegraph.files",

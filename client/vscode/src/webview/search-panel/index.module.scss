@@ -1,3 +1,10 @@
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities/spacing';
+@import 'wildcard/src/global-styles/breakpoints';
+@import './homepage';
+
 .with-editor-font span {
     font-family: var(--vscode-editor-font-family) !important;
     font-weight: var(--vscode-editor-font-weight) !important;
@@ -68,7 +75,6 @@
     &__cta {
         &-container {
             flex: 1;
-            background-color: var(--vscode-textCodeBlock-background) !important;
         }
 
         &-title {
@@ -96,5 +102,160 @@
     &:focus-within,
     &:focus-visible {
         box-shadow: none;
+    }
+}
+
+// Mirror of '@sourcegraph/web/src/search/home/LoggedOutHomepage.module.scss'
+
+.vsce-search-homepage {
+    width: 100%;
+
+    @media (--xl-breakpoint-up) {
+        max-width: var(--max-homepage-container-width);
+    }
+
+    :global(.theme-light) & {
+        --homepage-card-color: var(--color-bg-1);
+    }
+
+    :global(.theme-dark) & {
+        --homepage-card-color: var(--color-bg-2);
+    }
+
+    --home-marketing-drop: 0 4px 16px -6px rgba(46, 34, 119, 0.1);
+    --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+    &__community-search-context-list {
+        &-cards {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+
+            @media (--md-breakpoint-down) {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+                grid-auto-rows: minmax(4rem, auto);
+                gap: $spacer * 0.75;
+            }
+
+            @media (--sm-breakpoint-down) {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: unset;
+            }
+        }
+
+        &-card {
+            max-width: 13.5rem;
+
+            @media (--sm-breakpoint-down) {
+                margin-right: 0.75rem;
+            }
+        }
+
+        &-icon {
+            width: 2rem;
+            height: 2rem;
+            object-fit: contain;
+        }
+    }
+
+    &__cta {
+        max-width: 38rem;
+        background-color: var(--color-bg-1);
+    }
+
+    &__community-search-contexts-listing-title {
+        margin-bottom: 0.25rem;
+    }
+}
+
+.help-content {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 3rem;
+
+    @media (--sm-breakpoint-down) {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+.search-examples-wrapper {
+    margin-right: 1.5rem;
+
+    @media (--sm-breakpoint-down) {
+        margin-right: 0;
+    }
+
+    flex: 1;
+}
+
+.search-examples-title-wrapper {
+    @media (--md-breakpoint-down) {
+        flex-direction: column;
+    }
+}
+.search-examples-title {
+    @media (--md-breakpoint-down) {
+        margin-bottom: 0.5rem;
+    }
+}
+.title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.search-examples {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+
+    @media (--lg-breakpoint-down) {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    @media (--md-breakpoint-down) {
+        grid-template-columns: 1fr;
+    }
+}
+.search-example-card {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    font-size: 0.75rem;
+    text-decoration: none !important;
+    margin-bottom: 0.5rem;
+}
+.search-example-icon {
+    color: var(--primary);
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+}
+.search-example-query-wrapper {
+    padding: 0.5rem 0;
+    align-self: center;
+}
+
+.search-example-query {
+    padding: 0 0.75rem;
+    border-left: 1px solid var(--border-color);
+    min-height: 2.375rem;
+}
+
+.cta-card {
+    display: flex;
+    flex-direction: row;
+    padding: 0.75rem 1rem;
+}
+
+.thumbnail {
+    @media (--sm-breakpoint-down) {
+        margin-top: 3.5rem;
+        text-align: center;
     }
 }
