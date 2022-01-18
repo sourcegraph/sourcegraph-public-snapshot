@@ -5,7 +5,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useEffect, useState } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -47,9 +47,9 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
-            <div className="alert alert-info mt-3">
+            <Alert className="mt-3" variant="info">
                 No authentication providers are available. Contact a site administrator for help.
-            </div>
+            </Alert>
         ) : (
             <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
                 {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} icon={false} />}
