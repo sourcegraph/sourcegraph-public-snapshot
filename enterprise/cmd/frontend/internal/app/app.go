@@ -102,7 +102,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		actor := actor.FromContext(r.Context())
 		err := checkIfUserCanInstallGitHubApp(r.Context(), db, actor.UID)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
