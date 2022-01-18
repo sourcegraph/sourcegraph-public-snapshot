@@ -319,10 +319,10 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	sort.Slice(matchKeys, func(i, j int) bool { return matchKeys[i].Less(matchKeys[j]) })
 
 	wantResultKeys := []result.Key{
-		{Repo: "foo", Commit: "branch3", Path: "main.go", TypeRank: 4},
-		{Repo: "foo", Commit: "branch4", Path: "main.go", TypeRank: 4},
-		{Repo: "foo", Commit: "master", Path: "main.go", TypeRank: 4},
-		{Repo: "foo", Commit: "mybranch", Path: "main.go", TypeRank: 4},
+		{Repo: "foo", Commit: "branch3", Path: "main.go"},
+		{Repo: "foo", Commit: "branch4", Path: "main.go"},
+		{Repo: "foo", Commit: "master", Path: "main.go"},
+		{Repo: "foo", Commit: "mybranch", Path: "main.go"},
 	}
 	if !reflect.DeepEqual(matchKeys, wantResultKeys) {
 		t.Errorf("got %v, want %v", matchKeys, wantResultKeys)
