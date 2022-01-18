@@ -252,7 +252,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className="btn btn-primary btn-block mt-4"
+                        className="btn btn-primary btn-block"
                     />
                 </div>
                 {context.sourcegraphDotComMode && (
