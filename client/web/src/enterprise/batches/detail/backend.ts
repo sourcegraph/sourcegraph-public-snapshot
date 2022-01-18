@@ -269,6 +269,7 @@ export const externalChangesetFieldsFragment = gql`
                     headRef
                 }
             }
+            forkNamespace
         }
     }
 

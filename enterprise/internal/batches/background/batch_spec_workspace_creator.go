@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -255,6 +256,11 @@ func (r *batchSpecWorkspaceCreator) process(
 			changesetSpec.BatchSpecID = spec.ID
 			changesetSpec.RepoID = workspace.dbWorkspace.RepoID
 			changesetSpec.UserID = spec.UserID
+
+			// TODO: unify.
+			if conf.Get().BatchChangesEnforceForks {
+				changesetSpec.SetForkToUser()
+			}
 
 			specs = append(specs, changesetSpec)
 		}

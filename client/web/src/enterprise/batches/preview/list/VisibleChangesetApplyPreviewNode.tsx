@@ -525,7 +525,7 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
                 )}
             <BranchMerge
                 baseRef={spec.targets.changesetSpec.description.baseRef}
-                forkNamespace={spec.targets.changesetSpec.description.fork ? '' : null}
+                forkNamespace={spec.targets.changesetSpec.forkNamespace}
                 headRef={spec.targets.changesetSpec.description.headRef}
             />
         </div>

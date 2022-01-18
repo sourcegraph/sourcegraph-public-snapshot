@@ -1,8 +1,9 @@
 import classNames from 'classnames'
+import AccountIcon from 'mdi-react/AccountIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Tooltip } from '@sourcegraph/wildcard'
 import { BadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
 
 export interface BranchProps extends Pick<BadgeProps, 'variant'> {
@@ -23,7 +24,7 @@ export const Branch: React.FunctionComponent<BranchProps> = ({ className, delete
         ) : (
             <>
                 <SourceForkIcon className="icon-inline mr-1" />
-                {forkNamespace ? `${forkNamespace}:` : ''}
+                <BranchNamespace namespace={forkNamespace} />
                 {name}
             </>
         )}
@@ -43,3 +44,27 @@ export const BranchMerge: React.FunctionComponent<BranchMergeProps> = ({ baseRef
         <Branch name={headRef} forkNamespace={forkNamespace} />
     </div>
 )
+
+interface BranchNamespaceProps {
+    namespace?: string
+}
+
+const BranchNamespace: React.FunctionComponent<BranchNamespaceProps> = ({ namespace }) => {
+    if (!namespace) {
+        return <></>
+    }
+
+    if (namespace === '<user>') {
+        return (
+            <>
+                <AccountIcon
+                    className="icon-inline"
+                    data-tooltip="This branch will be pushed to the namespace associated with the user credential"
+                />
+                :
+            </>
+        )
+    }
+
+    return <>{namespace}:</>
+}

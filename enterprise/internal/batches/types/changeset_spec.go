@@ -41,6 +41,8 @@ type ChangesetSpec struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	ForkNamespace *string
 }
 
 // Clone returns a clone of a ChangesetSpec.
@@ -123,4 +125,26 @@ func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
 		repoIDs = append(repoIDs, id)
 	}
 	return repoIDs
+}
+
+const changesetSpecForkNamespaceUser = "<user>"
+
+func (cs *ChangesetSpec) IsFork() bool {
+	return cs.ForkNamespace != nil
+}
+
+func (cs *ChangesetSpec) ShouldForkToUser() bool {
+	return cs.ForkNamespace != nil && *cs.ForkNamespace == changesetSpecForkNamespaceUser
+}
+
+func (cs *ChangesetSpec) GetForkNamespace() *string {
+	if cs.ForkNamespace != nil && *cs.ForkNamespace != changesetSpecForkNamespaceUser {
+		return cs.ForkNamespace
+	}
+	return nil
+}
+
+func (cs *ChangesetSpec) SetForkToUser() {
+	s := changesetSpecForkNamespaceUser
+	cs.ForkNamespace = &s
 }

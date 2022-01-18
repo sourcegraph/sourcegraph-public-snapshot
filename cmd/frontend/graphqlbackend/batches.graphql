@@ -840,6 +840,8 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     """
     expiresAt: DateTime
 
+    forkNamespace: String
+
     """
     The workspace this resulted from. Null, if not run server-side.
     """
@@ -904,7 +906,7 @@ type GitBranchChangesetDescription {
     """
     headRepository: Repository!
         @deprecated(
-            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use fork or ExternalChangeset.forkNamespace instead."
+            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use VisibleChangesetSpec.fork or ExternalChangeset.forkNamespace instead."
         )
 
     """
@@ -913,11 +915,6 @@ type GitBranchChangesetDescription {
     the Git branch "fix-foo").
     """
     headRef: String!
-
-    """
-    Whether the changeset will be published to a fork.
-    """
-    fork: Boolean!
 
     """
     The title of the changeset on the code host.
