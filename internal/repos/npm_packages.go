@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
