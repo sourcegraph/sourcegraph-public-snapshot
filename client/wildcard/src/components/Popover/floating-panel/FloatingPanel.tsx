@@ -67,6 +67,8 @@ export const FloatingPanel = forwardRef((props, reference) => {
             return
         }
 
+        console.log('Create tether')
+
         const { unsubscribe } = createTether({
             element: tooltipElement,
             marker: tooltipTailElement,
@@ -102,7 +104,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         <>
             <Component
                 {...otherProps}
-                key={position}
+                // key={position}
                 ref={useMergeRefs([tooltipReferenceCallback, reference])}
                 className={classNames(styles.floatingPanel, otherProps.className)}
             >

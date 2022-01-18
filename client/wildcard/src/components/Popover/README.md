@@ -65,8 +65,8 @@ function ComponentWithPopover() {
 In the example above, we are still listening to all popover open state-changing events (trigger element clicks, keyboard, outside clicks)
 by `onOpenChange` callback, but the consumer now is in charge of carrying popover open state.
 
-Another popular case - render tooltip/popover when the target got focused. An accessible version of the code intel tooltip might be a good
-For example, when some hoverable literal element got focused in the blob view, we want to do a few things
+Another popular case - render tooltip/popover when the target got focused. An accessible version of the code intel tooltip might be a good example.
+For instance, when some hoverable literal element got focused in the blob view, we want to do a few things
 
 - Render the code intel tooltip right next to the target
 - Move focus from the target into the tooltip and focus first focusable element within the tooltip

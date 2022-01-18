@@ -18,7 +18,7 @@ import { ForwardReferenceComponent } from '../../types'
 
 import { FloatingPanel, FloatingPanelProps } from './floating-panel/FloatingPanel'
 
-enum PopoverOpenEventReason {
+export enum PopoverOpenEventReason {
     TriggerClick = 'TriggerClick',
     TriggerFocus = 'TriggerFocus',
     TriggerBlur = 'TriggerBlur',
@@ -26,7 +26,7 @@ enum PopoverOpenEventReason {
     Esc = 'Esc',
 }
 
-interface PopoverOpenEvent {
+export interface PopoverOpenEvent {
     isOpen: boolean
     reason: PopoverOpenEventReason
 }
@@ -54,19 +54,19 @@ const PopoverContext = createContext<PopoverContextData>(DEFAULT_CONTEXT_VALUE)
 
 interface PopoverProps {
     anchor?: MutableRefObject<HTMLElement | null>
-    open?: boolean
+    isOpen?: boolean
     onOpenChange?: (event: PopoverOpenEvent) => void
 }
 
-const Popover: React.FunctionComponent<PopoverProps> = props => {
-    const { children, anchor, open, onOpenChange = noop } = props
+export const Popover: React.FunctionComponent<PopoverProps> = props => {
+    const { children, anchor, isOpen, onOpenChange = noop } = props
 
     const [targetElement, setTargetElement] = useState<HTMLElement | null>(null)
     const [tailElement, setTailElement] = useState<HTMLElement | null>(null)
 
     const [isInternalOpen, setInternalOpen] = useState<boolean>(false)
-    const isControlled = open !== undefined
-    const isOpen = isControlled ? open : isInternalOpen
+    const isControlled = isOpen !== undefined
+    const isPopoverOpen = isControlled ? isOpen : isInternalOpen
     const setOpen = useCallback<(event: PopoverOpenEvent) => void>(
         event => {
             if (!isControlled) {
@@ -80,7 +80,7 @@ const Popover: React.FunctionComponent<PopoverProps> = props => {
 
     const context = useMemo(
         () => ({
-            isOpen,
+            isOpen: isPopoverOpen,
             targetElement,
             tailElement,
             anchor,
@@ -88,7 +88,7 @@ const Popover: React.FunctionComponent<PopoverProps> = props => {
             setTargetElement,
             setTailElement,
         }),
-        [isOpen, targetElement, tailElement, anchor, setOpen]
+        [isPopoverOpen, targetElement, tailElement, anchor, setOpen]
     )
 
     return <PopoverContext.Provider value={context}>{children}</PopoverContext.Provider>
@@ -96,7 +96,7 @@ const Popover: React.FunctionComponent<PopoverProps> = props => {
 
 interface PopoverTriggerProps {}
 
-const PopoverTrigger = forwardRef((props, reference) => {
+export const PopoverTrigger = forwardRef((props, reference) => {
     const { as: Component = 'button', onClick = noop, ...otherProps } = props
     const { setTargetElement, setOpen, isOpen } = useContext(PopoverContext)
 
@@ -112,13 +112,13 @@ const PopoverTrigger = forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'button', PopoverTriggerProps>
 
 interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marker'> {
-    open?: boolean
+    isOpen?: boolean
     focusLocked?: boolean
 }
 
-const PopoverContent = forwardRef((props, reference) => {
+export const PopoverContent = forwardRef((props, reference) => {
     const {
-        open,
+        isOpen,
         children,
         focusLocked = true,
         as: Component = 'div',
@@ -127,7 +127,7 @@ const PopoverContent = forwardRef((props, reference) => {
         ...otherProps
     } = props
 
-    const { isOpen, targetElement, anchor, setOpen } = useContext(PopoverContext)
+    const { isOpen: isOpenContext, targetElement, anchor, setOpen } = useContext(PopoverContext)
 
     const localReference = useRef<HTMLDivElement>(null)
     const mergeReference = useMergeRefs([localReference, reference])
@@ -144,7 +144,7 @@ const PopoverContent = forwardRef((props, reference) => {
     // Close popover on escape
     useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
 
-    if (!isOpen && !open) {
+    if (!isOpenContext && !isOpen) {
         return null
     }
 
@@ -162,20 +162,3 @@ const PopoverContent = forwardRef((props, reference) => {
         </FloatingPanel>
     )
 }) as ForwardReferenceComponent<'div', PopoverContentProps>
-
-const Root = Popover
-const Trigger = PopoverTrigger
-const Content = PopoverContent
-
-export {
-    Root,
-    Trigger,
-    Content,
-    //
-    Popover,
-    PopoverTrigger,
-    PopoverContent,
-    PopoverOpenEventReason,
-}
-
-export type { PopoverOpenEvent, PopoverProps, PopoverTriggerProps, PopoverContentProps }

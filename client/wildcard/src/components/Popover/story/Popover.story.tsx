@@ -6,15 +6,17 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Button, Position } from '@sourcegraph/wildcard'
 
-import * as Popover from '../Popover'
+import { Popover, PopoverContent, PopoverTrigger, PopoverOpenEvent } from '../Popover'
 import { Point } from '../tether'
 
 import styles from './Popover.story.module.scss'
 
-export default {
+const config: Meta = {
     title: 'wildcard/Popover',
     decorators: [story => <BrandedStory styles={webStyles}>{() => story()}</BrandedStory>],
-} as Meta
+}
+
+export default config
 
 export const PositionSettingsGallery = () => {
     const [position, setPosition] = useState(Position.top)
@@ -22,19 +24,19 @@ export const PositionSettingsGallery = () => {
     return (
         <div className={classNames(styles.container, 'd-flex justify-content-center align-items-center')}>
             <div className={styles.positionsContainer}>
-                <Popover.Root open={true}>
-                    <Popover.Trigger className={styles.positionsTarget} as="div">
+                <Popover isOpen={true}>
+                    <PopoverTrigger className={styles.positionsTarget} as="div">
                         Target
-                    </Popover.Trigger>
+                    </PopoverTrigger>
 
-                    <Popover.Content
+                    <PopoverContent
                         position={position}
                         focusLocked={false}
                         className={classNames(styles.floating, styles.floatingTooltipLike)}
                     >
                         Position {position}
-                    </Popover.Content>
-                </Popover.Root>
+                    </PopoverContent>
+                </Popover>
 
                 <button
                     className={classNames(
@@ -143,12 +145,12 @@ export const PositionSettingsGallery = () => {
 export const StandardExample = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
-            <Popover.Root>
-                <Popover.Trigger as={Button} variant="secondary" className={styles.target}>
+            <Popover>
+                <PopoverTrigger as={Button} variant="secondary" className={styles.target}>
                     Hello
-                </Popover.Trigger>
+                </PopoverTrigger>
 
-                <Popover.Content position={Position.rightStart} className={styles.floating}>
+                <PopoverContent position={Position.rightStart} className={styles.floating}>
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
@@ -158,8 +160,8 @@ export const StandardExample = () => (
                         <Button variant="secondary">Action 1</Button>
                         <Button variant="secondary">Action 2</Button>
                     </div>
-                </Popover.Content>
-            </Popover.Root>
+                </PopoverContent>
+            </Popover>
         </div>
     </ScrollCenterBox>
 )
@@ -170,14 +172,14 @@ export const WithCustomAnchor = () => {
     return (
         <ScrollCenterBox title="Root scroll block" className={styles.container}>
             <div className={styles.content}>
-                <Popover.Root anchor={customAnchor}>
+                <Popover anchor={customAnchor}>
                     <div ref={customAnchor} className={styles.triggerAnchor}>
-                        <Popover.Trigger as={Button} variant="secondary" className={styles.target}>
+                        <PopoverTrigger as={Button} variant="secondary" className={styles.target}>
                             Hello
-                        </Popover.Trigger>
+                        </PopoverTrigger>
                     </div>
 
-                    <Popover.Content position={Position.rightStart} className={styles.floating}>
+                    <PopoverContent position={Position.rightStart} className={styles.floating}>
                         Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                         Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                         career and his mother was a homemaker.[6] In the early years of his life his family moved to
@@ -187,8 +189,8 @@ export const WithCustomAnchor = () => {
                             <Button variant="secondary">Action 1</Button>
                             <Button variant="secondary">Action 2</Button>
                         </div>
-                    </Popover.Content>
-                </Popover.Root>
+                    </PopoverContent>
+                </Popover>
             </div>
         </ScrollCenterBox>
     )
@@ -221,7 +223,7 @@ const FSM_TRANSITIONS: Record<FSM_STATES, Partial<Record<FSM_ACTIONS, FSM_STATES
 export const ShowOnFocus = () => {
     const [state, setState] = useState<FSM_STATES>(FSM_STATES.Initial)
 
-    const handleOpenChange = (event: Popover.PopoverOpenEvent): void => {
+    const handleOpenChange = (event: PopoverOpenEvent): void => {
         const nextStateAfterClose = FSM_TRANSITIONS[state][FSM_ACTIONS.PopupClose]
 
         if (!event.isOpen && nextStateAfterClose) {
@@ -250,8 +252,8 @@ export const ShowOnFocus = () => {
     return (
         <ScrollCenterBox title="Root scroll block" className={styles.container}>
             <div className={styles.content}>
-                <Popover.Root open={open} onOpenChange={handleOpenChange}>
-                    <Popover.Trigger
+                <Popover isOpen={open} onOpenChange={handleOpenChange}>
+                    <PopoverTrigger
                         as={Button}
                         variant="secondary"
                         className={styles.target}
@@ -259,9 +261,9 @@ export const ShowOnFocus = () => {
                         onBlur={handleTargetBlur}
                     >
                         Target
-                    </Popover.Trigger>
+                    </PopoverTrigger>
 
-                    <Popover.Content position={Position.rightStart} className={styles.floating}>
+                    <PopoverContent position={Position.rightStart} className={styles.floating}>
                         Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                         Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                         career and his mother was a homemaker.[6] In the early years of his life his family moved to
@@ -271,8 +273,8 @@ export const ShowOnFocus = () => {
                             <Button variant="secondary">Action 1</Button>
                             <Button variant="secondary">Action 2</Button>
                         </div>
-                    </Popover.Content>
-                </Popover.Root>
+                    </PopoverContent>
+                </Popover>
             </div>
         </ScrollCenterBox>
     )
@@ -280,7 +282,7 @@ export const ShowOnFocus = () => {
 
 export const WithControlledState = () => {
     const [open, setOpen] = useState<boolean>(false)
-    const handleOpenChange = (event: Popover.PopoverOpenEvent): void => {
+    const handleOpenChange = (event: PopoverOpenEvent): void => {
         setOpen(event.isOpen)
         console.log('REASON', event.reason)
     }
@@ -292,12 +294,12 @@ export const WithControlledState = () => {
                     Open popover
                 </Button>
 
-                <Popover.Root open={open} onOpenChange={handleOpenChange}>
-                    <Popover.Trigger as={Button} variant="secondary" className={styles.target}>
+                <Popover isOpen={open} onOpenChange={handleOpenChange}>
+                    <PopoverTrigger as={Button} variant="secondary" className={styles.target}>
                         Target
-                    </Popover.Trigger>
+                    </PopoverTrigger>
 
-                    <Popover.Content position={Position.rightStart} className={styles.floating}>
+                    <PopoverContent position={Position.rightStart} className={styles.floating}>
                         Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                         Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                         career and his mother was a homemaker.[6] In the early years of his life his family moved to
@@ -307,8 +309,8 @@ export const WithControlledState = () => {
                             <Button variant="secondary">Action 1</Button>
                             <Button variant="secondary">Action 2</Button>
                         </div>
-                    </Popover.Content>
-                </Popover.Root>
+                    </PopoverContent>
+                </Popover>
             </div>
         </ScrollCenterBox>
     )
@@ -322,14 +324,14 @@ export const WithNestedScrollParents = () => (
                 className={classNames(styles.container, styles.containerAsSubRoot)}
             >
                 <div className={styles.content}>
-                    <Popover.Root>
+                    <Popover>
                         <div className={styles.triggerAnchor}>
-                            <Popover.Trigger as={Button} variant="secondary" className={styles.target}>
+                            <PopoverTrigger as={Button} variant="secondary" className={styles.target}>
                                 Hello
-                            </Popover.Trigger>
+                            </PopoverTrigger>
                         </div>
 
-                        <Popover.Content position={Position.rightStart} className={styles.floating}>
+                        <PopoverContent position={Position.rightStart} className={styles.floating}>
                             Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast
                             (now Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state
                             security career and his mother was a homemaker.[6] In the early years of his life his family
@@ -339,8 +341,8 @@ export const WithNestedScrollParents = () => (
                                 <Button variant="secondary">Action 1</Button>
                                 <Button variant="secondary">Action 2</Button>
                             </div>
-                        </Popover.Content>
-                    </Popover.Root>
+                        </PopoverContent>
+                    </Popover>
                 </div>
             </ScrollCenterBox>
         </div>
@@ -377,8 +379,8 @@ export const WithVirtualTarget = () => {
         <div ref={activeZoneReference} className={styles.container}>
             <span className="m-auto">Hover me</span>
             {virtualElement && (
-                <Popover.Content
-                    open={true}
+                <PopoverContent
+                    isOpen={true}
                     pin={virtualElement}
                     position={Position.rightStart}
                     className={classNames(styles.floating, styles.floatingWithNonEvents)}
@@ -388,7 +390,7 @@ export const WithVirtualTarget = () => {
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
                     in the Ukrainian SSR, where Limonov grew up. He studied at the H.S. Skovoroda Kharkiv National
                     Pedagogical University.
-                </Popover.Content>
+                </PopoverContent>
             )}
         </div>
     )
@@ -397,12 +399,12 @@ export const WithVirtualTarget = () => {
 export const WithTail = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
-            <Popover.Root>
-                <Popover.Trigger as={Button} variant="secondary" className={styles.target}>
+            <Popover>
+                <PopoverTrigger as={Button} variant="secondary" className={styles.target}>
                     Hello
-                </Popover.Trigger>
+                </PopoverTrigger>
 
-                <Popover.Content tail={true} position={Position.rightStart} className={styles.floating}>
+                <PopoverContent tail={true} position={Position.rightStart} className={styles.floating}>
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
@@ -412,8 +414,8 @@ export const WithTail = () => (
                         <Button variant="secondary">Action 1</Button>
                         <Button variant="secondary">Action 2</Button>
                     </div>
-                </Popover.Content>
-            </Popover.Root>
+                </PopoverContent>
+            </Popover>
         </div>
     </ScrollCenterBox>
 )
