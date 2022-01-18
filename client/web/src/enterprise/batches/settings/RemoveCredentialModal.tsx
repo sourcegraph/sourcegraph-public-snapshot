@@ -1,8 +1,7 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
@@ -37,11 +36,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
         }
     }, [afterDelete, credential.id])
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={labelId}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <div className="test-remove-credential-modal">
                 <ModalHeader
                     id={labelId}
@@ -89,6 +84,6 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                     </Button>
                 </div>
             </div>
-        </Dialog>
+        </Modal>
     )
 }

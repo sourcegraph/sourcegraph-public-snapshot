@@ -29,8 +29,7 @@ describe('KeyboardShortcutsHelp', () => {
         fireEvent.keyDown(document, { key: 'x', keyCode: 88 })
 
         await waitFor(() => {
-            expect(screen.getByText(/keyboard shortcuts/i)).toBeInTheDocument()
-            expect(screen.getByRole('dialog')).toHaveClass('show')
+            expect(screen.getByText(/keyboard shortcuts/i)).toBeVisible()
         })
 
         expect(document.body).toMatchSnapshot()

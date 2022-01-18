@@ -1,9 +1,8 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -44,11 +43,7 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
     }, [])
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={MODAL_LABEL_ID}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
             <h3 id={MODAL_LABEL_ID}>Merge changesets</h3>
             <p className="mb-4">Are you sure you want to attempt to merge all the selected changesets?</p>
             <Form>
@@ -84,7 +79,7 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
                     Merge
                 </Button>
             </div>
-        </Dialog>
+        </Modal>
     )
 }
 
