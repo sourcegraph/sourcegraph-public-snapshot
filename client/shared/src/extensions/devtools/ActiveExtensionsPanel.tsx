@@ -3,12 +3,14 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { Link } from '../../components/Link'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
+
+// TODO: Shared -? any issues with styles?
 
 export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
     const extensionsOrError = useObservable(
@@ -40,7 +42,9 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
             <div className="card-header">Active extensions (DEBUG)</div>
             {extensionsOrError ? (
                 isErrorLike(extensionsOrError) ? (
-                    <div className="alert alert-danger mb-0 rounded-0">{extensionsOrError.message}</div>
+                    <Alert className="mb-0 rounded-0" variant="danger">
+                        {extensionsOrError.message}
+                    </Alert>
                 ) : extensionsOrError.length > 0 ? (
                     <div className="list-group list-group-flush">
                         {extensionsOrError.map(({ id }, index) => (
