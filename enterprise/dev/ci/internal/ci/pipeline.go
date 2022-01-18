@@ -49,7 +49,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_COMMIT_MESSAGE": strings.ReplaceAll(os.Getenv("BUILDKITE_MESSAGE"), "$", "$$"),
 
 		// HoneyComb dataset that stores build traces.
-		"CI_BUILDEVENT_DATASET": "buildkite",
+		"CI_BUILDEVENT_DATASET": "buildkite-stateless",
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
