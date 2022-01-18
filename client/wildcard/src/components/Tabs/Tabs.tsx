@@ -83,7 +83,7 @@ export const Tab: React.FunctionComponent<TabProps> = props => {
 
 export const TabPanels: React.FunctionComponent<TabPanelsProps> = ({ children }) => {
     const { show, element } = useTabPanelsState(children)
-    return show ? <ReachTabPanels data-testid="wildcard-tab-panels">{element}</ReachTabPanels> : null
+    return show ? <ReachTabPanels data-testid="wildcard-tab-panel-list">{element}</ReachTabPanels> : null
 }
 
 export const TabPanel: React.FunctionComponent = ({ children }) => {
