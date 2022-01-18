@@ -12,7 +12,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -225,19 +225,19 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 </div>
                 {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
                 {this.state.resetPasswordURL && (
-                    <div className="alert alert-success mt-2">
+                    <Alert className="mt-2" variant="success">
                         <p>
                             Password was reset. You must manually send <strong>{this.props.node.username}</strong> this
                             reset link:
                         </p>
                         <CopyableText text={this.state.resetPasswordURL} size={40} />
-                    </div>
+                    </Alert>
                 )}
                 {this.state.resetPasswordURL === null && (
-                    <div className="alert alert-success mt-2">
+                    <Alert className="mt-2" variant="success">
                         Password was reset. The reset link was sent to the primary email of the user:{' '}
                         <strong>{this.props.node.emails.find(item => item.isPrimary)?.email}</strong>
-                    </div>
+                    </Alert>
                 )}
             </li>
         )

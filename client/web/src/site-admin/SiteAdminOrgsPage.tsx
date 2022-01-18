@@ -11,7 +11,7 @@ import { Subject } from 'rxjs'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Alert } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -134,9 +134,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
             </p>
             {window.context.sourcegraphDotComMode ? (
                 <>
-                    <div className="alert alert-info">
-                        Only organization members can view & modify organization settings.
-                    </div>
+                    <Alert variant="info">Only organization members can view & modify organization settings.</Alert>
                     <h3>Enable early access</h3>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <p>Enable early access for organization code host connections and repositories on Cloud.</p>

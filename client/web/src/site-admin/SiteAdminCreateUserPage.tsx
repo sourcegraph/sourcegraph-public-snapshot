@@ -8,7 +8,7 @@ import { catchError, mergeMap, tap } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Alert } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
@@ -105,7 +105,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                     <Link to="/help/admin/auth">User authentication</Link> in the Sourcegraph documentation.
                 </p>
                 {this.state.createUserResult ? (
-                    <div className="alert alert-success">
+                    <Alert variant="success">
                         <p>
                             Account created for <strong>{this.state.username}</strong>.
                         </p>
@@ -120,7 +120,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                         <Button className="mt-2" onClick={this.dismissAlert} autoFocus={true} variant="primary">
                             Create another user
                         </Button>
-                    </div>
+                    </Alert>
                 ) : (
                     <Form onSubmit={this.onSubmit} className="site-admin-create-user-page__form">
                         <div className={classNames('form-group', styles.formGroup)}>
