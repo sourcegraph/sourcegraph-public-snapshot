@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The endpoint `/search/stream` will be retired in favor of `/.api/search/stream`. This requires no action unless you have developed custom code against `/search/stream`. We will support both endpoints for a short period of time before removing `/search/stream`. Please refer to the [documentation](https://docs.sourcegraph.com/api/stream_api) for more information.
 - When displaying the content of symbolic links in the repository tree view, we will show the relative path to the link's target instead of the target's content. This behavior is consistent with how we display symbolic links in search results. [#29687](https://github.com/sourcegraph/sourcegraph/pull/29687)
 - A new janitor job, "sg maintenance" was added to gitserver. The new job replaces "garbage collect" with the goal to optimize the performance of git operations for large repositories. You can choose to enable "garbage collect" again by setting the environment variables "SRC_ENABLE_GC_AUTO" to "true" and "SRC_ENABLE_SG_MAINTENANCE" to "false" for gitserver. Note that you must not enable both options at the same time. [#28224](https://github.com/sourcegraph/sourcegraph/pull/28224).
+- Search results within the same file are now ordered by relevance instead of line number. To order by line number, update the setting `experimentalFeatures.clientSearchResultRanking: "by-line-number"`. [#29046](https://github.com/sourcegraph/sourcegraph/pull/29046)
 
 ### Fixed
 
