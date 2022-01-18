@@ -56,12 +56,15 @@ func TestDeduper(t *testing.T) {
 
 	lm := func(s string) *LineMatch {
 		return &LineMatch{
-			Preview: s,
+			Preview:          s,
+			OffsetAndLengths: [][2]int32{{123, int32(len(s))}},
+			LineNumber:       1,
 		}
 	}
 
 	cases := []struct {
 		name     string
+		limit    int
 		input    []Match
 		expected []Match
 	}{
@@ -91,6 +94,17 @@ func TestDeduper(t *testing.T) {
 			},
 		},
 		{
+			name:  "merge files with limit",
+			limit: 3,
+			input: []Match{
+				file("a", "b", "c", []*LineMatch{lm("a"), lm("b")}),
+				file("a", "b", "c", []*LineMatch{lm("c"), lm("d")}),
+			},
+			expected: []Match{
+				file("a", "b", "c", []*LineMatch{lm("a"), lm("b"), lm("c")}),
+			},
+		},
+		{
 			name: "diff and commit are not equal",
 			input: []Match{
 				commit("a", "b"),
@@ -115,11 +129,14 @@ func TestDeduper(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		dedup := NewDeduper()
-		for _, match := range tc.input {
-			dedup.Add(match)
-		}
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			dedup := NewDeduper(tc.limit)
+			for _, match := range tc.input {
+				dedup.Add(match)
+			}
 
-		require.Equal(t, tc.expected, dedup.Results())
+			require.Equal(t, tc.expected, dedup.Results())
+		})
 	}
 }

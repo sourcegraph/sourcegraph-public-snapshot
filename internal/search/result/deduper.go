@@ -5,15 +5,26 @@ package result
 type deduper struct {
 	results []Match
 	seen    map[Key]Match
+	count   int
+	limit   int
 }
 
-func NewDeduper() deduper {
+func NewDeduper(limit int) deduper {
 	return deduper{
-		seen: make(map[Key]Match),
+		seen:  make(map[Key]Match),
+		limit: limit,
 	}
 }
 
-func (d *deduper) Add(m Match) {
+func (d *deduper) Add(m Match) int {
+	if d.limit > 0 {
+		if d.count < d.limit {
+			m.Limit(d.limit - d.count)
+		} else {
+			return d.count
+		}
+	}
+
 	prev, seen := d.seen[m.Key()]
 
 	if seen {
@@ -24,11 +35,14 @@ func (d *deduper) Add(m Match) {
 		case *CommitMatch:
 			prevMatch.AppendMatches(m.(*CommitMatch))
 		}
-		return
+	} else {
+		d.results = append(d.results, m)
+		d.seen[m.Key()] = m
 	}
 
-	d.results = append(d.results, m)
-	d.seen[m.Key()] = m
+	d.count += m.ResultCount()
+
+	return d.count
 }
 
 func (d *deduper) Seen(m Match) bool {
@@ -38,4 +52,8 @@ func (d *deduper) Seen(m Match) bool {
 
 func (d *deduper) Results() []Match {
 	return d.results
+}
+
+func (d *deduper) ResultCount() int {
+	return d.count
 }

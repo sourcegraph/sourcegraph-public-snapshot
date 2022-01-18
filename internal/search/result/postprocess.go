@@ -12,7 +12,7 @@ func Select(results []Match, q query.Basic) []Match {
 	}
 	sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 
-	dedup := NewDeduper()
+	dedup := NewDeduper(0)
 	for _, result := range results {
 		current := result.Select(sp)
 		if current == nil {

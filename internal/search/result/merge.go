@@ -3,7 +3,7 @@ package result
 // Union performs a merge of results, merging line matches when they occur in
 // the same file.
 func Union(left, right []Match) []Match {
-	dedup := NewDeduper()
+	dedup := NewDeduper(0)
 	// Add results to maps for deduping
 	for _, result := range left {
 		dedup.Add(result)

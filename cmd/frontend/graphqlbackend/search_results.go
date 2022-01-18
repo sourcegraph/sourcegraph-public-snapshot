@@ -1083,7 +1083,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 		mu     sync.Mutex
 		stats  streaming.Stats
 		alerts []*searchAlert
-		dedup  = result.NewDeduper()
+		dedup  = result.NewDeduper(wantCount)
 		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
 		// this concurrency limit should probably be informed by a user's rate limit quota
 		// at any given time.
@@ -1113,7 +1113,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 			}
 
 			// Check if another go-routine has already produced enough results.
-			if wantCount <= 0 {
+			if dedup.ResultCount() >= wantCount {
 				return context.Canceled
 			}
 
@@ -1123,8 +1123,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 			stats.Update(&new.Stats)
 
 			for _, m := range new.Matches {
-				wantCount = m.Limit(wantCount)
-				if dedup.Add(m); wantCount <= 0 {
+				if dedup.Add(m) >= wantCount {
 					return context.Canceled
 				}
 			}
@@ -1343,7 +1342,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		mu     sync.Mutex
 		stats  streaming.Stats
 		alerts []*searchAlert
-		dedup  = result.NewDeduper()
+		dedup  = result.NewDeduper(wantCount)
 		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
 		// this concurrency limit should probably be informed by a user's rate limit quota
 		// at any given time.
@@ -1414,7 +1413,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 			}
 
 			// Check if another go-routine has already produced enough results.
-			if wantCount <= 0 {
+			if dedup.ResultCount() >= wantCount {
 				return context.Canceled
 			}
 
@@ -1430,9 +1429,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 					continue
 				}
 
-				wantCount = match.Limit(wantCount)
-
-				if dedup.Add(match); wantCount <= 0 {
+				if dedup.Add(match) >= wantCount {
 					return context.Canceled
 				}
 			}

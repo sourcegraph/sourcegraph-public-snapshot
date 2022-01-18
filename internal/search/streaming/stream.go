@@ -74,7 +74,7 @@ func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, 
 // on each event, deduplicating where possible.
 func WithSelect(parent Sender, s filter.SelectPath) Sender {
 	var mux sync.Mutex
-	dedup := result.NewDeduper()
+	dedup := result.NewDeduper(0)
 
 	return StreamFunc(func(e SearchEvent) {
 		if parent == nil {
