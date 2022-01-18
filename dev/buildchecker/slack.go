@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -23,6 +24,9 @@ func slackSummary(locked bool, branch string, failedCommits []CommitInfo) string
 	message := fmt.Sprintf(`:alert: *Consecutive build failures detected - the %s branch has been locked.* :alert:
 The authors of the following failed commits who are Sourcegraph teammates have been granted merge access to investigate and resolve the issue:
 `, branchStr)
+
+	// Reverse order of commits so that the oldest are listed first
+	sort.Slice(failedCommits, func(i, j int) bool { return failedCommits[i].BuildCreated.After(failedCommits[j].BuildCreated) })
 
 	for _, commit := range failedCommits {
 		var mention string
