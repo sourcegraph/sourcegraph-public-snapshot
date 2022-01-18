@@ -27,6 +27,7 @@ import { enterpriseTrial } from '../util/features'
 import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
+import { SignupEmailField } from './SignupEmailField'
 
 export interface SignUpArguments {
     email: string
@@ -57,7 +58,6 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
  * The form for creating an account
  */
 export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
-    featureFlags,
     onSignUp,
     buttonLabel,
     className,
@@ -155,6 +155,13 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 onSubmit={handleSubmit}
                 noValidate={true}
             >
+                <SignupEmailField
+                    label="Email"
+                    loading={loading}
+                    nextEmailFieldChange={nextEmailFieldChange}
+                    emailState={emailState}
+                    emailInputReference={emailInputReference}
+                />
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         htmlFor="username"
@@ -245,7 +252,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className={classNames('btn btn-primary btn-block')}
+                        className="btn btn-primary btn-block mt-4"
                     />
                 </div>
                 {context.sourcegraphDotComMode && (
