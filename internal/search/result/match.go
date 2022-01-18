@@ -32,10 +32,11 @@ var (
 // Match types with lower ranks will be sorted before match types
 // with higher ranks.
 const (
-	rankFileMatch   = 0
-	rankCommitMatch = 1
-	rankDiffMatch   = 2
-	rankRepoMatch   = 3
+	rankFileMatch     = 0
+	rankCommitMatch   = 1
+	rankDiffMatch     = 2
+	rankRepoMatch     = 3
+	rankFilePathMatch = 4
 )
 
 // Key is a sorting or deduplicating key for a Match.
