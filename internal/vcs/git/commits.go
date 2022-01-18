@@ -421,20 +421,29 @@ func CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID, check
 // If no HEAD revision exists for the given repository (which occurs with empty
 // repositories), a false-valued flag is returned along with a nil error and
 // empty revision.
-// TODO: sub-repo filtering
-func Head(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
+func Head(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ string, revisionExists bool, err error) {
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", "HEAD")
 	cmd.Repo = repo
 
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			err = nil
+		return checkError(err)
+	}
+	commitID := string(out)
+	if checker != nil && checker.Enabled() {
+		if _, err := GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); err != nil {
+			return checkError(err)
 		}
-		return "", false, err
 	}
 
-	return string(out), true, nil
+	return commitID, true, nil
+}
+
+func checkError(err error) (string, bool, error) {
+	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		err = nil
+	}
+	return "", false, err
 }
 
 const (

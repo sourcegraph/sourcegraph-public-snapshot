@@ -59,7 +59,7 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 		return "", false, err
 	}
 
-	return git.Head(ctx, repo)
+	return git.Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
 }
 
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
