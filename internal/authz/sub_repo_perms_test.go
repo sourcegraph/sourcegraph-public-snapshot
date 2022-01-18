@@ -229,3 +229,29 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 		t.Fatal("Should have been called twice")
 	}
 }
+
+func TestIsEnabledChecker(t *testing.T) {
+	t.Run("checker is nil", func(t *testing.T) {
+		if IsEnabled(nil) {
+			t.Errorf("expected checker to be invalid since it is nil")
+		}
+	})
+	t.Run("checker is not enabled", func(t *testing.T) {
+		checker := NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return false
+		})
+		if IsEnabled(checker) {
+			t.Errorf("expected checker to be invalid since it is disabled")
+		}
+	})
+	t.Run("checker is enabled", func(t *testing.T) {
+		checker := NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		if !IsEnabled(checker) {
+			t.Errorf("expected checker to be valid since it is enabled")
+		}
+	})
+}

@@ -118,7 +118,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	}
 
 	checker := c.SubRepoPermsChecker()
-	if checker == nil || !checker.Enabled() {
+	if !authz.IsEnabled(checker) {
 		return symbols, err
 	}
 
