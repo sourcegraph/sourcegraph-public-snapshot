@@ -15,7 +15,7 @@ import {
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { useTimeoutManager } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -289,9 +289,9 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
 
             {/* Visual feedback: alert when optimistic update fails */}
             {optimisticFailure && (
-                <div className={classNames('alert alert-danger px-2 py-1', styles.alert)}>
+                <Alert className={classNames('px-2 py-1', styles.alert)} variant="danger">
                     <span className="font-weight-medium">Error:</span> {actionableErrorMessage(optimisticFailure.error)}
-                </div>
+                </Alert>
             )}
         </div>
     )

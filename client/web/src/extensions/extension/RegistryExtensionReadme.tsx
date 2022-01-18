@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -6,17 +5,18 @@ import { isErrorLike } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Alert } from '@sourcegraph/wildcard'
 
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
+// TODO: fix alertClass to be alertVariant
 const PublishNewManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
     text: string
     buttonLabel: string
     alertClass: 'alert-info' | 'alert-danger'
 }> = ({ extension, text, buttonLabel, alertClass }) => (
-    <div className={classNames('alert', alertClass)}>
+    <Alert className={alertClass}>
         {text}
         {extension.registryExtension?.viewerCanAdminister && (
             <>
@@ -31,7 +31,7 @@ const PublishNewManifestAlert: React.FunctionComponent<{
                 </Button>
             </>
         )}
-    </div>
+    </Alert>
 )
 
 export const ExtensionReadme: React.FunctionComponent<{
