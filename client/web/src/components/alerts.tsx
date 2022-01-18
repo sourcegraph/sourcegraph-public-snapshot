@@ -1,10 +1,10 @@
-import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import React, { HTMLAttributes } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { Alert } from '@sourcegraph/wildcard'
 
 export const renderError = (error: unknown): string =>
     renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replace(/\t/g, '')), { breaks: true })
@@ -54,8 +54,8 @@ export const ErrorAlert: React.FunctionComponent<ErrorAlertProps> = ({
 }) => {
     prefix = prefix?.trim().replace(/:+$/, '')
     return (
-        <div className={classNames('alert', 'alert-danger', className)} {...rest}>
+        <Alert className={className} {...rest} variant="danger">
             {prefix && <strong>{prefix}:</strong>} <ErrorMessage error={error} />
-        </div>
+        </Alert>
     )
 }
