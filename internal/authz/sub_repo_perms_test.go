@@ -230,9 +230,9 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 	}
 }
 
-func TestIsEnabledChecker(t *testing.T) {
+func TestSubRepoEnabled(t *testing.T) {
 	t.Run("checker is nil", func(t *testing.T) {
-		if IsEnabled(nil) {
+		if SubRepoEnabled(nil) {
 			t.Errorf("expected checker to be invalid since it is nil")
 		}
 	})
@@ -241,7 +241,7 @@ func TestIsEnabledChecker(t *testing.T) {
 		checker.EnabledFunc.SetDefaultHook(func() bool {
 			return false
 		})
-		if IsEnabled(checker) {
+		if SubRepoEnabled(checker) {
 			t.Errorf("expected checker to be invalid since it is disabled")
 		}
 	})
@@ -250,7 +250,7 @@ func TestIsEnabledChecker(t *testing.T) {
 		checker.EnabledFunc.SetDefaultHook(func() bool {
 			return true
 		})
-		if !IsEnabled(checker) {
+		if !SubRepoEnabled(checker) {
 			t.Errorf("expected checker to be valid since it is enabled")
 		}
 	})
