@@ -45,7 +45,6 @@ func TestSelect(t *testing.T) {
 		t.Run("Message", func(t *testing.T) {
 			testMessageMatch := CommitMatch{
 				Repo:           types.MinimalRepo{Name: "testrepo"},
-				Body:           MatchedString{Content: "```COMMIT_EDITMSG\ntest\n```"},
 				MessagePreview: &MatchedString{Content: "test"},
 			}
 
@@ -91,10 +90,6 @@ func TestSelect(t *testing.T) {
 			testDiffMatch := func() CommitMatch {
 				return CommitMatch{
 					Repo: types.MinimalRepo{Name: "testrepo"},
-					Body: MatchedString{
-						Content:       "```diff\n" + diffContent + "\n```",
-						MatchedRanges: Ranges{addedRange, removedRange}.Add(Location{Line: 1, Offset: len("```diff\n")}),
-					},
 					DiffPreview: &MatchedString{
 						Content:       diffContent,
 						MatchedRanges: Ranges{addedRange, removedRange},
@@ -127,10 +122,6 @@ func TestSelect(t *testing.T) {
 				selectPath: []string{filter.Commit, "diff", "added"},
 				output: &CommitMatch{
 					Repo: types.MinimalRepo{Name: "testrepo"},
-					Body: MatchedString{
-						Content:       "```diff\n" + diffContent + "\n```",
-						MatchedRanges: Ranges{addedRange}.Add(Location{Line: 1, Offset: len("```diff\n")}),
-					},
 					DiffPreview: &MatchedString{
 						Content:       diffContent,
 						MatchedRanges: Ranges{addedRange},
@@ -141,10 +132,6 @@ func TestSelect(t *testing.T) {
 				selectPath: []string{filter.Commit, "diff", "removed"},
 				output: &CommitMatch{
 					Repo: types.MinimalRepo{Name: "testrepo"},
-					Body: MatchedString{
-						Content:       "```diff\n" + diffContent + "\n```",
-						MatchedRanges: Ranges{removedRange}.Add(Location{Line: 1, Offset: len("```diff\n")}),
-					},
 					DiffPreview: &MatchedString{
 						Content:       diffContent,
 						MatchedRanges: Ranges{removedRange},

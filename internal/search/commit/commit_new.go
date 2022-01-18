@@ -301,27 +301,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 }
 
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
-	var (
-		markdown       result.MatchedString
-		diffPreview    *result.MatchedString
-		messagePreview *result.MatchedString
-	)
-
-	if diff {
-		diffPreview = &in.Diff
-		markdown = result.MatchedString{
-			Content:       "```diff\n" + in.Diff.Content + "\n```",
-			MatchedRanges: in.Diff.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```diff\n")}),
-		}
-	} else {
-		messagePreview = &in.Message
-		markdown = result.MatchedString{
-			Content:       "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```",
-			MatchedRanges: in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}),
-		}
-	}
-
-	return &result.CommitMatch{
+	cm := result.CommitMatch{
 		Commit: gitdomain.Commit{
 			ID: in.Oid,
 			Author: gitdomain.Signature{
@@ -337,11 +317,16 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 			Message: gitdomain.Message(in.Message.Content),
 			Parents: in.Parents,
 		},
-		Repo:           repo,
-		MessagePreview: messagePreview,
-		DiffPreview:    diffPreview,
-		Body:           markdown,
+		Repo: repo,
 	}
+
+	if diff {
+		cm.DiffPreview = &in.Diff
+	} else {
+		cm.MessagePreview = &in.Message
+	}
+
+	return &cm
 }
 
 func newReposLimitError(limit int, hasTimeFilter bool, resultType string) error {
