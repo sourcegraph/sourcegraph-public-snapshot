@@ -4,8 +4,9 @@ import { TabsContext } from './context'
 import { reducer } from './reducer'
 
 export interface TabsState {
-    /* Tab component font size */
-    size: 'small' | 'medium' | 'large'
+    /* Tab component font size.
+     * Default is "small" */
+    size?: 'small' | 'medium' | 'large'
     /* true: only load the initial tab when tab component mounts
      * false: render all the TabPanel children when tab component mounts */
     lazy?: boolean
@@ -22,7 +23,7 @@ interface UseTabs {
     contextValue: TabsContext
 }
 
-export const useTabs = ({ lazy, size, behavior }: TabsState): UseTabs => {
+export const useTabs = ({ lazy, size = 'small', behavior }: TabsState): UseTabs => {
     const [state, dispatch] = useReducer(reducer, { lazy, size, behavior, current: 1, tabs: {} })
     const contextValue = useMemo(() => ({ state, dispatch }), [state, dispatch])
 

@@ -291,7 +291,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = prop
 
             <h3>Responses</h3>
 
-            <Tabs size="small" defaultIndex={tabIndex} onChange={handleTabsChange}>
+            <Tabs defaultIndex={tabIndex} onChange={handleTabsChange}>
                 <TabList>
                     <Tab>Chronological feed</Tab>
                     <Tab>Sort by user</Tab>
