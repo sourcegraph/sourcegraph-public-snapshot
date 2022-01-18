@@ -51,10 +51,10 @@ interface CreationSearchInsightFormProps {
      * Handlers for CRUD operation over series. Add, delete, update and cancel
      * series edit form.
      */
-    onEditSeriesRequest: (openedCardIndex: number) => void
-    onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
-    onEditSeriesCancel: (closedCardIndex: number) => void
-    onSeriesRemove: (removedSeriesIndex: number) => void
+    onEditSeriesRequest: (seriesId?: string) => void
+    onEditSeriesCommit: (editedSeries: EditableDataSeries) => void
+    onEditSeriesCancel: (seriesId: string) => void
+    onSeriesRemove: (seriesId: string) => void
 
     onFormReset: () => void
 }
@@ -196,6 +196,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
+                    numberOfPoints={allReposMode.input.value ? 12 : 7}
                 />
             </FormGroup>
 

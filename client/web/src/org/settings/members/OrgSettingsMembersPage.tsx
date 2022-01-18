@@ -7,8 +7,8 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'

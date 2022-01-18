@@ -184,7 +184,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {
-	chunkSize := 3
+	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
 	skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
 
@@ -192,7 +192,8 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
-		bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
+		bk.Env("COVERAGE_INSTRUMENT", "true"),
+		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
 
 	// Chunk web integration tests to save time via parallel execution.
@@ -719,5 +720,13 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
+	}
+}
+
+func uploadBuildeventTrace() operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":arrow_heading_up: Uploading trace to HoneyComb",
+			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
+		)
 	}
 }

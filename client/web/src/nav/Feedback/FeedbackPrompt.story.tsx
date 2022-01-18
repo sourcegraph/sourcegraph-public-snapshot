@@ -3,7 +3,7 @@ import { Meta } from '@storybook/react'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode } from '@sourcegraph/http-client'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { FeedbackPrompt, SUBMIT_HAPPINESS_FEEDBACK_QUERY } from '.'

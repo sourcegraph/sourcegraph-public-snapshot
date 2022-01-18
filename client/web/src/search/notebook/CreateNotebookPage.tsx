@@ -4,8 +4,7 @@ import { catchError, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { CreateNotebookBlockInput } from '../../graphql-operations'

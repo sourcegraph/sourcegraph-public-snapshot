@@ -1,4 +1,4 @@
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 /**
  * Common props for components underneath a namespace (e.g., a user or organization).

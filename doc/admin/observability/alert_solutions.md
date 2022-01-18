@@ -4569,24 +4569,24 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## zoekt-indexserver: average_resolve_revision_duration
+## zoekt: average_resolve_revision_duration
 
 <p class="subtitle">average resolve revision duration over 5m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 15s+ average resolve revision duration over 5m
-- <span class="badge badge-critical">critical</span> zoekt-indexserver: 30s+ average resolve revision duration over 5m
+- <span class="badge badge-warning">warning</span> zoekt: 15s+ average resolve revision duration over 5m
+- <span class="badge badge-critical">critical</span> zoekt: 30s+ average resolve revision duration over 5m
 
 **Possible solutions**
 
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-average-resolve-revision-duration).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-average-resolve-revision-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_average_resolve_revision_duration",
-  "critical_zoekt-indexserver_average_resolve_revision_duration"
+  "warning_zoekt_average_resolve_revision_duration",
+  "critical_zoekt_average_resolve_revision_duration"
 ]
 ```
 
@@ -4594,27 +4594,27 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## zoekt-indexserver: get_index_options_error_increase
+## zoekt: get_index_options_error_increase
 
 <p class="subtitle">the number of repositories we failed to get indexing options over 5m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 100+ the number of repositories we failed to get indexing options over 5m for 1m0s
-- <span class="badge badge-critical">critical</span> zoekt-indexserver: 100+ the number of repositories we failed to get indexing options over 5m for 20m0s
+- <span class="badge badge-warning">warning</span> zoekt: 100+ the number of repositories we failed to get indexing options over 5m for 1m0s
+- <span class="badge badge-critical">critical</span> zoekt: 100+ the number of repositories we failed to get indexing options over 5m for 20m0s
 
 **Possible solutions**
 
 - View error rates on gitserver and frontend to identify root cause.
 - Rollback frontend/gitserver deployment if due to a bad code change.
 - View error logs for `getIndexOptions` via net/trace debug interface. For example click on a `indexed-search-indexer-` on https://sourcegraph.com/-/debug/. Then click on Traces. Replace sourcegraph.com with your instance address.
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-indexserver-get-index-options-error-increase).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-get-index-options-error-increase).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-indexserver_get_index_options_error_increase",
-  "critical_zoekt-indexserver_get_index_options_error_increase"
+  "warning_zoekt_get_index_options_error_increase",
+  "critical_zoekt_get_index_options_error_increase"
 ]
 ```
 
@@ -4622,195 +4622,22 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## zoekt-indexserver: container_cpu_usage
-
-<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 99%+ container cpu usage total (1m average) across all cores by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-container-cpu-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_container_cpu_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: container_memory_usage
-
-<p class="subtitle">container memory usage by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 99%+ container memory usage by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-container-memory-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_container_memory_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-cpu-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">container memory usage (1d maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
-- **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-memory-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_memory_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-cpu-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_cpu_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">container memory usage (5m maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-indexserver: 90%+ container memory usage (5m maximum) by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-memory-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-indexserver_provisioning_container_memory_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-indexserver: pods_available_percentage
-
-<p class="subtitle">percentage pods available</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> zoekt-indexserver: less than 90% percentage pods available for 10m0s
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-pods-available-percentage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_zoekt-indexserver_pods_available_percentage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-webserver: indexed_search_request_errors
+## zoekt: indexed_search_request_errors
 
 <p class="subtitle">indexed search request errors every 5m by code</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 5%+ indexed search request errors every 5m by code for 5m0s
+- <span class="badge badge-warning">warning</span> zoekt: 5%+ indexed search request errors every 5m by code for 5m0s
 
 **Possible solutions**
 
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-indexed-search-request-errors).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexed-search-request-errors).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_indexed_search_request_errors"
+  "warning_zoekt_indexed_search_request_errors"
 ]
 ```
 
@@ -4818,24 +4645,24 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## zoekt-webserver: container_cpu_usage
+## zoekt: container_cpu_usage
 
 <p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 99%+ container cpu usage total (1m average) across all cores by instance
+- <span class="badge badge-warning">warning</span> zoekt: 99%+ container cpu usage total (1m average) across all cores by instance
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-container-cpu-usage).
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_container_cpu_usage"
+  "warning_zoekt_container_cpu_usage"
 ]
 ```
 
@@ -4843,24 +4670,24 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## zoekt-webserver: container_memory_usage
+## zoekt: container_memory_usage
 
 <p class="subtitle">container memory usage by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 99%+ container memory usage by instance
+- <span class="badge badge-warning">warning</span> zoekt: 99%+ container memory usage by instance
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-container-memory-usage).
+- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_container_memory_usage"
+  "warning_zoekt_container_memory_usage"
 ]
 ```
 
@@ -4868,74 +4695,24 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## zoekt-webserver: provisioning_container_cpu_usage_long_term
+## zoekt: container_cpu_usage
 
-<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
-- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-cpu-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-webserver: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">container memory usage (1d maximum) by instance</p>
+<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
-- **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-memory-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_memory_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## zoekt-webserver: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+- <span class="badge badge-warning">warning</span> zoekt: 99%+ container cpu usage total (1m average) across all cores by instance
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-cpu-usage-short-term).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_cpu_usage_short_term"
+  "warning_zoekt_container_cpu_usage"
 ]
 ```
 
@@ -4943,24 +4720,247 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## zoekt-webserver: provisioning_container_memory_usage_short_term
+## zoekt: container_memory_usage
 
-<p class="subtitle">container memory usage (5m maximum) by instance</p>
+<p class="subtitle">container memory usage by instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt-webserver: 90%+ container memory usage (5m maximum) by instance
+- <span class="badge badge-warning">warning</span> zoekt: 99%+ container memory usage by instance
 
 **Possible solutions**
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-memory-usage-short-term).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_zoekt-webserver_provisioning_container_memory_usage_short_term"
+  "warning_zoekt_container_memory_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-cpu-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">container memory usage (1d maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
+- **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-memory-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_memory_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-cpu-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">container memory usage (5m maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 90%+ container memory usage (5m maximum) by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-memory-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-cpu-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">container memory usage (1d maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
+- **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-memory-usage-long-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_memory_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-cpu-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">container memory usage (5m maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 90%+ container memory usage (5m maximum) by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-provisioning-container-memory-usage-short-term).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<br />
+
+## zoekt: pods_available_percentage
+
+<p class="subtitle">percentage pods available</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> zoekt: less than 90% percentage pods available for 10m0s
+
+**Possible solutions**
+
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-pods-available-percentage).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_zoekt_pods_available_percentage"
 ]
 ```
 

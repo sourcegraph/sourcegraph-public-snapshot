@@ -2,7 +2,7 @@ import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 
 import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { requestGraphQL } from '../../backend/graphql'

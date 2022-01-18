@@ -8,6 +8,7 @@ package buildkite
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -198,7 +199,11 @@ type StepOpt func(step *Step)
 
 func Cmd(command string) StepOpt {
 	return func(step *Step) {
-		step.Command = append(step.Command, command)
+		// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
+		// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
+		// see the underlying command even if prefixed by the tracing script.
+		tracedCmd := fmt.Sprintf("./tr %s", command)
+		step.Command = append(step.Command, tracedCmd)
 	}
 }
 

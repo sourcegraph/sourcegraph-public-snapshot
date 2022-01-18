@@ -16,15 +16,14 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/SyntaxHighlightedSearchQuery'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { ParsedSearchQueryProps, SearchContextInputProps, SearchContextProps } from '../search'
+import { SearchContextInputProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
 import { useNavbarQueryState } from '../stores'
@@ -40,7 +39,6 @@ export interface CommunitySearchContextPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
-        ParsedSearchQueryProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,

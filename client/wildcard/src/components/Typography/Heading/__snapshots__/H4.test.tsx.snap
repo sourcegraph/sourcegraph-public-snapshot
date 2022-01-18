@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`H4 should render correctly 1`] = `
+<DocumentFragment>
+  <h4
+    class="h4 alignLeft singleLine"
+  >
+    This is H4
+  </h4>
+</DocumentFragment>
+`;
+
+exports[`H4 should render correctly with \`as\` 1`] = `
+<DocumentFragment>
+  <p
+    class="h4 alignLeft singleLine"
+  >
+    This is a p
+  </p>
+</DocumentFragment>
+`;

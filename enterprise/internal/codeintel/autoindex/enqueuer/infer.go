@@ -3,6 +3,7 @@ package enqueuer
 import (
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -11,6 +12,7 @@ func InferRepositoryAndRevision(pkg precise.Package) (repoName, gitTagOrCommit s
 	for _, fn := range []func(pkg precise.Package) (string, string, bool){
 		inferGoRepositoryAndRevision,
 		inferJVMRepositoryAndRevision,
+		inferNPMRepositoryAndRevision,
 	} {
 		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
 			return repoName, gitTagOrCommit, true
@@ -43,7 +45,14 @@ func inferGoRepositoryAndRevision(pkg precise.Package) (string, string, bool) {
 }
 
 func inferJVMRepositoryAndRevision(pkg precise.Package) (string, string, bool) {
-	if pkg.Scheme != "semanticdb" {
+	if pkg.Scheme != dbstore.JVMPackagesScheme {
+		return "", "", false
+	}
+	return pkg.Name, "v" + pkg.Version, true
+}
+
+func inferNPMRepositoryAndRevision(pkg precise.Package) (string, string, bool) {
+	if pkg.Scheme != dbstore.NPMPackagesScheme {
 		return "", "", false
 	}
 	return pkg.Name, "v" + pkg.Version, true

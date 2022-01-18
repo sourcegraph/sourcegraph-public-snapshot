@@ -4,13 +4,13 @@ import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } from 'rxjs/operators'
 import { Subtract } from 'utility-types'
 
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     ActivationCompletionStatus,
     ActivationProps,
     ActivationStep,
 } from '@sourcegraph/shared/src/components/activation/Activation'
 import { UserEvent } from '@sourcegraph/shared/src/graphql-operations'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import { AuthenticatedUser } from '../auth'

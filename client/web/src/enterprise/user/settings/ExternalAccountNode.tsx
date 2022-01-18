@@ -4,7 +4,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Badge, Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -155,9 +155,9 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                             </Button>
                         )}{' '}
                         {this.props.node.refreshURL && (
-                            <a className="btn btn-secondary" href={this.props.node.refreshURL}>
+                            <Button href={this.props.node.refreshURL} variant="secondary" as="a">
                                 Refresh
-                            </a>
+                            </Button>
                         )}{' '}
                         <Button onClick={this.deleteExternalAccount} disabled={loading} variant="danger">
                             Delete

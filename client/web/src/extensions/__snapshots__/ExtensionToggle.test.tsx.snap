@@ -4,7 +4,7 @@ exports[`ExtensionToggle extension disabled in settings 1`] = `
 <DocumentFragment>
   <button
     aria-checked="false"
-    class="toggle"
+    class="toggle inlineCenter"
     data-testid="extension-toggle-x/y"
     role="switch"
     title="Click to enable"
@@ -25,7 +25,7 @@ exports[`ExtensionToggle extension enabled in settings 1`] = `
 <DocumentFragment>
   <button
     aria-checked="true"
-    class="toggle"
+    class="toggle inlineCenter"
     data-testid="extension-toggle-x/y"
     role="switch"
     title="Click to disable"
@@ -46,7 +46,7 @@ exports[`ExtensionToggle extension not present in settings 1`] = `
 <DocumentFragment>
   <button
     aria-checked="false"
-    class="toggle"
+    class="toggle inlineCenter"
     data-testid="extension-toggle-x/y"
     role="switch"
     title="Click to enable"

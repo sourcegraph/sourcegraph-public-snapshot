@@ -4,10 +4,9 @@ import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback } from 'react'
 import { UncontrolledPopover } from 'reactstrap'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { PlatformContextProps } from '../../platform/context'
-import { useLocalStorage } from '../../util/useLocalStorage'
 import { ExtensionsControllerProps } from '../controller'
 
 import { ActiveExtensionsPanel } from './ActiveExtensionsPanel'

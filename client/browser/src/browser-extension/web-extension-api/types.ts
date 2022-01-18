@@ -1,4 +1,4 @@
-import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
+import { GraphQLResult } from '@sourcegraph/http-client'
 import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 
 import { OptionFlagValues } from '../../shared/util/optionFlags'
@@ -43,7 +43,14 @@ export const featureFlagDefaults: FeatureFlags = {
 }
 
 interface SourcegraphURL {
+    /**
+     * Current connected/active sourcegraph URL
+     */
     sourcegraphURL: string
+    /**
+     * All previously successfully used sourcegraph URLs
+     */
+    previouslyUsedURLs?: string[]
 }
 
 export interface SyncStorageItems extends SourcegraphURL {

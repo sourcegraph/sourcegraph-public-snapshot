@@ -8,8 +8,9 @@ set -ex
 
 URL="${1:-"http://localhost:7080"}"
 
-# In CI, provide a directory unique to this job
-export DATA="/tmp/sourcegraph-data-${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}"
+# In CI, provide a directory and container name unique to this job
+IDENT=${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}
+export DATA="/tmp/sourcegraph-data-${IDENT}"
 
 cleanup() {
   echo "--- dump server logs"
@@ -23,8 +24,8 @@ trap cleanup EXIT
 
 # Run and initialize an old Sourcegraph release
 echo "--- start sourcegraph $MINIMUM_UPGRADEABLE_VERSION"
-CONTAINER="sourcegraph-old"
-IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION CLEAN="true" ./dev/run-server-image.sh -d --name $CONTAINER
+CONTAINER="sourcegraph-old-${IDENT}"
+IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION CLEAN="true" ./dev/run-server-image.sh -d --name "$CONTAINER"
 sleep 15
 pushd internal/cmd/init-sg
 go build
@@ -37,7 +38,7 @@ source /root/.sg_envrc
 set -x
 
 # Stop old Sourcegraph release
-docker container stop $CONTAINER
+docker container stop "$CONTAINER"
 sleep 5
 
 # Migrate DB if on version < 3.27.0
@@ -69,8 +70,8 @@ fi
 
 # Upgrade to current candidate image. Capture logs for the attempted upgrade.
 echo "--- start candidate"
-CONTAINER="sourcegraph-new"
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
+CONTAINER="sourcegraph-new-${IDENT}"
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name "$CONTAINER"
 sleep 15
 
 # Run tests

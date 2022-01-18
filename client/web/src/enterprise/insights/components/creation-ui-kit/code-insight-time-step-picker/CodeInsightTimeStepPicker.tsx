@@ -7,9 +7,11 @@ import { FormInput } from '../../form/form-input/FormInput'
 import { FormRadioInput } from '../../form/form-radio-input/FormRadioInput'
 
 import styles from './CodeInsightTimeStepPicker.module.scss'
+import { getDescriptionText } from './get-interval-descrtiption-text/get-interval-description-text'
 
 interface CodeInsightTimeStepPickerProps {
     value: string | number
+    numberOfPoints: number
     name?: string
     valid?: boolean
     disabled?: boolean
@@ -34,6 +36,7 @@ export const CodeInsightTimeStepPicker = forwardRef<HTMLInputElement, CodeInsigh
             name,
             value,
             stepType,
+            numberOfPoints,
             onChange,
             onStepTypeChange,
             onBlur,
@@ -44,7 +47,7 @@ export const CodeInsightTimeStepPicker = forwardRef<HTMLInputElement, CodeInsigh
             <FormGroup
                 name="insight step group"
                 title="Granularity: distance between data points"
-                description="The prototype supports timeframe up to 7 datapoints (for example: 2 weeks x 7 = 14 weeks timeframe)"
+                description={getDescriptionText({ stepValue: +value, stepType, numberOfPoints })}
                 error={error}
                 className="mt-4"
                 labelClassName={styles.groupLabel}

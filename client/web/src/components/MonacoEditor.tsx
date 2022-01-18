@@ -187,6 +187,14 @@ interface Props extends ThemeProps {
 
     /** Keyboard shortcut to focus the Monaco editor. */
     keyboardShortcutForFocus?: KeyboardShortcut
+
+    /**
+     * NOTE: This is currently only used for Insights code through
+     * the MonacoField component: client/web/src/enterprise/insights/components/form/monaco-field/MonacoField.tsx
+     *
+     * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
+     */
+    placeholder?: string
 }
 
 interface State {
@@ -278,6 +286,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                         height: this.state.computedHeight,
                         position: 'relative',
                     }}
+                    data-placeholder={this.props.placeholder}
                     ref={this.setRef}
                     id={this.props.id}
                     className={classNames(this.props.className, this.props.border !== false && 'border rounded')}

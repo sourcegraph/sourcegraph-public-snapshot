@@ -3,7 +3,7 @@ import * as H from 'history'
 import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, getDocumentNode } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'

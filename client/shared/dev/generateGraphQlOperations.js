@@ -14,7 +14,7 @@ const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.grap
 const SHARED_DOCUMENTS_GLOB = [
   `${SHARED_FOLDER}/src/**/*.{ts,tsx}`,
   `!${SHARED_FOLDER}/src/testing/**/*.*`,
-  `!${SHARED_FOLDER}/src/graphql/schema.ts`,
+  `!${SHARED_FOLDER}/src/schema.ts`,
 ]
 
 const WEB_DOCUMENTS_GLOB = [

@@ -1,8 +1,8 @@
 import { GraphQLError } from 'graphql'
 import type { Location } from 'history'
 
+import { GraphQLResult } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { Connection } from './ConnectionType'

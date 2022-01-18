@@ -112,10 +112,12 @@ describe('ManageCodeMonitorPage', () => {
 
     test('Save button is disabled when no changes have been made, enabled when changes have been made', () => {
         render(<ManageCodeMonitorPage {...props} />)
+
         const submitButton = screen.getByTestId('submit-monitor')
         expect(submitButton).toBeDisabled()
 
         userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
+
         expect(submitButton).toBeEnabled()
     })
 

@@ -1,11 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import {
-    createInvalidGraphQLMutationResponseError,
-    dataOrThrowErrors,
-    gql,
-} from '@sourcegraph/shared/src/graphql/graphql'
+import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -186,6 +182,7 @@ export const fetchCodeMonitor = (id: string): Observable<FetchCodeMonitorResult>
                     enabled
                     actions {
                         nodes {
+                            __typename
                             ... on MonitorEmail {
                                 id
                                 recipients {

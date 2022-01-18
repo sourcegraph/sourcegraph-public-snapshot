@@ -41,17 +41,24 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 
 	wg := sync.WaitGroup{}
 	failures := make(chan failedRun, len(cmds))
+	installed := make(chan string, len(cmds))
+	okayToStart := make(chan struct{})
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	cmdNames := make(map[string]struct{}, len(cmds))
+
 	for i, cmd := range cmds {
+		cmdNames[cmd.Name] = struct{}{}
+
 		wg.Add(1)
 
 		go func(cmd Command, ch <-chan struct{}) {
 			defer wg.Done()
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
-				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose); err != nil {
+				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose, installed, okayToStart); err != nil {
 					if errors.Is(err, ctx.Err()) { // if error caused by context, terminate
 						return
 					}
@@ -69,6 +76,11 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 		}(cmd, chs[i])
 	}
 
+	err = waitForInstallation(cmdNames, installed, failures, okayToStart)
+	if err != nil {
+		return err
+	}
+
 	wg.Wait()
 
 	select {
@@ -78,6 +90,64 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 	default:
 		return nil
 	}
+}
+
+func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
+	stdout.Out.Write("")
+	stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Waiting for %d commands to finish installation...", len(cmdNames)))
+	stdout.Out.Write("")
+
+	waitingMessages := []string{
+		"Still waiting for %s to finish installing...",
+		"Yup, still waiting for %s to finish installing...",
+		"Looks like we're still waiting for %s to finish installing...",
+		"This is getting awkward now. We're still waiting for %s to finish installing...",
+		"Nothing more to say, I guess. Come on %s ...",
+		"It might be your computer? Still waiting for %s ...",
+		"Anyway... how are you? (Still waiting for %s ...)",
+		"Still waiting for %s to finish installing...",
+	}
+	messageCount := 0
+
+	const tickInterval = 15 * time.Second
+	ticker := time.NewTicker(tickInterval)
+
+	for {
+		select {
+		case cmdName := <-installed:
+			ticker.Reset(tickInterval)
+			delete(cmdNames, cmdName)
+
+			// Everything installed!
+			if len(cmdNames) == 0 {
+				stdout.Out.Write("")
+				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
+				stdout.Out.Write("")
+				close(okayToStart)
+				return nil
+			}
+
+		case failure := <-failures:
+			// Something went wrong with an installation, no need to wait for the others
+			printCmdError(stdout.Out, failure.cmdName, failure.err)
+			return failure
+
+		case <-ticker.C:
+			names := []string{}
+			for name := range cmdNames {
+				names = append(names, name)
+			}
+
+			idx := messageCount
+			if idx > len(waitingMessages)-1 {
+				idx = len(waitingMessages) - 1
+			}
+			msg := waitingMessages[idx]
+			stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, msg, strings.Join(names, ", ")))
+			messageCount += 1
+		}
+	}
+
 }
 
 // failedRun is returned by run when a command failed to run and run exits
@@ -177,7 +247,16 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	}
 }
 
-func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[string]string, reload <-chan struct{}, verbose bool) error {
+func runWatch(
+	ctx context.Context,
+	cmd Command,
+	root string,
+	globalEnv map[string]string,
+	reload <-chan struct{},
+	verbose bool,
+	installDone chan string,
+	okayToStart chan struct{},
+) error {
 	printDebug := func(f string, args ...interface{}) {
 		if !verbose {
 			return
@@ -210,6 +289,7 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
+					installDone <- cmd.Name
 					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				} else {
 					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})
@@ -236,6 +316,12 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 				md5changed = md5hash != newHash
 				md5hash = newHash
 			}
+
+		}
+
+		if !startedOnce {
+			installDone <- cmd.Name
+			<-okayToStart
 		}
 
 		if cmd.CheckBinary == "" || md5changed {

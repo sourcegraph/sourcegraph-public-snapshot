@@ -8,7 +8,7 @@ import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/graphql/schema'
+import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import {
     aggregateStreamingSearch,
     AggregateStreamingSearchResults,

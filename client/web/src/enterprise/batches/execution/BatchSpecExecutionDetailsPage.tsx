@@ -6,10 +6,10 @@ import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation }
 import { NavLink as RouterLink } from 'react-router-dom'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
-import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, LoadingSpinner, PageHeader, FeedbackBadge } from '@sourcegraph/wildcard'

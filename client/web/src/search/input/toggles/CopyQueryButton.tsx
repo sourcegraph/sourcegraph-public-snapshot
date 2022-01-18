@@ -7,8 +7,7 @@ import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button, TooltipController } from '@sourcegraph/wildcard'
+import { Button, TooltipController, useEventObservable } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string

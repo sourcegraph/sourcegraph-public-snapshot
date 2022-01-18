@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators'
 
 import { PathMatch, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '..'
 import { parseLineRange } from '../serialize'

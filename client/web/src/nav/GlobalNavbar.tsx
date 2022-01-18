@@ -19,8 +19,7 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -38,7 +37,7 @@ import {
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { Settings } from '../schema/settings.schema'
-import { ParsedSearchQueryProps, isSearchContextSpecAvailable, SearchContextInputProps } from '../search'
+import { isSearchContextSpecAvailable, SearchContextInputProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
@@ -63,7 +62,6 @@ interface Props
         ThemePreferenceProps,
         ExtensionAlertAnimationProps,
         ActivationProps,
-        ParsedSearchQueryProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps {
@@ -112,7 +110,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
-    const query = props.parsedSearchQuery
+    const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
 

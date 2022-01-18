@@ -10,8 +10,9 @@ yarn --mutex network --frozen-lockfile --network-timeout 60000
 
 echo "--- buf"
 
-GOBIN="$PWD/.bin" go install golang.org/x/tools/cmd/goimports
 GOBIN="$PWD/.bin" go install github.com/bufbuild/buf/cmd/buf
+GOBIN="$PWD/.bin" go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc
+GOBIN="$PWD/.bin" go install golang.org/x/tools/cmd/goimports
 GOBIN="$PWD/.bin" go install google.golang.org/protobuf/cmd/protoc-gen-go
 
 GOBIN="$PWD/.bin" ./.bin/buf generate

@@ -27,11 +27,7 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
     <div className="alert alert-info my-2 mr-3" data-testid="alert-container">
         <h3>{alert.title}</h3>
 
-        {alert.description && (
-            <p>
-                <Markdown dangerousInnerHTML={renderMarkdown(alert.description)} />
-            </p>
-        )}
+        {alert.description && <Markdown className="mb-3" dangerousInnerHTML={renderMarkdown(alert.description)} />}
 
         {alert.proposedQueries && (
             <>

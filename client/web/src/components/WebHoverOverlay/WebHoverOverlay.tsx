@@ -7,7 +7,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 

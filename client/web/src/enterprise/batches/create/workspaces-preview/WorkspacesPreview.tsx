@@ -1,7 +1,7 @@
 import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { useQuery } from '@sourcegraph/http-client'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 
 import {

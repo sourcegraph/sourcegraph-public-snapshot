@@ -103,7 +103,7 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-client/shared/src/graphql/schema.ts
+client/shared/src/schema.ts
 client/web/src/schema/*
 puppeteer/
 package-lock.json

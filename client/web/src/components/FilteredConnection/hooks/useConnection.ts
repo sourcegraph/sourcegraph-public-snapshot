@@ -1,7 +1,7 @@
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
 import { useCallback, useMemo, useRef } from 'react'
 
-import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
 

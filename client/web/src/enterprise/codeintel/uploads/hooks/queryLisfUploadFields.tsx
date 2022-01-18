@@ -3,8 +3,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
-import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { fromObservableQuery, gql, getDocumentNode } from '@sourcegraph/http-client'
 
 import { LsifUploadFields, LsifUploadResult } from '../../../../graphql-operations'
 

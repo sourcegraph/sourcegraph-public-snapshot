@@ -88,6 +88,8 @@ export interface MonacoQueryInputProps
      * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
      */
     placeholder?: string
+
+    editorClassName?: string
 }
 
 /**
@@ -163,6 +165,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     preventNewLine = true,
     editorOptions,
     onHandleFuzzyFinder,
+    editorClassName,
     caseSensitive,
     keyboardShortcutForFocus,
     onEditorCreated: onEditorCreatedCallback,
@@ -381,7 +384,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     return (
         <div
             ref={setContainer}
-            data-placeholder={placeholder}
             className={classNames('flex-grow-1 flex-shrink-past-contents', className)}
             onFocus={onFocus}
         >
@@ -395,8 +397,9 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 onEditorCreated={onEditorCreated}
                 options={editorOptions ?? DEFAULT_MONACO_OPTIONS}
                 border={false}
+                placeholder={placeholder}
                 keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                className={classNames('test-query-input', styles.monacoQueryInput)}
+                className={classNames('test-query-input', styles.monacoQueryInput, editorClassName)}
             />
         </div>
     )

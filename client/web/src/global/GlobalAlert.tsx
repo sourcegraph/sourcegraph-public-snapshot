@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'

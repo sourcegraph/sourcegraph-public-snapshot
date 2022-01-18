@@ -7,8 +7,8 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -106,13 +106,16 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                             </Button>
                         )}
                         {!this.props.node.isLocal && this.props.node.remoteURL && this.props.node.registryName && (
-                            <a
+                            <Button
                                 href={this.props.node.remoteURL}
-                                className="btn btn-link text-info btn-sm ml-1"
+                                className="text-info ml-1"
                                 title={`View extension on ${this.props.node.registryName}`}
+                                variant="link"
+                                size="sm"
+                                as="a"
                             >
                                 Visit
-                            </a>
+                            </Button>
                         )}
                         {this.props.node.viewerCanAdminister && (
                             <Button
