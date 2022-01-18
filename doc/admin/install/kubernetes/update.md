@@ -145,8 +145,18 @@ The log output of the `migrator` container should look like:
 
 showing migrations being performed. The specific version numbers may not match what is shown here.
 
+> NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
+
 If you see an error message, please re-run the three prior `psql` commands to determine your DB migration status and contact support at support@sourcegraph.com for further assistance. Your database may not have been migrated correctly. Otherwise, you are now safe to upgrade Sourcegraph.
 
+
+### Migrating Without Code Insights
+If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the default migration process will fail. To work around this, the `migrator.Job.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph`'s `migrator.Job.yaml` file. If you use `kustomize` to generate your cluster, it will be in the generated cluster location. Otherwise, it can be found in `base/migrator/migrator.Job.yaml`:
+
+1. Comment out the existing job `migrator`
+1. Uncomment out the two jobs `migrator-frontend` and `migrator-codeintel`.
+
+You should now be able to apply the file and continue the migration and upgrade process as normal.
 
 ### Troubleshooting
 
