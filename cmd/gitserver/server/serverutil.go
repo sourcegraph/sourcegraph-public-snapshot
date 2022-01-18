@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -177,10 +178,11 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 }
 
 func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
+	_, executable := path.Split(cmd.Args[0])
 	// As a special case we also support the experimental p4-fusion client which is
 	// not run as a subcommand of git.
-	if cmd.Args[0] != "git" && cmd.Args[0] != "p4-fusion" {
-		panic("Only git or p4-fusion commands are supported")
+	if executable != "git" && executable != "p4-fusion" {
+		panic(fmt.Sprintf("Only git or p4-fusion commands are supported, got %q", executable))
 	}
 
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
