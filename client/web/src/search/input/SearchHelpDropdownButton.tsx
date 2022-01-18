@@ -3,6 +3,8 @@ import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap'
 
+import { Alert } from '@sourcegraph/wildcard'
+
 import { eventLogger } from '../../tracking/eventLogger'
 
 /**
@@ -117,10 +119,10 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                     <ExternalLinkIcon className="icon-inline small" /> All search keywords
                 </a>
                 {window.context?.sourcegraphDotComMode && (
-                    <div className="alert alert-info small rounded-0 mb-0 mt-1">
+                    <Alert className="small rounded-0 mb-0 mt-1" variant="info">
                         On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
                         repositories.
-                    </div>
+                    </Alert>
                 )}
             </DropdownMenu>
         </ButtonDropdown>
