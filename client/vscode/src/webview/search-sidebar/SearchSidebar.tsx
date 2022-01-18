@@ -163,7 +163,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                         mightContainPrivateInfo: true,
                     })
                     .toPromise()
-                console.log(currentUser)
                 // If user is detected, set valid access token to true
                 if (currentUser.data) {
                     setAuthenticatedUser(currentUser.data.currentUser)
@@ -171,7 +170,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                 } else {
                     setValidAccessToken(false)
                 }
-            })().catch(error => console.error(error))
+            })().catch(() => setValidAccessToken(false))
         }
         setValidating(false)
     }, [
@@ -261,6 +260,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
             </>
         )
     }
-
+    console.log({ validating, hasAccessToken, validAccessToken, activeSearchPanel })
     return <LoadingSpinner />
 }

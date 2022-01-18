@@ -62,13 +62,13 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
 
     return (
         <div className={classNames('d-flex flex-column align-items-left justify-content-center', className)}>
-            <p className={classNames('mt-3', styles.title)}>Search Your Private Code</p>
+            <p className={classNames('mt-1 mb-0', styles.title)}>Search Your Private Code</p>
             {validating && <LoadingSpinner />}
             {!validating && !hasAccessToken && (
                 <>
                     {!hasAccount ? (
                         <div>
-                            <p className={classNames('my-3', styles.text)}>
+                            <p className={classNames('mt-1 mb-3', styles.text)}>
                                 Create an account to enhance search across your private repositories: search multiple
                                 repos & commit history, monitor, save searches, and more.
                             </p>
@@ -76,31 +76,29 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                 type="submit"
                                 onClick={onSignUpClick}
                                 className={classNames(
-                                    'btn btn-sm btn-primary btn-link w-100 border-0 font-weight-normal my-3',
+                                    'btn btn-sm btn-primary btn-link w-100 border-0 font-weight-normal',
                                     styles.button
                                 )}
                             >
-                                <span className="my-0">Create an account</span>
+                                <span className="py-1">Create an account</span>
                             </button>
-                            <button
-                                type="button"
-                                className={classNames('my-3 btn btn-link', styles.textLink)}
-                                onClick={() => setHasAccount(true)}
-                            >
-                                Have an account
-                            </button>
+                            <p className={classNames('mt-1 mb-0', styles.textLink)}>
+                                <a href="sourcegraph://signup" onClick={() => setHasAccount(true)}>
+                                    Have an account?
+                                </a>
+                            </p>
                         </div>
                     ) : (
                         // eslint-disable-next-line react/forbid-elements
                         <Form onSubmit={onSubmitAccessToken}>
-                            <p className={classNames('my-3', styles.text)}>
+                            <p className={classNames('my-1', styles.text)}>
                                 Sign in by entering an access token created through your{' '}
                                 <a href={signInUrl} onClick={() => setHasAccount(true)}>
                                     user setting
                                 </a>{' '}
                                 on {instanceHostname}.
                             </p>
-                            <p className={classNames('my-3', styles.text)}>
+                            <p className={classNames('my-1 mb-3', styles.text)}>
                                 See our{' '}
                                 <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">
                                     user docs
@@ -108,21 +106,22 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                 for a video guide on how to create an access token.
                             </p>
                             <input
-                                className="input form-control"
+                                className="input form-control my-1"
                                 type="text"
                                 name="token"
+                                required={true}
                                 placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
                             />
                             <button
                                 type="submit"
                                 className={classNames(
-                                    'btn btn-sm btn-primary btn-link w-100 border-0 font-weight-normal my-3',
+                                    'btn btn-sm btn-primary btn-link w-100 border-0 font-weight-normal',
                                     styles.button
                                 )}
                             >
-                                <span className="my-0">Enter Access Token</span>
+                                <span className="py-1">Enter Access Token</span>
                             </button>
-                            <p className={classNames('mb-3', styles.textLink)}>
+                            <p className={classNames('mt-1 mb-0', styles.textLink)}>
                                 <a href={signUpUrl} onClick={onSignUpClick}>
                                     Create an account
                                 </a>
@@ -138,28 +137,29 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                         <Form onSubmit={onSubmitAccessToken}>
                             <a
                                 href={signInUrl}
-                                className="btn btn-lg btn-block btn-danger border-0 font-weight-normal"
+                                className="btn btn-lg btn-block btn-danger border-0 font-weight-normal my-3"
                                 onClick={() => setHasAccount(true)}
                             >
-                                <span className={classNames('my-3', styles.text)}>
+                                <span className={classNames('p-0', styles.text)}>
                                     ERROR: Unable to verify your Access Token for {instanceHostname}. Please try again
                                     with a new Access Token.
                                 </span>
                             </a>
                             <input
-                                className="input form-control my-3"
+                                className="input form-control my-0"
                                 type="text"
                                 name="token"
+                                required={true}
                                 placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
                             />
                             <button
                                 type="submit"
                                 className={classNames(
-                                    'btn btn-sm btn-link w-100 border-0 font-weight-normal',
+                                    'btn btn-sm btn-primary btn-link w-100 border-0 font-weight-normal',
                                     styles.button
                                 )}
                             >
-                                <span className={classNames('my-0', styles.text)}>Update Access Token</span>
+                                <span className="py-1">Update Access Token</span>
                             </button>
                         </Form>
                     )}

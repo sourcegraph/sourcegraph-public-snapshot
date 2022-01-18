@@ -27,13 +27,12 @@
 
 .text {
     font-size: var(--vscode-font-size) !important;
-    // color: var(--vscode-textPreformat-foreground);
     color: var(--vscode-foreground);
 }
 
 .description {
-    font-size: var(--vscode-font-size) !important;
-    // color: var(--vscode-textPreformat-foreground);
+    // font-size: var(--vscode-font-size) !important;
+    font-size: var(--vscode-editor-font-size) !important;
     color: var(--vscode-descriptionForeground);
 }
 

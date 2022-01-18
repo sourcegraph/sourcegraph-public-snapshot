@@ -10,22 +10,18 @@ interface OpenSearchPanelCtaProps extends Pick<WebviewPageProps, 'sourcegraphVSC
     onDesktop: boolean
 }
 
-export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps> = ({
-    className,
-    sourcegraphVSCodeExtensionAPI,
-    onDesktop,
-}) => (
+export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps> = ({ className, onDesktop }) => (
     <div className={classNames('d-flex flex-column align-items-left justify-content-center', className)}>
-        <p className={classNames('mt-2', styles.title)}>Welcome!</p>
-        <p className={classNames('my-2', styles.text)}>
+        <p className={classNames('my-0', styles.title)}>Welcome!</p>
+        <p className={classNames('my-1', styles.text)}>
             The Sourcegraph extension allows you to search millions of open source repositories without cloning them to
             your local machine.
         </p>
-        <p className={classNames('my-2', styles.text)}>
+        <p className={classNames('my-1', styles.text)}>
             Developers at some of the world's best software companies use Sourcegraph to onboard to new code bases, find
             examples, research errors, and resolve incidents.
         </p>
-        <div className={classNames('my-2', styles.text)}>
+        <div className={classNames('mt-1', styles.text)}>
             <p className={classNames('my-0', styles.text)}>Learn more:</p>
             <p>
                 <a href="http://sourcegraph.com/" className={classNames('my-0', styles.text)}>
