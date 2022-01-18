@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
+
+import { Alert } from '@sourcegraph/wildcard'
 
 import { LSIFIndexState, LSIFUploadState } from '../../../../graphql-operations'
 
@@ -13,7 +14,7 @@ export interface CodeIntelStateBannerProps {
     failure?: string | null
     className?: string
 }
-
+// TODO: Need to fix to use variants instread of className
 export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> = ({
     typeName,
     pluralTypeName,
@@ -22,7 +23,7 @@ export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> 
     failure,
     className = 'alert-primary',
 }) => (
-    <div className={classNames('alert', className)}>
+    <Alert className={className}>
         <span>
             <CodeIntelStateDescription
                 state={state}
@@ -32,5 +33,5 @@ export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> 
                 pluralTypeName={pluralTypeName}
             />
         </span>
-    </div>
+    </Alert>
 )

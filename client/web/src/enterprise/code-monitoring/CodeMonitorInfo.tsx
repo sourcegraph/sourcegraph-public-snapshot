@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Alert } from '@sourcegraph/wildcard'
 
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 
@@ -16,7 +16,7 @@ export const CodeMonitorInfo: React.FunctionComponent<{ className?: string }> = 
     }
 
     return (
-        <div className={classNames('alert alert-info alert-dismissable d-flex align-items-start', className)}>
+        <Alert className={classNames('alert-dismissable d-flex align-items-start', className)} variant="info">
             <p className="mb-0">
                 We currently recommend code monitors on repositories that don’t have a high commit traffic and for
                 non-critical use cases.
@@ -32,6 +32,6 @@ export const CodeMonitorInfo: React.FunctionComponent<{ className?: string }> = 
             >
                 <CloseIcon className="icon-inline" />
             </Button>
-        </div>
+        </Alert>
     )
 })

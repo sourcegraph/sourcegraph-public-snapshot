@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Button, AlertLink, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, AlertLink, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
@@ -86,13 +86,13 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                         </>
                     )}
                     {!viewerCanAdminister && (
-                        <div className="alert alert-warning">
+                        <Alert variant="warning">
                             You don't have permission to close this batch change. See{' '}
                             <AlertLink to="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes">
                                 Permissions in batch changes
                             </AlertLink>{' '}
                             for more information about the batch changes permission model.
-                        </div>
+                        </Alert>
                     )}
                     <div className="d-flex justify-content-end">
                         <Button

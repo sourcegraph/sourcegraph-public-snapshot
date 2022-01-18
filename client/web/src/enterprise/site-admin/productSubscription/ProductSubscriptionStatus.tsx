@@ -8,7 +8,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Alert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -166,7 +166,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                     />
                 ) : (
                     license.userCount - actualUserCount < 0 && (
-                        <div className="alert alert-warning">
+                        <Alert variant="warning">
                             You have exceeded your licensed users.{' '}
                             <Link to="/site-admin/license">View your license details</Link> or{' '}
                             {/* eslint-disable-next-line react/jsx-no-target-blank */}
@@ -174,7 +174,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                 upgrade your license
                             </a>{' '}
                             to true up and prevent a retroactive charge.
-                        </div>
+                        </Alert>
                     )
                 ))}
         </div>

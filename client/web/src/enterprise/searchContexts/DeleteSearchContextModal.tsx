@@ -6,7 +6,7 @@ import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { ALLOW_NAVIGATION } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Button, LoadingSpinner, useEventObservable, Modal } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Modal, Alert } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '../../search'
 
@@ -68,9 +68,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
                         Yes, delete search context
                     </Button>
                     {isErrorLike(deleteCompletedOrError) && (
-                        <div className="alert-danger">
-                            Error deleting search context: {deleteCompletedOrError.message}
-                        </div>
+                        <Alert variant="danger">Error deleting search context: {deleteCompletedOrError.message}</Alert>
                     )}
                 </div>
             )}
