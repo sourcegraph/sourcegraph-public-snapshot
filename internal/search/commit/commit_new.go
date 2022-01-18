@@ -301,7 +301,14 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 }
 
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
-	cm := result.CommitMatch{
+	var diffPreview, messagePreview *result.MatchedString
+	if diff {
+		diffPreview = &in.Diff
+	} else {
+		messagePreview = &in.Message
+	}
+
+	return &result.CommitMatch{
 		Commit: gitdomain.Commit{
 			ID: in.Oid,
 			Author: gitdomain.Signature{
@@ -317,16 +324,10 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 			Message: gitdomain.Message(in.Message.Content),
 			Parents: in.Parents,
 		},
-		Repo: repo,
+		Repo:           repo,
+		DiffPreview:    diffPreview,
+		MessagePreview: messagePreview,
 	}
-
-	if diff {
-		cm.DiffPreview = &in.Diff
-	} else {
-		cm.MessagePreview = &in.Message
-	}
-
-	return &cm
 }
 
 func newReposLimitError(limit int, hasTimeFilter bool, resultType string) error {
