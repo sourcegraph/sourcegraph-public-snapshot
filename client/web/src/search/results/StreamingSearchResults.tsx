@@ -249,7 +249,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     showSidebar && styles.streamingSearchResultsSidebarShow
                 )}
                 filters={results?.filters}
-                useQueryState={useNavbarQueryState}
                 getRevisions={getRevisions}
                 prefixContent={
                     props.isSourcegraphDotCom &&

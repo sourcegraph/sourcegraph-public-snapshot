@@ -1,9 +1,40 @@
+import React, { createContext, useContext } from 'react'
+import { StoreApi, UseBoundStore } from 'zustand'
+
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 
 import { QueryState, SubmitSearchParameters, toggleSubquery } from '.'
+
+export type SearchQueryStateStore = UseBoundStore<SearchQueryState, StoreApi<SearchQueryState>>
+
+export const SearchQueryStateStoreContext = createContext<SearchQueryStateStore | null>(null)
+
+/**
+ * React context provider for SearchQueryStateStore.
+ * Clients that render `search` package components that depend on a SearchQueryStateStore
+ * need to be wrapped with this.
+ *
+ * Example: Both the VS Code extension and the web app render `<SearchSidebar>`, so it needs to
+ * reference the appropriate zustand store through context (provided here).
+ */
+export const SearchQueryStateStoreProvider: React.FunctionComponent<{
+    useSearchQueryState: SearchQueryStateStore
+}> = ({ children, useSearchQueryState }) => (
+    <SearchQueryStateStoreContext.Provider value={useSearchQueryState}>
+        {children}
+    </SearchQueryStateStoreContext.Provider>
+)
+
+export const useSearchQueryStateStoreContext = (): SearchQueryStateStore => {
+    const context = useContext(SearchQueryStateStoreContext)
+    if (context === null) {
+        throw new Error('useSearchQueryStateStoreContext must be used within a SearchQueryStateStoreProvider')
+    }
+    return context
+}
 
 // Implemented in /web as navbar query state, /vscode as webview query state.
 export interface SearchQueryState {
