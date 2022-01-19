@@ -37,7 +37,6 @@ function baseChangesetSpec(
             baseRepository: testRepo,
             baseRef: 'master',
             headRef: 'cool-branch',
-            fork: false,
             body: 'Body text',
             commits: [
                 {
@@ -64,6 +63,7 @@ And the more explanatory body. And the more explanatory body. And the more expla
             title: 'Add prettier to repository',
             published,
         },
+        forkNamespace: null,
         ...overrides,
     }
 }
@@ -94,6 +94,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
                     baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
                     externalID: '123',
                 },
+                forkNamespace: null,
             },
         },
     },
@@ -665,12 +666,12 @@ export const visibleChangesetApplyPreviewNodeStories = (
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
             changesetSpec: baseChangesetSpec(12, publicationStateSet ? true : null, {
+                forkNamespace: '<user>',
                 description: {
                     __typename: 'GitBranchChangesetDescription',
                     baseRepository: testRepo,
                     baseRef: 'master',
                     headRef: 'cool-branch',
-                    fork: true,
                     body: 'Body text',
                     commits: [
                         {

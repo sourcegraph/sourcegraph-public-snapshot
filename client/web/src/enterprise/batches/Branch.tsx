@@ -3,7 +3,7 @@ import AccountIcon from 'mdi-react/AccountIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
-import { Badge, Tooltip } from '@sourcegraph/wildcard'
+import { Badge } from '@sourcegraph/wildcard'
 import { BadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
 
 export interface BranchProps extends Pick<BadgeProps, 'variant'> {
