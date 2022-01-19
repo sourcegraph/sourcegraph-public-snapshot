@@ -17,16 +17,19 @@ A good automated test suite increases the velocity of our team because it allows
 
 Engineers should budget an appropriate amount of time for writing tests when making iteration plans.
 
-## Testing code
+## Testing code <span class="badge badge-note">SOC2/GN-105</span>
 
-In order to ensure we are true to our [philosphy](#philosophy), we have various implementations of testing for our code base. 
+In order to ensure we are true to our [philosphy](#philosophy), we have various implementations of testing for our code base.
 
 This includes, but is not limited to:
-- Image Vulnerability scanning
-- Infrascture as code 
-- Unit, Integration and end-to-end tests as outlined in the [testing-pyrmid](#testing-pyramid)
+
+- Image vulnerability scanning
+- Infrascture as code
+- Unit, integration and end-to-end tests as outlined in the [testing-pyrmid](#testing-pyramid)
 
 Our goal is to ensure that our product and code work, and that all reasonable effort has been taken to reduce the risk of a security-related incident associated to Sourcegraph.
+
+Also see [continuous integration](continuous_integration.md).
 
 ## Flaky tests
 
