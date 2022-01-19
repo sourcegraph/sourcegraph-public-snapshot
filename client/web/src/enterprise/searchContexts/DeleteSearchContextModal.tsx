@@ -1,4 +1,3 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback } from 'react'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
@@ -7,7 +6,7 @@ import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { ALLOW_NAVIGATION } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Modal } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '../../search'
 
@@ -46,9 +45,9 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
     )
 
     return (
-        <Dialog
+        <Modal
+            position="center"
             isOpen={isOpen}
-            className="modal-body modal-body--centered p-4 rounded border"
             onDismiss={toggleDeleteModal}
             aria-labelledby={deleteLabelId}
             data-testid="delete-search-context-modal"
@@ -76,6 +75,6 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
                 </div>
             )}
             {deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
-        </Dialog>
+        </Modal>
     )
 }

@@ -1,9 +1,8 @@
-import Dialog from '@reach/dialog'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import styles from './ModalVideo.module.scss'
 
@@ -68,8 +67,9 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
         <>
             <div className={classNames(styles.wrapper, className)}>{thumbnailElement}</div>
             {isOpen && (
-                <Dialog
-                    className={classNames(styles.modal, 'modal-body modal-body--centered p-4 rounded border')}
+                <Modal
+                    position="center"
+                    className={styles.modal}
                     onDismiss={() => toggleDialog(false)}
                     aria-labelledby={id}
                 >
@@ -93,7 +93,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                             </div>
                         </div>
                     </div>
-                </Dialog>
+                </Modal>
             )}
         </>
     )

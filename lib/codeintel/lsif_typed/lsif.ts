@@ -690,7 +690,7 @@ export namespace lib.codeintel.lsif_typed {
     export class Occurrence extends pb_1.Message {
         constructor(data?: any[] | {
             range?: number[];
-            symbol_uri?: string;
+            symbol?: string;
             symbol_roles?: number;
             override_documentation?: string[];
             syntax_kind?: SyntaxKind;
@@ -701,8 +701,8 @@ export namespace lib.codeintel.lsif_typed {
                 if ("range" in data && data.range != undefined) {
                     this.range = data.range;
                 }
-                if ("symbol_uri" in data && data.symbol_uri != undefined) {
-                    this.symbol_uri = data.symbol_uri;
+                if ("symbol" in data && data.symbol != undefined) {
+                    this.symbol = data.symbol;
                 }
                 if ("symbol_roles" in data && data.symbol_roles != undefined) {
                     this.symbol_roles = data.symbol_roles;
@@ -721,10 +721,10 @@ export namespace lib.codeintel.lsif_typed {
         set range(value: number[]) {
             pb_1.Message.setField(this, 1, value);
         }
-        get symbol_uri() {
+        get symbol() {
             return pb_1.Message.getField(this, 2) as string;
         }
-        set symbol_uri(value: string) {
+        set symbol(value: string) {
             pb_1.Message.setField(this, 2, value);
         }
         get symbol_roles() {
@@ -747,7 +747,7 @@ export namespace lib.codeintel.lsif_typed {
         }
         static fromObject(data: {
             range?: number[];
-            symbol_uri?: string;
+            symbol?: string;
             symbol_roles?: number;
             override_documentation?: string[];
             syntax_kind?: SyntaxKind;
@@ -756,8 +756,8 @@ export namespace lib.codeintel.lsif_typed {
             if (data.range != null) {
                 message.range = data.range;
             }
-            if (data.symbol_uri != null) {
-                message.symbol_uri = data.symbol_uri;
+            if (data.symbol != null) {
+                message.symbol = data.symbol;
             }
             if (data.symbol_roles != null) {
                 message.symbol_roles = data.symbol_roles;
@@ -773,7 +773,7 @@ export namespace lib.codeintel.lsif_typed {
         toObject() {
             const data: {
                 range?: number[];
-                symbol_uri?: string;
+                symbol?: string;
                 symbol_roles?: number;
                 override_documentation?: string[];
                 syntax_kind?: SyntaxKind;
@@ -781,8 +781,8 @@ export namespace lib.codeintel.lsif_typed {
             if (this.range != null) {
                 data.range = this.range;
             }
-            if (this.symbol_uri != null) {
-                data.symbol_uri = this.symbol_uri;
+            if (this.symbol != null) {
+                data.symbol = this.symbol;
             }
             if (this.symbol_roles != null) {
                 data.symbol_roles = this.symbol_roles;
@@ -801,8 +801,8 @@ export namespace lib.codeintel.lsif_typed {
             const writer = w || new pb_1.BinaryWriter();
             if (this.range !== undefined)
                 writer.writePackedInt32(1, this.range);
-            if (typeof this.symbol_uri === "string" && this.symbol_uri.length)
-                writer.writeString(2, this.symbol_uri);
+            if (typeof this.symbol === "string" && this.symbol.length)
+                writer.writeString(2, this.symbol);
             if (this.symbol_roles !== undefined)
                 writer.writeInt32(3, this.symbol_roles);
             if (this.override_documentation !== undefined)
@@ -822,7 +822,7 @@ export namespace lib.codeintel.lsif_typed {
                         message.range = reader.readPackedInt32();
                         break;
                     case 2:
-                        message.symbol_uri = reader.readString();
+                        message.symbol = reader.readString();
                         break;
                     case 3:
                         message.symbol_roles = reader.readInt32();

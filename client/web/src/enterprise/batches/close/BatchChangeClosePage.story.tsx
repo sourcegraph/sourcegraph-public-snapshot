@@ -67,6 +67,7 @@ const batchChangeDefaults: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
+        id: 'specID1',
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
         codeHostsWithoutWebhooks: {

@@ -1,12 +1,11 @@
 import { ApolloError } from '@apollo/client'
-import Dialog from '@reach/dialog'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState, useEffect } from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, Button } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Modal } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -229,8 +228,9 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     }
 
     return (
-        <Dialog
-            className={classNames(styles.modal, 'modal-body p-4 rounded border')}
+        <Modal
+            position="center"
+            className={styles.modal}
             onDismiss={() => props.onClose()}
             aria-labelledby={FUZZY_MODAL_TITLE}
         >
@@ -283,7 +283,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     </Button>
                 )}
             </div>
-        </Dialog>
+        </Modal>
     )
 }
 

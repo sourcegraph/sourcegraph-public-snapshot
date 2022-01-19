@@ -122,7 +122,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	// Only post an update if the lock has been modified
 	lockModified := results.Action != nil
 	if lockModified {
-		summary := slackSummary(results.LockBranch, results.FailedCommits)
+		summary := slackSummary(results.LockBranch, flags.Branch, results.FailedCommits)
 		announceWebhooks := strings.Split(checkFlags.slackAnnounceWebhooks, ",")
 
 		// Post update first to avoid invisible changes

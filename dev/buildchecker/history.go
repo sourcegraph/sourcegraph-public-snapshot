@@ -12,7 +12,7 @@ func generateHistory(builds []buildkite.Build, windowStart time.Time, opts Check
 	// day:count
 	totals = make(map[string]int)
 	for _, b := range builds {
-		totals[buildDate(b)] += 1
+		totals[buildDate(b.CreatedAt.Time)] += 1
 	}
 	// day:count
 	flakes = make(map[string]int)
@@ -35,16 +35,16 @@ func generateHistory(builds []buildkite.Build, windowStart time.Time, opts Check
 		scanBuilds = scanBuilds[max(firstFailedBuildIndex-1, 0):]
 
 		failed, exceeded, scanned := checkConsecutiveFailures(
-			scanBuilds, opts.FailuresThreshold, opts.BuildTimeout, true, true)
+			scanBuilds, opts.FailuresThreshold, opts.BuildTimeout, true)
 		if exceeded {
 			// Time from last passed build to oldest build in series
 			firstFailed := failed[len(failed)-1]
-			redTime := lastPassedBuild.Sub(firstFailed.Build.CreatedAt.Time)
-			incidents[buildDate(*firstFailed.Build)] += int(redTime.Minutes())
+			redTime := lastPassedBuild.Sub(firstFailed.BuildCreated)
+			incidents[buildDate(firstFailed.BuildCreated)] += int(redTime.Minutes())
 		} else {
 			for _, f := range failed {
 				// Raw count of failed builds on date
-				flakes[buildDate(*f.Build)] += 1
+				flakes[buildDate(f.BuildCreated)] += 1
 			}
 		}
 
@@ -65,8 +65,8 @@ func generateHistory(builds []buildkite.Build, windowStart time.Time, opts Check
 	return
 }
 
-func buildDate(build buildkite.Build) string {
-	return build.CreatedAt.Format("2006/01/02")
+func buildDate(created time.Time) string {
+	return created.Format("2006/01/02")
 }
 
 func mapToRecords(m map[string]int) (records [][]string) {

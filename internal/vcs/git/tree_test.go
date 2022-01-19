@@ -54,7 +54,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	ctx := context.Background()
 
 	// file1 should be a file.
-	file1Info, err := Stat(ctx, repo, commitID, "file1")
+	file1Info, err := Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, "file1")
 	if err != nil {
 		t.Fatalf("fs.Stat(file1): %s", err)
 	}
@@ -74,7 +74,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Check symlinks are links
 	for symlink := range symlinks {
-		fi, err := lStat(ctx, repo, commitID, symlink)
+		fi, err := lStat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
 			t.Fatalf("fs.lStat(%s): %s", symlink, err)
 		}
@@ -86,7 +86,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Also check the FileInfo returned by ReadDir to ensure it's
 	// consistent with the FileInfo returned by lStat.
-	entries, err := ReadDir(ctx, repo, commitID, ".", false)
+	entries, err := ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, ".", false)
 	if err != nil {
 		t.Fatalf("fs.ReadDir(.): %s", err)
 	}
@@ -104,7 +104,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	}
 
 	for symlink, size := range symlinks {
-		fi, err := Stat(ctx, repo, commitID, symlink)
+		fi, err := Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
 			t.Fatalf("fs.Stat(%s): %s", symlink, err)
 		}
@@ -160,13 +160,13 @@ func TestRepository_FileSystem(t *testing.T) {
 
 	for label, test := range tests {
 		// notafile should not exist.
-		if _, err := Stat(ctx, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
+		if _, err := Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Stat(notafile): got err %v, want os.IsNotExist", label, err)
 			continue
 		}
 
 		// dir1 should exist and be a dir.
-		dir1Info, err := Stat(ctx, test.repo, test.first, "dir1")
+		dir1Info, err := Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1")
 		if err != nil {
 			t.Errorf("%s: fs1.Stat(dir1): %s", label, err)
 			continue
@@ -185,7 +185,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1 should contain one entry: file1.
-		dir1Entries, err := ReadDir(ctx, test.repo, test.first, "dir1", false)
+		dir1Entries, err := ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -206,7 +206,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir2 should not exist
-		_, err = ReadDir(ctx, test.repo, test.first, "dir2", false)
+		_, err = ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir2", false)
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.ReadDir(dir2): should not exist: %s", label, err)
 			continue
@@ -221,7 +221,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if !bytes.Equal(file1Data, []byte("infile1")) {
 			t.Errorf("%s: got file1Data == %q, want %q", label, string(file1Data), "infile1")
 		}
-		file1Info, err = Stat(ctx, test.repo, test.first, "dir1/file1")
+		file1Info, err = Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1/file1")
 		if err != nil {
 			t.Errorf("%s: fs1.Stat(dir1/file1): %s", label, err)
 			continue
@@ -250,7 +250,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// file1 should also exist in the 2nd commit.
-		if _, err := Stat(ctx, test.repo, test.second, "dir1/file1"); err != nil {
+		if _, err := Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.second, "dir1/file1"); err != nil {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
@@ -260,7 +260,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// root should exist (via Stat).
-		root, err := Stat(ctx, test.repo, test.second, ".")
+		root, err := Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.second, ".")
 		if err != nil {
 			t.Errorf("%s: fs2.Stat(.): %s", label, err)
 			continue
@@ -270,7 +270,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// root should have 2 entries: dir1 and file 2.
-		rootEntries, err := ReadDir(ctx, test.repo, test.second, ".", false)
+		rootEntries, err := ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.second, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs2.ReadDir(.): %s", label, err)
 			continue
@@ -287,7 +287,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1 should still only contain one entry: file1.
-		dir1Entries, err = ReadDir(ctx, test.repo, test.second, "dir1", false)
+		dir1Entries, err = ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.second, "dir1", false)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -301,7 +301,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// rootEntries should be empty for third commit
-		rootEntries, err = ReadDir(ctx, test.repo, test.third, ".", false)
+		rootEntries, err = ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.third, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs3.ReadDir(.): %s", label, err)
 			continue
@@ -354,7 +354,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		entries, err := ReadDir(ctx, test.repo, commitID, ".", false)
+		entries, err := ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -371,7 +371,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		}
 
 		for _, name := range wantNames {
-			stat, err := Stat(ctx, test.repo, commitID, name)
+			stat, err := Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, commitID, name)
 			if err != nil {
 				t.Errorf("%s: Stat(%q): %s", label, name, err)
 				continue
@@ -442,13 +442,13 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 
 		// Check the submodule fs.FileInfo both when it's returned by
 		// Stat and when it's returned in a list by ReadDir.
-		submod, err := Stat(ctx, test.repo, commitID, "submod")
+		submod, err := Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, commitID, "submod")
 		if err != nil {
 			t.Errorf("%s: fs.Stat(submod): %s", label, err)
 			continue
 		}
 		checkSubmoduleFileInfo(label+" (Stat)", submod)
-		entries, err := ReadDir(ctx, test.repo, commitID, ".", false)
+		entries, err := ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -673,6 +673,68 @@ func TestListDirectoryChildren(t *testing.T) {
 		"dir3/": nil,
 	}
 	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestStat(t *testing.T) {
+	t.Parallel()
+
+	gitCommands := []string{
+		"mkdir dir1",
+		"touch dir1/file1",
+		"git add dir1/file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	dir := InitGitRepository(t, gitCommands...)
+	repo := api.RepoName(filepath.Base(dir))
+
+	if resp, err := gitserver.DefaultClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+		t.Fatal(err)
+	} else if resp.Error != "" {
+		t.Fatal(resp.Error)
+	}
+
+	commitID := api.CommitID(ComputeCommitHash(dir, true))
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	fileInfo, err := Stat(ctx, checker, repo, commitID, "dir1/file1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "dir1/file1"
+	if diff := cmp.Diff(want, fileInfo.Name()); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.HasPrefix(content.Path, "dir2") {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+
+	_, err = Stat(ctx, checker, repo, commitID, "dir1/file1")
+	if err == nil {
+		t.Fatal(err)
+	}
+	want = "ls-tree dir1/file1: file does not exist"
+	if diff := cmp.Diff(want, err.Error()); diff != "" {
 		t.Fatal(diff)
 	}
 }

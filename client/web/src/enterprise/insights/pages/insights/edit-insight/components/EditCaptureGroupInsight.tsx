@@ -23,6 +23,7 @@ export const EditCaptureGroupInsight: React.FunctionComponent<EditCaptureGroupIn
             groupSearchQuery: insight.query,
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
+            allRepos: insight.repositories.length === 0,
         }),
         [insight]
     )
