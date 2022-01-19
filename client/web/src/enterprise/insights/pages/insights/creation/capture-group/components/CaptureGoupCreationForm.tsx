@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
@@ -12,7 +11,6 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
-import { LinkWithQuery } from '../../../../../components/link-with-query'
 import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
 
@@ -25,6 +23,7 @@ interface CaptureGroupCreationFormProps {
     form: Form<CaptureGroupFormFields>
     title: useFieldAPI<CaptureGroupFormFields['title']>
     repositories: useFieldAPI<CaptureGroupFormFields['repositories']>
+    allReposMode: useFieldAPI<CaptureGroupFormFields['allRepos']>
     step: useFieldAPI<CaptureGroupFormFields['step']>
     stepValue: useFieldAPI<CaptureGroupFormFields['stepValue']>
     query: useFieldAPI<CaptureGroupFormFields['groupSearchQuery']>
@@ -41,6 +40,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
         form,
         title,
         repositories,
+        allReposMode,
         query,
         step,
         stepValue,
@@ -79,22 +79,27 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     className="mb-0 d-flex flex-column"
                 />
 
-                <div className="d-flex mb-2 mt-3 align-items-start">
-                    <InformationOutlineIcon className="text-muted pr-2 h-auto flex-shrink-0" />
+                <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
+                    <input
+                        type="checkbox"
+                        {...allReposMode.input}
+                        value="all-repos-mode"
+                        checked={allReposMode.input.value}
+                    />
 
-                    <small className="text-muted">
-                        This type of insight can only run across specified repositories. To run your insight across all
-                        repositories, use <LinkWithQuery to="/insights/create/search">"Track" insight</LinkWithQuery>{' '}
-                        and define data series manually. Learn about the{' '}
+                    <span className="pl-2">Run your insight over all your repositories</span>
+
+                    <small className="w-100 mt-2 text-muted">
+                        This feature is actively in development. Read about the{' '}
                         <a
                             href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            beta limitations.
+                            beta limitations here.
                         </a>
                     </small>
-                </div>
+                </label>
             </FormGroup>
 
             <hr className="my-4 w-100" />

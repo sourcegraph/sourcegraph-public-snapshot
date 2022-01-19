@@ -20,7 +20,14 @@ export const MonacoPreviewLink: React.FunctionComponent<MonacoPreviewLinkProps> 
     const queryURL = useMemo(() => `/search?${buildSearchURLQuery(query, patternType, false)}`, [patternType, query])
 
     return (
-        <Button className={classNames(styles.previewLink, className)} to={queryURL} variant="link" as={Link}>
+        <Button
+            className={classNames(styles.previewLink, className)}
+            to={queryURL}
+            variant="link"
+            as={Link}
+            target="_blank"
+            rel="noopener noreferrer"
+        >
             Preview results <LinkExternalIcon size={18} className={styles.previewLink} />
         </Button>
     )

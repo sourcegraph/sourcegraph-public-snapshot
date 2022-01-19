@@ -65,20 +65,16 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
 
-const BY_LINE_RANKING = 'by-line-number'
+const ByZoektRanking = 'by-zoekt-ranking'
 const DEFAULT_CONTEXT = 1
 
 export const FileMatch: React.FunctionComponent<Props> = props => {
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
-    const settings = props.settingsCascade.final
-    const ranking = useMemo(() => {
-        if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
-            return new LineRanking()
-        }
-        return new ZoektRanking()
-    }, [settings])
+    const isZoektRanking: boolean =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade?.final?.experimentalFeatures?.clientSearchResultRanking === ByZoektRanking
     const renderTitle = (): JSX.Element => (
         <>
             <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
@@ -148,6 +144,8 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         ) : undefined
 
     let containerProps: ResultContainerProps
+
+    const ranking = useMemo(() => (isZoektRanking ? new ZoektRanking() : new LineRanking()), [isZoektRanking])
 
     const expandedMatchGroups = useMemo(() => ranking.expandedResults(items, context), [items, context, ranking])
     const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(items, context), [items, context, ranking])
