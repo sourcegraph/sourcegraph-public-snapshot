@@ -73,6 +73,12 @@ commands:
   enterprise-frontend:
     env:
       EXTSVC_CONFIG_FILE: ''
+    watch:
+      - lib
+      - internal
+      - cmd/frontend
+      - enterprise/internal
+      - enterprise/cmd/frontend
 ```
 
 4. Start your instance by running `sg start enterprise`
