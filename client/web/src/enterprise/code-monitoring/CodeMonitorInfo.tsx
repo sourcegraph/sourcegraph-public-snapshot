@@ -16,7 +16,7 @@ export const CodeMonitorInfo: React.FunctionComponent<{ className?: string }> = 
     }
 
     return (
-        <Alert className={classNames('alert-dismissable d-flex align-items-start', className)} variant="info">
+        <Alert className={classNames('d-flex align-items-start', className)} variant="info">
             <p className="mb-0">
                 We currently recommend code monitors on repositories that don’t have a high commit traffic and for
                 non-critical use cases.
