@@ -148,17 +148,17 @@ func displayRepoName(repoPath string) string {
 
 // selectModifiedLines extracts the highlight ranges that correspond to lines
 // that have a `+` or `-` prefix (corresponding to additions resp. removals).
-func selectModifiedLines(lines []string, highlights []Range, prefix string, offset int) []Range {
+func selectModifiedLines(lines []string, highlights []Range, prefix string) []Range {
 	if len(lines) == 0 {
 		return highlights
 	}
 	include := make([]Range, 0, len(highlights))
 	for _, h := range highlights {
-		if h.Start.Line-offset < 0 {
+		if h.Start.Line < 0 {
 			// Skip negative line numbers. See: https://github.com/sourcegraph/sourcegraph/issues/20286.
 			continue
 		}
-		if strings.HasPrefix(lines[h.Start.Line-offset], prefix) {
+		if strings.HasPrefix(lines[h.Start.Line], prefix) {
 			include = append(include, h)
 		}
 	}
@@ -207,8 +207,8 @@ func selectCommitDiffKind(c *CommitMatch, field string) Match {
 	// We have two data structures storing highlight information for diff
 	// results. We must keep these in sync. Additionally the diff highlights
 	// line number is offset by 1.
-	bodyHighlights := selectModifiedLines(strings.Split(c.Body.Content, "\n"), c.Body.MatchedRanges, prefix, 0)
-	diffHighlights := selectModifiedLines(strings.Split(diff.Content, "\n"), diff.MatchedRanges, prefix, 1)
+	bodyHighlights := selectModifiedLines(strings.Split(c.Body.Content, "\n"), c.Body.MatchedRanges, prefix)
+	diffHighlights := selectModifiedLines(strings.Split(diff.Content, "\n"), diff.MatchedRanges, prefix)
 	if len(bodyHighlights) > 0 {
 		// Only rely on bodyHighlights since the header in diff.Value
 		// will create bogus highlights due to `+++` or `---`.
