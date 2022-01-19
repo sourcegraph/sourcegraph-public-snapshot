@@ -8,10 +8,6 @@ export interface LinkProps
     > {
     to: string | H.LocationDescriptor<any>
     ref?: React.Ref<HTMLAnchorElement>
-    /**
-     * If the Link should use branded styles. Defaults to true.
-     */
-    branded?: boolean
 }
 
 /**
