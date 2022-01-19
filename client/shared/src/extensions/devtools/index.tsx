@@ -4,8 +4,9 @@ import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback } from 'react'
 import { UncontrolledPopover } from 'reactstrap'
 
+import { Button, useLocalStorage } from '@sourcegraph/wildcard'
+
 import { PlatformContextProps } from '../../platform/context'
-import { useLocalStorage } from '../../util/useLocalStorage'
 import { ExtensionsControllerProps } from '../controller'
 
 import { ActiveExtensionsPanel } from './ActiveExtensionsPanel'
@@ -65,9 +66,9 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
 /** A button that toggles the visibility of the ExtensionDevTools element in a popover. */
 export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
     <>
-        <button type="button" id="extension-status-popover" className="btn btn-link text-decoration-none px-2">
+        <Button id="extension-status-popover" className="text-decoration-none px-2" variant="link">
             <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
-        </button>
+        </Button>
         <UncontrolledPopover
             placement="auto-end"
             target="extension-status-popover"

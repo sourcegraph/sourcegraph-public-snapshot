@@ -3,7 +3,7 @@ import { parseISO } from 'date-fns'
 import format from 'date-fns/format'
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../productSubscription/helpers'
 

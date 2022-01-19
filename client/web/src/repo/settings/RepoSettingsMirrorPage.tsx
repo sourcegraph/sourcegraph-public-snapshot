@@ -8,11 +8,10 @@ import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Container, PageHeader, LoadingSpinner, FeedbackText, Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
-import { FeedbackText } from '../../components/FeedbackText'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'
@@ -196,14 +195,13 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                 title="Check connection to remote repository"
                 description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
                 action={
-                    <button
-                        type="button"
-                        className="btn btn-primary"
+                    <Button
                         disabled={this.state.loading}
                         onClick={this.checkMirrorRepositoryConnection}
+                        variant="primary"
                     >
                         Check connection
-                    </button>
+                    </Button>
                 }
                 details={
                     <>

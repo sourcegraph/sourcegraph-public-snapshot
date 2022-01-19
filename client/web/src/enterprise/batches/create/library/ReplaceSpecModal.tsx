@@ -1,5 +1,6 @@
-import Dialog from '@reach/dialog'
 import React from 'react'
+
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 export interface ReplaceSpecModalProps {
     libraryItemName: string
@@ -12,25 +13,21 @@ export const ReplaceSpecModal: React.FunctionComponent<ReplaceSpecModalProps> = 
     onCancel,
     onConfirm,
 }) => (
-    <Dialog
-        className="modal-body modal-body--top-third p-4 rounded border"
-        onDismiss={onCancel}
-        aria-labelledby={MODAL_LABEL_ID}
-    >
+    <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
         <h3 id={MODAL_LABEL_ID}>Replace batch spec?</h3>
         <p className="mb-4">
             Are you sure you want to replace your current batch spec with the template for{' '}
             <strong>{libraryItemName}</strong>?
         </p>
         <div className="d-flex justify-content-end">
-            <button type="button" className="btn btn-outline-secondary mr-2" onClick={onCancel}>
+            <Button className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                 Cancel
-            </button>
-            <button type="button" onClick={onConfirm} className="btn btn-primary">
+            </Button>
+            <Button onClick={onConfirm} variant="primary">
                 Confirm
-            </button>
+            </Button>
         </div>
-    </Dialog>
+    </Modal>
 )
 
 const MODAL_LABEL_ID = 'replace-batch-spec-modal-title'

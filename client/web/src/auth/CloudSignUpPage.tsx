@@ -3,17 +3,20 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
+import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
+import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './CloudSignUpPage.module.scss'
 import { ExternalsAuth } from './ExternalsAuth'
-import { OrDivider } from './OrDivider'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
@@ -26,7 +29,6 @@ interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
 
 const SourceToTitleMap = {
     Context: 'Easily search the code you care about.',
-    OptimisedContext: 'Easily search the code you care about, for free.',
     Saved: 'Create a library of useful searches.',
     Monitor: 'Monitor code for changes.',
     Extend: 'Augment code and workflows via extensions.',
@@ -52,7 +54,6 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     featureFlags,
 }) => {
     const location = useLocation()
-    const isSignupOptimised = featureFlags.get('signup-optimization')
 
     const queryWithUseEmailToggled = new URLSearchParams(location.search)
     if (showEmailForm) {
@@ -63,8 +64,15 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
 
     const assetsRoot = window.context?.assetsRoot || ''
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
-    const defaultTitle = isSignupOptimised ? SourceToTitleMap.OptimisedContext : SourceToTitleMap.Context // Use Context as default
+    const defaultTitle = SourceToTitleMap.Context
     const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : defaultTitle
+
+    const invitedBy = queryWithUseEmailToggled.get('invitedBy')
+    const { data } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(USER_AREA_USER_PROFILE, {
+        variables: { username: invitedBy || '', siteAdmin: false },
+        skip: !invitedBy,
+    })
+    const invitedByUser = data?.user
 
     const logEvent = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
@@ -83,26 +91,6 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
             experimental={true}
             className="my-3"
         />
-    )
-
-    const renderSignupOptimized = (): JSX.Element => (
-        <>
-            {signUpForm}
-            <div className={classNames('d-flex justify-content-center', styles.helperText)}>
-                <span className="mr-1">Have an account?</span>
-                <Link to={`/sign-in${location.search}`}>Log in</Link>
-            </div>
-
-            <OrDivider className="mt-4 mb-4 text-lowercase" />
-
-            <ExternalsAuth
-                withCenteredText={true}
-                context={context}
-                githubLabel="Sign up with GitHub"
-                gitlabLabel="Sign up with GitLab"
-                onClick={logEvent}
-            />
-        </>
     )
 
     const renderCodeHostAuth = (): JSX.Element => (
@@ -140,25 +128,36 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className={styles.page}>
-            <header>
-                <div className="position-relative">
-                    <div className={styles.headerBackground1} />
-                    <div className={styles.headerBackground2} />
-                    <div className={styles.headerBackground3} />
-
-                    <div className={styles.limitWidth}>
-                        <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    </div>
-                </div>
-
-                <div className={styles.limitWidth}>
-                    <h2 className={styles.pageHeading}>{title}</h2>
-                </div>
+            <header className="position-relative">
+                <div className={styles.headerBackground1} />
+                <div className={styles.headerBackground2} />
             </header>
+            <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
+                <div className={styles.leftOrRight}>
+                    <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
+                    <h2
+                        className={classNames(
+                            'd-flex',
+                            'align-items-center',
+                            'mb-4',
+                            'mt-1',
+                            invitedBy ? styles.pageHeadingInvitedBy : styles.pageHeading
+                        )}
+                    >
+                        {invitedByUser ? (
+                            <>
+                                <UserAvatar
+                                    className={classNames('icon-inline', 'mr-3', styles.avatar)}
+                                    user={invitedByUser}
+                                />
+                                <strong className="mr-1">{invitedBy}</strong> has invited you to join Sourcegraph
+                            </>
+                        ) : (
+                            title
+                        )}
+                    </h2>
 
-            <div className={classNames(styles.contents, styles.limitWidth)}>
-                <div className={styles.contentsLeft}>
-                    With a Sourcegraph account, you can also:
+                    {invitedBy ? 'With a Sourcegraph account, you can:' : 'With a Sourcegraph account, you can also:'}
                     <ul className={styles.featureList}>
                         <li>
                             <div className="d-flex align-items-center">
@@ -176,12 +175,13 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     <img
                         src={`${assetsRoot}/img/customer-logos-${isLightTheme ? 'light' : 'dark'}.svg`}
                         alt="Cloudflare, Uber, SoFi, Dropbox, Plaid, Toast"
+                        className={styles.customerLogos}
                     />
                 </div>
 
-                <div className={styles.signUpWrapper}>
+                <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
                     <h2>Create a free account</h2>
-                    {isSignupOptimised ? renderSignupOptimized() : renderAuthMethod()}
+                    {renderAuthMethod()}
 
                     <small className="text-muted">
                         By registering, you agree to our{' '}
@@ -195,15 +195,11 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                         .
                     </small>
 
-                    {!isSignupOptimised && (
-                        <>
-                            <hr className={styles.separator} />
+                    <hr className={styles.separator} />
 
-                            <div>
-                                Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
-                            </div>
-                        </>
-                    )}
+                    <div>
+                        Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
+                    </div>
                 </div>
             </div>
         </div>

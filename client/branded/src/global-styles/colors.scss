@@ -142,6 +142,7 @@ $theme-colors: (
     --border-active-color: var(--primary);
     --search-query-text-color: var(--gray-12);
     --search-filter-keyword-color: var(--primary);
+    --search-filter-separator-color: var(--oc-gray-6);
     --search-keyword-color: var(--purple);
     --infobar-warning-color: var(--oc-red-8);
     --icon-color: var(--gray-06);
@@ -157,6 +158,7 @@ $theme-colors: (
     --code-selection-bg: var(--gray-03);
     --sourcegraph-logo-text-color: #000000;
     --marketing-gradient: linear-gradient(90.64deg, #e4d3fc 3.11%, #d7f0fd 83.64%);
+    --modal-bg: #{rgba($gray-04, 0.5)};
 }
 
 .theme-dark {
@@ -198,6 +200,7 @@ $theme-colors: (
     --border-active-color: #4393e7;
     --search-query-text-color: var(--gray-04);
     --search-filter-keyword-color: #4393e7;
+    --search-filter-separator-color: var(--oc-gray-6);
     --search-keyword-color: var(--pink);
     --infobar-warning-color: #f05151;
     --icon-color: var(--gray-05);
@@ -213,6 +216,7 @@ $theme-colors: (
     --code-selection-bg: var(--gray-08);
     --sourcegraph-logo-text-color: var(--white);
     --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
+    --modal-bg: #{rgba($gray-08, 0.5)};
 }
 
 // Additional colors global colors.

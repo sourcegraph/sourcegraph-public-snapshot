@@ -4,7 +4,9 @@
     { "path": "../shared" },
     { "path": "../branded" },
     { "path": "../../schema" },
+    { "path": "../http-client" },
     { "path": "../common" },
+    { "path": "../codeintellify" },
   ],
   "compilerOptions": {
     "module": "commonjs",

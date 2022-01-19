@@ -4,20 +4,18 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
-import { asError } from '@sourcegraph/common'
-import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import {
     Scalars,
     SearchContextEditInput,
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'

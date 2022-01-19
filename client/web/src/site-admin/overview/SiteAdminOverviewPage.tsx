@@ -4,15 +4,14 @@ import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 
 import { ErrorLike, asError, isErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -262,13 +261,14 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                                 <div className="site-admin-overview-page__detail-header">
                                                     <h2>Weekly unique users</h2>
                                                     <h3>
-                                                        <Link
+                                                        <Button
                                                             to="/site-admin/usage-statistics"
-                                                            className="btn btn-secondary"
+                                                            variant="secondary"
+                                                            as={Link}
                                                         >
                                                             View all usage statistics{' '}
                                                             <OpenInNewIcon className="icon-inline" />
-                                                        </Link>
+                                                        </Button>
                                                     </h3>
                                                 </div>
                                             }

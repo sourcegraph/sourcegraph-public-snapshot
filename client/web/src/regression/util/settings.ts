@@ -1,4 +1,4 @@
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { mutateSettings } from '@sourcegraph/shared/src/settings/edit'
 
 import { getUser } from './api'

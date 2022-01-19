@@ -5,12 +5,12 @@ import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
 import { AuthenticatedUser } from '../../auth'
 import { SourcegraphContext } from '../../jscontext'
@@ -130,7 +130,7 @@ describe('SearchContextDropdown', () => {
                 </MockTemporarySettings>
             )
 
-            userEvent.click(screen.getByRole('button', { name: /context:/ }))
+            userEvent.click(screen.getByRole('button', { name: /context/ }))
 
             expect(screen.queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
         })
@@ -146,7 +146,7 @@ describe('SearchContextDropdown', () => {
                 </MockTemporarySettings>
             )
 
-            userEvent.click(screen.getByRole('button', { name: /context:/ }))
+            userEvent.click(screen.getByRole('button', { name: /context/ }))
 
             expect(screen.getByRole('button', { name: /Don't show this again/ })).toBeInTheDocument()
         })
@@ -169,7 +169,7 @@ describe('SearchContextDropdown', () => {
                 </MockTemporarySettings>
             )
 
-            userEvent.click(screen.getByRole('button', { name: /context:/ }))
+            userEvent.click(screen.getByRole('button', { name: /context/ }))
 
             expect(screen.queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
         })
@@ -185,7 +185,7 @@ describe('SearchContextDropdown', () => {
                 </MockTemporarySettings>
             )
 
-            userEvent.click(screen.getByRole('button', { name: /context:/ }))
+            userEvent.click(screen.getByRole('button', { name: /context/ }))
 
             expect(screen.queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
         })
@@ -201,7 +201,7 @@ describe('SearchContextDropdown', () => {
                 </MockTemporarySettings>
             )
 
-            userEvent.click(screen.getByRole('button', { name: /context:/ }))
+            userEvent.click(screen.getByRole('button', { name: /context/ }))
 
             expect(screen.queryByRole('button', { name: /Don't show this againr/ })).not.toBeInTheDocument()
         })
@@ -222,7 +222,7 @@ describe('SearchContextDropdown', () => {
                 </MockTemporarySettings>
             )
 
-            userEvent.click(screen.getByRole('button', { name: /context:/ }))
+            userEvent.click(screen.getByRole('button', { name: /context/ }))
 
             // would need some time for animation before the button becomes clickable
             // otherwise we would get `unable to click element as it has or inherits pointer-events set to "none".` error

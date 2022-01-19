@@ -457,6 +457,8 @@ type VisibleChangesetSpecResolver interface {
 
 	Description(ctx context.Context) (ChangesetDescription, error)
 	Workspace(ctx context.Context) (BatchSpecWorkspaceResolver, error)
+
+	ForkTarget() ForkTargetInterface
 }
 
 type ChangesetSpecDeltaResolver interface {
@@ -505,6 +507,11 @@ type GitCommitDescriptionResolver interface {
 	Body() *string
 	Author() *PersonResolver
 	Diff() string
+}
+
+type ForkTargetInterface interface {
+	PushUser() bool
+	Namespace() *string
 }
 
 type BatchChangesCodeHostConnectionResolver interface {
@@ -699,6 +706,7 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
+	ForkNamespace() *string
 	// ReviewState returns a value of type *btypes.ChangesetReviewState.
 	ReviewState(context.Context) *string
 	// CheckState returns a value of type *btypes.ChangesetCheckState.

@@ -1,17 +1,16 @@
-import { applyEdits } from '@sqs/jsonc-parser'
+import { applyEdits, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { JSONPath } from '@sqs/jsonc-parser/lib/main'
 import expect from 'expect'
 import { describe, before, after, test } from 'mocha'
 import { ElementHandle } from 'puppeteer'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { Config, getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { ensureTestExternalService, getUser, setUserSiteAdmin } from './util/api'
+import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
 import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
@@ -87,6 +86,7 @@ describe('Code intelligence regression test suite', () => {
             throw new Error(`test user ${testUsername} does not exist`)
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
+        await setTosAccepted(gqlClient, user.id)
 
         outerResourceManager.add('Global setting', 'codeIntel.includeForks', await setIncludeForks(gqlClient, true))
     })

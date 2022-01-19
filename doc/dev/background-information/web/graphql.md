@@ -20,7 +20,7 @@ Using a `useQuery` hook, we can easily fire a request and handle the response co
 
 ```ts
 // ./MyComponent.tsx
-import { useQuery, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { useQuery, gql } from '@sourcegraph/http-client'
 
 import { UserDisplayNameResult, UserDisplayNameVariables } from '../../graphql-operations'
 
@@ -132,7 +132,7 @@ Apollo lets us easily mock queries in our tests without having to actually mock 
 ```ts
 import { render } from '@testing-library/react'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { MyComponent, USER_DISPLAY_NAME } from './MyComponent'
@@ -171,7 +171,7 @@ describe('My Test', () => {
 Most queries should be requested in the context of our UI and should use hooks. If there is a scenario where this is not possible, it is still possible to realise the benefits of Apollo without relying this approach. We can imperatively trigger any query using `client.query`.
 
 ```ts
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { client } from './backend/graphql'
 import {

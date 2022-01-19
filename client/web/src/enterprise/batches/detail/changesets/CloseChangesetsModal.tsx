@@ -1,8 +1,7 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -38,29 +37,26 @@ export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalP
     }, [changesetIDs, closeChangesets, batchChangeID, afterCreate])
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={MODAL_LABEL_ID}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
             <h3 id={MODAL_LABEL_ID}>Close changesets</h3>
             <p className="mb-4">Are you sure you want to close all the selected changesets on the code hosts?</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
-                <button
-                    type="button"
+                <Button
                     disabled={isLoading === true}
-                    className="btn btn-outline-secondary mr-2"
+                    className="mr-2"
                     onClick={onCancel}
+                    outline={true}
+                    variant="secondary"
                 >
                     Cancel
-                </button>
-                <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
+                </Button>
+                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
                     {isLoading === true && <LoadingSpinner />}
                     Close
-                </button>
+                </Button>
             </div>
-        </Dialog>
+        </Modal>
     )
 }
 

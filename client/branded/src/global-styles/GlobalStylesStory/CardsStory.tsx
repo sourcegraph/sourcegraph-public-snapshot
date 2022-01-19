@@ -1,6 +1,8 @@
 import { Story } from '@storybook/react'
 import React from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 export const CardsStory: Story = () => (
     <>
         <h1>Cards</h1>
@@ -23,9 +25,7 @@ export const CardsStory: Story = () => (
                 <p className="card-text">
                     Some quick example text to build on the card title and make up the bulk of the card's content.
                 </p>
-                <button type="button" className="btn btn-primary">
-                    Do something
-                </button>
+                <Button variant="primary">Do something</Button>
             </div>
         </div>
 
@@ -34,9 +34,9 @@ export const CardsStory: Story = () => (
             <div className="card-body">
                 <h3 className="card-title">Special title treatment</h3>
                 <p className="card-text">With supporting text below as a natural lead-in to additional content.</p>
-                <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                <Button href="https://example.com" target="_blank" rel="noopener noreferrer" variant="primary" as="a">
                     Go somewhere
-                </a>
+                </Button>
             </div>
         </div>
     </>

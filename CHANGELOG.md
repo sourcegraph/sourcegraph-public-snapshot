@@ -19,8 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Sourcegraph's API (streaming search, GraphQL, etc.) may now be used from any domain when using an access token for authentication, or with no authentication in the case of Sourcegraph.com. [#28775](https://github.com/sourcegraph/sourcegraph/pull/28775)
-- The endpoint `/search/stream` will be retired in favor of `/.api/search/stream`. This requires no action unless you have developed custom code against `/search/stream`. We will support both endpoints for a short period of time before removing `/search/stream`. Please refer to the [documentation](https://docs.sourcegraph.com/api/stream_api) for more information.
+-
 
 ### Fixed
 
@@ -29,6 +28,36 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 -
+
+## 3.36.0
+
+### Added
+
+- Search contexts can now be defined with a restricted search query as an alternative to a specific list of repositories and revisions. This feature is _beta_ and may change in the following releases. Allowed filters: `repo`, `rev`, `file`, `lang`, `case`, `fork`, `visibility`. `OR`, `AND` expressions are also allowed. To enable this feature to all users, set `experimentalFeatures.searchContextsQuery` to true in global settings. You'll then see a "Create context" button from the search results page and a "Query" input field in the search contexts form. If you want revisions specified in these query based search contexts to be indexed, set `experimentalFeatures.search.index.query.contexts` to true in site configuration. [#29327](https://github.com/sourcegraph/sourcegraph/pull/29327)
+- More explicit Terms of Service and Privacy Policy consent has been added to Sourcegraph Server. [#28716](https://github.com/sourcegraph/sourcegraph/issues/28716)
+- Batch changes will be created on forks of the upstream repository if the new `batchChanges.enforceForks` site setting is enabled. [#17879](https://github.com/sourcegraph/sourcegraph/issues/17879)
+- Symbolic links are now searchable. Previously it was possible to navigate to symbolic links in the repository tree view, however the symbolic links were ignored during searches. [#29567](https://github.com/sourcegraph/sourcegraph/pull/29567), [#237](https://github.com/sourcegraph/zoekt/pull/237)
+- Maximum number of references/definitions shown in panel can be adjusted in settings with `codeIntelligence.maxPanelResults`. If not set, a hardcoded limit of 500 was used. [#29629](https://github.com/sourcegraph/sourcegraph/29629)
+- Search notebooks are now fully persistable. You can create notebooks through the WYSIWYG editor and share them via a unique URL. We support two visibility modes: private (only the creator can view the notebook) and public (everyone can view the notebook). This feature is _beta_ and may change in the following releases. [#27384](https://github.com/sourcegraph/sourcegraph/issues/27384)
+
+### Changed
+
+- Sourcegraph's API (streaming search, GraphQL, etc.) may now be used from any domain when using an access token for authentication, or with no authentication in the case of Sourcegraph.com. [#28775](https://github.com/sourcegraph/sourcegraph/pull/28775)
+- The endpoint `/search/stream` will be retired in favor of `/.api/search/stream`. This requires no action unless you have developed custom code against `/search/stream`. We will support both endpoints for a short period of time before removing `/search/stream`. Please refer to the [documentation](https://docs.sourcegraph.com/api/stream_api) for more information.
+- When displaying the content of symbolic links in the repository tree view, we will show the relative path to the link's target instead of the target's content. This behavior is consistent with how we display symbolic links in search results. [#29687](https://github.com/sourcegraph/sourcegraph/pull/29687)
+- A new janitor job, "sg maintenance" was added to gitserver. The new job replaces "garbage collect" with the goal to optimize the performance of git operations for large repositories. You can choose to enable "garbage collect" again by setting the environment variables "SRC_ENABLE_GC_AUTO" to "true" and "SRC_ENABLE_SG_MAINTENANCE" to "false" for gitserver. Note that you must not enable both options at the same time. [#28224](https://github.com/sourcegraph/sourcegraph/pull/28224).
+- Search results across repositories are now ordered by repository rank by default. By default the rank is the number of stars a repository has. An administrator can inflate the rank of a repository via `experimentalFeatures.ranking.repoScores`. If you notice increased latency in results, you can disable this feature by setting `experimentalFeatures.ranking.maxReorderQueueSize` to 0. [#29856](https://github.com/sourcegraph/sourcegraph/pull/29856)
+
+### Fixed
+
+- Issue preventing searches from completing when certain patterns contain `@`. [#29489](https://github.com/sourcegraph/sourcegraph/pull/29489)
+- The grafana dashboard for "successful search request duration" reports the time for streaming search which is used by the browser. Previously it reported the GraphQL time which the browser no longer uses. [#29625](https://github.com/sourcegraph/sourcegraph/pull/29625)
+- A regression introduced in 3.35 causing Code Insights that are run over all repositories to not query against repositories that have permissions enabled. (Restricted repositories are and remain filtered based on user permissions when a user views a chart, not at query time.) This may cause global Insights to undercount for data points generated after upgrading to 3.35 and before upgrading to 3.36. [](https://github.com/sourcegraph/sourcegraph/pull/29725)
+- Renaming repositories now removes the old indexes on Zoekt's disks. This did not affect search results, only wasted disk space. This was a regression introduced in Sourcegraph 3.33. [#29685](https://github.com/sourcegraph/sourcegraph/issues/29685)
+
+### Removed
+
+- Removed unused backend service from Kubernetes deployments. [#4050](https://github.com/sourcegraph/deploy-sourcegraph/pull/4050)
 
 ## 3.35.1
 
@@ -51,7 +80,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights is persisted entirely in the `codeinsights-db` database. A migration will automatically be performed to move any defined insights and dashboards from your user, org, or global settings files.
 - The GraphQL API for Code Insights has entered beta. [docs](https://docs.sourcegraph.com/code_insights/references/code_insights_graphql_api)
 - The `SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND` environment variable to control the egress throughput of gitserver's git service (e.g. used by zoekt-index-server to clone repos to index). Set to -1 for no limit. [#29197](https://github.com/sourcegraph/sourcegraph/pull/29197)
-- More explicit Terms of Service and Privacy Policy consent has been added to Sourcegraph Server. [#28716](https://github.com/sourcegraph/sourcegraph/issues/28716)
 - Search suggestions via the GraphQL API were deprecated last release and are now no longer available. Suggestions now work only with the search streaming API. [#29283](https://github.com/sourcegraph/sourcegraph/pull/29283)
 
 ### Changed
@@ -67,6 +95,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Minio service upgraded to RELEASE.2021-12-10T23-03-39Z. [#29188](https://github.com/sourcegraph/sourcegraph/pull/29188)
 - Code insights creation UI form query field now supports suggestions and syntax highlighting. [#28130](https://github.com/sourcegraph/sourcegraph/pull/28130)
 - Using `select:repo` in search queries will now stream results incrementally, greatly improving speed and reducing time-to-first-result. [#28920](https://github.com/sourcegraph/sourcegraph/pull/28920)
+- The fuzzy file finder is now enabled by default and can be activated with the shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows. Change the user setting `experimentalFeatures.fuzzyFinder` to `false` to disable this feature. [#29010](https://github.com/sourcegraph/sourcegraph/pull/29010)
 
 ### Fixed
 

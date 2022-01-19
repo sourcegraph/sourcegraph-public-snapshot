@@ -11,6 +11,7 @@ import { Subject } from 'rxjs'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -33,7 +34,7 @@ interface OrgNodeProps {
     history: H.History
 }
 
-const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, history, onDidUpdate }) => {
+const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, onDidUpdate }) => {
     const [loading, setLoading] = useState<boolean | Error>(false)
 
     const deleteOrg = useCallback(() => {
@@ -65,17 +66,21 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, history, onDidUp
                     <span className="text-muted">{node.displayName}</span>
                 </div>
                 <div>
-                    <Link
+                    <Button
                         to={`${orgURL(node.name)}/settings`}
-                        className="btn btn-sm btn-secondary"
                         data-tooltip="Organization settings"
+                        variant="secondary"
+                        size="sm"
+                        as={Link}
                     >
                         <SettingsIcon className="icon-inline" /> Settings
-                    </Link>{' '}
-                    <Link
+                    </Button>{' '}
+                    <Button
                         to={`${orgURL(node.name)}/settings/members`}
-                        className="btn btn-sm btn-secondary"
                         data-tooltip="Organization members"
+                        variant="secondary"
+                        size="sm"
+                        as={Link}
                     >
                         <AccountIcon className="icon-inline" />{' '}
                         {node.members && (
@@ -83,16 +88,16 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, history, onDidUp
                                 {node.members.totalCount} {pluralize('member', node.members.totalCount)}
                             </>
                         )}
-                    </Link>{' '}
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-danger"
+                    </Button>{' '}
+                    <Button
                         onClick={deleteOrg}
                         disabled={loading === true}
                         data-tooltip="Delete organization"
+                        variant="danger"
+                        size="sm"
                     >
                         <DeleteIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 </div>
             </div>
             {isErrorLike(loading) && <ErrorAlert className="mt-2" error={loading.message} />}
@@ -118,9 +123,9 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
             <PageTitle title="Organizations - Admin" />
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Organizations</h2>
-                <Link to="/organizations/new" className="btn btn-primary test-create-org-button">
+                <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
                     <AddIcon className="icon-inline" /> Create organization
-                </Link>
+                </Button>
             </div>
             <p>
                 An organization is a set of users with associated configuration. See{' '}
@@ -135,9 +140,9 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
                     <h3>Enable early access</h3>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <p>Enable early access for organization code host connections and repositories on Cloud.</p>
-                        <Link to="./organizations/early-access-orgs-code" className="btn btn-outline-primary">
+                        <Button to="./organizations/early-access-orgs-code" variant="primary" outline={true} as={Link}>
                             Enable early access
-                        </Link>
+                        </Button>
                     </div>
                 </>
             ) : (

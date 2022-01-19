@@ -1,5 +1,3 @@
-import Dialog from '@reach/dialog'
-import classNames from 'classnames'
 import { isArray } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -8,7 +6,8 @@ import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useMemo } from 'react'
 
-import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { isDefined } from '@sourcegraph/common'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
@@ -23,16 +22,12 @@ export interface TimelineModalProps {
 }
 
 export const TimelineModal: React.FunctionComponent<TimelineModalProps> = ({ node, onCancel }) => (
-    <Dialog
-        className={classNames(styles.modalBody, 'modal-body p-4 rounded border')}
-        onDismiss={onCancel}
-        aria-label="Execution timeline"
-    >
+    <Modal className={styles.modalBody} onDismiss={onCancel} aria-label="Execution timeline">
         <div className="d-flex justify-content-between">
             <h3 className="mb-0">Execution timeline</h3>
-            <button type="button" className="btn btn-link btn-sm p-0 m-0" onClick={onCancel}>
+            <Button className="p-0 m-0" onClick={onCancel} variant="link" size="sm">
                 <CloseIcon className="icon-inline" />
-            </button>
+            </Button>
         </div>
         <ExecutionTimeline node={node} />
         {node.executor && (
@@ -41,7 +36,7 @@ export const TimelineModal: React.FunctionComponent<TimelineModalProps> = ({ nod
                 <ExecutorNode node={node.executor} />
             </>
         )}
-    </Dialog>
+    </Modal>
 )
 
 interface ExecutionTimelineProps {

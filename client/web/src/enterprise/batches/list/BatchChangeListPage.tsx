@@ -6,9 +6,8 @@ import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'

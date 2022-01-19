@@ -681,11 +681,11 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "without url, token, repositoryQuery, repos nor orgs",
+			desc:   "without url, token, githubAppInstallationID, repositoryQuery, repos nor orgs",
 			config: `{}`,
 			assert: includes(
 				"url is required",
-				"token is required",
+				"at least one of token or githubAppInstallationID must be set",
 				"at least one of repositoryQuery, repos or orgs must be set",
 			),
 		},
@@ -697,6 +697,17 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"url": "https://github.corp.com",
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind: extsvc.KindGitHub,
+			desc: "with url, githubAppInstallationID, repos",
+			config: `
+			{
+				"url": "https://github.corp.com",
+				"githubAppInstallationID": "21994992",
+				"repos": [],
 			}`,
 			assert: equals(`<nil>`),
 		},

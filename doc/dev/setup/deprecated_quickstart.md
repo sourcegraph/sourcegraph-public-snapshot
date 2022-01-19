@@ -519,7 +519,6 @@ Congratulations on making it to the end of the quickstart guide!
 Here are some additional resources to help you go further:
 
 - [`sg`, the Sourcegraph developer tool](../background-information/sg/index.md)
-- [How-to guides](how-to/index.md), particularly:
-  - [Troubleshooting local development](troubleshooting.md)
+- [Troubleshooting local development](troubleshooting.md)
 - [Background information](../background-information/index.md) for more context
 

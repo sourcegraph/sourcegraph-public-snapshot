@@ -16,7 +16,7 @@ func TestCheckGitHubPermissions(t *testing.T) {
 		expectedAuthor                   bool
 		expectedErr                      error
 		getRepositoryHook                func(context.Context, string, string) (*github.Repository, error)
-		listInstallationRepositoriesHook func(context.Context) ([]*github.Repository, error)
+		listInstallationRepositoriesHook func(context.Context, int) ([]*github.Repository, bool, int, error)
 	}
 
 	testErr := fmt.Errorf("uh-oh")
@@ -37,21 +37,21 @@ func TestCheckGitHubPermissions(t *testing.T) {
 		return nil, &github.RepoNotFoundError{}
 	}
 
-	listInstallationRepositoriesHookMatchingRepository := func(ctx context.Context) ([]*github.Repository, error) {
-		return []*github.Repository{{NameWithOwner: "sourcegraph/sourcegraph"}}, nil
+	listInstallationRepositoriesHookMatchingRepository := func(ctx context.Context, page int) ([]*github.Repository, bool, int, error) {
+		return []*github.Repository{{NameWithOwner: "sourcegraph/sourcegraph"}}, false, 1, nil
 	}
 
-	listInstallationRepositoriesHookNonMatchingRepository := func(ctx context.Context) ([]*github.Repository, error) {
-		return []*github.Repository{{NameWithOwner: "sourcegraph/not-sourcegraph"}}, nil
+	listInstallationRepositoriesHookNonMatchingRepository := func(ctx context.Context, page int) ([]*github.Repository, bool, int, error) {
+		return []*github.Repository{{NameWithOwner: "sourcegraph/not-sourcegraph"}}, false, 1, nil
 	}
 
-	listInstallationRepositoriesHookCalledWithUserToken := func(ctx context.Context) ([]*github.Repository, error) {
+	listInstallationRepositoriesHookCalledWithUserToken := func(ctx context.Context, page int) ([]*github.Repository, bool, int, error) {
 		// This error occurs when a user token is supplied to an app installation endpoint
-		return nil, &github.APIError{Code: 403, Message: "You must authenticate with an installation access token in order to list repositories for an installation."}
+		return nil, false, 1, &github.APIError{Code: 403, Message: "You must authenticate with an installation access token in order to list repositories for an installation."}
 	}
 
-	listInstallationRepositoriesHookError := func(ctx context.Context) ([]*github.Repository, error) {
-		return nil, testErr
+	listInstallationRepositoriesHookError := func(ctx context.Context, page int) ([]*github.Repository, bool, int, error) {
+		return nil, false, 1, testErr
 	}
 
 	testCases := []testCase{

@@ -5,11 +5,10 @@ import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -120,14 +119,16 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                     / {numberWithCommas(license.userCount - currentUserCount)} remaining (
                                     {numberWithCommas(actualUserCount)} maximum ever used)
                                 </div>
-                                <a
+                                <Button
                                     href="https://about.sourcegraph.com/pricing"
-                                    className="btn btn-primary btn-sm"
                                     target="_blank"
                                     rel="noopener"
+                                    variant="primary"
+                                    size="sm"
+                                    as="a"
                                 >
                                     Upgrade
-                                </a>
+                                </Button>
                             </>
                         ) : (
                             <>
@@ -138,15 +139,17 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                         : ''}
                                 </div>
                                 <div className="text-nowrap flex-wrap-reverse">
-                                    <a
+                                    <Button
                                         href="http://about.sourcegraph.com/contact/sales"
-                                        className="btn btn-primary btn-sm"
                                         target="_blank"
                                         rel="noopener"
                                         data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
+                                        variant="primary"
+                                        size="sm"
+                                        as="a"
                                     >
                                         Get license
-                                    </a>
+                                    </Button>
                                 </div>
                             </>
                         )}

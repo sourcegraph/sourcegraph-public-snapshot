@@ -40,6 +40,7 @@ export interface SearchBackendBasedInsight extends SearchBasedBackendInsightSett
     viewType: InsightType.SearchBased
     series: SearchBasedInsightSeries[]
     step: Duration
+    filters: SearchBasedBackendFilters
 }
 
 /**
@@ -54,7 +55,7 @@ export interface SearchBasedExtensionInsightSettings {
 }
 
 export interface SearchBasedInsightSeries extends BackendInsightSeries {
-    id: string | null
+    id: string
 }
 
 /**

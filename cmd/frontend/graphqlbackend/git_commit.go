@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/fs"
 	"net/url"
 	"os"
 	"sync"
@@ -206,7 +207,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	defer span.Finish()
 	span.SetTag("path", args.Path)
 
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -225,14 +226,14 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	if !stat.Mode().IsRegular() {
+	if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
 		return nil, errors.Errorf("not a blob: %q", args.Path)
 	}
 	return NewGitTreeEntryResolver(r.db, r, stat), nil

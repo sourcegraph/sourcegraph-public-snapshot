@@ -66,6 +66,10 @@ export function parseInsightFromSubject(
                 type: InsightExecutionType.Runtime,
                 viewType: type,
                 ...insightConfiguration,
+                series: insightConfiguration.series?.map((line, index) => ({
+                    ...line,
+                    id: `${line.name}-${index}`,
+                })),
             }
         }
     }
@@ -76,6 +80,7 @@ export function parseInsightFromSubject(
     // At the moment we support only search based insight in setting BE insight map
     if (allReposInsights[insightId] && type === InsightType.SearchBased) {
         const insightConfiguration = allReposInsights[insightId]
+        const filters = insightConfiguration.filters ?? { includeRepoRegexp: '', excludeRepoRegexp: '' }
 
         return {
             id: insightId,
@@ -88,6 +93,7 @@ export function parseInsightFromSubject(
                 id: `${line.name}-${index}`,
                 ...line,
             })),
+            filters,
         }
     }
 

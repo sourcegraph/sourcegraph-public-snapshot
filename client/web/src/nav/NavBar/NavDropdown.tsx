@@ -12,7 +12,7 @@ import navItemStyles from './NavItem.module.scss'
 
 import { NavItem, NavLink } from '.'
 
-interface NavDropdownItem {
+export interface NavDropdownItem {
     content: React.ReactNode | string
     path: string
 }

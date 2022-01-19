@@ -276,62 +276,79 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 			return err
 		}
 
-		// We only care about files
-		if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
-			continue
-		}
-
-		// ignore files if they match the filter
-		if filter(hdr) {
-			continue
-		}
-
-		// We are happy with the file, so we can write it to zw.
-		w, err := zw.CreateHeader(&zip.FileHeader{
-			Name:   hdr.Name,
-			Method: zip.Store,
-		})
-		if err != nil {
-			return err
-		}
-
-		n, err := tr.Read(buf)
-		switch err {
-		case io.EOF:
-			if n == 0 {
+		switch hdr.Typeflag {
+		case tar.TypeReg, tar.TypeRegA:
+			// ignore files if they match the filter
+			if filter(hdr) {
 				continue
 			}
-		case nil:
+			// We are happy with the file, so we can write it to zw.
+			w, err := zw.CreateHeader(&zip.FileHeader{
+				Name:   hdr.Name,
+				Method: zip.Store,
+			})
+			if err != nil {
+				return err
+			}
+
+			n, err := tr.Read(buf)
+			switch err {
+			case io.EOF:
+				if n == 0 {
+					continue
+				}
+			case nil:
+			default:
+				return err
+			}
+
+			// We do not search the content of large files unless they are
+			// allowed.
+			if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, largeFilePatterns) {
+				continue
+			}
+
+			// Heuristic: Assume file is binary if first 256 bytes contain a
+			// 0x00. Best effort, so ignore err. We only search names of binary files.
+			if n > 0 && bytes.IndexByte(buf[:n], 0x00) >= 0 {
+				continue
+			}
+
+			// First write the data already read into buf
+			nw, err := w.Write(buf[:n])
+			if err != nil {
+				return err
+			}
+			if nw != n {
+				return io.ErrShortWrite
+			}
+
+			_, err = io.CopyBuffer(w, tr, buf)
+			if err != nil {
+				return err
+			}
+		case tar.TypeSymlink:
+			// We cannot use tr.Read like we do for normal files because tr.Read returns (0,
+			// io.EOF) for symlinks. We zip symlinks by setting the mode bits explicitly and
+			// writing the link's target path as content.
+
+			// ignore symlinks if they match the filter
+			if filter(hdr) {
+				continue
+			}
+			fh := &zip.FileHeader{
+				Name:   hdr.Name,
+				Method: zip.Store,
+			}
+			fh.SetMode(os.ModeSymlink)
+			w, err := zw.CreateHeader(fh)
+			if err != nil {
+				return err
+			}
+			w.Write([]byte(hdr.Linkname))
 		default:
-			return err
-		}
-
-		// We do not search the content of large files unless they are
-		// allowed.
-		if hdr.Size > maxFileSize && !ignoreSizeMax(hdr.Name, largeFilePatterns) {
 			continue
 		}
-
-		// Heuristic: Assume file is binary if first 256 bytes contain a
-		// 0x00. Best effort, so ignore err. We only search names of binary files.
-		if n > 0 && bytes.IndexByte(buf[:n], 0x00) >= 0 {
-			continue
-		}
-
-		// First write the data already read into buf
-		nw, err := w.Write(buf[:n])
-		if err != nil {
-			return err
-		}
-		if nw != n {
-			return io.ErrShortWrite
-		}
-
-		_, err = io.CopyBuffer(w, tr, buf)
-		if err != nil {
-			return err
-		}
-
 	}
 }
 

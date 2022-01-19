@@ -4,6 +4,7 @@ import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button } from '@sourcegraph/wildcard'
 
 import { CloudSignUpSource } from '../../auth/CloudSignUpPage'
 
@@ -77,13 +78,14 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                         <div className={classNames('text-muted', styles.copyText)}>{copyText}</div>
                     </div>
                 </div>
-                <Link
-                    className="btn btn-primary"
+                <Button
                     to={`/sign-up?src=${source}&returnTo=${encodeURIComponent(returnTo)}`}
                     onClick={onClick}
+                    variant="primary"
+                    as={Link}
                 >
                     Sign up for Sourcegraph
-                </Link>
+                </Button>
             </DropdownMenu>
         </ButtonDropdown>
     )

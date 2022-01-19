@@ -7,12 +7,13 @@ import React, { useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
+import { Button } from '@sourcegraph/wildcard'
 
 import styles from './SelfHostInstructions.module.scss'
 
 export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
     const dockerCommand =
-        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.30.3'
+        'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.35.1'
 
     const copyTooltip = 'Copy command'
     const copyCompletedTooltip = 'Copied!'
@@ -63,16 +64,16 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     <strong>Quickstart:</strong> launch Sourcegraph at http://localhost:3370
                 </div>
                 <MarketingBlock wrapperClassName={styles.codeWrapper} contentClassName={styles.codeContent}>
-                    <button
-                        type="button"
-                        className={classNames('btn btn-link', styles.copyButton)}
+                    <Button
+                        className={styles.copyButton}
                         onClick={onCopy}
                         data-tooltip={currentCopyTooltip}
                         data-placement="top"
                         aria-label="Copy Docker command to clipboard"
+                        variant="link"
                     >
                         <ContentCopyIcon className="icon-inline" />
-                    </button>
+                    </Button>
                     <code className={styles.codeBlock}>{dockerCommand}</code>
                 </MarketingBlock>
                 <div className="d-flex justify-content-between">

@@ -358,10 +358,11 @@
               }
             },
             "maxReorderQueueSize": {
-              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 0. Set this to small integers to limit latency increases from slow backends.",
-              "default": 0,
+              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.",
+              "default": 24,
               "type": "integer",
-              "group": "Search"
+              "group": "Search",
+              "!go": { "pointer": true }
             }
           }
         },
@@ -407,6 +408,12 @@
       "!go": { "pointer": true },
       "group": "BatchChanges",
       "default": true
+    },
+    "batchChanges.enforceForks": {
+      "description": "When enabled, all branches created by batch changes will be pushed to forks of the original repository.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
     },
     "batchChanges.restrictToAdmins": {
       "description": "When enabled, only site admins can create and apply batch changes.",
@@ -1080,6 +1087,20 @@
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
           "group": "Sourcegraph.com"
+        },
+        "githubApp.cloud": {
+          "description": "The config options for Sourcegraph Cloud GitHub App.",
+          "type": "object",
+          "properties": {
+            "appID": {
+              "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
+            "privateKey": {
+              "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"

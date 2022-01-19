@@ -296,6 +296,7 @@ Foreign-key constraints:
  head_ref          | text                     |           |          | 
  title             | text                     |           |          | 
  external_id       | text                     |           |          | 
+ fork_namespace    | citext                   |           |          | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_external_id" btree (external_id)
@@ -353,6 +354,7 @@ Referenced by:
  worker_hostname          | text                                         |           | not null | ''::text
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
  last_heartbeat_at        | timestamp with time zone                     |           |          | 
+ external_fork_namespace  | citext                                       |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -1543,6 +1545,24 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
 
 **upload_id**: The identifier of the upload visible from the tip of the specified branch or tag.
 
+# Table "public.migration_logs"
+```
+            Column             |           Type           | Collation | Nullable |                  Default                   
+-------------------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                            | integer                  |           | not null | nextval('migration_logs_id_seq'::regclass)
+ migration_logs_schema_version | integer                  |           | not null | 
+ schema                        | text                     |           | not null | 
+ version                       | integer                  |           | not null | 
+ up                            | boolean                  |           | not null | 
+ started_at                    | timestamp with time zone |           | not null | 
+ finished_at                   | timestamp with time zone |           |          | 
+ success                       | boolean                  |           |          | 
+ error_message                 | text                     |           |          | 
+Indexes:
+    "migration_logs_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.names"
 ```
  Column  |  Type   | Collation | Nullable | Default 
@@ -1557,6 +1577,22 @@ Check constraints:
 Foreign-key constraints:
     "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.notebook_stars"
+```
+   Column    |           Type           | Collation | Nullable | Default 
+-------------+--------------------------+-----------+----------+---------
+ notebook_id | integer                  |           | not null | 
+ user_id     | integer                  |           | not null | 
+ created_at  | timestamp with time zone |           | not null | now()
+Indexes:
+    "notebook_stars_pkey" PRIMARY KEY, btree (notebook_id, user_id)
+    "notebook_stars_user_id_idx" btree (user_id)
+Foreign-key constraints:
+    "notebook_stars_notebook_id_fkey" FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE
+    "notebook_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -1580,6 +1616,8 @@ Check constraints:
     "blocks_is_array" CHECK (jsonb_typeof(blocks) = 'array'::text)
 Foreign-key constraints:
     "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+Referenced by:
+    TABLE "notebook_stars" CONSTRAINT "notebook_stars_notebook_id_fkey" FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -2388,6 +2426,7 @@ Referenced by:
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "notebook_stars" CONSTRAINT "notebook_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "notebooks" CONSTRAINT "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
@@ -2783,6 +2822,8 @@ Foreign-key constraints:
  external_title           | text                                         |           |          | 
  worker_hostname          | text                                         |           |          | 
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
+ last_heartbeat_at        | timestamp with time zone                     |           |          | 
+ external_fork_namespace  | citext                                       |           |          | 
 
 ```
 
@@ -2824,7 +2865,9 @@ Foreign-key constraints:
     c.syncer_error,
     c.external_title,
     c.worker_hostname,
-    c.ui_publication_state
+    c.ui_publication_state,
+    c.last_heartbeat_at,
+    c.external_fork_namespace
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1

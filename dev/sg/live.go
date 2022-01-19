@@ -84,7 +84,7 @@ func printDeployedVersion(e environment) error {
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done updating list of commits"))
 
-	log, err := run.GitCmd("log", "--oneline", "-n", "20", `--pretty=format:%h|%cr|%an|%s`, "origin/main")
+	log, err := run.GitCmd("log", "--oneline", "-n", "20", `--pretty=format:%H|%cr|%an|%s`, "origin/main")
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
 		return err
@@ -116,7 +116,7 @@ func printDeployedVersion(e environment) error {
 			shaFound = true
 		}
 
-		line := output.Linef(emoji, style, "%s (%s, %s): %s", sha, timestamp, author, message)
+		line := output.Linef(emoji, style, "%s (%s, %s): %s", sha[0:7], timestamp, author, message)
 		stdout.Out.WriteLine(line)
 	}
 

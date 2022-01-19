@@ -2,6 +2,8 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 
 import styles from './CodeMonitorInfo.module.scss'
@@ -23,14 +25,13 @@ export const CodeMonitorInfo: React.FunctionComponent<{ className?: string }> = 
                 sensitive workloads, like a large number of repositories or auditing published code for secrets and
                 other security use cases.
             </p>
-            <button
-                type="button"
+            <Button
                 aria-label="Close alert"
-                className={classNames('btn btn-icon', styles.closeButton)}
+                className={classNames('btn-icon', styles.closeButton)}
                 onClick={() => setVisible(false)}
             >
                 <CloseIcon className="icon-inline" />
-            </button>
+            </Button>
         </div>
     )
 })

@@ -1,6 +1,6 @@
 import { ApolloError, ApolloQueryResult } from '@apollo/client'
 
-import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { useQuery } from '@sourcegraph/http-client'
 import { EXTERNAL_SERVICES } from '@sourcegraph/web/src/components/externalServices/backend'
 
 import {

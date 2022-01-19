@@ -11,8 +11,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'

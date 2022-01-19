@@ -1,4 +1,7 @@
 .monaco-query-input {
+    flex: 1;
+    min-width: 0;
+
     :global(.monaco-editor) {
         /* Disable stylelint for Monaco modifications */
         /* stylelint-disable*/

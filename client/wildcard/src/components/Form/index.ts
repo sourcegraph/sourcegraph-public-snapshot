@@ -1,4 +1,5 @@
 export * from './Checkbox'
+export * from './FlexTextArea'
 export * from './Input'
 export * from './RadioButton'
 export * from './Select'

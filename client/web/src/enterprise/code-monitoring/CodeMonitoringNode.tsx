@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
 import { Observable, concat, of } from 'rxjs'
@@ -7,8 +6,7 @@ import { switchMap, catchError, startWith, takeUntil, tap, delay, mergeMap } fro
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
@@ -94,13 +92,9 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                         <div className="d-flex text-muted">
                             New search result → Sends email notifications{' '}
                             {showCodeMonitoringTestEmailButton && isSiteAdminUser && hasEnabledAction && node.enabled && (
-                                <button
-                                    type="button"
-                                    className="btn btn-link p-0 border-0 ml-2"
-                                    onClick={sendEmailRequest}
-                                >
+                                <Button className="p-0 border-0 ml-2" onClick={sendEmailRequest} variant="link">
                                     Send test email
-                                </button>
+                                </Button>
                             )}
                         </div>
                     )}
@@ -115,12 +109,14 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             disabled={toggleMonitorOrError === LOADING}
                         />
                     </div>
-                    <Link
+                    <Button
                         to={`${location.pathname}/${node.id}`}
-                        className={classNames('btn btn-link', styles.editButton)}
+                        className={styles.editButton}
+                        variant="link"
+                        as={Link}
                     >
                         Edit
-                    </Link>
+                    </Button>
                 </div>
             </div>
             {isErrorLike(toggleMonitorOrError) && (

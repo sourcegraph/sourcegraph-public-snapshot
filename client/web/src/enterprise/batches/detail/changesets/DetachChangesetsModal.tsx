@@ -1,9 +1,8 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -43,28 +42,25 @@ export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModa
     const labelId = 'detach-changesets-modal-title'
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={labelId}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <h3 id={labelId}>Detach changesets</h3>
             <p className="mb-4">Are you sure you want to detach the selected changesets?</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
-                <button
-                    type="button"
+                <Button
                     disabled={isLoading === true}
-                    className="btn btn-outline-secondary mr-2"
+                    className="mr-2"
                     onClick={onCancel}
+                    outline={true}
+                    variant="secondary"
                 >
                     Cancel
-                </button>
-                <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
+                </Button>
+                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
                     {isLoading === true && <LoadingSpinner />}
                     Detach
-                </button>
+                </Button>
             </div>
-        </Dialog>
+        </Modal>
     )
 }

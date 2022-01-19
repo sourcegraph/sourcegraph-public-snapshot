@@ -7,6 +7,7 @@ import React from 'react'
 import { LineChartContent } from 'sourcegraph'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -37,25 +38,18 @@ const LINE_CHART_DATA: LineChartContent<any, string> = {
             dataKey: 'a',
             name: 'A metric',
             stroke: 'var(--blue)',
-            linkURLs: [
-                '#A:1st_data_point',
-                '#A:2nd_data_point',
-                '#A:3rd_data_point',
-                '#A:4th_data_point',
-                '#A:5th_data_point',
-            ],
+            linkURLs: {
+                [1588965700286 - 4 * 24 * 60 * 60 * 1000]: '#A:1st_data_point',
+                [1588965700286 - 3 * 24 * 60 * 60 * 1000]: '#A:2st_data_point',
+                [1588965700286 - 3 * 24 * 60 * 60 * 1000]: '#A:3rd_data_point',
+                [1588965700286 - 2 * 24 * 60 * 60 * 1000]: '#A:4th_data_point',
+                [1588965700286 - 1 * 24 * 60 * 60 * 1000]: '#A:5th_data_point',
+            },
         },
         {
             dataKey: 'b',
             name: 'B metric',
             stroke: 'var(--warning)',
-            linkURLs: [
-                '#B:1st_data_point',
-                '#B:2nd_data_point',
-                '#B:3rd_data_point',
-                '#B:4th_data_point',
-                '#B:5th_data_point',
-            ],
         },
     ],
     xAxis: {
@@ -115,9 +109,9 @@ export const ViewWithContextMenu: Story = () => (
         subtitle="Subtitle chart description"
         actions={
             <>
-                <button className="btn btn-icon p-1">
+                <Button className="btn-icon p-1">
                     <FilterOutlineIcon size="1rem" />
-                </button>
+                </Button>
                 <ContextMenu />
             </>
         }

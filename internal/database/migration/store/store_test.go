@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -23,12 +24,20 @@ func TestEnsureSchemaTable(t *testing.T) {
 		t.Fatalf("expected query to fail due to missing schema table")
 	}
 
+	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM migration_logs")); err == nil {
+		t.Fatalf("expected query to fail due to missing logs table")
+	}
+
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
 	}
 
 	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM test_migrations_table")); err != nil {
 		t.Fatalf("unexpected error querying version table: %s", err)
+	}
+
+	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM migration_logs")); err != nil {
+		t.Fatalf("unexpected error querying logs table: %s", err)
 	}
 
 	if err := store.EnsureSchemaTable(ctx); err != nil {
@@ -166,6 +175,16 @@ func TestUp(t *testing.T) {
 		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 16 {
 			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 16, false, version, dirty, ok, err)
 		}
+
+		assertLogs(t, ctx, store, []migrationLog{
+			{
+				Schema:  "test_migrations_table",
+				Version: 16,
+				Up:      true,
+				Success: boolPtr(true),
+			},
+		})
+		truncateLogs(t, ctx, store)
 	})
 
 	t.Run("unexpected version", func(t *testing.T) {
@@ -184,6 +203,8 @@ func TestUp(t *testing.T) {
 		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 16 {
 			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 16, false, version, dirty, ok, err)
 		}
+
+		assertLogs(t, ctx, store, nil)
 	})
 
 	t.Run("query failure", func(t *testing.T) {
@@ -208,6 +229,16 @@ func TestUp(t *testing.T) {
 		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 17 {
 			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 17, true, version, dirty, ok, err)
 		}
+
+		assertLogs(t, ctx, store, []migrationLog{
+			{
+				Schema:  "test_migrations_table",
+				Version: 17,
+				Up:      true,
+				Success: boolPtr(false),
+			},
+		})
+		truncateLogs(t, ctx, store)
 	})
 
 	t.Run("dirty", func(t *testing.T) {
@@ -226,6 +257,8 @@ func TestUp(t *testing.T) {
 		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 17 {
 			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 17, true, version, dirty, ok, err)
 		}
+
+		assertLogs(t, ctx, store, nil)
 	})
 }
 
@@ -285,6 +318,16 @@ func TestDown(t *testing.T) {
 		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 13 {
 			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 13, false, version, dirty, ok, err)
 		}
+
+		assertLogs(t, ctx, store, []migrationLog{
+			{
+				Schema:  "test_migrations_table",
+				Version: 14,
+				Up:      false,
+				Success: boolPtr(true),
+			},
+		})
+		truncateLogs(t, ctx, store)
 	})
 
 	t.Run("unexpected version", func(t *testing.T) {
@@ -303,6 +346,8 @@ func TestDown(t *testing.T) {
 		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 13 {
 			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 13, false, version, dirty, ok, err)
 		}
+
+		assertLogs(t, ctx, store, nil)
 	})
 
 	t.Run("query failure", func(t *testing.T) {
@@ -322,6 +367,16 @@ func TestDown(t *testing.T) {
 		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 12 {
 			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 12, true, version, dirty, ok, err)
 		}
+
+		assertLogs(t, ctx, store, []migrationLog{
+			{
+				Schema:  "test_migrations_table",
+				Version: 13,
+				Up:      false,
+				Success: boolPtr(false),
+			},
+		})
+		truncateLogs(t, ctx, store)
 	})
 
 	t.Run("dirty", func(t *testing.T) {
@@ -340,9 +395,36 @@ func TestDown(t *testing.T) {
 		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 12 {
 			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 12, true, version, dirty, ok, err)
 		}
+
+		assertLogs(t, ctx, store, nil)
 	})
 }
 
 func testStore(db dbutil.DB) *Store {
 	return NewWithDB(db, "test_migrations_table", NewOperations(&observation.TestContext))
+}
+
+func boolPtr(value bool) *bool {
+	return &value
+}
+
+func truncateLogs(t *testing.T, ctx context.Context, store *Store) {
+	t.Helper()
+
+	if err := store.Exec(ctx, sqlf.Sprintf(`TRUNCATE migration_logs`)); err != nil {
+		t.Fatalf("unexpected error truncating logs: %s", err)
+	}
+}
+
+func assertLogs(t *testing.T, ctx context.Context, store *Store, expectedLogs []migrationLog) {
+	t.Helper()
+
+	logs, err := scanMigrationLogs(store.Query(ctx, sqlf.Sprintf(`SELECT schema, version, up, success FROM migration_logs ORDER BY started_at`)))
+	if err != nil {
+		t.Fatalf("unexpected error scanning logs: %s", err)
+	}
+
+	if diff := cmp.Diff(expectedLogs, logs); diff != "" {
+		t.Errorf("unexpected migration logs (-want +got):\n%s", diff)
+	}
 }

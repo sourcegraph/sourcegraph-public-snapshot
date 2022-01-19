@@ -1,10 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "references": [
+    { "path": "client/template-parser" },
     { "path": "client/build-config" },
     { "path": "client/common" },
     { "path": "client/shared" },
     { "path": "client/shared/src/testing" },
+    { "path": "client/http-client" },
     { "path": "client/branded" },
     { "path": "client/web" },
     { "path": "client/wildcard" },
@@ -18,5 +20,6 @@
     { "path": "client/storybook" },
     { "path": "dev/release" },
     { "path": "schema" },
+    { "path": "client/codeintellify" },
   ],
 }

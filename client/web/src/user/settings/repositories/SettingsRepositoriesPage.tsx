@@ -4,11 +4,10 @@ import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
 import {
@@ -18,7 +17,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
-import { Container, PageHeader, ProductStatusBadge, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge, LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -343,37 +342,41 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 actions={
                     <span>
                         {hasRepos ? (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
                                 Manage repositories
-                            </Link>
+                            </Button>
                         ) : isUserOwner ? (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
                                 <AddIcon className="icon-inline" /> Add repositories
-                            </Link>
+                            </Button>
                         ) : externalServices && externalServices.length !== 0 ? (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
                                 <AddIcon className="icon-inline" /> Add repositories
-                            </Link>
+                            </Button>
                         ) : (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/code-hosts`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
                                 <AddIcon className="icon-inline" /> Connect code hosts
-                            </Link>
+                            </Button>
                         )}
                     </span>
                 }

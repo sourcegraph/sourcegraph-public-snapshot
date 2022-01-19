@@ -4,7 +4,7 @@ import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useState, useLayoutEffect } from 'react'
 import { useLocation } from 'react-router'
 
-import { TooltipController } from '@sourcegraph/wildcard'
+import { Button, TooltipController } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -35,14 +35,14 @@ export const CopyPathAction: React.FunctionComponent = () => {
     }
 
     return (
-        <button
-            type="button"
-            className="btn btn-icon btn-sm p-2"
+        <Button
+            className="btn-icon p-2"
             data-tooltip={copied ? 'Copied!' : 'Copy path to clipboard'}
             aria-label="Copy path"
             onClick={onClick}
+            size="sm"
         >
             <ContentCopyIcon className={classNames('icon-inline', styles.copyIcon)} />
-        </button>
+        </Button>
     )
 }

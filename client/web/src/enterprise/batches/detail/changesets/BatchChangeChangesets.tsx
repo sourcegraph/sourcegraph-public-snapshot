@@ -3,18 +3,18 @@ import React, { useState, useCallback, useMemo, useEffect, useContext } from 're
 import { Subject } from 'rxjs'
 import { withLatestFrom, map, filter } from 'rxjs/operators'
 
+import { createHoverifier } from '@sourcegraph/codeintellify'
+import { isDefined } from '@sourcegraph/common'
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { createHoverifier } from '@sourcegraph/shared/src/codeintellify'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property, isDefined } from '@sourcegraph/shared/src/util/types'
+import { property } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
@@ -25,7 +25,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
 import { WebHoverOverlay } from '../../../../components/shared'

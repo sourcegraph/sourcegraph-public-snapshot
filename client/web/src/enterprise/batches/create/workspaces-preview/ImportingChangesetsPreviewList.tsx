@@ -1,8 +1,8 @@
 import ImportIcon from 'mdi-react/ImportIcon'
 import React from 'react'
 
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import {
     useConnection,
     UseConnectionResult,

@@ -75,7 +75,7 @@ func TestMergeSettings(t *testing.T) {
 			CodeIntelligenceAutoIndexPopularRepoLimit: 1, // This is the zero value, so will not override a previous non-zero value
 		},
 	}, {
-		name: "shallow override struct pointer",
+		name: "deep merge struct pointer",
 		left: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
 				ShowSearchNotebook: boolPtr(true),
@@ -88,6 +88,7 @@ func TestMergeSettings(t *testing.T) {
 		},
 		expected: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+				ShowSearchNotebook:          boolPtr(true),
 				ShowSearchContextManagement: boolPtr(false),
 			},
 		},

@@ -1,15 +1,18 @@
-# Getting Started on Sourcegraph Cloud
+# Getting Started on Sourcegraph Cloud for Individuals
 
 Are you new to Sourcegraph Cloud? This is your place to start. 
 
-[Sourcegraph Cloud](https://sourcegraph.com/search) lets you search across your code from GitHub.com or GitLab.com, and across any open-source project on GitHub.com or Gitlab.com. Sourcegraph Cloud is in Public Beta, allowing any individual to sign-up, connect personal repositories, and search across personal code. 
+[Sourcegraph Cloud](https://sourcegraph.com/search) lets you search across your personal code from GitHub.com or GitLab.com, and across more than 2 million open source repositories. Sourcegraph Cloud allows any individual to sign up, connect personal repositories, and search across personal code for free. 
+
+[Sourcegraph Cloud for Teams](https://about.sourcegraph.com/cloud-beta/) is in private beta today. [Join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku) to get access today!
 
 ## Getting Started
 Getting started with Sourcegraph Cloud takes less than one minute. Follow the below steps to get started
 1. Sign up for an [account on Sourcegraph Cloud](https://sourcegraph.com/sign-up). After sign-up, you will be guided through the next two steps
-1. Connect a code host using your OAuth flow. Sourcegraph Cloud natively supports Github.com and Gitlab.com repositories. 
-1. Next, [add your repositories to Sourcegraph](https://learn.sourcegraph.com/how-to-add-private-code-repositories-to-sourcegraph). Sourcegraph respects code host permissions, so you should only see repositories which you have permission to on the code host you connected. 
-1. Try out your first search! Sourcegraph search is incredibly powerful and it may take some time to fully understand the power. Don't worry, start with [three ways to search Sourcegraph](https://learn.sourcegraph.com/three-ways-to-search-video).
+2. Connect a code host using your OAuth flow. Sourcegraph Cloud natively supports Github.com and Gitlab.com repositories. 
+3. Next, [add your repositories to Sourcegraph](https://learn.sourcegraph.com/how-to-add-private-code-repositories-to-sourcegraph). Sourcegraph respects code host permissions, so you should only see repositories which you have permission to view on the code host you connected. 
+4. Try out your first search! Check out [three ways to search Sourcegraph](https://learn.sourcegraph.com/three-ways-to-search-video) to learn how to get the most out of Sourcegraph's powerful search.
+5. [Join our private beta](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku) for Sourcegraph Cloud for Teams and invite your teammates to get the most out of Sourcegraph. 
 
 Are you stuck along the way? Please do not hesitate to reach out to our [support team](mailto:support@sourcegraph.com).
 

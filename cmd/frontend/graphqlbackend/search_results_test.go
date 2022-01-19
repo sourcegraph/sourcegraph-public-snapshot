@@ -14,6 +14,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
@@ -884,46 +885,40 @@ func TestSearchContext(t *testing.T) {
 	}
 }
 
-func TestIsGlobalSearch(t *testing.T) {
+func Test_toSearchInputs(t *testing.T) {
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	tts := []struct {
-		name        string
-		searchQuery string
-		patternType query.SearchType
-		mode        search.GlobalSearchMode
-	}{
-		{name: "user search context", searchQuery: "foo context:@userA", mode: search.DefaultMode},
-		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, mode: search.DefaultMode},
-		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", mode: search.DefaultMode},
-		{name: "repohasfile", searchQuery: "foo repohasfile:bar", mode: search.DefaultMode},
-		{name: "global search context", searchQuery: "foo context:global", mode: search.ZoektGlobalSearch},
-		{name: "global search", searchQuery: "foo", mode: search.ZoektGlobalSearch},
+	test := func(input string, parser func(string) (query.Q, error)) string {
+		q, _ := parser(input)
+		resolver := searchResolver{
+			SearchInputs: &run.SearchInputs{
+				Query:        q,
+				UserSettings: &schema.Settings{},
+				PatternType:  query.SearchTypeLiteral,
+			},
+		}
+		jobs, _, _, _ := resolver.toSearchInputs(q)
+		var jobNames []string
+		for _, j := range jobs {
+			jobNames = append(jobNames, j.Name())
+		}
+		return strings.Join(jobNames, ",")
 	}
 
-	for _, tt := range tts {
-		t.Run(tt.name, func(t *testing.T) {
-			qinfo, err := query.ParseLiteral(tt.searchQuery)
-			if err != nil {
-				t.Fatal(err)
-			}
+	// Job generation for global vs non-global search
+	autogold.Want("user search context", "RepoSubsetText,Repo").Equal(t, test(`foo context:@userA`, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search context", "RepoUniverseText,Repo").Equal(t, test(`foo context:global`, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search", "RepoUniverseText,Repo").Equal(t, test(`foo`, query.ParseLiteral))
+	autogold.Want("nonglobal repo", "RepoSubsetText,Repo").Equal(t, test(`foo repo:sourcegraph/sourcegraph`, query.ParseLiteral))
+	autogold.Want("nonglobal repo contains", "RepoSubsetText,Repo").Equal(t, test(`foo repo:contains(bar)`, query.ParseLiteral))
 
-			resolver := searchResolver{
-				SearchInputs: &run.SearchInputs{
-					Query:        qinfo,
-					UserSettings: &schema.Settings{},
-					PatternType:  tt.patternType,
-				},
-			}
-
-			p, _, _ := resolver.toSearchInputs(resolver.Query)
-			if p.Mode != tt.mode {
-				t.Fatalf("got %+v, want %+v", p.Mode, tt.mode)
-			}
-		})
-	}
+	// Job generation support for implied `type:repo` queries.
+	autogold.Want("supported Repo job", "RepoUniverseText,Repo").Equal(t, test("ok ok", query.ParseRegexp))
+	autogold.Want("supportedRepo job literal", "RepoUniverseText,Repo").Equal(t, test("ok @thing", query.ParseLiteral))
+	autogold.Want("unsupported Repo job prefix", "RepoUniverseText").Equal(t, test("@nope", query.ParseRegexp))
+	autogold.Want("unsupported Repo job regexp", "RepoUniverseText").Equal(t, test("foo @bar", query.ParseRegexp))
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {
@@ -961,6 +956,92 @@ func TestIsContextError(t *testing.T) {
 			if got := isContextError(ctx, c.err); got != c.want {
 				t.Fatalf("wanted %t, got %t", c.want, got)
 			}
+		})
+	}
+}
+
+func Test_searchResultsToRepoNodes(t *testing.T) {
+	cases := []struct {
+		matches []result.Match
+		res     string
+		err     string
+	}{{
+		matches: []result.Match{
+			&result.RepoMatch{Name: "repo_a"},
+		},
+		res: `"repo:^repo_a$"`,
+	}, {
+		matches: []result.Match{
+			&result.RepoMatch{Name: "repo_a", Rev: "main"},
+		},
+		res: `"repo:^repo_a$@main"`,
+	}, {
+		matches: []result.Match{
+			&result.FileMatch{},
+		},
+		err: "expected type",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.res, func(t *testing.T) {
+			nodes, err := searchResultsToRepoNodes(tc.matches)
+			if err != nil {
+				require.Contains(t, err.Error(), tc.err)
+				return
+			}
+			require.Equal(t, tc.res, query.Q(nodes).String())
+		})
+	}
+}
+
+func Test_searchResultsToFileNodes(t *testing.T) {
+	cases := []struct {
+		matches []result.Match
+		res     string
+		err     string
+	}{{
+		matches: []result.Match{
+			&result.FileMatch{
+				File: result.File{
+					Repo: types.MinimalRepo{
+						Name: "repo_a",
+					},
+					Path: "my/file/path.txt",
+				},
+			},
+		},
+		res: `(and "repo:^repo_a$" "file:^my/file/path\\.txt$")`,
+	}, {
+		matches: []result.Match{
+			&result.FileMatch{
+				File: result.File{
+					Repo: types.MinimalRepo{
+						Name: "repo_a",
+					},
+					InputRev: func() *string { s := "main"; return &s }(),
+					Path:     "my/file/path1.txt",
+				},
+			},
+			&result.FileMatch{
+				File: result.File{
+					Repo: types.MinimalRepo{
+						Name: "repo_b",
+					},
+					Path: "my/file/path2.txt",
+				},
+			},
+		},
+		res: `(and "repo:^repo_a$@main" "file:^my/file/path1\\.txt$") (and "repo:^repo_b$" "file:^my/file/path2\\.txt$")`,
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.res, func(t *testing.T) {
+			nodes, err := searchResultsToFileNodes(tc.matches)
+			if err != nil {
+				require.Contains(t, err.Error(), tc.err)
+				return
+			}
+			require.Equal(t, tc.res, query.Q(nodes).String())
 		})
 	}
 }

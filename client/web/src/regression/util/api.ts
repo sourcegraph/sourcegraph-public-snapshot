@@ -7,18 +7,18 @@ import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 
 import { isErrorLike, createAggregateError } from '@sourcegraph/common'
 import {
-    CloneInProgressError,
-    isCloneInProgressErrorLike,
-    isRepoNotFoundErrorLike,
-} from '@sourcegraph/shared/src/backend/errors'
-import {
     gql,
     dataOrThrowErrors,
     createInvalidGraphQLMutationResponseError,
     isErrorGraphQLResult,
-} from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+} from '@sourcegraph/http-client'
+import {
+    CloneInProgressError,
+    isCloneInProgressErrorLike,
+    isRepoNotFoundErrorLike,
+} from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { Config } from '@sourcegraph/shared/src/testing/config'
 
 import { GraphQLClient } from './GraphQlClient'
@@ -371,6 +371,21 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID,
                 }
             `,
             { userID, siteAdmin }
+        )
+        .toPromise()
+}
+
+export async function setTosAccepted(gqlClient: GraphQLClient, userID: GQL.ID): Promise<void> {
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation SetTosAccepted($userID: ID!) {
+                    setTosAccepted(userID: $userID) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { userID }
         )
         .toPromise()
 }

@@ -1,7 +1,7 @@
 import { EMPTY, Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -139,6 +139,7 @@ const batchChangeFragment = gql`
         }
 
         currentSpec {
+            id
             originalInput
             supersedingBatchSpec {
                 createdAt
@@ -251,6 +252,7 @@ export const externalChangesetFieldsFragment = gql`
         externalURL {
             url
         }
+        forkNamespace
         externalID
         diffStat {
             ...DiffStatFields
@@ -264,8 +266,13 @@ export const externalChangesetFieldsFragment = gql`
             description {
                 __typename
                 ... on GitBranchChangesetDescription {
+                    baseRef
                     headRef
                 }
+            }
+            forkTarget {
+                pushUser
+                namespace
             }
         }
     }

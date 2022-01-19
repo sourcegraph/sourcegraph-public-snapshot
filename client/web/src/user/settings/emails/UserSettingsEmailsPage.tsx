@@ -2,9 +2,8 @@ import classNames from 'classnames'
 import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'

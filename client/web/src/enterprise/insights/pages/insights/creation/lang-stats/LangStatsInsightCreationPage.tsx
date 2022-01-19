@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'

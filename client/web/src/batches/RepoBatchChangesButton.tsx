@@ -1,10 +1,8 @@
-import classNames from 'classnames'
 import React, { FC, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { queryRepoChangesetsStats as _queryRepoChangesetsStats } from './backend'
 import { BatchChangesIcon } from './icons'
@@ -32,9 +30,12 @@ export const RepoBatchChangesButton: FC<RepoBatchChangesButtonProps> = ({
     const { open, merged } = stats.changesetsStats
 
     return (
-        <Link
-            className={classNames('btn btn-outline-secondary', className)}
+        <Button
+            className={className}
             to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
+            variant="secondary"
+            outline={true}
+            as={Link}
         >
             <BatchChangesIcon className="icon-inline" /> Batch Changes
             {open > 0 && (
@@ -55,6 +56,6 @@ export const RepoBatchChangesButton: FC<RepoBatchChangesButtonProps> = ({
                     {merged}
                 </Badge>
             )}
-        </Link>
+        </Button>
     )
 }

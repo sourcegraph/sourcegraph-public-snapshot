@@ -25,11 +25,11 @@ func TestSearchFiltersUpdate(t *testing.T) {
 				{
 					Results: []result.Match{
 						&result.CommitMatch{
-							Repo: repo,
-							Body: result.HighlightedString{Highlights: make([]result.HighlightedRange, 2)}},
+							Repo:           repo,
+							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 2)}},
 						&result.CommitMatch{
-							Repo: repo,
-							Body: result.HighlightedString{Highlights: make([]result.HighlightedRange, 1)}},
+							Repo:           repo,
+							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 1)}},
 					},
 				}},
 			wantFilterName:  "repo:^foo$",

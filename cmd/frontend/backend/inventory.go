@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -42,10 +43,10 @@ func InventoryContext(repo api.RepoName, commitID api.CommitID, forceEnhancedLan
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
 			// to avoid sequential tree traversal calls.
-			return git.ReadDir(ctx, repo, commitID, path, false)
+			return git.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return git.NewFileReader(ctx, repo, commitID, path)
+			return git.NewFileReader(ctx, repo, commitID, path, authz.DefaultSubRepoPermsChecker)
 		},
 		CacheGet: func(e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)

@@ -10,15 +10,14 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { SearchContextProps } from '../../search'
@@ -189,13 +188,14 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                 ]}
                                 actions={
                                     searchContextOrError.viewerCanManage && (
-                                        <Link
+                                        <Button
                                             to={`/contexts/${searchContextOrError.spec}/edit`}
-                                            className="btn btn-secondary"
                                             data-testid="edit-search-context-link"
+                                            variant="secondary"
+                                            as={Link}
                                         >
                                             Edit
-                                        </Link>
+                                        </Button>
                                     )
                                 }
                             />

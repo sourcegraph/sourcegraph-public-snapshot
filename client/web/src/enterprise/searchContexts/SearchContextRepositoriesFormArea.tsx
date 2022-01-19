@@ -6,10 +6,10 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 
-import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
@@ -156,12 +156,14 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
                     </ul>
                 </div>
             )}
-            <button
-                type="button"
-                className="mt-3 btn btn-sm btn-outline-secondary"
+            <Button
+                className="mt-3"
                 data-testid="repositories-config-button"
                 onClick={triggerTestConfig}
                 disabled={triggerTestConfigErrors === LOADING || isValidConfig}
+                outline={true}
+                variant="secondary"
+                size="sm"
             >
                 {isValidConfig ? (
                     <span className="d-flex align-items-center">
@@ -173,7 +175,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
                 ) : (
                     testConfigButtonText
                 )}
-            </button>
+            </Button>
         </div>
     )
 }

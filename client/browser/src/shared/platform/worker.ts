@@ -1,4 +1,4 @@
-import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+import { checkOk } from '@sourcegraph/http-client'
 
 import { isDefaultSourcegraphUrl } from '../util/context'
 

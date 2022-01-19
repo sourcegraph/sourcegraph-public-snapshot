@@ -1,7 +1,8 @@
-import Dialog from '@reach/dialog'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
+
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import styles from './ModalVideo.module.scss'
 
@@ -50,9 +51,13 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
             <figure>
                 {thumbnailElement}
                 <figcaption>
-                    <button type="button" className="btn btn-link" onClick={() => toggleDialog(true)}>
+                    <Button
+                        variant="link"
+                        className="font-weight-normal p-0 pt-2 w-100"
+                        onClick={() => toggleDialog(true)}
+                    >
                         {title}
-                    </button>
+                    </Button>
                 </figcaption>
             </figure>
         )
@@ -62,22 +67,18 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
         <>
             <div className={classNames(styles.wrapper, className)}>{thumbnailElement}</div>
             {isOpen && (
-                <Dialog
-                    className={classNames(styles.modal, 'modal-body modal-body--centered p-4 rounded border')}
+                <Modal
+                    position="center"
+                    className={styles.modal}
                     onDismiss={() => toggleDialog(false)}
                     aria-labelledby={id}
                 >
                     <div className={styles.modalContent}>
                         <div className={styles.modalHeader}>
                             <h3 id={id}>{title}</h3>
-                            <button
-                                type="button"
-                                className="btn btn-icon p-1"
-                                onClick={() => toggleDialog(false)}
-                                aria-label="Close"
-                            >
+                            <Button className="btn-icon p-1" onClick={() => toggleDialog(false)} aria-label="Close">
                                 <CloseIcon className="icon-inline" />
-                            </button>
+                            </Button>
                         </div>
                         <div className="w-100">
                             <div className={styles.iframeVideoWrapper}>
@@ -92,7 +93,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                             </div>
                         </div>
                     </div>
-                </Dialog>
+                </Modal>
             )}
         </>
     )

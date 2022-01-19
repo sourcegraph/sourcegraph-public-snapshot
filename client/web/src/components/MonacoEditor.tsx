@@ -46,6 +46,7 @@ const darkRules: monaco.editor.ITokenThemeRule[] = [
     { token: 'closingParen', foreground: '#d68cf3' }, // --search-keyword-color
     { token: 'comment', foreground: '#ffa94d' }, // --oc-orange-4
     // Sourcegraph decorated language tokens
+    { token: 'metaFilterSeparator', foreground: '#868e96' }, // --oc-gray-6
     { token: 'metaRepoRevisionSeparator', foreground: '#4393e7' }, // --search-filter-keyword-color
     { token: 'metaContextPrefix', foreground: '#d68cf3' }, // --search-keyword-color
     { token: 'metaPredicateNameAccess', foreground: '#d68cf3' }, // --search-keyword-color
@@ -106,6 +107,7 @@ const lightRules: monaco.editor.ITokenThemeRule[] = [
     { token: 'closingParen', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'comment', foreground: '#d9480f' }, // --oc-orange-9
     // Sourcegraph decorated language tokens
+    { token: 'metaFilterSeparator', foreground: '#868e96' }, // --oc-gray-6
     { token: 'metaRepoRevisionSeparator', foreground: '#0b70db' }, // --search-filter-keyword-color
     { token: 'metaContextPrefix', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'metaPredicateNameAccess', foreground: '#a112ff' }, // --search-keyword-color
@@ -185,6 +187,14 @@ interface Props extends ThemeProps {
 
     /** Keyboard shortcut to focus the Monaco editor. */
     keyboardShortcutForFocus?: KeyboardShortcut
+
+    /**
+     * NOTE: This is currently only used for Insights code through
+     * the MonacoField component: client/web/src/enterprise/insights/components/form/monaco-field/MonacoField.tsx
+     *
+     * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
+     */
+    placeholder?: string
 }
 
 interface State {
@@ -276,6 +286,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                         height: this.state.computedHeight,
                         position: 'relative',
                     }}
+                    data-placeholder={this.props.placeholder}
                     ref={this.setRef}
                     id={this.props.id}
                     className={classNames(this.props.className, this.props.border !== false && 'border rounded')}

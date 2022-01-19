@@ -12,12 +12,11 @@ import {
     SearchContextRepositoryRevisionsInput,
     SearchPatternType,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Container, RadioButton } from '@sourcegraph/wildcard'
+import { Container, Button, RadioButton, TextArea, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SearchContextProps } from '../../search'
@@ -333,8 +332,8 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     <div className="mb-2">
                         Description <span className="text-muted">(optional)</span>
                     </div>
-                    <textarea
-                        className="form-control w-100"
+                    <TextArea
+                        className="w-100"
                         data-testid="search-context-description-input"
                         maxLength={MAX_DESCRIPTION_LENGTH}
                         value={description}
@@ -416,28 +415,30 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 )}
             </Container>
             <div className="d-flex">
-                <button
+                <Button
                     type="submit"
-                    className="btn btn-primary mr-2 test-search-context-submit-button"
+                    className="mr-2 test-search-context-submit-button"
                     data-testid="search-context-submit-button"
                     disabled={searchContextOrError && searchContextOrError === LOADING}
+                    variant="primary"
                 >
                     {!searchContext ? 'Create search context' : 'Save'}
-                </button>
-                <button type="button" onClick={onCancel} className="btn btn-outline-secondary">
+                </Button>
+                <Button onClick={onCancel} outline={true} variant="secondary">
                     Cancel
-                </button>
+                </Button>
                 {searchContext && (
                     <>
                         <div className="flex-grow-1" />
-                        <button
-                            type="button"
+                        <Button
                             data-testid="search-context-delete-button"
-                            className="btn btn-outline-secondary text-danger"
+                            className="text-danger"
                             onClick={toggleDeleteModal}
+                            outline={true}
+                            variant="secondary"
                         >
                             Delete
-                        </button>
+                        </Button>
                         <DeleteSearchContextModal
                             isOpen={showDeleteModal}
                             deleteSearchContext={deleteSearchContext}

@@ -22,7 +22,7 @@ var (
 			Name:        "container_missing",
 			Description: "container missing",
 			// inspired by https://awesome-prometheus-alerts.grep.to/rules#docker-containers
-			Query:   fmt.Sprintf(`count by(name) ((time() - container_last_seen{%s}) > 60)`, CadvisorNameMatcher(containerName)),
+			Query:   fmt.Sprintf(`count by(name) ((time() - container_last_seen{%s}) > 60)`, CadvisorContainerNameMatcher(containerName)),
 			NoAlert: true,
 			Panel:   monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:   owner,
@@ -44,7 +44,7 @@ var (
 		return Observable{
 			Name:        "container_memory_usage",
 			Description: "container memory usage by instance",
-			Query:       fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, CadvisorNameMatcher(containerName)),
+			Query:       fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, CadvisorContainerNameMatcher(containerName)),
 			Warning:     monitoring.Alert().GreaterOrEqual(99, nil),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
@@ -59,7 +59,7 @@ var (
 		return Observable{
 			Name:        "container_cpu_usage",
 			Description: "container cpu usage total (1m average) across all cores by instance",
-			Query:       fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, CadvisorNameMatcher(containerName)),
+			Query:       fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, CadvisorContainerNameMatcher(containerName)),
 			Warning:     monitoring.Alert().GreaterOrEqual(99, nil),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
@@ -76,7 +76,7 @@ var (
 		return Observable{
 			Name:        "fs_io_operations",
 			Description: "filesystem reads and writes rate by instance over 1h",
-			Query:       fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, CadvisorNameMatcher(containerName)),
+			Query:       fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, CadvisorContainerNameMatcher(containerName)),
 			NoAlert:     true,
 			Panel:       monitoring.Panel().LegendFormat("{{name}}"),
 			Owner:       monitoring.ObservableOwnerCoreApplication,
@@ -100,6 +100,9 @@ type ContainerMonitoringGroupOptions struct {
 
 	// IOUsage transforms the default observable used to construct the IO usage panel.
 	IOUsage ObservableOption
+
+	// CustomTitle, if provided, provides a custom title for this monitoring group that will be displayed in Grafana.
+	CustomTitle string
 }
 
 // NewContainerMonitoringGroup creates a group containing panels displaying
@@ -110,8 +113,13 @@ func NewContainerMonitoringGroup(containerName string, owner monitoring.Observab
 		options = &ContainerMonitoringGroupOptions{}
 	}
 
+	title := TitleContainerMonitoring
+	if options.CustomTitle != "" {
+		title = options.CustomTitle
+	}
+
 	return monitoring.Group{
-		Title:  TitleContainerMonitoring,
+		Title:  title,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{

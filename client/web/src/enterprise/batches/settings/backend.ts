@@ -1,14 +1,12 @@
 import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     BatchChangesCodeHostsFields,
     BatchChangesCredentialFields,
-    BatchSpecsResult,
-    BatchSpecsVariables,
     CreateBatchChangesCredentialResult,
     CreateBatchChangesCredentialVariables,
     DeleteBatchChangesCredentialResult,
@@ -158,49 +156,4 @@ export const queryGlobalBatchChangesCodeHosts = ({
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.batchChangesCodeHosts)
-    )
-
-export const queryBatchSpecs = ({ first, after }: BatchSpecsVariables): Observable<BatchSpecsResult['batchSpecs']> =>
-    requestGraphQL<BatchSpecsResult, BatchSpecsVariables>(
-        gql`
-            query BatchSpecs($first: Int, $after: String) {
-                batchSpecs(first: $first, after: $after) {
-                    __typename
-                    totalCount
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
-                    nodes {
-                        ...BatchSpecListFields
-                    }
-                }
-            }
-
-            fragment BatchSpecListFields on BatchSpec {
-                __typename
-                id
-                state
-                finishedAt
-                createdAt
-                description {
-                    name
-                }
-                namespace {
-                    namespaceName
-                    url
-                }
-                creator {
-                    username
-                }
-                originalInput
-            }
-        `,
-        {
-            first,
-            after,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.batchSpecs)
     )

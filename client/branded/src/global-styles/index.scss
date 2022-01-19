@@ -82,9 +82,6 @@ $dropdown-padding-y: $dropdown-item-padding-y;
 $table-cell-padding: 0.625rem;
 $table-border-color: var(--border-color);
 
-// Progress
-$progress-height: auto;
-
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
@@ -105,12 +102,10 @@ $spacer: 1rem;
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/grid';
-@import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/transitions';
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
-@import 'bootstrap/scss/button-group';
 
 // Modified in `./forms.scss`
 @import 'bootstrap/scss/forms';
@@ -125,7 +120,6 @@ $spacer: 1rem;
 @import './background';
 @import './card';
 @import './dropdown';
-@import './modal';
 @import './meter';
 @import './popover';
 @import './nav';
@@ -134,10 +128,12 @@ $spacer: 1rem;
 @import './tables';
 @import './code';
 @import './buttons';
+@import './button-group';
 @import './alert';
 @import './forms';
 @import './highlight';
 @import './tabs';
+@import './progress';
 
 * {
     box-sizing: border-box;

@@ -2,7 +2,9 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"regexp"
+	"sort"
 	"sync"
 	"time"
 
@@ -94,14 +96,16 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	}
 
 	for j, current := range i.view.Series {
-		if current.GeneratedFromCaptureGroups {
+		if current.GeneratedFromCaptureGroups && current.JustInTime {
 			// this works fine for now because these are all just-in-time series. As soon as we start including global / recorded
 			// series, we need to have some logic to either fetch from the database or calculate the time series.
-			expanded, err := expandCaptureGroupSeries(ctx, current, i.baseInsightResolver, *filters)
+			expanded, err := expandCaptureGroupSeriesJustInTime(ctx, current, i.baseInsightResolver, *filters)
 			if err != nil {
-				return nil, errors.Wrapf(err, "expandCaptureGroupSeries for seriesID: %s", current.SeriesID)
+				return nil, errors.Wrapf(err, "expandCaptureGroupSeriesJustInTime for seriesID: %s", current.SeriesID)
 			}
 			resolvers = append(resolvers, expanded...)
+		} else if current.GeneratedFromCaptureGroups && !current.JustInTime {
+			return expandCaptureGroupSeriesRecorded(ctx, current, i.baseInsightResolver, *filters)
 		} else {
 			resolvers = append(resolvers, &insightSeriesResolver{
 				insightsStore:   i.timeSeriesStore,
@@ -153,7 +157,68 @@ func filterRepositories(filters types.InsightViewFilters, repositories []string)
 	return results, nil
 }
 
-func expandCaptureGroupSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	var opts store.SeriesPointsOpts
+
+	// Query data points only for the series we are representing.
+	seriesID := definition.SeriesID
+	opts.SeriesID = &seriesID
+
+	// Default to last 12mo of data
+	frames := query.BuildFrames(12, timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
+		Value: definition.SampleIntervalValue,
+	}, time.Now())
+	oldest := time.Now().AddDate(-1, 0, 0)
+	if len(frames) != 0 {
+		possibleOldest := frames[0].From
+		if possibleOldest.Before(oldest) {
+			oldest = possibleOldest
+		}
+	}
+	opts.From = &oldest
+
+	if filters.IncludeRepoRegex != nil {
+		opts.IncludeRepoRegex = *filters.IncludeRepoRegex
+	}
+	if filters.ExcludeRepoRegex != nil {
+		opts.ExcludeRepoRegex = *filters.ExcludeRepoRegex
+	}
+	groupedByCapture := make(map[string][]store.SeriesPoint)
+	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range allPoints {
+		point := allPoints[i]
+		if point.Capture == nil {
+			// skip nil values, this shouldn't be a real possibility
+			continue
+		}
+		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
+	}
+
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for capturedValue, points := range groupedByCapture {
+		sort.Slice(points, func(i, j int) bool {
+			return points[i].Time.Before(points[j].Time)
+		})
+		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
+			insightsStore:   r.timeSeriesStore,
+			workerBaseStore: r.workerBaseStore,
+			series:          definition,
+			metadataStore:   r.insightStore,
+			points:          points,
+			label:           capturedValue,
+			filters:         filters,
+			seriesId:        fmt.Sprintf("%s-%s", seriesID, capturedValue),
+		})
+	}
+	return resolvers, nil
+}
+
+func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
 	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
@@ -764,11 +829,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
-	err = validateLineChartSearchInsightInput(series)
-	if err != nil {
-		return err
-	}
-
 	// Don't try to match on just-in-time series, since they are not recorded
 	if !service.IsJustInTime(series.RepositoryScope.Repositories) {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
@@ -811,17 +871,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	})
 	if err != nil {
 		return errors.Wrap(err, "AttachSeriesToView")
-	}
-	return nil
-}
-
-func validateLineChartSearchInsightInput(series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
-	var generated bool
-	if series.GeneratedFromCaptureGroups != nil {
-		generated = *series.GeneratedFromCaptureGroups
-	}
-	if len(series.RepositoryScope.Repositories) == 0 && generated {
-		return errors.New("generated capture group search insights are not supported globally")
 	}
 	return nil
 }

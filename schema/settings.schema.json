@@ -65,7 +65,10 @@
         "searchContextsQuery": {
           "description": "Enables query based search contexts",
           "type": "boolean",
-          "default": false
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         },
         "searchStats": {
           "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
@@ -174,7 +177,6 @@
         "fuzzyFinder": {
           "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
-          "default": false,
           "!go": {
             "pointer": true
           }
@@ -208,6 +210,14 @@
           "type": "string",
           "default": "by-line-number",
           "examples": ["by-line-number", "by-zoekt-ranking"],
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeMonitoringWebHooks": {
+          "description": "Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.",
+          "type": "boolean",
+          "default": false,
           "!go": {
             "pointer": true
           }
@@ -295,6 +305,10 @@
       "type": "integer",
       "minimum": 0,
       "default": 0
+    },
+    "codeIntelligence.maxPanelResults": {
+      "description": "Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
+      "type": "integer"
     },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",

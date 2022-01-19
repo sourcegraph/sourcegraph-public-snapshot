@@ -12,7 +12,7 @@
   },
   "scripts": {
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
-    "prettier-check": "yarn -s run prettier --write=false",
+    "prettier-check": "yarn -s run prettier --write=false --check --list-different=false --loglevel=warn",
     "all:eslint": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run eslint --quiet",
     "all:stylelint": "yarn --cwd client/web run stylelint && yarn --cwd client/shared run stylelint && yarn --cwd client/branded run stylelint && yarn --cwd client/browser run stylelint && yarn --cwd client/wildcard run stylelint",
     "build-ts": "tsc -b tsconfig.all.json",
@@ -88,6 +88,7 @@
   },
   "workspaces": {
     "packages": [
+      "lib/codeintel/lsif_typed",
       "client/*",
       "client/sandboxes/*"
     ]
@@ -248,6 +249,7 @@
     "fancy-log": "^1.3.3",
     "get-port": "^5.1.1",
     "glob": "^7.1.6",
+    "google-protobuf": "3.17.3",
     "googleapis": "^47.0.0",
     "gql2ts": "^1.10.1",
     "graphql": "^15.4.0",
@@ -285,6 +287,7 @@
     "postcss-modules": "^4.2.2",
     "prettier": "^2.2.1",
     "process": "^0.11.10",
+    "protoc-gen-ts": "0.8.1",
     "puppeteer": "12.0.1",
     "puppeteer-firefox": "^0.5.1",
     "react-refresh": "^0.10.0",
@@ -324,6 +327,8 @@
   },
   "dependencies": {
     "@apollo/client": "3.4.7",
+    "@floating-ui/dom": "^0.1.8",
+    "@floating-ui/react-dom": "^0.3.4",
     "@reach/accordion": "^0.10.2",
     "@reach/combobox": "^0.15.2",
     "@reach/dialog": "^0.11.2",
@@ -398,7 +403,6 @@
     "react-scroll-manager": "^1.0.3",
     "react-sticky-box": "^0.9.3",
     "react-stripe-elements": "^6.1.2",
-    "react-textarea-autosize": "^8.3.0",
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.9.0",
     "recharts": "^1.8.5",
@@ -421,7 +425,7 @@
     "webext-domain-permission-toggle": "^1.0.1",
     "webextension-polyfill": "^0.6.0",
     "yaml-ast-parser": "^0.0.43",
-    "zustand": "^3.5.10"
+    "zustand": "^3.6.9"
   },
   "resolutions": {
     "history": "4.5.1",

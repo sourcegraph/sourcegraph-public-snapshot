@@ -1,6 +1,7 @@
 package github
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/go-github/v41/github"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -144,6 +146,31 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 		return nil, err
 	}
 
+	return c.request(ctx, req, result)
+}
+
+func (c *V3Client) requestPost(ctx context.Context, requestURI string, payload, result interface{}) error {
+	_, err := c.post(ctx, requestURI, payload, result)
+	return err
+}
+
+func (c *V3Client) post(ctx context.Context, requestURI string, payload, result interface{}) (http.Header, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling payload")
+	}
+
+	req, err := http.NewRequest("POST", requestURI, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	return c.request(ctx, req, result)
+}
+
+func (c *V3Client) request(ctx context.Context, req *http.Request, result interface{}) (http.Header, error) {
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
 	//
@@ -161,7 +188,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 		req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
 	}
 
-	err = c.rateLimit.Wait(ctx)
+	err := c.rateLimit.Wait(ctx)
 	if err != nil {
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
 		// from the context.
@@ -645,19 +672,27 @@ func (c *V3Client) ListTopicsOnRepository(ctx context.Context, ownerAndName stri
 
 // ListInstallationRepositories lists repositories on which the authenticated
 // GitHub App has been installed.
-func (c *V3Client) ListInstallationRepositories(ctx context.Context) ([]*Repository, error) {
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#list-repositories-accessible-to-the-app-installation
+func (c *V3Client) ListInstallationRepositories(ctx context.Context, page int) (
+	repos []*Repository,
+	hasNextPage bool,
+	rateLimitCost int,
+	err error,
+) {
 	type response struct {
 		Repositories []restRepository `json:"repositories"`
 	}
 	var resp response
-	if err := c.requestGet(ctx, "installation/repositories", &resp); err != nil {
-		return nil, err
+	path := fmt.Sprintf("installation/repositories?page=%d&per_page=100", page)
+	if err = c.requestGet(ctx, path, &resp); err != nil {
+		return nil, false, 1, err
 	}
-	repos := make([]*Repository, 0, len(resp.Repositories))
+	repos = make([]*Repository, 0, len(resp.Repositories))
 	for _, restRepo := range resp.Repositories {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
-	return repos, nil
+	return repos, len(repos) > 0, 1, nil
 }
 
 // listRepositories is a generic method that unmarshals the given
@@ -678,4 +713,46 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	return repos, nil
+}
+
+// Fork forks the given repository. If org is given, then the repository will
+// be forked into that organisation, otherwise the repository is forked into
+// the authenticated user's account.
+func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
+	// GitHub's fork endpoint will happily accept either a new or existing fork,
+	// and returns a valid repository either way. As such, we don't need to check
+	// if there's already an extant fork.
+
+	payload := struct {
+		Org *string `json:"organization,omitempty"`
+	}{Org: org}
+
+	var restRepo restRepository
+	if err := c.requestPost(ctx, "repos/"+owner+"/"+repo+"/forks", payload, &restRepo); err != nil {
+		return nil, err
+	}
+
+	return convertRestRepo(restRepo), nil
+}
+
+// GetAppInstallation gets information of a GitHub App installation.
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
+func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64) (*github.Installation, error) {
+	var ins github.Installation
+	if err := c.requestGet(ctx, fmt.Sprintf("app/installations/%d", installationID), &ins); err != nil {
+		return nil, err
+	}
+	return &ins, nil
+}
+
+// CreateAppInstallationAccessToken creates an access token for the installation.
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#create-an-installation-access-token-for-an-app
+func (c *V3Client) CreateAppInstallationAccessToken(ctx context.Context, installationID int64) (*github.InstallationToken, error) {
+	var token github.InstallationToken
+	if err := c.requestPost(ctx, fmt.Sprintf("/app/installations/%d/access_tokens", installationID), nil, &token); err != nil {
+		return nil, err
+	}
+	return &token, nil
 }

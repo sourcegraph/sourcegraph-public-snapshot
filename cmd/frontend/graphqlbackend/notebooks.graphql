@@ -25,6 +25,15 @@ extend type Mutation {
     Delete a notebook. Only the owner can delete it.
     """
     deleteNotebook(id: ID!): EmptyResponse!
+    """
+    Create a notebook star for the current user.
+    Only one star can be created per notebook and user pair.
+    """
+    createNotebookStar(notebookID: ID!): NotebookStar!
+    """
+    Delete the notebook star for the current user, if exists.
+    """
+    deleteNotebookStar(notebookID: ID!): EmptyResponse!
 }
 
 extend type Query {
@@ -45,9 +54,13 @@ extend type Query {
         """
         query: String
         """
-        Limit notebooks made by a single creator.
+        Filter to notebooks made by a single creator.
         """
         creatorUserID: ID
+        """
+        Filter to notebooks that were starred by the user.
+        """
+        starredByUserID: ID
         """
         Sort field.
         """
@@ -83,6 +96,7 @@ NotebooksOrderBy enumerates the ways notebooks can be ordered.
 enum NotebooksOrderBy {
     NOTEBOOK_UPDATED_AT
     NOTEBOOK_CREATED_AT
+    NOTEBOOK_STAR_COUNT
 }
 
 """
@@ -206,6 +220,55 @@ type Notebook implements Node {
     If current viewer can manage (edit, delete) the notebook.
     """
     viewerCanManage: Boolean!
+    """
+    If current viewer has starred the notebook.
+    """
+    viewerHasStarred: Boolean!
+    """
+    Notebook stars.
+    """
+    stars(
+        """
+        Returns the first n notebook stars from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): NotebookStarConnection!
+}
+
+"""
+A paginated list of notebook stars.
+"""
+type NotebookStarConnection {
+    """
+    A list of notebook stars.
+    """
+    nodes: [NotebookStar!]!
+    """
+    The total number of notebook stars in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A notebook star.
+"""
+type NotebookStar {
+    """
+    User that starred the notebook.
+    """
+    user: User!
+    """
+    Date and time the notebook star was created.
+    """
+    createdAt: DateTime!
 }
 
 """

@@ -11,7 +11,7 @@ import {
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
     HIGHLIGHTED_FILE_LINES,
-} from '../util/searchTestHelpers'
+} from '../testing/searchTestHelpers'
 
 import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatchChildren } from './FileMatchChildren'

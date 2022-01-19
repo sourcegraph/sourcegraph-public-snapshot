@@ -1,4 +1,4 @@
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { CloseBatchChangeResult, CloseBatchChangeVariables } from '../../../graphql-operations'

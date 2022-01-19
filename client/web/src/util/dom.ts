@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, debounceTime, map } from 'rxjs/operators'
 
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 /**
  * An Observable wrapper around ResizeObserver

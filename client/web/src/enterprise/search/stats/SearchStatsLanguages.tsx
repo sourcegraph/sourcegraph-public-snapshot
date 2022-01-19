@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { PieChart, Pie, Tooltip, ResponsiveContainer, PieLabelRenderProps, Cell, TooltipFormatter } from 'recharts'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 

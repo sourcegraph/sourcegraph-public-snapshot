@@ -10,7 +10,7 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
@@ -55,7 +55,7 @@ export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstruction
 export interface MonacoQueryInputProps
     extends ThemeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<PatternTypeProps, 'patternType'>,
+        SearchPatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
@@ -88,6 +88,8 @@ export interface MonacoQueryInputProps
      * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
      */
     placeholder?: string
+
+    editorClassName?: string
 }
 
 /**
@@ -163,6 +165,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     preventNewLine = true,
     editorOptions,
     onHandleFuzzyFinder,
+    editorClassName,
     caseSensitive,
     keyboardShortcutForFocus,
     onEditorCreated: onEditorCreatedCallback,
@@ -381,7 +384,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     return (
         <div
             ref={setContainer}
-            data-placeholder={placeholder}
             className={classNames('flex-grow-1 flex-shrink-past-contents', className)}
             onFocus={onFocus}
         >
@@ -395,8 +397,9 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 onEditorCreated={onEditorCreated}
                 options={editorOptions ?? DEFAULT_MONACO_OPTIONS}
                 border={false}
+                placeholder={placeholder}
                 keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                className={classNames('test-query-input', styles.monacoQueryInput)}
+                className={classNames('test-query-input', styles.monacoQueryInput, editorClassName)}
             />
         </div>
     )

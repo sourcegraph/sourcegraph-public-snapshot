@@ -7,8 +7,7 @@ import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon
 import React, { useEffect, useMemo } from 'react'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { asError } from '@sourcegraph/common'
-import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -17,14 +16,14 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/SyntaxHighlightedSearchQuery'
+import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { PatternTypeProps, ParsedSearchQueryProps, SearchContextInputProps, SearchContextProps } from '../search'
+import { SearchContextInputProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
 import { useNavbarQueryState } from '../stores'
@@ -40,8 +39,6 @@ export interface CommunitySearchContextPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
-        ParsedSearchQueryProps,
-        PatternTypeProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
@@ -143,17 +140,18 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
                                     </small>
                                     <div className="d-flex">
-                                        <button
-                                            className={classNames('btn btn-secondary btn-sm', styles.searchButton)}
-                                            type="button"
+                                        <Button
+                                            className={styles.searchButton}
                                             aria-label="Search"
                                             onClick={onSubmitExample(
                                                 `${contextQuery} ${example.query}`,
                                                 example.patternType
                                             )}
+                                            variant="secondary"
+                                            size="sm"
                                         >
                                             Search
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>

@@ -11,17 +11,15 @@ import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { GraphQLClient } from '@sourcegraph/shared/src/graphql/graphql'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -31,7 +29,7 @@ import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 // This is the root Tooltip usage
 // eslint-disable-next-line no-restricted-imports
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, FeedbackText } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -39,7 +37,6 @@ import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
-import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
@@ -47,6 +44,7 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
+import { FeatureFlagsAgent } from './featureFlags/FeatureFlagsAgent'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
@@ -103,7 +101,7 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
-import { siteSubjectNoAdmin, viewerSubjectFromSettings, defaultPatternTypeFromSettings } from './util/settings'
+import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -149,11 +147,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     temporarySettingsStorage?: TemporarySettingsStorage
 
     viewerSubject: LayoutProps['viewerSubject']
-
-    /**
-     * The current search pattern type.
-     */
-    searchPatternType: SearchPatternType
 
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
@@ -218,17 +211,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
         )
 
-        const parsedSearchURL = parseSearchURL(window.location.search)
-        // The patternType in the URL query parameter. If none is provided, default to literal.
-        // This will be updated with the default in settings when the web app mounts.
-        const urlPatternType = parsedSearchURL.patternType || SearchPatternType.literal
-
         setQueryStateFromURL(window.location.search)
 
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
-            searchPatternType: urlPatternType,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             hasUserSyncedPublicRepositories: false,
@@ -267,13 +254,12 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 ([settingsCascade, authenticatedUser]) => {
                     setExperimentalFeaturesFromSettings(settingsCascade)
                     setQueryStateFromSettings(settingsCascade)
-                    this.setState(state => ({
+                    this.setState({
                         settingsCascade,
                         authenticatedUser,
                         globbing: globbingEnabledFromSettings(settingsCascade),
-                        searchPatternType: defaultPatternTypeFromSettings(settingsCascade) || state.searchPatternType,
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
-                    }))
+                    })
                 },
                 () => this.setState({ authenticatedUser: null })
             )
@@ -401,6 +387,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                             <SearchResultsCacheProvider>
                                 <ScrollManager history={history}>
                                     <Router history={history} key={0}>
+                                        <FeatureFlagsAgent />
                                         <Route
                                             path="/"
                                             render={routeComponentProps => (
@@ -420,8 +407,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         }
                                                         // Search query
                                                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                                        patternType={this.state.searchPatternType}
-                                                        setPatternType={this.setPatternType}
                                                         // Extensions
                                                         platformContext={this.platformContext}
                                                         extensionsController={this.extensionsController}
@@ -479,12 +464,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 </ErrorBoundary>
             </ApolloProvider>
         )
-    }
-
-    private setPatternType = (patternType: SearchPatternType): void => {
-        this.setState({
-            searchPatternType: patternType,
-        })
     }
 
     private onUserExternalServicesOrRepositoriesUpdate = (

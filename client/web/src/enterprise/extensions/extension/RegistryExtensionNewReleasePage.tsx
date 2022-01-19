@@ -8,16 +8,14 @@ import { map, catchError, tap, concatMap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useLocalStorage, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -203,13 +201,14 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 </div>
                             </div>
                             <div className="d-flex align-items-center">
-                                <button
+                                <Button
                                     type="submit"
                                     disabled={updateOrError === LOADING || isErrorLike(bundleOrError)}
-                                    className="btn btn-primary mr-2"
+                                    className="mr-2"
+                                    variant="primary"
                                 >
                                     Publish
-                                </button>{' '}
+                                </Button>{' '}
                                 {updateOrError &&
                                     !isErrorLike(updateOrError) &&
                                     (updateOrError === LOADING ? (
@@ -224,9 +223,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                         </Form>
                     </>
                 ) : (
-                    <button type="button" className="btn btn-secondary" onClick={onShowEditorClick}>
+                    <Button onClick={onShowEditorClick} variant="secondary">
                         Experimental: Use in-browser extension editor
-                    </button>
+                    </Button>
                 )}
             </div>
         )

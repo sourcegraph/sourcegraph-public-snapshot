@@ -117,13 +117,7 @@ exports[`GlobalNavbar default 1`] = `
                 role="menuitem"
                 to="/contexts"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </a>
             </div>
           </div>
@@ -170,13 +164,7 @@ exports[`GlobalNavbar default 1`] = `
               <span
                 class="text"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </span>
             </span>
           </a>
@@ -235,7 +223,7 @@ exports[`GlobalNavbar default 1`] = `
       >
         <div>
           <a
-            class="btn btn-sm btn-outline-secondary mr-1"
+            class="btn btn-outline-secondary btn-sm mr-1"
             to="/sign-in"
           >
             Log in
@@ -262,8 +250,6 @@ exports[`GlobalNavbar default 1`] = `
         history="[object Object]"
         keyboardshortcuts=""
         location="[object Object]"
-        parsedsearchquery="r:golang/oauth2 test f:travis"
-        patterntype="literal"
         platformcontext="[object Object]"
         routes=""
         selectedsearchcontextspec=""
@@ -393,13 +379,7 @@ exports[`GlobalNavbar low-profile 1`] = `
                 role="menuitem"
                 to="/contexts"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </a>
             </div>
           </div>
@@ -446,13 +426,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               <span
                 class="text"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </span>
             </span>
           </a>
@@ -511,7 +485,7 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <div>
           <a
-            class="btn btn-sm btn-outline-secondary mr-1"
+            class="btn btn-outline-secondary btn-sm mr-1"
             to="/sign-in"
           >
             Log in
@@ -538,8 +512,6 @@ exports[`GlobalNavbar low-profile 1`] = `
         history="[object Object]"
         keyboardshortcuts=""
         location="[object Object]"
-        parsedsearchquery="r:golang/oauth2 test f:travis"
-        patterntype="literal"
         platformcontext="[object Object]"
         routes=""
         selectedsearchcontextspec=""

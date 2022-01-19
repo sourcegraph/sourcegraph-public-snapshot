@@ -3,7 +3,7 @@ import { snakeCase } from 'lodash'
 import React, { useEffect } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
+import { isHTTPAuthError } from '@sourcegraph/http-client'
 
 import { SourcegraphIconButton, SourcegraphIconButtonProps } from '../../components/SourcegraphIconButton'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'

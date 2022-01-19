@@ -2,7 +2,7 @@ import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
 import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Badge'
 
 import { AuthenticatedUser } from '../../auth'
@@ -95,9 +95,9 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                             </SidebarNavItem>
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
-                                <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
+                                <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
                                     <AddIcon className="icon-inline" /> New organization
-                                </Link>
+                                </Button>
                             </div>
                         ))}
                 </SidebarGroup>
@@ -107,13 +107,9 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
                 {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
                 {showOnboardingTour && (
-                    <button
-                        type="button"
-                        className="btn text-left sidebar__link--inactive d-flex w-100"
-                        onClick={reEnableSearchTour}
-                    >
+                    <Button className="text-left sidebar__link--inactive d-flex w-100" onClick={reEnableSearchTour}>
                         Show search tour
-                    </button>
+                    </Button>
                 )}
             </SidebarGroup>
             <div>Version: {window.context.version}</div>

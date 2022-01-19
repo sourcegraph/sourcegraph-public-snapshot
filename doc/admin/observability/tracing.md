@@ -29,7 +29,7 @@ The Jaeger UI should look something like this:
    ```
 1. Go to Sourcegraph in your browser and do a search.
 1. Open Chrome dev tools.
-1. Append `&trace=1` to the end of the URL and hit `Enter`.
+1. Append `?trace=1` to the end of the URL and hit `Enter`.
 1. In the Chrome dev tools Network tab, find the `graphql?Search` or `stream?` request. Click it and click on the
    `Headers` tab. The value of the `x-trace` Response Header should be a trace ID, e.g.,
    `7edb43f744c42fbf`.
@@ -62,7 +62,7 @@ request and help pinpoint the source of high latency or errors. We generally fol
 algorithm to root-cause issues with Jaeger:
 
 1. Reproduce a slower user request (e.g., a search query that takes too long or times out).
-1. Add `trace=1` to the slow URL and reload the page, so that traces will be collected.
+1. Add `?trace=1` to the slow URL and reload the page, so that traces will be collected.
 1. Open Chrome developer tools to the Network tab and find the corresponding GraphQL request that
    takes a long time. If there are multiple requests that take a long time, investigate them one by
    one.

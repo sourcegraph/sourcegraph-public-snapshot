@@ -2,14 +2,12 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import TextAreaAutosize from 'react-textarea-autosize'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { gql, useMutation } from '@sourcegraph/http-client'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button, LoadingSpinner, useAutoFocus } from '@sourcegraph/wildcard'
+import { Button, FlexTextArea, LoadingSpinner, useAutoFocus, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
@@ -56,6 +54,8 @@ interface ContentProps {
     routeMatch?: string
     /** Text to be prepended to user input on submission. */
     textPrefix?: string
+    /** Boolean for displaying the Join Research link */
+    productResearchEnabled?: boolean
 }
 
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
@@ -64,16 +64,16 @@ const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
     closePrompt,
     routeMatch,
+    productResearchEnabled,
     textPrefix = '',
 }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
-    const textAreaReference = useRef<HTMLTextAreaElement>(null)
+    const textAreaReference = useRef<HTMLInputElement>(null)
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
-    const handleTextChange = useCallback(
-        (event: React.ChangeEvent<HTMLTextAreaElement>) => setText(event.target.value),
-        [setText]
-    )
+    const handleTextChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value), [
+        setText,
+    ])
 
     const [submitFeedback, { loading, data, error }] = useMutation<
         SubmitHappinessFeedbackResult,
@@ -118,7 +118,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                     <h3>We‘ve received your feedback!</h3>
                     <p className="d-inline">
                         Thank you for your help.
-                        {window.context.productResearchPageEnabled && (
+                        {productResearchEnabled && (
                             <>
                                 {' '}
                                 Want to help keep making Sourcegraph better?{' '}
@@ -134,13 +134,13 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                 <Form onSubmit={handleSubmit}>
                     <h3 className="mb-0">What’s on your mind?</h3>
 
-                    <TextAreaAutosize
+                    <FlexTextArea
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
                         maxRows={6}
                         placeholder="What’s going well? What could be better?"
-                        className={classNames('form-control', styles.textarea)}
+                        className={styles.textarea}
                         autoFocus={true}
                         ref={textAreaReference}
                     />
@@ -198,7 +198,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
                 <span>Feedback</span>
             </DropdownToggle>
             <DropdownMenu right={true} className={styles.menu}>
-                <FeedbackPromptContent closePrompt={forceClose} routeMatch={match} />
+                <FeedbackPromptContent productResearchEnabled={true} closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>
         </ButtonDropdown>
     )

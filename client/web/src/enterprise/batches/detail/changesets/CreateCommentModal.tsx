@@ -1,9 +1,8 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, TextArea, Modal } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -48,49 +47,41 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
     )
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={LABEL_ID}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={LABEL_ID}>
             <h3 id={LABEL_ID}>Post a bulk comment on changesets</h3>
             <p className="mb-4">Use this feature to create a bulk comment on all the selected code hosts.</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <Form onSubmit={onSubmit}>
                 <div className="form-group">
-                    <label htmlFor="token">Comment text</label>
-                    <textarea
+                    <TextArea
                         id="token"
                         name="token"
-                        className="form-control"
                         placeholder={PLACEHOLDER_COMMENT}
                         required={true}
                         rows={8}
                         minLength={1}
                         value={commentBody}
                         onChange={onChangeInput}
+                        label="Comment text"
                     />
                 </div>
                 <div className="d-flex justify-content-end">
-                    <button
-                        type="button"
+                    <Button
                         disabled={isLoading === true}
-                        className="btn btn-outline-secondary mr-2"
+                        className="mr-2"
                         onClick={onCancel}
+                        outline={true}
+                        variant="secondary"
                     >
                         Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={isLoading === true || commentBody.length === 0}
-                        className="btn btn-primary"
-                    >
+                    </Button>
+                    <Button type="submit" disabled={isLoading === true || commentBody.length === 0} variant="primary">
                         {isLoading === true && <LoadingSpinner />}
                         Post comments
-                    </button>
+                    </Button>
                 </div>
             </Form>
-        </Dialog>
+        </Modal>
     )
 }
 

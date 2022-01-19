@@ -3,8 +3,8 @@ import { cleanup, fireEvent } from '@testing-library/react'
 import { escapeRegExp } from 'lodash'
 import React from 'react'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 

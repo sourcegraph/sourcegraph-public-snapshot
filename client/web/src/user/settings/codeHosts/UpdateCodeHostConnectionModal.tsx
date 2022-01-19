@@ -1,8 +1,8 @@
-import Dialog from '@reach/dialog'
 import React, { useState, useCallback } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { updateExternalService } from '../../../components/externalServices/backend'
@@ -75,11 +75,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
     )
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            aria-labelledby={`heading--update-${serviceName}-code-host`}
-            onDismiss={onDidCancel}
-        >
+        <Modal aria-labelledby={`heading--update-${serviceName}-code-host`} onDismiss={onDidCancel}>
             <div className="web-content">
                 <h3 id={`heading--update-${serviceName}-code-host`} className="mb-4">
                     Update {serviceName} connection
@@ -121,9 +117,9 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                         )}
                     </div>
                     <div className="d-flex justify-content-end">
-                        <button type="button" className="btn btn-outline-secondary mr-2" onClick={onDidCancel}>
+                        <Button className="mr-2" onClick={onDidCancel} outline={true} variant="secondary">
                             Cancel
-                        </button>
+                        </Button>
 
                         {didAckMachineUserHint ? (
                             <LoaderButton
@@ -135,17 +131,16 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 alwaysShowLabel={true}
                             />
                         ) : (
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
+                            <Button
                                 onClick={() => setAckMachineUserHint(previousAckStatus => !previousAckStatus)}
+                                variant="secondary"
                             >
                                 I understand, continue
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </Form>
             </div>
-        </Dialog>
+        </Modal>
     )
 }

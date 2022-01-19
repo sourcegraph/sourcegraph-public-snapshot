@@ -7,12 +7,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
-
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -20,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
@@ -36,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -84,18 +83,22 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	}
 
 	if err := codeintel.Init(ctx, db, conf, &enterpriseServices, observationContext, services); err != nil {
-		log.Fatal(fmt.Sprintf("failed to initialize codeintel: %s", err))
+		log.Fatalf("failed to initialize codeintel: %s", err)
 	}
 
 	// Initialize executor-specific services with the code-intel services.
 	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext, services.InternalUploadHandler); err != nil {
-		log.Fatal(fmt.Sprintf("failed to initialize executor: %s", err))
+		log.Fatalf("failed to initialize executor: %s", err)
+	}
+
+	if err := app.Init(db, conf, &enterpriseServices); err != nil {
+		log.Fatalf("failed to initialize app: %s", err)
 	}
 
 	// Initialize all the enterprise-specific services that do not need the codeintel-specific services.
 	for name, fn := range initFunctions {
 		if err := fn(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
-			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
+			log.Fatalf("failed to initialize %s: %s", name, err)
 		}
 	}
 

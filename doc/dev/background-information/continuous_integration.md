@@ -1,6 +1,8 @@
 # Continuous integration
 
-We have a variety of tooling on [Buildkite](https://buildkite.com/sourcegraph/sourcegraph) and [GitHub Actions](https://github.com/sourcegraph/sourcegraph/actions) for continuous integration.
+Sourcegraph uses a continuous integration and delivery tool, [Buildkite](#buildkite-pipelines), to help ensure a consistent build, test and deploy process. Software changes are systematically required to complete all steps within the continuous integration tool workflow prior to production deployment, in addition to being [peer reviewed](pull_request_reviews.md).
+
+Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-actions) for continuous integration and repository maintainence purposes.
 
 > NOTE: To learn more about testing in particular, see our [testing principles](testing_principles.md).
 

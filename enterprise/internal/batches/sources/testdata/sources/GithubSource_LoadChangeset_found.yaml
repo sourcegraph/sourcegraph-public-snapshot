@@ -37,8 +37,10 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
-      {\n    ...actor\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
+      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
+      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
+      {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
       {\n      ...prCommit\n    }\n  }\n  timelineItems(first: 250, itemTypes: [ASSIGNED_EVENT,
       CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW,
@@ -60,9 +62,9 @@ interactions:
     body: '{"data":{"repository":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzE2ODI5NDE0","title":"Fix
       disableExtension flag for native integrations","body":"This flag should only
       be observed in the browser extension. Calling `observeStorageKey()` breaks native
-      integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z","headRefOid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","baseRefOid":"f7097fe19816d0a9d637dc759722f6f43fd057ea","headRefName":"disable-extension-native-integratin","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDU0MzIx","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
+      integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z","headRefOid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","baseRefOid":"f7097fe19816d0a9d637dc759722f6f43fd057ea","headRefName":"disable-extension-native-integratin","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDU0MzIx","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
       #42783 passed (15 minutes, 53 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDUzMTQ0","context":"percy/Sourcegraph","state":"SUCCESS","description":"Visual
-      review automatically approved, no visual changes found."}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODA=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODE=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODI=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}}]},"committedDate":"2019-09-13T09:13:12Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABbSoCn3ABqjI2MzE3ODE0NzU="},"nodes":[{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"PullRequestReview","databaseId":287537086,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"authorAssociation":"CONTRIBUTOR","body":"Thanks
+      review automatically approved, no visual changes found."}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODA=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODE=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODI=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}}]},"committedDate":"2019-09-13T09:13:12Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABbSoCn3ABqjI2MzE3ODE0NzU="},"nodes":[{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"PullRequestReview","databaseId":287537086,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"authorAssociation":"MEMBER","body":"Thanks
       for the fix! The chaining logic looks brilliant to me (as a non-FE dev).","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086","createdAt":"2019-09-12T15:57:28Z","updatedAt":"2019-09-12T15:57:28Z","commit":null,"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":287549355,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287549355","createdAt":"2019-09-12T16:18:08Z","updatedAt":"2019-09-12T16:18:58Z","commit":null,"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"21d1cd99699e36ab5e2b9be1cc663691d47193ef","message":"Fix
       disableExtension flag for native integrations\n\nThis flag should only be observed
       in the browser extension. Calling `observeStorageKey()` breaks native integrations.","messageHeadline":"Fix
@@ -91,14 +93,14 @@ interactions:
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
-        Sunset
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 24 Aug 2021 13:30:13 GMT
+      - Thu, 30 Dec 2021 22:37:48 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -116,11 +118,10 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1224:0216:56D4E5:9C899E:6124F464
+      - 9BA2:3A05:D9F4E4:21D87FA:61CE34BC
       X-Oauth-Scopes:
-      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
-        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
-        user, workflow, write:discussion, write:packages
+      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
+        read:user, repo, workflow
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:

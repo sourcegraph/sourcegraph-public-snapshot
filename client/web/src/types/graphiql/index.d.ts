@@ -1,6 +1,6 @@
-declare module 'graphiql' {
-    import * as React from 'react'
+import * as React from 'react'
 
+declare module 'graphiql' {
     export interface GraphQLParams {
         query: string
         variables?: any

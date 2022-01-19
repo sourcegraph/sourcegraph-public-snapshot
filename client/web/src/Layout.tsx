@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -6,16 +6,16 @@ import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/validate'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
+import { TosConsentModal } from './auth/TosConsentModal'
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
@@ -51,7 +51,6 @@ import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
 import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
-    PatternTypeProps,
     HomePanelsProps,
     SearchStreamingProps,
     parseSearchURL,
@@ -76,7 +75,6 @@ export interface LayoutProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ActivationProps,
-        PatternTypeProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
@@ -129,46 +127,26 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
+    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
-    const {
-        history,
-        patternType: currentPatternType,
-        selectedSearchContextSpec,
-        location,
-        setPatternType,
-        setSelectedSearchContextSpec,
-    } = props
+    const { history, selectedSearchContextSpec, location, setSelectedSearchContextSpec } = props
 
     useEffect(() => setQueryStateFromURL(location.search), [location.search])
 
-    const { query = '', patternType } = useMemo(() => parseSearchURL(location.search), [location.search])
+    const { query = '' } = useMemo(() => parseSearchURL(location.search), [location.search])
 
     const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
     useEffect(() => {
         // Only override filters from URL if there is a search query
         if (query) {
-            if (patternType && patternType !== currentPatternType) {
-                setPatternType(patternType)
-            }
-
             if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
                 setSelectedSearchContextSpec(searchContextSpec)
             }
         }
-    }, [
-        history,
-        currentPatternType,
-        selectedSearchContextSpec,
-        patternType,
-        query,
-        setPatternType,
-        setSelectedSearchContextSpec,
-        searchContextSpec,
-    ])
+    }, [history, selectedSearchContextSpec, query, setSelectedSearchContextSpec, searchContextSpec])
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
@@ -202,9 +180,25 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }, [startExtensionAlertAnimation])
 
     useScrollToLocationHash(props.location)
+
+    const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
+    useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
+        props.authenticatedUser,
+    ])
+    const afterTosAccepted = useCallback(() => {
+        setTosAccepted(true)
+    }, [])
+
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
+    }
+
+    // If a user has not accepted the Terms of Service yet, show the modal to force them to accept
+    // before continuing to use Sourcegraph. This is only done on self-hosted Sourcegraph Server;
+    // cloud users are all considered to have accepted regarless of the value of `tosAccepted`.
+    if (!props.isSourcegraphDotCom && !tosAccepted) {
+        return <TosConsentModal afterTosAccepted={afterTosAccepted} />
     }
 
     const context: LayoutRouteComponentProps<any> = {
@@ -213,7 +207,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform,
-        parsedSearchQuery: query,
     }
 
     return (
@@ -228,14 +221,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     {...themeProps}
-                    parsedSearchQuery={query}
                     authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
                         !isCommunitySearchContextPage &&
                         !isSearchConsolePage &&
-                        !isSearchNotebookPage
+                        !isSearchNotebooksPage
                     }
                     variant={
                         isSearchHomepage

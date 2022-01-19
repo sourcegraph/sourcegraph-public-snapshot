@@ -254,7 +254,7 @@ func TestSearchRevspecs(t *testing.T) {
 			descr:    "invalid regexp",
 			specs:    []string{"*o@a:b"},
 			repo:     "foo",
-			err:      errors.Errorf("%s", "bad request: error parsing regexp: missing argument to repetition operator: `*`"),
+			err:      errors.Errorf("%s", "bad request: in findPatternRevs: error parsing regexp: missing argument to repetition operator: `*`"),
 			matched:  nil,
 			clashing: nil,
 		},

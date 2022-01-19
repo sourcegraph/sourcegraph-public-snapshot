@@ -168,7 +168,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
             class="form-group mt-3"
           >
             <a
-              class="btn btn-lg btn-primary w-100 center"
+              class="btn btn-primary btn-lg w-100 center"
               href="/sign-up?returnTo=%2Fsubscriptions%2Fnew"
             >
               Create account or sign in to continue

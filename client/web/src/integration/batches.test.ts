@@ -200,6 +200,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     externalURL: {
                         url: 'http://test.test/123',
                     },
+                    forkNamespace: null,
                     id: 'changeset123',
                     labels: [
                         {
@@ -222,8 +223,10 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                         type: ChangesetSpecType.BRANCH,
                         description: {
                             __typename: 'GitBranchChangesetDescription',
+                            baseRef: 'my-branch',
                             headRef: 'my-branch',
                         },
+                        forkTarget: null,
                     },
                 },
             ],
@@ -322,6 +325,7 @@ function mockCommonGraphQLResponses(
                     username: 'bob',
                 },
                 currentSpec: {
+                    id: 'specID1',
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                     codeHostsWithoutWebhooks: {
@@ -681,6 +685,7 @@ describe('Batches', () => {
                                                     __typename: 'GitBranchChangesetDescription',
                                                     baseRef: 'main',
                                                     headRef: 'head-ref',
+                                                    fork: false,
                                                     baseRepository: {
                                                         name: 'github.com/sourcegraph/repo',
                                                         url: 'http://test.test/repo',
@@ -714,6 +719,7 @@ describe('Batches', () => {
                                                 expiresAt: addDays(now, 3).toISOString(),
                                                 id: 'changesetspec123',
                                                 type: ChangesetSpecType.BRANCH,
+                                                forkTarget: null,
                                             },
                                         },
                                     },

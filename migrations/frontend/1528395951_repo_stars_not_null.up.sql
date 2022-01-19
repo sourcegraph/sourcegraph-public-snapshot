@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1528395950
+-- +++
+
 ALTER TABLE repo
   ALTER COLUMN stars SET NOT NULL,
   ALTER COLUMN stars SET DEFAULT 0;

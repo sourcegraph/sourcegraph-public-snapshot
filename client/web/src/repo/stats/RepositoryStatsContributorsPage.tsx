@@ -7,19 +7,20 @@ import { map } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { createAggregateError } from '@sourcegraph/common'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { gql } from '@sourcegraph/http-client'
+import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Button } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { PersonLink } from '../../person/PersonLink'
-import { quoteIfNeeded, searchQueryForRepoRevision, PatternTypeProps } from '../../search'
+import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
@@ -32,7 +33,7 @@ interface QuerySpec {
     path: string | null
 }
 
-interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'setPatternType'> {
+interface RepositoryContributorNodeProps extends QuerySpec {
     node: GQL.IRepositoryContributor
     repoName: string
     globbing: boolean
@@ -44,7 +45,6 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     revisionRange,
     after,
     path,
-    patternType,
     globbing,
 }) => {
     const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
@@ -82,7 +82,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                 </div>
                 <div className={styles.count}>
                     <Link
-                        to={`/search?${buildSearchURLQuery(query, patternType, false)}`}
+                        to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
                         className="font-weight-bold"
                         data-tooltip={
                             revisionRange?.includes('..') &&
@@ -165,16 +165,13 @@ const queryRepositoryContributors = memoizeObservable(
 
 const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
 
-interface Props
-    extends RepositoryStatsAreaPageProps,
-        RouteComponentProps<{}>,
-        Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {
     globbing: boolean
 }
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,
-    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'patternType' | 'globbing'>
+    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'globbing'>
 > {}
 
 interface State extends QuerySpec {}
@@ -251,47 +248,37 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                     />
                                     <div className="input-group-append">
                                         <div className="btn-group">
-                                            <button
-                                                type="button"
+                                            <Button
                                                 className={classNames(
                                                     styles.btnNoLeftRoundedCorners,
-                                                    'btn btn-secondary',
                                                     this.state.after === '7 days ago' && 'active'
                                                 )}
                                                 onClick={() => this.setStateAfterAndSubmit('7 days ago')}
+                                                variant="secondary"
                                             >
                                                 Last 7 days
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={classNames(
-                                                    'btn btn-secondary',
-                                                    this.state.after === '30 days ago' && 'active'
-                                                )}
+                                            </Button>
+                                            <Button
+                                                className={classNames(this.state.after === '30 days ago' && 'active')}
                                                 onClick={() => this.setStateAfterAndSubmit('30 days ago')}
+                                                variant="secondary"
                                             >
                                                 Last 30 days
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={classNames(
-                                                    'btn btn-secondary',
-                                                    this.state.after === '1 year ago' && 'active'
-                                                )}
+                                            </Button>
+                                            <Button
+                                                className={classNames(this.state.after === '1 year ago' && 'active')}
                                                 onClick={() => this.setStateAfterAndSubmit('1 year ago')}
+                                                variant="secondary"
                                             >
                                                 Last year
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={classNames(
-                                                    'btn btn-secondary',
-                                                    !this.state.after && 'active'
-                                                )}
+                                            </Button>
+                                            <Button
+                                                className={classNames(!this.state.after && 'active')}
                                                 onClick={() => this.setStateAfterAndSubmit(null)}
+                                                variant="secondary"
                                             >
                                                 All time
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
@@ -347,12 +334,17 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                 </div>
                                 {stateDiffers && (
                                     <div className="form-group mb-0">
-                                        <button type="submit" className="btn btn-primary mr-2 mt-2">
+                                        <Button type="submit" className="mr-2 mt-2" variant="primary">
                                             Update
-                                        </button>
-                                        <button type="reset" className="btn btn-secondary mt-2" onClick={this.onCancel}>
+                                        </Button>
+                                        <Button
+                                            type="reset"
+                                            className="mt-2"
+                                            onClick={this.onCancel}
+                                            variant="secondary"
+                                        >
                                             Cancel
-                                        </button>
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -370,7 +362,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                         revisionRange,
                         after,
                         path,
-                        patternType: this.props.patternType,
                         globbing: this.props.globbing,
                     }}
                     defaultFirst={20}

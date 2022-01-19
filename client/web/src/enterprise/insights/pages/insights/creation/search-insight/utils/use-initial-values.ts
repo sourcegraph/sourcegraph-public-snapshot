@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CreateInsightFormFields } from '../types'
 

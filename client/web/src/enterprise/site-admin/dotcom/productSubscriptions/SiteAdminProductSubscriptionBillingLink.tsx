@@ -5,9 +5,9 @@ import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import {
@@ -78,14 +78,14 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
                 {isErrorLike(update) && (
                     <AlertCircleIcon className="icon-inline text-danger mr-2" data-tooltip={update.message} />
                 )}
-                <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
+                <Button
                     onClick={productSubscriptionHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}
                     disabled={update === LOADING}
+                    variant="secondary"
+                    size="sm"
                 >
                     {productSubscriptionHasLinkedBilling ? 'Unlink' : 'Link billing subscription'}
-                </button>
+                </Button>
             </div>
         </div>
     )

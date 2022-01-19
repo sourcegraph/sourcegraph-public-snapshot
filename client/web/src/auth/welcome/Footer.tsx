@@ -2,6 +2,7 @@ import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
+import { Button } from '@sourcegraph/wildcard'
 
 import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps/context'
@@ -14,7 +15,7 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
     const { setStep, currentIndex, currentStep } = useSteps()
 
     return (
-        <div className="d-flex align-items-center justify-content-end mt-4">
+        <div className="d-flex align-items-center justify-content-end mt-4 w-100">
             {!currentStep.isLastStep && (
                 <Link
                     to="https://docs.sourcegraph.com/code_search/explanations/code_visibility_on_sourcegraph_cloud"
@@ -28,15 +29,15 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
 
             <div>
                 {!currentStep.isLastStep && (
-                    <button
-                        type="button"
-                        className="btn btn-link font-weight-normal text-secondary"
+                    <Button
+                        className="font-weight-normal text-secondary"
                         onClick={event =>
                             onFinish(event, { eventName: 'NotRightNow_Clicked', tabNumber: currentIndex })
                         }
+                        variant="link"
                     >
                         Not right now
-                    </button>
+                    </Button>
                 )}
                 <LoaderButton
                     type="button"

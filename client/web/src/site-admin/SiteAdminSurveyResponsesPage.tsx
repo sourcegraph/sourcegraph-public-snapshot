@@ -5,8 +5,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Button, useLocalStorage } from '@sourcegraph/wildcard'
 import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
 
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -151,9 +150,9 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                     </td>
                     <td>
                         {responses.length > 0 && (
-                            <button type="button" className="btn btn-sm btn-secondary" onClick={this.showMoreClicked}>
+                            <Button onClick={this.showMoreClicked} variant="secondary" size="sm">
                                 {this.state.displayAll ? 'Hide' : 'See all'}
-                            </button>
+                            </Button>
                         )}
                     </td>
                 </tr>
