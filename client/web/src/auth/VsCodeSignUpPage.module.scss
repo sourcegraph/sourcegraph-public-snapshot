@@ -94,8 +94,8 @@
     }
 
     &:first-of-type {
-        margin-right: 0;
-        max-width: 32.5rem;
+        margin-right: 1rem;
+        max-width: 31.5rem;
         @media (--xs-breakpoint-down) {
             margin-top: 0.75rem;
         }
