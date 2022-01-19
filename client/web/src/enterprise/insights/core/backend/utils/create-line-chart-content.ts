@@ -4,6 +4,7 @@ import { LineChartContent } from 'sourcegraph'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
+import { PageRoutes } from '../../../../../routes.constants'
 import { SearchBasedBackendFilters, SearchBasedInsightSeries } from '../../types/insight/search-insight'
 
 interface SeriesDataset {
@@ -109,13 +110,9 @@ export function createLineChartContentFromIndexedSeries(
                         const beforeFilter = `before:${before}`
                         const dateFilters = `${afterFilter} ${beforeFilter}`
                         const diffQuery = `${repoFilter} type:diff ${dateFilters} ${definitionMap[line.seriesId].query}`
-
                         const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
 
-                        // Go to search results page
-                        const path = '/search?' + searchQueryParameter
-
-                        return [date, `${window.origin}${path}`]
+                        return [date, `${window.origin}${PageRoutes.Search}?${searchQueryParameter}`]
                     })
             ),
         })),
