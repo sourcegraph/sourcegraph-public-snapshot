@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import AccountIcon from 'mdi-react/AccountIcon'
+import AccountQuestionIcon from 'mdi-react/AccountQuestionIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
@@ -57,9 +57,9 @@ const BranchNamespace: React.FunctionComponent<BranchNamespaceProps> = ({ namesp
     if (namespace === '<user>') {
         return (
             <>
-                <AccountIcon
+                <AccountQuestionIcon
                     className="icon-inline"
-                    data-tooltip="This branch will be pushed to the namespace associated with the user credential"
+                    data-tooltip="This branch will be pushed to a user fork. If you have configured a credential for yourself in the Batch Changes settings, this will be a fork in your code host account; otherwise the fork will be in the code host account associated with the site credential used to open changesets."
                 />
                 :
             </>
