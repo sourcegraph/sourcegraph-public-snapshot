@@ -51,7 +51,7 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
             baseRef: 'my-branch',
             headRef: 'my-branch',
         },
-        forkNamespace: null,
+        forkTarget: null,
     },
 }
 
@@ -91,7 +91,7 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
             baseRef: 'my-branch',
             headRef: 'my-branch',
         },
-        forkNamespace: null,
+        forkTarget: null,
     },
 }
 
