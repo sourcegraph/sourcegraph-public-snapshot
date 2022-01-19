@@ -8,6 +8,9 @@ echo "--- yarn in root"
 # mutex is necessary since CI runs various yarn installs in parallel
 yarn --mutex network --frozen-lockfile --network-timeout 60000
 
+echo "--- cargo install rust-protobuf"
+which protoc-gen-rust || cargo install protobuf-codegen
+
 echo "--- buf"
 
 GOBIN="$PWD/.bin" go install github.com/bufbuild/buf/cmd/buf
