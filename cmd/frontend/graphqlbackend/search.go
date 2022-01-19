@@ -199,7 +199,7 @@ func substituteSearchContexts(ctx context.Context, db database.DB, plan query.Pl
 			return p
 		}
 
-		contextQuery, err := query.Pipeline(query.Init(sc.Query, query.SearchTypeRegex))
+		contextQuery, err := query.Pipeline(query.InitRegexp(sc.Query))
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			return p
