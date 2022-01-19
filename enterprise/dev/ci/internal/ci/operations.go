@@ -120,18 +120,32 @@ type CacheConfig struct {
 		Path string `json:"path,omitempty"`
 		Max  int    `json:"max,omitempty"`
 	} `json:"tarball,omitempty"`
-	Paths []string `json:"paths"`
+	Paths []string      `json:"paths"`
+	S3    CacheConfigS3 `json:"s3"`
+}
+
+type CacheConfigS3 struct {
+	Profile string `json:"profile,omitempty"`
+	Bucket  string `json:"bucket"`
+	Class   string `json:"class,omitempty"`
+	Args    string `json:"args,omitempty"`
 }
 
 // yarn ~41s + ~30s
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
+		// TODO check that in case we also use awscli for real
+		bk.Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
 		bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
 			ID:          "node_modules",
 			Backend:     "s3",
 			Key:         "node_modules-{{checksum 'yarn.lock'}}",
 			RestoreKeys: []string{"node_modules-"},
 			Paths:       []string{"node_modules"},
+			S3: CacheConfigS3{
+				Bucket:  "sourcegraph_buildkite_cache",
+				Profile: "buildkite",
+			},
 		}),
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
 }
