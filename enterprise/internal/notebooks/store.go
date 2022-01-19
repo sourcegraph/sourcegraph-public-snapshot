@@ -363,7 +363,7 @@ const getNotebookStarFmtStr = `SELECT notebook_id, user_id, created_at FROM note
 
 // 🚨 SECURITY: The caller must ensure that the actor has permission to create the star for the notebook.
 func (s *notebooksStore) GetNotebookStar(ctx context.Context, notebookID int64, userID int32) (*NotebookStar, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(getNotebookStarFmtStr, userID, notebookID))
+	row := s.QueryRow(ctx, sqlf.Sprintf(getNotebookStarFmtStr, notebookID, userID))
 	return scanNotebookStar(row)
 }
 
@@ -379,7 +379,7 @@ const deleteNotebookStarFmtStr = `DELETE FROM notebook_stars WHERE notebook_id =
 
 // 🚨 SECURITY: The caller must ensure that the actor has permission to delete the star for the notebook.
 func (s *notebooksStore) DeleteNotebookStar(ctx context.Context, notebookID int64, userID int32) error {
-	return s.Exec(ctx, sqlf.Sprintf(deleteNotebookStarFmtStr, userID, notebookID))
+	return s.Exec(ctx, sqlf.Sprintf(deleteNotebookStarFmtStr, notebookID, userID))
 }
 
 const listNotebookStarsFmtStr = `

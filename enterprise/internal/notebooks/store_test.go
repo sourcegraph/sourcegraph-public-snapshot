@@ -544,10 +544,15 @@ func TestCreatingAndDeletingNotebookStars(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	notebook, err := n.CreateNotebook(internalCtx, &Notebook{Title: "Notebook", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user.ID})
+	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
+		{Title: "Notebook", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user.ID},
+		{Title: "Notebook", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user.ID},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Use the second notebook, so the user.ID and notebook.ID are different.
+	notebook := createdNotebooks[1]
 
 	_, err = n.CreateNotebookStar(internalCtx, notebook.ID, user.ID)
 	if err != nil {
