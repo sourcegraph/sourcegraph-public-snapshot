@@ -135,15 +135,26 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
             <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
                 <div className={styles.leftOrRight}>
                     <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    <h2 className={classNames('d-flex', 'align-items-center', 'mb-4', 'mt-1', invitedBy ? styles.pageHeadingInvitedBy : styles.pageHeading)}>
-                        {invitedBy ? <>
-                            <UserAvatar
+                    <h2
+                        className={classNames(
+                            'd-flex',
+                            'align-items-center',
+                            'mb-4',
+                            'mt-1',
+                            invitedBy ? styles.pageHeadingInvitedBy : styles.pageHeading
+                        )}
+                    >
+                        {invitedBy ? (
+                            <>
+                                <UserAvatar
                                     className={classNames('icon-inline', 'mr-3', styles.avatar)}
                                     user={invitedByUser}
                                 />
-                                <strong className="mr-1">{invitedBy}</strong> has invited you to join
-                                Sourcegraph
-                        </> : title }
+                                <strong className="mr-1">{invitedBy}</strong> has invited you to join Sourcegraph
+                            </>
+                        ) : (
+                            title
+                        )}
                     </h2>
 
                     {invitedBy ? 'With a Sourcegraph account, you can:' : 'With a Sourcegraph account, you can also:'}
