@@ -140,11 +140,11 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                                 {title}
                             </div>
                             {completed ? (
-                                <span className="text-muted" data-testid="existing-action-email">
+                                <span className="text-muted font-weight-normal" data-testid="existing-action-email">
                                     {completedSubtitle}
                                 </span>
                             ) : (
-                                <span className="text-muted">{subtitle}</span>
+                                <span className="text-muted font-weight-normal">{subtitle}</span>
                             )}
                         </div>
                         {completed && (
