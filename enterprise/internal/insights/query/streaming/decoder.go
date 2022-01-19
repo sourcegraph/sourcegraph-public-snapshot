@@ -6,7 +6,7 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
-// jsonDecoder streams results as JSON to w.
+// TabulationDecoder will tabulate the result counts per repository.
 func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *int, map[string]*SearchMatch, []string) {
 	var totalCount int
 	repoCounts := make(map[string]*SearchMatch)

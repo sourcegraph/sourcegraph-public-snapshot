@@ -252,16 +252,16 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	}()
 	err = r.limiter.Wait(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "limiter.Wait")
 	}
 	job, err := dequeueJob(ctx, r.baseWorkerStore, record.RecordID())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "dequeueJob")
 	}
 
 	series, err := r.getSeries(ctx, job.SeriesID)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getSeries")
 	}
 
 	recordTime := time.Now()
@@ -275,11 +275,11 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		types.Search:        r.searchHandler,
 	}
 
-	if executableHandler, ok := handlersByType[series.GenerationMethod]; ok {
-		return executableHandler(ctx, job, series, recordTime)
-	} else {
+	executableHandler, ok := handlersByType[series.GenerationMethod]
+	if !ok {
 		return errors.Newf("unable to handle record for series_id: %s and generation_method: %s", series.SeriesID, series.GenerationMethod)
 	}
+	return executableHandler(ctx, job, series, recordTime)
 }
 
 func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
