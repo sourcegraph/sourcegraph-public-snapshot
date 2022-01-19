@@ -13,6 +13,7 @@ type NotebooksOrderBy string
 const (
 	NotebookOrderByUpdatedAt NotebooksOrderBy = "NOTEBOOK_UPDATED_AT"
 	NotebookOrderByCreatedAt NotebooksOrderBy = "NOTEBOOK_CREATED_AT"
+	NotebookOrderByStarCount NotebooksOrderBy = "NOTEBOOK_STAR_COUNT"
 )
 
 type NotebooksResolver interface {
@@ -22,6 +23,9 @@ type NotebooksResolver interface {
 	DeleteNotebook(ctx context.Context, args DeleteNotebookArgs) (*EmptyResponse, error)
 	Notebooks(ctx context.Context, args ListNotebooksArgs) (NotebookConnectionResolver, error)
 
+	CreateNotebookStar(ctx context.Context, args CreateNotebookStarInputArgs) (NotebookStarResolver, error)
+	DeleteNotebookStar(ctx context.Context, args DeleteNotebookStarInputArgs) (*EmptyResponse, error)
+
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
@@ -29,6 +33,17 @@ type NotebookConnectionResolver interface {
 	Nodes(ctx context.Context) []NotebookResolver
 	TotalCount(ctx context.Context) int32
 	PageInfo(ctx context.Context) *graphqlutil.PageInfo
+}
+
+type NotebookStarResolver interface {
+	User(context.Context) (*UserResolver, error)
+	CreatedAt() DateTime
+}
+
+type NotebookStarConnectionResolver interface {
+	Nodes() []NotebookStarResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
 type NotebookResolver interface {
@@ -40,6 +55,8 @@ type NotebookResolver interface {
 	UpdatedAt(ctx context.Context) DateTime
 	CreatedAt(ctx context.Context) DateTime
 	ViewerCanManage(ctx context.Context) bool
+	ViewerHasStarred(ctx context.Context) (bool, error)
+	Stars(ctx context.Context, args ListNotebookStarsArgs) (NotebookStarConnectionResolver, error)
 }
 
 type NotebookBlockResolver interface {
@@ -123,10 +140,24 @@ type CreateFileBlockLineRangeInput struct {
 }
 
 type ListNotebooksArgs struct {
-	First         int32            `json:"first"`
-	After         *string          `json:"after"`
-	Query         *string          `json:"query"`
-	CreatorUserID *graphql.ID      `json:"creatorUserID"`
-	OrderBy       NotebooksOrderBy `json:"orderBy"`
-	Descending    bool             `json:"descending"`
+	First           int32            `json:"first"`
+	After           *string          `json:"after"`
+	Query           *string          `json:"query"`
+	CreatorUserID   *graphql.ID      `json:"creatorUserID"`
+	StarredByUserID *graphql.ID      `json:"starredByUserID"`
+	OrderBy         NotebooksOrderBy `json:"orderBy"`
+	Descending      bool             `json:"descending"`
+}
+
+type ListNotebookStarsArgs struct {
+	First int32   `json:"first"`
+	After *string `json:"after"`
+}
+
+type CreateNotebookStarInputArgs struct {
+	NotebookID graphql.ID
+}
+
+type DeleteNotebookStarInputArgs struct {
+	NotebookID graphql.ID
 }

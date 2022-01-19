@@ -44,7 +44,10 @@ func Init(
 	}
 
 	dotcomConfig := conf.SiteConfig().Dotcom
-	if dotcomConfig == nil || dotcomConfig.GithubAppCloud == nil || dotcomConfig.GithubAppCloud.AppID == "" {
+	if dotcomConfig == nil ||
+		dotcomConfig.GithubAppCloud == nil ||
+		dotcomConfig.GithubAppCloud.AppID == "" ||
+		dotcomConfig.GithubAppCloud.PrivateKey == "" {
 		enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)

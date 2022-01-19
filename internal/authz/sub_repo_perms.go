@@ -296,7 +296,7 @@ func (s *SubRepoPermsClient) Enabled() bool {
 func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
 	// Check config here, despite checking again in the s.Permissions implementation,
 	// because we also make some permissions decisions here.
-	if !s.Enabled() {
+	if !SubRepoEnabled(s) {
 		return Read, nil
 	}
 
@@ -312,6 +312,11 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
 	return perms, nil
+}
+
+// SubRepoEnabled takes a SubRepoPermissionChecker and returns true if the checker is not nil and is enabled
+func SubRepoEnabled(checker SubRepoPermissionChecker) bool {
+	return checker != nil && checker.Enabled()
 }
 
 // FilterActorPaths will filter the given list of paths for the given actor
@@ -333,7 +338,7 @@ func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *
 // FilterActorPath will filter the given path for the given actor
 // returning true if the path is allowed to read.
 func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, path string) (bool, error) {
-	if checker == nil || !checker.Enabled() {
+	if !SubRepoEnabled(checker) {
 		return true, nil
 	}
 	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
