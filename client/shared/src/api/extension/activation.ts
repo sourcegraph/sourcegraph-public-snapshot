@@ -1,4 +1,5 @@
 import { Remote } from 'comlink'
+import { isEqual } from 'lodash'
 import { BehaviorSubject, combineLatest, from, Observable, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilChanged, map, tap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
@@ -25,13 +26,30 @@ export function observeActiveExtensions(
 } {
     const activeLanguages = new BehaviorSubject<ReadonlySet<string>>(new Set())
     const enabledExtensions = wrapRemoteObservable(mainAPI.getEnabledExtensions())
+    const activatedExtensionIDs = new Set<string>()
+    let previousActiveLanguages: ReadonlySet<string> = new Set([])
 
     const activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]> = combineLatest([
         activeLanguages,
         enabledExtensions,
     ]).pipe(
-        map(([activeLanguages, enabledExtensions]) =>
-            extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
+        tap(([activeLanguages, enabledExtensions]) => {
+            const activeExtensions = extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
+
+            // We disable previously activated events that no longer match the
+            // activation condition when the set of active languages changes.
+            // c.f. https://github.com/sourcegraph/sourcegraph/pull/29853
+            if (!isEqual(previousActiveLanguages, activeLanguages) && activeLanguages.size !== 0) {
+                activatedExtensionIDs.clear()
+                previousActiveLanguages = activeLanguages
+            }
+
+            for (const extension of activeExtensions) {
+                activatedExtensionIDs.add(extension.id)
+            }
+        }),
+        map(([, extensions]) =>
+            extensions ? extensions.filter(extension => activatedExtensionIDs.has(extension.id)) : []
         ),
         distinctUntilChanged((a, b) => areExtensionsSame(a, b))
     )
