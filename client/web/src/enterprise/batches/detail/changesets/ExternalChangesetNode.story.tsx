@@ -77,6 +77,7 @@ add('All states', () => {
                                             baseRef: 'my-branch',
                                             headRef: 'my-branch',
                                         },
+                                        forkNamespace: null,
                                     },
                                 }}
                                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
@@ -153,6 +154,7 @@ add('Unpublished', () => {
                                 baseRef: 'my-branch',
                                 headRef: 'my-branch',
                             },
+                            forkNamespace: null,
                         },
                     }}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
