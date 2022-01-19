@@ -34,6 +34,7 @@
     font-size: calc(min(0.75rem, #{(11/12)}em));
     line-height: 1rem;
     letter-spacing: -(0.25/12) + em;
+    padding: var(--btn-padding-y-sm) 0.5rem;
 }
 
 .btn.btn-lg {
