@@ -3,8 +3,7 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'

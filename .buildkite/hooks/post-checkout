@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC1090
+source "$HOME/.profile"
+
 # Fetch the latest origin/master to accurately determine the set of changed
 # files on this branch.
 echo "Running git fetch..."
@@ -9,3 +12,6 @@ echo "Running git fetch... done"
 echo "install asdf plugins"
 asdf install
 echo "done installing"
+
+# Link the trace-script so we can have pretty steps in the buildkite ui
+ln -s "$(pwd)/enterprise/dev/ci/scripts/trace-command.sh" tr 2>/dev/null || true

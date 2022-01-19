@@ -24,6 +24,7 @@ const INITIAL_VALUES: CaptureGroupFormFields = {
     title: '',
     step: 'months',
     stepValue: '2',
+    allRepos: false,
 }
 
 const titleRequiredValidator = createRequiredValidator('Title is a required field.')
@@ -75,13 +76,30 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
         validators: { sync: titleRequiredValidator, async: asyncTitleValidator },
     })
 
+    const allReposMode = useField({
+        name: 'allRepos',
+        formApi: form.formAPI,
+        onChange: (checked: boolean) => {
+            // Reset form values in case if All repos mode was activated
+            if (checked) {
+                repositories.input.onChange('')
+                step.input.onChange('months')
+                stepValue.input.onChange('1')
+            }
+        },
+    })
+
+    const isAllReposMode = allReposMode.input.value
+
     const repositories = useField({
         name: 'repositories',
         formApi: form.formAPI,
         validators: {
-            sync: repositoriesFieldValidator,
-            async: repositoriesExistValidator,
+            // Turn off any validations for the repositories field in we are in all repos mode
+            sync: !isAllReposMode ? repositoriesFieldValidator : undefined,
+            async: !isAllReposMode ? repositoriesExistValidator : undefined,
         },
+        disabled: isAllReposMode,
     })
 
     const query = useField({
@@ -93,12 +111,17 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
     const step = useField({
         name: 'step',
         formApi: form.formAPI,
+        disabled: isAllReposMode,
     })
 
     const stepValue = useField({
         name: 'stepValue',
         formApi: form.formAPI,
-        validators: { sync: requiredStepValueField },
+        validators: {
+            // Turn off any validations if we are in all repos mode
+            sync: !isAllReposMode ? requiredStepValueField : undefined,
+        },
+        disabled: isAllReposMode,
     })
 
     const handleFormReset = (): void => {
@@ -118,7 +141,9 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
     const areAllFieldsForPreviewValid =
         repositories.meta.validState === 'VALID' &&
         stepValue.meta.validState === 'VALID' &&
-        query.meta.validState === 'VALID'
+        query.meta.validState === 'VALID' &&
+        // For all repos mode we are not able to show the live preview chart
+        !allReposMode.input.value
 
     return (
         <div className={classNames(styles.content, className)}>
@@ -134,10 +159,12 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
                 onCancel={onCancel}
                 onFormReset={handleFormReset}
                 className={styles.contentForm}
+                allReposMode={allReposMode}
             />
 
             <CaptureGroupCreationLivePreview
                 disabled={!areAllFieldsForPreviewValid}
+                isAllReposMode={allReposMode.input.value}
                 repositories={repositories.meta.value}
                 query={query.meta.value}
                 step={step.meta.value}

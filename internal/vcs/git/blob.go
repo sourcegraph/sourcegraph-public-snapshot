@@ -147,7 +147,7 @@ func (br *blobReader) convertError(err error) error {
 	}
 	if strings.Contains(err.Error(), "fatal: bad object ") {
 		// Could be a git submodule.
-		fi, err := Stat(br.ctx, br.repo, br.commit, br.name)
+		fi, err := Stat(br.ctx, authz.DefaultSubRepoPermsChecker, br.repo, br.commit, br.name)
 		if err != nil {
 			return err
 		}

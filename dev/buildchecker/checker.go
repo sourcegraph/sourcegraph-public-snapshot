@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -19,6 +18,10 @@ type CheckOptions struct {
 type CommitInfo struct {
 	Commit string
 	Author string
+
+	BuildNumber  int
+	BuildURL     string
+	BuildCreated time.Time
 
 	AuthorSlackID string
 }
@@ -59,10 +62,11 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 
 	// if failed, check if failures are consecutive
 	var exceeded bool
-	results.FailedCommits, exceeded = checkConsecutiveFailures(
+	results.FailedCommits, exceeded, _ = checkConsecutiveFailures(
 		builds[max(firstFailedBuildIndex-1, 0):], // Check builds starting with the one we found
 		opts.FailuresThreshold,
-		opts.BuildTimeout)
+		opts.BuildTimeout,
+		false)
 	if !exceeded {
 		fmt.Println("threshold not exceeded")
 		results.Action, err = branch.Unlock(ctx)
@@ -78,11 +82,12 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 	// over Slack.
 	for i, info := range results.FailedCommits {
 		teammate, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", info.Commit)
-		results.FailedCommits[i].AuthorSlackID = teammate.SlackID
 		if err != nil {
 			// If we can't resolve the user, do not interrupt the process.
-			fmt.Println(fmt.Errorf("slackUserResolve: %w", err))
+			fmt.Println("teammates.ResolveByCommitAuthor: ", err)
+			continue
 		}
+		results.FailedCommits[i].AuthorSlackID = teammate.SlackID
 	}
 
 	results.LockBranch = true
@@ -103,56 +108,57 @@ func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
 		return true
 	}
 	// Created, but not done
-	if build.CreatedAt != nil && build.FinishedAt == nil {
+	if timeout > 0 && build.CreatedAt != nil && build.FinishedAt == nil {
 		// Failed if exceeded timeout
 		return time.Now().After(build.CreatedAt.Add(timeout))
 	}
 	return false
 }
 
-func buildSummary(build buildkite.Build) string {
-	summary := []string{*build.Commit}
-	if build.State != nil {
-		summary = append(summary, *build.State)
-	}
-	if build.CreatedAt != nil {
-		summary = append(summary, "started: "+build.CreatedAt.String())
-	}
-	if build.FinishedAt != nil {
-		summary = append(summary, "finished: "+build.FinishedAt.String())
-	}
-	return strings.Join(summary, ", ")
-}
-
-func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout time.Duration) (failedCommits []CommitInfo, thresholdExceeded bool) {
+func checkConsecutiveFailures(
+	builds []buildkite.Build,
+	threshold int,
+	timeout time.Duration,
+	returnAll bool,
+) (failedCommits []CommitInfo, thresholdExceeded bool, buildsScanned int) {
 	failedCommits = []CommitInfo{}
 
 	var consecutiveFailures int
-	for _, b := range builds {
-		if !isBuildFailed(b, timeout) {
-			fmt.Printf("build %d not failed: %+v\n", *b.Number, buildSummary(b))
-
-			if !isBuildPassed(b) {
-				// we're only safe if non-failures are actually passed, otherwise
-				// keep looking
-				continue
-			}
+	var build buildkite.Build
+	for buildsScanned, build = range builds {
+		if isBuildPassed(build) {
+			// If we find a passed build we are done
 			return
+		} else if !isBuildFailed(build, timeout) {
+			// we're only safe if non-failures are actually passed, otherwise
+			// keep looking
+			continue
 		}
 
 		var author string
-		if b.Author != nil {
-			author = fmt.Sprintf("%s (%s)", b.Author.Name, b.Author.Email)
+		if build.Author != nil {
+			author = fmt.Sprintf("%s (%s)", build.Author.Name, build.Author.Email)
 		}
 
+		// Process this build as a failure
 		consecutiveFailures += 1
-		failedCommits = append(failedCommits, CommitInfo{
-			Commit: *b.Commit,
+		commit := CommitInfo{
 			Author: author,
-		})
-		fmt.Printf("build %d is a failure: count %d, %s\n", *b.Number, consecutiveFailures, buildSummary(b))
+			Commit: maybeString(build.Commit),
+		}
+		if build.Number != nil {
+			commit.BuildNumber = *build.Number
+			commit.BuildURL = maybeString(build.URL)
+		}
+		if build.CreatedAt != nil {
+			commit.BuildCreated = build.CreatedAt.Time
+		}
+		failedCommits = append(failedCommits, commit)
 		if consecutiveFailures >= threshold {
-			return failedCommits, true
+			thresholdExceeded = true
+			if !returnAll {
+				return
+			}
 		}
 	}
 
@@ -164,4 +170,11 @@ func max(x, y int) int {
 		return y
 	}
 	return x
+}
+
+func maybeString(s *string) string {
+	if s != nil {
+		return *s
+	}
+	return ""
 }

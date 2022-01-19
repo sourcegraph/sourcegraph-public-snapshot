@@ -2,9 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { BehaviorSubject } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-
-import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { OnboardingTourStepItem, ONBOARDING_STEP_ITEMS } from './data'
 
@@ -93,22 +91,17 @@ export function useOnboardingTour(
         clear()
     }, [])
 
-    const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
-
     const { steps, isTourCompleted, isClosed } = useMemo(() => {
         const steps = ONBOARDING_STEP_ITEMS.map(step => ({
             ...step,
-            isCompleted:
-                step.id === 'TourBrowserExtensions'
-                    ? !!isBrowserExtensionInstalled
-                    : !!store?.completedStepIds?.includes(step.id),
+            isCompleted: !!store?.completedStepIds?.includes(step.id),
         }))
         return {
             steps,
             isTourCompleted: steps.filter(step => step.isCompleted).length === steps.length,
             isClosed: !!store?.isClosed,
         }
-    }, [store, isBrowserExtensionInstalled])
+    }, [store])
 
     useEffect(() => {
         if (!store) {

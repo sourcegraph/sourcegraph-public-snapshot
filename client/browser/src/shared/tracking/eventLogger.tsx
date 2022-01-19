@@ -1,6 +1,5 @@
 import { noop } from 'lodash'
-import { Observable, ReplaySubject, Subscription } from 'rxjs'
-import { take } from 'rxjs/operators'
+import { Observable, Subscription } from 'rxjs'
 import * as uuid from 'uuid'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -10,7 +9,7 @@ import { storage } from '../../browser-extension/web-extension-api/storage'
 import { UserEvent } from '../../graphql-operations'
 import { logUserEvent, logEvent } from '../backend/userEvents'
 import { isInPage } from '../context'
-import { observeSourcegraphURL, getPlatformName } from '../util/context'
+import { getPlatformName } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
@@ -26,35 +25,37 @@ const uidKey = 'sourcegraphAnonymousUid'
  */
 export class ConditionalTelemetryService implements TelemetryService {
     /** Log events are passed on to the inner TelemetryService */
-    private innerTelemetryService: TelemetryService
     private subscription = new Subscription()
 
-    /**
-     * The enabled state set by an observable, provided upon instantiation
-     */
+    /** The enabled state set by an observable, provided upon instantiation */
     private isEnabled = false
 
-    constructor(innerTelemetryService: TelemetryService, isEnabled: Observable<boolean>) {
+    constructor(private innerTelemetryService: TelemetryService, isEnabled: Observable<boolean>) {
         this.subscription.add(
             isEnabled.subscribe(value => {
                 this.isEnabled = value
             })
         )
-        this.innerTelemetryService = innerTelemetryService
     }
-
     public log(eventName: string, eventProperties?: any): void {
-        if (this.isEnabled) {
-            this.innerTelemetryService.log(eventName, eventProperties)
-        }
+        // Wait for this.isEnabled to get a new value
+        setTimeout(() => {
+            if (this.isEnabled) {
+                this.innerTelemetryService.log(eventName, eventProperties)
+            }
+        })
     }
     public logViewEvent(eventName: string, eventProperties?: any): void {
-        if (this.isEnabled) {
-            this.innerTelemetryService.logViewEvent(eventName, eventProperties)
-        }
+        // Wait for this.isEnabled to get a new value
+        setTimeout(() => {
+            if (this.isEnabled) {
+                this.innerTelemetryService.logViewEvent(eventName, eventProperties)
+            }
+        })
     }
-
     public unsubscribe(): void {
+        // Reset initial state
+        this.isEnabled = false
         return this.subscription.unsubscribe()
     }
 }
@@ -67,14 +68,8 @@ export class EventLogger implements TelemetryService {
     /**
      * Buffered Observable for the latest Sourcegraph URL
      */
-    private sourcegraphURLs: Observable<string>
 
-    constructor(isExtension: boolean, private requestGraphQL: PlatformContext['requestGraphQL']) {
-        const replaySubject = new ReplaySubject<string>(1)
-        this.sourcegraphURLs = replaySubject.asObservable()
-        // TODO pass this Observable as a parameter
-        // eslint-disable-next-line rxjs/no-ignored-subscription
-        observeSourcegraphURL(isExtension).subscribe(replaySubject)
+    constructor(private requestGraphQL: PlatformContext['requestGraphQL'], private sourcegraphURL: string) {
         // Fetch user ID on initial load.
         this.getAnonUserID().catch(noop)
     }
@@ -115,18 +110,18 @@ export class EventLogger implements TelemetryService {
     }
 
     /**
-     * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
-     * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
+     * Log a user action on the associated Sourcegraph instance
      */
-    public async logCodeIntelligenceEvent(event: string, userEvent: UserEvent, eventProperties?: any): Promise<void> {
+    private async logEvent(event: string, eventProperties?: any, userEvent?: UserEvent): Promise<void> {
         const anonUserId = await this.getAnonUserID()
-        const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
-        logUserEvent(userEvent, anonUserId, sourcegraphURL, this.requestGraphQL)
+        if (userEvent) {
+            logUserEvent(userEvent, anonUserId, this.sourcegraphURL, this.requestGraphQL)
+        }
         logEvent(
             {
                 name: event,
                 userCookieID: anonUserId,
-                url: sourcegraphURL,
+                url: this.sourcegraphURL,
                 argument: { platform: this.platform, ...eventProperties },
             },
             this.requestGraphQL
@@ -142,13 +137,16 @@ export class EventLogger implements TelemetryService {
      */
     public async log(eventName: string, eventProperties?: any): Promise<void> {
         switch (eventName) {
+            case 'findReferences':
+                await this.logEvent(eventName, eventProperties, UserEvent.CODEINTELINTEGRATIONREFS)
+                break
             case 'goToDefinition':
             case 'goToDefinition.preloaded':
             case 'hover':
-                await this.logCodeIntelligenceEvent(eventName, UserEvent.CODEINTELINTEGRATION, eventProperties)
+                await this.logEvent(eventName, eventProperties, UserEvent.CODEINTELINTEGRATION)
                 break
-            case 'findReferences':
-                await this.logCodeIntelligenceEvent(eventName, UserEvent.CODEINTELINTEGRATIONREFS, eventProperties)
+            default:
+                await this.logEvent(eventName, eventProperties)
                 break
         }
     }
@@ -159,16 +157,6 @@ export class EventLogger implements TelemetryService {
      * @param pageTitle The title of the page being viewed.
      */
     public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
-        const anonUserId = await this.getAnonUserID()
-        const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
-        logEvent(
-            {
-                name: `View${pageTitle}`,
-                userCookieID: anonUserId,
-                url: sourcegraphURL,
-                argument: { ...eventProperties, platform: this.platform },
-            },
-            this.requestGraphQL
-        )
+        await this.logEvent(`View${pageTitle}`, eventProperties)
     }
 }

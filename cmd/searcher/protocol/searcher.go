@@ -45,10 +45,6 @@ type Request struct {
 	// the fetch will still happen in the background so future requests don't have to wait.
 	FetchTimeout string
 
-	// The deadline for the search request.
-	// It is parsed with time.Time.UnmarshalText.
-	Deadline string
-
 	// Endpoint(s) for reaching Zoekt. See description in
 	// endpoint.go:Static(...)
 	IndexerEndpoints []string

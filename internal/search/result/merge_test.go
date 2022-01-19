@@ -23,7 +23,7 @@ func commitResult(repo, commit string) *CommitMatch {
 
 func diffResult(repo, commit string) *CommitMatch {
 	return &CommitMatch{
-		DiffPreview: &HighlightedString{},
+		DiffPreview: &MatchedString{},
 		Repo:        types.MinimalRepo{Name: api.RepoName(repo)},
 		Commit: gitdomain.Commit{
 			ID: api.CommitID(commit),

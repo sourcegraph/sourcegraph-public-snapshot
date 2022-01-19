@@ -6,8 +6,7 @@ import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -83,15 +82,18 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                 },
                 { id: codeMonitor.trigger.id, update: { query: codeMonitor.trigger.query } },
                 codeMonitor.actions.nodes.map(action => ({
-                    email: {
-                        id: action.id,
-                        update: {
-                            enabled: action.enabled,
-                            priority: MonitorEmailPriority.NORMAL,
-                            recipients: [authenticatedUser.id],
-                            header: '',
-                        },
-                    },
+                    email:
+                        action.__typename === 'MonitorEmail'
+                            ? {
+                                  id: action.id || null, // Convert empty string to null so action is created
+                                  update: {
+                                      enabled: action.enabled,
+                                      priority: MonitorEmailPriority.NORMAL,
+                                      recipients: [authenticatedUser.id],
+                                      header: '',
+                                  },
+                              }
+                            : undefined,
                 }))
             ),
         [authenticatedUser.id, match.params.id, updateCodeMonitor]

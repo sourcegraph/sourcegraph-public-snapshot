@@ -757,14 +757,16 @@ declare module 'sourcegraph' {
         priority: number
 
         /**
-         * Display the results of the location provider (with the given ID) in this panel below the
-         * {@link PanelView#contents}.
+         * Display the results of the location provider (with the given ID) in
+         * this panel below the {@link PanelView#contents}. If
+         * maxLocationResults is set, then only maxLocationResults will be shown
+         * in the panel.
          *
          * Experimental. Subject to change or removal without notice.
          *
          * @internal
          */
-        component: { locationProvider: string } | null
+        component: { locationProvider: string; maxLocationResults?: number } | null
 
         /**
          * A selector that defines the documents this panel is applicable to.

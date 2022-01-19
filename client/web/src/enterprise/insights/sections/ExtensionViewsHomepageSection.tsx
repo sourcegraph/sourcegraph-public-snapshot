@@ -4,7 +4,7 @@ import { switchMap } from 'rxjs/operators'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { ExtensionViewsSectionCommonProps } from '../../../insights/sections/types'
 import { isCodeInsightsEnabled } from '../../../insights/utils/is-code-insights-enabled'

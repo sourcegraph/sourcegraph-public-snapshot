@@ -1,4 +1,4 @@
-import { Dialog, DialogProps } from '@reach/dialog'
+import { DialogProps, DialogOverlay, DialogContent } from '@reach/dialog'
 import classNames from 'classnames'
 import React from 'react'
 
@@ -14,6 +14,11 @@ interface BaseModalProps extends DialogProps {
      * @default "top-third"
      */
     position?: typeof MODAL_POSITIONS[number]
+
+    /**
+     * Additional styles to pass to the Modal wrapper.
+     */
+    containerClassName?: string
 }
 
 interface VisiblyLabelledModal extends BaseModalProps {
@@ -36,12 +41,35 @@ export type ModalProps = VisiblyLabelledModal | InvisiblyLabelledModal
  * @see — Building accessible Modals: https://www.w3.org/TR/2019/NOTE-wai-aria-practices-1.1-20190814/examples/dialog-modal/dialog.html
  * @see — Docs https://reach.tech/dialog
  */
-export const Modal = React.forwardRef(({ children, className, position = 'top-third', ...props }, reference) => (
-    <Dialog
-        ref={reference}
-        {...props}
-        className={classNames(styles.modal, styles[position as keyof typeof styles], className)}
-    >
-        {children}
-    </Dialog>
-)) as ForwardReferenceComponent<'div', ModalProps>
+export const Modal = React.forwardRef(
+    (
+        {
+            children,
+            containerClassName,
+            className,
+            position = 'top-third',
+            allowPinchZoom = false,
+            initialFocusRef,
+            isOpen,
+            onDismiss,
+            ...props
+        },
+        reference
+    ) => (
+        <DialogOverlay
+            allowPinchZoom={allowPinchZoom}
+            initialFocusRef={initialFocusRef}
+            isOpen={isOpen}
+            onDismiss={onDismiss}
+            className={containerClassName}
+        >
+            <DialogContent
+                ref={reference}
+                {...props}
+                className={classNames(styles.modal, styles[position as keyof typeof styles], className)}
+            >
+                {children}
+            </DialogContent>
+        </DialogOverlay>
+    )
+) as ForwardReferenceComponent<'div', ModalProps>

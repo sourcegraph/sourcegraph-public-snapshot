@@ -24,8 +24,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { match } from '../../../../shared/src/api/client/types/textDocument'
 import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
@@ -174,9 +173,11 @@ export const Panel = React.memo<Props>(props => {
                                     )
                                     .map((panelView: PanelViewWithComponent) => {
                                         const locationProviderID = panelView.component?.locationProvider
+                                        const maxLocations = panelView.component?.maxLocationResults
                                         if (locationProviderID) {
                                             const panelViewWithProvider: PanelViewWithComponent = {
                                                 ...panelView,
+                                                maxLocationResults: maxLocations,
                                                 locationProvider: wrapRemoteObservable(
                                                     extensionHostAPI.getActiveCodeEditorPosition()
                                                 ).pipe(

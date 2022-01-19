@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"io/fs"
 	"path"
 	"strconv"
 	"time"
@@ -338,6 +339,31 @@ func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *a
 	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
 		Repo: repo,
 		Path: path,
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "checking sub-repo permissions")
+	}
+	return perms.Include(Read), nil
+}
+
+func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fis []fs.FileInfo) ([]fs.FileInfo, error) {
+	filtered := make([]fs.FileInfo, 0, len(fis))
+	for _, fi := range fis {
+		include, err := FilterActorFileInfo(ctx, checker, a, repo, fi)
+		if err != nil {
+			return nil, err
+		}
+		if include {
+			filtered = append(filtered, fi)
+		}
+	}
+	return filtered, nil
+}
+
+func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fi fs.FileInfo) (bool, error) {
+	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
+		Repo: repo,
+		Path: fi.Name(),
 	})
 	if err != nil {
 		return false, errors.Wrap(err, "checking sub-repo permissions")

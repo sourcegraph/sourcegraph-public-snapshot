@@ -97,7 +97,7 @@ func main() {
 	)
 
 	cache := diskcache.NewStore(config.cacheDir, "symbols",
-		diskcache.WithBackgroundTimeout(20*time.Minute),
+		diskcache.WithBackgroundTimeout(config.processingTimeout),
 		diskcache.WithObservationContext(observationContext),
 	)
 
