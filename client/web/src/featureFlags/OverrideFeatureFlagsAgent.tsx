@@ -22,7 +22,7 @@ export const OverrideFeatureFlagsAgent = React.memo(() => {
                 } else {
                     localStorage.setItem(
                         getOverrideKey(overrideFeatureKey),
-                        Boolean(overrideFeatureValue === 'true').toString()
+                        (overrideFeatureValue === 'true').toString()
                     )
                 }
             }
