@@ -34,7 +34,7 @@ func TestMapField(t *testing.T) {
 			Parameter{Field: "after", Value: "yesterday"},
 		},
 	}
-	got := MapField([]Node{input}, "before", func(_ string, _ bool) Node {
+	got := MapField([]Node{input}, "before", func(_ string, _ bool, _ Annotation) Node {
 		return want
 	})
 	if diff := cmp.Diff(want, got[0]); diff != "" {
