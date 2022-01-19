@@ -139,14 +139,13 @@ func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
 	return repoIDs
 }
 
+// changesetSpecForkNamespaceUser is the sentinel value used in the database to
+// indicate that the changeset spec should be forked into the user's namespace,
+// which we don't know at spec upload time.
 const changesetSpecForkNamespaceUser = "<user>"
 
 func (cs *ChangesetSpec) IsFork() bool {
 	return cs.ForkNamespace != nil
-}
-
-func (cs *ChangesetSpec) ShouldForkToUser() bool {
-	return cs.ForkNamespace != nil && *cs.ForkNamespace == changesetSpecForkNamespaceUser
 }
 
 func (cs *ChangesetSpec) GetForkNamespace() *string {
