@@ -20,7 +20,11 @@ class ProxyMap<K extends string, V extends boolean> extends Map<K, V> {
 
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
-export type FeatureFlagName = 'search-notebook-onboarding' | 'test-flag' | 'getting-started-tour'
+export type FeatureFlagName =
+    | 'search-notebook-onboarding'
+    | 'test-flag'
+    | 'getting-started-tour'
+    | 'disable-search-onboarding-tour'
 
 export type FlagSet = ProxyMap<FeatureFlagName, boolean>
 
