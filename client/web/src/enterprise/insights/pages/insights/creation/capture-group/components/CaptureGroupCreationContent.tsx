@@ -141,7 +141,9 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
     const areAllFieldsForPreviewValid =
         repositories.meta.validState === 'VALID' &&
         stepValue.meta.validState === 'VALID' &&
-        query.meta.validState === 'VALID'
+        query.meta.validState === 'VALID' &&
+        // For all repos mode we are not able to show the live preview chart
+        !allReposMode.input.value
 
     return (
         <div className={classNames(styles.content, className)}>
@@ -162,6 +164,7 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
 
             <CaptureGroupCreationLivePreview
                 disabled={!areAllFieldsForPreviewValid}
+                isAllReposMode={allReposMode.input.value}
                 repositories={repositories.meta.value}
                 query={query.meta.value}
                 step={step.meta.value}
