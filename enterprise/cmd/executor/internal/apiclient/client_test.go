@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,7 +22,7 @@ func TestDequeue(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef"}`,
 		responseStatus:   http.StatusOK,
 		responsePayload:  `{"id": 42}`,
@@ -47,7 +48,7 @@ func TestDequeueNoRecord(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef"}`,
 		responseStatus:   http.StatusNoContent,
 		responsePayload:  ``,
@@ -69,7 +70,7 @@ func TestDequeueBadResponse(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef"}`,
 		responseStatus:   http.StatusInternalServerError,
 		responsePayload:  ``,
@@ -96,7 +97,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/addExecutionLogEntry",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobId": 42,
@@ -136,7 +137,7 @@ func TestAddExecutionLogEntryBadResponse(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/addExecutionLogEntry",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobId": 42,
@@ -172,7 +173,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/updateExecutionLogEntry",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobId": 42,
@@ -209,7 +210,7 @@ func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/updateExecutionLogEntry",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobId": 42,
@@ -237,7 +238,7 @@ func TestMarkComplete(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/markComplete",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42}`,
 		responseStatus:   http.StatusNoContent,
 		responsePayload:  ``,
@@ -255,7 +256,7 @@ func TestMarkCompleteBadResponse(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/markComplete",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42}`,
 		responseStatus:   http.StatusInternalServerError,
 		responsePayload:  ``,
@@ -273,7 +274,7 @@ func TestMarkErrored(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/markErrored",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
 		responseStatus:   http.StatusNoContent,
 		responsePayload:  ``,
@@ -291,7 +292,7 @@ func TestMarkErroredBadResponse(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/markErrored",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
 		responseStatus:   http.StatusInternalServerError,
 		responsePayload:  ``,
@@ -309,7 +310,7 @@ func TestMarkFailed(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/markFailed",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
 		responseStatus:   http.StatusNoContent,
 		responsePayload:  ``,
@@ -327,7 +328,7 @@ func TestCanceled(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/canceled",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef"}`,
 		responseStatus:   http.StatusOK,
 		responsePayload:  `[1]`,
@@ -347,7 +348,7 @@ func TestHeartbeat(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/heartbeat",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
@@ -381,7 +382,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedMethod:   "POST",
 		expectedPath:     "/.executors/queue/test_queue/heartbeat",
 		expectedUsername: "test",
-		expectedPassword: "hunter2",
+		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
@@ -409,7 +410,7 @@ type routeSpec struct {
 	expectedMethod   string
 	expectedPath     string
 	expectedUsername string
-	expectedPassword string
+	expectedToken    string
 	expectedPayload  string
 	responseStatus   int
 	responsePayload  string
@@ -423,8 +424,8 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		ExecutorName: "deadbeef",
 		PathPrefix:   "/.executors/queue",
 		EndpointOptions: EndpointOptions{
-			URL:      ts.URL,
-			Password: "hunter2",
+			URL:   ts.URL,
+			Token: "hunter2",
 		},
 		TelemetryOptions: TelemetryOptions{
 			OS:              "test-os",
@@ -449,9 +450,11 @@ func testServer(t *testing.T, spec routeSpec) *httptest.Server {
 			t.Errorf("unexpected method. want=%s have=%s", spec.expectedPath, r.URL.Path)
 		}
 
-		_, password, _ := r.BasicAuth()
-		if password != spec.expectedPassword {
-			t.Errorf("unexpected password. want=%s have=%s", spec.expectedPassword, password)
+		parts := strings.Split(r.Header.Get("Authorization"), " ")
+		if len(parts) != 2 || parts[0] != "token-executor" {
+			if parts[1] != spec.expectedToken {
+				t.Errorf("unexpected token`. want=%s have=%s", spec.expectedToken, parts[1])
+			}
 		}
 
 		content, err := io.ReadAll(r.Body)

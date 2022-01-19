@@ -42,7 +42,7 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 		authorizationOption := fmt.Sprintf(
 			"http.extraHeader=Authorization: %s %s",
 			SchemeExecutorToken,
-			h.options.ClientOptions.EndpointOptions.Password,
+			h.options.ClientOptions.EndpointOptions.Token,
 		)
 
 		gitCommands := []command.CommandSpec{

@@ -44,8 +44,8 @@ type EndpointOptions struct {
 	// URL is the target request URL.
 	URL string
 
-	// Password is the basic-auth password to include with all requests.
-	Password string
+	// Token is the authorization token to include with all requests (via Authorization header).
+	Token string
 }
 
 func New(options Options, observationContext *observation.Context) *Client {
@@ -242,7 +242,7 @@ func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Re
 		return nil, err
 	}
 
-	r.Header.Add("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, c.options.EndpointOptions.Password))
+	r.Header.Add("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, c.options.EndpointOptions.Token))
 	return r, nil
 }
 
