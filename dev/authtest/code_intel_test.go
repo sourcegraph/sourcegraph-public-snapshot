@@ -3,7 +3,6 @@ package authtest
 import (
 	"bytes"
 	"io"
-	"net/http"
 	"testing"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 )
 
 func TestCodeIntelEndpoints(t *testing.T) {
+
 	// Create a test user (authtest-user-code-intel) which is not a site admin, the
 	// user should receive access denied for LSIF endpoints of repositories the user
 	// does not have access to.
@@ -114,24 +114,53 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		}
 	})
 
-	t.Run("executor endpoints", func(t *testing.T) {
-		req, err := http.NewRequest("GET", *baseURL+"/.executors/", nil)
+	t.Run("executor endpoints (no access token configured)", func(t *testing.T) {
+		// Update site configuration to remove any executor access token.
+		defer setExecutorAccessToken(t, "")()
+
+		resp, err := userClient.Get(*baseURL + "/.executors/")
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer func() { _ = resp.Body.Close() }()
 
-		resp, err := http.DefaultClient.Do(req)
+		if resp.StatusCode/100 != 5 {
+			t.Fatalf(`Want status code 5xx error but got %d`, resp.StatusCode)
+		}
+	})
+
+	t.Run("executor endpoints (no access token supplied)", func(t *testing.T) {
+		// Update site configuration to set the executor access token.
+		defer setExecutorAccessToken(t, "hunter2hunter2hunter2")()
+
+		resp, err := userClient.Get(*baseURL + "/.executors/")
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode/100 != 4 {
-			payload, err := io.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatalf(err.Error())
-			}
-			t.Fatalf(`Want status code 4xx error but got %d (%v)`, resp.StatusCode, payload)
+			t.Fatalf(`Want status code 4xx error but got %d`, resp.StatusCode)
 		}
 	})
+}
+
+func setExecutorAccessToken(t *testing.T, token string) func() {
+	siteConfig, err := client.SiteConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	oldSiteConfig := new(schema.SiteConfiguration)
+	*oldSiteConfig = *siteConfig
+	siteConfig.ExecutorsAccessToken = token
+
+	if err := client.UpdateSiteConfiguration(siteConfig); err != nil {
+		t.Fatal(err)
+	}
+	return func() {
+		if err := client.UpdateSiteConfiguration(oldSiteConfig); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
