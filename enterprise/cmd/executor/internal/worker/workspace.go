@@ -40,7 +40,7 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 		}
 
 		authorizationOption := fmt.Sprintf(
-			"http.extraheader='Authorization: %s %s'",
+			"http.extraHeader=Authorization: %s %s",
 			SchemeExecutorToken,
 			h.options.ClientOptions.EndpointOptions.Password,
 		)
@@ -71,7 +71,14 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 		return nil, err
 	}
 
-	return baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+	urlx, err := baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+	if err != nil {
+		return nil, err
+	}
+
+	// HOLY SHIT
+	urlx.User = url.User("executor") // TODO - identify self?
+	return urlx, nil
 }
 
 // makeTempDir defaults to makeTemporaryDirectory and can be replaced for testing

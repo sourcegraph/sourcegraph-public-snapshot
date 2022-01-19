@@ -52,61 +52,43 @@ func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handle
 // in which a shared key exchange can be done so safely.
 func basicAuthMiddleware(accessToken func() string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedAccessToken := accessToken()
-		if expectedAccessToken == "" {
-			w.WriteHeader(http.StatusInternalServerError)
-			log15.Error("executors.accessToken not configured in site config")
-			return
+		if validateExecutorToken(w, r, accessToken()) {
+			next.ServeHTTP(w, r)
 		}
-
-		token, headerSupplied, err := executorToken(r)
-		if err != nil {
-			if !headerSupplied {
-				// This header is required to be present with 401 responses in order to prompt the client
-				// to retry the request with basic auth credentials. If we do not send this header, the
-				// git fetch/clone flow will break against the internal gitservice with a permanent 401.
-				w.Header().Add("WWW-Authenticate", `Basic realm="Sourcegraph"`)
-			}
-
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		if token != expectedAccessToken {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-
-		next.ServeHTTP(w, r)
 	})
 }
 
 const SchemeExecutorToken = "token-executor"
 
-var (
-	errNoTokenSupplied    = errors.New("no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)")
-	errMalformedToken     = errors.Errorf(`HTTP Authorization request header value must be of the following form: '%s "TOKEN"'`, SchemeExecutorToken)
-	errUnrecognizedScheme = errors.Errorf("unrecognized HTTP Authorization request header scheme (supported values: %q)", SchemeExecutorToken)
-)
+func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAccessToken string) bool {
+	if expectedAccessToken == "" {
+		log15.Error("executors.accessToken not configured in site config")
+		w.WriteHeader(http.StatusInternalServerError)
+		return false
+	}
 
-func executorToken(r *http.Request) (_ string, headerSupplied bool, _ error) {
-	headerValue := r.Header.Get("Authorization")
-	if headerValue == "" {
-		if _, password, ok := r.BasicAuth(); ok {
-			return password, false, nil
+	var token string
+	if headerValue := r.Header.Get("Authorization"); headerValue != "" {
+		parts := strings.Split(headerValue, " ")
+		if len(parts) != 2 {
+			http.Error(w, fmt.Sprintf(`HTTP Authorization request header value must be of the following form: '%s "TOKEN"'`, SchemeExecutorToken), http.StatusUnauthorized)
+			return false
+		}
+		if parts[0] != SchemeExecutorToken {
+			http.Error(w, fmt.Sprintf("unrecognized HTTP Authorization request header scheme (supported values: %q)", SchemeExecutorToken), http.StatusUnauthorized)
+			return false
 		}
 
-		return "", false, errNoTokenSupplied
+		token = parts[1]
+	}
+	if token == "" {
+		http.Error(w, "no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)", http.StatusUnauthorized)
 	}
 
-	parts := strings.Split(headerValue, " ")
-	if len(parts) != 2 {
-		return "", true, errMalformedToken
+	if token != expectedAccessToken {
+		w.WriteHeader(http.StatusForbidden)
+		return false
 	}
 
-	if parts[0] != SchemeExecutorToken {
-		return "", true, errUnrecognizedScheme
-	}
-
-	return parts[1], true, nil
+	return true
 }
