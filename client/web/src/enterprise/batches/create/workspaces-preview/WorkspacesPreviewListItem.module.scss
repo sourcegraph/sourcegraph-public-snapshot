@@ -26,3 +26,8 @@
     align-self: flex-start;
     margin-top: 0.1rem;
 }
+
+.btn-bordered {
+    // Added to undo overide of border property on .btn-icon
+    border: 1px solid transparent !important;
+}
