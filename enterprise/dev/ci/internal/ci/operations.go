@@ -139,12 +139,13 @@ func addPrettier(pipeline *bk.Pipeline) {
 		// TODO check that in case we also use awscli for real
 		bk.Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
 		bk.Env("AWS_SHARED_CREDENTIALS_FILE", "/buildkite/.aws/credentials"),
+		bk.Env("YARN_CACHE_FOLDER", "/buildkite/yarn-cache"),
 		bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
-			ID:          "node_modules",
+			ID:          "yarn",
 			Backend:     "s3",
-			Key:         "node_modules-{{checksum 'yarn.lock'}}",
-			RestoreKeys: []string{"node_modules-"},
-			Paths:       []string{"node_modules"},
+			Key:         "yarn-{{checksum 'yarn.lock'}}",
+			RestoreKeys: []string{"yarn-"},
+			Paths:       []string{"/buildkite/yarn-cache"},
 			S3: CacheConfigS3{
 				Bucket:   "sourcegraph_buildkite_cache",
 				Profile:  "buildkite",
