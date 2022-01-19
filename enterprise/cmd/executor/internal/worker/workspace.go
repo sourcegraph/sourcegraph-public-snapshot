@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 )
 
+const SchemeExecutorToken = "token-executor"
+
 // prepareWorkspace creates and returns a temporary director in which acts the workspace
 // while processing a single job. It is up to the caller to ensure that this directory is
 // removed after the job has finished processing. If a repository name is supplied, then
@@ -28,9 +30,8 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 	}()
 
 	if repositoryName != "" {
-		cloneURL, err := makeURL(
+		cloneURL, err := makeRelativeURL(
 			h.options.ClientOptions.EndpointOptions.URL,
-			h.options.ClientOptions.EndpointOptions.Password,
 			h.options.GitServicePath,
 			repositoryName,
 		)
@@ -38,9 +39,15 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 			return "", err
 		}
 
+		authorizationOption := fmt.Sprintf(
+			"http.extraheader='Authorization: %s %s'",
+			SchemeExecutorToken,
+			h.options.ClientOptions.EndpointOptions.Password,
+		)
+
 		gitCommands := []command.CommandSpec{
 			{Key: "setup.git.init", Command: []string{"git", "-C", tempDir, "init"}, Operation: h.operations.SetupGitInit},
-			{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), "-t", commit}, Operation: h.operations.SetupGitFetch},
+			{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "-c", authorizationOption, "fetch", cloneURL.String(), "-t", commit}, Operation: h.operations.SetupGitFetch},
 			{Key: "setup.git.add-remote", Command: []string{"git", "-C", tempDir, "remote", "add", "origin", repositoryName}, Operation: h.operations.SetupAddRemote},
 			{Key: "setup.git.checkout", Command: []string{"git", "-C", tempDir, "checkout", commit}, Operation: h.operations.SetupGitCheckout},
 		}
@@ -56,16 +63,6 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 	}
 
 	return tempDir, nil
-}
-
-func makeURL(base, password string, path ...string) (*url.URL, error) {
-	u, err := makeRelativeURL(base, path...)
-	if err != nil {
-		return nil, err
-	}
-
-	u.User = url.UserPassword("sourcegraph", password)
-	return u, nil
 }
 
 func makeRelativeURL(base string, path ...string) (*url.URL, error) {

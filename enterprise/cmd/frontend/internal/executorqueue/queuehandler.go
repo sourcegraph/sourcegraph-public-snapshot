@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
@@ -51,28 +52,61 @@ func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handle
 // in which a shared key exchange can be done so safely.
 func basicAuthMiddleware(accessToken func() string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO
-		// We don't care about the username. Only the password matters here.
-		_, password, ok := r.BasicAuth()
-		if !ok {
-			// This header is required to be present with 401 responses in order to prompt the client
-			// to retry the request with basic auth credentials. If we do not send this header, the
-			// git fetch/clone flow will break against the internal gitservice with a permanent 401.
-			w.Header().Add("WWW-Authenticate", `Basic realm="Sourcegraph"`)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		ac := accessToken()
-		if ac == "" {
+		expectedAccessToken := accessToken()
+		if expectedAccessToken == "" {
 			w.WriteHeader(http.StatusInternalServerError)
 			log15.Error("executors.accessToken not configured in site config")
 			return
 		}
-		if password != ac {
+
+		token, headerSupplied, err := executorToken(r)
+		if err != nil {
+			if !headerSupplied {
+				// This header is required to be present with 401 responses in order to prompt the client
+				// to retry the request with basic auth credentials. If we do not send this header, the
+				// git fetch/clone flow will break against the internal gitservice with a permanent 401.
+				w.Header().Add("WWW-Authenticate", `Basic realm="Sourcegraph"`)
+			}
+
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		if token != expectedAccessToken {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+const SchemeExecutorToken = "token-executor"
+
+var (
+	errNoTokenSupplied    = errors.New("no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)")
+	errMalformedToken     = errors.Errorf(`HTTP Authorization request header value must be of the following form: '%s "TOKEN"'`, SchemeExecutorToken)
+	errUnrecognizedScheme = errors.Errorf("unrecognized HTTP Authorization request header scheme (supported values: %q)", SchemeExecutorToken)
+)
+
+func executorToken(r *http.Request) (_ string, headerSupplied bool, _ error) {
+	headerValue := r.Header.Get("Authorization")
+	if headerValue == "" {
+		if _, password, ok := r.BasicAuth(); ok {
+			return password, false, nil
+		}
+
+		return "", false, errNoTokenSupplied
+	}
+
+	parts := strings.Split(headerValue, " ")
+	if len(parts) != 2 {
+		return "", true, errMalformedToken
+	}
+
+	if parts[0] != SchemeExecutorToken {
+		return "", true, errUnrecognizedScheme
+	}
+
+	return parts[1], true, nil
 }

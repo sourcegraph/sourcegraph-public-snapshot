@@ -225,10 +225,11 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	return knownIDs, nil
 }
 
+const SchemeExecutorToken = "token-executor"
+
 func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Request, error) {
-	u, err := makeURL(
+	u, err := makeRelativeURL(
 		c.options.EndpointOptions.URL,
-		c.options.EndpointOptions.Password,
 		c.options.PathPrefix,
 		path,
 	)
@@ -236,18 +237,13 @@ func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Re
 		return nil, err
 	}
 
-	return MakeJSONRequest(method, u, payload)
-}
-
-func makeURL(base, password string, path ...string) (*url.URL, error) {
-	u, err := makeRelativeURL(base, path...)
+	r, err := MakeJSONRequest(method, u, payload)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO
-	u.User = url.UserPassword("sourcegraph", password)
-	return u, nil
+	r.Header.Add("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, c.options.EndpointOptions.Password))
+	return r, nil
 }
 
 func makeRelativeURL(base string, path ...string) (*url.URL, error) {
