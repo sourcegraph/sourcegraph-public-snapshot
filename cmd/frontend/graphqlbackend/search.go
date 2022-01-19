@@ -179,11 +179,12 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 
 func substituteSearchContexts(ctx context.Context, db database.DB, plan query.Plan) (query.Plan, error) {
 	errs := new(multierror.Error)
-	dnf := query.Dnf(query.MapParameter(plan.ToParseTree(), func(field, value string, negated bool, a query.Annotation) query.Node {
+	dnf := query.Dnf(query.MapParameter(plan.ToParseTree(), func(field, value string, negated bool, ann query.Annotation) query.Node {
 		p := query.Parameter{
-			Value:   value,
-			Field:   field,
-			Negated: negated,
+			Value:      value,
+			Field:      field,
+			Negated:    negated,
+			Annotation: ann,
 		}
 
 		if field != query.FieldContext {
