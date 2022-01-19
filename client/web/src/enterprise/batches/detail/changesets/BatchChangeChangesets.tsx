@@ -15,7 +15,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { property } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
@@ -26,7 +25,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
 import { WebHoverOverlay } from '../../../../components/shared'

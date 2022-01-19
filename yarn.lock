@@ -24574,10 +24574,10 @@ zip-stream@^4.0.0:
     compress-commons "^4.1.0"
     readable-stream "^3.6.0"
 
-zustand@^3.5.10:
-  version "3.5.10"
-  resolved "https://registry.npmjs.org/zustand/-/zustand-3.5.10.tgz#d2622efd64530ffda285ee5b13ff645b68ab0faf"
-  integrity sha512-upluvSRWrlCiExu2UbkuMIPJ9AigyjRFoO7O9eUossIj7rPPq7pcJ0NKk6t2P7KF80tg/UdPX6/pNKOSbs9DEg==
+zustand@^3.6.9:
+  version "3.6.9"
+  resolved "https://registry.npmjs.org/zustand/-/zustand-3.6.9.tgz#f61a756ddea9f95c7ee7cfd3af2f88c10078afbc"
+  integrity sha512-OvDNu/jEWpRnEC7k8xh8GKjqYog7td6FZrLMuHs/IeI8WhrCwV+FngVuwMIFhp5kysZXr6emaeReMqjLGaldAQ==
 
 zwitch@^1.0.0:
   version "1.0.5"

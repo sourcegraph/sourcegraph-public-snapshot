@@ -43,7 +43,14 @@ export const featureFlagDefaults: FeatureFlags = {
 }
 
 interface SourcegraphURL {
+    /**
+     * Current connected/active sourcegraph URL
+     */
     sourcegraphURL: string
+    /**
+     * All previously successfully used sourcegraph URLs
+     */
+    previouslyUsedURLs?: string[]
 }
 
 export interface SyncStorageItems extends SourcegraphURL {

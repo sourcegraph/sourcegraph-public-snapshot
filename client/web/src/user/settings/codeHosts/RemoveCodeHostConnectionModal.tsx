@@ -1,9 +1,8 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { deleteExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -68,8 +67,7 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
     )
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
+        <Modal
             aria-labelledby={`heading--remove-${serviceName}-code-host`}
             aria-describedby={`description--remove-${serviceName}-code-host`}
             onDismiss={onDidCancel}
@@ -101,6 +99,6 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
                     />
                 </div>
             </Form>
-        </Dialog>
+        </Modal>
     )
 }

@@ -171,31 +171,29 @@ In https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-c
     
 1. In the Environment section of the compose file uncomment & update this line with your Sourcegraph Site Address:
 
-```
-- 'SRC_SITE_ADDRESS=sourcegraph.example.com'
-```    
+   ```
+   - 'SRC_SITE_ADDRESS=sourcegraph.example.com'
+   ```
+1. In Volumes section of the compose file comment out the following line 
 
-2. In Volumes section of the compose file comment out the following line 
+   ```
+   - '../caddy/builtins/http.Caddyfile:/etc/caddy/Caddyfile'
+   ```
+1. In Volumes section of the compose file uncomment the following line: 
 
-```
-- '../caddy/builtins/http.Caddyfile:/etc/caddy/Caddyfile'
-```        
-      
+   ```
+   - '../caddy/builtins/https.custom-cert.Caddyfile:/etc/caddy/Caddyfile' 
+   ```
+1. In Volumes section of the compose file uncomment and update the following line with your custom cert path:
 
-3. In Volumes section of the compose file uncomment the following line: 
-```
-- '../caddy/builtins/https.custom-cert.Caddyfile:/etc/caddy/Caddyfile' 
-``` 
+   ```
+   - '/LOCAL/CERT/PATH.pem:/sourcegraph.pem'
+   ```
+1. In Volumes section of the compose file uncomment and update the following line with your custom cert path:
 
-4. In Volumes section of the compose file uncomment and update the following line with your custom cert path: 
-```
-- '/LOCAL/CERT/PATH.pem:/sourcegraph.pem'
-```
-
-5. In Volumes section of the compose file uncomment and update the following line with your custom cert path: 
-```
-- '/LOCAL/KEY/PATH.key:/sourcegraph.key'
-```
+   ```
+   - '/LOCAL/KEY/PATH.key:/sourcegraph.key'
+   ```
 
 ## Other Sourcegraph clusters (e.g. pure-Docker)
 

@@ -14,11 +14,10 @@ import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schem
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader, LoadingSpinner, Button } from '@sourcegraph/wildcard'
+import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { SearchContextProps } from '../../search'

@@ -13,7 +13,7 @@ import { Controller as ExtensionsController } from '@sourcegraph/shared/src/exte
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { property } from '@sourcegraph/shared/src/util/types'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec, toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { FileDiffFields, Scalars } from '../../graphql-operations'
 import { FilteredConnection, Connection } from '../FilteredConnection'

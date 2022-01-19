@@ -67,7 +67,6 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
 import { isInstanceOf, property } from '@sourcegraph/shared/src/util/types'
 import {
@@ -90,16 +89,11 @@ import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/Cod
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
-import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import {
-    DEFAULT_SOURCEGRAPH_URL,
-    getPlatformName,
-    isDefaultSourcegraphUrl,
-    observeSourcegraphURL,
-} from '../../util/context'
+import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLogger'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
-import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
+import { observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
@@ -1480,21 +1474,20 @@ export function injectCodeIntelligenceToCodeHost(
 
     subscriptions.add(extensionsController)
 
-    const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(
-        map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
+    const isTelemetryEnabled = combineLatest([
+        observeSendTelemetry(isExtension),
+        from(codeHost.getContext?.().then(context => context.privateRepository) ?? Promise.resolve(true)),
+    ]).pipe(
+        map(
+            ([sendTelemetry, isPrivateRepo]) =>
+                sendTelemetry &&
+                /** Enable telemetry if: a) this is a self-hosted Sourcegraph instance; b) or public repository; */
+                (!isDefaultSourcegraphUrl(sourcegraphURL) || !isPrivateRepo)
+        )
     )
 
-    const observeSendTelemetry = combineLatest([overrideSendTelemetry, observeOptionFlag('sendTelemetry')]).pipe(
-        map(([override, sendTelemetry]) => {
-            if (override) {
-                return true
-            }
-            return sendTelemetry
-        })
-    )
-
-    const innerTelemetryService = new EventLogger(isExtension, requestGraphQL)
-    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, observeSendTelemetry)
+    const innerTelemetryService = new EventLogger(requestGraphQL, sourcegraphURL)
+    const telemetryService = new ConditionalTelemetryService(innerTelemetryService, isTelemetryEnabled)
     subscriptions.add(telemetryService)
 
     let codeHostSubscription: Subscription

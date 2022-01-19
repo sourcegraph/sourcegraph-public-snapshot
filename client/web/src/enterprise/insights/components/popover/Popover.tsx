@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
 
-import { useOnClickOutside } from '@sourcegraph/shared/src/util/useOnClickOutside'
+import { useOnClickOutside } from '@sourcegraph/wildcard'
 
 import { useKeyboard } from './hooks/use-keyboard'
 

@@ -56,7 +56,6 @@ body,
 }
 
 // Global styles provided by @reach packages. Should be imported once in the global scope.
-@import '@reach/dialog/styles.css';
 @import '@reach/combobox/styles.css';
 @import '@reach/menu-button/styles.css';
 @import '@reach/listbox/styles.css';
@@ -64,7 +63,6 @@ body,
 // Pages
 @import './api/ApiConsole';
 @import './search/ShepherdTour';
-@import './components/Dialog';
 
 :root {
     --max-homepage-container-width: 65rem;

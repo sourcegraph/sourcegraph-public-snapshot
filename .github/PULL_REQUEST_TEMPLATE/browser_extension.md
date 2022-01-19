@@ -3,18 +3,16 @@ Closes https://github.com/sourcegraph/sourcegraph/issues/TODO.
 
 #### Description
 
-TODO: Add brief description.
-
-
-#### Screenshots (if applicable)
-| Before | After |
-| -: | :- |
-| | |
+TODO: Add a brief description of what PR includes.
 
 #### How to test
 
-TODO: Describe how to test for PR reviewers
+TODO: Describe how to test for PR reviewers.
 
+#### Screenshots (TODO: if applicable)
+| Before | After |
+| -: | :- |
+| | |
 
 #### Before merging
 
