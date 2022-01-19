@@ -97,7 +97,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     value: 'stars-desc',
                     label: 'Stars (descending)',
                     args: {
-                        orderBy: NotebooksOrderBy.NOTEBOOK_STARS_COUNT,
+                        orderBy: NotebooksOrderBy.NOTEBOOK_STAR_COUNT,
                         descending: true,
                     },
                 },
@@ -105,7 +105,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     value: 'stars-asc',
                     label: 'Stars (ascending)',
                     args: {
-                        orderBy: NotebooksOrderBy.NOTEBOOK_STARS_COUNT,
+                        orderBy: NotebooksOrderBy.NOTEBOOK_STAR_COUNT,
                         descending: false,
                     },
                 },
