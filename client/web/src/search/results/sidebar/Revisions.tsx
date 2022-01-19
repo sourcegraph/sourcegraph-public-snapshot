@@ -1,11 +1,10 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import React from 'react'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
@@ -167,7 +166,7 @@ export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
             ])
         return (
             <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
-                <TabList className={styles.sidebarSectionTabsHeader}>
+                <TabList>
                     <Tab index={TabIndex.BRANCHES}>Branches</Tab>
                     <Tab index={TabIndex.TAGS}>Tags</Tab>
                 </TabList>
