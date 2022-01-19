@@ -130,7 +130,7 @@ func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker
 		return nil, err
 	}
 
-	if checker != nil && checker.Enabled() {
+	if authz.SubRepoEnabled(checker) {
 		// If sub-repo permissions enabled, must fetch files modified w/ commits to determine if user has access to view this commit
 		opt.NameOnly = true
 	}
@@ -138,7 +138,7 @@ func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker
 }
 
 func filterCommits(ctx context.Context, commits []*wrappedCommit, repoName api.RepoName, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
-	if checker == nil || !checker.Enabled() {
+	if !authz.SubRepoEnabled(checker) {
 		return unWrapCommits(commits), nil
 	}
 	filtered := make([]*gitdomain.Commit, 0, len(commits))
