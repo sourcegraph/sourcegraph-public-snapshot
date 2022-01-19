@@ -136,6 +136,7 @@ func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
 		// TODO check that in case we also use awscli for real
 		bk.Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
+		bk.Env("AWS_SHARED_CREDENTIALS_FILE", "/buildkite/.aws/credentials"),
 		bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
 			ID:          "node_modules",
 			Backend:     "s3",
