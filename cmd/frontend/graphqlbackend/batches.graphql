@@ -840,6 +840,11 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     """
     expiresAt: DateTime
 
+    """
+    The fork namespace the changeset spec should be pushed to, if any. The
+    special value "<user>" is used to indicate that the changeset spec should be
+    pushed to the namespace associated with the user or site credential in use.
+    """
     forkNamespace: String
 
     """
