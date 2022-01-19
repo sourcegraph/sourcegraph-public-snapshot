@@ -30,10 +30,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    /**
-     * Called when the file's search result is selected.
-     */
-    onSelect: () => void
 }
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
@@ -135,7 +131,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     styles.item,
                                     styles.itemClickable
                                 )}
-                                onClick={props.onSelect}
                                 data-testid="file-match-children-item"
                             >
                                 <CodeExcerpt
