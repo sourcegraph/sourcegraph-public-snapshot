@@ -25,21 +25,13 @@ export function observeActiveExtensions(
 } {
     const activeLanguages = new BehaviorSubject<ReadonlySet<string>>(new Set())
     const enabledExtensions = wrapRemoteObservable(mainAPI.getEnabledExtensions())
-    const activatedExtensionIDs = new Set<string>()
 
     const activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]> = combineLatest([
         activeLanguages,
         enabledExtensions,
     ]).pipe(
-        tap(([activeLanguages, enabledExtensions]) => {
-            const activeExtensions = extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
-            activatedExtensionIDs.clear()
-            for (const extension of activeExtensions) {
-                activatedExtensionIDs.add(extension.id)
-            }
-        }),
-        map(([, extensions]) =>
-            extensions ? extensions.filter(extension => activatedExtensionIDs.has(extension.id)) : []
+        map(([activeLanguages, enabledExtensions]) =>
+            extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
         ),
         distinctUntilChanged((a, b) => areExtensionsSame(a, b))
     )

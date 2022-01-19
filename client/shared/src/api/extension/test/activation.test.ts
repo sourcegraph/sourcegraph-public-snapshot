@@ -1,5 +1,5 @@
 import { BehaviorSubject } from 'rxjs'
-import { filter, first } from 'rxjs/operators'
+import { filter, first, take } from 'rxjs/operators'
 import sinon from 'sinon'
 import sourcegraph from 'sourcegraph'
 
@@ -63,6 +63,67 @@ describe('Extension activation', () => {
                 .toPromise()
 
             sinon.assert.calledWith(logEvent, 'ExtensionActivation', { extension_id: 'sourcegraph/fixture-extension' })
+        })
+
+        it('deactivates events when they no longer match the activation events', async () => {
+            const mockMain = pretendRemote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>({
+                getScriptURLForExtension: () => undefined,
+                logEvent: () => {},
+            })
+
+            const FIXTURE_EXTENSION: ExecutableExtension = {
+                scriptURL: 'https://fixture.extension',
+                id: 'sourcegraph/fixture-extension',
+                manifest: { url: 'a', contributes: {}, activationEvents: ['*'] },
+            }
+
+            const haveInitialExtensionsLoaded = new BehaviorSubject<boolean>(false)
+            const contributions = new BehaviorSubject<readonly Contributions[]>([])
+            const activeExtensions = new BehaviorSubject([FIXTURE_EXTENSION])
+            const mockStateWithActiveExtension: Pick<
+                ExtensionHostState,
+                'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'
+            > = {
+                activeExtensions,
+                contributions,
+                haveInitialExtensionsLoaded,
+                settings: new BehaviorSubject<Readonly<SettingsCascade>>({
+                    subjects: [],
+                    final: {},
+                }),
+            }
+
+            const onActivate = sinon.spy(() => Promise.resolve())
+            const onDectivate = sinon.spy(() => Promise.resolve())
+
+            activateExtensions(
+                mockStateWithActiveExtension,
+                mockMain,
+                function createExtensionAPI() {
+                    return {} as typeof sourcegraph
+                },
+                onActivate,
+                onDectivate
+            )
+
+            // Wait for extensions to load to check on the spy
+            await haveInitialExtensionsLoaded
+                .pipe(
+                    filter(haveLoaded => haveLoaded),
+                    first()
+                )
+                .toPromise()
+
+            sinon.assert.calledOnce(onActivate)
+            sinon.assert.notCalled(onDectivate)
+
+            activeExtensions.next([])
+
+            // Wait for contributions to be propagated
+            await contributions.pipe(take(2)).toPromise()
+
+            sinon.assert.calledOnce(onActivate)
+            sinon.assert.calledOnce(onDectivate)
         })
     })
 })
