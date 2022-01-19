@@ -110,9 +110,29 @@ func addCheck(pipeline *bk.Pipeline) {
 		bk.Cmd("./dev/check/all.sh"))
 }
 
+type CacheConfig struct {
+	ID          string   `json:"id"`
+	Backend     string   `json:"backend"`
+	Key         string   `json:"key"`
+	RestoreKeys []string `json:"restore_keys"`
+	Compress    bool     `json:"compress,omitempty"`
+	TarBall     struct {
+		Path string `json:"path,omitempty"`
+		Max  int    `json:"max,omitempty"`
+	} `json:"tarball,omitempty"`
+	Paths []string `json:"paths"`
+}
+
 // yarn ~41s + ~30s
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
+		bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
+			ID:          "node_modules",
+			Backend:     "s3",
+			Key:         "node_modules-{{checksum 'yarn.lock'}}",
+			RestoreKeys: []string{"node_modules-"},
+			Paths:       []string{"node_modules"},
+		}),
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
 }
 
