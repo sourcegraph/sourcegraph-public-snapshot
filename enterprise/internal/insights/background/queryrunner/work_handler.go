@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -151,6 +153,13 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
+	decoder, countPtr, streamRepoCounts := streaming.TabulationDecoder()
+	err = streaming.Search(ctx, job.SearchQuery, decoder)
+	if err != nil {
+		return errors.Wrap(err, "streaming.Search")
+	}
+	log15.Info("Search Counts", "streaming", *countPtr)
+
 	recordTime := time.Now()
 	if job.RecordTime != nil {
 		recordTime = *job.RecordTime
@@ -235,6 +244,9 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			err = multierror.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
 			continue
 		}
+
+		streamCount := streamRepoCounts[repoName]
+		log15.Info("counts", "graphql", matchCount, "stream", streamCount, "repo", repoName)
 
 		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {

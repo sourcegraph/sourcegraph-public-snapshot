@@ -2,15 +2,12 @@ package streaming
 
 import (
 	"context"
-	"fmt"
-	"net/http"
-	"net/url"
-	"strings"
-
-	"github.com/cockroachdb/errors"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 // Opts contains the search options supported by Search.
@@ -22,41 +19,23 @@ type Opts struct {
 
 // Search calls the streaming search endpoint and uses decoder to decode the
 // response body.
-func Search(ctx context.Context, query string, decoder decoder) error {
-	internalURL, err := url.Parse(internalapi.Client.URL)
+func Search(ctx context.Context, query string, decoder streamhttp.FrontendStreamDecoder) error {
+	req, err := streamhttp.NewRequest(internalapi.Client.URL+"/.internal", query)
 	if err != nil {
 		return err
 	}
-	// Create request.
-	p := ".api/search/stream?q=" + url.QueryEscape(query)
-	req, err := http.NewRequestWithContext(ctx, "GET", strings.TrimRight(internalURL.String(), "/")+"/"+p, nil)
-	if err != nil {
-		return err
-	}
-	// req, err := client.NewHTTPRequest(context.Background(), "GET", , nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Accept", "text/event-stream")
+	req = req.WithContext(ctx)
+	req.Header.Set("User-Agent", "code-insights-backend")
 
-	// Send request.
-	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
+	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "Post")
+		return err
 	}
 	defer resp.Body.Close()
 
-	// resp, byte, err := client.Do(req)
-	// if err != nil {
-	// 	return fmt.Errorf("error sending request: %w", err)
-	// }
-	// defer resp.Body.Close()
-
-	// Process response.
-	err = decoder.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("error during decoding: %w", err)
+	decErr := decoder.ReadAll(resp.Body)
+	if decErr != nil {
+		return decErr
 	}
-
-	return nil
+	return err
 }

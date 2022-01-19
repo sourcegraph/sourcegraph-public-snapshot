@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/opentracing/opentracing-go"
@@ -128,6 +130,7 @@ func Search(ctx context.Context, query string) (_ *GqlSearchResponse, err error)
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
 	}
+	log15.Info("graphql search", "url", req.URL.String())
 
 	req.Header.Set("Content-Type", "application/json")
 	if span != nil {
