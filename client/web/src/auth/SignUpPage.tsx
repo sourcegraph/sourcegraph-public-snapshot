@@ -76,7 +76,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             return Promise.resolve()
         })
 
-    if (query.get('vs-code')) {
+    if (query.get('editor') === 'vscode') {
         return (
             <VsCodeSignUpPage
                 source={query.get('src')}

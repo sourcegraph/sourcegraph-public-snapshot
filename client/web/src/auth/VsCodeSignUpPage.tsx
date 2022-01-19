@@ -112,29 +112,20 @@ export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className={styles.page}>
-            <header>
-                <div className="position-relative">
-                    <div className={styles.headerBackground1} />
-                    <div className={styles.headerBackground2} />
-                    <div className={styles.headerBackground3} />
-
-                    <div className={styles.limitWidth}>
-                        <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    </div>
-                </div>
+            <header className="position-relative">
+                <div className={styles.headerBackground1} />
+                <div className={styles.headerBackground2} />
             </header>
 
-            <div className={classNames(styles.contents, styles.limitWidth)}>
-                <div className={classNames(styles.contentsLeft, styles.subtitle)}>
-                    <h2 className={classNames('d-flex', 'align-items-center', styles.pageHeading)}>
+            <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
+                <div className={styles.leftOrRight}>
+                    <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
+                    <h2 className={classNames('d-flex', 'align-items-center', 'mb-3', 'mt-1', styles.pageHeading)}>
                         <div className={classNames(styles.iconCirlce, 'mr-3')}>
                             <VSCodeIcon />
                         </div>{' '}
-                        Unlock the full potential of the Sourcegraph extension
+                        <strong className="mr-1">Unlock the full potential of the Sourcegraph extension</strong>
                     </h2>
-                </div>
-
-                <div className={styles.contentsLeft}>
                     With a Sourcegraph account, you can:
                     <ul className={styles.featureList}>
                         <li>Search all of your code from your code host, even without downloading it locally</li>
@@ -147,13 +138,13 @@ export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
                     <img
                         src={`${assetsRoot}/img/customer-logos-${isLightTheme ? 'light' : 'dark'}.svg`}
                         alt="Cloudflare, Uber, SoFi, Dropbox, Plaid, Toast"
+                        className={styles.customerLogos}
                     />
                 </div>
-
-                <div className={styles.signUpWrapper}>
+                <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
+                    {' '}
                     <h2>Create a free account</h2>
                     {renderAuthMethod()}
-
                     <small className="text-muted">
                         By registering, you agree to our{' '}
                         <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
@@ -165,9 +156,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
                         </a>
                         .
                     </small>
-
                     <hr className={styles.separator} />
-
                     <div>
                         Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
                     </div>
