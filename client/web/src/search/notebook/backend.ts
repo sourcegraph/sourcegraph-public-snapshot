@@ -7,8 +7,12 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { requestGraphQL } from '../../backend/graphql'
 import {
     CreateNotebookResult,
+    CreateNotebookStarResult,
+    CreateNotebookStarVariables,
     CreateNotebookVariables,
     DeleteNotebookResult,
+    DeleteNotebookStarResult,
+    DeleteNotebookStarVariables,
     DeleteNotebookVariables,
     FetchNotebookResult,
     FetchNotebookVariables,
@@ -33,6 +37,10 @@ const notebooksFragment = gql`
         updatedAt
         public
         viewerCanManage
+        viewerHasStarred
+        stars {
+            totalCount
+        }
         blocks {
             ... on MarkdownBlock {
                 __typename
@@ -70,6 +78,7 @@ const fetchNotebooksQuery = gql`
         $orderBy: NotebooksOrderBy
         $descending: Boolean
         $creatorUserID: ID
+        $starredByUserID: ID
         $query: String
     ) {
         notebooks(
@@ -78,6 +87,7 @@ const fetchNotebooksQuery = gql`
             orderBy: $orderBy
             descending: $descending
             creatorUserID: $creatorUserID
+            starredByUserID: $starredByUserID
             query: $query
         ) {
             nodes {
@@ -96,6 +106,7 @@ const fetchNotebooksQuery = gql`
 export function fetchNotebooks({
     first,
     creatorUserID,
+    starredByUserID,
     query,
     after,
     orderBy,
@@ -104,6 +115,7 @@ export function fetchNotebooks({
     first: number
     query?: string
     creatorUserID?: Maybe<Scalars['ID']>
+    starredByUserID?: Maybe<Scalars['ID']>
     after?: string
     orderBy?: GQL.NotebooksOrderBy
     descending?: boolean
@@ -113,6 +125,7 @@ export function fetchNotebooks({
         after: after ?? null,
         query: query ?? null,
         creatorUserID: creatorUserID ?? null,
+        starredByUserID: starredByUserID ?? null,
         orderBy: orderBy ?? GQL.NotebooksOrderBy.NOTEBOOK_UPDATED_AT,
         descending: descending ?? false,
     }).pipe(
@@ -188,4 +201,35 @@ export function deleteNotebook(id: GQL.ID): Observable<DeleteNotebookResult> {
     return requestGraphQL<DeleteNotebookResult, DeleteNotebookVariables>(deleteNotebookMutation, { id }).pipe(
         map(dataOrThrowErrors)
     )
+}
+
+const createNotebookStarMutation = gql`
+    mutation CreateNotebookStar($notebookID: ID!) {
+        createNotebookStar(notebookID: $notebookID) {
+            createdAt
+        }
+    }
+`
+
+export function createNotebookStar(notebookID: GQL.ID): Observable<CreateNotebookStarResult['createNotebookStar']> {
+    return requestGraphQL<CreateNotebookStarResult, CreateNotebookStarVariables>(createNotebookStarMutation, {
+        notebookID,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.createNotebookStar)
+    )
+}
+
+const deleteNotebookStarMutation = gql`
+    mutation DeleteNotebookStar($notebookID: ID!) {
+        deleteNotebookStar(notebookID: $notebookID) {
+            alwaysNil
+        }
+    }
+`
+
+export function deleteNotebookStar(notebookID: GQL.ID): Observable<DeleteNotebookStarResult> {
+    return requestGraphQL<DeleteNotebookStarResult, DeleteNotebookStarVariables>(deleteNotebookStarMutation, {
+        notebookID,
+    }).pipe(map(dataOrThrowErrors))
 }

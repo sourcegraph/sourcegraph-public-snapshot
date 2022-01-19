@@ -335,7 +335,7 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			name:            "order by notebook stars descending",
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{First: 2},
-			opts:            ListNotebooksOptions{OrderBy: NotebooksOrderByStarsCount, OrderByDescending: true},
+			opts:            ListNotebooksOptions{OrderBy: NotebooksOrderByStarCount, OrderByDescending: true},
 			wantNotebookIDs: []int64{createdNotebooks[2].ID, createdNotebooks[0].ID},
 			wantCount:       3,
 		},
