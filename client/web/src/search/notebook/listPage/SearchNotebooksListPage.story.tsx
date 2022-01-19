@@ -28,6 +28,8 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                 updatedAt: subDays(now, 2).toISOString(),
                 public: true,
                 viewerCanManage: true,
+                viewerHasStarred: true,
+                stars: { totalCount: 123 },
                 creator: { __typename: 'User', username: 'user1' },
                 blocks: [
                     { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
@@ -42,6 +44,8 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                 updatedAt: subDays(now, 1).toISOString(),
                 public: true,
                 viewerCanManage: true,
+                viewerHasStarred: true,
+                stars: { totalCount: 123 },
                 creator: { __typename: 'User', username: 'user2' },
                 blocks: [{ __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' }],
             },

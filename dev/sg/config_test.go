@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 )
 
@@ -78,5 +79,66 @@ commandsets:
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("wrong config. (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseAndMerge(t *testing.T) {
+	a := `
+commands:
+  enterprise-frontend:
+    cmd: .bin/enterprise-frontend
+    install: go build .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    checkBinary: .bin/enterprise-frontend
+    env:
+      ENTERPRISE: 1
+      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
+    watch:
+      - lib
+      - internal
+      - cmd/frontend
+      - enterprise/internal
+      - enterprise/cmd/frontend
+`
+	config, err := ParseConfig([]byte(a))
+	if err != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+
+	b := `
+commands:
+  enterprise-frontend:
+    env:
+      EXTSVC_CONFIG_FILE: ''
+`
+
+	overwrite, err := ParseConfig([]byte(b))
+	if err != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+
+	config.Merge(overwrite)
+
+	cmd, ok := config.Commands["enterprise-frontend"]
+	if !ok {
+		t.Fatalf("command not found")
+	}
+
+	want := run.Command{
+		Name:        "enterprise-frontend",
+		Cmd:         ".bin/enterprise-frontend",
+		Install:     "go build .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend",
+		CheckBinary: ".bin/enterprise-frontend",
+		Env:         map[string]string{"ENTERPRISE": "1", "EXTSVC_CONFIG_FILE": ""},
+		Watch: []string{
+			"lib",
+			"internal",
+			"cmd/frontend",
+			"enterprise/internal",
+			"enterprise/cmd/frontend",
+		},
+	}
+
+	if diff := cmp.Diff(cmd, want); diff != "" {
+		t.Fatalf("wrong cmd. (-want +got):\n%s", diff)
 	}
 }
