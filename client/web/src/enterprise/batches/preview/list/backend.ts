@@ -40,6 +40,10 @@ const changesetSpecFieldsFragment = gql`
             ...ExistingChangesetReferenceFields
             ...GitBranchChangesetDescriptionFields
         }
+        forkTarget {
+            pushUser
+            namespace
+        }
     }
 
     fragment ExistingChangesetReferenceFields on ExistingChangesetReference {
@@ -74,7 +78,6 @@ const changesetSpecFieldsFragment = gql`
         }
         baseRef
         headRef
-        fork
         diffStat {
             ...DiffStatFields
         }

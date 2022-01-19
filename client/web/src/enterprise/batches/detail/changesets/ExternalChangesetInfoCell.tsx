@@ -55,7 +55,11 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                     {hasHeadReference(node) && (
                         <BranchMerge
                             baseRef={node.currentSpec.description.baseRef}
-                            forkNamespace={node.forkNamespace}
+                            forkTarget={
+                                node.forkNamespace
+                                    ? { pushUser: false, namespace: node.forkNamespace }
+                                    : node.currentSpec.forkTarget
+                            }
                             headRef={node.currentSpec.description.headRef}
                         />
                     )}
