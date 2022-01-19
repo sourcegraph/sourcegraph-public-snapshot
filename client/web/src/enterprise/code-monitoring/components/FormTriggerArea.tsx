@@ -319,7 +319,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             {!showQueryForm && (
                 <Button
                     data-testid="trigger-button"
-                    className={classNames('card test-trigger-button', cardBtnClassName)}
+                    className={classNames('card test-trigger-button', styles.triggerBtn, cardBtnClassName)}
                     aria-label="Edit trigger: When there are new search results"
                     onClick={toggleQueryForm}
                 >

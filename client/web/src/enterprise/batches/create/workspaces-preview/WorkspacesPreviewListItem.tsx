@@ -63,11 +63,10 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                 </div>
             </div>
             <Button
-                className={classNames(styles.btnBordered, 'p-0 my-0 mx-2')}
+                className="p-0 my-0 mx-2"
                 disabled={toBeExcluded}
                 data-tooltip={toBeExcluded ? undefined : 'Omit this repository from batch spec file'}
                 onClick={handleExclude}
-                variant="icon"
             >
                 <CloseIcon className="icon-inline" />
             </Button>

@@ -1,0 +1,5 @@
+// Added button color overide here for no-variant buttons
+// Should be removed during the Button bootstrap migrations.
+.monitor-btn {
+    color: var(--body-color);
+}

@@ -10,6 +10,7 @@ import combySample from './library/comby.batch.yaml'
 import goImportsSample from './library/go-imports.batch.yaml'
 import helloWorldSample from './library/hello-world.batch.yaml'
 import minimalSample from './library/minimal.batch.yaml'
+import styles from './OldCreateBatchChangeContent.module.scss'
 
 // SampleTabHeader is superseded by ExampleTabs and can be removed when SSBC is rolled out
 // at the same time as this exported component from this file is removed
@@ -30,7 +31,7 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
     return (
         <Button
             onClick={onClick}
-            className={classNames('text-left sidebar__link--inactive d-flex w-100')}
+            className={classNames('text-left sidebar__link--inactive d-flex w-100', !active && styles.btn)}
             variant={active ? 'primary' : undefined}
         >
             {sample.name}
