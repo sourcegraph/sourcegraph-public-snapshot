@@ -134,7 +134,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		expectedText := "executors.accessToken not configured in site config"
+		expectedText := "Executors are not configured on this instance"
 		if !strings.Contains(string(response), expectedText) {
 			t.Fatalf(`Expected different failure. want=%q got=%q`, expectedText, string(response))
 		}
