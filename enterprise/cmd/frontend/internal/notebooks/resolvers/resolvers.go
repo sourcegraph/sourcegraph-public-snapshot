@@ -224,8 +224,8 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 	orderBy := notebooks.NotebooksOrderByUpdatedAt
 	if args.OrderBy == graphqlbackend.NotebookOrderByCreatedAt {
 		orderBy = notebooks.NotebooksOrderByCreatedAt
-	} else if args.OrderBy == graphqlbackend.NotebookOrderByStarsCount {
-		orderBy = notebooks.NotebooksOrderByStarsCount
+	} else if args.OrderBy == graphqlbackend.NotebookOrderByStarCount {
+		orderBy = notebooks.NotebooksOrderByStarCount
 	}
 
 	// Request one extra to determine if there are more pages
@@ -365,13 +365,22 @@ func (r *notebookResolver) ViewerCanManage(ctx context.Context) bool {
 	return validateNotebookWritePermissionsForUser(r.notebook, actor.UID) == nil
 }
 
-func (r *notebookResolver) ViewerHasStarred(ctx context.Context) bool {
+func (r *notebookResolver) ViewerHasStarred(ctx context.Context) (bool, error) {
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return false
+	if errors.Is(err, database.ErrNoCurrentUser) {
+		return false, nil
+	} else if err != nil {
+		return false, err
 	}
+
 	star, err := notebooks.Notebooks(r.db).GetNotebookStar(ctx, r.notebook.ID, user.ID)
-	return star != nil && err == nil
+	if errors.Is(err, notebooks.ErrNotebookStarNotFound) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return star != nil, nil
 }
 
 type notebookBlockResolver struct {

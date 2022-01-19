@@ -18,6 +18,7 @@ import (
 )
 
 var ErrNotebookNotFound = errors.New("notebook not found")
+var ErrNotebookStarNotFound = errors.New("notebook star not found")
 
 type NotebooksOrderByOption uint8
 
@@ -25,7 +26,7 @@ const (
 	NotebooksOrderByID NotebooksOrderByOption = iota
 	NotebooksOrderByUpdatedAt
 	NotebooksOrderByCreatedAt
-	NotebooksOrderByStarsCount
+	NotebooksOrderByStarCount
 )
 
 type ListNotebooksPageOptions struct {
@@ -154,7 +155,7 @@ func getNotebooksOrderByClause(orderBy NotebooksOrderByOption, descending bool) 
 		return sqlf.Sprintf("notebooks.updated_at " + orderDirection)
 	case NotebooksOrderByID:
 		return sqlf.Sprintf("notebooks.id " + orderDirection)
-	case NotebooksOrderByStarsCount:
+	case NotebooksOrderByStarCount:
 		return sqlf.Sprintf("(SELECT COUNT(*) FROM notebook_stars WHERE notebook_id = notebooks.id) " + orderDirection)
 	}
 	panic("invalid NotebooksOrderByOption option")
@@ -364,7 +365,13 @@ const getNotebookStarFmtStr = `SELECT notebook_id, user_id, created_at FROM note
 // 🚨 SECURITY: The caller must ensure that the actor has permission to create the star for the notebook.
 func (s *notebooksStore) GetNotebookStar(ctx context.Context, notebookID int64, userID int32) (*NotebookStar, error) {
 	row := s.QueryRow(ctx, sqlf.Sprintf(getNotebookStarFmtStr, userID, notebookID))
-	return scanNotebookStar(row)
+	star, err := scanNotebookStar(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotebookStarNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return star, nil
 }
 
 const insertNotebookStarFmtStr = `INSERT INTO notebook_stars (notebook_id, user_id) VALUES (%d, %d) RETURNING notebook_id, user_id, created_at`

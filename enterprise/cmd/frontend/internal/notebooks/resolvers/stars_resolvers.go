@@ -35,15 +35,15 @@ type notebookStarConnectionResolver struct {
 	hasNextPage bool
 }
 
-func (n *notebookStarConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.NotebookStarResolver {
+func (n *notebookStarConnectionResolver) Nodes() []graphqlbackend.NotebookStarResolver {
 	return n.stars
 }
 
-func (n *notebookStarConnectionResolver) TotalCount(ctx context.Context) int32 {
+func (n *notebookStarConnectionResolver) TotalCount() int32 {
 	return n.totalCount
 }
 
-func (n *notebookStarConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+func (n *notebookStarConnectionResolver) PageInfo() *graphqlutil.PageInfo {
 	if len(n.stars) == 0 || !n.hasNextPage {
 		return graphqlutil.HasNextPage(false)
 	}
@@ -60,7 +60,7 @@ func (r *notebookStarResolver) User(ctx context.Context) (*graphqlbackend.UserRe
 	return graphqlbackend.UserByIDInt32(ctx, r.db, r.star.UserID)
 }
 
-func (r *notebookStarResolver) CreatedAt(ctx context.Context) graphqlbackend.DateTime {
+func (r *notebookStarResolver) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.star.CreatedAt}
 }
 
