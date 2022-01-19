@@ -8,13 +8,13 @@ import { BadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
 
 export interface ForkTarget {
     pushUser: boolean
-    namespace?: string
+    namespace?: string | null
 }
 
 export interface BranchProps extends Pick<BadgeProps, 'variant'> {
     className?: string
     deleted?: boolean
-    forkTarget?: ForkTarget
+    forkTarget?: ForkTarget | null
     name: string
 }
 
@@ -38,7 +38,7 @@ export const Branch: React.FunctionComponent<BranchProps> = ({ className, delete
 
 export interface BranchMergeProps {
     baseRef: string
-    forkTarget?: ForkTarget
+    forkTarget?: ForkTarget | null
     headRef: string
 }
 

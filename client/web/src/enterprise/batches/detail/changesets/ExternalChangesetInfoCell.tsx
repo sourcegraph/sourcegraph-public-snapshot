@@ -59,11 +59,6 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                                 node.forkNamespace
                                     ? { pushUser: false, namespace: node.forkNamespace }
                                     : node.currentSpec.forkTarget
-                                    ? {
-                                          pushUser: node.currentSpec.forkTarget.pushUser,
-                                          namespace: node.currentSpec.forkTarget.namespace ?? undefined,
-                                      }
-                                    : undefined
                             }
                             headRef={node.currentSpec.description.headRef}
                         />
