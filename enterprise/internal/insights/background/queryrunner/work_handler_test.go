@@ -64,7 +64,7 @@ func TestGenerateComputeRecordings(t *testing.T) {
 			computeSearch:   mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordings(ctx, &job)
+		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
 		if err != nil {
 			t.Error(err)
 		}
@@ -136,7 +136,7 @@ func TestGenerateComputeRecordings(t *testing.T) {
 			computeSearch:   mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordings(ctx, &job)
+		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
 		if err != nil {
 			t.Error(err)
 		}
@@ -210,7 +210,7 @@ func TestGenerateComputeRecordings(t *testing.T) {
 			computeSearch:   mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordings(ctx, &job)
+		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
 		if err != nil {
 			t.Error(err)
 		}
