@@ -146,6 +146,7 @@ func addPrettier(pipeline *bk.Pipeline) {
 			S3: CacheConfigS3{
 				Bucket:  "sourcegraph_buildkite_cache",
 				Profile: "buildkite",
+				Args:    "--endpoint-url=https://storage.googleapis.com --region=us-central1",
 			},
 		}),
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
