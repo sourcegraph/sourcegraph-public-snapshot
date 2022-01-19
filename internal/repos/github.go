@@ -172,6 +172,9 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
 		// TODO(cloud-saas): This code path is called every time a user visits the page
 		// https://sourcegraph.test:3443/organizations/test-org1/settings/repositories,
 		// and making an access token with every single refresh feels like a waste. We
@@ -185,7 +188,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		// revoked/expired access tokens in some external services but we currently do
 		// not stop trying on these external services, as well as lacking a reliable way
 		// to inform users about their revoked/expired access tokens.
-		token, err := client.CreateAppInstallationAccessToken(context.Background(), installationID)
+		token, err := client.CreateAppInstallationAccessToken(ctx, installationID)
 		if err != nil {
 			return nil, errors.Wrap(err, "create app installation access token")
 		}
