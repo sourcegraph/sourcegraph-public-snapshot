@@ -62,7 +62,7 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 
 	// if failed, check if failures are consecutive
 	var exceeded bool
-	results.FailedCommits, exceeded, _ = checkConsecutiveFailures(
+	results.FailedCommits, exceeded, _ = findConsecutiveFailures(
 		builds[max(firstFailedBuildIndex-1, 0):], // Check builds starting with the one we found
 		opts.FailuresThreshold,
 		opts.BuildTimeout)
@@ -74,14 +74,13 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 		}
 		return
 	}
+	fmt.Println("threshold exceeded, this is a big deal!")
 
-	// trip list of failed commits to oldest N builds, which is likely the source of the
+	// trim list of failed commits to oldest N builds, which is likely the source of the
 	// consecutive failures
 	if len(results.FailedCommits) > opts.FailuresThreshold {
 		results.FailedCommits = results.FailedCommits[len(results.FailedCommits)-opts.FailuresThreshold:]
 	}
-
-	fmt.Println("threshold exceeded, this is a big deal!")
 
 	// annotate the failures with their author (Github handle), so we can reach them
 	// over Slack.
@@ -120,62 +119,9 @@ func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
 	return false
 }
 
-func checkConsecutiveFailures(
-	builds []buildkite.Build,
-	threshold int,
-	timeout time.Duration,
-) (failedCommits []CommitInfo, thresholdExceeded bool, buildsScanned int) {
-	failedCommits = []CommitInfo{}
-
-	var consecutiveFailures int
-	var build buildkite.Build
-	for buildsScanned, build = range builds {
-		if isBuildPassed(build) {
-			// If we find a passed build we are done
-			return
-		} else if !isBuildFailed(build, timeout) {
-			// we're only safe if non-failures are actually passed, otherwise
-			// keep looking
-			continue
-		}
-
-		var author string
-		if build.Author != nil {
-			author = fmt.Sprintf("%s (%s)", build.Author.Name, build.Author.Email)
-		}
-
-		// Process this build as a failure
-		consecutiveFailures += 1
-		commit := CommitInfo{
-			Author: author,
-			Commit: maybeString(build.Commit),
-		}
-		if build.Number != nil {
-			commit.BuildNumber = *build.Number
-			commit.BuildURL = maybeString(build.URL)
-		}
-		if build.CreatedAt != nil {
-			commit.BuildCreated = build.CreatedAt.Time
-		}
-		failedCommits = append(failedCommits, commit)
-		if consecutiveFailures >= threshold {
-			thresholdExceeded = true
-		}
-	}
-
-	return
-}
-
 func max(x, y int) int {
 	if x < y {
 		return y
 	}
 	return x
-}
-
-func maybeString(s *string) string {
-	if s != nil {
-		return *s
-	}
-	return ""
 }

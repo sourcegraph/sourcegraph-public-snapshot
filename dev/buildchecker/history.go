@@ -34,7 +34,7 @@ func generateHistory(builds []buildkite.Build, windowStart time.Time, opts Check
 		}
 		scanBuilds = scanBuilds[max(firstFailedBuildIndex-1, 0):]
 
-		failed, exceeded, scanned := checkConsecutiveFailures(
+		failed, exceeded, scanned := findConsecutiveFailures(
 			scanBuilds, opts.FailuresThreshold, opts.BuildTimeout)
 		if exceeded {
 			// Time from last passed build to oldest build in series
