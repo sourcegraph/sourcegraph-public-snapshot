@@ -77,14 +77,10 @@ func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.
 	return &result[0], nil
 }
 
-func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job) (_ []store.RecordSeriesPointArgs, err error) {
+func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
 	results, err := r.computeSearch(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
-	}
-	recordTime := time.Now()
-	if job.RecordTime != nil {
-		recordTime = *job.RecordTime
 	}
 
 	var recordings []store.RecordSeriesPointArgs
@@ -104,68 +100,13 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job) (
 	return recordings, nil
 }
 
-func (r *workHandler) handleComputeSearch(ctx context.Context, job *Job) (err error) {
-	if store.PersistMode(job.PersistMode) != store.RecordMode {
-		return nil
-	}
-	recordings, err := r.generateComputeRecordings(ctx, job)
-	if err != nil {
-		return err
-	}
-	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
-		err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
-	}
-	return err
-}
+type insightsHandler func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) error
 
-func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
-	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
-	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
-	// repositories they can see.
-	ctx = actor.WithInternalActor(ctx)
-	defer func() {
-		if err != nil {
-			log15.Error("insights.queryrunner.workHandler", "error", err)
-		}
-	}()
-	err = r.limiter.Wait(ctx)
-	if err != nil {
-		return err
-	}
-	job, err := dequeueJob(ctx, r.baseWorkerStore, record.RecordID())
-	if err != nil {
-		return err
-	}
-
-	series, err := r.getSeries(ctx, job.SeriesID)
-	if err != nil {
-		return err
-	}
-
-	// Actually perform the search query.
-	if !series.JustInTime && series.GeneratedFromCaptureGroups {
-		return r.handleComputeSearch(ctx, job)
-	}
-
+func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
 	var results *query.GqlSearchResponse
 	results, err = query.Search(ctx, job.SearchQuery)
 	if err != nil {
 		return err
-	}
-
-	decoder, countPtr, streamRepoCounts, streamErrs := streaming.TabulationDecoder()
-	err = streaming.Search(ctx, job.SearchQuery, decoder)
-	if err != nil {
-		return errors.Wrap(err, "streaming.Search")
-	}
-	log15.Info("Search Counts", "streaming", *countPtr)
-	if len(streamErrs) > 0 {
-		log15.Error("streaming errors", "errors", streamErrs)
-	}
-
-	recordTime := time.Now()
-	if job.RecordTime != nil {
-		recordTime = *job.RecordTime
 	}
 
 	if len(results.Errors) > 0 {
@@ -248,18 +189,97 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			continue
 		}
 
-		if streamResults, ok := streamRepoCounts[repoName]; ok {
-			log15.Info("counts", "graphql", matchCount, "stream", streamResults.MatchCount, "repo", repoName)
-		} else {
-			log15.Warn("result not found in stream")
-		}
-
 		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
 			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
 	}
 	return err
+}
+
+func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+	if series.JustInTime {
+		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
+	}
+	if store.PersistMode(job.PersistMode) != store.RecordMode {
+		return nil
+	}
+	recordings, err := r.generateComputeRecordings(ctx, job, recordTime)
+	if err != nil {
+		return err
+	}
+	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+		err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+	}
+	return err
+}
+
+func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) (err error) {
+	decoder, countPtr, streamRepoCounts, streamErrs := streaming.TabulationDecoder()
+	err = streaming.Search(ctx, job.SearchQuery, decoder)
+	if err != nil {
+		return errors.Wrap(err, "streaming.Search")
+	}
+	log15.Info("Search Counts", "streaming", *countPtr)
+	if len(streamErrs) > 0 {
+		log15.Error("streaming errors", "errors", streamErrs)
+	}
+
+	tx, err := r.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, match := range streamRepoCounts {
+		args := ToRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), nil)
+		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
+			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
+		}
+	}
+	return err
+}
+
+func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
+	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
+	// repositories they can see.
+	ctx = actor.WithInternalActor(ctx)
+	defer func() {
+		if err != nil {
+			log15.Error("insights.queryrunner.workHandler", "error", err)
+		}
+	}()
+	err = r.limiter.Wait(ctx)
+	if err != nil {
+		return err
+	}
+	job, err := dequeueJob(ctx, r.baseWorkerStore, record.RecordID())
+	if err != nil {
+		return err
+	}
+
+	series, err := r.getSeries(ctx, job.SeriesID)
+	if err != nil {
+		return err
+	}
+
+	recordTime := time.Now()
+	if job.RecordTime != nil {
+		recordTime = *job.RecordTime
+	}
+
+	handlersByType := map[types.GenerationMethod]insightsHandler{
+		types.SearchCompute: r.computeHandler,
+		types.SearchStream:  r.searchStreamHandler,
+		types.Search:        r.searchHandler,
+	}
+
+	if executableHandler, ok := handlersByType[series.GenerationMethod]; ok {
+		return executableHandler(ctx, job, series, recordTime)
+	} else {
+		return errors.Newf("unable to handle record for series_id: %s and generation_method: %s", series.SeriesID, series.GenerationMethod)
+	}
 }
 
 func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
