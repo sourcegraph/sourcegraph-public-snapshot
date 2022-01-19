@@ -145,7 +145,8 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		cleanup := setExecutorAccessToken(t, "hunter2hunter2hunter2")
 		defer cleanup()
 
-		time.Sleep(time.Second * 10)
+		// sleep 5s to wait for site configuration to be restored from gqltest
+		time.Sleep(5 * time.Second)
 
 		resp, err := userClient.Get(*baseURL + "/.executors/")
 		if err != nil {
