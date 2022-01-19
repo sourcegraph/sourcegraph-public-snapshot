@@ -1,10 +1,9 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback } from 'react'
 import { UncontrolledPopover } from 'reactstrap'
 
-import { Button, useLocalStorage } from '@sourcegraph/wildcard'
+import { Tab, TabList, TabPanel, TabPanels, Tabs , Button, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { PlatformContextProps } from '../../platform/context'
 import { ExtensionsControllerProps } from '../controller'
@@ -42,15 +41,13 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
             className={classNames('card border-0 rounded-0', styles.extensionStatus)}
             onChange={handleTabsChange}
         >
-            <div className="tablist-wrapper w-100 align-items-center">
-                <TabList>
-                    {TABS.map(({ label, id }) => (
-                        <Tab className="d-flex flex-1 justify-content-around" key={id} data-tab-content={id}>
-                            {label}
-                        </Tab>
-                    ))}
-                </TabList>
-            </div>
+            <TabList>
+                {TABS.map(({ label, id }) => (
+                    <Tab key={id} data-tab-content={id}>
+                        {label}
+                    </Tab>
+                ))}
+            </TabList>
 
             <TabPanels>
                 {TABS.map(tab => (
