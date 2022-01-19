@@ -65,8 +65,7 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 	results.FailedCommits, exceeded, _ = checkConsecutiveFailures(
 		builds[max(firstFailedBuildIndex-1, 0):], // Check builds starting with the one we found
 		opts.FailuresThreshold,
-		opts.BuildTimeout,
-		false)
+		opts.BuildTimeout)
 	if !exceeded {
 		fmt.Println("threshold not exceeded")
 		results.Action, err = branch.Unlock(ctx)
@@ -74,6 +73,12 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 			return nil, fmt.Errorf("unlockBranch: %w", err)
 		}
 		return
+	}
+
+	// trip list of failed commits to oldest N builds, which is likely the source of the
+	// consecutive failures
+	if len(results.FailedCommits) > opts.FailuresThreshold {
+		results.FailedCommits = results.FailedCommits[len(results.FailedCommits)-opts.FailuresThreshold:]
 	}
 
 	fmt.Println("threshold exceeded, this is a big deal!")
@@ -119,7 +124,6 @@ func checkConsecutiveFailures(
 	builds []buildkite.Build,
 	threshold int,
 	timeout time.Duration,
-	returnAll bool,
 ) (failedCommits []CommitInfo, thresholdExceeded bool, buildsScanned int) {
 	failedCommits = []CommitInfo{}
 
@@ -156,9 +160,6 @@ func checkConsecutiveFailures(
 		failedCommits = append(failedCommits, commit)
 		if consecutiveFailures >= threshold {
 			thresholdExceeded = true
-			if !returnAll {
-				return
-			}
 		}
 	}
 

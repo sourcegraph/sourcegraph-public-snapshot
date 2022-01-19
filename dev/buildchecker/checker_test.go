@@ -43,16 +43,16 @@ func TestCheckBuilds(t *testing.T) {
 	}
 	// Triggers a fail
 	failSet := []buildkite.Build{{
-		Number: buildkite.Int(1),
+		Number: buildkite.Int(2),
 		Commit: buildkite.String("a"),
 		State:  buildkite.String("failed"),
 	}, {
-		Number: buildkite.Int(2),
+		Number: buildkite.Int(3),
 		Commit: buildkite.String("b"),
 		State:  buildkite.String("failed"),
 	}}
 	runningBuild := buildkite.Build{
-		Number:    buildkite.Int(1),
+		Number:    buildkite.Int(4),
 		Commit:    buildkite.String("a"),
 		State:     buildkite.String("running"),
 		StartedAt: buildkite.NewTimestamp(time.Now()),
@@ -88,14 +88,41 @@ func TestCheckBuilds(t *testing.T) {
 			var lock = &mockBranchLocker{}
 			res, err := CheckBuilds(ctx, lock, slackUser, tt.builds, testOptions)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.wantLocked, res.LockBranch)
+			assert.Equal(t, tt.wantLocked, res.LockBranch, "should lock")
 			// Mock always returns an action, check it's always assigned correctly
-			assert.NotNil(t, res.Action)
+			assert.NotNil(t, res.Action, "Action")
 			// Lock/Unlock should not be called repeatedly
 			assert.LessOrEqual(t, lock.calledUnlock, 1, "calledUnlock")
 			assert.LessOrEqual(t, lock.calledLock, 1, "calledLock")
+			// Don't return >N failed commits
+			assert.LessOrEqual(t, len(res.FailedCommits), testOptions.FailuresThreshold, "FailedCommits count")
 		})
 	}
+
+	t.Run("only return oldest N failed commits", func(t *testing.T) {
+		var lock = &mockBranchLocker{}
+		res, err := CheckBuilds(ctx, lock, slackUser, append(failSet,
+			// 2 builds == FailuresThreshold
+			buildkite.Build{
+				Number: buildkite.Int(10),
+				Commit: buildkite.String("b"),
+				State:  buildkite.String("failed"),
+			}, buildkite.Build{
+				Number: buildkite.Int(20),
+				Commit: buildkite.String("b"),
+				State:  buildkite.String("failed"),
+			}),
+			testOptions)
+		assert.NoError(t, err)
+		assert.True(t, res.LockBranch, "should lock")
+
+		assert.Len(t, res.FailedCommits, testOptions.FailuresThreshold, "FailedCommits count")
+		gotBuildNumbers := []int{}
+		for _, c := range res.FailedCommits {
+			gotBuildNumbers = append(gotBuildNumbers, c.BuildNumber)
+		}
+		assert.Equal(t, []int{10, 20}, gotBuildNumbers, "FailedCommits build numbers")
+	})
 }
 
 func TestCheckConsecutiveFailures(t *testing.T) {
@@ -238,7 +265,7 @@ func TestCheckConsecutiveFailures(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCommits, gotThresholdExceeded, _ := checkConsecutiveFailures(tt.args.builds, tt.args.threshold, tt.args.timeout, false)
+			gotCommits, gotThresholdExceeded, _ := checkConsecutiveFailures(tt.args.builds, tt.args.threshold, tt.args.timeout)
 			assert.Equal(t, tt.wantThresholdExceeded, gotThresholdExceeded, "thresholdExceeded")
 
 			got := []string{}
