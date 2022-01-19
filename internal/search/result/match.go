@@ -24,6 +24,7 @@ type Match interface {
 // Guard to ensure all match types implement the interface
 var (
 	_ Match = (*FileMatch)(nil)
+	_ Match = (*PathMatch)(nil)
 	_ Match = (*RepoMatch)(nil)
 	_ Match = (*CommitMatch)(nil)
 )
@@ -36,6 +37,7 @@ const (
 	rankCommitMatch = 1
 	rankDiffMatch   = 2
 	rankRepoMatch   = 3
+	rankPathMatch   = 4
 )
 
 // Key is a sorting or deduplicating key for a Match.
