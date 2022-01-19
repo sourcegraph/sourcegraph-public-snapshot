@@ -112,7 +112,7 @@ export function createLineChartContentFromIndexedSeries(
                         const diffQuery = `${repoFilter} type:diff ${dateFilters} ${definitionMap[line.seriesId].query}`
                         const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
 
-                        return [date, `${window.origin}${PageRoutes.Search}?${searchQueryParameter}`]
+                        return [date, `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`]
                     })
             ),
         })),
