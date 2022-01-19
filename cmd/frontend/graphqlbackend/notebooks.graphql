@@ -54,11 +54,11 @@ extend type Query {
         """
         query: String
         """
-        Limit notebooks made by a single creator.
+        Filter to notebooks made by a single creator.
         """
         creatorUserID: ID
         """
-        Limit notebooks that were starred by the user.
+        Filter to notebooks that were starred by the user.
         """
         starredByUserID: ID
         """
@@ -96,7 +96,7 @@ NotebooksOrderBy enumerates the ways notebooks can be ordered.
 enum NotebooksOrderBy {
     NOTEBOOK_UPDATED_AT
     NOTEBOOK_CREATED_AT
-    NOTEBOOK_STARS_COUNT
+    NOTEBOOK_STAR_COUNT
 }
 
 """
@@ -264,7 +264,7 @@ type NotebookStar {
     """
     User that starred the notebook.
     """
-    user: User
+    user: User!
     """
     Date and time the notebook star was created.
     """

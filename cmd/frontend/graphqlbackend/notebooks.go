@@ -11,9 +11,9 @@ import (
 type NotebooksOrderBy string
 
 const (
-	NotebookOrderByUpdatedAt  NotebooksOrderBy = "NOTEBOOK_UPDATED_AT"
-	NotebookOrderByCreatedAt  NotebooksOrderBy = "NOTEBOOK_CREATED_AT"
-	NotebookOrderByStarsCount NotebooksOrderBy = "NOTEBOOK_STARS_COUNT"
+	NotebookOrderByUpdatedAt NotebooksOrderBy = "NOTEBOOK_UPDATED_AT"
+	NotebookOrderByCreatedAt NotebooksOrderBy = "NOTEBOOK_CREATED_AT"
+	NotebookOrderByStarCount NotebooksOrderBy = "NOTEBOOK_STAR_COUNT"
 )
 
 type NotebooksResolver interface {
@@ -36,14 +36,14 @@ type NotebookConnectionResolver interface {
 }
 
 type NotebookStarResolver interface {
-	User(ctx context.Context) (*UserResolver, error)
-	CreatedAt(ctx context.Context) DateTime
+	User(context.Context) (*UserResolver, error)
+	CreatedAt() DateTime
 }
 
 type NotebookStarConnectionResolver interface {
-	Nodes(ctx context.Context) []NotebookStarResolver
-	TotalCount(ctx context.Context) int32
-	PageInfo(ctx context.Context) *graphqlutil.PageInfo
+	Nodes() []NotebookStarResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
 type NotebookResolver interface {
@@ -55,7 +55,7 @@ type NotebookResolver interface {
 	UpdatedAt(ctx context.Context) DateTime
 	CreatedAt(ctx context.Context) DateTime
 	ViewerCanManage(ctx context.Context) bool
-	ViewerHasStarred(ctx context.Context) bool
+	ViewerHasStarred(ctx context.Context) (bool, error)
 	Stars(ctx context.Context, args ListNotebookStarsArgs) (NotebookStarConnectionResolver, error)
 }
 

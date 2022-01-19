@@ -29,6 +29,7 @@ const notebookFields = `
 	updatedAt
 	public
 	viewerCanManage
+	viewerHasStarred
 	blocks {
 		... on MarkdownBlock {
 			__typename
@@ -477,7 +478,7 @@ func TestListNotebooks(t *testing.T) {
 		{
 			name:          "user1 starred notebooks ordered by count",
 			viewerID:      user1.ID,
-			args:          map[string]interface{}{"first": 3, "starredByUserID": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByStarsCount, "descending": true},
+			args:          map[string]interface{}{"first": 3, "starredByUserID": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByStarCount, "descending": true},
 			wantNotebooks: []*notebooks.Notebook{createdNotebooks[2], createdNotebooks[0]},
 			wantCount:     2,
 		},
