@@ -1,4 +1,3 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
@@ -11,7 +10,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
-import { Button, useLocalStorage, useMatchMedia } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, useMatchMedia, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { OnboardingTour } from '../onboarding-tour/OnboardingTour'
@@ -111,9 +110,9 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                 <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
                             </Button>
                         </div>
-                        <div aria-hidden={true} className={classNames('d-flex explorer', styles.tabpanels)}>
-                            <TabPanels className="w-100 overflow-auto">
-                                <TabPanel tabIndex={-1}>
+                        <div aria-hidden={true} className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
+                            <TabPanels>
+                                <TabPanel>
                                     {tabIndex === 0 && (
                                         <Tree
                                             key="files"
@@ -132,7 +131,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                         />
                                     )}
                                 </TabPanel>
-                                <TabPanel className="h-100">
+                                <TabPanel>
                                     {tabIndex === 1 && (
                                         <RepoRevisionSidebarSymbols
                                             key="symbols"
