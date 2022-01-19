@@ -143,9 +143,9 @@ func addPrettier(pipeline *bk.Pipeline) {
 		bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
 			ID:          "yarn",
 			Backend:     "s3",
-			Key:         "yarn-{{checksum 'yarn.lock'}}",
-			RestoreKeys: []string{"yarn-"},
-			Paths:       []string{"/buildkite/yarn-cache"},
+			Key:         "yarn-offline-{{checksum 'yarn.lock'}}",
+			RestoreKeys: []string{"yarn-offline-"},
+			Paths:       []string{"/buildkite/npm-packages-offline-cache"},
 			S3: CacheConfigS3{
 				Bucket:   "sourcegraph_buildkite_cache",
 				Profile:  "buildkite",
@@ -153,6 +153,7 @@ func addPrettier(pipeline *bk.Pipeline) {
 				Region:   "us-central1",
 			},
 		}),
+		bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
 }
 
