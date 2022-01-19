@@ -145,6 +145,8 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		cleanup := setExecutorAccessToken(t, "hunter2hunter2hunter2")
 		defer cleanup()
 
+		time.Sleep(time.Second * 10)
+
 		resp, err := userClient.Get(*baseURL + "/.executors/")
 		if err != nil {
 			t.Fatal(err)
