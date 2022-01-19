@@ -22,6 +22,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     theme,
 }) => {
     const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
+    const [localFileHistory, setLocalFileHistory] = useState<string[] | undefined>(undefined)
     const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null | undefined>(undefined)
 
     useEffect(() => {
@@ -32,6 +33,14 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                 .getLocalRecentSearch()
                 .then(response => {
                     setLocalRecentSearches(response)
+                })
+                .catch(() => {
+                    // TODO error handling
+                })
+            sourcegraphVSCodeExtensionAPI
+                .getLocalStorageItem('sg-files-test2')
+                .then(response => {
+                    setLocalFileHistory(response)
                 })
                 .catch(() => {
                     // TODO error handling
@@ -76,7 +85,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     theme={theme}
                 />
                 <RecentFile
-                    localRecentSearches={localRecentSearches}
+                    localFileHistory={localFileHistory}
                     telemetryService={platformContext.telemetryService}
                     authenticatedUser={authenticatedUser}
                     platformContext={platformContext}

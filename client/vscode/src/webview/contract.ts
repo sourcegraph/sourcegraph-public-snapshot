@@ -52,6 +52,10 @@ export interface SourcegraphVSCodeExtensionAPI
     getCorsSetting: () => string
     // Update Cors Setting - return true when updated successfully
     updateCorsUri: (uri: string) => Promise<boolean>
+    // Get item from VSCE local storage
+    getLocalStorageItem: (key: string) => string[]
+    // Set item in VSCE local storage
+    setLocalStorageItem: (key: string, value: string[]) => Promise<boolean>
     // Get Last Selected Search Context from Local Storage
     getLastSelectedSearchContext: () => string
     // Update Last Selected Search Context in Local Storage
@@ -113,4 +117,10 @@ export interface LocalRecentSeachProps {
     lastCaseSensitive: boolean
     lastPatternType: string
     lastFullQuery: string
+}
+
+export interface LocalFileHistoryProps {
+    repoName: string
+    filePath: string
+    sgUri: string
 }

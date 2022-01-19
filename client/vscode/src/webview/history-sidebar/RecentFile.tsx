@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React, { useEffect, useState } from 'react'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -8,7 +9,6 @@ import { EventLogsDataResult, EventLogsDataVariables } from '@sourcegraph/shared
 import { EventLogResult } from '@sourcegraph/shared/src/search/backend'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
 import { eventsQuery } from '../search-panel/queries'
 
@@ -22,12 +22,12 @@ interface RecentFile {
 }
 
 interface RecentFileProps extends WebviewPageProps, TelemetryProps {
-    localRecentSearches: LocalRecentSeachProps[] | undefined
+    localFileHistory: string[] | undefined
     authenticatedUser: AuthenticatedUser | null
 }
 
 export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
-    localRecentSearches,
+    localFileHistory,
     sourcegraphVSCodeExtensionAPI,
     authenticatedUser,
     telemetryService,
@@ -42,6 +42,7 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
     }
 
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
+    const [collapsed, setCollapsed] = useState(false)
 
     useEffect(() => {
         if (authenticatedUser && itemsToLoad) {
@@ -58,27 +59,32 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
                         mightContainPrivateInfo: true,
                     })
                     .toPromise()
-                console.log(userSearchHistory)
                 if (userSearchHistory.data?.node?.__typename === 'User') {
                     setShowMore(userSearchHistory.data.node.eventLogs.pageInfo.hasNextPage)
                     setProcessedResults(processRecentFiles(userSearchHistory.data.node.eventLogs))
                 }
             })().catch(error => console.error(error))
+        } else if (!authenticatedUser && localFileHistory) {
+            setProcessedResults(processLocalRecentFiles(localFileHistory))
         }
-    }, [authenticatedUser, itemsToLoad, platformContext])
+    }, [authenticatedUser, itemsToLoad, localFileHistory, platformContext])
 
     return (
         <div className={styles.sidebarSection}>
             <button
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
-                onClick={() => sourcegraphVSCodeExtensionAPI.openSearchPanel()}
+                onClick={() => setCollapsed(!collapsed)}
             >
                 <h5 className="flex-grow-1">Recent Files</h5>
-                <PlusIcon className="icon-inline mr-1" />
+                {collapsed ? (
+                    <ChevronLeftIcon className="icon-inline mr-1" />
+                ) : (
+                    <ChevronDownIcon className="icon-inline mr-1" />
+                )}
             </button>
             {/* Display results from cloud for registered users and results from local Storage for non registered users */}
-            {authenticatedUser && processedResults ? (
+            {processedResults && !collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
                     {processedResults?.map((recentFile, index) => (
                         <div key={index}>
@@ -87,9 +93,11 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
                                     data-testid="recent-files-item"
                                     to="/"
                                     onClick={() =>
-                                        sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
-                                            query: `repo:^${recentFile.repoName}$ file:^${recentFile.filePath}`,
-                                        })
+                                        authenticatedUser
+                                            ? sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
+                                                  query: `repo:^${recentFile.repoName}$ file:^${recentFile.filePath}`,
+                                              })
+                                            : sourcegraphVSCodeExtensionAPI.openFile(recentFile.url)
                                     }
                                 >
                                     {recentFile.repoName} › {recentFile.filePath}
@@ -99,14 +107,20 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
                     ))}
                     {showMore && <ShowMoreButton onClick={loadMoreItems} className="my-0" />}
                 </div>
-            ) : (
-                <div className={classNames('p-1', styles.sidebarSectionList)}>
-                    <p>For registered users only</p>
-                </div>
             )}
         </div>
     )
 }
+const ShowMoreButton: React.FunctionComponent<{ onClick: () => void; className?: string }> = ({
+    onClick,
+    className,
+}) => (
+    <div className="text-center py-3">
+        <button type="button" className={classNames('btn btn-link', className)} onClick={onClick}>
+            Show more
+        </button>
+    </div>
+)
 
 function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | null {
     if (!eventLogResult) {
@@ -131,8 +145,9 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
                 !recentFiles.some(file => file.repoName === repoName && file.filePath === filePath) // Don't show the same file twice
             ) {
                 const parsedUrl = new URL(node.url)
+                console.log(parsedUrl.pathname)
                 recentFiles.push({
-                    url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
+                    url: parsedUrl.pathname.replace('https://', 'sourcegraph://') + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
                     repoName,
                     filePath,
                     timestamp: node.timestamp,
@@ -144,16 +159,32 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
     return recentFiles
 }
 
-const ShowMoreButton: React.FunctionComponent<{ onClick: () => void; className?: string }> = ({
-    onClick,
-    className,
-}) => (
-    <div className="text-center py-3">
-        <button type="button" className={classNames('btn btn-link', className)} onClick={onClick}>
-            Show more
-        </button>
-    </div>
-)
+function processLocalRecentFiles(localFiles?: string[]): RecentFile[] | null {
+    if (!localFiles) {
+        return null
+    }
+
+    const recentFiles: RecentFile[] = []
+
+    for (const fileUrl of localFiles) {
+        const { repoName, filePath } = extractFileInfoFromUrl(fileUrl)
+
+        if (
+            filePath &&
+            repoName &&
+            !recentFiles.some(file => file.repoName === repoName && file.filePath === filePath) // Don't show the same file twice
+        ) {
+            recentFiles.push({
+                url: fileUrl,
+                repoName,
+                filePath,
+                timestamp: '',
+            })
+        }
+    }
+
+    return recentFiles
+}
 
 function extractFileInfoFromUrl(url: string): { repoName: string; filePath: string } {
     const parsedUrl = new URL(url)
@@ -163,6 +194,5 @@ function extractFileInfoFromUrl(url: string): { repoName: string; filePath: stri
     if (!repoName || !filePath) {
         return { repoName: '', filePath: '' }
     }
-
     return { repoName, filePath }
 }

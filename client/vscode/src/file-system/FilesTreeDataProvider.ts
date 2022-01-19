@@ -33,6 +33,8 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
             const didBecomeVisible = !this._isViewVisible && event.visible
             this._isViewVisible = event.visible
             if (didBecomeVisible) {
+                // Remove everything from the existing file tree before building a new one
+                this.fs.resetFileTree()
                 // NOTE: do not remove the line below even if you think it
                 // doesn't have an effect. Before you remove this line, make
                 // sure that the following steps don't cause the "Collapse All"
@@ -126,16 +128,15 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
     }
 
     public async didFocus(vscodeUri: vscode.Uri | undefined): Promise<void> {
-        log.appendLine(`didFocus=${vscodeUri?.toString(true) || 'undefined'}`)
+        // log.appendLine(`didFocus=${vscodeUri?.toString(true) || 'undefined'}`)
         this.didFocusToken.cancel()
         this.didFocusToken = new vscode.CancellationTokenSource()
         this.activeUri = vscodeUri
-        vscode.commands
-            .executeCommand('setContext', 'sourcegraph.canFocusActiveDocument', vscodeUri?.scheme === 'sourcegraph')
-            .then(
-                () => {},
-                () => {}
-            )
+        await vscode.commands.executeCommand(
+            'setContext',
+            'sourcegraph.canFocusActiveDocument',
+            vscodeUri?.scheme === 'sourcegraph'
+        )
         if (vscodeUri && vscodeUri.scheme === 'sourcegraph' && this.treeView && this._isViewVisible) {
             const uri = this.fs.sourcegraphUri(vscodeUri)
             if (uri.uri === this.fs.emptyFileUri()) {
@@ -144,6 +145,13 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
             await this.fs.downloadFiles(uri)
             await this.didFocusString(uri, true, this.didFocusToken.token)
         }
+    }
+
+    public isSourcegrapeRemoteFile(vscodeUri: vscode.Uri | undefined): boolean {
+        if (vscodeUri && vscodeUri.scheme === 'sourcegraph' && this.treeView && this._isViewVisible) {
+            return true
+        }
+        return false
     }
 
     public async getTreeItem(uriString: string): Promise<vscode.TreeItem> {
@@ -209,7 +217,7 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
             tooltip: uri.uri.replace('sourcegraph://', 'https://'),
             collapsibleState: uri.isFile()
                 ? vscode.TreeItemCollapsibleState.None
-                : parentChildrenCount === 1
+                : parentChildrenCount === 0
                 ? vscode.TreeItemCollapsibleState.Expanded
                 : vscode.TreeItemCollapsibleState.Collapsed,
             command,

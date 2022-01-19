@@ -85,7 +85,7 @@
         {
           "type": "webview",
           "id": "sourcegraph.historySidebar",
-          "name": "Search History",
+          "name": "Sourcegraph Search",
           "visibility": "visible",
           "when": "sourcegraph.searchHistoryFound && !sourcegraph.activeSearchPanel "
         },

@@ -71,7 +71,7 @@ export const RepoPage: React.FunctionComponent<RepoPageProps> = ({
             </button>
             <PageHeader
                 path={[{ icon: SourceRepositoryIcon, text: displayRepoName(selectedRepoName) }]}
-                className="mb-1 test-tree-page-title"
+                className="mb-1 mt-3 test-tree-page-title"
             />
             <p className="mt-0 description-text">Universal code search (self-hosted)</p>
             <div className={classNames('test-tree-entries p-2 mt-3', styles.section, styles.filesContainer)}>

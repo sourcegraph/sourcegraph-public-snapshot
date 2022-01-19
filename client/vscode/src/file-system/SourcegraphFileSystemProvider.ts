@@ -124,6 +124,10 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
         return [...this.fileNamesByRepository.keys()]
     }
 
+    public resetFileTree(): void {
+        return this.fileNamesByRepository.clear()
+    }
+
     public async allFilesFromOpenRepositories(folder?: SourcegraphUri): Promise<RepositoryFileNames[]> {
         const promises: RepositoryFileNames[] = []
         const folderRepositoryUri = folder?.repositoryUri()

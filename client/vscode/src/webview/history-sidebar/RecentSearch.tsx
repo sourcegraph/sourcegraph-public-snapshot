@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React, { useEffect, useState } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
@@ -35,10 +36,11 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
     platformContext,
 }) => {
     const [showMore, setShowMore] = useState(false)
-    const [itemsToLoad, setItemsToLoad] = useState(10)
+    const [itemsToLoad, setItemsToLoad] = useState(5)
+    const [collapsed, setCollapsed] = useState(false)
 
     function loadMoreItems(): void {
-        setItemsToLoad(current => current + 5)
+        setItemsToLoad(current => current + 3)
         telemetryService.log('RecentSearchesPanelShowMoreClicked')
     }
 
@@ -64,21 +66,27 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
                     setProcessedResults(processRecentSearches(userSearchHistory.data.node.eventLogs))
                 }
             })().catch(error => console.error(error))
+        } else if (!authenticatedUser && localRecentSearches && itemsToLoad) {
+            setShowMore(localRecentSearches.length > itemsToLoad)
         }
-    }, [authenticatedUser, itemsToLoad, platformContext])
+    }, [authenticatedUser, itemsToLoad, localRecentSearches, platformContext])
 
     return (
         <div className={styles.sidebarSection}>
             <button
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
-                onClick={() => sourcegraphVSCodeExtensionAPI.openSearchPanel()}
+                onClick={() => setCollapsed(!collapsed)}
             >
                 <h5 className="flex-grow-1">Recent Searches</h5>
-                <PlusIcon className="icon-inline mr-1" />
+                {collapsed ? (
+                    <ChevronLeftIcon className="icon-inline mr-1" />
+                ) : (
+                    <ChevronDownIcon className="icon-inline mr-1" />
+                )}
             </button>
             {/* Display results from cloud for registered users and results from local Storage for non registered users */}
-            {authenticatedUser && processedResults ? (
+            {authenticatedUser && processedResults && !collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
                     {processedResults?.map((search, index) => (
                         <div key={index}>
@@ -98,11 +106,13 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
                     ))}
                     {showMore && <ShowMoreButton onClick={loadMoreItems} className="my-0" />}
                 </div>
-            ) : (
+            )}
+            {!authenticatedUser && localRecentSearches && !collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
                     {localRecentSearches
                         ?.slice(0)
                         .reverse()
+                        .filter((search, index) => index < itemsToLoad)
                         .map((search, index) => (
                             <div key={index}>
                                 <small key={index} className={styles.sidebarSectionListItem}>
@@ -119,6 +129,7 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
                                 </small>
                             </div>
                         ))}
+                    {showMore && <ShowMoreButton onClick={loadMoreItems} className="my-0" />}
                 </div>
             )}
         </div>

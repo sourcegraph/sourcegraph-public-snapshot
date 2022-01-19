@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React, { useEffect, useState } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
@@ -45,6 +46,7 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
     }
 
     const [processedResults, setProcessedResults] = useState<string[] | null>(null)
+    const [collapsed, setCollapsed] = useState(false)
 
     useEffect(() => {
         if (authenticatedUser && itemsToLoad) {
@@ -79,31 +81,37 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
             <button
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
-                onClick={() => sourcegraphVSCodeExtensionAPI.openSearchPanel()}
+                onClick={() => setCollapsed(!collapsed)}
             >
-                <h5 className="flex-grow-1">Repositories</h5>
-                <PlusIcon className="icon-inline mr-1" />
+                <h5 className="flex-grow-1">Recent Repositories</h5>
+                {collapsed ? (
+                    <ChevronLeftIcon className="icon-inline mr-1" />
+                ) : (
+                    <ChevronDownIcon className="icon-inline mr-1" />
+                )}
             </button>
-            <div className={classNames('p-1', styles.sidebarSectionList)}>
-                {processedResults?.map((repo, index) => (
-                    <div key={index}>
-                        <small key={index} className={styles.sidebarSectionListItem}>
-                            <Link
-                                data-testid="recent-files-item"
-                                to="/"
-                                onClick={() =>
-                                    sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
-                                        query: `repo:${repo}`,
-                                    })
-                                }
-                            >
-                                <SyntaxHighlightedSearchQuery query={`repo:${repo}`} />
-                            </Link>
-                        </small>
-                    </div>
-                ))}
-                {showMore && <ShowMoreButton onClick={loadMoreItems} className="my-0" />}
-            </div>
+            {!collapsed && (
+                <div className={classNames('p-1', styles.sidebarSectionList)}>
+                    {processedResults?.map((repo, index) => (
+                        <div key={index}>
+                            <small key={index} className={styles.sidebarSectionListItem}>
+                                <Link
+                                    data-testid="recent-files-item"
+                                    to="/"
+                                    onClick={() =>
+                                        sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
+                                            query: `repo:${repo}`,
+                                        })
+                                    }
+                                >
+                                    <SyntaxHighlightedSearchQuery query={`repo:${repo}`} />
+                                </Link>
+                            </small>
+                        </div>
+                    ))}
+                    {showMore && <ShowMoreButton onClick={loadMoreItems} className="my-0" />}
+                </div>
+            )}
         </div>
     )
 }
