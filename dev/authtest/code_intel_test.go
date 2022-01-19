@@ -127,7 +127,10 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode/100 != 4 {
-			payload, _ := io.ReadAll(resp.Body)
+			payload, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
 			t.Fatalf(`Want status code 4xx error but got %d (%v)`, resp.StatusCode, payload)
 		}
 	})
