@@ -820,3 +820,23 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.SubRepoPerms()
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{db: db}).SetSubRepositoryPermissionsForUsers(ctx, &graphqlbackend.SubRepoPermsArgs{})
+		if want := backend.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+}

@@ -210,6 +210,33 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.SubRepoPermsArgs) (resp *graphqlbackend.EmptyResponse, err error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errDisabledSourcegraphDotCom
+	}
+
+	if err := r.checkLicense(); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins can mutate repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure the repo ID is valid.
+	if _, err = r.db.Repos().Get(ctx, repoID); err != nil {
+		return nil, err
+	}
+
+	return nil, errors.New("TODO")
+}
+
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
