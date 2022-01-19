@@ -144,7 +144,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                             invitedBy ? styles.pageHeadingInvitedBy : styles.pageHeading
                         )}
                     >
-                        {invitedBy ? (
+                        {invitedByUser ? (
                             <>
                                 <UserAvatar
                                     className={classNames('icon-inline', 'mr-3', styles.avatar)}
