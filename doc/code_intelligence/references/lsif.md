@@ -55,7 +55,7 @@ once in the stream. Other field values may appear in any order.
 | ---- | ---- | ----------- |
 |  **metadata** | Metadata | Metadata about this index.
 | repeated **document** | Document | Documents that belong to this index.
-| repeated **external_symbols** | SymbolInformation | (optional) Symbols that are referenced from this index and not defined in this index. Only used to provide documentation for symbols that are
+| repeated **external_symbols** | SymbolInformation | (optional) Symbols that are referenced from this index but are defined in an external package (a separate `Index` message).  Leave this field empty if you assume the external package will get indexed separately. If the external package won't get indexed for some reason then you can use this field to provide hover documentation for those external symbols.
 
 
 
@@ -125,13 +125,13 @@ improvements make up for it.
 
 ### Symbol
 
-Symbol is similar to a URI, it identifies a classes, methods, or local
-variables without
-`SymbolInformation` contains rich metadata about that symbols such as the
-docstring.
+Symbol is similar to a URI, it identifies a class, method, or a local
+variable. `SymbolInformation` contains rich metadata about symbols such as
+the docstring.
 
 Symbol has a standardized string representation, which can be used
 interchangeably with `Symbol`. The syntax for Symbol is the following:
+```
   <symbol>               ::= <scheme> ' ' <package> ' ' { <descriptor> } | 'local ' <local-id>
   <package>              ::= <manager> ' ' <package-name> ' ' <version>
   <scheme>               ::= any UTF-8 character, escape spaces with double space.
@@ -153,6 +153,7 @@ interchangeably with `Symbol`. The syntax for Symbol is the following:
   <identifier-character> ::= '_' | '-' | '$' | ASCII letter or digit
   <escaped-identifier>   ::= '`' { <escaped-character> } '`'
   <escaped-characters>   ::= any UTF-8 character, escape backticks with double backtick.
+```
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
