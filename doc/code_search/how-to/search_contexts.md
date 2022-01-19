@@ -68,7 +68,7 @@ You will be returned to the list of search contexts. Your new search context wil
 ## Beta: Query-based search contexts
 As of release 3.36, search contexts can be defined with a restricted search query as an alternative to a specific list of repositories and revisions. This feature is in beta and may change in following releases. Allowed filters: are `repo`, `rev`, `file`, `lang`, `case`, `fork`, and `visibility`. `OR` and `AND` expressions are also allowed.
 
-If you're an admin, to enable this feature to all users, in your global settings, set `experimentalFeatures.searchContextsQuery` to `true` (for regular users, just use the normal settings menu). You'll then see a "Create context" button from the search results page and a "Query" input field in the search contexts form. If you want revisions specified in these query based search contexts to be indexed, set `experimentalFeatures.search.index.query.contexts` to true in site configuration.
+If you're an admin, to enable this feature for all users set `experimentalFeatures.searchContextsQuery` to `true` in your global settings (for regular users, just use the normal settings menu). You'll then see a "Create context" button from the search results page and a "Query" input field in the search contexts form. If you want revisions specified in these query based search contexts to be indexed, set `experimentalFeatures.search.index.query.contexts` to `true` in site configuration.
 
 ### Creating search contexts from search results
 You can now create new search contexts right from the search results page. Once you've enabled query-based search contexts, you'll see a Create context button above the search results.
