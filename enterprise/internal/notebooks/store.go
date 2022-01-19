@@ -275,19 +275,22 @@ func (s *notebooksStore) CountNotebooks(ctx context.Context, opts ListNotebooksO
 	return count, nil
 }
 
+const getNotebookFmtStr = `
+SELECT %s
+FROM notebooks
+WHERE
+	(%s) -- permission conditions
+	AND (%s) -- query conditions
+`
+
 func (s *notebooksStore) GetNotebook(ctx context.Context, id int64) (*Notebook, error) {
 	row := s.QueryRow(
 		ctx,
 		sqlf.Sprintf(
-			listNotebooksFmtStr,
+			getNotebookFmtStr,
 			sqlf.Join(notebookColumns, ","),
-			sqlf.Sprintf(""), // joins
 			notebooksPermissionsCondition(ctx),
 			sqlf.Sprintf("notebooks.id = %d", id),
-			sqlf.Sprintf(""), // group by
-			getNotebooksOrderByClause(NotebooksOrderByID, false),
-			1, // limit
-			0, // offset
 		),
 	)
 	notebook, err := scanNotebook(row)
@@ -356,7 +359,7 @@ func scanNotebookStar(scanner dbutil.Scanner) (*NotebookStar, error) {
 	return star, nil
 }
 
-const getNotebookStarFmtStr = `SELECT notebook_id, user_id, created_at FROM notebook_stars WHERE user_id = %d AND notebook_id = %d`
+const getNotebookStarFmtStr = `SELECT notebook_id, user_id, created_at FROM notebook_stars WHERE notebook_id = %d AND user_id = %d`
 
 // 🚨 SECURITY: The caller must ensure that the actor has permission to create the star for the notebook.
 func (s *notebooksStore) GetNotebookStar(ctx context.Context, notebookID int64, userID int32) (*NotebookStar, error) {
@@ -364,15 +367,15 @@ func (s *notebooksStore) GetNotebookStar(ctx context.Context, notebookID int64, 
 	return scanNotebookStar(row)
 }
 
-const insertNotebookStarFmtStr = `INSERT INTO notebook_stars (user_id, notebook_id) VALUES (%d, %d) RETURNING notebook_id, user_id, created_at`
+const insertNotebookStarFmtStr = `INSERT INTO notebook_stars (notebook_id, user_id) VALUES (%d, %d) RETURNING notebook_id, user_id, created_at`
 
 // 🚨 SECURITY: The caller must ensure that the actor has permission to create the star for the notebook.
 func (s *notebooksStore) CreateNotebookStar(ctx context.Context, notebookID int64, userID int32) (*NotebookStar, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(insertNotebookStarFmtStr, userID, notebookID))
+	row := s.QueryRow(ctx, sqlf.Sprintf(insertNotebookStarFmtStr, notebookID, userID))
 	return scanNotebookStar(row)
 }
 
-const deleteNotebookStarFmtStr = `DELETE FROM notebook_stars WHERE user_id = %d AND notebook_id = %d`
+const deleteNotebookStarFmtStr = `DELETE FROM notebook_stars WHERE notebook_id = %d AND user_id = %d`
 
 // 🚨 SECURITY: The caller must ensure that the actor has permission to delete the star for the notebook.
 func (s *notebooksStore) DeleteNotebookStar(ctx context.Context, notebookID int64, userID int32) error {
