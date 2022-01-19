@@ -1,6 +1,7 @@
 package executorqueue
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -24,6 +25,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	}
 
 	// no auth
+	req.Header.Del("Authorization")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
@@ -31,12 +33,19 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusUnauthorized, resp.StatusCode)
 	}
-	if value := resp.Header.Get("WWW-Authenticate"); value != `Basic realm="Sourcegraph"` {
-		t.Errorf("unexpected www-authenticate header. want=%q have=%q", `Basic realm="Sourcegraph"`, value)
+
+	// malformed token
+	req.Header.Set("Authorization", fmt.Sprintf("token-unknown %s", strings.ToUpper(accessToken)))
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("unexpected error performing request: %s", err)
+	}
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("unexpected status code. want=%d have=%d", http.StatusUnauthorized, resp.StatusCode)
 	}
 
-	// wrong password
-	req.SetBasicAuth("anything", strings.ToUpper(accessToken))
+	// wrong token
+	req.Header.Set("Authorization", fmt.Sprintf("token-executor %s", strings.ToUpper(accessToken)))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
@@ -46,7 +55,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	}
 
 	// correct token
-	req.SetBasicAuth("anything", accessToken)
+	req.Header.Set("Authorization", fmt.Sprintf("token-executor %s", accessToken))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
