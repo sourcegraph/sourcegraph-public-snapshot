@@ -42,6 +42,7 @@
     font-size: var(--font-size-lg);
     line-height: var(--btn-line-height-lg);
 }
+
 .btn-link {
     color: var(--link-color);
     background-color: var(--link-1);
@@ -91,7 +92,7 @@
 
 // This class is meant for clickable icons. It is NOT meant for buttons with icons in it or for nav
 // items.
-.btn-icon {
+.btn.btn-icon {
     margin: 0;
     padding: 0;
     background: transparent;
@@ -100,37 +101,6 @@
     align-items: center;
     border: none;
     cursor: pointer;
-
-    .icon {
-        // Formats an icon so that it appears inline in the text
-        // with height matching the text
-        .icon-inline {
-            // SVGs already include padding to account for text baseline,
-            // so align with the bottom of the text
-            vertical-align: bottom;
-            display: inline-flex;
-            align-items: center;
-        }
-
-        svg.icon-inline,
-        div.icon-inline,
-        img.icon-inline,
-        .icon-inline svg {
-            width: var(--icon-inline-size);
-            height: var(--icon-inline-size);
-            // Match color of the text
-            fill: currentColor;
-            vertical-align: text-bottom;
-        }
-
-        svg.icon-inline-md,
-        div.icon-inline-md,
-        img.icon-inline-md,
-        .icon-inline-md svg {
-            width: var(--icon-inline-md-size);
-            height: var(--icon-inline-md-size);
-        }
-    }
 
     &:focus-visible:not(:disabled):not(:global(.disabled)) {
         box-shadow: 0 0 0 2px var(--primary-2);
