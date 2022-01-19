@@ -16,7 +16,7 @@ func slackMention(slackUserID string) string {
 	return fmt.Sprintf("<@%s>", slackUserID)
 }
 
-func slackSummary(locked bool, branch string, failedCommits []CommitInfo) string {
+func slackSummary(locked bool, branch string, discussionChannel string, failedCommits []CommitInfo) string {
 	branchStr := fmt.Sprintf("`%s`", branch)
 	if !locked {
 		return fmt.Sprintf(":white_check_mark: Pipeline healthy - %s unlocked!", branchStr)
@@ -41,13 +41,15 @@ The authors of the following failed commits who are Sourcegraph teammates have b
 		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%.7s> (<%s|build %d>): %s",
 			commit.Commit, commit.Commit, commit.BuildURL, commit.BuildNumber, mention)
 	}
-	message += `
+	message += fmt.Sprintf(`
 
-The branch will automatically be unlocked once a green build is run.
+The branch will automatically be unlocked once a green build has run on %s.
+Please head over to %s for relevant discussion about this branch lock.
 Refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
+
 If unable to resolve the issue, please start an incident with the '/incident' Slack command.
 
-cc: @dev-experience-support`
+cc: @dev-experience-support`, branchStr, discussionChannel)
 	return message
 }
 
