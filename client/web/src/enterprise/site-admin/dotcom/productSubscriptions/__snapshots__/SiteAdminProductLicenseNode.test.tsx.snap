@@ -14,7 +14,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         <strong>
           License in 
           <a
-            class="anchorLink mr-3"
+            class="mr-3"
             href="/s"
           >
             s
@@ -60,7 +60,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
     <div>
       Tags: 
       <div
-        class="badge secondary mr-1"
+        class="mr-1"
       >
         a
       </div>
@@ -118,7 +118,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         <strong>
           License in 
           <a
-            class="anchorLink mr-3"
+            class="mr-3"
             href="/s"
           >
             s
@@ -159,7 +159,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
     <div>
       Tags: 
       <div
-        class="badge secondary mr-1"
+        class="mr-1"
       >
         a
       </div>

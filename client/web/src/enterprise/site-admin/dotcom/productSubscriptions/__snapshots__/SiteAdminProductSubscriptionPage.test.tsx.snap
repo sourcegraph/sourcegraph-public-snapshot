@@ -9,7 +9,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="mb-2"
     >
       <a
-        class="anchorLink btn btn-link btn-sm"
+        class="btn btn-link btn-sm"
         href="/site-admin/dotcom/product/subscriptions"
       >
         <arrowlefticon
@@ -87,7 +87,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               </em>
                — 
               <a
-                class="anchorLink"
+                class=""
                 href="/s"
               >
                 View as user
@@ -217,7 +217,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             <div>
               Tags: 
               <div
-                class="badge secondary mr-1"
+                class="mr-1"
               >
                 a
               </div>

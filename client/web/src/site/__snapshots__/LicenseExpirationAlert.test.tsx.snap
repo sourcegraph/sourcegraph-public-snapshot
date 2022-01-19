@@ -10,7 +10,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
     >
       Your Sourcegraph license expired 3 months ago. 
       <a
-        class="anchorLink site-alert__link"
+        class="site-alert__link"
         href="/site-admin/license"
       >
         <span
@@ -62,7 +62,7 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
     >
       Your Sourcegraph license will expire in 3 days. 
       <a
-        class="anchorLink site-alert__link"
+        class="site-alert__link"
         href="/site-admin/license"
       >
         <span

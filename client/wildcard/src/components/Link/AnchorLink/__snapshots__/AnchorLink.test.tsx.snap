@@ -3,7 +3,7 @@
 exports[`AnchorLink renders anchor link correctly 1`] = `
 <DocumentFragment>
   <a
-    class="anchorLink"
+    class=""
     href="#"
   >
      Link to docs 

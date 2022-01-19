@@ -3,7 +3,7 @@
 exports[`RouterLink renders router link correctly 1`] = `
 <DocumentFragment>
   <a
-    class="anchorLink"
+    class=""
     href="/docs"
   >
     Link to docs
