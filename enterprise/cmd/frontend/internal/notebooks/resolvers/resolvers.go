@@ -97,9 +97,9 @@ func convertNotebookBlockInput(inputBlock graphqlbackend.CreateNotebookBlockInpu
 }
 
 func (r *Resolver) CreateNotebook(ctx context.Context, args graphqlbackend.CreateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("notebooks cannot be created by unauthenticated users")
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	notebookInput := args.Notebook
@@ -115,7 +115,7 @@ func (r *Resolver) CreateNotebook(ctx context.Context, args graphqlbackend.Creat
 	createdNotebook, err := notebooks.Notebooks(r.db).CreateNotebook(ctx, &notebooks.Notebook{
 		Title:         notebookInput.Title,
 		Public:        notebookInput.Public,
-		CreatorUserID: actor.UID,
+		CreatorUserID: user.ID,
 		Blocks:        blocks,
 	})
 	if err != nil {
@@ -132,9 +132,9 @@ func validateNotebookWritePermissionsForUser(notebook *notebooks.Notebook, userI
 }
 
 func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.UpdateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("notebooks cannot be created by unauthenticated users")
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	id, err := unmarshalNotebookID(args.ID)
@@ -148,7 +148,7 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 		return nil, err
 	}
 
-	err = validateNotebookWritePermissionsForUser(notebook, actor.UID)
+	err = validateNotebookWritePermissionsForUser(notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -175,9 +175,9 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 }
 
 func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.DeleteNotebookArgs) (*graphqlbackend.EmptyResponse, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("notebooks cannot be deleted by unauthenticated users")
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	id, err := unmarshalNotebookID(args.ID)
@@ -191,7 +191,7 @@ func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.Delet
 		return nil, err
 	}
 
-	err = validateNotebookWritePermissionsForUser(notebook, actor.UID)
+	err = validateNotebookWritePermissionsForUser(notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -224,6 +224,8 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 	orderBy := notebooks.NotebooksOrderByUpdatedAt
 	if args.OrderBy == graphqlbackend.NotebookOrderByCreatedAt {
 		orderBy = notebooks.NotebooksOrderByCreatedAt
+	} else if args.OrderBy == graphqlbackend.NotebookOrderByStarCount {
+		orderBy = notebooks.NotebooksOrderByStarCount
 	}
 
 	// Request one extra to determine if there are more pages
@@ -235,9 +237,15 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 		return nil, err
 	}
 
-	var userID int32
+	var userID, starredByUserID int32
 	if args.CreatorUserID != nil {
 		userID, err = graphqlbackend.UnmarshalUserID(*args.CreatorUserID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if args.StarredByUserID != nil {
+		starredByUserID, err = graphqlbackend.UnmarshalUserID(*args.StarredByUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -250,6 +258,7 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 	opts := notebooks.ListNotebooksOptions{
 		Query:             query,
 		CreatorUserID:     userID,
+		StarredByUserID:   starredByUserID,
 		OrderBy:           orderBy,
 		OrderByDescending: args.Descending,
 	}
@@ -354,6 +363,24 @@ func (r *notebookResolver) CreatedAt(ctx context.Context) graphqlbackend.DateTim
 func (r *notebookResolver) ViewerCanManage(ctx context.Context) bool {
 	actor := actor.FromContext(ctx)
 	return validateNotebookWritePermissionsForUser(r.notebook, actor.UID) == nil
+}
+
+func (r *notebookResolver) ViewerHasStarred(ctx context.Context) (bool, error) {
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if errors.Is(err, database.ErrNoCurrentUser) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	star, err := notebooks.Notebooks(r.db).GetNotebookStar(ctx, r.notebook.ID, user.ID)
+	if errors.Is(err, notebooks.ErrNotebookStarNotFound) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return star != nil, nil
 }
 
 type notebookBlockResolver struct {
