@@ -4,34 +4,37 @@ import * as React from 'react'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Notice, Settings } from '../schema/settings.schema'
 
 import styles from './Notices.module.scss'
 
-// TODO: Remove classNames
-const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string; testId?: string }> = ({
-    notice,
-    className = '',
-    testId,
-}) => {
+const getAlertVariant = (location: Notice['location']): AlertProps['variant'] =>
+    location === 'top' ? 'info' : undefined
+
+interface NoticeAlertProps {
+    notice: Notice
+    className?: string
+    testId?: string
+}
+
+const NoticeAlert: React.FunctionComponent<NoticeAlertProps> = ({ notice, className = '', testId }) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(notice.message)} />
-    const baseClassName = notice.location === 'top' ? 'alert-info' : 'bg-transparent border'
+
+    const sharedProps = {
+        'data-testid': testId,
+        variant: getAlertVariant(notice.location),
+        className: classNames(notice.location !== 'top' && 'bg transparent border', className),
+    }
 
     return notice.dismissible ? (
-        <DismissibleAlert
-            data-testid={testId}
-            className={classNames(baseClassName, className)}
-            partialStorageKey={`notice.${notice.message}`}
-        >
+        <DismissibleAlert {...sharedProps} partialStorageKey={`notice.${notice.message}`}>
             {content}
         </DismissibleAlert>
     ) : (
-        <Alert data-testid={testId} className={classNames(baseClassName, className)}>
-            {content}
-        </Alert>
+        <Alert {...sharedProps}>{content}</Alert>
     )
 }
 

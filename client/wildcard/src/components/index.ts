@@ -1,5 +1,5 @@
 export { Button } from './Button'
-export { Alert, AlertLink } from './Alert'
+export { Alert, AlertProps, AlertLink, AlertLinkProps } from './Alert'
 export { Container } from './Container'
 export { Checkbox, FlexTextArea, Input, RadioButton, Select, TextArea } from './Form'
 export { Grid } from './Grid'

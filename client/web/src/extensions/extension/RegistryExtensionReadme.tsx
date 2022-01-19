@@ -9,14 +9,13 @@ import { Button, Alert } from '@sourcegraph/wildcard'
 
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
-// TODO: fix alertClass to be alertVariant
 const PublishNewManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
     text: string
     buttonLabel: string
-    alertClass: 'alert-info' | 'alert-danger'
-}> = ({ extension, text, buttonLabel, alertClass }) => (
-    <Alert className={alertClass}>
+    alertVariant: 'info' | 'danger'
+}> = ({ extension, text, buttonLabel, alertVariant }) => (
+    <Alert variant={alertVariant}>
         {text}
         {extension.registryExtension?.viewerCanAdminister && (
             <>
@@ -46,7 +45,7 @@ export const ExtensionReadme: React.FunctionComponent<{
         return (
             <PublishNewManifestAlert
                 extension={extension}
-                alertClass="alert-danger"
+                alertVariant="danger"
                 text={`This extension's manifest is invalid: ${
                     manifest?.message ? manifest.message : 'JSON parse error'
                 }`}
@@ -59,7 +58,7 @@ export const ExtensionReadme: React.FunctionComponent<{
         return (
             <PublishNewManifestAlert
                 extension={extension}
-                alertClass="alert-info"
+                alertVariant="info"
                 text="This extension has no README."
                 buttonLabel="Add README and publish new release"
             />
@@ -73,7 +72,7 @@ export const ExtensionReadme: React.FunctionComponent<{
         return (
             <PublishNewManifestAlert
                 extension={extension}
-                alertClass="alert-danger"
+                alertVariant="danger"
                 text="This extension's Markdown README is invalid."
                 buttonLabel="Fix README and publish new release"
             />

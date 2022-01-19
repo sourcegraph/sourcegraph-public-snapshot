@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react'
 
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 import { LSIFIndexState, LSIFUploadState } from '../../../../graphql-operations'
 
@@ -12,18 +12,18 @@ export interface CodeIntelStateBannerProps {
     state: LSIFUploadState | LSIFIndexState
     placeInQueue?: number | null
     failure?: string | null
-    className?: string
+    variant?: AlertProps['variant']
 }
-// TODO: Need to fix to use variants instread of className
+
 export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> = ({
     typeName,
     pluralTypeName,
     state,
     placeInQueue,
     failure,
-    className = 'alert-primary',
+    variant = 'primary',
 }) => (
-    <Alert className={className}>
+    <Alert variant={variant}>
         <span>
             <CodeIntelStateDescription
                 state={state}
