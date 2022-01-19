@@ -511,12 +511,10 @@ export namespace lib.codeintel.lsif_typed {
             symbol?: string;
             documentation?: string[];
             package?: string;
-            reference_symbols?: string[];
-            implementation_symbols?: string[];
-            type_definition_symbols?: string[];
+            relationships?: Relationship[];
         }) {
             super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3, 5, 6, 7], []);
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3, 5], []);
             if (!Array.isArray(data) && typeof data == "object") {
                 if ("symbol" in data && data.symbol != undefined) {
                     this.symbol = data.symbol;
@@ -527,14 +525,8 @@ export namespace lib.codeintel.lsif_typed {
                 if ("package" in data && data.package != undefined) {
                     this.package = data.package;
                 }
-                if ("reference_symbols" in data && data.reference_symbols != undefined) {
-                    this.reference_symbols = data.reference_symbols;
-                }
-                if ("implementation_symbols" in data && data.implementation_symbols != undefined) {
-                    this.implementation_symbols = data.implementation_symbols;
-                }
-                if ("type_definition_symbols" in data && data.type_definition_symbols != undefined) {
-                    this.type_definition_symbols = data.type_definition_symbols;
+                if ("relationships" in data && data.relationships != undefined) {
+                    this.relationships = data.relationships;
                 }
             }
         }
@@ -556,31 +548,17 @@ export namespace lib.codeintel.lsif_typed {
         set package(value: string) {
             pb_1.Message.setField(this, 4, value);
         }
-        get reference_symbols() {
-            return pb_1.Message.getField(this, 5) as string[];
+        get relationships() {
+            return pb_1.Message.getRepeatedWrapperField(this, Relationship, 5) as Relationship[];
         }
-        set reference_symbols(value: string[]) {
-            pb_1.Message.setField(this, 5, value);
-        }
-        get implementation_symbols() {
-            return pb_1.Message.getField(this, 6) as string[];
-        }
-        set implementation_symbols(value: string[]) {
-            pb_1.Message.setField(this, 6, value);
-        }
-        get type_definition_symbols() {
-            return pb_1.Message.getField(this, 7) as string[];
-        }
-        set type_definition_symbols(value: string[]) {
-            pb_1.Message.setField(this, 7, value);
+        set relationships(value: Relationship[]) {
+            pb_1.Message.setRepeatedWrapperField(this, 5, value);
         }
         static fromObject(data: {
             symbol?: string;
             documentation?: string[];
             package?: string;
-            reference_symbols?: string[];
-            implementation_symbols?: string[];
-            type_definition_symbols?: string[];
+            relationships?: ReturnType<typeof Relationship.prototype.toObject>[];
         }) {
             const message = new SymbolInformation({});
             if (data.symbol != null) {
@@ -592,14 +570,8 @@ export namespace lib.codeintel.lsif_typed {
             if (data.package != null) {
                 message.package = data.package;
             }
-            if (data.reference_symbols != null) {
-                message.reference_symbols = data.reference_symbols;
-            }
-            if (data.implementation_symbols != null) {
-                message.implementation_symbols = data.implementation_symbols;
-            }
-            if (data.type_definition_symbols != null) {
-                message.type_definition_symbols = data.type_definition_symbols;
+            if (data.relationships != null) {
+                message.relationships = data.relationships.map(item => Relationship.fromObject(item));
             }
             return message;
         }
@@ -608,9 +580,7 @@ export namespace lib.codeintel.lsif_typed {
                 symbol?: string;
                 documentation?: string[];
                 package?: string;
-                reference_symbols?: string[];
-                implementation_symbols?: string[];
-                type_definition_symbols?: string[];
+                relationships?: ReturnType<typeof Relationship.prototype.toObject>[];
             } = {};
             if (this.symbol != null) {
                 data.symbol = this.symbol;
@@ -621,14 +591,8 @@ export namespace lib.codeintel.lsif_typed {
             if (this.package != null) {
                 data.package = this.package;
             }
-            if (this.reference_symbols != null) {
-                data.reference_symbols = this.reference_symbols;
-            }
-            if (this.implementation_symbols != null) {
-                data.implementation_symbols = this.implementation_symbols;
-            }
-            if (this.type_definition_symbols != null) {
-                data.type_definition_symbols = this.type_definition_symbols;
+            if (this.relationships != null) {
+                data.relationships = this.relationships.map((item: Relationship) => item.toObject());
             }
             return data;
         }
@@ -642,12 +606,8 @@ export namespace lib.codeintel.lsif_typed {
                 writer.writeRepeatedString(3, this.documentation);
             if (typeof this.package === "string" && this.package.length)
                 writer.writeString(4, this.package);
-            if (this.reference_symbols !== undefined)
-                writer.writeRepeatedString(5, this.reference_symbols);
-            if (this.implementation_symbols !== undefined)
-                writer.writeRepeatedString(6, this.implementation_symbols);
-            if (this.type_definition_symbols !== undefined)
-                writer.writeRepeatedString(7, this.type_definition_symbols);
+            if (this.relationships !== undefined)
+                writer.writeRepeatedMessage(5, this.relationships, (item: Relationship) => item.serialize(writer));
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -667,13 +627,7 @@ export namespace lib.codeintel.lsif_typed {
                         message.package = reader.readString();
                         break;
                     case 5:
-                        pb_1.Message.addToRepeatedField(message, 5, reader.readString());
-                        break;
-                    case 6:
-                        pb_1.Message.addToRepeatedField(message, 6, reader.readString());
-                        break;
-                    case 7:
-                        pb_1.Message.addToRepeatedField(message, 7, reader.readString());
+                        reader.readMessage(message.relationships, () => pb_1.Message.addToRepeatedWrapperField(message, 5, Relationship.deserialize(reader), Relationship));
                         break;
                     default: reader.skipField();
                 }
@@ -685,6 +639,141 @@ export namespace lib.codeintel.lsif_typed {
         }
         static deserializeBinary(bytes: Uint8Array): SymbolInformation {
             return SymbolInformation.deserialize(bytes);
+        }
+    }
+    export class Relationship extends pb_1.Message {
+        constructor(data?: any[] | {
+            symbol?: string;
+            is_reference?: boolean;
+            is_implementation?: boolean;
+            is_type_definition?: boolean;
+        }) {
+            super();
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
+            if (!Array.isArray(data) && typeof data == "object") {
+                if ("symbol" in data && data.symbol != undefined) {
+                    this.symbol = data.symbol;
+                }
+                if ("is_reference" in data && data.is_reference != undefined) {
+                    this.is_reference = data.is_reference;
+                }
+                if ("is_implementation" in data && data.is_implementation != undefined) {
+                    this.is_implementation = data.is_implementation;
+                }
+                if ("is_type_definition" in data && data.is_type_definition != undefined) {
+                    this.is_type_definition = data.is_type_definition;
+                }
+            }
+        }
+        get symbol() {
+            return pb_1.Message.getField(this, 1) as string;
+        }
+        set symbol(value: string) {
+            pb_1.Message.setField(this, 1, value);
+        }
+        get is_reference() {
+            return pb_1.Message.getField(this, 2) as boolean;
+        }
+        set is_reference(value: boolean) {
+            pb_1.Message.setField(this, 2, value);
+        }
+        get is_implementation() {
+            return pb_1.Message.getField(this, 3) as boolean;
+        }
+        set is_implementation(value: boolean) {
+            pb_1.Message.setField(this, 3, value);
+        }
+        get is_type_definition() {
+            return pb_1.Message.getField(this, 4) as boolean;
+        }
+        set is_type_definition(value: boolean) {
+            pb_1.Message.setField(this, 4, value);
+        }
+        static fromObject(data: {
+            symbol?: string;
+            is_reference?: boolean;
+            is_implementation?: boolean;
+            is_type_definition?: boolean;
+        }) {
+            const message = new Relationship({});
+            if (data.symbol != null) {
+                message.symbol = data.symbol;
+            }
+            if (data.is_reference != null) {
+                message.is_reference = data.is_reference;
+            }
+            if (data.is_implementation != null) {
+                message.is_implementation = data.is_implementation;
+            }
+            if (data.is_type_definition != null) {
+                message.is_type_definition = data.is_type_definition;
+            }
+            return message;
+        }
+        toObject() {
+            const data: {
+                symbol?: string;
+                is_reference?: boolean;
+                is_implementation?: boolean;
+                is_type_definition?: boolean;
+            } = {};
+            if (this.symbol != null) {
+                data.symbol = this.symbol;
+            }
+            if (this.is_reference != null) {
+                data.is_reference = this.is_reference;
+            }
+            if (this.is_implementation != null) {
+                data.is_implementation = this.is_implementation;
+            }
+            if (this.is_type_definition != null) {
+                data.is_type_definition = this.is_type_definition;
+            }
+            return data;
+        }
+        serialize(): Uint8Array;
+        serialize(w: pb_1.BinaryWriter): void;
+        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+            const writer = w || new pb_1.BinaryWriter();
+            if (typeof this.symbol === "string" && this.symbol.length)
+                writer.writeString(1, this.symbol);
+            if (this.is_reference !== undefined)
+                writer.writeBool(2, this.is_reference);
+            if (this.is_implementation !== undefined)
+                writer.writeBool(3, this.is_implementation);
+            if (this.is_type_definition !== undefined)
+                writer.writeBool(4, this.is_type_definition);
+            if (!w)
+                return writer.getResultBuffer();
+        }
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Relationship {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Relationship();
+            while (reader.nextField()) {
+                if (reader.isEndGroup())
+                    break;
+                switch (reader.getFieldNumber()) {
+                    case 1:
+                        message.symbol = reader.readString();
+                        break;
+                    case 2:
+                        message.is_reference = reader.readBool();
+                        break;
+                    case 3:
+                        message.is_implementation = reader.readBool();
+                        break;
+                    case 4:
+                        message.is_type_definition = reader.readBool();
+                        break;
+                    default: reader.skipField();
+                }
+            }
+            return message;
+        }
+        serializeBinary(): Uint8Array {
+            return this.serialize();
+        }
+        static deserializeBinary(bytes: Uint8Array): Relationship {
+            return Relationship.deserialize(bytes);
         }
     }
     export class Occurrence extends pb_1.Message {

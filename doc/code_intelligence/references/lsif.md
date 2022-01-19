@@ -85,6 +85,20 @@ improvements make up for it.
 
 
 
+### Relationship
+
+
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+|  **symbol** | string | 
+|  **is_reference** | bool | When resolving "Find references", this field documents what other symbols should be included together with this symbol. For example, consider the following TypeScript code that defines two symbols `Animal#sound()` and `Dog#sound()`: ```ts interface Animal {           ^^^^^^ definition Animal#   sound(): string   ^^^^^ definition Animal#sound() } class Dog implements Animal {       ^^^ definition Dog#, implementation_symbols = Animal#   public sound(): string { return "woof" }          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound() } const animal: Animal = new Dog()               ^^^^^^ reference Animal# console.log(animal.sound())                    ^^^^^ reference Animal#sound() ``` Doing "Find references" on the symbol `Animal#sound()` should return references to the `Dog#sound()` method as well. Vice-versa, doing "Find references" on the `Dog#sound()` method should include references to the `Animal#sound()` method as well.
+|  **is_implementation** | bool | Similar to `references_symbols` but for "Go to implementation". It's common for the `implementation_symbols` and `references_symbols` fields have the same values but that's not always the case. In the TypeScript example above, observe that `implementation_symbols` has the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is empty. When requesting "Find references" on the "Animal#" symbol we don't want to include references to "Dog#" even if "Go to implementation" on the "Animal#" symbol should navigate to the "Dog#" symbol.
+|  **is_type_definition** | bool | Similar to `references_symbols` but for "Go to type definition".
+
+
+
+
 ### SymbolInformation
 
 SymbolInformation defines metadata about a symbol, such as the symbol's
@@ -95,9 +109,7 @@ docstring or what package it's defined it.
 |  **symbol** | string | Identifier of this symbol, which can be referenced from `Occurence.symbol`. The string must be formatted as `"$SCHEME:$ID` where:
 | repeated **documentation** | string | (optional, but strongly recommended) The markdown-formatted documentation for this symbol. This field is repeated to allow different kinds of documentation.  For example, it's nice to include both the signature of a method (parameters and return type) along with the accompanying docstring.
 |  **package** | string | (optional) To enable cross-index navigation, specify which package this symbol is defined in. A package must be encoded as a space-separated string with the value `"$manager $name $version"` where: - `$manager` is the name of the package manager, for example `npm`. - `$name` is the name of the package, for example `react`. - `$version` is the version of the package, for example `1.2.0`.
-| repeated **reference_symbols** | string | (optional) When resolving "Find references", this field documents what other symbols should be included together with this symbol. For example, consider the following TypeScript code that defines two symbols `Animal#sound()` and `Dog#sound()`: ```ts interface Animal {           ^^^^^^ definition Animal#   sound(): string   ^^^^^ definition Animal#sound() } class Dog implements Animal {       ^^^ definition Dog#, implementation_symbols = Animal#   public sound(): string { return "woof" }          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound() } const animal: Animal = new Dog()               ^^^^^^ reference Animal# console.log(animal.sound())                    ^^^^^ reference Animal#sound() ``` Doing "Find references" on the symbol `Animal#sound()` should return references to the `Dog#sound()` method as well. Vice-versa, doing "Find references" on the `Dog#sound()` method should include references to the `Animal#sound()` method as well.
-| repeated **implementation_symbols** | string | (optional) Similar to `references_symbols` but for "Go to implementation". It's common for the `implementation_symbols` and `references_symbols` fields have the same values but that's not always the case. In the TypeScript example above, observe that `implementation_symbols` has the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is empty. When requesting "Find references" on the "Animal#" symbol we don't want to include references to "Dog#" even if "Go to implementation" on the "Animal#" symbol should navigate to the "Dog#" symbol.
-| repeated **type_definition_symbols** | string | (optional) Similar to `references_symbols` but for "Go to type definition".
+| repeated **relationships** | Relationship | (optional) Relationships to other symbols (e.g., implements, type definition).
 
 Additional notes on **symbol**:
 
@@ -113,8 +125,6 @@ The string must be formatted as `"$SCHEME:$ID` where:
   different invocations of the indexer against unchanged code.  For
   document-local symbols, any string value that uniquely identifies the
   symbol within the document it belong to (ideally stable between runs).
-
-
 
 
 

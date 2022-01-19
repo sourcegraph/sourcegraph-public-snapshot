@@ -108,11 +108,6 @@ message SymbolInformation {
 
 message Relationship {
     string symbol = 1;
-    repeated RelationshipType types = 2;
-}
-
-enum RelationshipType {
-    UnspecifiedRelationshipType = 0;
     // When resolving "Find references", this field documents what other symbols
     // should be included together with this symbol. For example, consider the
     // following TypeScript code that defines two symbols `Animal#sound()` and
@@ -137,7 +132,7 @@ enum RelationshipType {
     // references to the `Dog#sound()` method as well. Vice-versa, doing "Find
     // references" on the `Dog#sound()` method should include references to the
     // `Animal#sound()` method as well.
-    Reference = 1;
+    bool is_reference = 2;
     // Similar to `references_symbols` but for "Go to implementation".
     // It's common for the `implementation_symbols` and `references_symbols` fields
     // have the same values but that's not always the case.
@@ -146,9 +141,9 @@ enum RelationshipType {
     // empty. When requesting "Find references" on the "Animal#" symbol we don't
     // want to include references to "Dog#" even if "Go to implementation" on the
     // "Animal#" symbol should navigate to the "Dog#" symbol.
-    Implementation = 2;
+    bool is_implementation = 3;
     // Similar to `references_symbols` but for "Go to type definition".
-    TypeDefinition = 3;
+    bool is_type_definition = 4;
 }
 
 // SymbolRole declares what "role" a symbol has in an occurrence.  A role is
