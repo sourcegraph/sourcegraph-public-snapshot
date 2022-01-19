@@ -11,7 +11,7 @@ export interface SearchContextCtaPromptProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     hasUserAddedExternalServices: boolean
     onDismiss: () => void
-    /** Set in JSContext only available to the web app. */
+    /** Set in JSContext so only available to the web app. */
     isExternalServicesUserModeAll?: boolean
 }
 
