@@ -35,7 +35,7 @@ interface SymbolNodeProps {
 const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, onHandleClick, isActive }) => {
     const isActiveFunc = (): boolean => isActive
     return (
-        <li className={styles.repoRevisionSidebarSymbolsNode} data-tooltip={node.name}>
+        <li className={styles.repoRevisionSidebarSymbolsNode}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
