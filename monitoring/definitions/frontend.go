@@ -33,6 +33,9 @@ func Frontend() *monitoring.Container {
 		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
 		{"create_org", "CreateOrganization", "API requests to create an organisation"},
 		{"remove_org_member", "RemoveUserFromOrganization", "API requests to remove organisation member"},
+		{"invite_org_member", "InviteUserToOrganization", "API requests to invite a new organisation member"},
+		{"org_invite_respond", "RespondToOrganizationInvitation", "API requests to respond to an org invitation"},
+		{"org_repositories", "OrgRepositories", "API requests to list repositories owned by an org"},
 	}
 
 	return &monitoring.Container{
