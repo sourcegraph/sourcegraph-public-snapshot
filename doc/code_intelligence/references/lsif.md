@@ -55,8 +55,8 @@ information.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | repeated **range** | int32 | Source position of this occurrence. Must be exactly three or four elements:
-|  **symbol_uri** | string | (optional) References the `Symbol.uri` field. Can be empty if this is only a highlighting occurrence.
-|  **symbol_roles** | int32 | (optional) Is the symbol_uri defined or referenced at this occurrence?
+|  **symbol** | string | (optional) The symbol that appears at this position. See `SymbolInformation.symbol` for how to format symbols as strings.
+|  **symbol_roles** | int32 | (optional) Bitmask for what `SymbolRole` apply to this occurrence. See `SymbolRole` for how to read and write this field.
 | repeated **override_documentation** | string | (optional) Markdown-formatted documentation for this specific range.  If empty, the `Symbol.documentation` field is used instead. One example where this field might be useful is when the symbol represents a generic function (with abstract type parameters such as `List<T>`) and at this occurrence we know the exact values (such as `List<String>`).
 |  **syntax_kind** | SyntaxKind | (optional) What syntax highlighting class should be used for this range?
 
@@ -92,12 +92,27 @@ docstring or what package it's defined it.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **symbol** | string | The unique dentifier of this symbol, which can be referenced from `Occurence.symbol`.
+|  **symbol** | string | Identifier of this symbol, which can be referenced from `Occurence.symbol`. The string must be formatted as `"$SCHEME:$ID` where:
 | repeated **documentation** | string | (optional, but strongly recommended) The markdown-formatted documentation for this symbol. This field is repeated to allow different kinds of documentation.  For example, it's nice to include both the signature of a method (parameters and return type) along with the accompanying docstring.
 |  **package** | string | (optional) To enable cross-index navigation, specify which package this symbol is defined in. A package must be encoded as a space-separated string with the value `"$manager $name $version"` where: - `$manager` is the name of the package manager, for example `npm`. - `$name` is the name of the package, for example `react`. - `$version` is the version of the package, for example `1.2.0`.
 | repeated **reference_symbols** | string | (optional) When resolving "Find references", this field documents what other symbols should be included together with this symbol. For example, consider the following TypeScript code that defines two symbols `Animal#sound()` and `Dog#sound()`: ```ts interface Animal {           ^^^^^^ definition Animal#   sound(): string   ^^^^^ definition Animal#sound() } class Dog implements Animal {       ^^^ definition Dog#, implementation_symbols = Animal#   public sound(): string { return "woof" }          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound() } const animal: Animal = new Dog()               ^^^^^^ reference Animal# console.log(animal.sound())                    ^^^^^ reference Animal#sound() ``` Doing "Find references" on the symbol `Animal#sound()` should return references to the `Dog#sound()` method as well. Vice-versa, doing "Find references" on the `Dog#sound()` method should include references to the `Animal#sound()` method as well.
 | repeated **implementation_symbols** | string | (optional) Similar to `references_symbols` but for "Go to implementation". It's common for the `implementation_symbols` and `references_symbols` fields have the same values but that's not always the case. In the TypeScript example above, observe that `implementation_symbols` has the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is empty. When requesting "Find references" on the "Animal#" symbol we don't want to include references to "Dog#" even if "Go to implementation" on the "Animal#" symbol should navigate to the "Dog#" symbol.
 | repeated **type_definition_symbols** | string | (optional) Similar to `references_symbols` but for "Go to type definition".
+
+Additional notes on **symbol**:
+
+Identifier of this symbol, which can be referenced from `Occurence.symbol`.
+The string must be formatted as `"$SCHEME:$ID` where:
+
+- `SCHEME`: the value `local` for document-local symbols or an
+  indexer-specific identifier for global symbols.  Document-local symbols
+  are symbols that cannot be referenced outside the document, for example
+  local variables.
+- `ID`: an opaque identifier that uniquely determines this symbol within
+  the defined scheme. For global symbols, the ID must be stable between
+  different invocations of the indexer against unchanged code.  For
+  document-local symbols, any string value that uniquely identifies the
+  symbol within the document it belong to (ideally stable between runs).
 
 
 

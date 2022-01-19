@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import { addDays } from 'date-fns'
 import React from 'react'
 
-import { WebStory } from '../../../components/WebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { BatchSpecNode } from './BatchSpecNode'
 import styles from './BatchSpecsPage.module.scss'

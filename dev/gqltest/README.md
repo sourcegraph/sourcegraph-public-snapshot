@@ -8,7 +8,7 @@ Tests use environment variables to accept credentials of different external serv
 
 ```sh
 # Your GitHub personal access token, this token needs to have scope to access private
-# repositories of "sgtest" organization. If you haven't joined "sgtest" organization,
+# repositories of "sgtest" organization on `ghe.sgdev.org`. If you haven't joined "sgtest" organization,
 # please post a message on #dev-chat to ask for an invite.
 export GITHUB_TOKEN=<REDACTED>
 
@@ -61,6 +61,28 @@ It is not required to boot up a single Docker container to run these tests, whic
 ```sh
 go test -long -base-url "http://localhost:3080" -email "joe@sourcegraph.com" -username "joe" -password "<REDACTED>"
 ```
+
+You will need to run your local instance in `enterprise` mode in order for tests to pass. Also note you should not use an external service config file. To ensure your local environment is set up correctly, follow these steps:
+
+1. Clear your database: `./dev/drop-entire-local-database-and-redis.sh`
+2. Delete your `~/.sourcegraph` directory
+3. Add the following to your `sg.config.overwrite.yaml`
+
+```yaml
+commands:
+  enterprise-frontend:
+    env:
+      EXTSVC_CONFIG_FILE: ''
+    watch:
+      - lib
+      - internal
+      - cmd/frontend
+      - enterprise/internal
+      - enterprise/cmd/frontend
+```
+
+4. Start your instance by running `sg start enterprise`
+5. Create the admin account so that it matches the credentials passed to tests as above. (If you cleared your database this is done automatically when tests are first run)
 
 Generally, you're able to repeatedly run these tests regardless of any failures because tests are written in the way that cleans up and restores to the previous state. It is aware of if the instance has been initialized, so you can focus on debugging tests.
 

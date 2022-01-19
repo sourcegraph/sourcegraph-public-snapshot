@@ -1,10 +1,9 @@
-import Dialog from '@reach/dialog'
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -124,11 +123,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
     )
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={labelId}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <div className="test-add-credential-modal">
                 <ModalHeader
                     id={labelId}
@@ -227,6 +222,6 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                     </>
                 )}
             </div>
-        </Dialog>
+        </Modal>
     )
 }

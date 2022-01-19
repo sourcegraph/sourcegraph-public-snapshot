@@ -19,9 +19,11 @@ type CommitInfo struct {
 	Commit string
 	Author string
 
-	AuthorSlackID string
+	BuildNumber  int
+	BuildURL     string
+	BuildCreated time.Time
 
-	Build *buildkite.Build
+	AuthorSlackID string
 }
 
 type CheckResults struct {
@@ -64,7 +66,6 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 		builds[max(firstFailedBuildIndex-1, 0):], // Check builds starting with the one we found
 		opts.FailuresThreshold,
 		opts.BuildTimeout,
-		false,
 		false)
 	if !exceeded {
 		fmt.Println("threshold not exceeded")
@@ -119,7 +120,6 @@ func checkConsecutiveFailures(
 	threshold int,
 	timeout time.Duration,
 	returnAll bool,
-	includeBuild bool,
 ) (failedCommits []CommitInfo, thresholdExceeded bool, buildsScanned int) {
 	failedCommits = []CommitInfo{}
 
@@ -144,13 +144,14 @@ func checkConsecutiveFailures(
 		consecutiveFailures += 1
 		commit := CommitInfo{
 			Author: author,
+			Commit: maybeString(build.Commit),
 		}
-		if build.Commit != nil {
-			commit.Commit = *build.Commit
+		if build.Number != nil {
+			commit.BuildNumber = *build.Number
+			commit.BuildURL = maybeString(build.URL)
 		}
-		if includeBuild {
-			b := build // copy
-			commit.Build = &b
+		if build.CreatedAt != nil {
+			commit.BuildCreated = build.CreatedAt.Time
 		}
 		failedCommits = append(failedCommits, commit)
 		if consecutiveFailures >= threshold {
@@ -169,4 +170,11 @@ func max(x, y int) int {
 		return y
 	}
 	return x
+}
+
+func maybeString(s *string) string {
+	if s != nil {
+		return *s
+	}
+	return ""
 }

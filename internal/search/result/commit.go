@@ -13,14 +13,29 @@ import (
 )
 
 type CommitMatch struct {
-	Commit     gitdomain.Commit
-	Repo       types.MinimalRepo
-	Refs       []string
+	Commit gitdomain.Commit
+	Repo   types.MinimalRepo
+
+	// Refs is a set of git references that point to this commit. For example,
+	// for a search like `repo:sourcegraph@abcd123`, if the `refs/heads/main`
+	// branch currently points to commit `abcd123`, Refs will contain `main`.
+	// Note: this might be empty because finding refs that point to a commit
+	// is an expensive operation that may be disabled.
+	Refs []string
+
+	// SourceRefs is the set of input refs that were used to find this commit.
+	// For example, with a search like `repo:sourcegraph@my-branch`, SourceRefs
+	// should be set to []string{"my-branch"}
 	SourceRefs []string
+
 	// MessagePreview and DiffPreview are mutually exclusive. Only one should be set
 	MessagePreview *MatchedString
 	DiffPreview    *MatchedString
-	Body           MatchedString
+
+	// Body is a markdown-formatteed code block that contains the content of either
+	// the commit message if this match is to a commit, or the matching diff hunks
+	// if this is a diff result.
+	Body MatchedString
 }
 
 // ResultCount for CommitSearchResult returns the number of highlights if there

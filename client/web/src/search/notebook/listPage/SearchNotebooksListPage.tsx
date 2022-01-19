@@ -23,7 +23,7 @@ export interface SearchNotebooksListPageProps extends TelemetryProps {
     fetchNotebooks?: typeof _fetchNotebooks
 }
 
-type SelectedTab = 'my' | 'explore'
+type SelectedTab = 'my' | 'explore' | 'starred'
 
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): SelectedTab {
     if (!authenticatedUser) {
@@ -36,6 +36,8 @@ function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: A
             return 'my'
         case 'explore':
             return 'explore'
+        case 'starred':
+            return 'starred'
     }
     return 'my'
 }
@@ -43,7 +45,9 @@ function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: A
 function setSelectedLocationTab(location: H.Location, history: H.History, selectedTab: SelectedTab): void {
     const urlParameters = new URLSearchParams(location.search)
     urlParameters.set('tab', selectedTab)
+    // Reset FilteredConnection URL params when switching between tabs
     urlParameters.delete('visible')
+    urlParameters.delete('query')
     if (location.search !== urlParameters.toString()) {
         history.replace({ ...location, search: urlParameters.toString() })
     }
@@ -73,20 +77,10 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
         [location, history]
     )
 
-    const onSelectMyNotebooks = useCallback<React.MouseEventHandler>(
-        event => {
-            event.preventDefault()
-            setTab('my')
-            telemetryService.log('SearchNotebooksMyNotebooksTabClick')
-        },
-        [setTab, telemetryService]
-    )
-
-    const onSelectExploreNotebooks = useCallback<React.MouseEventHandler>(
-        event => {
-            event.preventDefault()
-            setTab('explore')
-            telemetryService.log('SearchNotebooksExploreNotebooksTabClick')
+    const onSelectTab = useCallback(
+        (tab: SelectedTab, logName: string) => {
+            setTab(tab)
+            telemetryService.log(logName)
         },
         [setTab, telemetryService]
     )
@@ -98,6 +92,22 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
             id: 'order',
             tooltip: 'Order notebooks',
             values: [
+                {
+                    value: 'stars-desc',
+                    label: 'Stars (descending)',
+                    args: {
+                        orderBy: NotebooksOrderBy.NOTEBOOK_STAR_COUNT,
+                        descending: true,
+                    },
+                },
+                {
+                    value: 'stars-asc',
+                    label: 'Stars (ascending)',
+                    args: {
+                        orderBy: NotebooksOrderBy.NOTEBOOK_STAR_COUNT,
+                        descending: false,
+                    },
+                },
                 {
                     value: 'updated-at-desc',
                     label: 'Last update (descending)',
@@ -156,7 +166,10 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                             <a
                                 href=""
                                 role="button"
-                                onClick={onSelectMyNotebooks}
+                                onClick={event => {
+                                    event.preventDefault()
+                                    onSelectTab('my', 'SearchNotebooksMyNotebooksTabClick')
+                                }}
                                 className={classNames('nav-link', selectedTab === 'my' && 'active')}
                             >
                                 <span className="text-content" data-tab-content="My Notebooks">
@@ -169,7 +182,26 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                             <a
                                 href=""
                                 role="button"
-                                onClick={onSelectExploreNotebooks}
+                                onClick={event => {
+                                    event.preventDefault()
+                                    onSelectTab('starred', 'SearchNotebooksExploreNotebooksTabClick')
+                                }}
+                                className={classNames('nav-link', selectedTab === 'starred' && 'active')}
+                            >
+                                <span className="text-content" data-tab-content="Starred Notebooks">
+                                    Starred Notebooks
+                                </span>
+                            </a>
+                        </div>
+                        <div className="nav-item">
+                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                            <a
+                                href=""
+                                role="button"
+                                onClick={event => {
+                                    event.preventDefault()
+                                    onSelectTab('explore', 'SearchNotebooksExploreNotebooksTabClick')
+                                }}
                                 className={classNames('nav-link', selectedTab === 'explore' && 'active')}
                             >
                                 <span className="text-content" data-tab-content="Explore Notebooks">
@@ -183,13 +215,23 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     <SearchNotebooksList
                         fetchNotebooks={fetchNotebooks}
                         filters={filters}
-                        authenticatedUser={authenticatedUser}
+                        creatorUserID={authenticatedUser.id}
                     />
                 )}
-                {selectedTab === 'my' && !authenticatedUser && (
-                    <UnauthenticatedMyNotebooksSection
+                {selectedTab === 'starred' && authenticatedUser && (
+                    <SearchNotebooksList
+                        fetchNotebooks={fetchNotebooks}
+                        starredByUserID={authenticatedUser.id}
+                        filters={filters}
+                    />
+                )}
+                {(selectedTab === 'my' || selectedTab === 'starred') && !authenticatedUser && (
+                    <UnauthenticatedNotebooksSection
+                        cta={selectedTab === 'my' ? 'Sign up to create notebooks' : 'Sign up to star notebooks'}
                         telemetryService={telemetryService}
-                        onSelectExploreNotebooks={onSelectExploreNotebooks}
+                        onSelectExploreNotebooks={() =>
+                            onSelectTab('explore', 'SearchNotebooksExploreNotebooksTabClick')
+                        }
                     />
                 )}
                 {selectedTab === 'explore' && <SearchNotebooksList fetchNotebooks={fetchNotebooks} filters={filters} />}
@@ -199,11 +241,13 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
 }
 
 interface UnauthenticatedMyNotebooksSectionProps extends TelemetryProps {
-    onSelectExploreNotebooks: (event: React.MouseEvent<HTMLElement>) => void
+    cta: string
+    onSelectExploreNotebooks: () => void
 }
 
-const UnauthenticatedMyNotebooksSection: React.FunctionComponent<UnauthenticatedMyNotebooksSectionProps> = ({
+const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMyNotebooksSectionProps> = ({
     telemetryService,
+    cta,
     onSelectExploreNotebooks,
 }) => {
     const onClick = (): void => {
@@ -217,7 +261,7 @@ const UnauthenticatedMyNotebooksSection: React.FunctionComponent<Unauthenticated
                 to={`/sign-up?returnTo=${encodeURIComponent('/notebooks')}`}
                 className="btn btn-primary"
             >
-                Sign up to create notebooks
+                {cta}
             </Link>
             <span className="my-3 text-muted">or</span>
             <span className={classNames('d-flex align-items-center', styles.explorePublicNotebooks)}>

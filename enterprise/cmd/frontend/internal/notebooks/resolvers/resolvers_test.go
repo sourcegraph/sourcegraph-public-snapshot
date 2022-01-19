@@ -29,6 +29,7 @@ const notebookFields = `
 	updatedAt
 	public
 	viewerCanManage
+	viewerHasStarred
 	blocks {
 		... on MarkdownBlock {
 			__typename
@@ -67,8 +68,8 @@ query Notebook($id: ID!) {
 `, notebookFields)
 
 var listNotebooksQuery = fmt.Sprintf(`
-query Notebooks($first: Int!, $after: String, $orderBy: NotebooksOrderBy, $descending: Boolean, $creatorUserID: ID, $query: String) {
-	notebooks(first: $first, after: $after, orderBy: $orderBy, descending: $descending, creatorUserID: $creatorUserID, query: $query) {
+query Notebooks($first: Int!, $after: String, $orderBy: NotebooksOrderBy, $descending: Boolean, $starredByUserID: ID, $creatorUserID: ID, $query: String) {
+	notebooks(first: $first, after: $after, orderBy: $orderBy, descending: $descending, starredByUserID: $starredByUserID, creatorUserID: $creatorUserID, query: $query) {
 		nodes {
 			%s
 	  	}
@@ -383,6 +384,21 @@ func createNotebooks(t *testing.T, db *sql.DB, notebooksToCreate []*notebooks.No
 	return createdNotebooks
 }
 
+func createNotebookStars(t *testing.T, db *sql.DB, notebookID int64, userIDs ...int32) []*notebooks.NotebookStar {
+	t.Helper()
+	n := notebooks.Notebooks(db)
+	internalCtx := actor.WithInternalActor(context.Background())
+	createdStars := make([]*notebooks.NotebookStar, 0, len(userIDs))
+	for _, userID := range userIDs {
+		createdStar, err := n.CreateNotebookStar(internalCtx, notebookID, userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		createdStars = append(createdStars, createdStar)
+	}
+	return createdStars
+}
+
 func TestListNotebooks(t *testing.T) {
 	db := dbtest.NewDB(t)
 	internalCtx := actor.WithInternalActor(context.Background())
@@ -408,6 +424,8 @@ func TestListNotebooks(t *testing.T) {
 		notebookFixture(user1.ID, false),
 		notebookFixture(user2.ID, true),
 	})
+	createNotebookStars(t, db, createdNotebooks[0].ID, user1.ID)
+	createNotebookStars(t, db, createdNotebooks[2].ID, user1.ID, user2.ID)
 
 	database := database.NewDB(db)
 	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database))
@@ -455,6 +473,13 @@ func TestListNotebooks(t *testing.T) {
 			viewerID:      user2.ID,
 			args:          map[string]interface{}{"first": 3, "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
 			wantNotebooks: []*notebooks.Notebook{createdNotebooks[0], createdNotebooks[2]},
+			wantCount:     2,
+		},
+		{
+			name:          "user1 starred notebooks ordered by count",
+			viewerID:      user1.ID,
+			args:          map[string]interface{}{"first": 3, "starredByUserID": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByStarCount, "descending": true},
+			wantNotebooks: []*notebooks.Notebook{createdNotebooks[2], createdNotebooks[0]},
 			wantCount:     2,
 		},
 	}

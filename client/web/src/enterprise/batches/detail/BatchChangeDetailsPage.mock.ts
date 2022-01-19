@@ -49,6 +49,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
+        id: 'specID1',
         originalInput: 'name: awesome-batch-changes\ndescription: somestring',
         supersedingBatchSpec: null,
         codeHostsWithoutWebhooks: {

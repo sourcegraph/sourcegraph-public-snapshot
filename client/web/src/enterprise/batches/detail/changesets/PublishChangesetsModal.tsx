@@ -1,9 +1,8 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -44,11 +43,7 @@ export const PublishChangesetsModal: React.FunctionComponent<PublishChangesetsMo
     }, [])
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={MODAL_LABEL_ID}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
             <h3 id={MODAL_LABEL_ID}>Publish changesets</h3>
             <p className="mb-4">Are you sure you want to publish all the selected changesets to the code hosts?</p>
             <Form>
@@ -84,7 +79,7 @@ export const PublishChangesetsModal: React.FunctionComponent<PublishChangesetsMo
                     Publish
                 </Button>
             </div>
-        </Dialog>
+        </Modal>
     )
 }
 

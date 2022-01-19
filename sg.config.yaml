@@ -549,7 +549,7 @@ commands:
 
       chmod +x "${target}"
     env:
-      JAEGER_VERSION: 1.18.1
+      JAEGER_VERSION: 1.30.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
       JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger
@@ -726,6 +726,27 @@ checks:
     cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
     failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
 
+  git-version:
+    cmd: |
+      git_version="$(git --version | cut -d' ' -f 3)"
+      git_major_version="$(echo $git_version | cut -d'.' -f 1)"
+      git_minor_version="$(echo $git_version | cut -d'.' -f 2)"
+      git_patch_version="$(echo $git_version | cut -d'.' -f 3)"
+      # See [NOTE: git-version-min-requirement]
+      ERR_MSG="Need git version 2.34.1 or higher but found $git_version."
+      if [[ "$git_major_version" -eq 2 ]]; then
+        if [[ "$git_minor_version" -eq 34 ]]; then
+          if [[ "$git_patch_version" -lt 1 ]]; then
+            echo $ERR_MSG && exit 1
+          fi
+        elif [[ "$git_minor_version" -lt 34 ]]; then
+          echo $ERR_MSG && exit 1
+        fi
+      elif [[ "$git_major_version" -lt 2 ]]; then
+        echo $ERR_MSG && exit 1
+      fi
+    failMessage: 'Incorrect git version'
+
 defaultCommandset: enterprise
 commandsets:
   oss:
@@ -735,6 +756,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - frontend
       - worker
@@ -758,6 +780,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -786,6 +809,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -815,6 +839,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -842,6 +867,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -861,6 +887,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -885,6 +912,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-repo-updater

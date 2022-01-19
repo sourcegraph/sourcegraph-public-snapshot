@@ -91,12 +91,12 @@ export class EventLogger implements TelemetryService {
             return
         }
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
-        this.logToConsole(eventLabel, eventProperties)
+        this.logToConsole(eventLabel, eventProperties, publicArgument)
     }
 
-    private logToConsole(eventLabel: string, object?: any): void {
+    private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
-            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, object)
+            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
         }
     }
 
@@ -255,17 +255,25 @@ function pageViewQueryParameters(url: string): EventQueryParameters {
     const parsedUrl = new URL(url)
 
     const utmSource = parsedUrl.searchParams.get('utm_source')
+    const utmCampaign = parsedUrl.searchParams.get('utm_campaign')
+
+    const utmProps = {
+        utm_campaign: utmCampaign || undefined,
+        utm_source: utmSource || undefined,
+        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
+        utm_term: parsedUrl.searchParams.get('utm_term') || undefined,
+        utm_content: parsedUrl.searchParams.get('utm_content') || undefined,
+    }
+
     if (utmSource === 'saved-search-email') {
         eventLogger.log('SavedSearchEmailClicked')
     } else if (utmSource === 'saved-search-slack') {
         eventLogger.log('SavedSearchSlackClicked')
     } else if (utmSource === 'code-monitoring-email') {
         eventLogger.log('CodeMonitorEmailLinkClicked')
+    } else if (utmSource === 'hubspot' && utmCampaign?.match(/^cloud-onboarding-email(.*)$/)) {
+        eventLogger.log('UTMCampaignLinkClicked', utmProps, utmProps)
     }
 
-    return {
-        utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
-        utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
-        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
-    }
+    return utmProps
 }

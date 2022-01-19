@@ -1,9 +1,8 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -43,11 +42,7 @@ export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModa
     const labelId = 'detach-changesets-modal-title'
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={labelId}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <h3 id={labelId}>Detach changesets</h3>
             <p className="mb-4">Are you sure you want to detach the selected changesets?</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
@@ -66,6 +61,6 @@ export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModa
                     Detach
                 </Button>
             </div>
-        </Dialog>
+        </Modal>
     )
 }
