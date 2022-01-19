@@ -15,7 +15,6 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -277,11 +276,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 			changesetSpec.BatchSpecID = batchSpec.ID
 			changesetSpec.RepoID = repo.ID
 			changesetSpec.UserID = batchSpec.UserID
-
-			// TODO: unify.
-			if conf.Get().BatchChangesEnforceForks {
-				changesetSpec.SetForkToUser()
-			}
 
 			specs = append(specs, changesetSpec)
 		}

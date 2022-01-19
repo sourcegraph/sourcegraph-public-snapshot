@@ -16,7 +16,6 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -67,11 +66,6 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 		s.BatchSpecID = batchSpec.ID
 		s.UserID = userID
 		s.RepoID = r.ID
-
-		// TODO: unify.
-		if conf.Get().BatchChangesEnforceForks {
-			s.SetForkToUser()
-		}
 
 		if err := cstore.CreateChangesetSpec(ctx, s); err != nil {
 			t.Fatal(err)

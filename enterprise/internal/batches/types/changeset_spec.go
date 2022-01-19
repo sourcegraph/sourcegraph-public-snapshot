@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -22,6 +23,7 @@ func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 
 func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, error) {
 	c := &ChangesetSpec{Spec: spec}
+	c.computeForkNamespace()
 	return c, c.computeDiffStat()
 }
 
@@ -86,6 +88,16 @@ func (cs *ChangesetSpec) computeDiffStat() error {
 	cs.DiffStatChanged = stats.Changed
 
 	return nil
+}
+
+// computeForkNamespace calculates the namespace that the changeset spec will be
+// forked into, if any.
+func (cs *ChangesetSpec) computeForkNamespace() {
+	// Right now, we only look at the global enforceForks setting, but we will
+	// likely base this off the description eventually as well.
+	if conf.Get().BatchChangesEnforceForks {
+		cs.SetForkToUser()
+	}
 }
 
 // DiffStat returns a *diff.Stat.

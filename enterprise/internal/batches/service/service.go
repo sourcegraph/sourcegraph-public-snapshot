@@ -21,7 +21,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -606,11 +605,6 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.Spec.BaseRepository))
 	if err != nil {
 		return nil, err
-	}
-
-	// TODO: unify.
-	if conf.Get().BatchChangesEnforceForks {
-		spec.SetForkToUser()
 	}
 
 	// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
