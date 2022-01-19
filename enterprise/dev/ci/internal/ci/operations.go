@@ -125,10 +125,12 @@ type CacheConfig struct {
 }
 
 type CacheConfigS3 struct {
-	Profile string `json:"profile,omitempty"`
-	Bucket  string `json:"bucket"`
-	Class   string `json:"class,omitempty"`
-	Args    string `json:"args,omitempty"`
+	Profile  string `json:"profile,omitempty"`
+	Bucket   string `json:"bucket"`
+	Class    string `json:"class,omitempty"`
+	Args     string `json:"args,omitempty"`
+	Endpoint string `json:"endpoint,omitempty"`
+	Region   string `json:"region,omitempty"`
 }
 
 // yarn ~41s + ~30s
@@ -144,9 +146,10 @@ func addPrettier(pipeline *bk.Pipeline) {
 			RestoreKeys: []string{"node_modules-"},
 			Paths:       []string{"node_modules"},
 			S3: CacheConfigS3{
-				Bucket:  "sourcegraph_buildkite_cache",
-				Profile: "buildkite",
-				Args:    "--endpoint-url=https://storage.googleapis.com --region=us-central1",
+				Bucket:   "sourcegraph_buildkite_cache",
+				Profile:  "buildkite",
+				Endpoint: "https://storage.googleapis.com",
+				Region:   "us-central1",
 			},
 		}),
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
