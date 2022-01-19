@@ -3,6 +3,7 @@ package authtest
 import (
 	"bytes"
 	"io"
+	"net/http"
 	"testing"
 	"time"
 
@@ -114,7 +115,12 @@ func TestCodeIntelEndpoints(t *testing.T) {
 	})
 
 	t.Run("executor endpoints", func(t *testing.T) {
-		resp, err := userClient.Get(*baseURL + "/.executors/")
+		req, err := http.NewRequest("GET", *baseURL+"/.executors/", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatal(err)
 		}
