@@ -9,7 +9,7 @@ import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 
 import { SearchContextProps } from '@sourcegraph/search'
-import { SearchResult } from '@sourcegraph/search-ui/src/components/SearchResult'
+import { SearchResult } from '@sourcegraph/search-ui'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'

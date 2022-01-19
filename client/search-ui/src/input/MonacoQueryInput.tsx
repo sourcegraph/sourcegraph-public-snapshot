@@ -9,8 +9,9 @@ import {
     CaseSensitivityProps,
     SearchPatternTypeProps,
     SearchContextProps,
+    useQueryIntelligence,
+    useQueryDiagnostics,
 } from '@sourcegraph/search'
-import { useQueryIntelligence, useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
