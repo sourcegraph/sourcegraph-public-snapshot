@@ -95,7 +95,7 @@ func checkGitHubPermissions(ctx context.Context, repoName string, client GitHubC
 // is present in set of visible repositories, indicating authorship of the user initiating the current
 // upload request.
 func checkGitHubAppInstallationPermissions(ctx context.Context, nameWithOwner string, client GitHubClient) (author bool, wrongTokenType bool, _ error) {
-	installationRepositories, err := client.ListInstallationRepositories(ctx)
+	installationRepositories, _, _, err := client.ListInstallationRepositories(ctx, 1) // TODO(code-intel): Loop over pages
 	if err != nil {
 		// A 403 error with this text indicates that the supplied token is a user token and not
 		// an app installation token. We'll send back a special flag to the caller to inform them
