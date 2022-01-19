@@ -1587,8 +1587,7 @@ Foreign-key constraints:
  user_id     | integer                  |           | not null | 
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
-    "notebook_stars_notebook_id_user_id_unique" UNIQUE, btree (notebook_id, user_id)
-    "notebook_stars_notebook_id_idx" btree (notebook_id)
+    "notebook_stars_pkey" PRIMARY KEY, btree (notebook_id, user_id)
     "notebook_stars_user_id_idx" btree (user_id)
 Foreign-key constraints:
     "notebook_stars_notebook_id_fkey" FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE
