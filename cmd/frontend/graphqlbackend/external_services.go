@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -12,6 +13,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -21,12 +24,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 const syncExternalServiceTimeout = 15 * time.Second
+
+var extsvcMutationLables = []string{"success", "mutation", "namespace"}
+var mutationDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_extsvc_mutation_duration_seconds",
+	Help:    "ExternalService mutation latencies in seconds.",
+	Buckets: trace.UserLatencyBuckets,
+}, extsvcMutationLables)
 
 type addExternalServiceArgs struct {
 	Input addExternalServiceInput
@@ -40,6 +51,7 @@ type addExternalServiceInput struct {
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
+	start := time.Now()
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
@@ -50,6 +62,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	if args.Input.Namespace != nil {
 		var err error
+		defer reportExternalServiceDuration(start, "add", &err, &namespaceUserID, &namespaceOrgID)
 
 		err = UnmarshalNamespaceID(*args.Input.Namespace, &namespaceUserID, &namespaceOrgID)
 		if err != nil {
@@ -116,19 +129,23 @@ type updateExternalServiceInput struct {
 }
 
 func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
+	start := time.Now()
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
 	id, err := UnmarshalExternalServiceID(args.Input.ID)
 	if err != nil {
+		defer reportExternalServiceDuration(start, "update", &err, nil, nil)
 		return nil, err
 	}
 
 	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
+		defer reportExternalServiceDuration(start, "update", &err, nil, nil)
 		return nil, err
 	}
+	defer reportExternalServiceDuration(start, "update", &err, &es.NamespaceUserID, &es.NamespaceOrgID)
 
 	// 🚨 SECURITY: check access to external service
 	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
@@ -209,19 +226,23 @@ type deleteExternalServiceArgs struct {
 }
 
 func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
+	start := time.Now()
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
 	id, err := UnmarshalExternalServiceID(args.ExternalService)
 	if err != nil {
+		defer reportExternalServiceDuration(start, "delete", &err, nil, nil)
 		return nil, err
 	}
 
 	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
+		defer reportExternalServiceDuration(start, "delete", &err, nil, nil)
 		return nil, err
 	}
+	defer reportExternalServiceDuration(start, "delete", &err, &es.NamespaceUserID, &es.NamespaceOrgID)
 
 	// 🚨 SECURITY: check external service access
 	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
@@ -386,4 +407,22 @@ func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Conte
 
 func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
+}
+
+func reportExternalServiceDuration(startTime time.Time, mutation string, err *error, userId, orgId *int32) {
+	duration := time.Since(startTime)
+	log.Println("ReportingReportingReportingReportingReportingReportingReportingReportingReporting", mutation, duration.Seconds(), *err, "u:", *userId, "o:", *orgId)
+	ns := "global"
+	if *userId != 0 {
+		ns = "user"
+	} else if *orgId != 0 {
+		ns = "org"
+	}
+	labels := prometheus.Labels{
+		"mutation":  mutation,
+		"success":   strconv.FormatBool(*err == nil),
+		"namespace": ns,
+	}
+	mutationDuration.With(labels).Observe(duration.Seconds())
+
 }
