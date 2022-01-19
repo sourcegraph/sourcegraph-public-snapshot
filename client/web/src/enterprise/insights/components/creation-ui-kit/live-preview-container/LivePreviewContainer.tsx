@@ -46,7 +46,7 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
         <aside className={classNames(styles.livePreview, className)}>
             <div className="d-flex align-items-center mb-1">
                 Live preview
-                <Button disabled={disabled} className="btn-icon ml-1" onClick={onUpdateClick}>
+                <Button disabled={disabled} variant="icon" className="ml-1" onClick={onUpdateClick}>
                     <RefreshIcon size="1rem" />
                 </Button>
             </div>

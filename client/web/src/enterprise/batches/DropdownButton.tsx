@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button, ButtonGroup } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
 
@@ -122,7 +122,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
     return (
         <>
             {renderedElement}
-            <div className="btn-group">
+            <ButtonGroup>
                 <Button
                     className="text-nowrap"
                     onClick={onTriggerAction}
@@ -161,7 +161,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
                         </div>
                     </>
                 )}
-            </div>
+            </ButtonGroup>
         </>
     )
 }

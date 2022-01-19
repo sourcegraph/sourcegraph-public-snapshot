@@ -33,7 +33,7 @@ export const WebhookLogNode: React.FunctionComponent<Props> = ({
             <span className={styles.separator} />
             <span className={styles.detailsButton}>
                 <Button
-                    className="btn-icon"
+                    variant="icon"
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleExpanded}
                 >

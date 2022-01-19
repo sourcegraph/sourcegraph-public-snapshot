@@ -112,7 +112,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                     )}
                 </p>
             </div>
-            <Button onClick={onAlertDismissed} aria-label="Close alert" className="btn-icon test-close-alert">
+            <Button onClick={onAlertDismissed} aria-label="Close alert" variant="icon" className="test-close-alert">
                 <CloseIcon className="icon-inline" />
             </Button>
         </div>
@@ -159,7 +159,7 @@ export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ 
                 . The extension adds code intelligence to code views on {displayName} or any other connected code host.
             </p>
         </div>
-        <Button onClick={onAlertDismissed} aria-label="Close alert" className="btn-icon test-close-alert">
+        <Button onClick={onAlertDismissed} aria-label="Close alert" variant="icon" className="test-close-alert">
             <CloseIcon className="icon-inline" />
         </Button>
     </div>

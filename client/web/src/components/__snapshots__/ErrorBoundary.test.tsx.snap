@@ -72,7 +72,7 @@ exports[`ErrorBoundary renders reload page if chunk error 1`] = `
           A new version of Sourcegraph is available.
         </p>
         <button
-          class="btn btn-primary"
+          class="btn btnPrimary"
           type="button"
         >
           Reload to update

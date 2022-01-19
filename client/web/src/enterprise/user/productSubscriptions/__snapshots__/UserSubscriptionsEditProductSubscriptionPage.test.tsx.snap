@@ -6,7 +6,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
     class="user-subscriptions-edit-product-subscription-page"
   >
     <a
-      class="btn btn-link btn-sm mb-3"
+      class="btn btnLink btnSm mb-3"
       href="/s"
     >
       <arrowlefticon

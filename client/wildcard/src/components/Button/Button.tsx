@@ -3,8 +3,9 @@ import React from 'react'
 
 import { ForwardReferenceComponent } from '../../types'
 
-import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
-import { getButtonSize, getButtonStyle } from './utils'
+import styles from './Button.module.scss'
+import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
+import { getButtonSize, getButtonStyle, getButtonDisplay } from './utils'
 
 export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement>,
@@ -17,6 +18,10 @@ export interface ButtonProps
      * Allows modifying the size of the button. Supports larger or smaller variants.
      */
     size?: typeof BUTTON_SIZES[number]
+    /**
+     * Allows modifying the display property of the button. Supports inline-block or block variants.
+     */
+    display?: typeof BUTTON_DISPLAY[number]
     /**
      * Modifies the button style to have a transparent/light background and a more pronounced outline.
      */
@@ -48,15 +53,26 @@ export interface ButtonProps
  */
 export const Button = React.forwardRef(
     (
-        { children, as: Component = 'button', type = 'button', variant, size, outline, className, ...attributes },
+        {
+            children,
+            as: Component = 'button',
+            type = 'button',
+            variant,
+            size,
+            display,
+            outline,
+            className,
+            ...attributes
+        },
         reference
     ) => (
         <Component
             ref={reference}
             className={classNames(
-                'btn',
+                styles.btn,
                 variant && getButtonStyle({ variant, outline }),
                 size && getButtonSize({ size }),
+                display && getButtonDisplay({ display }),
                 className
             )}
             type={Component === 'button' ? type : undefined}

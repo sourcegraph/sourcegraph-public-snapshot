@@ -299,7 +299,8 @@ export const Panel = React.memo<Props>(props => {
                     </small>
                     <Button
                         onClick={handlePanelClose}
-                        className={classNames('btn-icon ml-2', styles.dismissButton)}
+                        variant="icon"
+                        className={classNames('ml-2', styles.dismissButton)}
                         title="Close panel"
                         data-tooltip="Close panel"
                         data-placement="left"

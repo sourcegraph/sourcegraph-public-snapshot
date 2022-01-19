@@ -82,7 +82,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     return (
         <>
             <Button
-                className="btn-icon test-batches-expand-changeset d-none d-sm-block"
+                variant="icon"
+                className="test-batches-expand-changeset d-none d-sm-block"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >

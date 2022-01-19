@@ -7,7 +7,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Button, TooltipController } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, TooltipController } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -139,7 +139,8 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 <code className={styles.shaAndParentsSha}>
                     {node.oid}{' '}
                     <Button
-                        className={classNames('btn-icon', styles.shaAndParentsCopy)}
+                        variant="icon"
+                        className={styles.shaAndParentsCopy}
                         onClick={() => copyToClipboard(node.oid)}
                         data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                     >
@@ -162,7 +163,8 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                     <code>{parent.oid}</code>
                                 </Link>
                                 <Button
-                                    className={classNames('btn-icon', styles.shaAndParentsCopy)}
+                                    variant="icon"
+                                    className={styles.shaAndParentsCopy}
                                     onClick={() => copyToClipboard(parent.oid)}
                                     data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                                 >
@@ -222,12 +224,13 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                             <div className={styles.actions}>
                                 {!showSHAAndParentsRow && (
                                     <div>
-                                        <div className="btn-group btn-group-sm mr-2" role="group">
+                                        <ButtonGroup className="mr-2">
                                             <Button
                                                 to={node.canonicalURL}
                                                 data-tooltip="View this commit"
                                                 variant="secondary"
                                                 as={Link}
+                                                size="sm"
                                             >
                                                 <strong>{oidElement}</strong>
                                             </Button>
@@ -237,10 +240,11 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                                     flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
                                                 }
                                                 variant="secondary"
+                                                size="sm"
                                             >
                                                 <ContentCopyIcon className="icon-inline small" />
                                             </Button>
-                                        </div>
+                                        </ButtonGroup>
                                         {node.tree && (
                                             <Button
                                                 to={node.tree.canonicalURL}

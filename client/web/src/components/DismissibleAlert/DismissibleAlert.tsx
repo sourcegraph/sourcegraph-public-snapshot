@@ -48,7 +48,7 @@ export const DismissibleAlert: React.FunctionComponent<Props> = ({
     return (
         <div data-testid={testId} className={classNames('alert', styles.container, className)}>
             <div className={styles.content}>{children}</div>
-            <Button aria-label="Close alert" className={classNames('btn-icon', styles.closeButton)} onClick={onDismiss}>
+            <Button aria-label="Close alert" variant="icon" className={styles.closeButton} onClick={onDismiss}>
                 <CloseIcon className="icon-inline" />
             </Button>
         </div>

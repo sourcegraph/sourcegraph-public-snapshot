@@ -11,7 +11,8 @@ import 'storybook-addon-designs'
 
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
-import { TextArea, Button } from '@sourcegraph/wildcard'
+import { TextArea, Button, ButtonGroup } from '@sourcegraph/wildcard'
+import { BUTTON_SIZES } from '@sourcegraph/wildcard/src/components/Button/constants'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
@@ -52,6 +53,8 @@ Text.parameters = {
             'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
     },
 }
+
+type ButtonSizesType = typeof BUTTON_SIZES[number] | undefined
 
 export const Code: Story = () => (
     <>
@@ -251,6 +254,7 @@ Alerts.parameters = {
 
 export const ButtonGroups: Story = () => {
     const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
+    const buttonSizes: ButtonSizesType[] = ['lg', undefined, 'sm']
     return (
         <>
             <h1>Button groups</h1>
@@ -266,15 +270,15 @@ export const ButtonGroups: Story = () => {
                     used to group any other semantic or outline button variant.
                 </p>
                 <div className="mb-2">
-                    <div className="btn-group" role="group" aria-label="Basic example">
+                    <ButtonGroup aria-label="Basic example">
                         <Button variant="secondary">Left</Button>
                         <Button variant="secondary">Middle</Button>
                         <Button variant="secondary">Right</Button>
-                    </div>{' '}
+                    </ButtonGroup>{' '}
                     Example with <code>btn-secondary</code>
                 </div>
                 <div className="mb-2">
-                    <div className="btn-group" role="group" aria-label="Basic example">
+                    <ButtonGroup aria-label="Basic example">
                         <Button outline={true} variant="secondary">
                             Left
                         </Button>
@@ -284,11 +288,11 @@ export const ButtonGroups: Story = () => {
                         <Button outline={true} variant="secondary">
                             Right
                         </Button>
-                    </div>{' '}
+                    </ButtonGroup>{' '}
                     Example with <code>btn-outline-secondary</code>
                 </div>
                 <div className="mb-2">
-                    <div className="btn-group" role="group" aria-label="Basic example">
+                    <ButtonGroup aria-label="Basic example">
                         <Button outline={true} variant="primary">
                             Left
                         </Button>
@@ -298,7 +302,7 @@ export const ButtonGroups: Story = () => {
                         <Button outline={true} variant="primary">
                             Right
                         </Button>
-                    </div>{' '}
+                    </ButtonGroup>{' '}
                     Example with <code>btn-outline-primary</code>
                 </div>
             </div>
@@ -308,19 +312,19 @@ export const ButtonGroups: Story = () => {
                 Just like buttons, button groups have <code>sm</code> and <code>lg</code> size variants.
             </p>
             <div className="mb-2">
-                {['btn-group-lg', '', 'btn-group-sm'].map(size => (
+                {buttonSizes.map(size => (
                     <div key={size} className="mb-2">
-                        <div className={classNames('btn-group', size)} role="group" aria-label="Sizing example">
-                            <Button outline={true} variant="primary">
+                        <ButtonGroup aria-label="Sizing example">
+                            <Button size={size} outline={true} variant="primary">
                                 Left
                             </Button>
-                            <Button outline={true} variant="primary">
+                            <Button size={size} outline={true} variant="primary">
                                 Middle
                             </Button>
-                            <Button outline={true} variant="primary">
+                            <Button size={size} outline={true} variant="primary">
                                 Right
                             </Button>
-                        </div>
+                        </ButtonGroup>
                     </div>
                 ))}
             </div>
@@ -330,7 +334,7 @@ export const ButtonGroups: Story = () => {
                 The <code>active</code> class can be used to craft toggles out of button groups.
             </p>
             <div className="mb-2">
-                <div className="btn-group" role="group" aria-label="Basic example">
+                <ButtonGroup aria-label="Basic example">
                     {(['Left', 'Middle', 'Right'] as const).map(option => (
                         <Button
                             key={option}
@@ -343,11 +347,11 @@ export const ButtonGroups: Story = () => {
                             {option}
                         </Button>
                     ))}
-                </div>{' '}
+                </ButtonGroup>{' '}
                 Example with <code>btn-outline-secondary</code>
             </div>
             <div className="mb-2">
-                <div className="btn-group" role="group" aria-label="Basic example">
+                <ButtonGroup aria-label="Basic example">
                     {(['Left', 'Middle', 'Right'] as const).map(option => (
                         <Button
                             key={option}
@@ -360,7 +364,7 @@ export const ButtonGroups: Story = () => {
                             {option}
                         </Button>
                     ))}
-                </div>{' '}
+                </ButtonGroup>{' '}
                 Example with <code>btn-outline-primary</code>
             </div>
         </>

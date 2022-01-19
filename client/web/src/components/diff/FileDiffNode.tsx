@@ -100,7 +100,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
             <a id={anchor} aria-hidden={true} />
             <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
-                    <Button className="btn-icon mr-2" onClick={toggleExpand} size="sm">
+                    <Button variant="icon" className="mr-2" onClick={toggleExpand} size="sm">
                         {expanded ? (
                             <ChevronDownIcon className="icon-inline" />
                         ) : (

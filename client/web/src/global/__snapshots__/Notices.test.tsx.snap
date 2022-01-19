@@ -39,7 +39,7 @@ exports[`Notices shows notices for location 1`] = `
       </div>
       <button
         aria-label="Close alert"
-        class="btn btn-icon closeButton"
+        class="btn btnIcon closeButton"
         type="button"
       >
         <svg

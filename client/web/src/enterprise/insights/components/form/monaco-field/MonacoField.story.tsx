@@ -35,7 +35,7 @@ export const SimpleMonacoField = () => (
 
         <Monaco.Root>
             <Monaco.Field value="" placeholder="Example: type:diff repo:sourcegrph/* " />
-            <Button className="btn-icon" disabled={true}>
+            <Button variant="icon" disabled={true}>
                 <RegexIcon
                     size={21}
                     data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
@@ -45,7 +45,7 @@ export const SimpleMonacoField = () => (
 
         <Monaco.Root>
             <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" />
-            <Button className="btn-icon" disabled={true}>
+            <Button variant="icon" disabled={true}>
                 <RegexIcon
                     size={21}
                     data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
@@ -55,7 +55,7 @@ export const SimpleMonacoField = () => (
 
         <Monaco.Root>
             <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" className="is-valid" />
-            <Button className="btn-icon" disabled={true}>
+            <Button variant="icon" disabled={true}>
                 <RegexIcon
                     size={21}
                     data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
@@ -65,7 +65,7 @@ export const SimpleMonacoField = () => (
 
         <Monaco.Root>
             <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" className="is-invalid" />
-            <Button className="btn-icon" disabled={true}>
+            <Button variant="icon" disabled={true}>
                 <RegexIcon
                     size={21}
                     data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."

@@ -107,31 +107,31 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         >
           Set to 
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             7 days
           </button>
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             14 days
           </button>
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             30 days
           </button>
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             60 days
           </button>
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             1 year

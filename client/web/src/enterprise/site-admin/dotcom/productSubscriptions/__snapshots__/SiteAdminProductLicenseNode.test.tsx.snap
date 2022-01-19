@@ -81,7 +81,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           class="input-group-append"
         >
           <button
-            class="btn btn-secondary"
+            class="btn btnSecondary"
             type="button"
           >
             <svg
@@ -180,7 +180,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           class="input-group-append"
         >
           <button
-            class="btn btn-secondary"
+            class="btn btnSecondary"
             type="button"
           >
             <svg

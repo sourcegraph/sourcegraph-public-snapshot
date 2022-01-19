@@ -109,7 +109,7 @@ export const ViewWithContextMenu: Story = () => (
         subtitle="Subtitle chart description"
         actions={
             <>
-                <Button className="btn-icon p-1">
+                <Button variant="icon" className="p-1">
                     <FilterOutlineIcon size="1rem" />
                 </Button>
                 <ContextMenu />

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup } from '@sourcegraph/wildcard'
 
 import { DiffMode } from './RepositoryCommitPage'
 
@@ -19,7 +19,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
     small,
 }) => (
     <div className={className}>
-        <div role="group" className="btn-group">
+        <ButtonGroup>
             <Button
                 onClick={() => onHandleDiffMode('unified')}
                 className={classNames(
@@ -38,6 +38,6 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
             >
                 Split
             </Button>
-        </div>
+        </ButtonGroup>
     </div>
 )

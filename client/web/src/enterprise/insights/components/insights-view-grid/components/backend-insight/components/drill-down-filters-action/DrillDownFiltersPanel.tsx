@@ -48,7 +48,8 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
         <>
             <Button
                 ref={targetButtonReference}
-                className={classNames('btn-icon p-1', styles.filterButton, {
+                variant="icon"
+                className={classNames('p-1', styles.filterButton, {
                     [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: isFiltered,
                 })}

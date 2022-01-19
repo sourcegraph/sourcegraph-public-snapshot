@@ -52,7 +52,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       class="flex mt-1"
     >
       <button
-        class="btn btn-sm mr-2 btn-secondary"
+        class="btn btnSm mr-2 btn-secondary"
         disabled=""
         type="button"
       >
@@ -96,14 +96,14 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     >
       <div>
         <button
-          class="btn btn-secondary mr-1 test-submit-action"
+          class="btn btnSecondary mr-1 test-submit-action"
           data-testid="submit-action"
           type="submit"
         >
           Continue
         </button>
         <button
-          class="btn btn-outline-secondary"
+          class="btn btnOutlineSecondary"
           type="button"
         >
           Cancel

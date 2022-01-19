@@ -111,7 +111,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
         class="text-center py-3"
       >
         <button
-          class="btn btn-link"
+          class="btn btnLink"
           type="button"
         >
           Show more
@@ -233,7 +233,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
         class="text-center py-3"
       >
         <button
-          class="btn btn-link"
+          class="btn btnLink"
           type="button"
         >
           Show more

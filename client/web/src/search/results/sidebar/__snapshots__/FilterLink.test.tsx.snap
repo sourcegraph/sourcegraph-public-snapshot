@@ -3,7 +3,7 @@
 exports[`FilterLink should have correct links for dynamic filters 1`] = `
 <DocumentFragment>
   <button
-    class="btn btn-link sidebarSectionListItem"
+    class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
     value="lang:go"
@@ -35,7 +35,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
   </button>
   <button
-    class="btn btn-link sidebarSectionListItem"
+    class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
     value="lang:typescript"
@@ -67,7 +67,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
   </button>
   <button
-    class="btn btn-link sidebarSectionListItem"
+    class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
     value="-file:_test\\\\.go$"
@@ -104,7 +104,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
 exports[`FilterLink should have correct links for repos 1`] = `
 <DocumentFragment>
   <button
-    class="btn btn-link sidebarSectionListItem"
+    class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
     value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
@@ -148,7 +148,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
     </span>
   </button>
   <button
-    class="btn btn-link sidebarSectionListItem"
+    class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
     value="repo:^github\\\\.com/microsoft/vscode$"
@@ -197,7 +197,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
 exports[`FilterLink should have correct links for scopes 1`] = `
 <DocumentFragment>
   <button
-    class="btn btn-link sidebarSectionListItem"
+    class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
     value="repo:sourcegraph"
@@ -209,7 +209,7 @@ exports[`FilterLink should have correct links for scopes 1`] = `
     </span>
   </button>
   <button
-    class="btn btn-link sidebarSectionListItem"
+    class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
     value="count:all"
@@ -226,7 +226,7 @@ exports[`FilterLink should have correct links for scopes 1`] = `
 exports[`FilterLink should have show icons for repos on cloud 1`] = `
 <DocumentFragment>
   <button
-    class="btn btn-link sidebarSectionListItem"
+    class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
     value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
@@ -270,7 +270,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     </span>
   </button>
   <button
-    class="btn btn-link sidebarSectionListItem"
+    class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
     value="repo:^github\\\\.com/microsoft/vscode$"
