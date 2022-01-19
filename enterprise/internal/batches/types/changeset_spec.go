@@ -96,7 +96,7 @@ func (cs *ChangesetSpec) computeForkNamespace() {
 	// Right now, we only look at the global enforceForks setting, but we will
 	// likely base this off the description eventually as well.
 	if conf.Get().BatchChangesEnforceForks {
-		cs.SetForkToUser()
+		cs.setForkToUser()
 	}
 }
 
@@ -144,10 +144,14 @@ func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
 // which we don't know at spec upload time.
 const changesetSpecForkNamespaceUser = "<user>"
 
+// IsFork returns true if the changeset spec should be pushed to a fork.
 func (cs *ChangesetSpec) IsFork() bool {
 	return cs.ForkNamespace != nil
 }
 
+// GetForkNamespace returns the namespace if the changeset spec should be pushed
+// to a named fork, or nil if the changeset spec shouldn't be pushed to a fork
+// _or_ should be pushed to a fork in the user's default namespace.
 func (cs *ChangesetSpec) GetForkNamespace() *string {
 	if cs.ForkNamespace != nil && *cs.ForkNamespace != changesetSpecForkNamespaceUser {
 		return cs.ForkNamespace
@@ -155,7 +159,7 @@ func (cs *ChangesetSpec) GetForkNamespace() *string {
 	return nil
 }
 
-func (cs *ChangesetSpec) SetForkToUser() {
+func (cs *ChangesetSpec) setForkToUser() {
 	s := changesetSpecForkNamespaceUser
 	cs.ForkNamespace = &s
 }

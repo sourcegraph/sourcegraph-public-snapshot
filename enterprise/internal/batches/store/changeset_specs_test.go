@@ -62,7 +62,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 		if i == cap(changesetSpecs)-1 {
 			c.BatchSpecID = 0
-			c.SetForkToUser()
+			forkNamespace := "fork"
+			c.ForkNamespace = &forkNamespace
 		}
 		changesetSpecs = append(changesetSpecs, c)
 	}
