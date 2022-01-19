@@ -128,7 +128,6 @@ func TestGenerateHistory(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			println("--- " + t.Name())
 			_, gotFlakes, gotConsecutiveFailures := generateHistory(tt.builds, day.Add(2*time.Hour), CheckOptions{
 				FailuresThreshold: 3,
 				BuildTimeout:      0, // disable timeout check

@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -42,6 +43,9 @@ type CommitsOptions struct {
 
 	// When true we opt out of attempting to fetch missing revisions
 	NoEnsureRevision bool
+
+	// When true return the names of the files changed in the commit
+	NameOnly bool
 }
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
@@ -86,7 +90,7 @@ func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt Reso
 		NoEnsureRevision: opt.NoEnsureRevision,
 	}
 
-	commits, err := commitLog(ctx, repo, commitOptions)
+	commits, err := commitLog(ctx, repo, commitOptions, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +117,7 @@ func GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt Reso
 }
 
 // Commits returns all commits matching the options.
-func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error) {
+func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
 	if Mocks.Commits != nil {
 		return Mocks.Commits(repo, opt)
 	}
@@ -126,7 +130,49 @@ func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*git
 		return nil, err
 	}
 
-	return commitLog(ctx, repo, opt)
+	if checker != nil && checker.Enabled() {
+		// If sub-repo permissions enabled, must fetch files modified w/ commits to determine if user has access to view this commit
+		opt.NameOnly = true
+	}
+	return commitLog(ctx, repo, opt, checker)
+}
+
+func filterCommits(ctx context.Context, commits []*wrappedCommit, repoName api.RepoName, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+	if checker == nil || !checker.Enabled() {
+		return unWrapCommits(commits), nil
+	}
+	filtered := make([]*gitdomain.Commit, 0, len(commits))
+	for _, commit := range commits {
+		if hasAccess, err := hasAccessToCommit(ctx, commit, repoName, checker); hasAccess {
+			filtered = append(filtered, commit.Commit)
+		} else if err != nil {
+			return nil, err
+		}
+	}
+	return filtered, nil
+}
+
+func unWrapCommits(wrappedCommits []*wrappedCommit) []*gitdomain.Commit {
+	commits := make([]*gitdomain.Commit, 0, len(wrappedCommits))
+	for _, wc := range wrappedCommits {
+		commits = append(commits, wc.Commit)
+	}
+	return commits
+}
+
+func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.RepoName, checker authz.SubRepoPermissionChecker) (bool, error) {
+	a := actor.FromContext(ctx)
+	if commit.files == nil || len(commit.files) == 0 {
+		return true, nil // If commit has no files, assume user has access to view the commit.
+	}
+	for _, fileName := range commit.files {
+		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repoName, fileName); err != nil {
+			return false, err
+		} else if !hasAccess {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular
@@ -212,7 +258,7 @@ func isBadObjectErr(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) (commits []*gitdomain.Commit, err error) {
+func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) (commits []*gitdomain.Commit, err error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -223,13 +269,17 @@ func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) (comm
 	if !opt.NoEnsureRevision {
 		cmd.EnsureRevision = opt.Range
 	}
-	return runCommitLog(ctx, cmd, opt)
+	wrappedCommits, err := runCommitLog(ctx, cmd, opt)
+	if err != nil {
+		return nil, err
+	}
+	return filterCommits(ctx, wrappedCommits, repo, checker)
 }
 
 // runCommitLog sends the git command to gitserver. It interprets missing
 // revision responses and converts them into RevisionNotFoundError.
 // It is declared as a variable so that we can swap it out in tests
-var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*gitdomain.Commit, error) {
+var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*wrappedCommit, error) {
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
@@ -240,18 +290,27 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 	}
 
 	allParts := bytes.Split(data, []byte{'\x00'})
+	partsPerCommit := partsPerCommitBasic
+	if opt.NameOnly {
+		partsPerCommit = partsPerCommitWithFileNames
+	}
 	numCommits := len(allParts) / partsPerCommit
-	commits := make([]*gitdomain.Commit, 0, numCommits)
+	commits := make([]*wrappedCommit, 0, numCommits)
 	for len(data) > 0 {
-		var commit *gitdomain.Commit
+		var commit *wrappedCommit
 		var err error
-		commit, _, data, err = parseCommitFromLog(data)
+		commit, _, data, err = parseCommitFromLog(data, partsPerCommit)
 		if err != nil {
 			return nil, err
 		}
 		commits = append(commits, commit)
 	}
 	return commits, nil
+}
+
+type wrappedCommit struct {
+	*gitdomain.Commit
+	files []string
 }
 
 func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err error) {
@@ -291,7 +350,9 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.Range != "" {
 		args = append(args, opt.Range)
 	}
-
+	if opt.NameOnly {
+		args = append(args, "--name-only")
+	}
 	if opt.Path != "" {
 		args = append(args, "--", opt.Path)
 	}
@@ -373,7 +434,8 @@ func Head(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool
 }
 
 const (
-	partsPerCommit = 10 // number of \x00-separated fields per commit
+	partsPerCommitBasic         = 10 // number of \x00-separated fields per commit
+	partsPerCommitWithFileNames = 11 // number of \x00-separated fields per commit with names of modified files also returned
 
 	// don't include refs (faster, should be used if refs are not needed)
 	logFormatWithoutRefs = "--format=format:%H%x00%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
@@ -382,7 +444,7 @@ const (
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by
 // logFormatFlag.
-func parseCommitFromLog(data []byte) (commit *gitdomain.Commit, refs []string, rest []byte, err error) {
+func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit, refs []string, rest []byte, err error) {
 	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
 	if len(parts) < partsPerCommit {
 		return nil, nil, nil, errors.Errorf("invalid commit log entry: %q", parts)
@@ -411,23 +473,52 @@ func parseCommitFromLog(data []byte) (commit *gitdomain.Commit, refs []string, r
 		}
 	}
 
+	fileNames, nextCommit := parseCommitFileNames(partsPerCommit, parts)
+
 	if len(parts[1]) > 0 {
 		refs = strings.Split(string(parts[1]), ", ")
 	}
 
-	commit = &gitdomain.Commit{
-		ID:        commitID,
-		Author:    gitdomain.Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
-		Committer: &gitdomain.Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
-		Message:   gitdomain.Message(strings.TrimSuffix(string(parts[8]), "\n")),
-		Parents:   parents,
-	}
+	commit = &wrappedCommit{
+		Commit: &gitdomain.Commit{
+			ID:        commitID,
+			Author:    gitdomain.Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
+			Committer: &gitdomain.Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
+			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[8]), "\n")),
+			Parents:   parents,
+		}, files: fileNames}
 
 	if len(parts) == partsPerCommit+1 {
-		rest = parts[10]
+		rest = parts[partsPerCommit]
+		if string(nextCommit) != "" {
+			// Add the next commit ID with the rest to be processed
+			rest = append(append(nextCommit, '\x00'), rest...)
+		}
 	}
 
 	return commit, refs, rest, nil
+}
+
+// If the commit has filenames, parse those and return as a list. Also, in this case the next commit ID shows up in this
+// portion of the byte array, so it must be returned as well to be added to the rest of the commits to be processed.
+func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte) {
+	var fileNames []string
+	var nextCommit []byte
+	if partsPerCommit == partsPerCommitWithFileNames {
+		parts[10] = bytes.TrimPrefix(parts[10], []byte{'\n'})
+		fileNamesRaw := parts[10]
+		fileNameParts := bytes.Split(fileNamesRaw, []byte{'\n'})
+		for i, name := range fileNameParts {
+			// The last item contains the files modified, some empty space, and the commit ID for the next commit. Drop
+			// the empty space and the next commit ID (which will be processed in the next iteration).
+			if string(name) == "" || i == len(fileNameParts)-1 {
+				continue
+			}
+			fileNames = append(fileNames, string(name))
+		}
+		nextCommit = fileNameParts[len(fileNameParts)-1]
+	}
+	return fileNames, nextCommit
 }
 
 // BranchesContaining returns a map from branch names to branch tip hashes for

@@ -139,6 +139,7 @@ const batchChangeFragment = gql`
         }
 
         currentSpec {
+            id
             originalInput
             supersedingBatchSpec {
                 createdAt

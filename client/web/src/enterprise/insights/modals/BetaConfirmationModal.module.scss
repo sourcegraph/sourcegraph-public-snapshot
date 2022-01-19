@@ -1,22 +1,5 @@
 .overlay {
-    display: flex;
     background-color: #343a4d4d; // --color-bg-3 with 30% opacity
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    overflow: auto;
-    padding: 1.5rem;
-}
-
-.content {
-    max-width: 32rem;
-    width: 100%;
-    margin: auto;
-    background-color: var(--color-bg-1);
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
     padding: 1.5rem;
 }
 

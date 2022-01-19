@@ -17,7 +17,6 @@ import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './CloudSignUpPage.module.scss'
 import { ExternalsAuth } from './ExternalsAuth'
-import { OrDivider } from './OrDivider'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
@@ -30,7 +29,6 @@ interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
 
 const SourceToTitleMap = {
     Context: 'Easily search the code you care about.',
-    OptimisedContext: 'Easily search the code you care about, for free.',
     Saved: 'Create a library of useful searches.',
     Monitor: 'Monitor code for changes.',
     Extend: 'Augment code and workflows via extensions.',
@@ -56,7 +54,6 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     featureFlags,
 }) => {
     const location = useLocation()
-    const isSignupOptimised = featureFlags.get('signup-optimization')
 
     const queryWithUseEmailToggled = new URLSearchParams(location.search)
     if (showEmailForm) {
@@ -67,7 +64,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
 
     const assetsRoot = window.context?.assetsRoot || ''
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
-    const defaultTitle = isSignupOptimised ? SourceToTitleMap.OptimisedContext : SourceToTitleMap.Context // Use Context as default
+    const defaultTitle = SourceToTitleMap.Context
     const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : defaultTitle
 
     const invitedBy = queryWithUseEmailToggled.get('invitedBy')
@@ -94,26 +91,6 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
             experimental={true}
             className="my-3"
         />
-    )
-
-    const renderSignupOptimized = (): JSX.Element => (
-        <>
-            {signUpForm}
-            <div className={classNames('d-flex justify-content-center', styles.helperText)}>
-                <span className="mr-1">Have an account?</span>
-                <Link to={`/sign-in${location.search}`}>Log in</Link>
-            </div>
-
-            <OrDivider className="mt-4 mb-4 text-lowercase" />
-
-            <ExternalsAuth
-                withCenteredText={true}
-                context={context}
-                githubLabel="Sign up with GitHub"
-                gitlabLabel="Sign up with GitLab"
-                onClick={logEvent}
-            />
-        </>
     )
 
     const renderCodeHostAuth = (): JSX.Element => (
@@ -220,7 +197,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
 
                 <div className={invitedBy ? styles.signUpWrapperInvitedBy : styles.signUpWrapper}>
                     <h2>Create a free account</h2>
-                    {isSignupOptimised ? renderSignupOptimized() : renderAuthMethod()}
+                    {renderAuthMethod()}
 
                     <small className="text-muted">
                         By registering, you agree to our{' '}
@@ -234,15 +211,11 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                         .
                     </small>
 
-                    {!isSignupOptimised && (
-                        <>
-                            <hr className={styles.separator} />
+                    <hr className={styles.separator} />
 
-                            <div>
-                                Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
-                            </div>
-                        </>
-                    )}
+                    <div>
+                        Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
+                    </div>
                 </div>
             </div>
         </div>

@@ -460,9 +460,6 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	if ed.Error != "" {
 		return nil, errors.New(ed.Error)
 	}
-	if ed.DeadlineHit {
-		err = context.DeadlineExceeded
-	}
 	return matches, err
 }
 

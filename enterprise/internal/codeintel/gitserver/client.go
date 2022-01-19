@@ -316,7 +316,7 @@ func (c *Client) FileExists(ctx context.Context, repositoryID int, commit, file 
 		return false, errors.Wrap(err, "git.ResolveRevision")
 	}
 
-	if _, err := git.Stat(ctx, repo, api.CommitID(commit), file); err != nil {
+	if _, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), file); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
