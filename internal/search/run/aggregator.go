@@ -9,16 +9,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func NewAggregator(db dbutil.DB, stream streaming.Sender) *Aggregator {
+func NewAggregator(stream streaming.Sender) *Aggregator {
 	return &Aggregator{
-		db:           db,
 		parentStream: stream,
 		errors:       &multierror.Error{},
 	}
@@ -26,7 +24,6 @@ func NewAggregator(db dbutil.DB, stream streaming.Sender) *Aggregator {
 
 type Aggregator struct {
 	parentStream streaming.Sender
-	db           dbutil.DB
 
 	mu         sync.Mutex
 	results    []result.Match
