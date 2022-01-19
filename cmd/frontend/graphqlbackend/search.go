@@ -28,12 +28,10 @@ type SearchArgs struct {
 	// Stream if non-nil will stream all SearchEvents.
 	//
 	// This is how our streaming and our batch interface co-exist. When this
-	// is set, it exposes a way to stream out results as we collect them.
-	//
-	// TODO(keegan) This is not our final design. For example this doesn't
-	// allow us to stream out things like dynamic filters or take into account
-	// AND/OR. However, streaming is behind a feature flag for now, so this is
-	// to make it visible in the browser.
+	// is set, it exposes a way to stream out results as we collect them. By
+	// default we stream all results, including results that are processed
+	// over batch-based evaluation (like and/or expressions), where results
+	// are first collected, merged, and then sent on the stream.
 	Stream streaming.Sender
 
 	// For tests
