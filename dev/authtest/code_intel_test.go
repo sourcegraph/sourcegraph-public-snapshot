@@ -3,6 +3,8 @@ package authtest
 import (
 	"bytes"
 	"io"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -114,7 +116,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		}
 	})
 
-	t.Run("executor endpoints (no access token configured)", func(t *testing.T) {
+	t.Run("executor endpoints (no access not configured configured)", func(t *testing.T) {
 		// Update site configuration to remove any executor access token.
 		defer setExecutorAccessToken(t, "")()
 
@@ -124,12 +126,21 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		if resp.StatusCode/100 != 5 {
-			t.Fatalf(`Want status code 5xx error but got %d`, resp.StatusCode)
+		if resp.StatusCode != http.StatusInternalServerError {
+			t.Fatalf(`Want status code 500 error but got %d`, resp.StatusCode)
+		}
+
+		response, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedText := "executors.accessToken not configured in site config"
+		if !strings.Contains(string(response), expectedText) {
+			t.Fatalf(`Expected different failure. want=%q got=%q`, expectedText, string(response))
 		}
 	})
 
-	t.Run("executor endpoints (no access token supplied)", func(t *testing.T) {
+	t.Run("executor endpoints (access token configured but not supplied)", func(t *testing.T) {
 		// Update site configuration to set the executor access token.
 		defer setExecutorAccessToken(t, "hunter2hunter2hunter2")()
 
@@ -139,8 +150,8 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		if resp.StatusCode/100 != 4 {
-			t.Fatalf(`Want status code 4xx error but got %d`, resp.StatusCode)
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf(`Want status code 401 error but got %d`, resp.StatusCode)
 		}
 	})
 }
