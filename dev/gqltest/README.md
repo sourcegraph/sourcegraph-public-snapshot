@@ -82,7 +82,7 @@ commands:
 ```
 
 4. Start your instance by running `sg start enterprise`
-5. Create the admin account so that it matches the credentials passed to tests as above
+5. Create the admin account so that it matches the credentials passed to tests as above. (If you cleared your database this is done automatically when tests are first run)
 
 Generally, you're able to repeatedly run these tests regardless of any failures because tests are written in the way that cleans up and restores to the previous state. It is aware of if the instance has been initialized, so you can focus on debugging tests.
 
