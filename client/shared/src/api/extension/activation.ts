@@ -36,8 +36,12 @@ export function observeActiveExtensions(
         tap(([activeLanguages, enabledExtensions]) => {
             const activeExtensions = extensionsWithMatchedActivationEvent(enabledExtensions, activeLanguages)
 
-            // We disable previously activated events that no longer match the
-            // activation condition when the set of active languages changes.
+            // We deactivate extensions that no longer match the activation conditions when thre viewed language change.
+            //
+            // When no file is open (e.g. a user is navigating), activeLanguages might temporary be an empty set. We
+            // don't need to deactive the extensions in this case, since no new language-activated extensions will be
+            // added.
+            //
             // c.f. https://github.com/sourcegraph/sourcegraph/pull/29853
             if (!isEqual(previousActiveLanguages, activeLanguages) && activeLanguages.size !== 0) {
                 activatedExtensionIDs.clear()
