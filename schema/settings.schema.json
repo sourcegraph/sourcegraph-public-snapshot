@@ -213,6 +213,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "codeMonitoringWebHooks": {
+          "description": "Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
