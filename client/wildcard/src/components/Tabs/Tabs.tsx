@@ -51,9 +51,11 @@ export const Tabs: React.FunctionComponent<TabsProps> = props => {
 
     return (
         <TabsContext.Provider value={contextValue}>
-            <div className={classNames(styles.wildcardTabs, className)} data-testid="wildcard-tabs">
-                <ReachTabs {...reachProps} />
-            </div>
+            <ReachTabs
+                className={classNames(styles.wildcardTabs, className)}
+                data-testid="wildcard-tabs"
+                {...reachProps}
+            />
         </TabsContext.Provider>
     )
 }
