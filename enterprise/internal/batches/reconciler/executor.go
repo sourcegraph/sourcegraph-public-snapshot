@@ -469,7 +469,7 @@ func loadRemoteRepo(
 	// changeset that was previously created using a fork, then we don't need to
 	// even check if the changeset source is forkable, let alone set up the
 	// remote repo: we can just return the target repo and be done with it.
-	if ch.ExternalForkNamespace == "" && !spec.IsFork() {
+	if ch.ExternalForkNamespace == "" && (spec == nil || !spec.IsFork()) {
 		return targetRepo, nil
 	}
 
