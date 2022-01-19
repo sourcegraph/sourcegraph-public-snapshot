@@ -270,7 +270,10 @@ export const externalChangesetFieldsFragment = gql`
                     headRef
                 }
             }
-            forkNamespace
+            forkTarget {
+                pushUser
+                namespace
+            }
         }
     }
 

@@ -95,8 +95,8 @@ func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
 }
 
-func (r *changesetSpecResolver) ForkNamespace() *string {
-	return r.changesetSpec.ForkNamespace
+func (r *changesetSpecResolver) ForkTarget() graphqlbackend.ForkTargetInterface {
+	return &forkTargetResolver{changesetSpec: r.changesetSpec}
 }
 
 func (r *changesetSpecResolver) repoAccessible() bool {
@@ -226,3 +226,17 @@ func (r *gitCommitDescriptionResolver) Body() *string {
 	return &body
 }
 func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }
+
+type forkTargetResolver struct {
+	changesetSpec *btypes.ChangesetSpec
+}
+
+var _ graphqlbackend.ForkTargetInterface = &forkTargetResolver{}
+
+func (r *forkTargetResolver) PushUser() bool {
+	return r.changesetSpec.IsFork()
+}
+
+func (r *forkTargetResolver) Namespace() *string {
+	return r.changesetSpec.GetForkNamespace()
+}

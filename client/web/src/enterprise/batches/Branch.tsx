@@ -6,25 +6,30 @@ import React from 'react'
 import { Badge } from '@sourcegraph/wildcard'
 import { BadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
 
+export interface ForkTarget {
+    pushUser: boolean
+    namespace?: string
+}
+
 export interface BranchProps extends Pick<BadgeProps, 'variant'> {
     className?: string
     deleted?: boolean
-    forkNamespace?: string | null
+    forkTarget?: ForkTarget
     name: string
 }
 
-export const Branch: React.FunctionComponent<BranchProps> = ({ className, deleted, forkNamespace, name, variant }) => (
+export const Branch: React.FunctionComponent<BranchProps> = ({ className, deleted, forkTarget, name, variant }) => (
     <Badge
         variant={variant !== undefined ? variant : deleted ? 'danger' : 'secondary'}
         className={classNames('text-monospace', className)}
         as={deleted ? 'del' : undefined}
     >
-        {forkNamespace === undefined || forkNamespace === null ? (
+        {!forkTarget ? (
             name
         ) : (
             <>
                 <SourceForkIcon className="icon-inline mr-1" />
-                <BranchNamespace namespace={forkNamespace} />
+                <BranchNamespace target={forkTarget} />
                 {name}
             </>
         )}
@@ -33,28 +38,28 @@ export const Branch: React.FunctionComponent<BranchProps> = ({ className, delete
 
 export interface BranchMergeProps {
     baseRef: string
-    forkNamespace?: string | null
+    forkTarget?: ForkTarget
     headRef: string
 }
 
-export const BranchMerge: React.FunctionComponent<BranchMergeProps> = ({ baseRef, forkNamespace, headRef }) => (
+export const BranchMerge: React.FunctionComponent<BranchMergeProps> = ({ baseRef, forkTarget, headRef }) => (
     <div className="d-block d-sm-inline-block">
         <Branch name={baseRef} />
         <span className="p-1">&larr;</span>
-        <Branch name={headRef} forkNamespace={forkNamespace} />
+        <Branch name={headRef} forkTarget={forkTarget} />
     </div>
 )
 
 interface BranchNamespaceProps {
-    namespace?: string
+    target: ForkTarget
 }
 
-const BranchNamespace: React.FunctionComponent<BranchNamespaceProps> = ({ namespace }) => {
-    if (!namespace) {
+const BranchNamespace: React.FunctionComponent<BranchNamespaceProps> = ({ target }) => {
+    if (!target) {
         return <></>
     }
 
-    if (namespace === '<user>') {
+    if (target.pushUser) {
         return (
             <>
                 <AccountQuestionIcon
@@ -66,5 +71,5 @@ const BranchNamespace: React.FunctionComponent<BranchNamespaceProps> = ({ namesp
         )
     }
 
-    return <>{namespace}:</>
+    return <>{target.namespace}:</>
 }

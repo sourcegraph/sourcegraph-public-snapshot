@@ -458,7 +458,7 @@ type VisibleChangesetSpecResolver interface {
 	Description(ctx context.Context) (ChangesetDescription, error)
 	Workspace(ctx context.Context) (BatchSpecWorkspaceResolver, error)
 
-	ForkNamespace() *string
+	ForkTarget() ForkTargetInterface
 }
 
 type ChangesetSpecDeltaResolver interface {
@@ -507,6 +507,11 @@ type GitCommitDescriptionResolver interface {
 	Body() *string
 	Author() *PersonResolver
 	Diff() string
+}
+
+type ForkTargetInterface interface {
+	PushUser() bool
+	Namespace() *string
 }
 
 type BatchChangesCodeHostConnectionResolver interface {

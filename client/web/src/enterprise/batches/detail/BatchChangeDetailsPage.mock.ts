@@ -258,7 +258,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
-                    forkNamespace: null,
+                    forkTarget: null,
                 },
             },
             {
@@ -297,7 +297,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
-                    forkNamespace: null,
+                    forkTarget: null,
                 },
             },
         ],

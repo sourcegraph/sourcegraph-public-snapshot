@@ -63,7 +63,7 @@ And the more explanatory body. And the more explanatory body. And the more expla
             title: 'Add prettier to repository',
             published,
         },
-        forkNamespace: null,
+        forkTarget: null,
         ...overrides,
     }
 }
@@ -94,7 +94,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
                     baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
                     externalID: '123',
                 },
-                forkNamespace: null,
+                forkTarget: null,
             },
         },
     },
@@ -666,7 +666,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
             changesetSpec: baseChangesetSpec(12, publicationStateSet ? true : null, {
-                forkNamespace: '<user>',
+                forkTarget: { pushUser: true, namespace: null },
                 description: {
                     __typename: 'GitBranchChangesetDescription',
                     baseRepository: testRepo,

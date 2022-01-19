@@ -40,7 +40,10 @@ const changesetSpecFieldsFragment = gql`
             ...ExistingChangesetReferenceFields
             ...GitBranchChangesetDescriptionFields
         }
-        forkNamespace
+        forkTarget {
+            pushUser
+            namespace
+        }
     }
 
     fragment ExistingChangesetReferenceFields on ExistingChangesetReference {

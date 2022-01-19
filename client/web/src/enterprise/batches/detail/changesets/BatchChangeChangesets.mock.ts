@@ -53,7 +53,7 @@ export const BATCH_CHANGE_CHANGESETS: (ExternalChangesetFields | HiddenExternalC
                     baseRef: 'my-branch',
                     headRef: 'my-branch',
                 },
-                forkNamespace: null,
+                forkTarget: null,
             },
         })
     ),
