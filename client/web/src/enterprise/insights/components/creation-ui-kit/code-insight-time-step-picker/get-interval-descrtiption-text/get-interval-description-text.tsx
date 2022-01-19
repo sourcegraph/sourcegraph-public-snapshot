@@ -52,7 +52,8 @@ export function getDescriptionText(options: DescriptionTextOptions): ReactNode {
 
     return (
         <span>
-            Show the past <b>{intervalText} of data</b>, one datapoint every {everyUnitText}. This insight provides {numberOfPoints} datapoints.
+            Show the past <b>{intervalText} of data</b>, one datapoint every {everyUnitText}. This insight provides{' '}
+            {numberOfPoints} datapoints.
         </span>
     )
 }
