@@ -115,9 +115,10 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		}
 	})
 
-	t.Run("executor endpoints (no access not configured configured)", func(t *testing.T) {
+	t.Run("executor endpoints (access token not configured)", func(t *testing.T) {
 		// Update site configuration to remove any executor access token.
-		defer setExecutorAccessToken(t, "")()
+		cleanup := setExecutorAccessToken(t, "")
+		defer cleanup()
 
 		resp, err := userClient.Get(*baseURL + "/.executors/")
 		if err != nil {
@@ -141,7 +142,8 @@ func TestCodeIntelEndpoints(t *testing.T) {
 
 	t.Run("executor endpoints (access token configured but not supplied)", func(t *testing.T) {
 		// Update site configuration to set the executor access token.
-		defer setExecutorAccessToken(t, "hunter2hunter2hunter2")()
+		cleanup := setExecutorAccessToken(t, "hunter2hunter2hunter2")
+		defer cleanup()
 
 		resp, err := userClient.Get(*baseURL + "/.executors/")
 		if err != nil {
