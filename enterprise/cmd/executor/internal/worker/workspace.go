@@ -76,8 +76,7 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 		return nil, err
 	}
 
-	// HOLY SHIT
-	urlx.User = url.User("executor") // TODO - identify self?
+	urlx.User = url.User("executor")
 	return urlx, nil
 }
 
