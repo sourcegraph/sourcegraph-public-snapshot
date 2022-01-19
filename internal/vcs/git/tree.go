@@ -82,7 +82,7 @@ func ReadDir(
 	}
 	files, err := lsTree(ctx, repo, commit, path, recurse)
 
-	if err != nil || checker == nil || !checker.Enabled() {
+	if err != nil || !authz.SubRepoEnabled(checker) {
 		return files, err
 	}
 
@@ -152,7 +152,7 @@ func lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api
 		return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 	}
 
-	if checker == nil || !checker.Enabled() {
+	if !authz.SubRepoEnabled(checker) {
 		return fis[0], nil
 	}
 	// Applying sub-repo permissions
@@ -386,7 +386,7 @@ func ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, patt
 // 🚨 SECURITY: All git methods that deal with file or path access need to have
 // sub-repo permissions applied
 func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, paths []string) ([]string, error) {
-	if !checker.Enabled() {
+	if !authz.SubRepoEnabled(checker) {
 		return paths, nil
 	}
 	a := actor.FromContext(ctx)
@@ -418,7 +418,7 @@ func ListDirectoryChildren(
 	}
 
 	paths := strings.Split(string(out), "\n")
-	if checker != nil && checker.Enabled() {
+	if authz.SubRepoEnabled(checker) {
 		paths, err = authz.FilterActorPaths(ctx, checker, actor.FromContext(ctx), repo, paths)
 		if err != nil {
 			return nil, err

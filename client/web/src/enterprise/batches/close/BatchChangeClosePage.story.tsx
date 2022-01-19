@@ -173,6 +173,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
             {
@@ -211,6 +212,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
         ],

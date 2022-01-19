@@ -1,20 +1,55 @@
 package definitions
 
 import (
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+
+	"github.com/grafana-tools/sdk"
 )
 
 func Frontend() *monitoring.Container {
 	// frontend is sometimes called sourcegraph-frontend in various contexts
 	const containerName = "(frontend|sourcegraph-frontend)"
 
+	var sentinelSamplingIntervals []string
+	for _, d := range []time.Duration{
+		1 * time.Minute,
+		5 * time.Minute,
+		10 * time.Minute,
+		30 * time.Minute,
+		1 * time.Hour,
+		90 * time.Minute,
+		3 * time.Hour,
+	} {
+		sentinelSamplingIntervals = append(sentinelSamplingIntervals, d.Round(time.Second).String())
+	}
+
+	defaultSamplingInterval := (90 * time.Minute).Round(time.Second)
+
 	return &monitoring.Container{
 		Name:        "frontend",
 		Title:       "Frontend",
 		Description: "Serves all end-user browser and API requests.",
+		RawVariables: []sdk.TemplateVar{
+			{
+				Type:  "interval",
+				Name:  "sentinel_sampling_duration",
+				Label: "Sentinel query sampling duration",
+				Query: strings.Join(sentinelSamplingIntervals, ","),
+				Current: sdk.Current{
+					Text: &sdk.StringSliceString{
+						Value: []string{defaultSamplingInterval.String()}, Valid: true},
+					Value: defaultSamplingInterval.String(),
+				},
+				Refresh: sdk.BoolInt{
+					Flag:  true,
+					Value: monitoring.Int64Ptr(2),
+				},
+			},
+		},
 		Groups: []monitoring.Group{
 			{
 				Title: "Search at a glance",
@@ -616,11 +651,11 @@ func Frontend() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "mean_successful_sentinel_duration_1h30m",
+							Name:        "mean_successful_sentinel_duration_over_1h30m",
 							Description: "mean successful sentinel search duration over 1h30m",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:          `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[1h30m])) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[1h30m]))`,
+							Query:          "sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[1h30m])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[1h30m]))",
 							Warning:        monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
 							Critical:       monitoring.Alert().GreaterOrEqual(8, nil).For(30 * time.Minute),
 							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
@@ -633,7 +668,7 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "mean_sentinel_stream_latency_1h30m",
+							Name:        "mean_sentinel_stream_latency_over_1h30m",
 							Description: "mean successful sentinel stream latency over 1h30m",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
@@ -655,7 +690,7 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "90th_percentile_successful_sentinel_duration_1h30m",
+							Name:        "90th_percentile_successful_sentinel_duration_over_1h30m",
 							Description: "90th percentile successful sentinel search duration over 1h30m",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
@@ -672,7 +707,7 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "90th_percentile_sentinel_stream_latency_1h30m",
+							Name:        "90th_percentile_sentinel_stream_latency_over_1h30m",
 							Description: "90th percentile successful sentinel stream latency over 1h30m",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
@@ -694,9 +729,9 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "mean_successful_sentinel_duration_by_query_1h30m",
-							Description: "mean successful sentinel search duration by query over 1h30m",
-							Query:       `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[1h30m])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[1h30m])) by (source)`,
+							Name:        "mean_successful_sentinel_duration_by_query",
+							Description: "mean successful sentinel search duration by query",
+							Query:       `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (source)`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -708,9 +743,9 @@ func Frontend() *monitoring.Container {
 							Interpretation: `Mean search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
 						},
 						{
-							Name:        "mean_sentinel_stream_latency_by_query_1h30m",
-							Description: "mean successful sentinel stream latency by query over 1h30m",
-							Query:       `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[1h30m])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[1h30m])) by (source)`,
+							Name:        "mean_sentinel_stream_latency_by_query",
+							Description: "mean successful sentinel stream latency by query",
+							Query:       `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (source)`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -724,9 +759,9 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "90th_percentile_successful_sentinel_duration_by_query_1h30m",
-							Description: "90th percentile successful sentinel search duration by query over 1h30m",
-							Query:       `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m])) by (le, source))`,
+							Name:        "90th_percentile_successful_sentinel_duration_by_query",
+							Description: "90th percentile successful sentinel search duration by query",
+							Query:       `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (le, source))`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -738,9 +773,9 @@ func Frontend() *monitoring.Container {
 							Interpretation: `90th percentile search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
 						},
 						{
-							Name:        "90th_percentile_successful_stream_latency_by_query_1h30m",
-							Description: "90th percentile successful sentinel stream latency by query over 1h30m",
-							Query:       `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m])) by (le, source))`,
+							Name:        "90th_percentile_successful_stream_latency_by_query",
+							Description: "90th percentile successful sentinel stream latency by query",
+							Query:       `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (le, source))`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -754,9 +789,9 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "90th_percentile_unsuccessful_duration_by_query_1h30m",
-							Description: "90th percentile unsuccessful sentinel search duration by query over 1h30m",
-							Query:       "histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[1h30m])) by (le, source))",
+							Name:        "90th_percentile_unsuccessful_duration_by_query",
+							Description: "90th percentile unsuccessful sentinel search duration by query",
+							Query:       "histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[$sentinel_sampling_duration])) by (le, source))",
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{source}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -770,9 +805,9 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "75th_percentile_successful_sentinel_duration_by_query_1h30m",
-							Description: "75th percentile successful sentinel search duration by query over 1h30m",
-							Query:       `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m])) by (le, source))`,
+							Name:        "75th_percentile_successful_sentinel_duration_by_query",
+							Description: "75th percentile successful sentinel search duration by query",
+							Query:       `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (le, source))`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -784,9 +819,9 @@ func Frontend() *monitoring.Container {
 							Interpretation: `75th percentile search duration of successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
 						},
 						{
-							Name:        "75th_percentile_successful_stream_latency_by_query_1h30m",
-							Description: "75th percentile successful sentinel stream latency by query over 1h30m",
-							Query:       `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m])) by (le, source))`,
+							Name:        "75th_percentile_successful_stream_latency_by_query",
+							Description: "75th percentile successful sentinel stream latency by query",
+							Query:       `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (le, source))`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -800,9 +835,9 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "75th_percentile_unsuccessful_duration_by_query_1h30m",
-							Description: "75th percentile unsuccessful sentinel search duration by query over 1h30m",
-							Query:       "histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[1h30m])) by (le, source))",
+							Name:        "75th_percentile_unsuccessful_duration_by_query",
+							Description: "75th percentile unsuccessful sentinel search duration by query",
+							Query:       "histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[$sentinel_sampling_duration])) by (le, source))",
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{source}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -816,9 +851,9 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:           "unsuccessful_status_rate_1h30m",
-							Description:    "unsuccessful status rate per 1h30m",
-							Query:          `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[1h30m])) by (status)`,
+							Name:           "unsuccessful_status_rate",
+							Description:    "unsuccessful status rate",
+							Query:          `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[$sentinel_sampling_duration])) by (status)`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("{{status}}"),
 							Owner:          monitoring.ObservableOwnerSearch,
