@@ -153,12 +153,15 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
-	decoder, countPtr, streamRepoCounts := streaming.TabulationDecoder()
+	decoder, countPtr, streamRepoCounts, streamErrs := streaming.TabulationDecoder()
 	err = streaming.Search(ctx, job.SearchQuery, decoder)
 	if err != nil {
 		return errors.Wrap(err, "streaming.Search")
 	}
 	log15.Info("Search Counts", "streaming", *countPtr)
+	if len(streamErrs) > 0 {
+		log15.Error("streaming errors", "errors", streamErrs)
+	}
 
 	recordTime := time.Now()
 	if job.RecordTime != nil {
@@ -245,8 +248,11 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			continue
 		}
 
-		streamCount := streamRepoCounts[repoName]
-		log15.Info("counts", "graphql", matchCount, "stream", streamCount, "repo", repoName)
+		if streamResults, ok := streamRepoCounts[repoName]; ok {
+			log15.Info("counts", "graphql", matchCount, "stream", streamResults.MatchCount, "repo", repoName)
+		} else {
+			log15.Warn("result not found in stream")
+		}
 
 		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {

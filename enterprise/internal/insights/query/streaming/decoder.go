@@ -7,13 +7,22 @@ import (
 )
 
 // jsonDecoder streams results as JSON to w.
-func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *int, map[string]int) {
+func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *int, map[string]*SearchMatch, []string) {
 	var totalCount int
-	repoCounts := make(map[string]int)
-
-	addCount := func(repo string, count int) {
-		repoCounts[repo] += count
+	repoCounts := make(map[string]*SearchMatch)
+	addCount := func(repo string, repoId int32, count int) {
+		if forRepo, ok := repoCounts[repo]; !ok {
+			repoCounts[repo] = &SearchMatch{
+				RepositoryID:   repoId,
+				RepositoryName: repo,
+				MatchCount:     count,
+			}
+			return
+		} else {
+			forRepo.MatchCount += count
+		}
 	}
+	var errors []string
 
 	return streamhttp.FrontendStreamDecoder{
 		OnProgress: func(progress *streamapi.Progress) {
@@ -29,38 +38,41 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *int, map[string]int
 					for _, lineMatch := range match.LineMatches {
 						count += len(lineMatch.OffsetAndLengths)
 					}
-					log15.Info("EventContentMatch", "count", count)
+					log15.Debug("EventContentMatch", "count", count)
 					totalCount += count
-					addCount(match.Repository, count)
+					addCount(match.Repository, match.RepositoryID, count)
 				case *streamhttp.EventPathMatch:
-					log15.Info("EventPathMatch", "count", 1)
+					log15.Debug("EventPathMatch", "count", 1)
 					totalCount += 1
-					addCount(match.Repository, 1)
+					addCount(match.Repository, match.RepositoryID, 1)
 				case *streamhttp.EventRepoMatch:
-					log15.Info("EventRepoMatch", "count", 1)
+					log15.Debug("EventRepoMatch", "count", 1)
 					totalCount += 1
-					addCount(match.Repository, 1)
+					addCount(match.Repository, match.RepositoryID, 1)
 				case *streamhttp.EventCommitMatch:
-					log15.Info("EventCommitMatch", "count", 1)
+					log15.Debug("EventCommitMatch", "count", 1)
 					totalCount += 1
-					addCount(match.Repository, 1)
+					addCount(match.Repository, match.RepositoryID, 1)
 				case *streamhttp.EventSymbolMatch:
 					count := len(match.Symbols)
-					log15.Info("EventSymbolMatch", "count", count)
+					log15.Debug("EventSymbolMatch", "count", count)
 					totalCount += count
-					addCount(match.Repository, count)
+					addCount(match.Repository, match.RepositoryID, count)
 				}
 			}
 		},
+		OnAlert: func(alert *streamhttp.EventAlert) {
+			log15.Debug("stream alert", "title", alert.Title)
+		},
 
 		OnError: func(eventError *streamhttp.EventError) {
-
+			errors = append(errors, eventError.Message)
 		},
-	}, &totalCount, repoCounts
+	}, &totalCount, repoCounts, errors
 }
 
 type SearchMatch struct {
-	repositoryID   int32
-	repositoryName string
-	matchCount     int32
+	RepositoryID   int32
+	RepositoryName string
+	MatchCount     int
 }
