@@ -21,7 +21,5 @@ ln -s "$(pwd)/enterprise/dev/ci/scripts/trace-command.sh" tr 2>/dev/null || true
 # set the buildkite cache access keys
 AWS_CONFIG_DIR_PATH="/buildkite/.aws"
 mkdir -p "$AWS_CONFIG_DIR_PATH"
-AWS_CONFIG_FILE="$AWS_CONFIG_DIR_PATH/config"
-export AWS_CONFIG_FILE
-aws configure set aws_access_key_id "$BUILDKITE_HMAC_KEY" --profile buildkite
-aws configure buildkite set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
+AWS_CONFIG_FILE="$AWS_CONFIG_DIR_PATH/config" aws configure set aws_access_key_id "$BUILDKITE_HMAC_KEY" --profile buildkite
+AWS_CONFIG_FILE="$AWS_CONFIG_DIR_PATH/config" aws configure buildkite set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
