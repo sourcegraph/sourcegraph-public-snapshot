@@ -234,7 +234,39 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		return nil, err
 	}
 
-	return nil, errors.New("TODO")
+	cfg := globals.PermissionsUserMapping()
+	for _, perm := range args.UserPermissions {
+		var userID int32
+		switch cfg.BindID {
+		case "email":
+			emails, err := r.db.UserEmails().GetVerifiedEmails(ctx, perm.BindID)
+			if err != nil {
+				return nil, err
+			}
+			for i := range emails {
+				userID = emails[i].UserID
+			}
+
+		case "username":
+			user, err := r.db.Users().GetByUsername(ctx, perm.BindID)
+			if err != nil {
+				return nil, err
+			}
+			userID = user.ID
+
+		default:
+			return nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
+		}
+
+		if err := r.db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
+			PathIncludes: perm.PathIncludes,
+			PathExcludes: perm.PathExcludes,
+		}); err != nil {
+			return nil, errors.Wrap(err, "upserting sub-repo permissions")
+		}
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
