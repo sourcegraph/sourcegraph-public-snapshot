@@ -262,7 +262,7 @@ func toComputeQuery(plan query.Plan) (*Query, error) {
 }
 
 func Parse(q string) (*Query, error) {
-	plan, err := query.Pipeline(query.Init(q, query.SearchTypeRegex))
+	plan, err := query.Pipeline(query.InitRegexp(q))
 	if err != nil {
 		return nil, err
 	}
