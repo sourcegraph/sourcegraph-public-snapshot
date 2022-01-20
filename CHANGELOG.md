@@ -42,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights that are run over all repositories now have data points with links that lead to the search page. [#29587](https://github.com/sourcegraph/sourcegraph/pull/29587)
 - Code Insights creation UI query field now supports different syntax highlight modes based on `patterntype` filter. [#29733](https://github.com/sourcegraph/sourcegraph/pull/29733)
 - Code Insights creation UI query field now has live-preview button that leads to the search page with predefined query value. [#29698](https://github.com/sourcegraph/sourcegraph/pull/29698)
+- - Code Insights creation UI detect and track patterns can now search across all repositories. [#29551](https://github.com/sourcegraph/sourcegraph/issues/29551)
 
 ### Changed
 
