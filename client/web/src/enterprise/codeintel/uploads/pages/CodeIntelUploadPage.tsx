@@ -6,6 +6,7 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -16,7 +17,6 @@ import {
 import { Button, Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
-import { ErrorAlert } from '../../../../components/alerts'
 import { Collapsible } from '../../../../components/Collapsible'
 import { PageTitle } from '../../../../components/PageTitle'
 import { LsifUploadFields, LsifUploadConnectionFields } from '../../../../graphql-operations'

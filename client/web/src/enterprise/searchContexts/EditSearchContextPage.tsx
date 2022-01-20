@@ -5,11 +5,13 @@ import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
 import {
     Scalars,
     SearchContextEditInput,
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -19,7 +21,6 @@ import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { SearchContextProps } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -27,7 +28,8 @@ export interface EditSearchContextPageProps
     extends RouteComponentProps<{ spec: Scalars['ID'] }>,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'> {
+        Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
@@ -35,7 +37,7 @@ export interface EditSearchContextPageProps
 export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
-    const { match, updateSearchContext, fetchSearchContextBySpec } = props
+    const { match, updateSearchContext, fetchSearchContextBySpec, platformContext } = props
     const onSubmit = useCallback(
         (
             id: Scalars['ID'] | undefined,
@@ -45,15 +47,15 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
             if (!id) {
                 return throwError(new Error('Cannot update search context with undefined ID'))
             }
-            return updateSearchContext({ id, searchContext, repositories })
+            return updateSearchContext({ id, searchContext, repositories }, platformContext)
         },
-        [updateSearchContext]
+        [updateSearchContext, platformContext]
     )
 
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContextBySpec(match.params.spec).pipe(
+                fetchSearchContextBySpec(match.params.spec, platformContext).pipe(
                     switchMap(searchContext => {
                         if (!searchContext.viewerCanManage) {
                             return throwError(new Error('You do not have sufficient permissions to edit this context.'))
@@ -63,7 +65,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.spec, fetchSearchContextBySpec]
+            [match.params.spec, fetchSearchContextBySpec, platformContext]
         )
     )
 

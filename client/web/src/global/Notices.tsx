@@ -2,11 +2,11 @@ import classNames from 'classnames'
 import * as React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { Notice, Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { Notice, Settings } from '../schema/settings.schema'
 
 import styles from './Notices.module.scss'
 
