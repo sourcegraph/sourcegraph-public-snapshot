@@ -49,7 +49,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 ref={targetButtonReference}
                 type="button"
                 aria-label={isFiltered ? 'Active filters' : 'Filters'}
-                className={classNames('btn btn-icon p-1', styles.filterButton, {
+                className={classNames('btn-icon p-1', styles.filterButton, {
                     [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: isFiltered,
                 })}
