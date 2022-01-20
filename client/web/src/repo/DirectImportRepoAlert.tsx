@@ -1,8 +1,6 @@
 import * as React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
-
-import { Alert } from '@sourcegraph/wildcard'
+import { Link, Alert } from '@sourcegraph/wildcard'
 
 export const DirectImportRepoAlert: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <>

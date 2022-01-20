@@ -83,7 +83,11 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, init
                 <Button type="submit" disabled={loading} id="test-EditUserProfileForm__save" variant="primary">
                     Save
                 </Button>
-                {error && <Alert className="mt-3" variant="danger">{error.message}</Alert>}
+                {error && (
+                    <Alert className="mt-3" variant="danger">
+                        {error.message}
+                    </Alert>
+                )}
                 {data?.updateUser && (
                     <Alert className="mt-3 mb-0 test-EditUserProfileForm__success" variant="success">
                         User profile updated.

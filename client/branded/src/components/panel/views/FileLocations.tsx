@@ -22,7 +22,9 @@ import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 import styles from './FileLocations.module.scss'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <Alert className="m-2" variant="danger">Error getting locations: {upperFirst(error.message)}</Alert>
+    <Alert className="m-2" variant="danger">
+        Error getting locations: {upperFirst(error.message)}
+    </Alert>
 )
 
 export const FileLocationsNotFound: React.FunctionComponent = () => (

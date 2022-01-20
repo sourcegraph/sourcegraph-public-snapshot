@@ -60,7 +60,7 @@ export const ErrorAlert: React.FunctionComponent<ErrorAlertProps> = ({
 }) => {
     prefix = prefix?.trim().replace(/:+$/, '')
     return (
-        <Alert className={className} {...rest} variant={variant}>
+        <Alert className={className} variant={variant} {...rest}>
             {prefix && <strong>{prefix}:</strong>} <ErrorMessage error={error} />
         </Alert>
     )

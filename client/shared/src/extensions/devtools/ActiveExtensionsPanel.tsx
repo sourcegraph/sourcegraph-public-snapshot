@@ -9,7 +9,11 @@ import { wrapRemoteObservable } from '../../api/client/api/common'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
 
-// TODO: Shared -? any issues with styles?
+/**
+ * TODO: Check if this component will break styles
+ * 1. Previously seemed to rely on Bootstrap alert classNames
+ * 2. Used in GlobalDebug.tsx which is used both in /web and /browser
+ */
 
 export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
     const extensionsOrError = useObservable(

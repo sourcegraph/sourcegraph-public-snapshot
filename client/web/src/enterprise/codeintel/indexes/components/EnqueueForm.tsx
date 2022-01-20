@@ -75,7 +75,9 @@ export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, query
             </div>
 
             {state === State.Queued && queueResult !== undefined && (
-                <Alert className="mt-3 mb-0" variant="success">{queueResult} index jobs enqueued.</Alert>
+                <Alert className="mt-3 mb-0" variant="success">
+                    {queueResult} index jobs enqueued.
+                </Alert>
             )}
         </>
     )

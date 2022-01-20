@@ -92,12 +92,12 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             concat(
                                 [{ updateOrError: 'loading' }],
                                 updateExtension({
-                                    extension: this.props.extension.registryExtension.id,
+                                    extension: this.props.extension.registryExtension!.id,
                                     name: this.state.name,
                                 }).pipe(
                                     tap(result => {
                                         // Redirect to the extension's new URL (if it changed).
-                                        if (this.props.extension.registryExtension.url !== result.extension.url) {
+                                        if (this.props.extension.registryExtension!.url !== result.extension.url) {
                                             this.props.history.push(result.extension.url + '/-/manage')
                                         }
                                         this.props.onDidUpdateExtension()
