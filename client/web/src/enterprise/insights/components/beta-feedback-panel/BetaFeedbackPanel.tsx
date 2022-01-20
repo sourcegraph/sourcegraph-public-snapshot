@@ -15,7 +15,7 @@ export const BetaFeedbackPanel: React.FunctionComponent = () => {
                 <ProductStatusBadge status="beta" className="text-uppercase" />
             </a>
 
-            <Popover open={isVisible} onOpenChange={event => setVisibility(event.isOpen)}>
+            <Popover isOpen={isVisible} onOpenChange={event => setVisibility(event.isOpen)}>
                 <PopoverTrigger as={Button} variant="link" size="sm">
                     Share feedback
                 </PopoverTrigger>

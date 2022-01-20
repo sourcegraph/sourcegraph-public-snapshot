@@ -43,7 +43,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
     const isFiltered = hasActiveFilters(initialFiltersValue)
 
     return (
-        <Popover open={isOpen} anchor={popoverTargetRef} onOpenChange={event => onVisibilityChange(event.isOpen)}>
+        <Popover isOpen={isOpen} anchor={popoverTargetRef} onOpenChange={event => onVisibilityChange(event.isOpen)}>
             <PopoverTrigger
                 as={Button}
                 ref={targetButtonReference}
