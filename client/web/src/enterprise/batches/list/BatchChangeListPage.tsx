@@ -7,7 +7,7 @@ import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { Container, PageHeader, useObservable, CardBody } from '@sourcegraph/wildcard'
+import { Container, PageHeader, useObservable, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -294,7 +294,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
 const GettingStartedFooter: React.FunctionComponent<{}> = () => (
     <div className="row">
         <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
-            <div className="card">
+            <Card>
                 <CardBody className="text-center">
                     <p>Create your first batch change</p>
                     <h2 className="mb-0">
@@ -303,7 +303,7 @@ const GettingStartedFooter: React.FunctionComponent<{}> = () => (
                         </a>
                     </h2>
                 </CardBody>
-            </div>
+            </Card>
         </div>
     </div>
 )

@@ -1,10 +1,9 @@
-import classNames from 'classnames'
 import React from 'react'
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
-import { CardBody } from '@sourcegraph/wildcard'
+import { CardBody, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
@@ -75,7 +74,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className={styles.siteInitPage}>
-            <div className={classNames('card', styles.content)}>
+            <Card className={styles.content}>
                 <CardBody className="p-4">
                     <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} variant="logo" />
                     {authenticatedUser ? (
@@ -100,7 +99,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                         </>
                     )}
                 </CardBody>
-            </div>
+            </Card>
         </div>
     )
 }

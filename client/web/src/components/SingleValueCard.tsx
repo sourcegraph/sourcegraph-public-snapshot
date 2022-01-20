@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import * as React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { CardText, CardTitle, CardBody } from '@sourcegraph/wildcard'
+import { CardText, CardTitle, CardBody, Card } from '@sourcegraph/wildcard'
 
 import styles from './SingleValueCard.module.scss'
 
@@ -19,7 +19,7 @@ export const SingleValueCard: React.FunctionComponent<{
     valueTooltip?: string
     subText?: string
 }> = ({ title, value, subTitle, link, className, valueClassName, valueTooltip, subText }) => (
-    <div className={classNames('card', styles.singleValueCard, className)}>
+    <Card className={classNames(styles.singleValueCard, className)}>
         <CardBody className="text-center">
             <CardTitle as="h4" className="mb-0">
                 {title}
@@ -33,5 +33,5 @@ export const SingleValueCard: React.FunctionComponent<{
             </CardText>
             {subText && <small>{subText}</small>}
         </CardBody>
-    </div>
+    </Card>
 )

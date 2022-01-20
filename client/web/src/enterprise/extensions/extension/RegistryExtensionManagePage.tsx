@@ -10,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, Link, CardHeader, CardBody } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -181,7 +181,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                         </Button>
                     </Form>
                     {isErrorLike(this.state.updateOrError) && <ErrorAlert error={this.state.updateOrError} />}
-                    <div className={classNames('card mt-5', styles.otherActions)}>
+                    <Card className={classNames('mt-5', styles.otherActions)}>
                         <CardHeader>Other actions</CardHeader>
                         <CardBody>
                             <Button
@@ -197,7 +197,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                                 onDidUpdate={this.onDidDelete}
                             />
                         </CardBody>
-                    </div>
+                    </Card>
                 </div>
             )
         }

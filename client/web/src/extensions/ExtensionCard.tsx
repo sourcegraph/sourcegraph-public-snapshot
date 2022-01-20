@@ -14,7 +14,7 @@ import {
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { useTimeoutManager, Link, CardBody } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Link, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -181,8 +181,8 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     const iconClassName = classNames(styles.icon, featured && styles.iconFeatured)
 
     return (
-        <div
-            className={classNames('card position-relative flex-1', styles.extensionCard, {
+        <Card
+            className={classNames('position-relative flex-1', styles.extensionCard, {
                 [classNames('p-0 m-0', styles.extensionCardEnabled)]: change === 'enabled',
             })}
         >
@@ -292,7 +292,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     <span className="font-weight-medium">Error:</span> {actionableErrorMessage(optimisticFailure.error)}
                 </div>
             )}
-        </div>
+        </Card>
     )
 },
 areEqual)

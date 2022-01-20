@@ -8,7 +8,7 @@ import { catchError, map, startWith } from 'rxjs/operators'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link, CardHeader, CardBody } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -41,7 +41,6 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
         params: { subscriptionUUID },
     },
     _queryProductSubscription = queryProductSubscription,
-    history,
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
 
@@ -103,7 +102,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                             licenseKey={productSubscription.activeLicense?.licenseKey ?? null}
                         />
                     )}
-                    <div className="card mt-3">
+                    <Card className="mt-3">
                         <CardHeader>Billing</CardHeader>
                         {productSubscription.invoiceItem ? (
                             <>
@@ -134,11 +133,11 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                                 </span>
                             </CardBody>
                         )}
-                    </div>
-                    <div className="card mt-3">
+                    </Card>
+                    <Card className="mt-3">
                         <CardHeader>History</CardHeader>
                         <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </div>
+                    </Card>
                 </>
             )}
         </div>

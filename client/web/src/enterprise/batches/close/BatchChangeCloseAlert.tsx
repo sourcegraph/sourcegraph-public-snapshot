@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Button, AlertLink, LoadingSpinner, CardBody } from '@sourcegraph/wildcard'
+import { Button, AlertLink, LoadingSpinner, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
@@ -54,7 +54,7 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
     }, [history, closeChangesets, closeBatchChange, batchChangeID, batchChangeURL])
     return (
         <>
-            <div className="card mb-3">
+            <Card className="mb-3">
                 <CardBody className="p-3">
                     <p>
                         <strong>
@@ -113,7 +113,7 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                         </Button>
                     </div>
                 </CardBody>
-            </div>
+            </Card>
             {isErrorLike(isClosing) && <ErrorAlert error={isClosing} />}
         </>
     )

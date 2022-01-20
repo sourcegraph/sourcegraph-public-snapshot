@@ -27,6 +27,7 @@ import {
     Button,
     Link,
     CardBody,
+    Card,
 } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
@@ -246,11 +247,11 @@ const ChangesetSpecNode: React.FunctionComponent<
     // TODO: This should not happen. When the workspace is visibile, the changeset spec should be visible as well.
     if (node.__typename === 'HiddenChangesetSpec') {
         return (
-            <div className="card">
+            <Card>
                 <CardBody>
                     <h4>Changeset in a hidden repo</h4>
                 </CardBody>
-            </div>
+            </Card>
         )
     }
 
@@ -285,7 +286,7 @@ const ChangesetSpecNode: React.FunctionComponent<
             titleClassName="flex-grow-1"
             defaultExpanded={1 === 1}
         >
-            <div className={classNames('card mt-2', styles.resultCard)}>
+            <Card className={classNames('mt-2', styles.resultCard)}>
                 <CardBody>
                     <h3>Changeset template</h3>
                     <h4>{node.description.title}</h4>
@@ -307,7 +308,7 @@ const ChangesetSpecNode: React.FunctionComponent<
                         />
                     </Collapsible>
                 </CardBody>
-            </div>
+            </Card>
         </Collapsible>
     )
 }
@@ -383,7 +384,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                 </div>
             }
         >
-            <div className={classNames('card mt-2', styles.stepCard)}>
+            <Card className={classNames('mt-2', styles.stepCard)}>
                 <CardBody>
                     {!step.skipped && (
                         <Tabs size="small" behavior="forceRender">
@@ -468,7 +469,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                         </p>
                     )}
                 </CardBody>
-            </div>
+            </Card>
         </Collapsible>
     )
 }

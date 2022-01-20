@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Card } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
@@ -63,14 +63,14 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                 variant="secondary"
                 className="p-0 w-100 border-0"
             >
-                <div
+                <Card
                     data-tooltip={!permissions.isConfigurable ? getTooltipMessage(dashboard, permissions) : undefined}
                     data-placement="right"
-                    className={classNames(styles.itemCard, 'card')}
+                    className={styles.itemCard}
                 >
                     <PlusIcon size="2rem" />
                     <span>Add insights</span>
-                </div>
+                </Card>
             </Button>
             <span className="d-flex justify-content-center mt-3">
                 <Link to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</Link>

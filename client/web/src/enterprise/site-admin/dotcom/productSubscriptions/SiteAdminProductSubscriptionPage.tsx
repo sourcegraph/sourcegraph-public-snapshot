@@ -17,6 +17,7 @@ import {
     Link,
     CardHeader,
     CardBody,
+    Card,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
@@ -157,7 +158,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                         </Button>
                         {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} />}
                     </div>
-                    <div className="card mt-3">
+                    <Card className="mt-3">
                         <CardHeader>Details</CardHeader>
                         <table className="table mb-0">
                             <tbody>
@@ -203,9 +204,9 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
+                    </Card>
                     <LicenseGenerationKeyWarning className="mt-3" />
-                    <div className="card mt-1">
+                    <Card className="mt-1">
                         <CardHeader className="d-flex align-items-center justify-content-between">
                             Licenses
                             {showGenerate ? (
@@ -240,11 +241,11 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                             history={history}
                             location={location}
                         />
-                    </div>
-                    <div className="card mt-3">
+                    </Card>
+                    <Card className="mt-3">
                         <CardHeader>History</CardHeader>
                         <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </div>
+                    </Card>
                 </>
             )}
         </div>

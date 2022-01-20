@@ -6,7 +6,7 @@ import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { CardHeader } from '@sourcegraph/wildcard'
+import { CardHeader, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -92,7 +92,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-compare-page">
-                <div className="card">
+                <Card>
                     <CardHeader>Commits</CardHeader>
                     <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                         listClassName="list-group list-group-flush"
@@ -112,7 +112,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                         history={this.props.history}
                         location={this.props.location}
                     />
-                </div>
+                </Card>
             </div>
         )
     }
