@@ -696,8 +696,14 @@ func parseRefDescriptions(lines []string) (map[string][]gitdomain.RefDescription
 // CommitDate returns the time that the given commit was committed. If the given
 // revision does not exist, a false-valued flag is returned along with a nil
 // error and zero-valued time.
-// TODO: sub-repo filtering
-func CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
+func CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) (_ string, _ time.Time, revisionExists bool, err error) {
+	if authz.SubRepoEnabled(checker) {
+		// GetCommit to validate that the user has permissions to access it.
+		if _, err := GetCommit(ctx, repo, commit, ResolveRevisionOptions{}, checker); err != nil {
+			return "", time.Time{}, false, nil
+		}
+	}
+
 	cmd := gitserver.DefaultClient.Command("git", "show", "-s", "--format=%H:%cI", string(commit))
 	cmd.Repo = repo
 

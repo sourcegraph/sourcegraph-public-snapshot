@@ -76,7 +76,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 		return "", time.Time{}, false, nil
 	}
 
-	rev, tm, ok, err := git.CommitDate(ctx, repo, api.CommitID(commit))
+	rev, tm, ok, err := git.CommitDate(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return rev, tm, ok, nil
 	}

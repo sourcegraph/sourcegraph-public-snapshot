@@ -978,6 +978,7 @@ func TestFilterRefDescriptions(t *testing.T) {
 }
 
 func TestRefDescriptions(t *testing.T) {
+	t.Parallel()
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
@@ -1029,7 +1030,42 @@ func TestRefDescriptions(t *testing.T) {
 			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
 		}
 	})
+}
 
+func TestCommitDate(t *testing.T) {
+	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := getGitCommandsWithFiles("file1", "file2")
+	repo := MakeGitRepository(t, gitCommands...)
+
+	t.Run("basic", func(t *testing.T) {
+		_, date, commitExists, err := CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", nil)
+		if err != nil {
+			t.Errorf("error fetching CommitDate: %s", err)
+		}
+		if !commitExists {
+			t.Errorf("commit should exist")
+		}
+		if !date.Equal(time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC)) {
+			t.Errorf("unexpected date: %s", date)
+		}
+	})
+
+	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
+		checker := getTestSubRepoPermsChecker("file1")
+		_, date, commitExists, err := CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", checker)
+		if err != nil {
+			t.Errorf("error fetching CommitDate: %s", err)
+		}
+		if commitExists {
+			t.Errorf("expect commit to not exist since the user doesn't have access")
+		}
+		if !date.IsZero() {
+			t.Errorf("expected date to be empty, got: %s", date)
+		}
+	})
 }
 
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
