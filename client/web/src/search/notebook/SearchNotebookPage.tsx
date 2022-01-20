@@ -7,6 +7,7 @@ import { Observable } from 'rxjs'
 import { catchError, debounceTime, delay, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -19,7 +20,6 @@ import { AuthenticatedUser } from '../../auth'
 import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
 import { resolveRevision as _resolveRevision, fetchRepository as _fetchRepository } from '../../repo/backend'
-import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
 import {
     fetchNotebook as _fetchNotebook,

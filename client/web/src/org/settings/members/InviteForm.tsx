@@ -5,16 +5,15 @@ import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { map } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { CopyableText } from '../../../components/CopyableText'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import {

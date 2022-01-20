@@ -4,6 +4,32 @@
 # LSIF Typed protocol reference
 
 
+### Descriptor
+
+
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+|  **name** | string | 
+|  **disambiguator** | string | 
+|  **suffix** | Suffix | 
+
+
+
+#### Suffix
+
+
+
+| Number | Name | Description |
+| ------ | ---- | ----------- |
+| 0 | UnspecifiedSuffix | 
+| 1 | Package | 
+| 2 | Type | 
+| 3 | Term | 
+| 4 | Method | 
+| 5 | TypeParameter | 
+| 6 | Parameter | 
+| 7 | Meta | Can be used for any purpose.
 ### Document
 
 Document defines the metadata about a source file on disk.
@@ -29,7 +55,7 @@ once in the stream. Other field values may appear in any order.
 | ---- | ---- | ----------- |
 |  **metadata** | Metadata | Metadata about this index.
 | repeated **document** | Document | Documents that belong to this index.
-| repeated **external_symbols** | SymbolInformation | Symbols that are referenced from this index and not defined in this index.
+| repeated **external_symbols** | SymbolInformation | (optional) Symbols that are referenced from this index but are defined in an external package (a separate `Index` message).  Leave this field empty if you assume the external package will get indexed separately. If the external package won't get indexed for some reason then you can use this field to provide hover documentation for those external symbols.
 
 
 
@@ -85,6 +111,72 @@ improvements make up for it.
 
 
 
+### Package
+
+
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+|  **manager** | string | 
+|  **name** | string | 
+|  **version** | string | 
+
+
+
+### Relationship
+
+
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+|  **symbol** | string | 
+|  **is_reference** | bool | When resolving "Find references", this field documents what other symbols should be included together with this symbol. For example, consider the following TypeScript code that defines two symbols `Animal#sound()` and `Dog#sound()`: ```ts interface Animal {           ^^^^^^ definition Animal#   sound(): string   ^^^^^ definition Animal#sound() } class Dog implements Animal {       ^^^ definition Dog#, implementation_symbols = Animal#   public sound(): string { return "woof" }          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound() } const animal: Animal = new Dog()               ^^^^^^ reference Animal# console.log(animal.sound())                    ^^^^^ reference Animal#sound() ``` Doing "Find references" on the symbol `Animal#sound()` should return references to the `Dog#sound()` method as well. Vice-versa, doing "Find references" on the `Dog#sound()` method should include references to the `Animal#sound()` method as well.
+|  **is_implementation** | bool | Similar to `references_symbols` but for "Go to implementation". It's common for the `implementation_symbols` and `references_symbols` fields have the same values but that's not always the case. In the TypeScript example above, observe that `implementation_symbols` has the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is empty. When requesting "Find references" on the "Animal#" symbol we don't want to include references to "Dog#" even if "Go to implementation" on the "Animal#" symbol should navigate to the "Dog#" symbol.
+|  **is_type_definition** | bool | Similar to `references_symbols` but for "Go to type definition".
+
+
+
+
+### Symbol
+
+Symbol is similar to a URI, it identifies a class, method, or a local
+variable. `SymbolInformation` contains rich metadata about symbols such as
+the docstring.
+
+Symbol has a standardized string representation, which can be used
+interchangeably with `Symbol`. The syntax for Symbol is the following:
+```
+  <symbol>               ::= <scheme> ' ' <package> ' ' { <descriptor> } | 'local ' <local-id>
+  <package>              ::= <manager> ' ' <package-name> ' ' <version>
+  <scheme>               ::= any UTF-8 character, escape spaces with double space.
+  <manager>              ::= same as above
+  <package-name>         ::= same as above
+  <version>              ::= same as above
+  <descriptor>           ::= <package> | <type> | <term> | <method> | <type-parameter> | <parameter> | <meta>
+  <package>              ::= <name> '/'
+  <type>                 ::= <name> '#'
+  <term>                 ::= <name> '.'
+  <meta>                 ::= <name> ':'
+  <method>               ::= <name> '(' <method-disambiguator> ').'
+  <type-parameter>       ::= '[' <name> ']'
+  <parameter>            ::= '(' <name> ')'
+  <name>                 ::= <identifier>
+  <method-disambiguator> ::= <simple-identifier>
+  <identifier>           ::= <simple-identifier> | <escaped-identifier>
+  <simple-identifier>    ::= { <identifier-character> }
+  <identifier-character> ::= '_' | '-' | '$' | ASCII letter or digit
+  <escaped-identifier>   ::= '`' { <escaped-character> } '`'
+  <escaped-characters>   ::= any UTF-8 character, escape backticks with double backtick.
+```
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+|  **scheme** | string | 
+|  **package** | Package | 
+| repeated **descriptor** | Descriptor | 
+
+
+
 ### SymbolInformation
 
 SymbolInformation defines metadata about a symbol, such as the symbol's
@@ -92,30 +184,9 @@ docstring or what package it's defined it.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **symbol** | string | Identifier of this symbol, which can be referenced from `Occurence.symbol`. The string must be formatted as `"$SCHEME:$ID` where:
+|  **symbol** | string | Identifier of this symbol, which can be referenced from `Occurence.symbol`. The string must be formatted according to the grammar in `Symbol`.
 | repeated **documentation** | string | (optional, but strongly recommended) The markdown-formatted documentation for this symbol. This field is repeated to allow different kinds of documentation.  For example, it's nice to include both the signature of a method (parameters and return type) along with the accompanying docstring.
-|  **package** | string | (optional) To enable cross-index navigation, specify which package this symbol is defined in. A package must be encoded as a space-separated string with the value `"$manager $name $version"` where: - `$manager` is the name of the package manager, for example `npm`. - `$name` is the name of the package, for example `react`. - `$version` is the version of the package, for example `1.2.0`.
-| repeated **reference_symbols** | string | (optional) When resolving "Find references", this field documents what other symbols should be included together with this symbol. For example, consider the following TypeScript code that defines two symbols `Animal#sound()` and `Dog#sound()`: ```ts interface Animal {           ^^^^^^ definition Animal#   sound(): string   ^^^^^ definition Animal#sound() } class Dog implements Animal {       ^^^ definition Dog#, implementation_symbols = Animal#   public sound(): string { return "woof" }          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound() } const animal: Animal = new Dog()               ^^^^^^ reference Animal# console.log(animal.sound())                    ^^^^^ reference Animal#sound() ``` Doing "Find references" on the symbol `Animal#sound()` should return references to the `Dog#sound()` method as well. Vice-versa, doing "Find references" on the `Dog#sound()` method should include references to the `Animal#sound()` method as well.
-| repeated **implementation_symbols** | string | (optional) Similar to `references_symbols` but for "Go to implementation". It's common for the `implementation_symbols` and `references_symbols` fields have the same values but that's not always the case. In the TypeScript example above, observe that `implementation_symbols` has the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is empty. When requesting "Find references" on the "Animal#" symbol we don't want to include references to "Dog#" even if "Go to implementation" on the "Animal#" symbol should navigate to the "Dog#" symbol.
-| repeated **type_definition_symbols** | string | (optional) Similar to `references_symbols` but for "Go to type definition".
-
-Additional notes on **symbol**:
-
-Identifier of this symbol, which can be referenced from `Occurence.symbol`.
-The string must be formatted as `"$SCHEME:$ID` where:
-
-- `SCHEME`: the value `local` for document-local symbols or an
-  indexer-specific identifier for global symbols.  Document-local symbols
-  are symbols that cannot be referenced outside the document, for example
-  local variables.
-- `ID`: an opaque identifier that uniquely determines this symbol within
-  the defined scheme. For global symbols, the ID must be stable between
-  different invocations of the indexer against unchanged code.  For
-  document-local symbols, any string value that uniquely identifies the
-  symbol within the document it belong to (ideally stable between runs).
-
-
-
+| repeated **relationships** | Relationship | (optional) Relationships to other symbols (e.g., implements, type definition).
 
 
 

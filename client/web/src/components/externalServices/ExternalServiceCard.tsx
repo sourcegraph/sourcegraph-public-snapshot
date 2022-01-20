@@ -4,7 +4,7 @@ import AccountIcon from 'mdi-react/AccountIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 

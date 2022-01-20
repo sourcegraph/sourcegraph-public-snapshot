@@ -4,10 +4,10 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 

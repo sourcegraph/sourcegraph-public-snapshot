@@ -1,19 +1,18 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
 import { ReactStripeElements } from 'react-stripe-elements'
 import { from, of, throwError, Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../components/alerts'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
 import {

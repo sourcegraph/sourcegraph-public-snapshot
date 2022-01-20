@@ -3,14 +3,11 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Container, Button } from '@sourcegraph/wildcard'
+import { Button, Container, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
-import { Settings } from '../../schema/settings.schema'
 
 import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
@@ -20,8 +17,7 @@ import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 type CodeMonitorFilter = 'all' | 'user'
 
 interface CodeMonitorListProps
-    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>>,
-        SettingsCascadeProps<Settings> {
+    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>> {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -43,7 +39,6 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
 
 export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
     authenticatedUser,
-    settingsCascade,
     fetchUserCodeMonitors,
     toggleCodeMonitorEnabled,
 }) => {

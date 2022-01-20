@@ -265,6 +265,71 @@ func (SyntaxKind) EnumDescriptor() ([]byte, []int) {
 	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{3}
 }
 
+type Descriptor_Suffix int32
+
+const (
+	Descriptor_UnspecifiedSuffix Descriptor_Suffix = 0
+	Descriptor_Package           Descriptor_Suffix = 1
+	Descriptor_Type              Descriptor_Suffix = 2
+	Descriptor_Term              Descriptor_Suffix = 3
+	Descriptor_Method            Descriptor_Suffix = 4
+	Descriptor_TypeParameter     Descriptor_Suffix = 5
+	Descriptor_Parameter         Descriptor_Suffix = 6
+	// Can be used for any purpose.
+	Descriptor_Meta Descriptor_Suffix = 7
+)
+
+// Enum value maps for Descriptor_Suffix.
+var (
+	Descriptor_Suffix_name = map[int32]string{
+		0: "UnspecifiedSuffix",
+		1: "Package",
+		2: "Type",
+		3: "Term",
+		4: "Method",
+		5: "TypeParameter",
+		6: "Parameter",
+		7: "Meta",
+	}
+	Descriptor_Suffix_value = map[string]int32{
+		"UnspecifiedSuffix": 0,
+		"Package":           1,
+		"Type":              2,
+		"Term":              3,
+		"Method":            4,
+		"TypeParameter":     5,
+		"Parameter":         6,
+		"Meta":              7,
+	}
+)
+
+func (x Descriptor_Suffix) Enum() *Descriptor_Suffix {
+	p := new(Descriptor_Suffix)
+	*p = x
+	return p
+}
+
+func (x Descriptor_Suffix) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Descriptor_Suffix) Descriptor() protoreflect.EnumDescriptor {
+	return file_lib_codeintel_lsif_typed_lsif_proto_enumTypes[4].Descriptor()
+}
+
+func (Descriptor_Suffix) Type() protoreflect.EnumType {
+	return &file_lib_codeintel_lsif_typed_lsif_proto_enumTypes[4]
+}
+
+func (x Descriptor_Suffix) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Descriptor_Suffix.Descriptor instead.
+func (Descriptor_Suffix) EnumDescriptor() ([]byte, []int) {
+	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{6, 0}
+}
+
 // Index represents a complete LSIF index for a workspace this is rooted at a
 // single directory. An Index message payload can have a large memory footprint
 // and it's therefore recommended to emit and consume an Index payload one field
@@ -280,7 +345,11 @@ type Index struct {
 	Metadata *Metadata `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	// Documents that belong to this index.
 	Document []*Document `protobuf:"bytes,2,rep,name=document,proto3" json:"document,omitempty"`
-	// Symbols that are referenced from this index and not defined in this index.
+	// (optional) Symbols that are referenced from this index but are defined in
+	// an external package (a separate `Index` message).  Leave this field empty
+	// if you assume the external package will get indexed separately. If the
+	// external package won't get indexed for some reason then you can use this
+	// field to provide hover documentation for those external symbols.
 	ExternalSymbols []*SymbolInformation `protobuf:"bytes,3,rep,name=external_symbols,json=externalSymbols,proto3" json:"external_symbols,omitempty"`
 }
 
@@ -550,6 +619,224 @@ func (x *Document) GetSymbols() []*SymbolInformation {
 	return nil
 }
 
+// Symbol is similar to a URI, it identifies a class, method, or a local
+// variable. `SymbolInformation` contains rich metadata about symbols such as
+// the docstring.
+//
+// Symbol has a standardized string representation, which can be used
+// interchangeably with `Symbol`. The syntax for Symbol is the following:
+// ```
+//   <symbol>               ::= <scheme> ' ' <package> ' ' { <descriptor> } | 'local ' <local-id>
+//   <package>              ::= <manager> ' ' <package-name> ' ' <version>
+//   <scheme>               ::= any UTF-8 character, escape spaces with double space.
+//   <manager>              ::= same as above
+//   <package-name>         ::= same as above
+//   <version>              ::= same as above
+//   <descriptor>           ::= <package> | <type> | <term> | <method> | <type-parameter> | <parameter> | <meta>
+//   <package>              ::= <name> '/'
+//   <type>                 ::= <name> '#'
+//   <term>                 ::= <name> '.'
+//   <meta>                 ::= <name> ':'
+//   <method>               ::= <name> '(' <method-disambiguator> ').'
+//   <type-parameter>       ::= '[' <name> ']'
+//   <parameter>            ::= '(' <name> ')'
+//   <name>                 ::= <identifier>
+//   <method-disambiguator> ::= <simple-identifier>
+//   <identifier>           ::= <simple-identifier> | <escaped-identifier>
+//   <simple-identifier>    ::= { <identifier-character> }
+//   <identifier-character> ::= '_' | '-' | '$' | ASCII letter or digit
+//   <escaped-identifier>   ::= '`' { <escaped-character> } '`'
+//   <escaped-characters>   ::= any UTF-8 character, escape backticks with double backtick.
+// ```
+type Symbol struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Scheme      string        `protobuf:"bytes,1,opt,name=scheme,proto3" json:"scheme,omitempty"`
+	Package     *Package      `protobuf:"bytes,2,opt,name=package,proto3" json:"package,omitempty"`
+	Descriptor_ []*Descriptor `protobuf:"bytes,3,rep,name=descriptor,proto3" json:"descriptor,omitempty"`
+}
+
+func (x *Symbol) Reset() {
+	*x = Symbol{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Symbol) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Symbol) ProtoMessage() {}
+
+func (x *Symbol) ProtoReflect() protoreflect.Message {
+	mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Symbol.ProtoReflect.Descriptor instead.
+func (*Symbol) Descriptor() ([]byte, []int) {
+	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Symbol) GetScheme() string {
+	if x != nil {
+		return x.Scheme
+	}
+	return ""
+}
+
+func (x *Symbol) GetPackage() *Package {
+	if x != nil {
+		return x.Package
+	}
+	return nil
+}
+
+func (x *Symbol) GetDescriptor_() []*Descriptor {
+	if x != nil {
+		return x.Descriptor_
+	}
+	return nil
+}
+
+type Package struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Manager string `protobuf:"bytes,1,opt,name=manager,proto3" json:"manager,omitempty"`
+	Name    string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+}
+
+func (x *Package) Reset() {
+	*x = Package{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Package) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Package) ProtoMessage() {}
+
+func (x *Package) ProtoReflect() protoreflect.Message {
+	mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Package.ProtoReflect.Descriptor instead.
+func (*Package) Descriptor() ([]byte, []int) {
+	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *Package) GetManager() string {
+	if x != nil {
+		return x.Manager
+	}
+	return ""
+}
+
+func (x *Package) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Package) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+type Descriptor struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name          string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Disambiguator string            `protobuf:"bytes,2,opt,name=disambiguator,proto3" json:"disambiguator,omitempty"`
+	Suffix        Descriptor_Suffix `protobuf:"varint,3,opt,name=suffix,proto3,enum=lib.codeintel.lsif_typed.Descriptor_Suffix" json:"suffix,omitempty"`
+}
+
+func (x *Descriptor) Reset() {
+	*x = Descriptor{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Descriptor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Descriptor) ProtoMessage() {}
+
+func (x *Descriptor) ProtoReflect() protoreflect.Message {
+	mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Descriptor.ProtoReflect.Descriptor instead.
+func (*Descriptor) Descriptor() ([]byte, []int) {
+	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Descriptor) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Descriptor) GetDisambiguator() string {
+	if x != nil {
+		return x.Disambiguator
+	}
+	return ""
+}
+
+func (x *Descriptor) GetSuffix() Descriptor_Suffix {
+	if x != nil {
+		return x.Suffix
+	}
+	return Descriptor_UnspecifiedSuffix
+}
+
 // SymbolInformation defines metadata about a symbol, such as the symbol's
 // docstring or what package it's defined it.
 type SymbolInformation struct {
@@ -558,34 +845,80 @@ type SymbolInformation struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Identifier of this symbol, which can be referenced from `Occurence.symbol`.
-	// The string must be formatted as `"$SCHEME:$ID` where:
-	//
-	// - `SCHEME`: the value `local` for document-local symbols or an
-	//   indexer-specific identifier for global symbols.  Document-local symbols
-	//   are symbols that cannot be referenced outside the document, for example
-	//   local variables.
-	// - `ID`: an opaque identifier that uniquely determines this symbol within
-	//   the defined scheme. For global symbols, the ID must be stable between
-	//   different invocations of the indexer against unchanged code.  For
-	//   document-local symbols, any string value that uniquely identifies the
-	//   symbol within the document it belong to (ideally stable between runs).
+	// The string must be formatted according to the grammar in `Symbol`.
 	Symbol string `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
 	// (optional, but strongly recommended) The markdown-formatted documentation
 	// for this symbol. This field is repeated to allow different kinds of
 	// documentation.  For example, it's nice to include both the signature of a
 	// method (parameters and return type) along with the accompanying docstring.
 	Documentation []string `protobuf:"bytes,3,rep,name=documentation,proto3" json:"documentation,omitempty"`
-	// (optional) To enable cross-index navigation, specify which package this
-	// symbol is defined in. A package must be encoded as a space-separated string
-	// with the value `"$manager $name $version"` where:
-	// - `$manager` is the name of the package manager, for example `npm`.
-	// - `$name` is the name of the package, for example `react`.
-	// - `$version` is the version of the package, for example `1.2.0`.
-	Package string `protobuf:"bytes,4,opt,name=package,proto3" json:"package,omitempty"`
-	// (optional) When resolving "Find references", this field documents what
-	// other symbols should be included together with this symbol. For example,
-	// consider the following TypeScript code that defines two symbols
-	// `Animal#sound()` and `Dog#sound()`:
+	// (optional) Relationships to other symbols (e.g., implements, type definition).
+	Relationships []*Relationship `protobuf:"bytes,4,rep,name=relationships,proto3" json:"relationships,omitempty"`
+}
+
+func (x *SymbolInformation) Reset() {
+	*x = SymbolInformation{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SymbolInformation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SymbolInformation) ProtoMessage() {}
+
+func (x *SymbolInformation) ProtoReflect() protoreflect.Message {
+	mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SymbolInformation.ProtoReflect.Descriptor instead.
+func (*SymbolInformation) Descriptor() ([]byte, []int) {
+	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *SymbolInformation) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *SymbolInformation) GetDocumentation() []string {
+	if x != nil {
+		return x.Documentation
+	}
+	return nil
+}
+
+func (x *SymbolInformation) GetRelationships() []*Relationship {
+	if x != nil {
+		return x.Relationships
+	}
+	return nil
+}
+
+type Relationship struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Symbol string `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	// When resolving "Find references", this field documents what other symbols
+	// should be included together with this symbol. For example, consider the
+	// following TypeScript code that defines two symbols `Animal#sound()` and
+	// `Dog#sound()`:
 	// ```ts
 	// interface Animal {
 	//           ^^^^^^ definition Animal#
@@ -606,8 +939,8 @@ type SymbolInformation struct {
 	// references to the `Dog#sound()` method as well. Vice-versa, doing "Find
 	// references" on the `Dog#sound()` method should include references to the
 	// `Animal#sound()` method as well.
-	ReferenceSymbols []string `protobuf:"bytes,5,rep,name=reference_symbols,json=referenceSymbols,proto3" json:"reference_symbols,omitempty"`
-	// (optional) Similar to `references_symbols` but for "Go to implementation".
+	IsReference bool `protobuf:"varint,2,opt,name=is_reference,json=isReference,proto3" json:"is_reference,omitempty"`
+	// Similar to `references_symbols` but for "Go to implementation".
 	// It's common for the `implementation_symbols` and `references_symbols` fields
 	// have the same values but that's not always the case.
 	// In the TypeScript example above, observe that `implementation_symbols` has
@@ -615,28 +948,28 @@ type SymbolInformation struct {
 	// empty. When requesting "Find references" on the "Animal#" symbol we don't
 	// want to include references to "Dog#" even if "Go to implementation" on the
 	// "Animal#" symbol should navigate to the "Dog#" symbol.
-	ImplementationSymbols []string `protobuf:"bytes,6,rep,name=implementation_symbols,json=implementationSymbols,proto3" json:"implementation_symbols,omitempty"`
-	// (optional) Similar to `references_symbols` but for "Go to type definition".
-	TypeDefinitionSymbols []string `protobuf:"bytes,7,rep,name=type_definition_symbols,json=typeDefinitionSymbols,proto3" json:"type_definition_symbols,omitempty"`
+	IsImplementation bool `protobuf:"varint,3,opt,name=is_implementation,json=isImplementation,proto3" json:"is_implementation,omitempty"`
+	// Similar to `references_symbols` but for "Go to type definition".
+	IsTypeDefinition bool `protobuf:"varint,4,opt,name=is_type_definition,json=isTypeDefinition,proto3" json:"is_type_definition,omitempty"`
 }
 
-func (x *SymbolInformation) Reset() {
-	*x = SymbolInformation{}
+func (x *Relationship) Reset() {
+	*x = Relationship{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[4]
+		mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *SymbolInformation) String() string {
+func (x *Relationship) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SymbolInformation) ProtoMessage() {}
+func (*Relationship) ProtoMessage() {}
 
-func (x *SymbolInformation) ProtoReflect() protoreflect.Message {
-	mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[4]
+func (x *Relationship) ProtoReflect() protoreflect.Message {
+	mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -647,51 +980,37 @@ func (x *SymbolInformation) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SymbolInformation.ProtoReflect.Descriptor instead.
-func (*SymbolInformation) Descriptor() ([]byte, []int) {
-	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{4}
+// Deprecated: Use Relationship.ProtoReflect.Descriptor instead.
+func (*Relationship) Descriptor() ([]byte, []int) {
+	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *SymbolInformation) GetSymbol() string {
+func (x *Relationship) GetSymbol() string {
 	if x != nil {
 		return x.Symbol
 	}
 	return ""
 }
 
-func (x *SymbolInformation) GetDocumentation() []string {
+func (x *Relationship) GetIsReference() bool {
 	if x != nil {
-		return x.Documentation
+		return x.IsReference
 	}
-	return nil
+	return false
 }
 
-func (x *SymbolInformation) GetPackage() string {
+func (x *Relationship) GetIsImplementation() bool {
 	if x != nil {
-		return x.Package
+		return x.IsImplementation
 	}
-	return ""
+	return false
 }
 
-func (x *SymbolInformation) GetReferenceSymbols() []string {
+func (x *Relationship) GetIsTypeDefinition() bool {
 	if x != nil {
-		return x.ReferenceSymbols
+		return x.IsTypeDefinition
 	}
-	return nil
-}
-
-func (x *SymbolInformation) GetImplementationSymbols() []string {
-	if x != nil {
-		return x.ImplementationSymbols
-	}
-	return nil
-}
-
-func (x *SymbolInformation) GetTypeDefinitionSymbols() []string {
-	if x != nil {
-		return x.TypeDefinitionSymbols
-	}
-	return nil
+	return false
 }
 
 // Occurrence associates a source position with a symbol and/or highlighting
@@ -739,7 +1058,7 @@ type Occurrence struct {
 func (x *Occurrence) Reset() {
 	*x = Occurrence{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[5]
+		mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -752,7 +1071,7 @@ func (x *Occurrence) String() string {
 func (*Occurrence) ProtoMessage() {}
 
 func (x *Occurrence) ProtoReflect() protoreflect.Message {
-	mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[5]
+	mi := &file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -765,7 +1084,7 @@ func (x *Occurrence) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Occurrence.ProtoReflect.Descriptor instead.
 func (*Occurrence) Descriptor() ([]byte, []int) {
-	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{5}
+	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Occurrence) GetRange() []int32 {
@@ -858,24 +1177,60 @@ var file_lib_codeintel_lsif_typed_lsif_proto_rawDesc = []byte{
 	0x6c, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x6c, 0x69, 0x62, 0x2e, 0x63,
 	0x6f, 0x64, 0x65, 0x69, 0x6e, 0x74, 0x65, 0x6c, 0x2e, 0x6c, 0x73, 0x69, 0x66, 0x5f, 0x74, 0x79,
 	0x70, 0x65, 0x64, 0x2e, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x72, 0x6d,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x22, 0x87,
-	0x02, 0x0a, 0x11, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x12, 0x24, 0x0a, 0x0d,
-	0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20,
-	0x03, 0x28, 0x09, 0x52, 0x0d, 0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x18, 0x04, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x07, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x12, 0x2b, 0x0a, 0x11,
-	0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x5f, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c,
-	0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x09, 0x52, 0x10, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e,
-	0x63, 0x65, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x12, 0x35, 0x0a, 0x16, 0x69, 0x6d, 0x70,
-	0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x79, 0x6d, 0x62,
-	0x6f, 0x6c, 0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x09, 0x52, 0x15, 0x69, 0x6d, 0x70, 0x6c, 0x65,
-	0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73,
-	0x12, 0x36, 0x0a, 0x17, 0x74, 0x79, 0x70, 0x65, 0x5f, 0x64, 0x65, 0x66, 0x69, 0x6e, 0x69, 0x74,
-	0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x18, 0x07, 0x20, 0x03, 0x28,
-	0x09, 0x52, 0x15, 0x74, 0x79, 0x70, 0x65, 0x44, 0x65, 0x66, 0x69, 0x6e, 0x69, 0x74, 0x69, 0x6f,
-	0x6e, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x22, 0xdb, 0x01, 0x0a, 0x0a, 0x4f, 0x63, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x22, 0xa3,
+	0x01, 0x0a, 0x06, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x63, 0x68,
+	0x65, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x63, 0x68, 0x65, 0x6d,
+	0x65, 0x12, 0x3b, 0x0a, 0x07, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x21, 0x2e, 0x6c, 0x69, 0x62, 0x2e, 0x63, 0x6f, 0x64, 0x65, 0x69, 0x6e, 0x74,
+	0x65, 0x6c, 0x2e, 0x6c, 0x73, 0x69, 0x66, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x64, 0x2e, 0x50, 0x61,
+	0x63, 0x6b, 0x61, 0x67, 0x65, 0x52, 0x07, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x12, 0x44,
+	0x0a, 0x0a, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x03,
+	0x28, 0x0b, 0x32, 0x24, 0x2e, 0x6c, 0x69, 0x62, 0x2e, 0x63, 0x6f, 0x64, 0x65, 0x69, 0x6e, 0x74,
+	0x65, 0x6c, 0x2e, 0x6c, 0x73, 0x69, 0x66, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x64, 0x2e, 0x44, 0x65,
+	0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x52, 0x0a, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69,
+	0x70, 0x74, 0x6f, 0x72, 0x22, 0x51, 0x0a, 0x07, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x12,
+	0x18, 0x0a, 0x07, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x07, 0x6d, 0x61, 0x6e, 0x61, 0x67, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a,
+	0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
+	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x85, 0x02, 0x0a, 0x0a, 0x44, 0x65, 0x73, 0x63,
+	0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x24, 0x0a, 0x0d, 0x64, 0x69,
+	0x73, 0x61, 0x6d, 0x62, 0x69, 0x67, 0x75, 0x61, 0x74, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0d, 0x64, 0x69, 0x73, 0x61, 0x6d, 0x62, 0x69, 0x67, 0x75, 0x61, 0x74, 0x6f, 0x72,
+	0x12, 0x43, 0x0a, 0x06, 0x73, 0x75, 0x66, 0x66, 0x69, 0x78, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0e,
+	0x32, 0x2b, 0x2e, 0x6c, 0x69, 0x62, 0x2e, 0x63, 0x6f, 0x64, 0x65, 0x69, 0x6e, 0x74, 0x65, 0x6c,
+	0x2e, 0x6c, 0x73, 0x69, 0x66, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x64, 0x2e, 0x44, 0x65, 0x73, 0x63,
+	0x72, 0x69, 0x70, 0x74, 0x6f, 0x72, 0x2e, 0x53, 0x75, 0x66, 0x66, 0x69, 0x78, 0x52, 0x06, 0x73,
+	0x75, 0x66, 0x66, 0x69, 0x78, 0x22, 0x78, 0x0a, 0x06, 0x53, 0x75, 0x66, 0x66, 0x69, 0x78, 0x12,
+	0x15, 0x0a, 0x11, 0x55, 0x6e, 0x73, 0x70, 0x65, 0x63, 0x69, 0x66, 0x69, 0x65, 0x64, 0x53, 0x75,
+	0x66, 0x66, 0x69, 0x78, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x61, 0x63, 0x6b, 0x61, 0x67,
+	0x65, 0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65, 0x10, 0x02, 0x12, 0x08, 0x0a,
+	0x04, 0x54, 0x65, 0x72, 0x6d, 0x10, 0x03, 0x12, 0x0a, 0x0a, 0x06, 0x4d, 0x65, 0x74, 0x68, 0x6f,
+	0x64, 0x10, 0x04, 0x12, 0x11, 0x0a, 0x0d, 0x54, 0x79, 0x70, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x65, 0x74, 0x65, 0x72, 0x10, 0x05, 0x12, 0x0d, 0x0a, 0x09, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65,
+	0x74, 0x65, 0x72, 0x10, 0x06, 0x12, 0x08, 0x0a, 0x04, 0x4d, 0x65, 0x74, 0x61, 0x10, 0x07, 0x22,
+	0x9f, 0x01, 0x0a, 0x11, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x72, 0x6d,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x12, 0x24, 0x0a,
+	0x0d, 0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03,
+	0x20, 0x03, 0x28, 0x09, 0x52, 0x0d, 0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x12, 0x4c, 0x0a, 0x0d, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73,
+	0x68, 0x69, 0x70, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x6c, 0x69, 0x62,
+	0x2e, 0x63, 0x6f, 0x64, 0x65, 0x69, 0x6e, 0x74, 0x65, 0x6c, 0x2e, 0x6c, 0x73, 0x69, 0x66, 0x5f,
+	0x74, 0x79, 0x70, 0x65, 0x64, 0x2e, 0x52, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x68,
+	0x69, 0x70, 0x52, 0x0d, 0x72, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x68, 0x69, 0x70,
+	0x73, 0x22, 0xa4, 0x01, 0x0a, 0x0c, 0x52, 0x65, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x68,
+	0x69, 0x70, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x06, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x12, 0x21, 0x0a, 0x0c, 0x69, 0x73,
+	0x5f, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08,
+	0x52, 0x0b, 0x69, 0x73, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x12, 0x2b, 0x0a,
+	0x11, 0x69, 0x73, 0x5f, 0x69, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x10, 0x69, 0x73, 0x49, 0x6d, 0x70, 0x6c,
+	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x2c, 0x0a, 0x12, 0x69, 0x73,
+	0x5f, 0x74, 0x79, 0x70, 0x65, 0x5f, 0x64, 0x65, 0x66, 0x69, 0x6e, 0x69, 0x74, 0x69, 0x6f, 0x6e,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x10, 0x69, 0x73, 0x54, 0x79, 0x70, 0x65, 0x44, 0x65,
+	0x66, 0x69, 0x6e, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0xdb, 0x01, 0x0a, 0x0a, 0x4f, 0x63, 0x63,
 	0x75, 0x72, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x72, 0x61, 0x6e, 0x67, 0x65,
 	0x18, 0x01, 0x20, 0x03, 0x28, 0x05, 0x52, 0x05, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x16, 0x0a,
 	0x06, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73,
@@ -938,35 +1293,44 @@ func file_lib_codeintel_lsif_typed_lsif_proto_rawDescGZIP() []byte {
 	return file_lib_codeintel_lsif_typed_lsif_proto_rawDescData
 }
 
-var file_lib_codeintel_lsif_typed_lsif_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_lib_codeintel_lsif_typed_lsif_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_lib_codeintel_lsif_typed_lsif_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_lib_codeintel_lsif_typed_lsif_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_lib_codeintel_lsif_typed_lsif_proto_goTypes = []interface{}{
 	(ProtocolVersion)(0),      // 0: lib.codeintel.lsif_typed.ProtocolVersion
 	(TextEncoding)(0),         // 1: lib.codeintel.lsif_typed.TextEncoding
 	(SymbolRole)(0),           // 2: lib.codeintel.lsif_typed.SymbolRole
 	(SyntaxKind)(0),           // 3: lib.codeintel.lsif_typed.SyntaxKind
-	(*Index)(nil),             // 4: lib.codeintel.lsif_typed.Index
-	(*Metadata)(nil),          // 5: lib.codeintel.lsif_typed.Metadata
-	(*ToolInfo)(nil),          // 6: lib.codeintel.lsif_typed.ToolInfo
-	(*Document)(nil),          // 7: lib.codeintel.lsif_typed.Document
-	(*SymbolInformation)(nil), // 8: lib.codeintel.lsif_typed.SymbolInformation
-	(*Occurrence)(nil),        // 9: lib.codeintel.lsif_typed.Occurrence
+	(Descriptor_Suffix)(0),    // 4: lib.codeintel.lsif_typed.Descriptor.Suffix
+	(*Index)(nil),             // 5: lib.codeintel.lsif_typed.Index
+	(*Metadata)(nil),          // 6: lib.codeintel.lsif_typed.Metadata
+	(*ToolInfo)(nil),          // 7: lib.codeintel.lsif_typed.ToolInfo
+	(*Document)(nil),          // 8: lib.codeintel.lsif_typed.Document
+	(*Symbol)(nil),            // 9: lib.codeintel.lsif_typed.Symbol
+	(*Package)(nil),           // 10: lib.codeintel.lsif_typed.Package
+	(*Descriptor)(nil),        // 11: lib.codeintel.lsif_typed.Descriptor
+	(*SymbolInformation)(nil), // 12: lib.codeintel.lsif_typed.SymbolInformation
+	(*Relationship)(nil),      // 13: lib.codeintel.lsif_typed.Relationship
+	(*Occurrence)(nil),        // 14: lib.codeintel.lsif_typed.Occurrence
 }
 var file_lib_codeintel_lsif_typed_lsif_proto_depIdxs = []int32{
-	5, // 0: lib.codeintel.lsif_typed.Index.metadata:type_name -> lib.codeintel.lsif_typed.Metadata
-	7, // 1: lib.codeintel.lsif_typed.Index.document:type_name -> lib.codeintel.lsif_typed.Document
-	8, // 2: lib.codeintel.lsif_typed.Index.external_symbols:type_name -> lib.codeintel.lsif_typed.SymbolInformation
-	0, // 3: lib.codeintel.lsif_typed.Metadata.version:type_name -> lib.codeintel.lsif_typed.ProtocolVersion
-	6, // 4: lib.codeintel.lsif_typed.Metadata.tool_info:type_name -> lib.codeintel.lsif_typed.ToolInfo
-	1, // 5: lib.codeintel.lsif_typed.Metadata.text_document_encoding:type_name -> lib.codeintel.lsif_typed.TextEncoding
-	9, // 6: lib.codeintel.lsif_typed.Document.occurrences:type_name -> lib.codeintel.lsif_typed.Occurrence
-	8, // 7: lib.codeintel.lsif_typed.Document.symbols:type_name -> lib.codeintel.lsif_typed.SymbolInformation
-	3, // 8: lib.codeintel.lsif_typed.Occurrence.syntax_kind:type_name -> lib.codeintel.lsif_typed.SyntaxKind
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	6,  // 0: lib.codeintel.lsif_typed.Index.metadata:type_name -> lib.codeintel.lsif_typed.Metadata
+	8,  // 1: lib.codeintel.lsif_typed.Index.document:type_name -> lib.codeintel.lsif_typed.Document
+	12, // 2: lib.codeintel.lsif_typed.Index.external_symbols:type_name -> lib.codeintel.lsif_typed.SymbolInformation
+	0,  // 3: lib.codeintel.lsif_typed.Metadata.version:type_name -> lib.codeintel.lsif_typed.ProtocolVersion
+	7,  // 4: lib.codeintel.lsif_typed.Metadata.tool_info:type_name -> lib.codeintel.lsif_typed.ToolInfo
+	1,  // 5: lib.codeintel.lsif_typed.Metadata.text_document_encoding:type_name -> lib.codeintel.lsif_typed.TextEncoding
+	14, // 6: lib.codeintel.lsif_typed.Document.occurrences:type_name -> lib.codeintel.lsif_typed.Occurrence
+	12, // 7: lib.codeintel.lsif_typed.Document.symbols:type_name -> lib.codeintel.lsif_typed.SymbolInformation
+	10, // 8: lib.codeintel.lsif_typed.Symbol.package:type_name -> lib.codeintel.lsif_typed.Package
+	11, // 9: lib.codeintel.lsif_typed.Symbol.descriptor:type_name -> lib.codeintel.lsif_typed.Descriptor
+	4,  // 10: lib.codeintel.lsif_typed.Descriptor.suffix:type_name -> lib.codeintel.lsif_typed.Descriptor.Suffix
+	13, // 11: lib.codeintel.lsif_typed.SymbolInformation.relationships:type_name -> lib.codeintel.lsif_typed.Relationship
+	3,  // 12: lib.codeintel.lsif_typed.Occurrence.syntax_kind:type_name -> lib.codeintel.lsif_typed.SyntaxKind
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_lib_codeintel_lsif_typed_lsif_proto_init() }
@@ -1024,7 +1388,7 @@ func file_lib_codeintel_lsif_typed_lsif_proto_init() {
 			}
 		}
 		file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SymbolInformation); i {
+			switch v := v.(*Symbol); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1036,6 +1400,54 @@ func file_lib_codeintel_lsif_typed_lsif_proto_init() {
 			}
 		}
 		file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Package); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Descriptor); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SymbolInformation); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*Relationship); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_lib_codeintel_lsif_typed_lsif_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Occurrence); i {
 			case 0:
 				return &v.state
@@ -1053,8 +1465,8 @@ func file_lib_codeintel_lsif_typed_lsif_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_lib_codeintel_lsif_typed_lsif_proto_rawDesc,
-			NumEnums:      4,
-			NumMessages:   6,
+			NumEnums:      5,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

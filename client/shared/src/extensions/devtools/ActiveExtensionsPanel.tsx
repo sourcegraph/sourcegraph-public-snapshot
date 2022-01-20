@@ -3,10 +3,9 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
-import { Link } from '../../components/Link'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
 

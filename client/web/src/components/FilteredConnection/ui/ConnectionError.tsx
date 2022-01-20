@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { ErrorMessage } from '../../alerts'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 
 import styles from './ConnectionError.module.scss'
 

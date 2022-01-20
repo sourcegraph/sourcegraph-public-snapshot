@@ -8,18 +8,24 @@ import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import {
+    KeyboardShortcutsProps,
+    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
+    KEYBOARD_SHORTCUT_SWITCH_THEME,
+} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge, useObservable, Button } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -29,15 +35,8 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
-import {
-    KeyboardShortcutsProps,
-    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
-    KEYBOARD_SHORTCUT_SWITCH_THEME,
-} from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
-import { Settings } from '../schema/settings.schema'
-import { isSearchContextSpecAvailable, SearchContextInputProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
@@ -128,9 +127,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                       // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
                       // user selects a search context from the dropdown.
                       // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
-                      isSearchContextSpecAvailable(globalSearchContextSpec.spec).pipe(startWith(true))
+                      isSearchContextSpecAvailable({
+                          spec: globalSearchContextSpec.spec,
+                          platformContext: props.platformContext,
+                      }).pipe(startWith(true))
                     : of(false),
-            [globalSearchContextSpec, searchContextsEnabled]
+            [globalSearchContextSpec, searchContextsEnabled, props.platformContext]
         )
     )
 

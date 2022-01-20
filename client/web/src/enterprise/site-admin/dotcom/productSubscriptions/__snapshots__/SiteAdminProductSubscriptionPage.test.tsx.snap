@@ -87,6 +87,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               </em>
                — 
               <a
+                class=""
                 href="/s"
               >
                 View as user
@@ -216,7 +217,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             <div>
               Tags: 
               <div
-                class="badge secondary mr-1"
+                class="mr-1"
               >
                 a
               </div>

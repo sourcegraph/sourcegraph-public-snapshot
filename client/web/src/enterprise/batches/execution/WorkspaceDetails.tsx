@@ -13,8 +13,8 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 import { delay, repeatWhen } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     useObservable,
@@ -26,9 +26,9 @@ import {
     TabPanels,
     Tabs,
     Button,
+    Link,
 } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../components/alerts'
 import { Collapsible } from '../../../components/Collapsible'
 import { DiffStat } from '../../../components/diff/DiffStat'
 import { FileDiffConnection } from '../../../components/diff/FileDiffConnection'

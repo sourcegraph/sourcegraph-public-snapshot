@@ -2,15 +2,14 @@ import classNames from 'classnames'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import React, { useCallback } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SyntaxHighlightedSearchQuery, ModalVideo } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
-import { ModalVideo } from '../documentation/ModalVideo'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
@@ -112,9 +111,9 @@ const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
                     </div>
                 ))}
             </div>
-            <a className={styles.tipsAndTricksMore} href={moreLink.href}>
+            <Link className={styles.tipsAndTricksMore} to={moreLink.href}>
                 {moreLink.label}
-            </a>
+            </Link>
         </div>
     )
 }
@@ -148,6 +147,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                         isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
                                     )
                                 }
+                                assetsRoot={window.context?.assetsRoot || ''}
                             />
                         </div>
 
@@ -197,6 +197,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                         isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
                                     )
                                 }
+                                assetsRoot={window.context?.assetsRoot || ''}
                             />
                         </div>
                     </div>

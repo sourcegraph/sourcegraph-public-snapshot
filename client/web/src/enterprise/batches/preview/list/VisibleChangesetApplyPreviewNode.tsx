@@ -8,11 +8,10 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'

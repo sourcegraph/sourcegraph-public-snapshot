@@ -4,12 +4,11 @@ import StarIcon from 'mdi-react/StarIcon'
 import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 import React, { useMemo } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { IMarkdownBlock, NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge } from '@sourcegraph/wildcard'
+import { Link, Badge } from '@sourcegraph/wildcard'
 
 import { NotebookFields } from '../../../graphql-operations'
 import { PageRoutes } from '../../../routes.constants'

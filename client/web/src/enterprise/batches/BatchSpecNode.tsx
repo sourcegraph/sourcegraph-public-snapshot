@@ -10,11 +10,10 @@ import StarIcon from 'mdi-react/StarIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 

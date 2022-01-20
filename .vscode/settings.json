@@ -61,6 +61,8 @@
     "./client/browser",
     "./client/build-config",
     "./client/shared",
+    "./client/search",
+    "./client/search-ui",
     "./client/http-client",
     "./client/branded",
     "./client/wildcard",

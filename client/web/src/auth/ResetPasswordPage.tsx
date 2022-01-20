@@ -1,14 +1,14 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { ErrorAlert } from '../components/alerts'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'

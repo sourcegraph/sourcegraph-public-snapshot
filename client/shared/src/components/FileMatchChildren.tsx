@@ -5,6 +5,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { Link } from '@sourcegraph/wildcard'
 
 import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
@@ -20,7 +21,6 @@ import {
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import styles from './FileMatchChildren.module.scss'
 import { LastSyncedIcon } from './LastSyncedIcon'
-import { Link } from './Link'
 import { MatchGroup } from './ranking/PerFileResultRanking'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
