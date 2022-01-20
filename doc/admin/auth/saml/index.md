@@ -94,7 +94,7 @@ When debugging a problem with SAML its often helpful to use your browsers develo
 ![Screen Shot 2021-09-15 at 1 13 17 PM](https://user-images.githubusercontent.com/13024338/134255811-88250622-7f0e-42f8-91b0-a3f7bf5274fc.png)
 In a real network response you will often find that the header info in the network tab has a `SAMLResponse` field containing XML that has been encoded, and/or encrypted, there are a variety of ways to decompress and decrypt XML. For an easy to use tools we recommend [samltool.com](https://www.samltool.com/), which provides a user friendly UI to accomplish these tasks.
 
-If you're not sure why your SAML isn't working and you've collected the network request and response from your login attempts please feel free to reach out to our support team at [support@sourcegraph.com](mailto:support@sourcegraph.com), **please redacted any secret keys that may be contained in your site configuration or SAML assertions before sharing with us at Sourcegraph.** 
+If you're not sure why your SAML isn't working and you've collected the network request and response from your login attempts please feel free to reach out to our support team at [support@sourcegraph.com](mailto:support@sourcegraph.com), **please redact any secret keys that may be contained in your site configuration or SAML assertions before sharing with us at Sourcegraph.** 
 
 
 
