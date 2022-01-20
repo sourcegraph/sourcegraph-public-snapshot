@@ -308,7 +308,7 @@ function shouldShowSuggestions(searchReference: FilterInfo): boolean {
 }
 
 function isFilterInfo(searchReference: SearchReferenceInfo): searchReference is FilterInfo {
-    return searchReference.field !== undefined
+    return (searchReference as FilterInfo).field !== undefined
 }
 
 const classNameTokenMap = {
