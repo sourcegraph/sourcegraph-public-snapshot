@@ -32,6 +32,19 @@ var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_E
 
 const syncExternalServiceTimeout = 15 * time.Second
 
+type ExternalServiceMutationType int
+
+const (
+	Add ExternalServiceMutationType = iota
+	Update
+	Delete
+	SetRepos
+)
+
+func (d ExternalServiceMutationType) String() string {
+	return []string{"add", "update", "delete", "set-repos"}[d]
+}
+
 var extsvcMutationLables = []string{"success", "mutation", "namespace"}
 var mutationDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_extsvc_mutation_duration_seconds",
@@ -62,7 +75,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	if args.Input.Namespace != nil {
 		var err error
-		defer reportExternalServiceDuration(start, "add", &err, &namespaceUserID, &namespaceOrgID)
+		defer reportExternalServiceDuration(start, Add, &err, namespaceUserID, namespaceOrgID)
 
 		err = UnmarshalNamespaceID(*args.Input.Namespace, &namespaceUserID, &namespaceOrgID)
 		if err != nil {
@@ -136,16 +149,16 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 
 	id, err := UnmarshalExternalServiceID(args.Input.ID)
 	if err != nil {
-		defer reportExternalServiceDuration(start, "update", &err, nil, nil)
+		defer reportExternalServiceDuration(start, Update, &err, 0, 0)
 		return nil, err
 	}
 
 	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
-		defer reportExternalServiceDuration(start, "update", &err, nil, nil)
+		defer reportExternalServiceDuration(start, Update, &err, 0, 0)
 		return nil, err
 	}
-	defer reportExternalServiceDuration(start, "update", &err, &es.NamespaceUserID, &es.NamespaceOrgID)
+	defer reportExternalServiceDuration(start, Update, &err, es.NamespaceUserID, es.NamespaceOrgID)
 
 	// 🚨 SECURITY: check access to external service
 	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
@@ -233,16 +246,16 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 
 	id, err := UnmarshalExternalServiceID(args.ExternalService)
 	if err != nil {
-		defer reportExternalServiceDuration(start, "delete", &err, nil, nil)
+		defer reportExternalServiceDuration(start, Delete, &err, 0, 0)
 		return nil, err
 	}
 
 	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
-		defer reportExternalServiceDuration(start, "delete", &err, nil, nil)
+		defer reportExternalServiceDuration(start, Delete, &err, 0, 0)
 		return nil, err
 	}
-	defer reportExternalServiceDuration(start, "delete", &err, &es.NamespaceUserID, &es.NamespaceOrgID)
+	defer reportExternalServiceDuration(start, Delete, &err, es.NamespaceUserID, es.NamespaceOrgID)
 
 	// 🚨 SECURITY: check external service access
 	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
@@ -409,17 +422,17 @@ func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }
 
-func reportExternalServiceDuration(startTime time.Time, mutation string, err *error, userId, orgId *int32) {
+func reportExternalServiceDuration(startTime time.Time, mutation ExternalServiceMutationType, err *error, userId, orgId int32) {
 	duration := time.Since(startTime)
-	log.Println("ReportingReportingReportingReportingReportingReportingReportingReportingReporting", mutation, duration.Seconds(), *err, "u:", *userId, "o:", *orgId)
+	log.Println("ReportingReportingReportingReportingReportingReportingReportingReportingReporting", mutation, duration.Seconds(), *err, "u:", userId, "o:", orgId)
 	ns := "global"
-	if *userId != 0 {
+	if userId != 0 {
 		ns = "user"
-	} else if *orgId != 0 {
+	} else if orgId != 0 {
 		ns = "org"
 	}
 	labels := prometheus.Labels{
-		"mutation":  mutation,
+		"mutation":  mutation.String(),
 		"success":   strconv.FormatBool(*err == nil),
 		"namespace": ns,
 	}

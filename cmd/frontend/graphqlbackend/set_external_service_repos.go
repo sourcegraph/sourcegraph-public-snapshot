@@ -21,7 +21,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	start := time.Now()
 	id, err := UnmarshalExternalServiceID(args.ID)
 	if err != nil {
-		defer reportExternalServiceDuration(start, "set-repos", &err, nil, nil)
+		defer reportExternalServiceDuration(start, SetRepos, &err, 0, 0)
 
 		return nil, err
 	}
@@ -29,10 +29,10 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	extsvcStore := r.db.ExternalServices()
 	es, err := extsvcStore.GetByID(ctx, id)
 	if err != nil {
-		defer reportExternalServiceDuration(start, "set-repos", &err, nil, nil)
+		defer reportExternalServiceDuration(start, SetRepos, &err, 0, 0)
 		return nil, err
 	}
-	defer reportExternalServiceDuration(start, "set-repos", &err, &es.NamespaceUserID, &es.NamespaceOrgID)
+	defer reportExternalServiceDuration(start, SetRepos, &err, es.NamespaceUserID, es.NamespaceOrgID)
 
 	// 🚨 SECURITY: make sure the user has access to external service
 	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
