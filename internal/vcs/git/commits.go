@@ -547,8 +547,13 @@ func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte)
 
 // BranchesContaining returns a map from branch names to branch tip hashes for
 // each branch containing the given commit.
-// TODO: sub-repo filtering
-func BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+func BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) ([]string, error) {
+	if authz.SubRepoEnabled(checker) {
+		// GetCommit to validate that the user has permissions to access it.
+		if _, err := GetCommit(ctx, repo, commit, ResolveRevisionOptions{}, checker); err != nil {
+			return nil, err
+		}
+	}
 	cmd := gitserver.DefaultClient.Command("git", "branch", "--contains", string(commit), "--format", "%(refname)")
 	cmd.Repo = repo
 
@@ -579,8 +584,7 @@ func parseBranchesContaining(lines []string) []string {
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-// TODO: sub-repo filtering
-func RefDescriptions(ctx context.Context, repo api.RepoName) (map[string][]gitdomain.RefDescription, error) {
+func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ map[string][]gitdomain.RefDescription, err error) {
 	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
 		args := append(make([]string, 0, 3), "for-each-ref")
 		if refPrefix == "refs/tags/" {
@@ -612,7 +616,23 @@ func RefDescriptions(ctx context.Context, repo api.RepoName) (map[string][]gitdo
 		}
 	}
 
+	if authz.SubRepoEnabled(checker) {
+		return filterRefDescriptions(ctx, repo, aggregate, checker), nil
+	}
 	return aggregate, nil
+}
+
+func filterRefDescriptions(ctx context.Context,
+	repo api.RepoName,
+	refDescriptions map[string][]gitdomain.RefDescription,
+	checker authz.SubRepoPermissionChecker) map[string][]gitdomain.RefDescription {
+	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
+	for commitID, descriptions := range refDescriptions {
+		if _, err := GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			filtered[commitID] = descriptions
+		}
+	}
+	return filtered
 }
 
 var refPrefixes = map[string]gitdomain.RefType{

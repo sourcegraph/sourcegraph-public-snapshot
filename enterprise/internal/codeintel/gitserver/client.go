@@ -161,7 +161,7 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[s
 		return nil, err
 	}
 
-	return git.RefDescriptions(ctx, repo)
+	return git.RefDescriptions(ctx, repo, authz.DefaultSubRepoPermsChecker)
 }
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
@@ -191,7 +191,7 @@ func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commi
 	if err != nil {
 		return nil, err
 	}
-	return git.BranchesContaining(ctx, repo, api.CommitID(commit))
+	return git.BranchesContaining(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 }
 
 // DefaultBranchContains tells if the default branch contains the given commit ID.
