@@ -24,10 +24,9 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 # Install other packages that are desirable in ALL Sourcegraph Docker images.
 RUN apk update && apk add --no-cache \
     bind-tools \
-    'busybox>=1.34.1' \
+    busybox \
     ca-certificates \
     curl \
     mailcap \
     tini \
-    # Required due to ssl_clent upgrade with busybox
-    'wget>=1.21.1'
+    wget

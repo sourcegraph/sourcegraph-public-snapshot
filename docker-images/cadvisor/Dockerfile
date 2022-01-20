@@ -13,9 +13,8 @@ LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
 RUN apk add --upgrade --no-cache apk-tools=2.10.8-r0 krb5-libs=1.18.4-r0 \
-    'busybox>=1.34.1'
-    # Required due to ssl_clent upgrade with busybox
-    'wget>=1.21.1'
+    busybox \
+    wget
 
 # Reflects cAdvisor Dockerfile at https://github.com/google/cadvisor/blob/v0.39.2/deploy/Dockerfile
 # alongside additional Sourcegraph defaults.
