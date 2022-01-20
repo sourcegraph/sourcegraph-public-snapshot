@@ -9,6 +9,7 @@ import { Route, Router } from 'react-router'
 import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { NotificationType as NotificationTypeEnum } from 'sourcegraph'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -35,6 +36,7 @@ import {
     RouterLink,
     WildcardThemeContext,
     WildcardTheme,
+    AlertProps,
 } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
@@ -170,12 +172,12 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     featureFlags: FlagSet
 }
 
-const notificationClassNames = {
-    [NotificationType.Log]: 'alert alert-secondary',
-    [NotificationType.Success]: 'alert alert-success',
-    [NotificationType.Info]: 'alert alert-info',
-    [NotificationType.Warning]: 'alert alert-warning',
-    [NotificationType.Error]: 'alert alert-danger',
+const notificationVariants: Record<NotificationTypeEnum, AlertProps['variant']> = {
+    [NotificationType.Log]: 'secondary',
+    [NotificationType.Success]: 'success',
+    [NotificationType.Info]: 'info',
+    [NotificationType.Warning]: 'warning',
+    [NotificationType.Error]: 'danger',
 }
 
 const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
@@ -474,7 +476,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     <Notifications
                                         key={2}
                                         extensionsController={this.extensionsController}
-                                        notificationClassNames={notificationClassNames}
+                                        notificationVariants={notificationVariants}
                                     />
                                     <UserSessionStores />
                                 </SearchResultsCacheProvider>

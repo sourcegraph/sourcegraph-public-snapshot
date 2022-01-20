@@ -10,12 +10,22 @@ import { NotificationType } from '../api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '../extensions/controller'
 
 import { Notification } from './notification'
-import { NotificationItem, NotificationClassNameProps } from './NotificationItem'
+import { BrandedNotificationItemProps, NotificationItem, UnbrandedNotificationItemProps } from './NotificationItem'
 import styles from './Notifications.module.scss'
 
-interface Props extends ExtensionsControllerProps, NotificationClassNameProps {}
+interface BaseNotificationsProps extends ExtensionsControllerProps {}
 
-interface State {
+interface BrandedNotificationsProps
+    extends BaseNotificationsProps,
+        Pick<BrandedNotificationItemProps, 'notificationVariants'> {}
+
+interface UnbrandedNotificationsProps
+    extends BaseNotificationsProps,
+        Pick<UnbrandedNotificationItemProps, 'notificationClassNames'> {}
+
+type NotificationsProps = BrandedNotificationsProps | UnbrandedNotificationsProps
+
+interface NotificationsState {
     // TODO(tj): use remote progress observable type
     notifications: (Notification & { id: string })[]
 }
@@ -23,14 +33,14 @@ interface State {
 /**
  * A notifications center that displays global, non-modal messages.
  */
-export class Notifications extends React.PureComponent<Props, State> {
+export class Notifications extends React.PureComponent<NotificationsProps, NotificationsState> {
     /**
      * The maximum number of notifications at a time. Older notifications are truncated when the length exceeds
      * this number.
      */
     private static MAX_RETAIN = 7
 
-    public state: State = {
+    public state: NotificationsState = {
         notifications: [],
     }
 
@@ -132,15 +142,26 @@ export class Notifications extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className={styles.sourcegraphNotifications}>
-                {this.state.notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
-                    <NotificationItem
-                        key={notification.id}
-                        notification={notification}
-                        onDismiss={this.onDismiss}
-                        className="sourcegraph-notifications__notification m-2"
-                        notificationClassNames={this.props.notificationClassNames}
-                    />
-                ))}
+                {this.state.notifications.slice(0, Notifications.MAX_RETAIN).map(notification => {
+                    const notificationItemProps =
+                        'notificationVariants' in this.props
+                            ? {
+                                  notificationVariants: this.props.notificationVariants,
+                              }
+                            : {
+                                  notificationClassNames: this.props.notificationClassNames,
+                              }
+
+                    return (
+                        <NotificationItem
+                            key={notification.id}
+                            notification={notification}
+                            onDismiss={this.onDismiss}
+                            className="sourcegraph-notifications__notification m-2"
+                            {...notificationItemProps}
+                        />
+                    )
+                })}
             </div>
         )
     }
