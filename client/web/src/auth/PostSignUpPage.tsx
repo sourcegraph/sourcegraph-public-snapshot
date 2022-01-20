@@ -67,14 +67,18 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     const location = useLocation()
     const history = useHistory()
 
+    const debug = new URLSearchParams(location.search).get('debug')
+
     const goToSearch = (): void => history.push(getReturnTo(location))
 
     useEffect(() => {
         eventLogger.logViewEvent(getPostSignUpEvent())
     }, [])
 
-    // if the welcome flow was already finished - navigate to search
-    if (didUserFinishWelcomeFlow) {
+    if (debug && !didUserFinishWelcomeFlow) {
+        setUserFinishedWelcomeFlow(false)
+    } else if (didUserFinishWelcomeFlow) {
+        // if the welcome flow was already finished - navigate to search
         goToSearch()
     }
 
@@ -144,7 +148,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                 </p>
                             </div>
                             <div className="mt-4 pb-3 d-flex flex-column align-items-center">
-                                <Steps initialStep={1}>
+                                <Steps initialStep={debug ? parseInt(debug, 10) : 1}>
                                     <StepList numeric={true} className={styles.container}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
