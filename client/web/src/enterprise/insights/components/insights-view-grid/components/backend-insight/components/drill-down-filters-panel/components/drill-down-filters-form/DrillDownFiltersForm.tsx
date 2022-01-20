@@ -100,7 +100,9 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
 
                 {hasAppliedFilters && (
                     <span className="ml-auto">
-                        <Badge variant="secondary">Default filters applied</Badge>{' '}
+                        <Badge className="text-uppercase" variant="secondary">
+                            Default filters applied
+                        </Badge>{' '}
                         <a
                             href="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
                             target="_blank"
