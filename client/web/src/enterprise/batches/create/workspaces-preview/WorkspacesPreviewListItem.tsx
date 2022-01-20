@@ -5,8 +5,7 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 

@@ -1,8 +1,7 @@
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
-import { Link, LinkProps } from '@sourcegraph/shared/src/components/Link'
-import { Button } from '@sourcegraph/wildcard'
+import { Link, LinkProps, Button } from '@sourcegraph/wildcard'
 
 interface NewBatchChangeButtonProps extends Pick<LinkProps, 'to'> {}
 

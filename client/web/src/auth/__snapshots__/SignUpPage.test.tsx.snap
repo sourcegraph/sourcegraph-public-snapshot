@@ -42,7 +42,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
               class="d-flex align-items-center"
             >
               <span
-                class="badge info productStatusBadge text-uppercase mr-1"
+                class="productStatusBadge text-uppercase mr-1"
                 status="beta"
               >
                 beta
@@ -82,6 +82,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         >
           Or, 
           <a
+            class=""
             href="/?showEmail=true"
           >
             continue with email
@@ -114,6 +115,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         <div>
           Already have an account? 
           <a
+            class=""
             href="/sign-in"
           >
             Log in
@@ -295,6 +297,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
         >
           Already have an account? 
           <a
+            class=""
             href="/sign-in"
           >
             Sign in

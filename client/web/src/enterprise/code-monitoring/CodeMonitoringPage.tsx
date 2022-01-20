@@ -5,10 +5,9 @@ import { of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'

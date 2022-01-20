@@ -1,6 +1,5 @@
 import { parseISO } from 'date-fns'
 import React, { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
@@ -8,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'

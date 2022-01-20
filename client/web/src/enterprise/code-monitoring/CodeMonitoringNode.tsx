@@ -5,8 +5,7 @@ import { switchMap, catchError, startWith, takeUntil, tap, delay, mergeMap } fro
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Link } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 

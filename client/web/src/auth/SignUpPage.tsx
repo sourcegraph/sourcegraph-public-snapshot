@@ -1,9 +1,10 @@
 import classNames from 'classnames'
 import React, { useEffect } from 'react'
-import { Link, Redirect, useLocation } from 'react-router-dom'
+import { Redirect, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'

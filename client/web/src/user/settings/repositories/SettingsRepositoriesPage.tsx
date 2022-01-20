@@ -5,7 +5,6 @@ import { catchError, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
@@ -17,7 +16,15 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
-import { Container, PageHeader, ProductStatusBadge, LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    ProductStatusBadge,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Link,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'

@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import { isEqual, range } from 'lodash'
 import React from 'react'
-import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
@@ -11,7 +10,7 @@ import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIco
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { highlightCode } from '../search/backend'
 

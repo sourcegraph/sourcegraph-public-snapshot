@@ -5,9 +5,8 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import React, { useState, useCallback, useEffect } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Button, TooltipController } from '@sourcegraph/wildcard'
+import { Button, TooltipController, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'

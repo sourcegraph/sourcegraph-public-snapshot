@@ -5,12 +5,11 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 

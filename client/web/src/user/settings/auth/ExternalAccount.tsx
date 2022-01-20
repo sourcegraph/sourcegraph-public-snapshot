@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { AuthProvider } from '../../../jscontext'

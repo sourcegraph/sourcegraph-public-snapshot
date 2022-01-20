@@ -1,7 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import * as H from 'history'
 import * as React from 'react'
 import sinon from 'sinon'
+
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { CodeMonitorNode } from './CodeMonitoringNode'
 import { mockCodeMonitorFields } from './testing/util'
@@ -10,7 +12,7 @@ describe('CreateCodeMonitorPage', () => {
     const history = H.createMemoryHistory()
 
     test('Does not show "Send test email" option when showCodeMonitoringTestEmailButton is false', () => {
-        render(
+        renderWithRouter(
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
@@ -23,7 +25,7 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('Shows "Send test email" option to site admins on enabled code monitors', () => {
-        render(
+        renderWithRouter(
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
@@ -40,7 +42,7 @@ describe('CreateCodeMonitorPage', () => {
             ...mockCodeMonitorFields,
             enabled: false,
         }
-        render(
+        renderWithRouter(
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
@@ -53,7 +55,7 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('Does not show "Send test email" option to non-site admins', () => {
-        render(
+        renderWithRouter(
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}

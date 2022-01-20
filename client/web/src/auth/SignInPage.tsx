@@ -3,9 +3,9 @@ import * as H from 'history'
 import { partition } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useEffect, useState } from 'react'
-import { Link, Redirect } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
