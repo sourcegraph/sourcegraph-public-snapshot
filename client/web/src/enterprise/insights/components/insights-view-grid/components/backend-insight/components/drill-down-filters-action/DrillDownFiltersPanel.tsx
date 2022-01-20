@@ -61,6 +61,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 position={Position.rightStart}
                 aria-label="Drill-down filters panel"
                 onMouseDown={handleMouseDown}
+                className={styles.popover}
             >
                 <DrillDownFiltersPanel
                     initialFiltersValue={initialFiltersValue}

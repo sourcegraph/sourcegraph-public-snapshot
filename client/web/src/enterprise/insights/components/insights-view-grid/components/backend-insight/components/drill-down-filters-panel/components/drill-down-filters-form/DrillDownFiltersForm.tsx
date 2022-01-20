@@ -114,6 +114,10 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
             <hr className="w-100 m-0 mt-1" />
 
             <fieldset className="px-3 mt-3">
+                <small className="mb-3 d-inline-block">
+                    Use regular expression to include and exclude repositories from the scope of this insight
+                </small>
+
                 <FormInput
                     as={DrillDownRegExpInput}
                     autoFocus={true}
@@ -141,7 +145,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
                     valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
                     error={excludeRegex.meta.dirty && excludeRegex.meta.error}
-                    className="mb-3"
+                    className="mb-2"
                     {...excludeRegex.input}
                 />
             </fieldset>
