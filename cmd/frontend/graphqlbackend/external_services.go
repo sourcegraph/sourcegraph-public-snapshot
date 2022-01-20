@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -424,7 +423,6 @@ func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context
 
 func reportExternalServiceDuration(startTime time.Time, mutation ExternalServiceMutationType, err *error, userId, orgId int32) {
 	duration := time.Since(startTime)
-	log.Println("ReportingReportingReportingReportingReportingReportingReportingReportingReporting", mutation, duration.Seconds(), *err, "u:", userId, "o:", orgId)
 	ns := "global"
 	if userId != 0 {
 		ns = "user"
