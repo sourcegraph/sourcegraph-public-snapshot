@@ -1,15 +1,7 @@
-// Note: Import disabled until Modal migration is finished: https://github.com/sourcegraph/sourcegraph/pull/29470
-// Avoids potential duplicate import that could cause styling issues.
-// @import '@reach/dialog/styles.css';
+@import '@reach/dialog/styles.css';
 
 [data-reach-dialog-overlay] {
-    background-color: rgba(var(--gray-04-rgb), 0.5);
-}
-
-:global(.theme-dark) {
-    [data-reach-dialog-overlay] {
-        background-color: rgba(var(--gray-08-rgb), 0.5);
-    }
+    background-color: var(--modal-bg);
 }
 
 [data-reach-dialog-content] {

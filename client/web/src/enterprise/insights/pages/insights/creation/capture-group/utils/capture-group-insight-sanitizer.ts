@@ -10,13 +10,13 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
     return {
         title: values.title.trim(),
         query: getSanitizedCaptureQuery(values.groupSearchQuery.trim()),
-        repositories: getSanitizedRepositories(values.repositories),
         viewType: InsightType.CaptureGroup,
         type: InsightExecutionType.Backend,
         id: '',
         visibility: '',
         step: { [values.step]: +values.stepValue },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        repositories: values.allRepos ? [] : getSanitizedRepositories(values.repositories),
     }
 }
 

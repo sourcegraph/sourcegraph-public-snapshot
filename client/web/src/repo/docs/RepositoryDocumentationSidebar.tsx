@@ -4,12 +4,10 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback, useMemo } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'

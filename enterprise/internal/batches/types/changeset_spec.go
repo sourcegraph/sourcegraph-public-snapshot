@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -22,6 +23,7 @@ func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 
 func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, error) {
 	c := &ChangesetSpec{Spec: spec}
+	c.computeForkNamespace()
 	return c, c.computeDiffStat()
 }
 
@@ -41,6 +43,8 @@ type ChangesetSpec struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	ForkNamespace *string
 }
 
 // Clone returns a clone of a ChangesetSpec.
@@ -86,6 +90,16 @@ func (cs *ChangesetSpec) computeDiffStat() error {
 	return nil
 }
 
+// computeForkNamespace calculates the namespace that the changeset spec will be
+// forked into, if any.
+func (cs *ChangesetSpec) computeForkNamespace() {
+	// Right now, we only look at the global enforceForks setting, but we will
+	// likely base this off the description eventually as well.
+	if conf.Get().BatchChangesEnforceForks {
+		cs.setForkToUser()
+	}
+}
+
 // DiffStat returns a *diff.Stat.
 func (cs *ChangesetSpec) DiffStat() diff.Stat {
 	return diff.Stat{
@@ -123,4 +137,29 @@ func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
 		repoIDs = append(repoIDs, id)
 	}
 	return repoIDs
+}
+
+// changesetSpecForkNamespaceUser is the sentinel value used in the database to
+// indicate that the changeset spec should be forked into the user's namespace,
+// which we don't know at spec upload time.
+const changesetSpecForkNamespaceUser = "<user>"
+
+// IsFork returns true if the changeset spec should be pushed to a fork.
+func (cs *ChangesetSpec) IsFork() bool {
+	return cs.ForkNamespace != nil
+}
+
+// GetForkNamespace returns the namespace if the changeset spec should be pushed
+// to a named fork, or nil if the changeset spec shouldn't be pushed to a fork
+// _or_ should be pushed to a fork in the user's default namespace.
+func (cs *ChangesetSpec) GetForkNamespace() *string {
+	if cs.ForkNamespace != nil && *cs.ForkNamespace != changesetSpecForkNamespaceUser {
+		return cs.ForkNamespace
+	}
+	return nil
+}
+
+func (cs *ChangesetSpec) setForkToUser() {
+	s := changesetSpecForkNamespaceUser
+	cs.ForkNamespace = &s
 }

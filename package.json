@@ -425,7 +425,7 @@
     "webext-domain-permission-toggle": "^1.0.1",
     "webextension-polyfill": "^0.6.0",
     "yaml-ast-parser": "^0.0.43",
-    "zustand": "^3.5.10"
+    "zustand": "^3.6.9"
   },
   "resolutions": {
     "history": "4.5.1",

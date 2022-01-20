@@ -7,45 +7,32 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
   <div
     class="page"
   >
-    <header>
+    <header
+      class="position-relative"
+    >
       <div
-        class="position-relative"
-      >
-        <div
-          class="headerBackground1"
-        />
-        <div
-          class="headerBackground2"
-        />
-        <div
-          class="headerBackground3"
-        />
-        <div
-          class="limitWidth"
-        >
-          <img
-            alt="Sourcegraph logo"
-            class="logo"
-            src="/img/sourcegraph-logo-light.svg"
-          />
-        </div>
-      </div>
+        class="headerBackground1"
+      />
       <div
-        class="limitWidth"
+        class="headerBackground2"
+      />
+    </header>
+    <div
+      class="d-flex justify-content-center mb-5 leftOrRightContainer"
+    >
+      <div
+        class="leftOrRight"
       >
+        <img
+          alt="Sourcegraph logo"
+          class="logo"
+          src="/img/sourcegraph-logo-light.svg"
+        />
         <h2
-          class="d-flex align-items-center pageHeading"
+          class="d-flex align-items-center mb-4 mt-1 pageHeading"
         >
           Easily search the code you care about.
         </h2>
-      </div>
-    </header>
-    <div
-      class="contents limitWidth"
-    >
-      <div
-        class="contentsLeft"
-      >
         With a Sourcegraph account, you can also:
         <ul
           class="featureList"
@@ -55,7 +42,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
               class="d-flex align-items-center"
             >
               <span
-                class="badge info productStatusBadge text-uppercase mr-1"
+                class="productStatusBadge text-uppercase mr-1"
                 status="beta"
               >
                 beta
@@ -80,11 +67,12 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         </div>
         <img
           alt="Cloudflare, Uber, SoFi, Dropbox, Plaid, Toast"
+          class="customerLogos"
           src="/img/customer-logos-light.svg"
         />
       </div>
       <div
-        class="signUpWrapper"
+        class="leftOrRight signUpWrapper"
       >
         <h2>
           Create a free account
@@ -94,6 +82,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         >
           Or, 
           <a
+            class=""
             href="/?showEmail=true"
           >
             continue with email
@@ -126,6 +115,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         <div>
           Already have an account? 
           <a
+            class=""
             href="/sign-in"
           >
             Log in
@@ -307,6 +297,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
         >
           Already have an account? 
           <a
+            class=""
             href="/sign-in"
           >
             Sign in

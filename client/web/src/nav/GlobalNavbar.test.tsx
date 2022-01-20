@@ -3,13 +3,13 @@ import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
-import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { setLinkComponent } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'

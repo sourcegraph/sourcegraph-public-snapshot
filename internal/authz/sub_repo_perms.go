@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"io/fs"
 	"path"
 	"strconv"
 	"time"
@@ -295,7 +296,7 @@ func (s *SubRepoPermsClient) Enabled() bool {
 func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
 	// Check config here, despite checking again in the s.Permissions implementation,
 	// because we also make some permissions decisions here.
-	if !s.Enabled() {
+	if !SubRepoEnabled(s) {
 		return Read, nil
 	}
 
@@ -311,6 +312,11 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
 	return perms, nil
+}
+
+// SubRepoEnabled takes a SubRepoPermissionChecker and returns true if the checker is not nil and is enabled
+func SubRepoEnabled(checker SubRepoPermissionChecker) bool {
+	return checker != nil && checker.Enabled()
 }
 
 // FilterActorPaths will filter the given list of paths for the given actor
@@ -332,12 +338,37 @@ func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *
 // FilterActorPath will filter the given path for the given actor
 // returning true if the path is allowed to read.
 func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, path string) (bool, error) {
-	if checker == nil || !checker.Enabled() {
+	if !SubRepoEnabled(checker) {
 		return true, nil
 	}
 	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
 		Repo: repo,
 		Path: path,
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "checking sub-repo permissions")
+	}
+	return perms.Include(Read), nil
+}
+
+func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fis []fs.FileInfo) ([]fs.FileInfo, error) {
+	filtered := make([]fs.FileInfo, 0, len(fis))
+	for _, fi := range fis {
+		include, err := FilterActorFileInfo(ctx, checker, a, repo, fi)
+		if err != nil {
+			return nil, err
+		}
+		if include {
+			filtered = append(filtered, fi)
+		}
+	}
+	return filtered, nil
+}
+
+func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fi fs.FileInfo) (bool, error) {
+	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
+		Repo: repo,
+		Path: fi.Name(),
 	})
 	if err != nil {
 		return false, errors.Wrap(err, "checking sub-repo permissions")

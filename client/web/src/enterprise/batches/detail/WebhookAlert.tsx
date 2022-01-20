@@ -1,11 +1,9 @@
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { authenticatedUser } from '../../../auth'
 import { BatchChangeFields } from '../../../graphql-operations'

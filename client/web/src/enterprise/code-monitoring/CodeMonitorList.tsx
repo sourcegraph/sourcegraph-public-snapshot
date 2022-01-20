@@ -4,9 +4,8 @@ import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Container, Button } from '@sourcegraph/wildcard'
+import { Button, Container, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'

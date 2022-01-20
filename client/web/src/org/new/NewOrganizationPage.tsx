@@ -3,8 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Button, Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { ErrorAlert } from '../../components/alerts'

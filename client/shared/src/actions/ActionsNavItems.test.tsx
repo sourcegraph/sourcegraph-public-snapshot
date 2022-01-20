@@ -7,7 +7,7 @@ import { FlatExtensionHostAPI } from '../api/contract'
 import { ContributableMenu } from '../api/protocol'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { extensionsController } from '../util/searchTestHelpers'
+import { extensionsController } from '../testing/searchTestHelpers'
 
 import { ActionsNavItems } from './ActionsNavItems'
 

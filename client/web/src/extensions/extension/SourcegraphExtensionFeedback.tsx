@@ -1,7 +1,6 @@
-import Dialog from '@reach/dialog'
 import React, { useState } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { FeedbackPromptContent } from '../../nav/Feedback'
 
@@ -25,13 +24,9 @@ export const SourcegraphExtensionFeedback: React.FunctionComponent<SourcegraphEx
                 <small>Message the author</small>
             </Button>
             {isOpen && (
-                <Dialog
-                    className="modal-body modal-body--top-third p-4 rounded border"
-                    onDismiss={onClose}
-                    aria-labelledby={labelId}
-                >
+                <Modal onDismiss={onClose} aria-labelledby={labelId}>
                     <FeedbackPromptContent closePrompt={onClose} textPrefix={textPrefix} />
-                </Dialog>
+                </Modal>
             )}
         </>
     )

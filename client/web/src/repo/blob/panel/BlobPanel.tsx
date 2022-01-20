@@ -14,7 +14,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 

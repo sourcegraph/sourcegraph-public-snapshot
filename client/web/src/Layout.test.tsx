@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { SearchPatternType } from './graphql-operations'
 import { Layout, LayoutProps } from './Layout'

@@ -235,11 +235,11 @@ describe('createLineChartContentFromIndexedSeries', () => {
                     stroke: 'blue',
                     linkURLs: {
                         '1630456428000':
-                            'https://sourcegraph.test/search?q=++type%3Adiff++before%3A2021-09-01T00%3A33%3A48Z+series+1+query',
+                            'https://sourcegraph.test/search?q=++type:diff++before:2021-09-01T00:33:48Z+series+1+query&patternType=literal',
                         '1633048428000':
-                            'https://sourcegraph.test/search?q=++type%3Adiff+after%3A2021-09-01T00%3A33%3A48Z+before%3A2021-10-01T00%3A33%3A48Z+series+1+query',
+                            'https://sourcegraph.test/search?q=++type:diff+after:2021-09-01T00:33:48Z+before:2021-10-01T00:33:48Z+series+1+query&patternType=literal',
                         '1635727674000':
-                            'https://sourcegraph.test/search?q=++type%3Adiff+after%3A2021-10-01T00%3A33%3A48Z+before%3A2021-11-01T00%3A47%3A54Z+series+1+query',
+                            'https://sourcegraph.test/search?q=++type:diff+after:2021-10-01T00:33:48Z+before:2021-11-01T00:47:54Z+series+1+query&patternType=literal',
                     },
                 },
                 {
@@ -248,11 +248,11 @@ describe('createLineChartContentFromIndexedSeries', () => {
                     stroke: 'orange',
                     linkURLs: {
                         '1630542828000':
-                            'https://sourcegraph.test/search?q=++type%3Adiff++before%3A2021-09-02T00%3A33%3A48Z+series+2+query',
+                            'https://sourcegraph.test/search?q=++type:diff++before:2021-09-02T00:33:48Z+series+2+query&patternType=literal',
                         '1633048428000':
-                            'https://sourcegraph.test/search?q=++type%3Adiff+after%3A2021-09-02T00%3A33%3A48Z+before%3A2021-10-01T00%3A33%3A48Z+series+2+query',
+                            'https://sourcegraph.test/search?q=++type:diff+after:2021-09-02T00:33:48Z+before:2021-10-01T00:33:48Z+series+2+query&patternType=literal',
                         '1635727674000':
-                            'https://sourcegraph.test/search?q=++type%3Adiff+after%3A2021-10-01T00%3A33%3A48Z+before%3A2021-11-01T00%3A47%3A54Z+series+2+query',
+                            'https://sourcegraph.test/search?q=++type:diff+after:2021-10-01T00:33:48Z+before:2021-11-01T00:47:54Z+series+2+query&patternType=literal',
                     },
                 },
             ],

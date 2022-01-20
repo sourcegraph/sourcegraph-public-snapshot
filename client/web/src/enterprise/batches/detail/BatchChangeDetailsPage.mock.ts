@@ -49,6 +49,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
+        id: 'specID1',
         originalInput: 'name: awesome-batch-changes\ndescription: somestring',
         supersedingBatchSpec: null,
         codeHostsWithoutWebhooks: {
@@ -257,6 +258,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
             {
@@ -295,6 +297,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
         ],

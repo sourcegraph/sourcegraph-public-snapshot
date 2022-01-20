@@ -9,6 +9,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -35,6 +38,11 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 
 	totalCount := 0
 
+	checkerEnabled := authz.SubRepoEnabled(r.checker)
+	var a *actor.Actor
+	if checkerEnabled {
+		a = actor.FromContext(ctx)
+	}
 	for i := range adjustedUploads {
 		trace.Log(log.Int("uploadID", adjustedUploads[i].Upload.ID))
 
@@ -55,7 +63,17 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 				return nil, 0, err
 			}
 
-			adjustedDiagnostics = append(adjustedDiagnostics, adjustedDiagnostic)
+			if !checkerEnabled {
+				adjustedDiagnostics = append(adjustedDiagnostics, adjustedDiagnostic)
+				continue
+			}
+
+			// sub-repo checker is enabled, proceeding with check
+			if include, err := authz.FilterActorPath(ctx, r.checker, a, api.RepoName(adjustedDiagnostic.Dump.RepositoryName), adjustedDiagnostic.Path); err != nil {
+				return nil, 0, err
+			} else if include {
+				adjustedDiagnostics = append(adjustedDiagnostics, adjustedDiagnostic)
+			}
 		}
 
 		totalCount += count

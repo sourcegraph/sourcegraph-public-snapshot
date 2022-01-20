@@ -10,11 +10,11 @@ import { Optional } from 'utility-types'
 
 import { asError } from '@sourcegraph/common'
 import { GraphQLResult } from '@sourcegraph/http-client'
-import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
 
 import { fetchSite } from '../../shared/backend/server'
+import { WildcardThemeProvider } from '../../shared/components/WildcardThemeProvider'
 import { initSentry } from '../../shared/sentry'
 import { ConditionalTelemetryService, EventLogger } from '../../shared/tracking/eventLogger'
 import { observeSourcegraphURL, getExtensionVersion, isDefaultSourcegraphUrl } from '../../shared/util/context'
@@ -206,24 +206,26 @@ const Options: React.FunctionComponent = () => {
 
     return (
         <ThemeWrapper>
-            <OptionsPage
-                isFullPage={isFullPage}
-                sourcegraphUrl={sourcegraphUrl || ''}
-                suggestedSourcegraphUrls={previouslyUsedUrls || []}
-                onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
-                version={version}
-                validateSourcegraphUrl={validateSourcegraphUrl}
-                isActivated={!!isActivated}
-                onToggleActivated={handleToggleActivated}
-                optionFlags={optionFlagsWithValues || []}
-                onChangeOptionFlag={handleChangeOptionFlag}
-                showPrivateRepositoryAlert={
-                    currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
-                }
-                showSourcegraphCloudAlert={showSourcegraphCloudAlert}
-                permissionAlert={permissionAlert}
-                requestPermissionsHandler={currentTabStatus?.handler}
-            />
+            <WildcardThemeProvider>
+                <OptionsPage
+                    isFullPage={isFullPage}
+                    sourcegraphUrl={sourcegraphUrl || ''}
+                    suggestedSourcegraphUrls={previouslyUsedUrls || []}
+                    onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
+                    version={version}
+                    validateSourcegraphUrl={validateSourcegraphUrl}
+                    isActivated={!!isActivated}
+                    onToggleActivated={handleToggleActivated}
+                    optionFlags={optionFlagsWithValues || []}
+                    onChangeOptionFlag={handleChangeOptionFlag}
+                    showPrivateRepositoryAlert={
+                        currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
+                    }
+                    showSourcegraphCloudAlert={showSourcegraphCloudAlert}
+                    permissionAlert={permissionAlert}
+                    requestPermissionsHandler={currentTabStatus?.handler}
+                />
+            </WildcardThemeProvider>
         </ThemeWrapper>
     )
 }

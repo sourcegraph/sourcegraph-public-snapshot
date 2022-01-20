@@ -8,8 +8,7 @@ import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, Button } from '@sourcegraph/wildcard'
+import { Container, Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -217,9 +216,6 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             disabled={!formCompletion.triggerCompleted}
                             onActionsChange={onActionsChange}
                             description={currentCodeMonitorState.description}
-                            cardBtnClassName={styles.cardButton}
-                            cardLinkClassName={styles.cardLink}
-                            cardClassName={styles.card}
                         />
                     </div>
                     <hr className={classNames('my-3', styles.horizontalRule)} />

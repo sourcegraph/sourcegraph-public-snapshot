@@ -4,11 +4,9 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISavedSearch } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQueryFromQueryState } from '../../stores'

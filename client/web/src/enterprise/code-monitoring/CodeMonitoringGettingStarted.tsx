@@ -2,9 +2,8 @@ import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button } from '@sourcegraph/wildcard'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'

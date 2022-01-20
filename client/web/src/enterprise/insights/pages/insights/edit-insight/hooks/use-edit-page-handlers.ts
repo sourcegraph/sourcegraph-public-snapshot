@@ -2,7 +2,7 @@ import { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'

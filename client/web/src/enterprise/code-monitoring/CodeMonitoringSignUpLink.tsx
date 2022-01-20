@@ -1,7 +1,6 @@
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Button } from '@sourcegraph/wildcard'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 

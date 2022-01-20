@@ -6,9 +6,7 @@ import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button, FlexTextArea, LoadingSpinner, useAutoFocus } from '@sourcegraph/wildcard'
+import { Button, FlexTextArea, LoadingSpinner, useAutoFocus, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'

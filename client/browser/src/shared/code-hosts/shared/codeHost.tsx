@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
-import { render as reactDOMRender } from 'react-dom'
+import { render as reactDOMRender, Renderer } from 'react-dom'
 import {
     asyncScheduler,
     combineLatest,
@@ -86,6 +86,7 @@ import { observeStorageKey } from '../../../browser-extension/web-extension-api/
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
+import { WildcardThemeProvider } from '../../components/WildcardThemeProvider'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
@@ -367,7 +368,7 @@ function initCodeIntelligence({
     hoverAlerts,
     privateCloudErrors,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
-    render: typeof reactDOMRender
+    render: Renderer
     hoverAlerts: Observable<HoverAlert>[]
     mutations: Observable<MutationRecordLike[]>
     privateCloudErrors: Observable<boolean>
@@ -669,7 +670,7 @@ export function observeHoverOverlayMountLocation(
 
 export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     mutations: Observable<MutationRecordLike[]>
-    render: typeof reactDOMRender
+    render: Renderer
     minimalUI: boolean
     hideActions?: boolean
     background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
@@ -1502,6 +1503,10 @@ export function injectCodeIntelligenceToCodeHost(
         minimalUIStorageFlag !== null ? minimalUIStorageFlag === 'true' : codeHost.type === 'gitlab' && !isExtension
     // Flag to hide the actions in the code view toolbar (hide ActionNavItems) leaving only the "Open on Sourcegraph" button in the toolbar.
     const hideActions = codeHost.type === 'gerrit'
+
+    const renderWithThemeProvider = (element: React.ReactNode, container: Element | null): void =>
+        reactDOMRender(<WildcardThemeProvider>{element}</WildcardThemeProvider>, container)
+
     subscriptions.add(
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
         extensionDisabled.subscribe(async disableExtension => {
@@ -1519,7 +1524,7 @@ export function injectCodeIntelligenceToCodeHost(
                     platformContext,
                     showGlobalDebug,
                     telemetryService,
-                    render: reactDOMRender,
+                    render: renderWithThemeProvider as Renderer,
                     minimalUI,
                     hideActions,
                     background,

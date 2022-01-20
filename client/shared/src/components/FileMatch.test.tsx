@@ -1,13 +1,15 @@
-import { cleanup, getAllByTestId, getByTestId, render } from '@testing-library/react'
+import { cleanup, getAllByTestId, getByTestId } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+
 import { ContentMatch } from '../search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../util/searchTestHelpers'
+import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '../testing/searchTestHelpers'
 
 import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatch, limitGroup } from './FileMatch'
@@ -36,7 +38,7 @@ describe('FileMatch', () => {
     }
 
     it('renders one result container', () => {
-        const { container } = render(<FileMatch {...defaultProps} />)
+        const { container } = renderWithRouter(<FileMatch {...defaultProps} />)
         expect(getByTestId(container, 'result-container')).toBeVisible()
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
     })
@@ -72,7 +74,9 @@ describe('FileMatch', () => {
                 },
             ],
         }
-        const { container } = render(<FileMatch {...defaultProps} result={result} settingsCascade={settingsCascade} />)
+        const { container } = renderWithRouter(
+            <FileMatch {...defaultProps} result={result} settingsCascade={settingsCascade} />
+        )
         const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')
         expect(tableRows.length).toBe(7)
     })

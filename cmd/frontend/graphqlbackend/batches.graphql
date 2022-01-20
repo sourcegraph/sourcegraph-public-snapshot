@@ -841,6 +841,11 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     expiresAt: DateTime
 
     """
+    The fork the changeset will be pushed to, if any.
+    """
+    forkTarget: ForkTarget
+
+    """
     The workspace this resulted from. Null, if not run server-side.
     """
     workspace: BatchSpecWorkspace
@@ -904,7 +909,7 @@ type GitBranchChangesetDescription {
     """
     headRepository: Repository!
         @deprecated(
-            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use fork or ExternalChangeset.forkNamespace instead."
+            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use VisibleChangesetSpec.fork or ExternalChangeset.forkNamespace instead."
         )
 
     """
@@ -913,11 +918,6 @@ type GitBranchChangesetDescription {
     the Git branch "fix-foo").
     """
     headRef: String!
-
-    """
-    Whether the changeset will be published to a fork.
-    """
-    fork: Boolean!
 
     """
     The title of the changeset on the code host.
@@ -1245,6 +1245,23 @@ type ChangesetApplyPreviewConnection {
     Stats on the elements in this connnection. Does not respect pagination parameters.
     """
     stats: ChangesetApplyPreviewConnectionStats!
+}
+
+"""
+The target repository that a changeset will be pushed to, if it's not the origin
+repository.
+"""
+type ForkTarget {
+    """
+    True if the remote target is a fork in the user namespace associated with
+    the credential used to push the changeset.
+    """
+    pushUser: Boolean!
+
+    """
+    The specific named fork that the changeset will be pushed to.
+    """
+    namespace: String
 }
 
 extend type Mutation {

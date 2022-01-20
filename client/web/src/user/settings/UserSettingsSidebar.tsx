@@ -1,8 +1,8 @@
 import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 
-import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button, Link } from '@sourcegraph/wildcard'
 import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Badge'
 
 import { AuthenticatedUser } from '../../auth'
