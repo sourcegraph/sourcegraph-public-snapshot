@@ -4,7 +4,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button } from '@sourcegraph/wildcard'
+import { Badge, Button } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
@@ -12,6 +12,7 @@ import { useField } from '../../../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
 
 import { DrillDownRegExpInput, LabelWithReset } from './components/drill-down-reg-exp-input/DrillDownRegExpInput'
+import styles from './DrillDownFiltersForm.module.scss'
 import { validRegexp } from './validators'
 
 export interface DrillDownFiltersFormValues {
@@ -93,31 +94,30 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
     const hasAppliedFilters = hasActiveFilters(originalFiltersValue)
 
     return (
-        <form ref={ref} className={classNames(className, 'd-flex flex-column')} onSubmit={handleSubmit}>
-            <header className="d-flex align-items-baseline px-3 py-2 mt-1">
+        <form ref={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
+            <header className="d-flex align-items-baseline pt-3 pb-0">
                 <h4 className="mb-0">Filter repositories</h4>
 
                 {hasAppliedFilters && (
-                    <small className="text-muted ml-auto mb-0">
-                        Default filters applied.{' '}
+                    <span className="ml-auto">
+                        <Badge variant="secondary">Default filters applied</Badge>{' '}
                         <a
                             href="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
                             target="_blank"
                             rel="noopener"
+                            className="small"
                         >
                             Learn more.
                         </a>
-                    </small>
+                    </span>
                 )}
             </header>
 
-            <hr className="w-100 m-0 mt-1" />
+            <small className={styles.description}>
+                Use regular expression to include and exclude repositories from the scope of this insight
+            </small>
 
-            <fieldset className="px-3 mt-3">
-                <small className="mb-3 d-inline-block">
-                    Use regular expression to include and exclude repositories from the scope of this insight
-                </small>
-
+            <fieldset>
                 <FormInput
                     as={DrillDownRegExpInput}
                     autoFocus={true}
@@ -131,6 +131,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     className="mb-3"
                     valid={includeRegex.meta.dirty && includeRegex.meta.validState === 'VALID'}
                     error={includeRegex.meta.dirty && includeRegex.meta.error}
+                    spellCheck={false}
                     {...includeRegex.input}
                 />
 
@@ -145,12 +146,13 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
                     valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
                     error={excludeRegex.meta.dirty && excludeRegex.meta.error}
+                    spellCheck={false}
                     className="mb-2"
                     {...excludeRegex.input}
                 />
             </fieldset>
 
-            <footer className="px-3 d-flex flex-wrap py-3">
+            <footer className={styles.footer}>
                 {formAPI.submitErrors?.[FORM_ERROR] && (
                     <ErrorAlert className="w-100 mb-3" error={formAPI.submitErrors[FORM_ERROR]} />
                 )}
