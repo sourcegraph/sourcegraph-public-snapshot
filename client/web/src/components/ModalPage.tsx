@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { CardBody } from '@sourcegraph/wildcard'
+
 import styles from './ModalPage.module.scss'
 
 interface Props {
@@ -16,10 +18,10 @@ interface Props {
 export const ModalPage: React.FunctionComponent<Props> = ({ icon, className = '', children }) => (
     <div className={classNames(styles.modalPage, className)}>
         <div className="card">
-            <div className={classNames('card-body', styles.cardBody)}>
+            <CardBody className={styles.cardBody}>
                 {icon && <div className={styles.icon}>{icon}</div>}
                 {children}
-            </div>
+            </CardBody>
         </div>
     </div>
 )

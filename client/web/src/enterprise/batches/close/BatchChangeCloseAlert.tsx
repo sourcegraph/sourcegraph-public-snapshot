@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Button, AlertLink, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, AlertLink, LoadingSpinner, CardBody } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
@@ -55,7 +55,7 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
     return (
         <>
             <div className="card mb-3">
-                <div className="card-body p-3">
+                <CardBody className="p-3">
                     <p>
                         <strong>
                             After closing this batch change, it will be read-only and no new batch specs can be applied.
@@ -112,7 +112,7 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                             {isClosing === true && <LoadingSpinner />} Close batch change
                         </Button>
                     </div>
-                </div>
+                </CardBody>
             </div>
             {isErrorLike(isClosing) && <ErrorAlert error={isClosing} />}
         </>

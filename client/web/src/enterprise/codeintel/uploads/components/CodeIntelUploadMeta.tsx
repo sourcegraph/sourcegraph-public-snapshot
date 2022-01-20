@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react'
 
-import { CardSubtitle, CardText, CardTitle } from '@sourcegraph/wildcard'
+import { CardSubtitle, CardText, CardTitle, CardBody } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelUploadOrIndexCommit } from '../../shared/components/CodeIntelUploadOrIndexCommit'
@@ -16,9 +16,9 @@ export interface CodeIntelUploadMetaProps {
 
 export const CodeIntelUploadMeta: FunctionComponent<CodeIntelUploadMetaProps> = ({ node, now }) => (
     <div className="card">
-        <div className="card-body">
+        <CardBody>
             <div className="card border-0">
-                <div className="card-body">
+                <CardBody>
                     <CardTitle>
                         <CodeIntelUploadOrIndexRepository node={node} />
                     </CardTitle>
@@ -31,8 +31,8 @@ export const CodeIntelUploadMeta: FunctionComponent<CodeIntelUploadMetaProps> = 
                         Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                         <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
                     </CardText>
-                </div>
+                </CardBody>
             </div>
-        </div>
+        </CardBody>
     </div>
 )

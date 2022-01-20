@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
+import { CardBody } from '@sourcegraph/wildcard'
 
 import styles from './BatchChangesListIntro.module.scss'
 
@@ -11,7 +12,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
         partialStorageKey="batch-changes-list-intro-changelog-3.36"
     >
         <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
-            <div className="card-body">
+            <CardBody>
                 <h4>Batch Changes updates in version 3.36</h4>
                 <ul className="mb-0 pl-3">
                     <li>
@@ -24,7 +25,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                         </a>
                     </li>
                 </ul>
-            </div>
+            </CardBody>
         </div>
     </DismissibleAlert>
 )

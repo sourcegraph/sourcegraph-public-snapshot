@@ -3,7 +3,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody } from '@sourcegraph/wildcard'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
@@ -106,11 +106,11 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     {exampleCodeMonitors.map(monitor => (
                         <div className={styles.startingPoint} key={monitor.title}>
                             <div className="card h-100">
-                                <div className="card-body p-3 d-flex flex-column">
+                                <CardBody className="p-3 d-flex flex-column">
                                     <h3>{monitor.title}</h3>
                                     <p className="text-muted flex-grow-1">{monitor.description}</p>
                                     <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>
-                                </div>
+                                </CardBody>
                             </div>
                         </div>
                     ))}

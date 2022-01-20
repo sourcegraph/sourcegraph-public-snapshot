@@ -9,7 +9,15 @@ import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, useObservable, useEventObservable, Link, CardHeader } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    useObservable,
+    useEventObservable,
+    Link,
+    CardHeader,
+    CardBody,
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { ErrorAlert } from '../../../../components/alerts'
@@ -211,12 +219,12 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                             )}
                         </CardHeader>
                         {showGenerate && (
-                            <div className="card-body">
+                            <CardBody>
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                                     subscriptionID={productSubscription.id}
                                     onGenerate={onLicenseUpdate}
                                 />
-                            </div>
+                            </CardBody>
                         )}
                         <FilteredSiteAdminProductLicenseConnection
                             className="list-group list-group-flush"

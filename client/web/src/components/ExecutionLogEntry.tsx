@@ -3,7 +3,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, CardBody } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'
 import { LogOutput } from './LogOutput'
@@ -23,7 +23,7 @@ interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
 
 export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> = ({ logEntry, children, now }) => (
     <div className="card mb-3">
-        <div className="card-body">
+        <CardBody>
             {logEntry.command.length > 0 ? (
                 <LogOutput text={logEntry.command.join(' ')} className="mb-3" />
             ) : (
@@ -53,7 +53,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                 )}
             </div>
             {children}
-        </div>
+        </CardBody>
 
         <div className="p-2">
             {logEntry.out ? (

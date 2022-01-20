@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
@@ -120,8 +120,9 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         formApi: formAPI,
     })
 
+    // TODO: Check composing card and card body and add ref support
     return (
-        <div data-testid="series-form" ref={ref} className={classNames('d-flex flex-column', className)}>
+        <Card data-testid="series-form" ref={ref} className={classNames('d-flex flex-column', className)}>
             <FormInput
                 title="Name"
                 required={true}
@@ -170,7 +171,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                     </Button>
                 )}
             </div>
-        </div>
+        </Card>
     )
 }
 

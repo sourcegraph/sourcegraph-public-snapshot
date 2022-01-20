@@ -4,6 +4,7 @@ import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
+import { CardBody } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
@@ -75,7 +76,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     return (
         <div className={styles.siteInitPage}>
             <div className={classNames('card', styles.content)}>
-                <div className="card-body p-4">
+                <CardBody className="p-4">
                     <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} variant="logo" />
                     {authenticatedUser ? (
                         // If there's already a user but the site is not initialized, then the we're in an
@@ -98,7 +99,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                             />
                         </>
                     )}
-                </div>
+                </CardBody>
             </div>
         </div>
     )

@@ -11,7 +11,7 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, PageHeader, FeedbackBadge, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, PageHeader, FeedbackBadge, Link, CardBody } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -405,17 +405,17 @@ const SelectedWorkspace: React.FunctionComponent<{ workspace: Scalars['ID'] | nu
     if (workspace === null) {
         return (
             <div className="card w-100">
-                <div className="card-body">
+                <CardBody>
                     <h3 className="text-center my-3">Select a workspace to view details.</h3>
-                </div>
+                </CardBody>
             </div>
         )
     }
     return (
         <div className="card w-100">
-            <div className="card-body">
+            <CardBody>
                 <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} />
-            </div>
+            </CardBody>
         </div>
     )
 }

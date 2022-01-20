@@ -26,6 +26,7 @@ import {
     Tabs,
     Button,
     Link,
+    CardBody,
 } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
@@ -246,9 +247,9 @@ const ChangesetSpecNode: React.FunctionComponent<
     if (node.__typename === 'HiddenChangesetSpec') {
         return (
             <div className="card">
-                <div className="card-body">
+                <CardBody>
                     <h4>Changeset in a hidden repo</h4>
-                </div>
+                </CardBody>
             </div>
         )
     }
@@ -285,7 +286,7 @@ const ChangesetSpecNode: React.FunctionComponent<
             defaultExpanded={1 === 1}
         >
             <div className={classNames('card mt-2', styles.resultCard)}>
-                <div className="card-body">
+                <CardBody>
                     <h3>Changeset template</h3>
                     <h4>{node.description.title}</h4>
                     <p className="mb-0">{node.description.body}</p>
@@ -305,7 +306,7 @@ const ChangesetSpecNode: React.FunctionComponent<
                             queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         />
                     </Collapsible>
-                </div>
+                </CardBody>
             </div>
         </Collapsible>
     )
@@ -383,7 +384,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
             }
         >
             <div className={classNames('card mt-2', styles.stepCard)}>
-                <div className="card-body">
+                <CardBody>
                     {!step.skipped && (
                         <Tabs size="small" behavior="forceRender">
                             <TabList>
@@ -466,7 +467,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                             </strong>
                         </p>
                     )}
-                </div>
+                </CardBody>
             </div>
         </Collapsible>
     )

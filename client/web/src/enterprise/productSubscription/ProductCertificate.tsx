@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { CardBody } from '@sourcegraph/wildcard'
+
 import styles from './ProductCertificate.module.scss'
 
 interface Props {
@@ -34,7 +36,7 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
     className = '',
 }) => (
     <div className={classNames('card', className, 'test-product-certificate')}>
-        <div className="card-body d-flex align-items-center">
+        <CardBody className="d-flex align-items-center">
             <img
                 className={classNames(styles.logo, 'mr-1', 'p-2')}
                 src="/.assets/img/sourcegraph-mark.svg?v2"
@@ -45,7 +47,7 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
                 {subtitle && <h3 className="text-muted font-weight-normal">{subtitle}</h3>}
                 {detail && <p className="text-muted mb-0">{detail}</p>}
             </div>
-        </div>
+        </CardBody>
         <div className={styles.bg} />
         {footer && <div className={styles.footer}>{footer}</div>}
     </div>

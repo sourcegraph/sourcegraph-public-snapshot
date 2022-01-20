@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Container } from '@sourcegraph/wildcard'
+import { Container, CardBody } from '@sourcegraph/wildcard'
 
 import styles from './GettingStarted.module.scss'
 
@@ -57,7 +57,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
                 <div className="card h-100 p-2">
-                    <div className="card-body d-flex">
+                    <CardBody className="d-flex">
                         <FindReplaceIcon className="mr-3" />
                         <div>
                             <h4>
@@ -73,12 +73,12 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                                 to manage a large scale change.
                             </p>
                         </div>
-                    </div>
+                    </CardBody>
                 </div>
             </div>
             <div className="col-12 col-md-6 mb-3">
                 <div className="card h-100 p-2">
-                    <div className="card-body d-flex">
+                    <CardBody className="d-flex">
                         <RefactorCombyIcon className="mr-3" />
                         <div>
                             <h4>
@@ -98,7 +98,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                                 but clearer execution.
                             </p>
                         </div>
-                    </div>
+                    </CardBody>
                 </div>
             </div>
             <div className="col-12 mb-4 text-right">
@@ -152,7 +152,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
             </div>
             <div className="col-12 col-md-4">
                 <div className={classNames(styles.overviewCard, 'card')}>
-                    <div className="card-body p-3">
+                    <CardBody className="p-3">
                         <p>
                             <strong>Overview</strong>
                         </p>
@@ -163,7 +163,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                         <a href="https://about.sourcegraph.com/batch-changes" rel="noopener">
                             Batch Changes marketing page
                         </a>
-                    </div>
+                    </CardBody>
                 </div>
             </div>
         </div>

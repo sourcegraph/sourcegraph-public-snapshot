@@ -8,7 +8,7 @@ import { catchError, map, startWith } from 'rxjs/operators'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link, CardHeader } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, CardHeader, CardBody } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -120,7 +120,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                                 </div>
                             </>
                         ) : (
-                            <div className="card-body">
+                            <CardBody>
                                 <span className="text-muted ">
                                     No billing information is associated with this subscription.{' '}
                                     <a
@@ -132,7 +132,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                                     </a>{' '}
                                     for help.
                                 </span>
-                            </div>
+                            </CardBody>
                         )}
                     </div>
                     <div className="card mt-3">
