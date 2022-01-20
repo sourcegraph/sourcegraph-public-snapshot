@@ -211,10 +211,15 @@ func parseMatchOnly(q *query.Basic) (Command, bool, error) {
 		return nil, false, err
 	}
 
+	if !q.IsCaseSensitive() {
+		pattern.Value = "(?i:" + pattern.Value + ")"
+	}
+
 	rp, err := toRegexpPattern(pattern.Value)
 	if err != nil {
 		return nil, false, err
 	}
+
 	return &MatchOnly{MatchPattern: rp}, true, nil
 }
 
