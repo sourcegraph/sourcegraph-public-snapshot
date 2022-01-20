@@ -48,8 +48,7 @@ extend type Mutation {
         repository: ID!
         """
         A list of user identifiers and their sub-repository permissions, which defines the set of
-        users who may view the repository. All users not included in the list will not be
-        permitted to view the repository on Sourcegraph.
+        paths within the repository they can access.
         """
         userPermissions: [UserSubRepoPermission!]!
     ): EmptyResponse!
