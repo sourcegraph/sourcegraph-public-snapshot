@@ -10,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, CardHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -182,7 +182,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                     </Form>
                     {isErrorLike(this.state.updateOrError) && <ErrorAlert error={this.state.updateOrError} />}
                     <div className={classNames('card mt-5', styles.otherActions)}>
-                        <div className="card-header">Other actions</div>
+                        <CardHeader>Other actions</CardHeader>
                         <div className="card-body">
                             <Button
                                 to={`${this.props.extension.registryExtension.url}/-/releases/new`}

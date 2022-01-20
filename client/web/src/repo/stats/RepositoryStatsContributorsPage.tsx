@@ -13,7 +13,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, CardHeader } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -223,7 +223,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
             <div>
                 <PageTitle title="Contributors" />
                 <div className={classNames(styles.card, 'card')}>
-                    <div className="card-header">Contributions filter</div>
+                    <CardHeader>Contributions filter</CardHeader>
                     <div className="card-body">
                         <Form onSubmit={this.onSubmit}>
                             <div className={classNames(styles.row, 'form-inline')}>

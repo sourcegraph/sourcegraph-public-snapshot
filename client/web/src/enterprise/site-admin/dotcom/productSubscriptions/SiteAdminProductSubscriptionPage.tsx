@@ -9,7 +9,7 @@ import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, useObservable, useEventObservable, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, useEventObservable, Link, CardHeader } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { ErrorAlert } from '../../../../components/alerts'
@@ -150,7 +150,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                         {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} />}
                     </div>
                     <div className="card mt-3">
-                        <div className="card-header">Details</div>
+                        <CardHeader>Details</CardHeader>
                         <table className="table mb-0">
                             <tbody>
                                 <tr>
@@ -198,7 +198,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                     </div>
                     <LicenseGenerationKeyWarning className="mt-3" />
                     <div className="card mt-1">
-                        <div className="card-header d-flex align-items-center justify-content-between">
+                        <CardHeader className="d-flex align-items-center justify-content-between">
                             Licenses
                             {showGenerate ? (
                                 <Button onClick={toggleShowGenerate} variant="secondary">
@@ -209,7 +209,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                     <AddIcon className="icon-inline" /> Generate new license manually
                                 </Button>
                             )}
-                        </div>
+                        </CardHeader>
                         {showGenerate && (
                             <div className="card-body">
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
@@ -234,7 +234,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                         />
                     </div>
                     <div className="card mt-3">
-                        <div className="card-header">History</div>
+                        <CardHeader>History</CardHeader>
                         <ProductSubscriptionHistory productSubscription={productSubscription} />
                     </div>
                 </>
