@@ -5,7 +5,6 @@ import { catchError, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
@@ -25,6 +24,7 @@ import {
     useObservable,
     Button,
     Alert,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'

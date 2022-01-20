@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
-import { Link } from 'react-router-dom'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
 

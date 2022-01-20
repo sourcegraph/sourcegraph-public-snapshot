@@ -3,10 +3,9 @@ import * as H from 'history'
 import React, { useCallback, useContext, useState } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecFields } from '../../../graphql-operations'

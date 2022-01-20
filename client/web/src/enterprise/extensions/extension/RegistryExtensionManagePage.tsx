@@ -3,7 +3,6 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
@@ -11,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -93,12 +92,12 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             concat(
                                 [{ updateOrError: 'loading' }],
                                 updateExtension({
-                                    extension: this.props.extension.registryExtension!.id,
+                                    extension: this.props.extension.registryExtension.id,
                                     name: this.state.name,
                                 }).pipe(
                                     tap(result => {
                                         // Redirect to the extension's new URL (if it changed).
-                                        if (this.props.extension.registryExtension!.url !== result.extension.url) {
+                                        if (this.props.extension.registryExtension.url !== result.extension.url) {
                                             this.props.history.push(result.extension.url + '/-/manage')
                                         }
                                         this.props.onDidUpdateExtension()

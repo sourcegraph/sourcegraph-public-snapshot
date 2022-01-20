@@ -9,7 +9,6 @@ import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -18,7 +17,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/SyntaxHighlightedSearchQuery'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
@@ -214,9 +213,9 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
     <li className={classNames('list-unstyled mb-3', styles.repoItem)} key={repo}>
         {repo.startsWith('github.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GithubIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </a>
+                </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>
@@ -224,9 +223,9 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         )}
         {repo.startsWith('gitlab.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GitlabIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </a>
+                </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>
@@ -234,9 +233,9 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         )}
         {repo.startsWith('bitbucket.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <BitbucketIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </a>
+                </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>

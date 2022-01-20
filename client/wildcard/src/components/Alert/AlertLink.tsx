@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link, LinkProps } from '@sourcegraph/shared/src/components/Link'
+import { Link, LinkProps } from '../Link/Link'
 
 import styles from './AlertLink.module.scss'
 

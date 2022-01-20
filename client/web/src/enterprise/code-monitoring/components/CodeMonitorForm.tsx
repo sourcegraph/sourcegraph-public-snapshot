@@ -216,9 +216,6 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             disabled={!formCompletion.triggerCompleted}
                             onActionsChange={onActionsChange}
                             description={currentCodeMonitorState.description}
-                            cardBtnClassName={styles.cardButton}
-                            cardLinkClassName={styles.cardLink}
-                            cardClassName={styles.card}
                         />
                     </div>
                     <hr className={classNames('my-3', styles.horizontalRule)} />

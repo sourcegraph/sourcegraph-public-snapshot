@@ -1,13 +1,15 @@
 import Popper from 'popper.js'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Subject, Subscription } from 'rxjs'
+import { distinctUntilChanged } from 'rxjs/operators'
 
 import { TooltipController } from './TooltipController'
-import { getSubject, getContent, getDelay, getPlacement } from './utils'
+import { getSubject, getContent, getPlacement, getDelay } from './utils'
 
 export interface UseTooltipState {
-    subject?: HTMLElement
+    subject?: HTMLElement | null
     subjectSeq: number
-    lastEventTarget?: HTMLElement
+    lastEventTarget?: HTMLElement | null
     content?: string
     placement?: Popper.Placement
     delay?: number
@@ -18,24 +20,55 @@ export interface UseTooltipReturn extends UseTooltipState {
 }
 
 export const useTooltipState = (): UseTooltipState => {
+    const lastEventTarget = useRef<HTMLElement | null>(null)
+    const subjectUpdates = useRef(new Subject<HTMLElement | null | undefined>())
+    const subscriptions = useRef(new Subscription())
     const [state, setState] = useState<UseTooltipState>({
         subjectSeq: 0,
     })
 
-    const forceUpdate = (): void => {
-        setState(previousState => {
-            const subject = previousState.lastEventTarget && getSubject(previousState.lastEventTarget)
+    useEffect(() => {
+        const currentSubscriptions = subscriptions.current
 
-            return {
-                ...previousState,
-                subject,
-                content: subject ? getContent(subject) : undefined,
-            }
-        })
-    }
+        currentSubscriptions.add(
+            subjectUpdates.current.pipe(distinctUntilChanged()).subscribe(subject => {
+                if (!subject) {
+                    setState(previousState => ({
+                        ...previousState,
+                        subject: undefined,
+                        content: undefined,
+                    }))
+
+                    return
+                }
+
+                setState(previousState => ({
+                    subject,
+                    subjectSeq: previousState.subjectSeq + 1,
+                    content: getContent(subject),
+                    placement: getPlacement(subject),
+                    delay: getDelay(subject),
+                }))
+            })
+        )
+
+        return () => {
+            currentSubscriptions.unsubscribe()
+        }
+    }, [])
 
     useEffect(() => {
-        TooltipController.setInstance({ forceUpdate })
+        TooltipController.setInstance({
+            forceUpdate: () => {
+                const subject = lastEventTarget.current && getSubject(lastEventTarget.current)
+
+                setState(previousState => ({
+                    ...previousState,
+                    subject,
+                    content: subject ? getContent(subject) : undefined,
+                }))
+            },
+        })
 
         return () => {
             TooltipController.setInstance()
@@ -53,20 +86,16 @@ export const useTooltipState = (): UseTooltipState => {
                 (event as MouseEvent).pageX === 0 &&
                 (event as MouseEvent).pageY === 0
             ) {
-                setState(previousState => ({ ...previousState, subject: undefined, content: undefined }))
+                subjectUpdates.current.next(null)
+
                 return
             }
 
             const eventTarget = event.target as HTMLElement
             const subject = getSubject(eventTarget)
-            setState(previousState => ({
-                subject,
-                subjectSeq: previousState.subject === subject ? previousState.subjectSeq : previousState.subjectSeq + 1,
-                content: subject ? getContent(subject) : undefined,
-                placement: subject ? getPlacement(subject) : undefined,
-                delay: subject ? getDelay(subject) : 0,
-                lastEventTarget: eventTarget,
-            }))
+
+            lastEventTarget.current = eventTarget
+            subjectUpdates.current.next(subject)
         }
 
         document.addEventListener('focusin', handleEvent)

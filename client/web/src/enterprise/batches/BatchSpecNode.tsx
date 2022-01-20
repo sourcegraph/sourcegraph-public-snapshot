@@ -6,27 +6,34 @@ import CancelIcon from 'mdi-react/CancelIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import StarIcon from 'mdi-react/StarIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useCallback, useState } from 'react'
 
-import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
-import { BatchSpecListFields } from '../../../graphql-operations'
+import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
+import { BatchSpec } from './BatchSpec'
 import styles from './BatchSpecNode.module.scss'
 
-export interface BatchSpecNodeProps {
+export interface BatchSpecNodeProps extends ThemeProps {
     node: BatchSpecListFields
+    currentSpecID?: Scalars['ID']
     /** Used for testing purposes. Sets the current date */
     now?: () => Date
 }
 
-export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({ node, now = () => new Date() }) => {
-    const [isExpanded, setIsExpanded] = useState(false)
+export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({
+    node,
+    currentSpecID,
+    isLightTheme,
+    now = () => new Date(),
+}) => {
+    const [isExpanded, setIsExpanded] = useState(currentSpecID === node.id)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         setIsExpanded(!isExpanded)
     }, [isExpanded])
@@ -51,15 +58,33 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({ nod
             </div>
             <div className="px-2 pb-1">
                 <h3 className="pr-2">
-                    <Link className="text-muted" to={`${node.namespace.url}/batch-changes`}>
-                        {node.namespace.namespaceName}
-                    </Link>
-                    <span className="text-muted d-inline-block mx-1">/</span>
-                    <Link to={`/batch-changes/executions/${node.id}`}>{node.description.name || '-'}</Link>
+                    {currentSpecID === node.id && (
+                        <>
+                            <StarIcon className="icon-inline text-warning" data-tooltip="Currently applied spec" />{' '}
+                        </>
+                    )}
+                    {currentSpecID && (
+                        <Link to={`/batch-changes/executions/${node.id}`}>
+                            Executed by <strong>{node.creator?.username}</strong>{' '}
+                            <Timestamp date={node.createdAt} now={now} />
+                        </Link>
+                    )}
+                    {!currentSpecID && (
+                        <>
+                            <Link className="text-muted" to={`${node.namespace.url}/batch-changes`}>
+                                {node.namespace.namespaceName}
+                            </Link>
+                            <span className="text-muted d-inline-block mx-1">/</span>
+                            <Link to={`/batch-changes/executions/${node.id}`}>{node.description.name || '-'}</Link>
+                        </>
+                    )}
                 </h3>
-                <small className="text-muted d-block">
-                    Executed by <strong>{node.creator?.username}</strong> <Timestamp date={node.createdAt} now={now} />
-                </small>
+                {!currentSpecID && (
+                    <small className="text-muted d-block">
+                        Executed by <strong>{node.creator?.username}</strong>{' '}
+                        <Timestamp date={node.createdAt} now={now} />
+                    </small>
+                )}
             </div>
             <div className="text-center pb-1">
                 <Duration start={parseISO(node.createdAt)} end={node.finishedAt ? new Date(node.finishedAt) : now()} />
@@ -67,7 +92,12 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({ nod
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
                     <h4>Input spec</h4>
-                    <CodeSnippet code={node.originalInput} language="yaml" className="mb-0" />
+                    <BatchSpec
+                        isLightTheme={isLightTheme}
+                        name={node.description.name}
+                        originalInput={node.originalInput}
+                        className={classNames(styles.batchSpec, 'mb-0')}
+                    />
                 </div>
             )}
         </>

@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
-import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import {
     ListNotebooksResult,
@@ -16,13 +15,15 @@ import styles from './SearchNotebooksList.module.scss'
 
 interface SearchNotebooksListProps {
     filters: FilteredConnectionFilter[]
-    authenticatedUser?: AuthenticatedUser | null
+    creatorUserID?: string
+    starredByUserID?: string
     fetchNotebooks: typeof _fetchNotebooks
 }
 
 export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListProps> = ({
     filters,
-    authenticatedUser,
+    creatorUserID,
+    starredByUserID,
     fetchNotebooks,
 }) => {
     const queryConnection = useCallback(
@@ -36,12 +37,13 @@ export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListPro
                 first: args.first ?? 10,
                 query: args.query ?? undefined,
                 after: args.after ?? undefined,
-                creatorUserID: authenticatedUser?.id,
+                creatorUserID,
+                starredByUserID,
                 orderBy,
                 descending,
             })
         },
-        [authenticatedUser, fetchNotebooks]
+        [creatorUserID, starredByUserID, fetchNotebooks]
     )
 
     const history = useHistory()

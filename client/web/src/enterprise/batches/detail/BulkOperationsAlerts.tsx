@@ -1,9 +1,9 @@
 import * as H from 'history'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert, isAlertDismissed } from '../../../components/DismissibleAlert'
 import { ActiveBulkOperationsConnectionFields } from '../../../graphql-operations'

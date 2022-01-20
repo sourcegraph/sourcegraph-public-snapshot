@@ -9,9 +9,14 @@ import { useThemeProps } from './theme'
 // Don't test reacting to system-wide theme changes, for simplicity. This means that
 // observeSystemIsLightTheme's initial value will be used, but it will not monitor for subsequent
 // changes.
-jest.mock('@sourcegraph/wildcard/src/hooks/useObservable', () => ({
-    useObservable: () => undefined,
-}))
+jest.mock('@sourcegraph/wildcard', () => {
+    const actual = jest.requireActual('@sourcegraph/wildcard')
+
+    return {
+        ...actual,
+        useObservable: () => undefined,
+    }
+})
 
 const mockSystemTheme = (systemTheme: 'light' | 'dark') => {
     window.matchMedia = query => {

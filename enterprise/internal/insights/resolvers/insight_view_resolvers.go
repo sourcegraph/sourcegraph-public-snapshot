@@ -829,11 +829,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
-	err = validateLineChartSearchInsightInput(series)
-	if err != nil {
-		return err
-	}
-
 	// Don't try to match on just-in-time series, since they are not recorded
 	if !service.IsJustInTime(series.RepositoryScope.Repositories) {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
@@ -876,17 +871,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	})
 	if err != nil {
 		return errors.Wrap(err, "AttachSeriesToView")
-	}
-	return nil
-}
-
-func validateLineChartSearchInsightInput(series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
-	var generated bool
-	if series.GeneratedFromCaptureGroups != nil {
-		generated = *series.GeneratedFromCaptureGroups
-	}
-	if len(series.RepositoryScope.Repositories) == 0 && generated {
-		return errors.New("generated capture group search insights are not supported globally")
 	}
 	return nil
 }

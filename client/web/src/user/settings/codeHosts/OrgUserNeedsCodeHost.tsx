@@ -1,7 +1,6 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 
-import { Container, Button } from '@sourcegraph/wildcard'
+import { Container, Button, Link } from '@sourcegraph/wildcard'
 
 import { useExternalServices } from '../../../auth/useExternalServices'
 import { ListExternalServiceFields } from '../../../graphql-operations'

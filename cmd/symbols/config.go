@@ -4,6 +4,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
@@ -21,6 +22,7 @@ type Config struct {
 	cacheSizeMB       int
 	numCtagsProcesses int
 	requestBufferSize int
+	processingTimeout time.Duration
 }
 
 var config = &Config{}
@@ -37,4 +39,5 @@ func (c *Config) Load() {
 	c.cacheSizeMB = c.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)")
 	c.numCtagsProcesses = c.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run")
 	c.requestBufferSize = c.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel")
+	c.processingTimeout = c.GetInterval("PROCESSING_TIMEOUT", "2h", "maximum time to spend processing a repository")
 }

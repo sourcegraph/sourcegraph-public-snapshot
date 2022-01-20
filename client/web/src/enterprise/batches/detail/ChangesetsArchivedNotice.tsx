@@ -2,8 +2,8 @@ import * as H from 'history'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import React, { useEffect, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 

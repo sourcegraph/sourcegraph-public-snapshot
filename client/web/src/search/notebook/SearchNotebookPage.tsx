@@ -32,6 +32,8 @@ import {
     fetchNotebook as _fetchNotebook,
     updateNotebook as _updateNotebook,
     deleteNotebook as _deleteNotebook,
+    createNotebookStar as _createNotebookStar,
+    deleteNotebookStar as _deleteNotebookStar,
 } from './backend'
 import { NotebookContent } from './NotebookContent'
 import { NotebookTitle } from './NotebookTitle'
@@ -56,6 +58,8 @@ interface SearchNotebookPageProps
     fetchNotebook?: typeof _fetchNotebook
     updateNotebook?: typeof _updateNotebook
     deleteNotebook?: typeof _deleteNotebook
+    createNotebookStar?: typeof _createNotebookStar
+    deleteNotebookStar?: typeof _deleteNotebookStar
 }
 
 const LOADING = 'loading' as const
@@ -70,6 +74,8 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     fetchNotebook = _fetchNotebook,
     updateNotebook = _updateNotebook,
     deleteNotebook = _deleteNotebook,
+    createNotebookStar = _createNotebookStar,
+    deleteNotebookStar = _deleteNotebookStar,
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('SearchNotebookPage'), [props.telemetryService])
@@ -187,11 +193,16 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                             ]}
                             actions={
                                 <SearchNotebookPageHeaderActions
+                                    authenticatedUser={props.authenticatedUser}
                                     notebookId={notebookId}
                                     viewerCanManage={notebookOrError.viewerCanManage}
                                     isPublic={notebookOrError.public}
                                     onUpdateVisibility={onUpdateVisibility}
                                     deleteNotebook={deleteNotebook}
+                                    starsCount={notebookOrError.stars.totalCount}
+                                    viewerHasStarred={notebookOrError.viewerHasStarred}
+                                    createNotebookStar={createNotebookStar}
+                                    deleteNotebookStar={deleteNotebookStar}
                                 />
                             }
                         />

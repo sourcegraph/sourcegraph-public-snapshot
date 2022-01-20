@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Alert, Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Alert } from '@sourcegraph/wildcard'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { updateExternalService } from '../../../components/externalServices/backend'

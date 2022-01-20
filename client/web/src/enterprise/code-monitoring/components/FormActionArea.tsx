@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
+import { useExperimentalFeatures } from '../../../stores'
 
 import { EmailAction } from './actions/EmailAction'
+import { SlackWebhookAction } from './actions/SlackWebhookAction'
+import { WebhookAction } from './actions/WebhookAction'
 
 export interface ActionAreaProps {
     actions: CodeMonitorFields['actions']
@@ -13,9 +16,6 @@ export interface ActionAreaProps {
     authenticatedUser: AuthenticatedUser
     onActionsChange: (action: CodeMonitorFields['actions']) => void
     description: string
-    cardClassName?: string
-    cardBtnClassName?: string
-    cardLinkClassName?: string
 }
 
 export type MonitorAction = CodeMonitorFields['actions']['nodes'][number]
@@ -32,9 +32,6 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
     authenticatedUser,
     onActionsChange,
     description,
-    cardClassName,
-    cardBtnClassName,
-    cardLinkClassName,
 }) => {
     const [emailAction, setEmailAction] = useState<MonitorAction | undefined>(
         actions.nodes.find(action => action.__typename === 'MonitorEmail')
@@ -56,6 +53,8 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         onActionsChange(actions)
     }, [emailAction, onActionsChange])
 
+    const showWebhooks = useExperimentalFeatures(features => features.codeMonitoringWebHooks)
+
     return (
         <>
             <h3 className="mb-1">Actions</h3>
@@ -67,11 +66,15 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 actionCompleted={emailActionCompleted}
                 setActionCompleted={setEmailActionCompleted}
                 authenticatedUser={authenticatedUser}
-                cardClassName={cardClassName}
-                cardBtnClassName={cardBtnClassName}
-                cardLinkClassName={cardLinkClassName}
                 description={description}
             />
+            {showWebhooks && (
+                <>
+                    <SlackWebhookAction />
+                    <WebhookAction />
+                </>
+            )}
+
             <small className="text-muted">
                 What other actions would you like to take?{' '}
                 <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">

@@ -2,11 +2,10 @@ import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import React, { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
@@ -52,7 +51,9 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                                 <a href="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</a>
                             </Alert>
                         ) : (
-                            <Alert className={styles.alert} variant="success">Up to date.</Alert>
+                            <Alert className={styles.alert} variant="success">
+                                Up to date.
+                            </Alert>
                         ))}
                     {updateCheck.errorMessage && (
                         <ErrorAlert

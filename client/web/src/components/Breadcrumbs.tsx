@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Unsubscribable } from 'sourcegraph'
 
 import { isDefined } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Link } from '@sourcegraph/wildcard'
 
 import styles from './Breadcrumbs.module.scss'
 

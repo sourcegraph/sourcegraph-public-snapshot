@@ -1,8 +1,7 @@
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { ViewerBatchChangesCodeHostsFields } from '../../../graphql-operations'

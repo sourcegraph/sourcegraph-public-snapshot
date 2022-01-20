@@ -2,10 +2,9 @@ import classNames from 'classnames'
 import React, { useEffect, useState } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { CopyableText } from '@sourcegraph/web/src/components/CopyableText'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
-import { Alert } from '@sourcegraph/wildcard'
+import { Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { eventLogger } from '../../tracking/eventLogger'

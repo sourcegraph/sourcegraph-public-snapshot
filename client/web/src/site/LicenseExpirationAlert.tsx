@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { isProductLicenseExpired, formatRelativeExpirationDate } from '../productSubscription/helpers'
