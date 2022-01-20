@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
@@ -58,12 +57,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Build options for pipeline operations that spawn more build steps
-	buildOptions := bk.BuildOptions{
-		Message: os.Getenv("BUILDKITE_MESSAGE"),
-		Commit:  c.Commit,
-		Branch:  c.Branch,
-		Env:     env,
-	}
+	// buildOptions := bk.BuildOptions{
+	// 	Message: os.Getenv("BUILDKITE_MESSAGE"),
+	// 	Commit:  c.Commit,
+	// 	Branch:  c.Branch,
+	// 	Env:     env,
+	// }
 
 	// Make all command steps timeout after 60 minutes in case a buildkite agent
 	// got stuck / died.
@@ -103,148 +102,176 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
-	switch c.RunType {
-	case PullRequest:
-		if c.ChangedFiles.AffectsClient() {
-			// triggers a slow pipeline, currently only affects web. It's optional so we
-			// set it up separately from CoreTestOperations
-			ops.Append(triggerAsync(buildOptions))
-		}
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+	// switch c.RunType {
+	// case PullRequest:
+	// 	if c.ChangedFiles.AffectsClient() {
+	// 		// triggers a slow pipeline, currently only affects web. It's optional so we
+	// 		// set it up separately from CoreTestOperations
+	// 		ops.Append(triggerAsync(buildOptions))
+	// 	}
+	// 	ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+	//
+	// case BackendIntegrationTests:
+	// 	ops.Append(
+	// 		buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
+	// 		backendIntegrationTests(c.candidateImageTag()))
+	//
+	// 	// Run default set of PR checks as well
+	// 	ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+	//
+	// case BextReleaseBranch:
+	// 	// If this is a browser extension release branch, run the browser-extension tests and
+	// 	// builds.
+	// 	ops = operations.NewSet([]operations.Operation{
+	// 		addTsLint,
+	// 		addBrowserExt,
+	// 		frontendTests,
+	// 		wait,
+	// 		addBrowserExtensionReleaseSteps,
+	// 	})
+	//
+	// case BextNightly:
+	// 	// If this is a browser extension nightly build, run the browser-extension tests and
+	// 	// e2e tests.
+	// 	ops = operations.NewSet([]operations.Operation{
+	// 		addTsLint,
+	// 		addBrowserExt,
+	// 		frontendTests,
+	// 		wait,
+	// 		addBrowserExtensionE2ESteps,
+	// 	})
+	//
+	// case ImagePatch:
+	// 	// only build candidate image for the specified image in the branch name
+	// 	// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
+	// 	patchImage := c.Branch[20:]
+	// 	if !contains(images.SourcegraphDockerImages, patchImage) {
+	// 		panic(fmt.Sprintf("no image %q found", patchImage))
+	// 	}
+	// 	ops = operations.NewSet([]operations.Operation{
+	// 		buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+	// 	})
+	//
+	// 	// Trivy security scans
+	// 	ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
+	// 	// Test images
+	// 	ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+	// 	// Publish images after everything is done
+	// 	ops.Append(wait,
+	// 		publishFinalDockerImage(c, patchImage))
+	//
+	// case ImagePatchNoTest:
+	// 	// If this is a no-test branch, then run only the Docker build. No tests are run.
+	// 	app := c.Branch[27:]
+	// 	ops = operations.NewSet([]operations.Operation{
+	// 		buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
+	// 		wait,
+	// 		publishFinalDockerImage(c, app),
+	// 	})
+	//
+	// case CandidatesNoTest:
+	// 	for _, dockerImage := range images.SourcegraphDockerImages {
+	// 		ops.Append(
+	// 			buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+	// 	}
+	//
+	// case ExecutorPatchNoTest:
+	// 	ops = operations.NewSet([]operations.Operation{
+	// 		buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+	// 		publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+	// 		buildExecutorDockerMirror(c.Version),
+	// 		publishExecutorDockerMirror(c.Version),
+	// 	})
+	//
+	// default:
+	// 	// Slow async pipeline
+	// 	ops.Append(triggerAsync(buildOptions))
+	//
+	// 	// Slow image builds
+	// 	for _, dockerImage := range images.SourcegraphDockerImages {
+	// 		ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+	// 	}
+	//
+	// 	// Trivy security scans
+	// 	for _, dockerImage := range images.SourcegraphDockerImages {
+	// 		ops.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+	// 	}
+	//
+	// 	// Executor VM image
+	// 	skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
+	// 	if c.RunType.Is(MainDryRun, MainBranch, ReleaseBranch) {
+	// 		ops.Append(buildExecutor(c.Version, skipHashCompare))
+	// 		if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+	// 			ops.Append(buildExecutorDockerMirror(c.Version))
+	// 		}
+	// 	}
+	//
+	// 	// Core tests
+	// 	ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
+	// 		ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
+	// 		MinimumUpgradeableVersion: minimumUpgradeableVersion,
+	// 	}))
+	//
+	// 	// Various integration tests
+	// 	ops.Append(
+	// 		backendIntegrationTests(c.candidateImageTag()),
+	// 		codeIntelQA(c.candidateImageTag()),
+	// 		serverE2E(c.candidateImageTag()),
+	// 		serverQA(c.candidateImageTag()),
+	// 		// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
+	// 		// clusterQA(c.candidateImageTag()),
+	// 		testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
+	//
+	// 	// All operations before this point are required
+	// 	ops.Append(wait)
+	//
+	// 	// Add final artifacts
+	// 	for _, dockerImage := range images.SourcegraphDockerImages {
+	// 		ops.Append(publishFinalDockerImage(c, dockerImage))
+	// 	}
+	// 	// Executor VM image
+	// 	if c.RunType.Is(MainBranch, ReleaseBranch) {
+	// 		ops.Append(publishExecutor(c.Version, skipHashCompare))
+	// 		if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+	// 			ops.Append(publishExecutorDockerMirror(c.Version))
+	// 		}
+	// 	}
+	//
+	// 	// Propagate changes elsewhere
+	// 	if c.RunType.Is(MainBranch) {
+	// 		ops.Append(
+	// 			wait, // wait for all steps to pass
+	// 			triggerUpdaterPipeline)
+	// 	}
+	// }
+	//
 
-	case BackendIntegrationTests:
-		ops.Append(
-			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
-			backendIntegrationTests(c.candidateImageTag()))
-
-		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
-
-	case BextReleaseBranch:
-		// If this is a browser extension release branch, run the browser-extension tests and
-		// builds.
-		ops = operations.NewSet([]operations.Operation{
-			addTsLint,
-			addBrowserExt,
-			frontendTests,
-			wait,
-			addBrowserExtensionReleaseSteps,
-		})
-
-	case BextNightly:
-		// If this is a browser extension nightly build, run the browser-extension tests and
-		// e2e tests.
-		ops = operations.NewSet([]operations.Operation{
-			addTsLint,
-			addBrowserExt,
-			frontendTests,
-			wait,
-			addBrowserExtensionE2ESteps,
-		})
-
-	case ImagePatch:
-		// only build candidate image for the specified image in the branch name
-		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
-		patchImage := c.Branch[20:]
-		if !contains(images.SourcegraphDockerImages, patchImage) {
-			panic(fmt.Sprintf("no image %q found", patchImage))
-		}
-		ops = operations.NewSet([]operations.Operation{
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
-		})
-
-		// Trivy security scans
-		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
-		// Test images
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
-		// Publish images after everything is done
-		ops.Append(wait,
-			publishFinalDockerImage(c, patchImage))
-
-	case ImagePatchNoTest:
-		// If this is a no-test branch, then run only the Docker build. No tests are run.
-		app := c.Branch[27:]
-		ops = operations.NewSet([]operations.Operation{
-			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
-			wait,
-			publishFinalDockerImage(c, app),
-		})
-
-	case CandidatesNoTest:
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
-		}
-
-	case ExecutorPatchNoTest:
-		ops = operations.NewSet([]operations.Operation{
-			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
-			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
-			buildExecutorDockerMirror(c.Version),
-			publishExecutorDockerMirror(c.Version),
-		})
-
-	default:
-		// Slow async pipeline
-		ops.Append(triggerAsync(buildOptions))
-
-		// Slow image builds
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
-		}
-
-		// Trivy security scans
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-
-		// Executor VM image
-		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
-		if c.RunType.Is(MainDryRun, MainBranch, ReleaseBranch) {
-			ops.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
-				ops.Append(buildExecutorDockerMirror(c.Version))
-			}
-		}
-
-		// Core tests
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
-			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
-			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-		}))
-
-		// Various integration tests
-		ops.Append(
-			backendIntegrationTests(c.candidateImageTag()),
-			codeIntelQA(c.candidateImageTag()),
-			serverE2E(c.candidateImageTag()),
-			serverQA(c.candidateImageTag()),
-			// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
-			// clusterQA(c.candidateImageTag()),
-			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
-
-		// All operations before this point are required
-		ops.Append(wait)
-
-		// Add final artifacts
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(publishFinalDockerImage(c, dockerImage))
-		}
-		// Executor VM image
-		if c.RunType.Is(MainBranch, ReleaseBranch) {
-			ops.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
-				ops.Append(publishExecutorDockerMirror(c.Version))
-			}
-		}
-
-		// Propagate changes elsewhere
-		if c.RunType.Is(MainBranch) {
-			ops.Append(
-				wait, // wait for all steps to pass
-				triggerUpdaterPipeline)
-		}
-	}
+	ops.Append(
+		// lightweight check that works over a lot of stuff - we are okay with running
+		// these on all PRs
+		operations.Operation(func(pipeline *buildkite.Pipeline) {
+			pipeline.AddStep(":lipstick: Prettier",
+				// TODO check that in case we also use awscli for real
+				bk.Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
+				bk.Env("AWS_SHARED_CREDENTIALS_FILE", "/buildkite/.aws/credentials"),
+				bk.Env("YARN_CACHE_FOLDER", "/buildkite/yarn-cache"),
+				bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
+					ID:          "yarn",
+					Backend:     "s3",
+					Key:         "valery-node-modules-{{checksum 'yarn.lock'}}",
+					RestoreKeys: []string{"valery-node-modules-"},
+					Paths:       []string{"./node_modules"},
+					S3: CacheConfigS3{
+						Bucket:   "sourcegraph_buildkite_cache",
+						Profile:  "buildkite",
+						Endpoint: "https://storage.googleapis.com",
+						Region:   "us-central1",
+					},
+				}),
+				// bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
+				bk.Cmd("yarn install --prefer-offline"))
+		}),
+	)
 
 	ops.Append(
 		wait,                    // wait for all steps to pass
