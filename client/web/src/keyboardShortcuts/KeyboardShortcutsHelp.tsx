@@ -1,4 +1,4 @@
-import { Shortcut } from '@slimsag/react-shortcuts'
+import { Shortcut, ModifierKey, Key } from '@slimsag/react-shortcuts'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
 
@@ -24,6 +24,11 @@ const LEGACY_KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
         keybindings: [{ ordered: ['y'] }],
     },
 ]
+
+const KEY_TO_NAMES: { [P in Key | ModifierKey]?: string } = {
+    Meta: 'Cmd',
+    Control: 'Ctrl',
+}
 
 const MODAL_LABEL_ID = 'keyboard-shortcuts-help-modal-title'
 
@@ -68,7 +73,7 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
                                                 {index !== 0 && ' or '}
                                                 {[...(keybinding.held || []), ...keybinding.ordered].map(
                                                     (key, index) => (
-                                                        <kbd key={index}>{key}</kbd>
+                                                        <kbd key={index}>{KEY_TO_NAMES[key] ?? key}</kbd>
                                                     )
                                                 )}
                                             </span>
