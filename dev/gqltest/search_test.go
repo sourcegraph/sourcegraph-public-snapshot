@@ -18,40 +18,38 @@ import (
 )
 
 func TestSearch(t *testing.T) {
-	if len(*githubToken) == 0 {
-		t.Skip("Environment variable GITHUB_TOKEN is not set")
+	if len(*githubToken) != 0 {
+		// Set up external service
+		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "gqltest-github-search",
+			Config: mustMarshalJSONString(struct {
+				URL                   string   `json:"url"`
+				Token                 string   `json:"token"`
+				Repos                 []string `json:"repos"`
+				RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			}{
+				URL:   "https://ghe.sgdev.org/",
+				Token: *githubToken,
+				Repos: []string{
+					"sgtest/java-langserver",
+					"sgtest/jsonrpc2",
+					"sgtest/go-diff",
+					"sgtest/appdash",
+					"sgtest/sourcegraph-typescript",
+					"sgtest/private",  // Private
+					"sgtest/mux",      // Fork
+					"sgtest/archived", // Archived
+				},
+				RepositoryPathPattern: "github.com/{nameWithOwner}",
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	// Set up external service
-	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "gqltest-github-search",
-		Config: mustMarshalJSONString(struct {
-			URL                   string   `json:"url"`
-			Token                 string   `json:"token"`
-			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
-		}{
-			URL:   "https://ghe.sgdev.org/",
-			Token: *githubToken,
-			Repos: []string{
-				"sgtest/java-langserver",
-				"sgtest/jsonrpc2",
-				"sgtest/go-diff",
-				"sgtest/appdash",
-				"sgtest/sourcegraph-typescript",
-				"sgtest/private",  // Private
-				"sgtest/mux",      // Fork
-				"sgtest/archived", // Archived
-			},
-			RepositoryPathPattern: "github.com/{nameWithOwner}",
-		}),
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = client.WaitForReposToBeCloned(
+	err := client.WaitForReposToBeCloned(
 		"github.com/sgtest/java-langserver",
 		"github.com/sgtest/jsonrpc2",
 		"github.com/sgtest/go-diff",
@@ -1026,11 +1024,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 			//	exactMatchCount: 30,
 			//	skip:            skipStream,
 			// },
-			// {
-			//	name:            `Exact default count is respected in OR queries`,
-			//	query:           `foo OR bar OR (type:repo diff)`,
-			//	exactMatchCount: 30,
-			// },
+			{
+				name:            `Exact default count is respected in OR queries`,
+				query:           `(type:path foo) OR bar OR (type:repo diff)`,
+				exactMatchCount: 30,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
