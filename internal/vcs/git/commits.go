@@ -229,8 +229,10 @@ func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err err
 
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
-// TODO: sub-repo filtering
-func HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error) {
+func HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string, checker authz.SubRepoPermissionChecker) (bool, error) {
+	if authz.SubRepoEnabled(checker) {
+		return hasCommitAfterWithFiltering(ctx, repo, date, revspec, checker)
+	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: HasCommitAfter")
 	span.SetTag("Date", date)
 	span.SetTag("RevSpec", revspec)
@@ -245,12 +247,21 @@ func HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec
 		return false, err
 	}
 
-	n, err := CommitCount(ctx, repo, CommitsOptions{
+	n, err := commitCount(ctx, repo, CommitsOptions{
 		N:     1,
 		After: date,
 		Range: string(commitid),
 	})
 	return n > 0, err
+}
+
+func hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string, checker authz.SubRepoPermissionChecker) (bool, error) {
+	if commits, err := Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}, checker); err != nil {
+		return false, err
+	} else if len(commits) > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 func isBadObjectErr(output, obj string) bool {
@@ -361,9 +372,8 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	return args, nil
 }
 
-// CommitCount returns the number of commits that would be returned by Commits.
-// TODO: sub-repo filtering
-func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
+// commitCount returns the number of commits that would be returned by Commits.
+func commitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()

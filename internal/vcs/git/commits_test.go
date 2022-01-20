@@ -134,78 +134,129 @@ func TestRepository_GetCommit(t *testing.T) {
 
 func TestRepository_HasCommitAfter(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	testCases := []struct {
-		commitDates []string
-		after       string
-		revspec     string
-		want        bool
+		label                 string
+		commitDates           []string
+		after                 string
+		revspec               string
+		want, wantSubRepoTest bool
 	}{
 		{
+			label: "after specific date",
 			commitDates: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2008-01-02T15:04:05Z",
 			},
-			after:   "2006-01-02T15:04:05Z",
-			revspec: "master",
-			want:    true,
+			after:           "2006-01-02T15:04:05Z",
+			revspec:         "master",
+			want:            true,
+			wantSubRepoTest: true,
 		},
 		{
+			label: "after 1 year ago",
 			commitDates: []string{
 				"2016-01-02T15:04:05Z",
 				"2017-01-02T15:04:05Z",
 				"2017-01-02T15:04:06Z",
 			},
-			after:   "1 year ago",
-			revspec: "master",
-			want:    false,
+			after:           "1 year ago",
+			revspec:         "master",
+			want:            false,
+			wantSubRepoTest: false,
 		},
 		{
+			label: "after too recent date",
 			commitDates: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2008-01-02T15:04:05Z",
 			},
-			after:   "2010-01-02T15:04:05Z",
-			revspec: "HEAD",
-			want:    false,
+			after:           "2010-01-02T15:04:05Z",
+			revspec:         "HEAD",
+			want:            false,
+			wantSubRepoTest: false,
 		},
 		{
+			label: "commit 1 second after",
 			commitDates: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2007-01-02T15:04:06Z",
 			},
-			after:   "2007-01-02T15:04:05Z",
-			revspec: "HEAD",
-			want:    true,
+			after:           "2007-01-02T15:04:05Z",
+			revspec:         "HEAD",
+			want:            true,
+			wantSubRepoTest: false,
 		},
 		{
+			label: "after 10 years ago",
 			commitDates: []string{
 				"2016-01-02T15:04:05Z",
 				"2017-01-02T15:04:05Z",
 				"2017-01-02T15:04:06Z",
 			},
-			after:   "10 years ago",
-			revspec: "HEAD",
-			want:    true,
+			after:           "10 years ago",
+			revspec:         "HEAD",
+			want:            true,
+			wantSubRepoTest: true,
 		},
 	}
 
-	for _, tc := range testCases {
-		gitCommands := make([]string, len(tc.commitDates))
-		for i, date := range tc.commitDates {
-			gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
-		}
+	t.Run("basic", func(t *testing.T) {
+		for _, tc := range testCases {
+			t.Run(tc.label, func(t *testing.T) {
+				gitCommands := make([]string, len(tc.commitDates))
+				for i, date := range tc.commitDates {
+					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+				}
 
-		repo := MakeGitRepository(t, gitCommands...)
-		got, err := HasCommitAfter(ctx, repo, tc.after, tc.revspec)
-		if err != nil || got != tc.want {
-			t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				repo := MakeGitRepository(t, gitCommands...)
+				got, err := HasCommitAfter(ctx, repo, tc.after, tc.revspec, nil)
+				if err != nil || got != tc.want {
+					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				}
+			})
 		}
-	}
+	})
+
+	t.Run("with sub-repo permissions", func(t *testing.T) {
+		for _, tc := range testCases {
+			t.Run(tc.label, func(t *testing.T) {
+				gitCommands := make([]string, len(tc.commitDates))
+				for i, date := range tc.commitDates {
+					fileName := fmt.Sprintf("file%d", i)
+					gitCommands = append(gitCommands, fmt.Sprintf("touch %s", fileName), fmt.Sprintf("git add %s", fileName))
+					gitCommands = append(gitCommands, fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit -m commit%d --author='a <a@a.com>'", date, i))
+				}
+				// Case where user can't view commit 2, but can view commits 0 and 1. In each test case the result should match the case where no sub-repo perms enabled
+				checker := getTestSubRepoPermsChecker("file2")
+				repo := MakeGitRepository(t, gitCommands...)
+				got, err := HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				if err != nil {
+					t.Errorf("got error: %s", err)
+				}
+				if got != tc.want {
+					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				}
+
+				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
+				checker = getTestSubRepoPermsChecker("file1", "file2")
+				repo = MakeGitRepository(t, gitCommands...)
+				got, err = HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				if err != nil {
+					t.Errorf("got error: %s", err)
+				}
+				if got != tc.wantSubRepoTest {
+					t.Errorf("got %t hascommitafter, want %t", got, tc.wantSubRepoTest)
+				}
+			})
+		}
+	})
 }
 
 func TestRepository_FirstEverCommit(t *testing.T) {
@@ -908,9 +959,9 @@ func testCommits(ctx context.Context, label string, repo api.RepoName, opt Commi
 		return
 	}
 
-	total, err := CommitCount(ctx, repo, opt)
+	total, err := commitCount(ctx, repo, opt)
 	if err != nil {
-		t.Errorf("%s: CommitCount(): %s", label, err)
+		t.Errorf("%s: commitCount(): %s", label, err)
 		return
 	}
 	if total != wantTotal {
