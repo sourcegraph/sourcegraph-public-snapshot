@@ -254,13 +254,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				// TODO check that in case we also use awscli for real
 				bk.Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
 				bk.Env("AWS_SHARED_CREDENTIALS_FILE", "/buildkite/.aws/credentials"),
-				// bk.Env("YARN_CACHE_FOLDER", "/buildkite/yarn-cache"),
+				bk.Env("YARN_CACHE_FOLDER", "/buildkite/yarn-cache"),
 				bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
 					ID:          "yarn",
 					Backend:     "s3",
-					Key:         "yarn-1206-{{checksum 'yarn.lock'}}",
-					RestoreKeys: []string{"yarn-1206-"},
-					Paths:       []string{"../../../../buildkite/npm-packages-offline-cache"},
+					Key:         "yarn-1240-{{checksum 'yarn.lock'}}",
+					RestoreKeys: []string{"yarn-1240-"},
+					Paths:       []string{"../../../../buildkite/yarn-cache"},
 					S3: CacheConfigS3{
 						Bucket:   "sourcegraph_buildkite_cache",
 						Profile:  "buildkite",
@@ -268,9 +268,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 						Region:   "us-central1",
 					},
 				}),
-				bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
 				bk.Cmd("yarn install --verbose --frozen-lockfile --prefer-offline"),
-				bk.Cmd("sleep 3000"),
+				// bk.Cmd("sleep 3000"),
 			)
 		}),
 	)
