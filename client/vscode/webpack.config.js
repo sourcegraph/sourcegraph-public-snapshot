@@ -41,7 +41,6 @@ function getExtensionCoreConfiguration(targetType) {
           ? {
               process: require.resolve('process/browser'),
               path: require.resolve('path-browserify'),
-              stream: require.resolve('stream-browserify'),
               assert: require.resolve('assert'),
               util: require.resolve('util'),
             }
@@ -116,7 +115,6 @@ const webviewConfig = {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
       path: require.resolve('path-browserify'),
-      stream: require.resolve('stream-browserify'),
       process: require.resolve('process/browser'),
     },
   },

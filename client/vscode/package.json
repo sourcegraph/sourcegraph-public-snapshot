@@ -38,7 +38,7 @@
         {
           "id": "sourcegraph-view",
           "title": "Sourcegraph",
-          "icon": "images/logo.png"
+          "icon": "images/logo.svg"
         }
       ]
     },

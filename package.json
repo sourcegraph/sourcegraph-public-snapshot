@@ -304,7 +304,6 @@
     "speed-measure-webpack-plugin": "^1.5.0",
     "storybook-addon-designs": "^6.2.0",
     "storybook-dark-mode": "^1.0.8",
-    "stream-browserify": "^3.0.0",
     "string-width": "^4.2.0",
     "style-loader": "^3.1.0",
     "stylelint": "^13.8.0",
