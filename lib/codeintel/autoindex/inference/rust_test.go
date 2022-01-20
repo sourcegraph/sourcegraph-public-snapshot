@@ -29,7 +29,7 @@ func TestInferRustIndexJobs(t *testing.T) {
 			Indexer:     "sourcegraph/lsif-rust",
 			IndexerArgs: []string{"lsif-rust", "index"},
 			Outfile:     "dump.lsif",
-			Root:        "",
+			Root:        "dir1",
 			Steps:       []config.DockerStep{},
 		},
 	}
