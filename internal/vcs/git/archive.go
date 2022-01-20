@@ -33,7 +33,7 @@ func ArchiveReader(
 	relativePath string,
 ) (io.ReadCloser, error) {
 	a := actor.FromContext(ctx)
-	if checker != nil && checker.Enabled() && a.IsAuthenticated() {
+	if authz.SubRepoEnabled(checker) && a.IsAuthenticated() {
 		return nil, errors.New("ArchiveReader invoked by user on a repo with sub-repo permissions")
 	}
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format="+string(format), string(commit), relativePath)
