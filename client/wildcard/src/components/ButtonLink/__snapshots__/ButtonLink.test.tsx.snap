@@ -1,0 +1,52 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<ButtonLink /> renders correctly \`disabled\` 1`] = `
+<DocumentFragment>
+  <a
+    class="btn btn-secondary btn-lg"
+    disabled=""
+    href=""
+    role="button"
+  >
+    Button link
+  </a>
+</DocumentFragment>
+`;
+
+exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
+<DocumentFragment>
+  <a
+    class="btn btn-secondary btn-lg"
+    data-pressed="true"
+    data-tooltip="SourceGraph.com"
+    href="https://sourcegraph.com"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    Button link
+  </a>
+</DocumentFragment>
+`;
+
+exports[`<ButtonLink /> renders correctly btn classes 1`] = `
+<DocumentFragment>
+  <a
+    class="btn btn-secondary btn-lg"
+    href="http://example.com"
+  >
+    Button link
+  </a>
+</DocumentFragment>
+`;
+
+exports[`<ButtonLink /> renders correctly empty \`to\` 1`] = `
+<DocumentFragment>
+  <a
+    class="btn btn-secondary btn-lg"
+    href=""
+    role="button"
+  >
+    Button link
+  </a>
+</DocumentFragment>
+`;
