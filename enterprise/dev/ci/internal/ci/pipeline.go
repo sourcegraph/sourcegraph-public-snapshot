@@ -258,9 +258,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
 					ID:          "yarn",
 					Backend:     "s3",
-					Key:         "yarn-1240-{{checksum 'yarn.lock'}}",
-					RestoreKeys: []string{"yarn-1240-"},
-					Paths:       []string{"../../../../buildkite/yarn-cache"},
+					Key:         "yarn-1257-{{checksum 'yarn.lock'}}",
+					RestoreKeys: []string{"yarn-1257-"},
+					Paths:       []string{"../../../../buildkite/yarn-cache", "node_modules"},
 					S3: CacheConfigS3{
 						Bucket:   "sourcegraph_buildkite_cache",
 						Profile:  "buildkite",
