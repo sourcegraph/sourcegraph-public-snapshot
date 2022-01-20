@@ -124,9 +124,9 @@ type packageInfo struct {
 
 func (client *HTTPClient) AvailablePackageVersions(ctx context.Context, pkg reposource.NPMPackage) (versions map[string]struct{}, err error) {
 	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PackageSyntax())
-	jsonBytes, err := client.makeGetRequest(ctx, url)
-	if err != nil {
-		return nil, err
+	jsonBytes, npmErr := client.makeGetRequest(ctx, url)
+	if npmErr.err != nil {
+		return nil, npmErr.err
 	}
 	var pkgInfo packageInfo
 	if err := json.Unmarshal(jsonBytes, &pkgInfo); err != nil {
@@ -174,40 +174,50 @@ func (client *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Resp
 	return client.doer.Do(req)
 }
 
-func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) ([]byte, error) {
+type npmError struct {
+	statusCode int
+	err        error
+}
+
+func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (responseBody []byte, httpErr npmError) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return nil, npmError{err: err}
 	}
 	resp, err := client.do(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, npmError{resp.StatusCode, err}
 	}
 	var bodyBuffer bytes.Buffer
 	if _, err := io.Copy(&bodyBuffer, resp.Body); err != nil {
-		return nil, err
+		return nil, npmError{err: err}
 	}
 	if err := resp.Body.Close(); err != nil {
-		return nil, err
+		return nil, npmError{err: err}
 	}
-	return bodyBuffer.Bytes(), nil
+	return bodyBuffer.Bytes(), httpErr
 }
 
-func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep reposource.NPMDependency) (info npmDependencyInfo, err error) {
+func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep reposource.NPMDependency) (info npmDependencyInfo, npmErr npmError) {
 	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getpackageversion
 	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.Package.PackageSyntax(), dep.Version)
-	respBytes, err := client.makeGetRequest(ctx, url)
-	if err != nil {
-		return info, err
+	respBytes, npmErr := client.makeGetRequest(ctx, url)
+	if npmErr.err != nil {
+		return info, npmErr
 	}
 	if json.Unmarshal(respBytes, &info) != nil {
-		return info, illFormedJSONError{url: url}
+		return info, npmError{err: illFormedJSONError{url: url}}
 	}
-	return info, nil
+	return info, npmErr
 }
 
 func (client *HTTPClient) DoesDependencyExist(ctx context.Context, dep reposource.NPMDependency) (exists bool, err error) {
-	_, err = client.getDependencyInfo(ctx, dep)
+	_, npmErr := client.getDependencyInfo(ctx, dep)
+	if npmErr.statusCode == 404 {
+		log15.Info("npm dependency does not exist", "dependency", dep.PackageManagerSyntax())
+		return false, err
+	}
+	err = npmErr.err
 	var e illFormedJSONError
 	if errors.As(err, &e) {
 		log15.Warn("received ill-formed JSON payload from NPM Registry API", "error", e)
@@ -217,13 +227,13 @@ func (client *HTTPClient) DoesDependencyExist(ctx context.Context, dep reposourc
 }
 
 func (client *HTTPClient) FetchTarball(ctx context.Context, dep reposource.NPMDependency) (io.ReadSeekCloser, error) {
-	info, err := client.getDependencyInfo(ctx, dep)
-	if err != nil {
-		return nil, err
+	info, npmErr := client.getDependencyInfo(ctx, dep)
+	if npmErr.err != nil {
+		return nil, npmErr.err
 	}
-	respBytes, err := client.makeGetRequest(ctx, info.Dist.TarballURL)
-	if err != nil {
-		return nil, err
+	respBytes, npmErr := client.makeGetRequest(ctx, info.Dist.TarballURL)
+	if npmErr.err != nil {
+		return nil, npmErr.err
 	}
 	return &NopSeekCloser{bytes.NewReader(respBytes)}, nil
 }
