@@ -44,8 +44,6 @@ export async function initializeSearchPanelWebview({
         )
         .toPromise()
 
-    console.log('trying init!')
-
     // Get a proxy for the search panel API to communicate with the Webview.
     const searchPanelAPI = Comlink.wrap<SearchPanelAPI>(proxy)
 
@@ -78,7 +76,6 @@ export async function initializeSearchPanelWebview({
     </html>`
 
     await hasInitialized
-    console.log('has init!')
 
     return {
         searchPanelAPI,

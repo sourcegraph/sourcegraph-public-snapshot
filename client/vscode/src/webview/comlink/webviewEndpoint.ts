@@ -76,7 +76,7 @@ export function createEndpointsForWebToWeb(
         return {
             postMessage: message => {
                 // Add relationship type to all nested connection values (i.e values to be proxied).
-                // TODO is the above necessary for this endpoitn type??
+                // TODO is the above necessary for this endpoint type?
                 const value = message.value
                 const argumentList = message.argumentList
 
@@ -150,7 +150,7 @@ export function createEndpointsForWebToNode(vscodeApi: VsCodeApi): EndpointPair 
         return {
             postMessage: message => {
                 // Add relationship type to all nested connection values (i.e values to be proxied).
-                // TODO is the above necessary for this endpoitn type??
+                // TODO is the above necessary for this endpoint type?
                 const value = message.value
                 const argumentList = message.argumentList
 
