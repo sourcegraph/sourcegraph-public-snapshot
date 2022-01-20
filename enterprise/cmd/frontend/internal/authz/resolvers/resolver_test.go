@@ -857,6 +857,12 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 				Username: "foo",
 			}, nil
 		})
+		usersStore.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, s string) (*types.User, error) {
+			return &types.User{
+				ID:       1,
+				Username: "foo",
+			}, nil
+		})
 
 		subReposStore := database.NewStrictMockSubRepoPermsStore()
 		subReposStore.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
@@ -871,23 +877,10 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 			}, nil
 		})
 
-		emailStore := database.NewStrictMockUserEmailsStore()
-		emailStore.GetVerifiedEmailsFunc.SetDefaultHook(func(ctx context.Context, s ...string) ([]*database.UserEmail, error) {
-			return []*database.UserEmail{
-				{
-
-					UserID:  1,
-					Email:   "foo@bar.com",
-					Primary: true,
-				},
-			}, nil
-		})
-
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
 		db.ReposFunc.SetDefaultReturn(reposStore)
-		db.UserEmailsFunc.SetDefaultReturn(emailStore)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
