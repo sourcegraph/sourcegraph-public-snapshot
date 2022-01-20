@@ -1,29 +1,87 @@
 import { cloneDeep } from 'lodash'
 import { BehaviorSubject, Observable } from 'rxjs'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+
+// State management in the Sourcegraph VS Code extension
+// -----
+// This extension runs code in 4 (and counting) different execution contexts.
+// Coordinating state between these contexts is a difficult task.
+// So, instead of managing shared state in each context, we maintain
+// one state machine in the "Core" context (see './extension.ts' for architecure diagram).
+// All contexts listen for state updates and emit events on which the state
+// machine may transition.
+// For example:
+// - Commands from VS Code extension core
+// - The first submitted search in a session will cause the state machine
+//    to transition from the `search-home` state to the `search-results` state.
+//    This new state will be reflected in both the search sidebar and search panel UIs
+//
+
+// We represent a hierarchical state machine in a "flat" manner to reduce code complexity
+// and because our state machine is simple enough to not necessitate bringing in a library.
+// So,
+//   ┌───►home
+//   │
+// - search
+//   │
+//   └───►results
+// - remote-browsing
+// - idle
+// - context-invalidated
+// becomes:
+// - [search-home, search-results, remote-browsing, idle, context-invalidated]
+
+// Example user flow state transitions:
+// - User clicks on Sourcegraph logo in VS Code sidebar.
+// - Extension activates with initial state of `search-home`
+// - User submits search -> state === `search-results`
+// - User clicks on a search result, which opens a file -> state === `remote-browsing`
+// - User copies some code, then focuses an editor for a local file -> state === `idle`
+
 export interface VSCEStateMachine {
     state: VSCEState
+    /**
+     * Returns an Observable that emits the current state and
+     * on subsequent state updates.
+     */
     observeState: () => Observable<VSCEState>
     emit: (event: VSCEEvent) => void
 }
+export type VSCEState = SearchHomeState | SearchResultsState | RemoteBrowsingState | IdleState | ContextInvalidatedState
 
-// Sourcegraph VS Code extension states:
-// - extension not activated: this state is implicit in our codebase; simply when this code isn't run.
-// - extension activated: state transitions here on activation events (e.g. onCommand:sourcegraph.search or onView:sourcegraph.extensionHost)
-//   - searching (context/data: search query, search context, etc.)
-//     - search home (only when search panel is freshly opened. once a search has been executed on this panel instance, it's going to be in search results state)
-//        - auth'ed (proper search sidebar)
-//        - unauth'ed (sign up CTA)
-//     - search results
-//   - remote file browsing (potential actions from here: going to def, finding refs, cloning repo locally)
-//   - idle/not engaged (e.g. editing local file, search panel is not focused)
-//   - context invalidated (Sourcegraph URL or access token changed)
-
-export interface VSCEState {
-    status: 'search-home' | 'search-results' | 'remote-browsing' | 'idle' | 'context-invalidated'
+interface SearchHomeState {
+    status: 'search-home'
+    context: CommonContext & {}
 }
 
-// TODO common context between sub-states (e.g. search query?)
+interface SearchResultsState {
+    status: 'search-results'
+    context: CommonContext & {}
+}
+
+interface RemoteBrowsingState {
+    status: 'remote-browsing'
+    context: CommonContext & {}
+}
+
+interface IdleState {
+    status: 'idle'
+    context: CommonContext & {}
+}
+
+interface ContextInvalidatedState {
+    status: 'context-invalidated'
+    context: CommonContext & {}
+}
+
+interface CommonContext {
+    authenticatedUser: AuthenticatedUser | null
+}
+
+const INITIAL_STATE: VSCEState = { status: 'search-home', context: { authenticatedUser: null } }
+
+// Temporary placeholder events. We will replace these with the actual events as we implement the webviews.
 
 export type VSCEEvent = AccessTokenValidationEvent | SearchEvent | { type: 'sourcegraph_url_change' }
 
@@ -31,31 +89,22 @@ type AccessTokenValidationEvent =
     | { type: 'validate_access_token'; accessToken: string }
     | { type: 'access_token_validation_failure' }
 
-type SearchEvent = { type: 'submit_search_query' }
-
-const INITIAL_STATE: VSCEState = { status: 'search-home' }
+type SearchEvent = { type: 'set_query_state' } | { type: 'submit_search_query' }
 
 export function createVSCEStateMachine(): VSCEStateMachine {
     const states = new BehaviorSubject<VSCEState>(INITIAL_STATE)
 
     function reducer(state: VSCEState, event: VSCEEvent): VSCEState {
         if (event.type === 'sourcegraph_url_change') {
-            return { status: 'context-invalidated' }
+            return { status: 'context-invalidated', context: INITIAL_STATE.context }
         }
-
-        // TODO: hierarchical state, but represented in flat manner.
-        // So for example:
-        // search
-        // - home
-        // - results
-        // becomes search-home and search-results.
-        // Why? To delay bringing in statechart libraries as long as we can.
 
         switch (state.status) {
             case 'search-home':
                 switch (event.type) {
                     case 'submit_search_query':
                         return {
+                            ...state,
                             status: 'search-results',
                         }
                 }
@@ -79,9 +128,7 @@ export function createVSCEStateMachine(): VSCEStateMachine {
         get state() {
             return cloneDeep(states.value)
         },
-        observeState: () => {
-            return states.asObservable()
-        },
+        observeState: () => states.asObservable(),
         emit: event => {
             const nextState = reducer(states.value, event)
             states.next(nextState)
