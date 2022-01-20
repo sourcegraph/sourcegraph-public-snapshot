@@ -186,9 +186,7 @@ docstring or what package it's defined it.
 | ---- | ---- | ----------- |
 |  **symbol** | string | Identifier of this symbol, which can be referenced from `Occurence.symbol`. The string must be formatted according to the grammar in `Symbol`.
 | repeated **documentation** | string | (optional, but strongly recommended) The markdown-formatted documentation for this symbol. This field is repeated to allow different kinds of documentation.  For example, it's nice to include both the signature of a method (parameters and return type) along with the accompanying docstring.
-|  **package** | string | (optional) To enable cross-index navigation, specify which package this symbol is defined in. A package must be encoded as a space-separated string with the value `"$manager $name $version"` where: - `$manager` is the name of the package manager, for example `npm`. - `$name` is the name of the package, for example `react`. - `$version` is the version of the package, for example `1.2.0`.
 | repeated **relationships** | Relationship | (optional) Relationships to other symbols (e.g., implements, type definition).
-
 
 
 
