@@ -82,6 +82,8 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 </span>
                 <span
                   class="d-flex"
+                  data-placement="bottom"
+                  data-tooltip="Code monitors support literal and regex search. Searches are literal by default."
                 >
                   <svg
                     aria-hidden="true"
@@ -140,6 +142,8 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 </span>
                 <span
                   class="d-flex"
+                  data-placement="bottom"
+                  data-tooltip="type:diff targets code present in new commits, while type:commit targets commit messages"
                 >
                   <svg
                     aria-hidden="true"
@@ -194,6 +198,8 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                 </span>
                 <span
                   class="d-flex"
+                  data-placement="bottom"
+                  data-tooltip="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
                 >
                   <svg
                     aria-hidden="true"

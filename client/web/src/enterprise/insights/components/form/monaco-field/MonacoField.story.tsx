@@ -6,6 +6,8 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../components/WebStory'
 
+import styles from './MonacoField.module.scss'
+
 import * as Monaco from '.'
 
 export default {
@@ -37,6 +39,7 @@ export const SimpleMonacoField = () => (
             <Monaco.Field value="" placeholder="Example: type:diff repo:sourcegrph/* " />
             <Button variant="icon" disabled={true}>
                 <RegexIcon
+                    className={styles.btnInlineIcon}
                     size={21}
                     data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
                 />
@@ -47,6 +50,7 @@ export const SimpleMonacoField = () => (
             <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" />
             <Button variant="icon" disabled={true}>
                 <RegexIcon
+                    className={styles.btnInlineIcon}
                     size={21}
                     data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
                 />
@@ -57,6 +61,7 @@ export const SimpleMonacoField = () => (
             <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" className="is-valid" />
             <Button variant="icon" disabled={true}>
                 <RegexIcon
+                    className={styles.btnInlineIcon}
                     size={21}
                     data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
                 />
@@ -67,6 +72,7 @@ export const SimpleMonacoField = () => (
             <Monaco.Field value="repo:github.com/sourcegraph/sourcegraph" className="is-invalid" />
             <Button variant="icon" disabled={true}>
                 <RegexIcon
+                    className={styles.btnInlineIcon}
                     size={21}
                     data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
                 />

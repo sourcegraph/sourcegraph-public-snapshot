@@ -3,7 +3,7 @@ import React from 'react'
 
 import { ForwardReferenceComponent } from '../..'
 
-import styles from './ButtonGroup.module.scss'
+import styles from './Button.module.scss'
 import { BUTTON_GROUP_DIRECTION } from './constants'
 
 interface ButtonGroupProps {

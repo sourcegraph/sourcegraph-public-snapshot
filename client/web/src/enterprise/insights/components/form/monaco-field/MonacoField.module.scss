@@ -89,3 +89,13 @@
         white-space: nowrap;
     }
 }
+
+.btn-inline-icon {
+    :global(.theme-light) & {
+        color: #797d8a;
+    }
+
+    :global(.theme-dark) & {
+        color: #959ba7;
+    }
+}

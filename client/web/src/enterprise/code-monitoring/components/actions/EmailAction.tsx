@@ -3,7 +3,6 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { Observable } from 'rxjs'
 import { delay, startWith, tap, mergeMap, catchError } from 'rxjs/operators'
 
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useEventObservable, Button } from '@sourcegraph/wildcard'
 
@@ -12,6 +11,8 @@ import { MonitorEmailPriority } from '../../../../graphql-operations'
 import { triggerTestEmailAction } from '../../backend'
 import { MonitorAction } from '../FormActionArea'
 import styles from '../FormActionArea.module.scss'
+
+import { ActionEditor } from './ActionEditor'
 
 const LOADING = 'LOADING' as const
 
@@ -23,9 +24,6 @@ interface EmailActionProps {
     disabled: boolean
     authenticatedUser: AuthenticatedUser
     description: string
-    cardClassName?: string
-    cardBtnClassName?: string
-    cardLinkClassName?: string
 }
 
 export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
@@ -36,20 +34,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
     disabled,
     authenticatedUser,
     description,
-    cardClassName,
-    cardBtnClassName,
-    cardLinkClassName,
 }) => {
-    const [showEmailNotificationForm, setShowEmailNotificationForm] = useState(false)
-    const toggleEmailNotificationForm: React.FormEventHandler = useCallback(
-        event => {
-            if (!disabled) {
-                setShowEmailNotificationForm(show => !show)
-            }
-        },
-        [disabled]
-    )
-
     const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(action ? action.enabled : true)
 
     const toggleEmailNotificationEnabled: (enabled: boolean) => void = useCallback(
@@ -68,7 +53,6 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
     const completeForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setShowEmailNotificationForm(false)
             setActionCompleted(true)
             if (!action) {
                 // We are creating a new monitor if there are no actions yet.
@@ -84,16 +68,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
         [action, authenticatedUser.id, setAction, setActionCompleted]
     )
 
-    const cancelForm: React.FormEventHandler = useCallback(
-        event => {
-            event.preventDefault()
-            setShowEmailNotificationForm(false)
-        },
-        [setShowEmailNotificationForm]
-    )
-
-    const clearForm: () => void = useCallback(() => {
-        setShowEmailNotificationForm(false)
+    const clearForm: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
         setActionCompleted(false)
     }, [setAction, setActionCompleted])
@@ -130,10 +105,10 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
     )
 
     useEffect(() => {
-        if ((isTestEmailSent && !description) || !showEmailNotificationForm) {
+        if (isTestEmailSent && !description) {
             setIsTestEmailSent(false)
         }
-    }, [isTestEmailSent, description, showEmailNotificationForm])
+    }, [isTestEmailSent, description])
 
     const sendTestEmailButtonText =
         triggerTestEmailResult === LOADING
@@ -143,141 +118,60 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
             : 'Send test email'
     const isSendTestEmailButtonDisabled = triggerTestEmailResult === LOADING || isTestEmailSent || !description
 
-    // When the action is completed, the wrapper cannot be a button because we show nested buttons inside it.
-    // Use a div instead. The edit button will still allow keyboard users to activate the form.
-    const CollapsedWrapperElement = actionCompleted ? 'div' : Button
-
     return (
-        <>
-            {showEmailNotificationForm && (
-                <div className={classNames(cardClassName, 'card p-3')}>
-                    <div className="font-weight-bold">Send email notifications</div>
-                    <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                    <div className="form-group mt-4 test-action-form" data-testid="action-form">
-                        <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
-                        <input
-                            id="code-monitoring-form-actions-recipients"
-                            type="text"
-                            className="form-control mb-2"
-                            value={`${authenticatedUser.email || ''} (you)`}
-                            disabled={true}
-                            autoFocus={true}
-                            required={true}
-                        />
-                        <small className="text-muted">
-                            Code monitors are currently limited to sending emails to your primary email address.
-                        </small>
-                    </div>
-                    <div className="flex mt-1">
-                        <Button
-                            className={classNames(
-                                'mr-2',
-                                isSendTestEmailButtonDisabled ? 'btn-secondary' : 'btn-outline-secondary'
-                            )}
-                            disabled={isSendTestEmailButtonDisabled}
-                            onClick={triggerTestEmailActionRequest}
-                            size="sm"
-                        >
-                            {sendTestEmailButtonText}
-                        </Button>
-                        {isTestEmailSent && triggerTestEmailResult !== LOADING && (
-                            <Button className="p-0" onClick={triggerTestEmailActionRequest} variant="link" size="sm">
-                                Send again
-                            </Button>
-                        )}
-                        {!description && (
-                            <div className={classNames('mt-2', styles.testActionError)}>
-                                Please provide a name for the code monitor before sending a test
-                            </div>
-                        )}
-                        {isErrorLike(triggerTestEmailResult) && (
-                            <div className={classNames('mt-2', styles.testActionError)}>
-                                {triggerTestEmailResult.message}
-                            </div>
-                        )}
-                    </div>
-                    <div className="d-flex align-items-center my-4">
-                        <div>
-                            <Toggle
-                                title="Enabled"
-                                value={emailNotificationEnabled}
-                                onToggle={toggleEmailNotificationEnabled}
-                                className="mr-2"
-                                aria-labelledby="code-monitoring-form-actions-enable-toggle"
-                            />
-                        </div>
-                        <span id="code-monitoring-form-actions-enable-toggle">
-                            {emailNotificationEnabled ? 'Enabled' : 'Disabled'}
-                        </span>
-                    </div>
-                    <div className="d-flex justify-content-between">
-                        <div>
-                            <Button
-                                type="submit"
-                                data-testid="submit-action"
-                                className="mr-1 test-submit-action"
-                                onClick={completeForm}
-                                onSubmit={completeForm}
-                                variant="secondary"
-                            >
-                                Continue
-                            </Button>
-                            <Button onClick={cancelForm} outline={true} variant="secondary">
-                                Cancel
-                            </Button>
-                        </div>
-                        {action && (
-                            <Button onClick={clearForm} outline={true} variant="danger">
-                                Delete
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            )}
-            {!showEmailNotificationForm && (
-                <CollapsedWrapperElement
-                    data-testid="form-action-toggle-email-notification"
-                    className={classNames('card test-action-button', cardBtnClassName, disabled && 'disabled')}
-                    disabled={disabled}
-                    aria-label="Edit action: Send email notifications"
-                    onClick={toggleEmailNotificationForm}
+        <ActionEditor
+            title="Send email notifications"
+            subtitle="Deliver email notifications to specified recipients."
+            disabled={disabled}
+            completed={actionCompleted}
+            completedSubtitle={authenticatedUser.email}
+            actionEnabled={emailNotificationEnabled}
+            toggleActionEnabled={toggleEmailNotificationEnabled}
+            onSubmit={completeForm}
+            canDelete={!!action}
+            onDelete={clearForm}
+        >
+            <div className="form-group mt-4 test-action-form" data-testid="action-form">
+                <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
+                <input
+                    id="code-monitoring-form-actions-recipients"
+                    type="text"
+                    className="form-control mb-2"
+                    value={`${authenticatedUser.email || ''} (you)`}
+                    disabled={true}
+                    autoFocus={true}
+                    required={true}
+                />
+                <small className="text-muted">
+                    Code monitors are currently limited to sending emails to your primary email address.
+                </small>
+            </div>
+            <div className="flex mt-1">
+                <Button
+                    className={classNames(
+                        'mr-2',
+                        isSendTestEmailButtonDisabled ? 'btn-secondary' : 'btn-outline-secondary'
+                    )}
+                    disabled={isSendTestEmailButtonDisabled}
+                    onClick={triggerTestEmailActionRequest}
+                    size="sm"
                 >
-                    <div className="d-flex justify-content-between align-items-center w-100">
-                        <div>
-                            <div
-                                className={classNames(
-                                    'font-weight-bold',
-                                    !actionCompleted && classNames(cardLinkClassName, 'btn-link')
-                                )}
-                            >
-                                Send email notifications
-                            </div>
-                            {actionCompleted ? (
-                                <span className="text-muted" data-testid="existing-action-email">
-                                    {authenticatedUser.email}
-                                </span>
-                            ) : (
-                                <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                            )}
-                        </div>
-                        {actionCompleted && (
-                            <div className="d-flex align-items-center">
-                                <div>
-                                    <Toggle
-                                        title="Enabled"
-                                        value={emailNotificationEnabled}
-                                        onToggle={toggleEmailNotificationEnabled}
-                                        className="mr-3"
-                                    />
-                                </div>
-                                <Button variant="link" className="p-0">
-                                    Edit
-                                </Button>
-                            </div>
-                        )}
+                    {sendTestEmailButtonText}
+                </Button>
+                {isTestEmailSent && triggerTestEmailResult !== LOADING && (
+                    <Button className="p-0" onClick={triggerTestEmailActionRequest} variant="link" size="sm">
+                        Send again
+                    </Button>
+                )}
+                {!description && (
+                    <div className={classNames('mt-2', styles.testActionError)}>
+                        Please provide a name for the code monitor before sending a test
                     </div>
-                </CollapsedWrapperElement>
-            )}
-        </>
+                )}
+                {isErrorLike(triggerTestEmailResult) && (
+                    <div className={classNames('mt-2', styles.testActionError)}>{triggerTestEmailResult.message}</div>
+                )}
+            </div>
+        </ActionEditor>
     )
 }

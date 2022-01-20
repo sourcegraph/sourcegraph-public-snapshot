@@ -68,7 +68,7 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                 data-tooltip={toBeExcluded ? undefined : 'Omit this repository from batch spec file'}
                 onClick={handleExclude}
             >
-                <CloseIcon className="icon-inline" />
+                <CloseIcon className={classNames(styles.btnInlineIcon, 'icon-inline')} />
             </Button>
         </li>
     )
