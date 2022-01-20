@@ -260,7 +260,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 					Backend:     "s3",
 					Key:         "valery-node-modules-{{checksum 'yarn.lock'}}",
 					RestoreKeys: []string{"valery-node-modules-"},
-					Paths:       []string{"./node_modules"},
+					Paths:       []string{"./node_modules", "/buildkite/yarn-cache"},
 					S3: CacheConfigS3{
 						Bucket:   "sourcegraph_buildkite_cache",
 						Profile:  "buildkite",
@@ -269,7 +269,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 					},
 				}),
 				// bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
-				bk.Cmd("du -h node_modules"),
 				bk.Cmd("yarn install --verbose --prefer-offline"))
 		}),
 	)
