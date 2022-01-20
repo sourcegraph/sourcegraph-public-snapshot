@@ -10,6 +10,12 @@ and any manual migration steps you must perform.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## 3.35 -> 3.36
+
+TODO
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.35).*
+
 ## 3.34 -> 3.35.1
 
 **Due to issues related to Code Insights on the 3.35.0 release, Users are advised to upgrade directly to 3.35.1.**
