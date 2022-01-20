@@ -3,6 +3,7 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"math/rand"
 	"regexp"
 	"strings"
 	"sync"
@@ -199,12 +200,15 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 
 				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
 				if err != nil {
-					schedError.Inc()
-					log15.Warn("error requesting repo update", "uri", repo.Name, "err", err)
+					schedError.WithLabelValues("requestRepoUpdate").Inc()
+					log15.Warn("runUpdateLoop: error requesting repo update", "uri", repo.Name, "err", err)
+				} else if resp.Error != "" {
+					schedError.WithLabelValues("repoUpdateResponse").Inc()
+					log15.Warn("runUpdateLoop: error updating repo", "uri", repo.Name, "err", resp.Error)
 				}
 				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
 					s.schedule.updateInterval(repo, interval)
-				} else if err != nil {
+				} else if err != nil || resp.Error != "" {
 					// On error we will double the current interval so that we back off and don't
 					// get stuck with problematic repos with low intervals.
 					if currentInterval, ok := s.schedule.getCurrentInterval(repo); ok {
@@ -778,6 +782,12 @@ func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 		default:
 			update.Interval = interval
 		}
+
+		// Add a jitter of 5% on either side of the interval to avoid
+		// repos getting updated at the same time.
+		delta := int64(update.Interval) / 20
+		update.Interval = update.Interval + time.Duration(rand.Int63n(2*delta)-delta)
+
 		update.Due = timeNow().Add(update.Interval)
 		log15.Debug("updated repo", "repo", repo.Name, "due", update.Due.Sub(timeNow()))
 		heap.Fix(s, update.Index)
