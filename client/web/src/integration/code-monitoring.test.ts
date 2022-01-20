@@ -73,6 +73,7 @@ describe('Code monitoring', () => {
                                 actions: {
                                     nodes: [
                                         {
+                                            __typename: 'MonitorEmail',
                                             enabled: true,
                                             id: 'Q29kZU1vbml0b3JBY3Rpb25FbWFpbDoy',
                                             recipients: {

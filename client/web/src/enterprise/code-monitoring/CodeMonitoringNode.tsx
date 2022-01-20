@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
 import { Observable, concat, of } from 'rxjs'
-import { switchMap, catchError, startWith, takeUntil, tap, delay, mergeMap } from 'rxjs/operators'
+import { switchMap, catchError, startWith, takeUntil, tap, delay } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
@@ -10,14 +10,12 @@ import { Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcar
 
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
-import { sendTestEmail, toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
+import { toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
 import styles from './CodeMonitoringNode.module.scss'
 
 export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
     location: H.Location
-    isSiteAdminUser: boolean
-    showCodeMonitoringTestEmailButton: boolean
 
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
 }
@@ -27,8 +25,6 @@ const LOADING = 'LOADING' as const
 export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     location,
     node,
-    isSiteAdminUser,
-    showCodeMonitoringTestEmailButton,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
 }: CodeMonitorNodeProps) => {
     const [enabled, setEnabled] = useState<boolean>(node.enabled)
@@ -63,22 +59,23 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
         )
     )
 
-    const [sendEmailRequest] = useEventObservable(
-        useCallback(
-            (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
-                click.pipe(
-                    mergeMap(() =>
-                        sendTestEmail(node.trigger.id).pipe(
-                            startWith(LOADING),
-                            catchError(error => [asError(error)])
-                        )
-                    )
-                ),
-            [node]
-        )
+    const actions = useMemo(
+        () =>
+            node.actions.nodes
+                .map(action => {
+                    switch (action.__typename) {
+                        case 'MonitorEmail':
+                            return 'Sends email notification'
+                        case 'MonitorSlackWebhook':
+                            return 'Sends Slack notification'
+                        default:
+                            return ''
+                    }
+                })
+                .filter(string => string !== '')
+                .join('; '),
+        [node.actions]
     )
-
-    const hasEnabledAction = useMemo(() => node.actions.nodes.filter(node => node.enabled).length > 0, [node.actions])
 
     return (
         <div className={styles.codeMonitoringNode}>
@@ -89,14 +86,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     </div>
                     {/** TODO: Generate this text based on the type of action when new actions are added. */}
                     {node.actions.nodes.length > 0 && (
-                        <div className="d-flex text-muted">
-                            New search result → Sends email notifications{' '}
-                            {showCodeMonitoringTestEmailButton && isSiteAdminUser && hasEnabledAction && node.enabled && (
-                                <Button className="p-0 border-0 ml-2" onClick={sendEmailRequest} variant="link">
-                                    Send test email
-                                </Button>
-                            )}
-                        </div>
+                        <div className="d-flex text-muted align-items-center">New search result → {actions}</div>
                     )}
                 </div>
                 <div className="d-flex">
@@ -119,9 +109,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     </Button>
                 </div>
             </div>
-            {isErrorLike(toggleMonitorOrError) && (
-                <div className="alert alert-danger">Failed to toggle monitor: {toggleMonitorOrError.message}</div>
-            )}
+            {}
         </div>
     )
 }

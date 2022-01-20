@@ -16,6 +16,7 @@ interface Props {
     actionEnabled: boolean
     toggleActionEnabled: (enabled: boolean) => void
 
+    canSubmit?: boolean
     onSubmit: React.FormEventHandler
     onCancel?: React.FormEventHandler
 
@@ -31,6 +32,7 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
     completedSubtitle,
     actionEnabled,
     toggleActionEnabled,
+    canSubmit = true,
     onSubmit,
     onCancel,
     canDelete,
@@ -105,6 +107,7 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                                 className="mr-1 test-submit-action"
                                 onClick={submitHandler}
                                 onSubmit={submitHandler}
+                                disabled={!canSubmit}
                                 variant="secondary"
                             >
                                 Continue

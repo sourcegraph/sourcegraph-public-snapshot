@@ -90,6 +90,15 @@ describe('ManageCodeMonitorPage', () => {
                         },
                     },
                 },
+                {
+                    slackWebhook: {
+                        id: 'test-action-1',
+                        update: {
+                            enabled: true,
+                            url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
+                        },
+                    },
+                },
             ]
         )
         props.updateCodeMonitor.resetHistory()

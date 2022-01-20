@@ -56,17 +56,29 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                 },
                 trigger: { query: codeMonitor.trigger.query },
 
-                actions: codeMonitor.actions.nodes.map(action => ({
-                    email:
-                        action.__typename === 'MonitorEmail'
-                            ? {
-                                  enabled: action.enabled,
-                                  priority: MonitorEmailPriority.NORMAL,
-                                  recipients: [authenticatedUser.id],
-                                  header: '',
-                              }
-                            : undefined,
-                })),
+                actions: codeMonitor.actions.nodes.map(action => {
+                    switch (action.__typename) {
+                        case 'MonitorEmail':
+                            return {
+                                email: {
+                                    enabled: action.enabled,
+                                    priority: MonitorEmailPriority.NORMAL,
+                                    recipients: [authenticatedUser.id],
+                                    header: '',
+                                },
+                            }
+                        case 'MonitorSlackWebhook':
+                            return {
+                                slackWebhook: {
+                                    enabled: action.enabled,
+                                    url: action.url,
+                                },
+                            }
+                        default:
+                            console.warn('Unknown monitor action type', action.__typename)
+                            return {}
+                    }
+                }),
             })
         },
         [authenticatedUser.id, createCodeMonitor]

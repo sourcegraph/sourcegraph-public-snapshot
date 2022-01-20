@@ -9,21 +9,15 @@ import { useEventObservable, Button } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../../../auth'
 import { MonitorEmailPriority } from '../../../../graphql-operations'
 import { triggerTestEmailAction } from '../../backend'
-import { MonitorAction } from '../FormActionArea'
+import { ActionProps } from '../FormActionArea'
 import styles from '../FormActionArea.module.scss'
 
 import { ActionEditor } from './ActionEditor'
 
 const LOADING = 'LOADING' as const
 
-interface EmailActionProps {
-    action?: MonitorAction
-    setAction: (action?: MonitorAction) => void
-    actionCompleted: boolean
-    setActionCompleted: (actionCompleted: boolean) => void
-    disabled: boolean
+interface EmailActionProps extends ActionProps {
     authenticatedUser: AuthenticatedUser
-    description: string
 }
 
 export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
@@ -33,7 +27,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
     setActionCompleted,
     disabled,
     authenticatedUser,
-    description,
+    monitorName,
 }) => {
     const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(action ? action.enabled : true)
 
@@ -50,7 +44,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
         [action?.id, authenticatedUser.id, setAction]
     )
 
-    const completeForm: React.FormEventHandler = useCallback(
+    const onSubmit: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
             setActionCompleted(true)
@@ -68,7 +62,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
         [action, authenticatedUser.id, setAction, setActionCompleted]
     )
 
-    const clearForm: React.FormEventHandler = useCallback(() => {
+    const onDelete: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
         setActionCompleted(false)
     }, [setAction, setActionCompleted])
@@ -81,7 +75,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                     mergeMap(() =>
                         triggerTestEmailAction({
                             namespace: authenticatedUser.id,
-                            description,
+                            description: monitorName,
                             email: {
                                 enabled: true,
                                 priority: MonitorEmailPriority.NORMAL,
@@ -100,15 +94,15 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                         )
                     )
                 ),
-            [authenticatedUser, description]
+            [authenticatedUser, monitorName]
         )
     )
 
     useEffect(() => {
-        if (isTestEmailSent && !description) {
+        if (isTestEmailSent && !monitorName) {
             setIsTestEmailSent(false)
         }
-    }, [isTestEmailSent, description])
+    }, [isTestEmailSent, monitorName])
 
     const sendTestEmailButtonText =
         triggerTestEmailResult === LOADING
@@ -116,7 +110,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
             : isTestEmailSent
             ? 'Test email sent!'
             : 'Send test email'
-    const isSendTestEmailButtonDisabled = triggerTestEmailResult === LOADING || isTestEmailSent || !description
+    const isSendTestEmailButtonDisabled = triggerTestEmailResult === LOADING || isTestEmailSent || !monitorName
 
     return (
         <ActionEditor
@@ -127,9 +121,9 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
             completedSubtitle={authenticatedUser.email}
             actionEnabled={emailNotificationEnabled}
             toggleActionEnabled={toggleEmailNotificationEnabled}
-            onSubmit={completeForm}
+            onSubmit={onSubmit}
             canDelete={!!action}
-            onDelete={clearForm}
+            onDelete={onDelete}
         >
             <div className="form-group mt-4 test-action-form" data-testid="action-form">
                 <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
@@ -163,7 +157,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                         Send again
                     </Button>
                 )}
-                {!description && (
+                {!monitorName && (
                     <div className={classNames('mt-2', styles.testActionError)}>
                         Please provide a name for the code monitor before sending a test
                     </div>

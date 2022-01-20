@@ -109,6 +109,12 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
           Cancel
         </button>
       </div>
+      <button
+        class="btn btn-outline-danger"
+        type="button"
+      >
+        Delete
+      </button>
     </div>
   </div>
   <small

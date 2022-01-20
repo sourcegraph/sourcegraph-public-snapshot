@@ -50,7 +50,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
         description: '',
         enabled: true,
         trigger: { id: '', query: '' },
-        actions: { nodes: [{ id: '', enabled: true, recipients: { nodes: [{ id: authenticatedUser.id }] } }] },
+        actions: { nodes: [] },
     })
 
     const codeMonitorOrError = useObservable(
@@ -81,20 +81,36 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                     },
                 },
                 { id: codeMonitor.trigger.id, update: { query: codeMonitor.trigger.query } },
-                codeMonitor.actions.nodes.map(action => ({
-                    email:
-                        action.__typename === 'MonitorEmail'
-                            ? {
-                                  id: action.id || null, // Convert empty string to null so action is created
-                                  update: {
-                                      enabled: action.enabled,
-                                      priority: MonitorEmailPriority.NORMAL,
-                                      recipients: [authenticatedUser.id],
-                                      header: '',
-                                  },
-                              }
-                            : undefined,
-                }))
+                codeMonitor.actions.nodes.map(action => {
+                    // Convert empty IDs to null so action is created
+                    switch (action.__typename) {
+                        case 'MonitorEmail':
+                            return {
+                                email: {
+                                    id: action.id || null,
+                                    update: {
+                                        enabled: action.enabled,
+                                        priority: MonitorEmailPriority.NORMAL,
+                                        recipients: [authenticatedUser.id],
+                                        header: '',
+                                    },
+                                },
+                            }
+                        case 'MonitorSlackWebhook':
+                            return {
+                                slackWebhook: {
+                                    id: action.id || null,
+                                    update: {
+                                        enabled: action.enabled,
+                                        url: action.url,
+                                    },
+                                },
+                            }
+                        default:
+                            console.warn('Unknown monitor action type', action.__typename)
+                            return {}
+                    }
+                })
             ),
         [authenticatedUser.id, match.params.id, updateCodeMonitor]
     )

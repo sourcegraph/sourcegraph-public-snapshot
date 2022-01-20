@@ -3,7 +3,6 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Container, Button } from '@sourcegraph/wildcard'
@@ -109,13 +108,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             hideSearch={true}
                             nodeComponent={CodeMonitorNode}
                             nodeComponentProps={{
-                                isSiteAdminUser: authenticatedUser?.siteAdmin ?? false,
                                 location,
-                                showCodeMonitoringTestEmailButton:
-                                    (!isErrorLike(settingsCascade.final) &&
-                                        settingsCascade.final?.experimentalFeatures
-                                            ?.showCodeMonitoringTestEmailButton) ||
-                                    false,
                                 toggleCodeMonitorEnabled,
                             }}
                             noun="code monitor"
