@@ -13,6 +13,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gobwas/glob v0.2.3
+	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.6
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
@@ -29,12 +30,12 @@ require (
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/stretchr/testify v1.7.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d
 	golang.org/x/tools v0.1.8 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
