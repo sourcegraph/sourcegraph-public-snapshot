@@ -17,7 +17,7 @@ func InferRustIndexJobs(gitserver GitClient, paths []string) (indexes []config.I
 				Indexer:     "sourcegraph/lsif-rust",
 				IndexerArgs: []string{"lsif-rust", "index"},
 				Outfile:     "dump.lsif",
-				Root:        "",
+				Root:        dirWithoutDot(path),
 				Steps:       []config.DockerStep{},
 			})
 			break
