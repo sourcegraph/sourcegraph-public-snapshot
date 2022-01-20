@@ -237,3 +237,23 @@ export const currentAuthStateQuery = gql`
         }
     }
 `
+export const savedSearchQuery = gql`
+    query savedSearches {
+        savedSearches {
+            ...SavedSearchFields
+        }
+    }
+    fragment SavedSearchFields on SavedSearch {
+        id
+        description
+        notify
+        notifySlack
+        query
+        namespace {
+            __typename
+            id
+            namespaceName
+        }
+        slackWebhookURL
+    }
+`

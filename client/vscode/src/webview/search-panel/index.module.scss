@@ -224,7 +224,7 @@
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    font-size: 0.75rem;
+    font-size: var(--vscode-editor-font-size);
     text-decoration: none !important;
     margin-bottom: 0.5rem;
 }
@@ -240,19 +240,18 @@
     padding: 0.5rem 0;
     align-self: center;
 }
-
 .search-example-query {
     padding: 0 0.75rem;
     border-left: 1px solid var(--border-color);
-    min-height: 2.375rem;
+    min-height: 1.5rem;
 }
-
 .cta-card {
     display: flex;
     flex-direction: row;
     padding: 0.75rem 1rem;
+    background-color: var(--vscode-textCodeBlock-background) !important;
+    font-size: var(--vscode-font-size);
 }
-
 .thumbnail {
     @media (--sm-breakpoint-down) {
         margin-top: 3.5rem;

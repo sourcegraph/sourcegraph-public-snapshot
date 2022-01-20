@@ -76,6 +76,10 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
         }
     }, [authenticatedUser, itemsToLoad, localRecentSearches, platformContext])
 
+    if (!processedResults) {
+        return null
+    }
+
     return (
         <div className={styles.sidebarSection}>
             <button
@@ -104,12 +108,12 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
                                         })
                                     }
                                 >
-                                    <SyntaxHighlightedSearchQuery query={`repo:${repo}`} />
+                                    <SyntaxHighlightedSearchQuery query={`r:${repo}`} />
                                 </Link>
                             </small>
                         </div>
                     ))}
-                    {showMore && <ShowMoreButton onClick={loadMoreItems} className="my-0" />}
+                    {showMore && <ShowMoreButton onClick={loadMoreItems} />}
                 </div>
             )}
         </div>
@@ -153,7 +157,7 @@ function processLocalRepositories(localRecentSearches: LocalRecentSeachProps[]):
     for (const search of localRecentSearches) {
         const repoNameRegex = /(?<=repo:)(\S+)/
         const repoName = search.lastQuery.match(repoNameRegex)
-        if (typeof repoName?.[0] === 'string') {
+        if (repoName?.[0] && typeof repoName?.[0] === 'string') {
             recentlySearchedRepoNames.add(repoName?.[0])
         }
     }
@@ -161,12 +165,9 @@ function processLocalRepositories(localRecentSearches: LocalRecentSeachProps[]):
     return recentlySearchedRepoNames ? [...recentlySearchedRepoNames].reverse() : null
 }
 
-const ShowMoreButton: React.FunctionComponent<{ onClick: () => void; className?: string }> = ({
-    onClick,
-    className,
-}) => (
+const ShowMoreButton: React.FunctionComponent<{ onClick: () => void }> = ({ onClick }) => (
     <div className="text-center py-3">
-        <button type="button" className={classNames('btn btn-link', className)} onClick={onClick}>
+        <button type="button" className={classNames('btn', styles.sidebarSectionButtonLink)} onClick={onClick}>
             Show more
         </button>
     </div>

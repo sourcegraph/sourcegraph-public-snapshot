@@ -60,7 +60,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
                                 </div>
                             </div>
                         </Link>
-                        <p>{example.label}</p>
+                        <p className="vsce-text">{example.label}</p>
                     </div>
                 ))}
             </div>

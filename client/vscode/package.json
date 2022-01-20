@@ -26,6 +26,7 @@
     "onCommand:sourcegraph.searchInSourcegraph",
     "onCommand:extension.openFile",
     "onView:sourcegraph.extensionHost",
+    "onView:sourcegraph.historySidebar",
     "onView:sourcegraph.searchSidebar",
     "onWebviewPanel:sourcegraphSearch"
   ],
@@ -37,11 +38,6 @@
         "command": "sourcegraph.search",
         "category": "Sourcegraph",
         "title": "Open Sourcegraph Search Tab"
-      },
-      {
-        "command": "extension.openFile",
-        "category": "Sourcegraph",
-        "title": "Open Remote File in Sourcegraph"
       },
       {
         "command": "sourcegraph.copyFileLink",
@@ -56,12 +52,12 @@
       {
         "command": "sourcegraph.searchInSourcegraph",
         "category": "Sourcegraph",
-        "title": "Search Selected Text in Sourcegraph"
+        "title": "Search Selection in Sourcegraph Search Tab"
       },
       {
         "command": "sourcegraph.searchOnSourcegraph",
         "category": "Sourcegraph",
-        "title": "Search Selected Text in Sourcegraph Web"
+        "title": "Search Selection in Sourcegraph Web"
       }
     ],
     "viewsContainers": {
@@ -87,7 +83,7 @@
           "id": "sourcegraph.historySidebar",
           "name": "Sourcegraph Search",
           "visibility": "visible",
-          "when": "sourcegraph.searchHistoryFound && !sourcegraph.activeSearchPanel "
+          "when": "sourcegraph.searchHistoryFound && !sourcegraph.activeSearchPanel && !sourcegraph.showFileTree && !sourcegraph.canFocusActiveDocument"
         },
         {
           "id": "sourcegraph.files",

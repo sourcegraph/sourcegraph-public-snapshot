@@ -100,6 +100,8 @@ export function activate(context: vscode.ExtensionContext): void {
                 const sgUri = fs.sourcegraphUri(vsceUri).uri
                 const fileHistorySet = new Set(currentFileHistory).add(sgUri)
                 await storageManager.setFileHistory([...fileHistorySet].slice(-9))
+            } else {
+                await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', false)
             }
         })
     )
@@ -342,6 +344,7 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.commands.registerCommand('extension.openFile', async uri => {
             if (typeof uri === 'string') {
                 await openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri))
+                await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', true)
             } else {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 log.error(`extension.openRemoteFile(${uri}) argument is not a string`)

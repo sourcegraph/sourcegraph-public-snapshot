@@ -121,6 +121,11 @@ a,
     color: var(--vscode-foreground);
 }
 
+.vsce-text {
+    color: var(--vscode-foreground);
+    font-size: var(--vscode-font-size) !important;
+}
+
 .btn-outline-secondary {
     color: var(--vscode-foreground) !important;
 
@@ -166,4 +171,8 @@ a,
     svg {
         color: var(--vscode-textLink-foreground) !important;
     }
+}
+
+.collapse {
+    font-size: var(--vscode-editor-font-size) !important;
 }
