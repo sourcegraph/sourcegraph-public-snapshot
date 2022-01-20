@@ -258,8 +258,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
 					ID:          "yarn",
 					Backend:     "s3",
-					Key:         "valery-offline-{{checksum 'yarn.lock'}}",
-					RestoreKeys: []string{"valery-offline-"},
+					Key:         "yarn-1206-{{checksum 'yarn.lock'}}",
+					RestoreKeys: []string{"yarn-1206-"},
 					Paths:       []string{"../../../../buildkite/npm-packages-offline-cache"},
 					S3: CacheConfigS3{
 						Bucket:   "sourcegraph_buildkite_cache",
@@ -268,7 +268,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 						Region:   "us-central1",
 					},
 				}),
-				// bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
+				bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
 				bk.Cmd("yarn install --verbose --frozen-lockfile --prefer-offline"),
 			)
 		}),
