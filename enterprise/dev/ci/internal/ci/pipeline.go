@@ -65,6 +65,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		Env:     env,
 	}
 
+	// Every step first requires an ASDF installation of the tools defined in the
+	// repository .tools-version.
+	bk.BeforeEveryStepOpts = append(bk.BeforeEveryStepOpts, ASDFInstall()...)
+
 	// Make all command steps timeout after 60 minutes in case a buildkite agent
 	// got stuck / died.
 	bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {

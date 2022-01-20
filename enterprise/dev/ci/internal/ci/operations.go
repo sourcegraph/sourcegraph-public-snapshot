@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
@@ -113,7 +114,16 @@ func addCheck(pipeline *bk.Pipeline) {
 // yarn ~41s + ~30s
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
+		bk.Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
+		bk.Env("AWS_SHARED_CREDENTIALS_FILE", "/buildkite/.aws/credentials"),
+		bk.Env("BUILDKITE_PLUGIN_CACHE_DEBUG", "true"),
+		bk.Cache(&buildkite.CacheOptions{
+			ID:          "node_modules",
+			Key:         "cache-node_modules-{{ checksum 'yarn.lock' }}",
+			RestoreKeys: []string{"cache-node_modules-{{ checksum 'yarn.lock' }}"},
+			Paths:       []string{"node_modules", "client/extension-api/node_modules", "client/eslint-plugin-sourcegraph/node_modules"},
+		}),
+		bk.Cmd("yarn install --prefer-offline --frozen-lockfile"))
 }
 
 // yarn ~41s + ~1s
