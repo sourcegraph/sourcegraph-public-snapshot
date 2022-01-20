@@ -268,7 +268,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 						Region:   "us-central1",
 					},
 				}),
-				bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
+				// bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
 				bk.Cmd("yarn install --verbose --frozen-lockfile --prefer-offline"),
 			)
 		}),
