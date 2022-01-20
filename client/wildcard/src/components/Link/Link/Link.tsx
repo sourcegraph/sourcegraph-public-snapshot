@@ -1,10 +1,14 @@
 import * as H from 'history'
 import React from 'react'
 
-export type LinkProps = { to: string | H.LocationDescriptor<any>; ref?: React.Ref<HTMLAnchorElement> } & Pick<
-    React.AnchorHTMLAttributes<HTMLAnchorElement>,
-    Exclude<keyof React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>
->
+export interface LinkProps
+    extends Pick<
+        React.AnchorHTMLAttributes<HTMLAnchorElement>,
+        Exclude<keyof React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>
+    > {
+    to: string | H.LocationDescriptor<any>
+    ref?: React.Ref<HTMLAnchorElement>
+}
 
 /**
  * The component used to render a link. All shared code must use this component for links—not <a>, <Link>, etc.
@@ -43,15 +47,3 @@ if (process.env.NODE_ENV !== 'production') {
 export function setLinkComponent(component: typeof Link): void {
     Link = component
 }
-
-/**
- * A link component (to be passed to {@link setLinkComponent}) that renders a normal <a>. This
- * should be used everywhere except when a HTML5 history API router is in use (e.g., react-router).
- *
- * @see setLinkComponent
- */
-export const AnchorLink: React.FunctionComponent<LinkProps> = ({ to, children, ...props }) => (
-    <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
-        {children}
-    </a>
-)

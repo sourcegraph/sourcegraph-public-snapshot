@@ -3,7 +3,7 @@ import { addDays } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { WebStory } from '../../../components/WebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { queryBatchSpecs as _queryBatchSpecs } from './backend'
 import { BatchSpecsPage } from './BatchSpecsPage'

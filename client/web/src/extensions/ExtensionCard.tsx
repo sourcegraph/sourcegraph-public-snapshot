@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useState, useCallback, useMemo, memo } from 'react'
-import { Link } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
@@ -15,7 +14,7 @@ import {
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { useTimeoutManager } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 

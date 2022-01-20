@@ -19,9 +19,11 @@ type CommitInfo struct {
 	Commit string
 	Author string
 
-	AuthorSlackID string
+	BuildNumber  int
+	BuildURL     string
+	BuildCreated time.Time
 
-	Build *buildkite.Build
+	AuthorSlackID string
 }
 
 type CheckResults struct {
@@ -60,12 +62,10 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 
 	// if failed, check if failures are consecutive
 	var exceeded bool
-	results.FailedCommits, exceeded, _ = checkConsecutiveFailures(
+	results.FailedCommits, exceeded, _ = findConsecutiveFailures(
 		builds[max(firstFailedBuildIndex-1, 0):], // Check builds starting with the one we found
 		opts.FailuresThreshold,
-		opts.BuildTimeout,
-		false,
-		false)
+		opts.BuildTimeout)
 	if !exceeded {
 		fmt.Println("threshold not exceeded")
 		results.Action, err = branch.Unlock(ctx)
@@ -74,8 +74,13 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 		}
 		return
 	}
-
 	fmt.Println("threshold exceeded, this is a big deal!")
+
+	// trim list of failed commits to oldest N builds, which is likely the source of the
+	// consecutive failures
+	if len(results.FailedCommits) > opts.FailuresThreshold {
+		results.FailedCommits = results.FailedCommits[len(results.FailedCommits)-opts.FailuresThreshold:]
+	}
 
 	// annotate the failures with their author (Github handle), so we can reach them
 	// over Slack.
@@ -112,56 +117,6 @@ func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
 		return time.Now().After(build.CreatedAt.Add(timeout))
 	}
 	return false
-}
-
-func checkConsecutiveFailures(
-	builds []buildkite.Build,
-	threshold int,
-	timeout time.Duration,
-	returnAll bool,
-	includeBuild bool,
-) (failedCommits []CommitInfo, thresholdExceeded bool, buildsScanned int) {
-	failedCommits = []CommitInfo{}
-
-	var consecutiveFailures int
-	var build buildkite.Build
-	for buildsScanned, build = range builds {
-		if isBuildPassed(build) {
-			// If we find a passed build we are done
-			return
-		} else if !isBuildFailed(build, timeout) {
-			// we're only safe if non-failures are actually passed, otherwise
-			// keep looking
-			continue
-		}
-
-		var author string
-		if build.Author != nil {
-			author = fmt.Sprintf("%s (%s)", build.Author.Name, build.Author.Email)
-		}
-
-		// Process this build as a failure
-		consecutiveFailures += 1
-		commit := CommitInfo{
-			Author: author,
-		}
-		if build.Commit != nil {
-			commit.Commit = *build.Commit
-		}
-		if includeBuild {
-			b := build // copy
-			commit.Build = &b
-		}
-		failedCommits = append(failedCommits, commit)
-		if consecutiveFailures >= threshold {
-			thresholdExceeded = true
-			if !returnAll {
-				return
-			}
-		}
-	}
-
-	return
 }
 
 func max(x, y int) int {

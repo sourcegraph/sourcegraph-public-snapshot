@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import React, { useCallback } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -112,9 +112,9 @@ const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
                     </div>
                 ))}
             </div>
-            <a className={styles.tipsAndTricksMore} href={moreLink.href}>
+            <Link className={styles.tipsAndTricksMore} to={moreLink.href}>
                 {moreLink.label}
-            </a>
+            </Link>
         </div>
     )
 }

@@ -58,7 +58,6 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
  * The form for creating an account
  */
 export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
-    featureFlags,
     onSignUp,
     buttonLabel,
     className,
@@ -68,7 +67,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
-    const isSignupOptimised = featureFlags.get('signup-optimization')
 
     const signUpFieldValidators: Record<'email' | 'username' | 'password', ValidationOptions> = useMemo(
         () => ({
@@ -157,15 +155,13 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 onSubmit={handleSubmit}
                 noValidate={true}
             >
-                {!isSignupOptimised && (
-                    <SignupEmailField
-                        label="Email"
-                        loading={loading}
-                        nextEmailFieldChange={nextEmailFieldChange}
-                        emailState={emailState}
-                        emailInputReference={emailInputReference}
-                    />
-                )}
+                <SignupEmailField
+                    label="Email"
+                    loading={loading}
+                    nextEmailFieldChange={nextEmailFieldChange}
+                    emailState={emailState}
+                    emailInputReference={emailInputReference}
+                />
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         htmlFor="username"
@@ -195,15 +191,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         </small>
                     )}
                 </div>
-                {isSignupOptimised && (
-                    <SignupEmailField
-                        label="Email address"
-                        loading={loading}
-                        nextEmailFieldChange={nextEmailFieldChange}
-                        emailState={emailState}
-                        emailInputReference={emailInputReference}
-                    />
-                )}
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         htmlFor="password"
@@ -265,7 +252,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className={classNames('btn btn-primary btn-block', isSignupOptimised && 'mt-4')}
+                        className="btn btn-primary btn-block"
                     />
                 </div>
                 {context.sourcegraphDotComMode && (

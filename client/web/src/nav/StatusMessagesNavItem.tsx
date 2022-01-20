@@ -18,8 +18,8 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
+import { Link } from '@sourcegraph/wildcard'
 
-import { Link } from '../../../shared/src/components/Link'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { requestGraphQL } from '../backend/graphql'
 import { ErrorAlert } from '../components/alerts'

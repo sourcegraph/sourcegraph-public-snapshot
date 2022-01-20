@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react'
-import { Link } from 'react-router-dom'
 
 import { SettingsSiteSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { Link } from '@sourcegraph/wildcard'
 
 import {
     isGlobalSubject,

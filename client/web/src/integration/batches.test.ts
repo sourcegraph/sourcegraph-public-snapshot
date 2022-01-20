@@ -226,6 +226,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                             baseRef: 'my-branch',
                             headRef: 'my-branch',
                         },
+                        forkTarget: null,
                     },
                 },
             ],
@@ -324,6 +325,7 @@ function mockCommonGraphQLResponses(
                     username: 'bob',
                 },
                 currentSpec: {
+                    id: 'specID1',
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                     codeHostsWithoutWebhooks: {
@@ -717,6 +719,7 @@ describe('Batches', () => {
                                                 expiresAt: addDays(now, 3).toISOString(),
                                                 id: 'changesetspec123',
                                                 type: ChangesetSpecType.BRANCH,
+                                                forkTarget: null,
                                             },
                                         },
                                     },

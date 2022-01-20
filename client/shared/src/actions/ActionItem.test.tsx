@@ -6,6 +6,7 @@ import { NEVER } from 'rxjs'
 
 import { createBarrier } from '../api/integration-test/testHelpers'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
+import { renderWithRouter } from '../testing/render-with-router'
 
 import { ActionItem } from './ActionItem'
 
@@ -220,7 +221,7 @@ describe('ActionItem', () => {
         it('renders as link', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-            const { asFragment } = render(
+            const { asFragment } = renderWithRouter(
                 <ActionItem
                     active={true}
                     action={{ id: 'c', command: 'open', commandArguments: ['https://example.com/bar'], title: 't' }}
@@ -236,7 +237,7 @@ describe('ActionItem', () => {
         it('renders as link with icon and opens a new tab for a different origin', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-            const { asFragment } = render(
+            const { asFragment } = renderWithRouter(
                 <ActionItem
                     active={true}
                     action={{ id: 'c', command: 'open', commandArguments: ['https://other.com/foo'], title: 't' }}
@@ -252,7 +253,7 @@ describe('ActionItem', () => {
         it('renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-            const { asFragment } = render(
+            const { asFragment } = renderWithRouter(
                 <ActionItem
                     active={true}
                     action={{ id: 'c1', command: 'whatever', title: 'primary' }}

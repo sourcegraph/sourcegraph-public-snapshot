@@ -79,7 +79,7 @@ func (r *CommitSearchResultResolver) Detail() Markdown {
 }
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
-	hls := r.CommitMatch.Body.ToHighlightedString()
+	hls := r.CommitMatch.Body().ToHighlightedString()
 	match := &searchResultMatchResolver{
 		body:       hls.Value,
 		highlights: hls.Highlights,

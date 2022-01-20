@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
-import { Link } from 'react-router-dom'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../components/DismissibleAlert'
 import globalAlertStyles from '../../global/GlobalAlerts.module.scss'

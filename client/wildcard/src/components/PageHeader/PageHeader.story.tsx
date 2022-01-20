@@ -5,8 +5,8 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { Link } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '../Feedback'
 

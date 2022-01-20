@@ -3,15 +3,13 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { Tooltip } from 'reactstrap'
+import React, { useCallback, useMemo, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 
@@ -36,66 +34,42 @@ const ValidQueryChecklistItem: React.FunctionComponent<{
     hint?: string
     className?: string
     dataTestid?: string
-}> = ({ checked, children, hint, className, dataTestid }) => {
-    const tooltipTarget = useRef<HTMLElement | null>(null)
-    const [tooltipOpen, setTooltipOpen] = useState(false)
-    const toggleTooltip = useCallback(() => setTooltipOpen(isOpen => !isOpen), [])
-    const showTooltip = useCallback(() => setTooltipOpen(true), [])
-    const hideTooltip = useCallback(() => setTooltipOpen(false), [])
+}> = ({ checked, children, hint, className, dataTestid }) => (
+    <label className={classNames('d-flex align-items-center mb-1 text-muted', className)}>
+        <input className="sr-only" type="checkbox" disabled={true} checked={checked} data-testid={dataTestid} />
 
-    return (
-        <label
-            className={classNames('d-flex align-items-center mb-1 text-muted', className)}
-            onMouseOver={showTooltip}
-            onMouseOut={hideTooltip}
-            onFocus={showTooltip}
-            onBlur={hideTooltip}
-        >
-            <input className="sr-only" type="checkbox" disabled={true} checked={checked} data-testid={dataTestid} />
+        {checked ? (
+            <CheckIcon
+                className={classNames('icon-inline text-success', styles.checklistCheckbox)}
+                aria-hidden={true}
+            />
+        ) : (
+            <RadioboxBlankIcon
+                className={classNames('icon-inline', styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
+                aria-hidden={true}
+            />
+        )}
 
-            {checked ? (
-                <CheckIcon
-                    className={classNames('icon-inline text-success', styles.checklistCheckbox)}
-                    aria-hidden={true}
-                />
-            ) : (
-                <RadioboxBlankIcon
-                    className={classNames('icon-inline', styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
-                    aria-hidden={true}
-                />
-            )}
+        <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
 
-            <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
+        {hint && (
+            <>
+                <span className="sr-only"> {hint}</span>
 
-            {hint && (
-                <>
-                    <span className="sr-only"> {hint}</span>
-
-                    <span ref={tooltipTarget} className="d-flex">
-                        <HelpCircleIcon
-                            className={classNames(
-                                styles.checklistHint,
-                                'icon-inline',
-                                checked && styles.checklistHintFaded
-                            )}
-                            aria-hidden={true}
-                        />
-                    </span>
-
-                    <Tooltip
-                        target={tooltipTarget}
-                        toggle={toggleTooltip}
-                        isOpen={tooltipOpen}
-                        placement="bottom"
-                        innerClassName={styles.checklistTooltip}
-                    >
-                        {hint}
-                    </Tooltip>
-                </>
-            )}
-        </label>
-    )
-}
+                <span data-tooltip={hint} data-placement="bottom" className="d-flex">
+                    <HelpCircleIcon
+                        className={classNames(
+                            styles.checklistHint,
+                            'icon-inline',
+                            checked && styles.checklistHintFaded
+                        )}
+                        aria-hidden={true}
+                    />
+                </span>
+            </>
+        )}
+    </label>
+)
 
 export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     query,
