@@ -175,7 +175,7 @@
           }
         },
         "fuzzyFinder": {
-          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
+          "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
           "!go": {
             "pointer": true
