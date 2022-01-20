@@ -2,10 +2,6 @@
 
 set -eu
 
-echo "install asdf plugins"
-asdf install
-echo "done installing"
-
 # HoneyComb's buildevent plumbing.
 # -------------------------------
 

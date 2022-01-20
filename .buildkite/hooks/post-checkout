@@ -9,5 +9,25 @@ echo "Running git fetch..."
 git fetch
 echo "Running git fetch... done"
 
+echo "install asdf awscli"
+asdf install awscli
+echo "done installing"
+
 # Link the trace-script so we can have pretty steps in the buildkite ui
 ln -s "$(pwd)/enterprise/dev/ci/scripts/trace-command.sh" tr 2>/dev/null || true
+
+# set the buildkite cache access keys
+AWS_CONFIG_DIR_PATH="/buildkite/.aws"
+mkdir -p "$AWS_CONFIG_DIR_PATH"
+AWS_CONFIG_FILE="$AWS_CONFIG_DIR_PATH/config"
+export AWS_CONFIG_FILE
+AWS_SHARED_CREDENTIALS_FILE="/buildkite/.aws/credentials"
+export AWS_SHARED_CREDENTIALS_FILE
+aws configure set aws_access_key_id "$BUILDKITE_HMAC_KEY" --profile buildkite
+aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
+unset AWS_SHARED_CREDENTIALS_FILE
+unset AWS_CONFIG_FILE
+
+# handle caching absolute paths
+mkdir -p .buildkite-cache
+ln -s ~/.asdf .buildkite-cache/asdf
