@@ -58,6 +58,16 @@ type Comby struct {
 	Value string
 }
 
+type NestedCompute struct {
+	Value string
+}
+
+func (c NestedCompute) pattern() {}
+
+func (c NestedCompute) String() string {
+	return c.Value
+}
+
 func (p Regexp) String() string {
 	return p.Value.String()
 }
@@ -102,6 +112,10 @@ func toRegexpPattern(value string) (MatchPattern, error) {
 	return &Regexp{Value: rp}, nil
 }
 
+func toNestedComputePattern(leftPattern MatchPattern, right string) (MatchPattern, error) {
+	return NestedCompute{}, nil
+}
+
 var ComputePredicateRegistry = query.PredicateRegistry{
 	query.FieldContent: {
 		"replace":            func() query.Predicate { return query.EmptyPredicate{} },
@@ -110,6 +124,7 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 		"output":             func() query.Predicate { return query.EmptyPredicate{} },
 		"output.regexp":      func() query.Predicate { return query.EmptyPredicate{} },
 		"output.structural":  func() query.Predicate { return query.EmptyPredicate{} },
+		"compute":            func() query.Predicate { return query.EmptyPredicate{} },
 	},
 }
 
@@ -119,6 +134,15 @@ func parseContentPredicate(pattern *query.Pattern) (string, string, bool) {
 		return "", "", false
 	}
 	value, _, ok := query.ScanPredicate("content", []byte(pattern.Value), ComputePredicateRegistry)
+	if !ok {
+		return "", "", false
+	}
+	name, args := query.ParseAsPredicate(value)
+	return name, args, true
+}
+
+func parseNestedComputePredicate(pattern *query.Pattern) (string, string, bool) {
+	value, _, ok := query.ScanPredicate("compute", []byte(pattern.Value), ComputePredicateRegistry)
 	if !ok {
 		return "", "", false
 	}
@@ -155,8 +179,10 @@ func parseReplace(pattern *query.Pattern) (Command, bool, error) {
 			return nil, false, errors.Wrap(err, "replace command")
 		}
 	case "replace.structural":
-		// structural search doesn't do any match pattern validation
+		// structural search 	doesn't do any match pattern validation
 		matchPattern = &Comby{Value: left}
+	case "compute":
+
 	default:
 		// unrecognized name
 		return nil, false, nil
@@ -175,10 +201,17 @@ func parseOutput(pattern *query.Pattern) (Command, bool, error) {
 		return nil, false, err
 	}
 
+	_, nestedArgs, hasNestedCompute := parseNestedComputePredicate(&query.Pattern{
+		Value:      right,
+		Negated:    false,
+		Annotation: query.Annotation{},
+	})
 	var matchPattern MatchPattern
+
 	switch name {
 	case "output", "output.regexp":
 		var err error
+
 		matchPattern, err = toRegexpPattern(left)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "output command")
@@ -186,9 +219,19 @@ func parseOutput(pattern *query.Pattern) (Command, bool, error) {
 	case "output.structural":
 		// structural search doesn't do any match pattern validation
 		matchPattern = &Comby{Value: left}
+
 	default:
 		// unrecognized name
 		return nil, false, nil
+	}
+
+	if hasNestedCompute {
+		matchPattern, err = toNestedComputePattern(matchPattern, nestedArgs)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "output command nested compute")
+		}
+		// rightQuery, err := Parse(nestedArgs)
+
 	}
 
 	// The default separator is newline and cannot be changed currently.
