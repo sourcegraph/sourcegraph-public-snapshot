@@ -168,7 +168,7 @@ export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpe
                 setCode(result.spec)
             } else {
                 setUpdateError(
-                    'Unable to update batch spec. Double-check to make sure there are no syntax errors, then try again.' +
+                    'Unable to update batch spec. Double-check to make sure there are no syntax errors, then try again. ' +
                         result.error
                 )
             }

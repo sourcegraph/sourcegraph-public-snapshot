@@ -2,10 +2,9 @@ import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
-import { Link } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
-import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'

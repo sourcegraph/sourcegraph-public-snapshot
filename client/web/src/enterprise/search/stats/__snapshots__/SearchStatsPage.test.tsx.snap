@@ -24,7 +24,7 @@ exports[`SearchStatsPage limitHit 1`] = `
         </svg>
          Code statistics 
         <small
-          class="badge secondary text-uppercase ml-2"
+          class="text-uppercase ml-2"
         >
           Experimental
         </small>
@@ -89,7 +89,7 @@ exports[`SearchStatsPage renders 1`] = `
         </svg>
          Code statistics 
         <small
-          class="badge secondary text-uppercase ml-2"
+          class="text-uppercase ml-2"
         >
           Experimental
         </small>
@@ -167,6 +167,7 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
+                    class=""
                     href="/search?q=abc+lang:a&patternType=literal"
                   >
                     A
@@ -182,6 +183,7 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
+                    class=""
                     href="/search?q=abc+lang:b&patternType=literal"
                   >
                     B
@@ -197,6 +199,7 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
+                    class=""
                     href="/search?q=abc+lang:c&patternType=literal"
                   >
                     C
@@ -212,6 +215,7 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
+                    class=""
                     href="/search?q=abc+lang:d&patternType=literal"
                   >
                     D

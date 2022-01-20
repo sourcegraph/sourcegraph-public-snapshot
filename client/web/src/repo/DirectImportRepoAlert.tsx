@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+
+import { Link } from '@sourcegraph/wildcard'
 
 export const DirectImportRepoAlert: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <>

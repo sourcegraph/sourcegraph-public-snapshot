@@ -1,11 +1,10 @@
 import React, { useCallback, useState, useEffect } from 'react'
 
 import { asError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { keyExistsIn } from '@sourcegraph/shared/src/util/types'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
-import { Container, PageHeader, LoadingSpinner, Button } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'

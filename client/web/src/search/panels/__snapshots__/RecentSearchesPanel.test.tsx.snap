@@ -45,6 +45,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 class="recentQuery"
               >
                 <a
+                  class=""
                   href="/search?q=test&patternType=literal"
                 >
                   <span
@@ -74,6 +75,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 class="recentQuery"
               >
                 <a
+                  class=""
                   href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span
@@ -167,6 +169,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 class="recentQuery"
               >
                 <a
+                  class=""
                   href="/search?q=test&patternType=literal"
                 >
                   <span
@@ -196,6 +199,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 class="recentQuery"
               >
                 <a
+                  class=""
                   href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span
@@ -289,6 +293,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 class="recentQuery"
               >
                 <a
+                  class=""
                   href="/search?q=test&patternType=literal"
                 >
                   <span
@@ -318,6 +323,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 class="recentQuery"
               >
                 <a
+                  class=""
                   href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span
@@ -401,6 +407,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                 class="recentQuery"
               >
                 <a
+                  class=""
                   href="/search?q=test&patternType=literal"
                 >
                   <span
@@ -430,6 +437,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                 class="recentQuery"
               >
                 <a
+                  class=""
                   href="/search?q=r:sourcegraph&patternType=literal"
                 >
                   <span

@@ -506,6 +506,354 @@ export namespace lib.codeintel.lsif_typed {
             return Document.deserialize(bytes);
         }
     }
+    export class Symbol extends pb_1.Message {
+        constructor(data?: any[] | {
+            scheme?: string;
+            package?: Package;
+            descriptor?: Descriptor[];
+        }) {
+            super();
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3], []);
+            if (!Array.isArray(data) && typeof data == "object") {
+                if ("scheme" in data && data.scheme != undefined) {
+                    this.scheme = data.scheme;
+                }
+                if ("package" in data && data.package != undefined) {
+                    this.package = data.package;
+                }
+                if ("descriptor" in data && data.descriptor != undefined) {
+                    this.descriptor = data.descriptor;
+                }
+            }
+        }
+        get scheme() {
+            return pb_1.Message.getField(this, 1) as string;
+        }
+        set scheme(value: string) {
+            pb_1.Message.setField(this, 1, value);
+        }
+        get package() {
+            return pb_1.Message.getWrapperField(this, Package, 2) as Package;
+        }
+        set package(value: Package) {
+            pb_1.Message.setWrapperField(this, 2, value);
+        }
+        get descriptor() {
+            return pb_1.Message.getRepeatedWrapperField(this, Descriptor, 3) as Descriptor[];
+        }
+        set descriptor(value: Descriptor[]) {
+            pb_1.Message.setRepeatedWrapperField(this, 3, value);
+        }
+        static fromObject(data: {
+            scheme?: string;
+            package?: ReturnType<typeof Package.prototype.toObject>;
+            descriptor?: ReturnType<typeof Descriptor.prototype.toObject>[];
+        }) {
+            const message = new Symbol({});
+            if (data.scheme != null) {
+                message.scheme = data.scheme;
+            }
+            if (data.package != null) {
+                message.package = Package.fromObject(data.package);
+            }
+            if (data.descriptor != null) {
+                message.descriptor = data.descriptor.map(item => Descriptor.fromObject(item));
+            }
+            return message;
+        }
+        toObject() {
+            const data: {
+                scheme?: string;
+                package?: ReturnType<typeof Package.prototype.toObject>;
+                descriptor?: ReturnType<typeof Descriptor.prototype.toObject>[];
+            } = {};
+            if (this.scheme != null) {
+                data.scheme = this.scheme;
+            }
+            if (this.package != null) {
+                data.package = this.package.toObject();
+            }
+            if (this.descriptor != null) {
+                data.descriptor = this.descriptor.map((item: Descriptor) => item.toObject());
+            }
+            return data;
+        }
+        serialize(): Uint8Array;
+        serialize(w: pb_1.BinaryWriter): void;
+        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+            const writer = w || new pb_1.BinaryWriter();
+            if (typeof this.scheme === "string" && this.scheme.length)
+                writer.writeString(1, this.scheme);
+            if (this.package !== undefined)
+                writer.writeMessage(2, this.package, () => this.package.serialize(writer));
+            if (this.descriptor !== undefined)
+                writer.writeRepeatedMessage(3, this.descriptor, (item: Descriptor) => item.serialize(writer));
+            if (!w)
+                return writer.getResultBuffer();
+        }
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Symbol {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Symbol();
+            while (reader.nextField()) {
+                if (reader.isEndGroup())
+                    break;
+                switch (reader.getFieldNumber()) {
+                    case 1:
+                        message.scheme = reader.readString();
+                        break;
+                    case 2:
+                        reader.readMessage(message.package, () => message.package = Package.deserialize(reader));
+                        break;
+                    case 3:
+                        reader.readMessage(message.descriptor, () => pb_1.Message.addToRepeatedWrapperField(message, 3, Descriptor.deserialize(reader), Descriptor));
+                        break;
+                    default: reader.skipField();
+                }
+            }
+            return message;
+        }
+        serializeBinary(): Uint8Array {
+            return this.serialize();
+        }
+        static deserializeBinary(bytes: Uint8Array): Symbol {
+            return Symbol.deserialize(bytes);
+        }
+    }
+    export class Package extends pb_1.Message {
+        constructor(data?: any[] | {
+            manager?: string;
+            name?: string;
+            version?: string;
+        }) {
+            super();
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
+            if (!Array.isArray(data) && typeof data == "object") {
+                if ("manager" in data && data.manager != undefined) {
+                    this.manager = data.manager;
+                }
+                if ("name" in data && data.name != undefined) {
+                    this.name = data.name;
+                }
+                if ("version" in data && data.version != undefined) {
+                    this.version = data.version;
+                }
+            }
+        }
+        get manager() {
+            return pb_1.Message.getField(this, 1) as string;
+        }
+        set manager(value: string) {
+            pb_1.Message.setField(this, 1, value);
+        }
+        get name() {
+            return pb_1.Message.getField(this, 2) as string;
+        }
+        set name(value: string) {
+            pb_1.Message.setField(this, 2, value);
+        }
+        get version() {
+            return pb_1.Message.getField(this, 3) as string;
+        }
+        set version(value: string) {
+            pb_1.Message.setField(this, 3, value);
+        }
+        static fromObject(data: {
+            manager?: string;
+            name?: string;
+            version?: string;
+        }) {
+            const message = new Package({});
+            if (data.manager != null) {
+                message.manager = data.manager;
+            }
+            if (data.name != null) {
+                message.name = data.name;
+            }
+            if (data.version != null) {
+                message.version = data.version;
+            }
+            return message;
+        }
+        toObject() {
+            const data: {
+                manager?: string;
+                name?: string;
+                version?: string;
+            } = {};
+            if (this.manager != null) {
+                data.manager = this.manager;
+            }
+            if (this.name != null) {
+                data.name = this.name;
+            }
+            if (this.version != null) {
+                data.version = this.version;
+            }
+            return data;
+        }
+        serialize(): Uint8Array;
+        serialize(w: pb_1.BinaryWriter): void;
+        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+            const writer = w || new pb_1.BinaryWriter();
+            if (typeof this.manager === "string" && this.manager.length)
+                writer.writeString(1, this.manager);
+            if (typeof this.name === "string" && this.name.length)
+                writer.writeString(2, this.name);
+            if (typeof this.version === "string" && this.version.length)
+                writer.writeString(3, this.version);
+            if (!w)
+                return writer.getResultBuffer();
+        }
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Package {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Package();
+            while (reader.nextField()) {
+                if (reader.isEndGroup())
+                    break;
+                switch (reader.getFieldNumber()) {
+                    case 1:
+                        message.manager = reader.readString();
+                        break;
+                    case 2:
+                        message.name = reader.readString();
+                        break;
+                    case 3:
+                        message.version = reader.readString();
+                        break;
+                    default: reader.skipField();
+                }
+            }
+            return message;
+        }
+        serializeBinary(): Uint8Array {
+            return this.serialize();
+        }
+        static deserializeBinary(bytes: Uint8Array): Package {
+            return Package.deserialize(bytes);
+        }
+    }
+    export class Descriptor extends pb_1.Message {
+        constructor(data?: any[] | {
+            name?: string;
+            disambiguator?: string;
+            suffix?: Descriptor.Suffix;
+        }) {
+            super();
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
+            if (!Array.isArray(data) && typeof data == "object") {
+                if ("name" in data && data.name != undefined) {
+                    this.name = data.name;
+                }
+                if ("disambiguator" in data && data.disambiguator != undefined) {
+                    this.disambiguator = data.disambiguator;
+                }
+                if ("suffix" in data && data.suffix != undefined) {
+                    this.suffix = data.suffix;
+                }
+            }
+        }
+        get name() {
+            return pb_1.Message.getField(this, 1) as string;
+        }
+        set name(value: string) {
+            pb_1.Message.setField(this, 1, value);
+        }
+        get disambiguator() {
+            return pb_1.Message.getField(this, 2) as string;
+        }
+        set disambiguator(value: string) {
+            pb_1.Message.setField(this, 2, value);
+        }
+        get suffix() {
+            return pb_1.Message.getField(this, 3) as Descriptor.Suffix;
+        }
+        set suffix(value: Descriptor.Suffix) {
+            pb_1.Message.setField(this, 3, value);
+        }
+        static fromObject(data: {
+            name?: string;
+            disambiguator?: string;
+            suffix?: Descriptor.Suffix;
+        }) {
+            const message = new Descriptor({});
+            if (data.name != null) {
+                message.name = data.name;
+            }
+            if (data.disambiguator != null) {
+                message.disambiguator = data.disambiguator;
+            }
+            if (data.suffix != null) {
+                message.suffix = data.suffix;
+            }
+            return message;
+        }
+        toObject() {
+            const data: {
+                name?: string;
+                disambiguator?: string;
+                suffix?: Descriptor.Suffix;
+            } = {};
+            if (this.name != null) {
+                data.name = this.name;
+            }
+            if (this.disambiguator != null) {
+                data.disambiguator = this.disambiguator;
+            }
+            if (this.suffix != null) {
+                data.suffix = this.suffix;
+            }
+            return data;
+        }
+        serialize(): Uint8Array;
+        serialize(w: pb_1.BinaryWriter): void;
+        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+            const writer = w || new pb_1.BinaryWriter();
+            if (typeof this.name === "string" && this.name.length)
+                writer.writeString(1, this.name);
+            if (typeof this.disambiguator === "string" && this.disambiguator.length)
+                writer.writeString(2, this.disambiguator);
+            if (this.suffix !== undefined)
+                writer.writeEnum(3, this.suffix);
+            if (!w)
+                return writer.getResultBuffer();
+        }
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Descriptor {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Descriptor();
+            while (reader.nextField()) {
+                if (reader.isEndGroup())
+                    break;
+                switch (reader.getFieldNumber()) {
+                    case 1:
+                        message.name = reader.readString();
+                        break;
+                    case 2:
+                        message.disambiguator = reader.readString();
+                        break;
+                    case 3:
+                        message.suffix = reader.readEnum();
+                        break;
+                    default: reader.skipField();
+                }
+            }
+            return message;
+        }
+        serializeBinary(): Uint8Array {
+            return this.serialize();
+        }
+        static deserializeBinary(bytes: Uint8Array): Descriptor {
+            return Descriptor.deserialize(bytes);
+        }
+    }
+    export namespace Descriptor {
+        export enum Suffix {
+            UnspecifiedSuffix = 0,
+            Package = 1,
+            Type = 2,
+            Term = 3,
+            Method = 4,
+            TypeParameter = 5,
+            Parameter = 6,
+            Meta = 7
+        }
+    }
     export class SymbolInformation extends pb_1.Message {
         constructor(data?: any[] | {
             symbol?: string;

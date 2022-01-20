@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -15,31 +16,40 @@ func slackMention(slackUserID string) string {
 	return fmt.Sprintf("<@%s>", slackUserID)
 }
 
-func slackSummary(locked bool, failedCommits []CommitInfo) string {
+func slackSummary(locked bool, branch string, discussionChannel string, failedCommits []CommitInfo) string {
+	branchStr := fmt.Sprintf("`%s`", branch)
 	if !locked {
-		return ":white_check_mark: Pipeline healthy - branch unlocked!"
+		return fmt.Sprintf(":white_check_mark: Pipeline healthy - %s unlocked!", branchStr)
 	}
-	message := `:alert: *Consecutive build failures detected - branch has been locked.* :alert:
+	message := fmt.Sprintf(`:alert: *Consecutive build failures detected - the %s branch has been locked.* :alert:
 The authors of the following failed commits who are Sourcegraph teammates have been granted merge access to investigate and resolve the issue:
-`
+`, branchStr)
+
+	// Reverse order of commits so that the oldest are listed first
+	sort.Slice(failedCommits, func(i, j int) bool { return failedCommits[i].BuildCreated.After(failedCommits[j].BuildCreated) })
 
 	for _, commit := range failedCommits {
 		var mention string
 		if commit.AuthorSlackID != "" {
 			mention = slackMention(commit.AuthorSlackID)
-		} else {
+		} else if commit.Author != "" {
 			mention = commit.Author
+		} else {
+			mention = "unable to infer author"
 		}
-		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%.7s>: %s",
-			commit.Commit, commit.Commit, mention)
-	}
-	message += `
 
-The branch will automatically be unlocked once a green build is run.
+		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%.7s> (<%s|build %d>): %s",
+			commit.Commit, commit.Commit, commit.BuildURL, commit.BuildNumber, mention)
+	}
+	message += fmt.Sprintf(`
+
+The branch will automatically be unlocked once a green build has run on %s.
+Please head over to %s for relevant discussion about this branch lock.
 Refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
+
 If unable to resolve the issue, please start an incident with the '/incident' Slack command.
 
-cc: @dev-experience-support`
+cc: @dev-experience-support`, branchStr, discussionChannel)
 	return message
 }
 
@@ -79,12 +89,12 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 	// Attempt to send a message out to each
 	var errs error
 	var oneSucceeded bool
-	for _, webhook := range webhooks {
+	for i, webhook := range webhooks {
 		if len(webhook) == 0 {
 			return false, nil
 		}
 
-		log.Println("posting to ", webhook)
+		log.Println("posting to webhook ", i)
 
 		req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
 		if err != nil {

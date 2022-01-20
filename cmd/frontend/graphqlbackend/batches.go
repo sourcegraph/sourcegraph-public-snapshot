@@ -457,6 +457,8 @@ type VisibleChangesetSpecResolver interface {
 
 	Description(ctx context.Context) (ChangesetDescription, error)
 	Workspace(ctx context.Context) (BatchSpecWorkspaceResolver, error)
+
+	ForkTarget() ForkTargetInterface
 }
 
 type ChangesetSpecDeltaResolver interface {
@@ -487,7 +489,6 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	HeadRepository() *RepositoryResolver
 	HeadRef() string
-	Fork() bool
 
 	Title() string
 	Body() string
@@ -506,6 +507,11 @@ type GitCommitDescriptionResolver interface {
 	Body() *string
 	Author() *PersonResolver
 	Diff() string
+}
+
+type ForkTargetInterface interface {
+	PushUser() bool
+	Namespace() *string
 }
 
 type BatchChangesCodeHostConnectionResolver interface {

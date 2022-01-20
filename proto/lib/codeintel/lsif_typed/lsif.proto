@@ -25,7 +25,11 @@ message Index {
   Metadata metadata = 1;
   // Documents that belong to this index.
   repeated Document document = 2;
-  // Symbols that are referenced from this index and not defined in this index.
+  // (optional) Symbols that are referenced from this index but are defined in
+  // an external package (a separate `Index` message).  Leave this field empty
+  // if you assume the external package will get indexed separately. If the
+  // external package won't get indexed for some reason then you can use this
+  // field to provide hover documentation for those external symbols.
   repeated SymbolInformation external_symbols = 3;
 }
 
@@ -74,21 +78,69 @@ message Document {
   repeated SymbolInformation symbols = 3;
 }
 
+// Symbol is similar to a URI, it identifies a class, method, or a local
+// variable. `SymbolInformation` contains rich metadata about symbols such as
+// the docstring.
+//
+// Symbol has a standardized string representation, which can be used
+// interchangeably with `Symbol`. The syntax for Symbol is the following:
+// ```
+//   <symbol>               ::= <scheme> ' ' <package> ' ' { <descriptor> } | 'local ' <local-id>
+//   <package>              ::= <manager> ' ' <package-name> ' ' <version>
+//   <scheme>               ::= any UTF-8 character, escape spaces with double space.
+//   <manager>              ::= same as above
+//   <package-name>         ::= same as above
+//   <version>              ::= same as above
+//   <descriptor>           ::= <package> | <type> | <term> | <method> | <type-parameter> | <parameter> | <meta>
+//   <package>              ::= <name> '/'
+//   <type>                 ::= <name> '#'
+//   <term>                 ::= <name> '.'
+//   <meta>                 ::= <name> ':'
+//   <method>               ::= <name> '(' <method-disambiguator> ').'
+//   <type-parameter>       ::= '[' <name> ']'
+//   <parameter>            ::= '(' <name> ')'
+//   <name>                 ::= <identifier>
+//   <method-disambiguator> ::= <simple-identifier>
+//   <identifier>           ::= <simple-identifier> | <escaped-identifier>
+//   <simple-identifier>    ::= { <identifier-character> }
+//   <identifier-character> ::= '_' | '-' | '$' | ASCII letter or digit
+//   <escaped-identifier>   ::= '`' { <escaped-character> } '`'
+//   <escaped-characters>   ::= any UTF-8 character, escape backticks with double backtick.
+// ```
+message Symbol {
+    string scheme = 1;
+    Package package = 2;
+    repeated Descriptor descriptor = 3;
+}
+
+message Package {
+    string manager = 1;
+    string name = 2;
+    string version = 3;
+}
+
+message Descriptor {
+    enum Suffix {
+        UnspecifiedSuffix = 0;
+        Package = 1;
+        Type = 2;
+        Term = 3;
+        Method = 4;
+        TypeParameter = 5;
+        Parameter = 6;
+        // Can be used for any purpose.
+        Meta = 7;
+    }
+    string name = 1;
+    string disambiguator = 2;
+    Suffix suffix = 3;
+}
+
 // SymbolInformation defines metadata about a symbol, such as the symbol's
 // docstring or what package it's defined it.
 message SymbolInformation {
   // Identifier of this symbol, which can be referenced from `Occurence.symbol`.
-  // The string must be formatted as `"$SCHEME:$ID` where:
-  //
-  // - `SCHEME`: the value `local` for document-local symbols or an
-  //   indexer-specific identifier for global symbols.  Document-local symbols
-  //   are symbols that cannot be referenced outside the document, for example
-  //   local variables.
-  // - `ID`: an opaque identifier that uniquely determines this symbol within
-  //   the defined scheme. For global symbols, the ID must be stable between
-  //   different invocations of the indexer against unchanged code.  For
-  //   document-local symbols, any string value that uniquely identifies the
-  //   symbol within the document it belong to (ideally stable between runs).
+  // The string must be formatted according to the grammar in `Symbol`.
   string symbol = 1;
   // (optional, but strongly recommended) The markdown-formatted documentation
   // for this symbol. This field is repeated to allow different kinds of

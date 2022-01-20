@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { QuickLink } from '../../../schema/settings.schema'
 
@@ -22,6 +23,6 @@ describe('QuickLink', () => {
         ]
         const links = getQuickLinks({ subjects: [], final: { quicklinks } })
         expect(links.length).toBe(2)
-        expect(render(<>{links}</>).asFragment()).toMatchSnapshot()
+        expect(renderWithRouter(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 })

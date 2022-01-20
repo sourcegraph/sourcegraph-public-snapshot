@@ -25,4 +25,10 @@ export interface CaptureGroupFormFields {
      * Value for insight step setting
      */
     stepValue: string
+
+    /**
+     * This settings stands for turn on/off all repos mode that means this insight
+     * will be run over all repos on BE (BE insight)
+     */
+    allRepos: boolean
 }

@@ -7,10 +7,9 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Badge, AlertLink } from '@sourcegraph/wildcard'
+import { Badge, AlertLink, Link } from '@sourcegraph/wildcard'
 
 import { ErrorMessage } from '../../../../components/alerts'
 import { Collapsible } from '../../../../components/Collapsible'

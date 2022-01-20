@@ -20,8 +20,8 @@ exports[`LoaderInput should render a loading spinner when loading prop is true 1
     <input
       type="text"
     />
-    <loadingspinner
-      class="spinner"
+    <div
+      class="loadingSpinner spinner"
     />
   </div>
 </DocumentFragment>

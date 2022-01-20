@@ -5,9 +5,8 @@ import PencilIcon from 'mdi-react/PencilIcon'
 import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'

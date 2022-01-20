@@ -17,10 +17,6 @@ interface HoverOverlayContentProps {
     aggregatedBadges: HoverMerged['aggregatedBadges']
     index: number
     /**
-     * Use our branded badge. For use in Sourcegraph branded applications.
-     */
-    useBrandedBadge?: boolean
-    /**
      * Allows custom styles
      * Primarily used to inherit different styles for use on a code host.
      */
@@ -38,7 +34,7 @@ function tryMarkdownRender(content: string): string | Error {
 }
 
 export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentProps> = props => {
-    const { content, aggregatedBadges = [], index, errorAlertClassName, badgeClassName, useBrandedBadge } = props
+    const { content, aggregatedBadges = [], index, errorAlertClassName, badgeClassName } = props
 
     if (content.kind !== 'markdown') {
         return (
@@ -67,11 +63,8 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
             {aggregatedBadges.map(({ text, linkURL, hoverMessage }) => (
                 <small key={text} className={classNames(hoverOverlayStyle.badge)}>
                     <Badge
-                        branded={Boolean(useBrandedBadge)}
-                        {...(useBrandedBadge && {
-                            variant: 'secondary',
-                            small: true,
-                        })}
+                        variant="secondary"
+                        small={true}
                         className={classNames('test-hover-badge', badgeClassName, hoverOverlayStyle.badgeLabel)}
                         href={linkURL}
                         tooltip={hoverMessage}
