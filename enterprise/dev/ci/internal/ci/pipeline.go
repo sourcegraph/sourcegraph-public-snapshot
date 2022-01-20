@@ -254,13 +254,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				// TODO check that in case we also use awscli for real
 				bk.Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
 				bk.Env("AWS_SHARED_CREDENTIALS_FILE", "/buildkite/.aws/credentials"),
-				bk.Env("YARN_CACHE_FOLDER", "/buildkite/yarn-cache"),
+				// bk.Env("YARN_CACHE_FOLDER", "/buildkite/yarn-cache"),
 				bk.Plugin("gencer/cache#v2.4.10", CacheConfig{
 					ID:          "yarn",
 					Backend:     "s3",
-					Key:         "valery-node-modules-{{checksum 'yarn.lock'}}",
-					RestoreKeys: []string{"valery-node-modules-"},
-					Paths:       []string{"./node_modules", "/buildkite/yarn-cache"},
+					Key:         "valery-offline-{{checksum 'yarn.lock'}}",
+					RestoreKeys: []string{"valery-offline-"},
+					Paths:       []string{"../../../../buildkite/npm-packages-offline-cache"},
 					S3: CacheConfigS3{
 						Bucket:   "sourcegraph_buildkite_cache",
 						Profile:  "buildkite",
@@ -268,9 +268,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 						Region:   "us-central1",
 					},
 				}),
-				// bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
-				bk.Cmd("yarn install --verbose --prefer-offline"),
-				bk.Cmd("sleep 30000"))
+				bk.Cmd("yarn config set yarn-offline-mirror /buildkite/npm-packages-offline-cache"),
+				bk.Cmd("yarn install --verbose --frozen-lockfile --prefer-offline"),
+			)
 		}),
 	)
 
