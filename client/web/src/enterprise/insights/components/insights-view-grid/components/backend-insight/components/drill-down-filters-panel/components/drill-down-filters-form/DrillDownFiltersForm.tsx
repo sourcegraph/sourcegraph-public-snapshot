@@ -3,9 +3,9 @@ import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
 import { useField } from '../../../../../../../form/hooks/useField'

@@ -5,12 +5,12 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { Settings } from '../schema/settings.schema'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { CodeHostScopeAlerts, GitLabScopeAlert } from '../site/CodeHostScopeAlerts/CodeHostScopeAlerts'

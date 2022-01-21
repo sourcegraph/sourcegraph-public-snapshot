@@ -11,7 +11,7 @@ import (
 func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	accessToken := "hunter2"
 
-	ts := httptest.NewServer(basicAuthMiddleware(
+	ts := httptest.NewServer(authMiddleware(
 		func() string { return accessToken },
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusTeapot)

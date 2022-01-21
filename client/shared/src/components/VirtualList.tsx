@@ -8,7 +8,7 @@ interface Props<TItem, TExtraItemProps> {
     /* Additional props passed to the render function. */
     itemProps: TExtraItemProps
     /* Function to render an item once it becomes visible. */
-    renderItem: (item: TItem, additionalProps: TExtraItemProps) => JSX.Element
+    renderItem: (item: TItem, index: number, additionalProps: TExtraItemProps) => JSX.Element
     /* Determines the list key of an item. Needed for stable react array rendering. */
     itemKey: (item: TItem) => string
 
@@ -60,7 +60,7 @@ export class VirtualList<TItem, TExtraItemProps = undefined> extends React.PureC
                         containment={this.props.containment}
                         partialVisibility={true}
                     >
-                        {this.props.renderItem(item, this.props.itemProps)}
+                        {this.props.renderItem(item, index, this.props.itemProps)}
                     </VisibilitySensor>
                 ))}
             </div>

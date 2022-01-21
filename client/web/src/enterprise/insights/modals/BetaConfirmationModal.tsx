@@ -1,9 +1,8 @@
 import React, { useRef } from 'react'
 import { useHistory } from 'react-router'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, useAutoFocus, Modal } from '@sourcegraph/wildcard'
-
-import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 
 import styles from './BetaConfirmationModal.module.scss'
 import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './components/MediaCharts'

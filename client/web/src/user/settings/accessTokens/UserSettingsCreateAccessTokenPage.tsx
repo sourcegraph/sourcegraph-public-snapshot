@@ -4,6 +4,7 @@ import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
@@ -12,7 +13,6 @@ import { Container, PageHeader, LoadingSpinner, Button, useObservable, Link } fr
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'

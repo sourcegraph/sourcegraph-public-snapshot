@@ -6,7 +6,7 @@ import {
     BackendInsight as SearchBasedBackendInsightSettings,
     BackendInsightSeries,
     InsightFilters as SearchBasedBackendFilters,
-} from '../../../../../schema/settings.schema'
+} from '@sourcegraph/shared/src/schema/settings.schema'
 
 import { InsightExecutionType, InsightTypePrefix, InsightType, SyntheticInsightFields } from './common'
 
