@@ -1,0 +1,5 @@
+BEGIN;
+
+CREATE TABLE IF EXISTS serach_index_jobs;
+
+COMMIT;
