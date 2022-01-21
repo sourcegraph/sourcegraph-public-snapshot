@@ -35,7 +35,7 @@ export const DotcomGettingStartedPage: React.FunctionComponent<DotcomGettingStar
 const DotcomGettingStartedPageFooter: React.FunctionComponent<{}> = () => (
     <div className="d-flex justify-content-between">
         <Card className={classNames(styles.requirementsCard, 'mr-3')}>
-            <CardBody className="p-3">
+            <CardBody>
                 <p>
                     <strong>Batch Changes requirements</strong>
                 </p>

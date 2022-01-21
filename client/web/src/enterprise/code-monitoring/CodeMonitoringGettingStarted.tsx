@@ -106,7 +106,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     {exampleCodeMonitors.map(monitor => (
                         <div className={styles.startingPoint} key={monitor.title}>
                             <Card className="h-100">
-                                <CardBody className="p-3 d-flex flex-column">
+                                <CardBody className="d-flex flex-column">
                                     <h3>{monitor.title}</h3>
                                     <p className="text-muted flex-grow-1">{monitor.description}</p>
                                     <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>

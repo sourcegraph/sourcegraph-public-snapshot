@@ -56,7 +56,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
         <h3 className="mb-3">Tutorials to help with your first batch change</h3>
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
-                <Card className="h-100 p-2">
+                <Card className="h-100">
                     <CardBody className="d-flex">
                         <FindReplaceIcon className="mr-3" />
                         <div>
@@ -77,7 +77,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                 </Card>
             </div>
             <div className="col-12 col-md-6 mb-3">
-                <Card className="h-100 p-2">
+                <Card className="h-100">
                     <CardBody className="d-flex">
                         <RefactorCombyIcon className="mr-3" />
                         <div>
@@ -152,7 +152,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
             </div>
             <div className="col-12 col-md-4">
                 <Card className={styles.overviewCard}>
-                    <CardBody className="p-3">
+                    <CardBody>
                         <p>
                             <strong>Overview</strong>
                         </p>

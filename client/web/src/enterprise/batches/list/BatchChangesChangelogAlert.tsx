@@ -11,7 +11,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
         className={styles.batchChangesListIntroAlert}
         partialStorageKey="batch-changes-list-intro-changelog-3.36"
     >
-        <Card className={classNames(styles.batchChangesListIntroCard, 'h-100 p-2')}>
+        <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
             <CardBody>
                 <h4>Batch Changes updates in version 3.36</h4>
                 <ul className="mb-0 pl-3">

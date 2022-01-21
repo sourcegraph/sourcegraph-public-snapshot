@@ -55,7 +55,7 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
     return (
         <>
             <Card className="mb-3">
-                <CardBody className="p-3">
+                <CardBody>
                     <p>
                         <strong>
                             After closing this batch change, it will be read-only and no new batch specs can be applied.
