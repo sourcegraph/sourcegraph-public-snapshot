@@ -33,7 +33,7 @@ We use soft failures for the following reasons only:
   - Examples: [hash comparison steps that determine if a build should run](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/operations%5C.go+compare-hash.sh&patternType=literal)
 - Regular analysis tasks, where soft failures serve as an monitoring indicator to warn the team responsible for fixing issues.
   - Examples: [vulnerability scanning](#vulnerability-scanning), linting tasks for catching deprecation warnings
-- Temporary exceptions to accomodate xperimental or in-progress work.
+- Temporary exceptions to accommodate experimental or in-progress work.
 
 You can find all usages of soft failures [with the following queries](https://sourcegraph.com/notebooks/Tm90ZWJvb2s6NTc=):
 
