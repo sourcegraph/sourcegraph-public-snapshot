@@ -79,13 +79,12 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
             <MonacoEditor
                 className={classNames(styles.editor, this.props.className)}
                 language="yaml"
-                height="100%"
+                height="auto"
                 isLightTheme={this.props.isLightTheme}
                 value={this.props.value}
                 editorWillMount={this.editorWillMount}
                 options={{
                     lineNumbers: 'on',
-                    automaticLayout: true,
                     minimap: { enabled: false },
                     formatOnType: true,
                     formatOnPaste: true,
