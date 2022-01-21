@@ -1,6 +1,9 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { useWildcardTheme } from '../../hooks/useWildcardTheme'
+import { Link } from '../Link'
+
 import styles from './Badge.module.scss'
 import { BADGE_VARIANTS } from './constants'
 
@@ -26,10 +29,6 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
      */
     href?: string
     /**
-     * If the Badge should use branded styles. Defaults to true.
-     */
-    branded?: boolean
-    /**
      * Used to change the element that is rendered.
      */
     as?: React.ElementType
@@ -46,13 +45,13 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
     pill,
     tooltip,
     className,
-    branded = true,
     href,
     as: Component = 'span',
     ...otherProps
 }) => {
+    const { isBranded } = useWildcardTheme()
     const brandedClassName =
-        branded && classNames(styles.badge, variant && styles[variant], small && styles.sm, pill && styles.pill)
+        isBranded && classNames(styles.badge, variant && styles[variant], small && styles.sm, pill && styles.pill)
 
     const commonProps = {
         'data-tooltip': tooltip,
@@ -62,9 +61,9 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
 
     if (href) {
         return (
-            <a href={href} rel="noopener" target="_blank" {...commonProps}>
+            <Link to={href} rel="noopener" target="_blank" {...commonProps}>
                 {children}
-            </a>
+            </Link>
         )
     }
 

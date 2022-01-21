@@ -49,6 +49,7 @@ func main() {
 	flag.StringVar(&checkFlags.slackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&checkFlags.slackAnnounceWebhooks, "slack.announce-webhook", "", "Slack Webhook URL to post the results on (comma-delimited for multiple values)")
 	flag.StringVar(&checkFlags.slackDebugWebhook, "slack.debug-webhook", "", "Slack Webhook URL to post debug results on")
+	flag.StringVar(&checkFlags.slackDiscussionChannel, "slack.discussion-channel", "#buildkite-main", "Slack channel to ask everyone to head over to for discusison")
 
 	historyFlags := &cmdHistoryFlags{}
 	flag.StringVar(&historyFlags.createdFromDate, "created.from", "", "date in YYYY-MM-DD format")
@@ -58,12 +59,18 @@ func main() {
 
 	flags.Parse()
 
-	switch flag.Arg(0) {
+	switch cmd := flag.Arg(0); cmd {
 	case "history":
+		log.Println("buildchecker history")
 		cmdHistory(ctx, flags, historyFlags)
 
-	default:
+	case "check":
+		log.Println("buildchecker check")
 		cmdCheck(ctx, flags, checkFlags)
+
+	default:
+		log.Printf("unknown command %q - available commands: 'history', 'check'", cmd)
+		os.Exit(1)
 	}
 }
 
@@ -71,8 +78,9 @@ type cmdCheckFlags struct {
 	slackToken  string
 	githubToken string
 
-	slackAnnounceWebhooks string
-	slackDebugWebhook     string
+	slackAnnounceWebhooks  string
+	slackDebugWebhook      string
+	slackDiscussionChannel string
 }
 
 func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
@@ -122,7 +130,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	// Only post an update if the lock has been modified
 	lockModified := results.Action != nil
 	if lockModified {
-		summary := slackSummary(results.LockBranch, flags.Branch, results.FailedCommits)
+		summary := slackSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
 		announceWebhooks := strings.Split(checkFlags.slackAnnounceWebhooks, ",")
 
 		// Post update first to avoid invisible changes

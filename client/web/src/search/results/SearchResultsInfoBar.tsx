@@ -9,6 +9,7 @@ import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
@@ -19,7 +20,6 @@ import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/que
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { SearchPatternTypeProps, CaseSensitivityProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { SearchPatternType } from '../../graphql-operations'

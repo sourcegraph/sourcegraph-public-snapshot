@@ -6,10 +6,12 @@ import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SearchContextProps } from '@sourcegraph/search'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
@@ -17,16 +19,14 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
-
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
-import { SearchContextProps } from '../../search'
+import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
     extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'>,
-        Pick<SearchContextProps, 'fetchSearchContextBySpec'> {}
+        Pick<SearchContextProps, 'fetchSearchContextBySpec'>,
+        PlatformContextProps<'requestGraphQL'> {}
 
 const initialRepositoriesToShow = 15
 const incrementalRepositoriesToShow = 10
@@ -129,16 +129,16 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
 export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
-    const { match, fetchSearchContextBySpec } = props
+    const { match, fetchSearchContextBySpec, platformContext } = props
 
     const searchContextOrError = useObservable(
         React.useMemo(
             () =>
-                fetchSearchContextBySpec(match.params.spec).pipe(
+                fetchSearchContextBySpec(match.params.spec, platformContext).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.spec, fetchSearchContextBySpec]
+            [match.params.spec, fetchSearchContextBySpec, platformContext]
         )
     )
 

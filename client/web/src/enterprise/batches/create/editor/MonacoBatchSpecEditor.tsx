@@ -6,8 +6,8 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
 

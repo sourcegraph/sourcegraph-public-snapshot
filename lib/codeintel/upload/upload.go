@@ -105,7 +105,7 @@ func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r i
 func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, readerFactory func() io.Reader, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry func(message string) output.Progress, barIndex int, numParts int) error {
 	return makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)(func(attempt int) (_ bool, err error) {
 		defer func() {
-			if err != nil && !errors.Is(err, ctx.Err()) {
+			if err != nil && !errors.Is(err, ctx.Err()) && progress != nil {
 				progress.SetValue(barIndex, 0)
 			}
 		}()
@@ -116,7 +116,9 @@ func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions Uploa
 				suffix = fmt.Sprintf(" %d of %d", barIndex+1, numParts)
 			}
 
-			progress.SetValue(barIndex, 0)
+			if progress != nil {
+				progress.SetValue(barIndex, 0)
+			}
 			progress = retry(fmt.Sprintf("Failed to upload index file%s (will retry; attempt #%d)", suffix, attempt))
 		}
 

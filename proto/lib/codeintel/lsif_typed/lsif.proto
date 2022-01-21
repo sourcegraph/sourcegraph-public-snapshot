@@ -25,7 +25,11 @@ message Index {
   Metadata metadata = 1;
   // Documents that belong to this index.
   repeated Document document = 2;
-  // Symbols that are referenced from this index and not defined in this index.
+  // (optional) Symbols that are referenced from this index but are defined in
+  // an external package (a separate `Index` message).  Leave this field empty
+  // if you assume the external package will get indexed separately. If the
+  // external package won't get indexed for some reason then you can use this
+  // field to provide hover documentation for those external symbols.
   repeated SymbolInformation external_symbols = 3;
 }
 
@@ -74,70 +78,117 @@ message Document {
   repeated SymbolInformation symbols = 3;
 }
 
+// Symbol is similar to a URI, it identifies a class, method, or a local
+// variable. `SymbolInformation` contains rich metadata about symbols such as
+// the docstring.
+//
+// Symbol has a standardized string representation, which can be used
+// interchangeably with `Symbol`. The syntax for Symbol is the following:
+// ```
+//   <symbol>               ::= <scheme> ' ' <package> ' ' { <descriptor> } | 'local ' <local-id>
+//   <package>              ::= <manager> ' ' <package-name> ' ' <version>
+//   <scheme>               ::= any UTF-8 character, escape spaces with double space.
+//   <manager>              ::= same as above
+//   <package-name>         ::= same as above
+//   <version>              ::= same as above
+//   <descriptor>           ::= <package> | <type> | <term> | <method> | <type-parameter> | <parameter> | <meta>
+//   <package>              ::= <name> '/'
+//   <type>                 ::= <name> '#'
+//   <term>                 ::= <name> '.'
+//   <meta>                 ::= <name> ':'
+//   <method>               ::= <name> '(' <method-disambiguator> ').'
+//   <type-parameter>       ::= '[' <name> ']'
+//   <parameter>            ::= '(' <name> ')'
+//   <name>                 ::= <identifier>
+//   <method-disambiguator> ::= <simple-identifier>
+//   <identifier>           ::= <simple-identifier> | <escaped-identifier>
+//   <simple-identifier>    ::= { <identifier-character> }
+//   <identifier-character> ::= '_' | '-' | '$' | ASCII letter or digit
+//   <escaped-identifier>   ::= '`' { <escaped-character> } '`'
+//   <escaped-characters>   ::= any UTF-8 character, escape backticks with double backtick.
+// ```
+message Symbol {
+    string scheme = 1;
+    Package package = 2;
+    repeated Descriptor descriptor = 3;
+}
+
+message Package {
+    string manager = 1;
+    string name = 2;
+    string version = 3;
+}
+
+message Descriptor {
+    enum Suffix {
+        UnspecifiedSuffix = 0;
+        Package = 1;
+        Type = 2;
+        Term = 3;
+        Method = 4;
+        TypeParameter = 5;
+        Parameter = 6;
+        // Can be used for any purpose.
+        Meta = 7;
+    }
+    string name = 1;
+    string disambiguator = 2;
+    Suffix suffix = 3;
+}
+
 // SymbolInformation defines metadata about a symbol, such as the symbol's
 // docstring or what package it's defined it.
 message SymbolInformation {
   // Identifier of this symbol, which can be referenced from `Occurence.symbol`.
-  // The string must be formatted as `"$SCHEME:$ID` where:
-  //
-  // - `SCHEME`: the value `local` for document-local symbols or an
-  //   indexer-specific identifier for global symbols.  Document-local symbols
-  //   are symbols that cannot be referenced outside the document, for example
-  //   local variables.
-  // - `ID`: an opaque identifier that uniquely determines this symbol within
-  //   the defined scheme. For global symbols, the ID must be stable between
-  //   different invocations of the indexer against unchanged code.  For
-  //   document-local symbols, any string value that uniquely identifies the
-  //   symbol within the document it belong to (ideally stable between runs).
+  // The string must be formatted according to the grammar in `Symbol`.
   string symbol = 1;
   // (optional, but strongly recommended) The markdown-formatted documentation
   // for this symbol. This field is repeated to allow different kinds of
   // documentation.  For example, it's nice to include both the signature of a
   // method (parameters and return type) along with the accompanying docstring.
   repeated string documentation = 3;
-  // (optional) To enable cross-index navigation, specify which package this
-  // symbol is defined in. A package must be encoded as a space-separated string
-  // with the value `"$manager $name $version"` where:
-  // - `$manager` is the name of the package manager, for example `npm`.
-  // - `$name` is the name of the package, for example `react`.
-  // - `$version` is the version of the package, for example `1.2.0`.
-  string package = 4;
-  // (optional) When resolving "Find references", this field documents what
-  // other symbols should be included together with this symbol. For example,
-  // consider the following TypeScript code that defines two symbols
-  // `Animal#sound()` and `Dog#sound()`:
-  // ```ts
-  // interface Animal {
-  //           ^^^^^^ definition Animal#
-  //   sound(): string
-  //   ^^^^^ definition Animal#sound()
-  // }
-  // class Dog implements Animal {
-  //       ^^^ definition Dog#, implementation_symbols = Animal#
-  //   public sound(): string { return "woof" }
-  //          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound()
-  // }
-  // const animal: Animal = new Dog()
-  //               ^^^^^^ reference Animal#
-  // console.log(animal.sound())
-  //                    ^^^^^ reference Animal#sound()
-  // ```
-  // Doing "Find references" on the symbol `Animal#sound()` should return
-  // references to the `Dog#sound()` method as well. Vice-versa, doing "Find
-  // references" on the `Dog#sound()` method should include references to the
-  // `Animal#sound()` method as well.
-  repeated string reference_symbols = 5;
-  // (optional) Similar to `references_symbols` but for "Go to implementation".
-  // It's common for the `implementation_symbols` and `references_symbols` fields
-  // have the same values but that's not always the case.
-  // In the TypeScript example above, observe that `implementation_symbols` has
-  // the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is
-  // empty. When requesting "Find references" on the "Animal#" symbol we don't
-  // want to include references to "Dog#" even if "Go to implementation" on the
-  // "Animal#" symbol should navigate to the "Dog#" symbol.
-  repeated string implementation_symbols = 6;
-  // (optional) Similar to `references_symbols` but for "Go to type definition".
-  repeated string type_definition_symbols = 7;
+  // (optional) Relationships to other symbols (e.g., implements, type definition).
+  repeated Relationship relationships = 4;
+}
+
+message Relationship {
+    string symbol = 1;
+    // When resolving "Find references", this field documents what other symbols
+    // should be included together with this symbol. For example, consider the
+    // following TypeScript code that defines two symbols `Animal#sound()` and
+    // `Dog#sound()`:
+    // ```ts
+    // interface Animal {
+    //           ^^^^^^ definition Animal#
+    //   sound(): string
+    //   ^^^^^ definition Animal#sound()
+    // }
+    // class Dog implements Animal {
+    //       ^^^ definition Dog#, implementation_symbols = Animal#
+    //   public sound(): string { return "woof" }
+    //          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound()
+    // }
+    // const animal: Animal = new Dog()
+    //               ^^^^^^ reference Animal#
+    // console.log(animal.sound())
+    //                    ^^^^^ reference Animal#sound()
+    // ```
+    // Doing "Find references" on the symbol `Animal#sound()` should return
+    // references to the `Dog#sound()` method as well. Vice-versa, doing "Find
+    // references" on the `Dog#sound()` method should include references to the
+    // `Animal#sound()` method as well.
+    bool is_reference = 2;
+    // Similar to `references_symbols` but for "Go to implementation".
+    // It's common for the `implementation_symbols` and `references_symbols` fields
+    // have the same values but that's not always the case.
+    // In the TypeScript example above, observe that `implementation_symbols` has
+    // the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is
+    // empty. When requesting "Find references" on the "Animal#" symbol we don't
+    // want to include references to "Dog#" even if "Go to implementation" on the
+    // "Animal#" symbol should navigate to the "Dog#" symbol.
+    bool is_implementation = 3;
+    // Similar to `references_symbols` but for "Go to type definition".
+    bool is_type_definition = 4;
 }
 
 // SymbolRole declares what "role" a symbol has in an occurrence.  A role is

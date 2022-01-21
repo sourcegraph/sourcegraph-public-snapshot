@@ -1,7 +1,7 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { Link } from '@sourcegraph/wildcard'
 
 import { userURL } from '../../../user'
 

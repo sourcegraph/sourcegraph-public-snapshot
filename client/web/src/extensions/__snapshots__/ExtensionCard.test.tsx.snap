@@ -27,6 +27,7 @@ exports[`ExtensionCard renders 1`] = `
             class="mb-0 mr-1 text-truncate flex-1"
           >
             <a
+              class=""
               href="/extensions/x/y"
             >
               y

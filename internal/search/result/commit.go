@@ -31,11 +31,20 @@ type CommitMatch struct {
 	// MessagePreview and DiffPreview are mutually exclusive. Only one should be set
 	MessagePreview *MatchedString
 	DiffPreview    *MatchedString
+}
 
-	// Body is a markdown-formatteed code block that contains the content of either
-	// the commit message if this match is to a commit, or the matching diff hunks
-	// if this is a diff result.
-	Body MatchedString
+func (c *CommitMatch) Body() MatchedString {
+	if c.DiffPreview != nil {
+		return MatchedString{
+			Content:       "```diff\n" + c.DiffPreview.Content + "\n```",
+			MatchedRanges: c.DiffPreview.MatchedRanges.Add(Location{Line: 1, Offset: len("```diff\n")}),
+		}
+	}
+
+	return MatchedString{
+		Content:       "```COMMIT_EDITMSG\n" + c.MessagePreview.Content + "\n```",
+		MatchedRanges: c.MessagePreview.MatchedRanges.Add(Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}),
+	}
 }
 
 // ResultCount for CommitSearchResult returns the number of highlights if there
@@ -44,8 +53,15 @@ type CommitMatch struct {
 // compatibility for our GraphQL API. The GraphQL API calls ResultCount on the
 // resolver, while streaming calls ResultCount on CommitSearchResult.
 func (r *CommitMatch) ResultCount() int {
-	if n := len(r.Body.MatchedRanges); n > 0 {
-		return n
+	matchCount := 0
+	switch {
+	case r.DiffPreview != nil:
+		matchCount = len(r.DiffPreview.MatchedRanges)
+	case r.MessagePreview != nil:
+		matchCount = len(r.MessagePreview.MatchedRanges)
+	}
+	if matchCount > 0 {
+		return matchCount
 	}
 	// Queries such as type:commit after:"1 week ago" don't have highlights. We count
 	// those results as 1.
@@ -57,13 +73,24 @@ func (r *CommitMatch) RepoName() types.MinimalRepo {
 }
 
 func (r *CommitMatch) Limit(limit int) int {
-	if len(r.Body.MatchedRanges) == 0 {
-		return limit - 1 // just counting the commit
-	} else if len(r.Body.MatchedRanges) > limit {
-		r.Body.MatchedRanges = r.Body.MatchedRanges[:limit]
-		return 0
+	limitMatchedString := func(ms *MatchedString) int {
+		if len(ms.MatchedRanges) == 0 {
+			return limit - 1
+		} else if len(ms.MatchedRanges) > limit {
+			ms.MatchedRanges = ms.MatchedRanges[:limit]
+			return 0
+		}
+		return limit - len(ms.MatchedRanges)
 	}
-	return limit - len(r.Body.MatchedRanges)
+
+	switch {
+	case r.DiffPreview != nil:
+		return limitMatchedString(r.DiffPreview)
+	case r.MessagePreview != nil:
+		return limitMatchedString(r.MessagePreview)
+	default:
+		panic("exactly one of DiffPreview or Message must be set")
+	}
 }
 
 func (r *CommitMatch) Select(path filter.SelectPath) Match {
@@ -99,7 +126,6 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 func (r *CommitMatch) AppendMatches(src *CommitMatch) {
 	if r.MessagePreview != nil && src.MessagePreview != nil {
 		r.MessagePreview.MatchedRanges = append(r.MessagePreview.MatchedRanges, src.MessagePreview.MatchedRanges...)
-		r.Body.MatchedRanges = append(r.Body.MatchedRanges, src.Body.MatchedRanges...)
 	}
 }
 
@@ -148,17 +174,17 @@ func displayRepoName(repoPath string) string {
 
 // selectModifiedLines extracts the highlight ranges that correspond to lines
 // that have a `+` or `-` prefix (corresponding to additions resp. removals).
-func selectModifiedLines(lines []string, highlights []Range, prefix string, offset int) []Range {
+func selectModifiedLines(lines []string, highlights []Range, prefix string) []Range {
 	if len(lines) == 0 {
 		return highlights
 	}
 	include := make([]Range, 0, len(highlights))
 	for _, h := range highlights {
-		if h.Start.Line-offset < 0 {
+		if h.Start.Line < 0 {
 			// Skip negative line numbers. See: https://github.com/sourcegraph/sourcegraph/issues/20286.
 			continue
 		}
-		if strings.HasPrefix(lines[h.Start.Line-offset], prefix) {
+		if strings.HasPrefix(lines[h.Start.Line], prefix) {
 			include = append(include, h)
 		}
 	}
@@ -195,24 +221,14 @@ func selectCommitDiffKind(c *CommitMatch, field string) Match {
 	if len(diff.MatchedRanges) == 0 {
 		// No highlights, implying no pattern was specified. Filter by
 		// whether there exists lines corresponding to additions or
-		// removals. Inspect c.Body, which is the diff markdown in the
-		// format ```diff <...>``` and which doesn't contain a unified
-		// diff header with +++ or --- in diff.Value, which would would
-		// otherwise confuse this check.
-		if modifiedLinesExist(strings.Split(c.Body.Content, "\n"), prefix) {
+		// removals.
+		if modifiedLinesExist(strings.Split(diff.Content, "\n"), prefix) {
 			return c
 		}
 		return nil
 	}
-	// We have two data structures storing highlight information for diff
-	// results. We must keep these in sync. Additionally the diff highlights
-	// line number is offset by 1.
-	bodyHighlights := selectModifiedLines(strings.Split(c.Body.Content, "\n"), c.Body.MatchedRanges, prefix, 0)
-	diffHighlights := selectModifiedLines(strings.Split(diff.Content, "\n"), diff.MatchedRanges, prefix, 1)
-	if len(bodyHighlights) > 0 {
-		// Only rely on bodyHighlights since the header in diff.Value
-		// will create bogus highlights due to `+++` or `---`.
-		c.Body.MatchedRanges = bodyHighlights
+	diffHighlights := selectModifiedLines(strings.Split(diff.Content, "\n"), diff.MatchedRanges, prefix)
+	if len(diffHighlights) > 0 {
 		c.DiffPreview.MatchedRanges = diffHighlights
 		return c
 	}

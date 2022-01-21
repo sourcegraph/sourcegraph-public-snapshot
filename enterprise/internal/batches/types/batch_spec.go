@@ -9,7 +9,7 @@ import (
 
 // NewBatchSpecFromRaw parses and validates the given rawSpec, and returns a BatchSpec
 // containing the result.
-func NewBatchSpecFromRaw(rawSpec string, allowFiles bool) (_ *BatchSpec, err error) {
+func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
 	c := &BatchSpec{RawSpec: rawSpec}
 
 	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec), batcheslib.ParseBatchSpecOptions{
@@ -17,7 +17,6 @@ func NewBatchSpecFromRaw(rawSpec string, allowFiles bool) (_ *BatchSpec, err err
 		AllowArrayEnvironments: true,
 		AllowTransformChanges:  true,
 		AllowConditionalExec:   true,
-		AllowFiles:             allowFiles,
 	})
 
 	return c, err

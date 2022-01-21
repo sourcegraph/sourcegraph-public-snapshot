@@ -8,22 +8,21 @@ import React, { useEffect, useMemo } from 'react'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/SyntaxHighlightedSearchQuery'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
-import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { SearchContextInputProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
 import { useNavbarQueryState } from '../stores'
@@ -41,7 +40,7 @@ export interface CommunitySearchContextPageProps
         TelemetryProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         SearchContextInputProps,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'> {
     authenticatedUser: AuthenticatedUser | null
@@ -74,11 +73,11 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContextBySpec(props.communitySearchContextMetadata.spec).pipe(
+                fetchSearchContextBySpec(props.communitySearchContextMetadata.spec, props.platformContext).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [props.communitySearchContextMetadata.spec, fetchSearchContextBySpec]
+            [props.communitySearchContextMetadata.spec, fetchSearchContextBySpec, props.platformContext]
         )
     )
 
@@ -214,9 +213,9 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
     <li className={classNames('list-unstyled mb-3', styles.repoItem)} key={repo}>
         {repo.startsWith('github.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GithubIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </a>
+                </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>
@@ -224,9 +223,9 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         )}
         {repo.startsWith('gitlab.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GitlabIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </a>
+                </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>
@@ -234,9 +233,9 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         )}
         {repo.startsWith('bitbucket.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <BitbucketIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </a>
+                </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>

@@ -63,7 +63,7 @@ const SchemeExecutorToken = "token-executor"
 func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAccessToken string) bool {
 	if expectedAccessToken == "" {
 		log15.Error("executors.accessToken not configured in site config")
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "Executors are not configured on this instance", http.StatusInternalServerError)
 		return false
 	}
 
