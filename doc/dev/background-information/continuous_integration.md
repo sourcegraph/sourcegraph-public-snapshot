@@ -32,7 +32,7 @@ We use soft failures for the following reasons only:
 - Steps that determine whether a subsequent step should run, where soft failures are the only technical way to communicate that a later step should be skipped in this manner using Buildkite.
   - Examples: [hash comparison steps that determine if a build should run](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/operations%5C.go+compare-hash.sh&patternType=literal)
 - Regular analysis tasks, where soft failures serve as an monitoring indicator to warn the team responsible for fixing issues.
-  - Examples: [vulnerability scanning](#vulnerability-scanning), linting tasks for catching deprecation warnings
+  - Examples: [image vulnerability scanning](#image-vulnerability-scanning), linting tasks for catching deprecation warnings
 - Temporary exceptions to accomodate xperimental or in-progress work.
 
 You can find all usages of soft failures [with the following queries](https://sourcegraph.com/notebooks/Tm90ZWJvb2s6NTc=):
@@ -42,7 +42,7 @@ You can find all usages of soft failures [with the following queries](https://so
 
 All other failures are hard failures.
 
-### Vulnerability scanning
+### Image vulnerability scanning
 
 Our CI pipeline scans uses [Trivy](https://aquasecurity.github.io/trivy/) to scan our Docker images for security vulnerabilities.
 
