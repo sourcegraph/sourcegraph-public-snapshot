@@ -568,8 +568,8 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 	}
 }
 
-// toSearchInputs converts a query parse tree to the _internal_ representation
-// needed to run a search. To understand why this conversion matters, think
+// toSearchRoutine converts a query parse tree to the _internal_ representation
+// needed to run a search routine. To understand why this conversion matters, think
 // about the fact that the query parse tree doesn't know anything about our
 // backends or architecture. It doesn't decide certain defaults, like whether we
 // should return multiple result types (pattern matches content, or a file name,
@@ -577,21 +577,11 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 // particular backend (e.g., skip repository resolution and just run a Zoekt
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
-// toSearchInputs.
-//
-// toSearchInputs returns a tuple (args, jobs). `args` represents a large,
-// generic object with many values that drive search logic all over the backend.
-// `jobs` represent search objects with a Run() method that directly runs the
-// search job in question, and the job object comprises only the state to run
-// that search. Currently, both return values may be used to evaluate a search.
-// In time, it is expected that toSearchInputs migrates to return _only_ jobs,
-// where each job contains its separate state for that kind of search and
-// backend. To complete the migration to jobs in phases, `args` is kept
-// backwards compatibility and represents a generic search.
-func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOptions, time.Duration, error) {
+// toSearchRoutine.
+func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
-		return nil, search.RepoOptions{}, 0, err
+		return nil, err
 	}
 	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
 
@@ -657,7 +647,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 		if globalSearch {
 			defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
 			if err != nil {
-				return nil, search.RepoOptions{}, 0, err
+				return nil, err
 			}
 			includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
 
@@ -665,7 +655,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 				typ := search.TextRequest
 				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
-					return nil, search.RepoOptions{}, 0, err
+					return nil, err
 				}
 
 				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
@@ -697,7 +687,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 				typ := search.SymbolRequest
 				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
-					return nil, search.RepoOptions{}, 0, err
+					return nil, err
 				}
 				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
 
@@ -729,7 +719,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 				// a zoekt search at all.
 				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
-					return nil, search.RepoOptions{}, 0, err
+					return nil, err
 				}
 				zoektArgs := &search.ZoektParameters{
 					Query:          zoektQuery,
@@ -762,7 +752,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 				typ := search.SymbolRequest
 				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
-					return nil, search.RepoOptions{}, 0, err
+					return nil, err
 				}
 				zoektArgs := &search.ZoektParameters{
 					Query:          zoektQuery,
@@ -800,7 +790,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 			typ := search.TextRequest
 			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 			if err != nil {
-				return nil, search.RepoOptions{}, 0, err
+				return nil, err
 			}
 			zoektArgs := &search.ZoektParameters{
 				Query:          zoektQuery,
@@ -947,7 +937,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 			panic(fmt.Sprintf("unknown job type: %q", j))
 		}
 	}
-	return jobs, repoOptions, args.Timeout, nil
+	return &run.Routine{Jobs: jobs, RepoOptions: repoOptions, Timeout: args.Timeout}, nil
 }
 
 // intersect returns the intersection of two sets of search result content
@@ -1166,18 +1156,18 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
-			jobs, repoOptions, timeout, err := r.toSearchInputs(q.ToParseTree())
+			routine, err := r.toSearchRoutine(q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
+			return r.evaluateRoutine(ctx, routine)
 		}
 	case query.Pattern:
-		jobs, repoOptions, timeout, err := r.toSearchInputs(q.ToParseTree())
+		routine, err := r.toSearchRoutine(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
+		return r.evaluateRoutine(ctx, routine)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -1189,11 +1179,11 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
-		jobs, repoOptions, timeout, err := r.toSearchInputs(query.ToNodes(q.Parameters))
+		routine, err := r.toSearchRoutine(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
+		return r.evaluateRoutine(ctx, routine)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -1524,19 +1514,19 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 	return nodes, nil
 }
 
-// evaluateJobs is a toplevel function that runs search jobs to yield results.
-// Search jobs represent terminal nodes in the evaluation tree. If the deadline
+// evaluateRoutine is a toplevel function that runs a search routine to yield results.
+// A search routine represents a terminal node in the evaluation tree. If the deadline
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) evaluateJobs(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (_ *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "evaluateJobs", "")
+func (r *searchResolver) evaluateRoutine(ctx context.Context, routine *run.Routine) (_ *SearchResults, err error) {
+	tr, ctx := trace.New(ctx, "evaluateRoutine", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
 	start := time.Now()
-	rr, err := r.doResults(ctx, jobs, repoOptions, timeout)
+	rr, err := r.doResults(ctx, routine)
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1717,11 +1707,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		jobs, repoOptions, timeout, err := r.toSearchInputs(r.Query)
+		routine, err := r.toSearchRoutine(r.Query)
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.doResults(ctx, jobs, repoOptions, timeout)
+		results, err := r.doResults(ctx, routine)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1806,13 +1796,9 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 	return args
 }
 
-// doResults is one of the highest level search functions that handles finding results.
-//
-// If forceOnlyResultType is specified, only results of the given type are returned,
-// regardless of what `type:` is specified in the query string.
-//
+// doResults returns the results of running a search routine.
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (res *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (res *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1824,7 +1810,7 @@ func (r *searchResolver) doResults(ctx context.Context, jobs []run.Job, repoOpti
 
 	start := time.Now()
 
-	ctx, cancel := context.WithTimeout(ctx, timeout)
+	ctx, cancel := context.WithTimeout(ctx, routine.Timeout)
 	defer cancel()
 
 	limit := r.MaxResults()
@@ -1866,7 +1852,7 @@ func (r *searchResolver) doResults(ctx context.Context, jobs []run.Job, repoOpti
 		_, _, _, _ = agg.Get()
 	}()
 
-	repoOptionsCopy := repoOptions
+	repoOptionsCopy := routine.RepoOptions
 	{
 		wg := waitGroup(true)
 		wg.Add(1)
@@ -1892,12 +1878,12 @@ func (r *searchResolver) doResults(ctx context.Context, jobs []run.Job, repoOpti
 	}
 
 	repos := &searchrepos.Resolver{
-		Opts: repoOptions,
+		Opts: routine.RepoOptions,
 		DB:   r.db,
 	}
 
 	// Start all specific search jobs, if any.
-	for _, job := range jobs {
+	for _, job := range routine.Jobs {
 		job := job
 		wg := waitGroup(job.Required())
 		wg.Add(1)
