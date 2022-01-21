@@ -12,7 +12,7 @@ and any manual migration steps you must perform.
 
 ## 3.35 -> 3.36
 
-The `backend` Kubernetes service has been removed, so if you deploy with a method other than `kubectl-apply-all.sh`, a manual removal of the service may be necessary.
+The `backend` service has been removed, so if you deploy with a method other than `kubectl-apply-all.sh`, a manual removal of the service may be necessary.
 
 Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
 
