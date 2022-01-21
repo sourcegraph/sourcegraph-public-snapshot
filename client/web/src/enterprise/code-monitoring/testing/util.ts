@@ -267,3 +267,12 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
         trigger: { id: 'test-2', query: 'test' },
     },
 ]
+
+// Only minimal authenticated user data is needed for the code monitor tests
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+export const mockAuthenticatedUser: AuthenticatedUser = {
+    id: 'userID',
+    username: 'username',
+    email: 'user@me.com',
+    siteAdmin: true,
+} as AuthenticatedUser

@@ -3,23 +3,18 @@ import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
-import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
+import { mockAuthenticatedUser } from '../testing/util'
 
 import { FormActionArea } from './FormActionArea'
 
 describe('FormActionArea', () => {
-    const authenticatedUser = {
-        id: 'foobar',
-        username: 'alice',
-        email: 'alice@alice.com',
-    } as AuthenticatedUser
     const mockActions: CodeMonitorFields['actions'] = {
         nodes: [
             {
                 __typename: 'MonitorEmail',
                 id: 'id1',
-                recipients: { nodes: [{ id: authenticatedUser.id }] },
+                recipients: { nodes: [{ id: mockAuthenticatedUser.id }] },
                 enabled: true,
             },
         ],
@@ -32,13 +27,13 @@ describe('FormActionArea', () => {
                 actionsCompleted={true}
                 setActionsCompleted={sinon.spy()}
                 disabled={false}
-                authenticatedUser={authenticatedUser}
+                authenticatedUser={mockAuthenticatedUser}
                 onActionsChange={sinon.spy()}
                 monitorName=""
             />
         )
 
-        userEvent.click(screen.getByTestId('form-action-toggle-email-notification'))
+        userEvent.click(screen.getByTestId('form-action-toggle-email'))
 
         expect(asFragment()).toMatchSnapshot()
     })

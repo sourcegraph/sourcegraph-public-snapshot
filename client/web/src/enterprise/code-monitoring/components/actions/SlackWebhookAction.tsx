@@ -12,7 +12,7 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
     actionCompleted,
     setActionCompleted,
     disabled,
-    monitorName,
+    _testStartOpen,
 }) => {
     const [webhookEnabled, setWebhookEnabled] = useState(action ? action.enabled : true)
 
@@ -55,16 +55,20 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                     Send Slack message to channel <ProductStatusBadge className="ml-1" status="experimental" />{' '}
                 </div>
             }
+            label="Send Slack message to channel"
             subtitle="Post to a specified Slack channel. Requires webhook configuration."
+            idName="slack-webhook"
             disabled={disabled}
             completed={actionCompleted}
-            completedSubtitle="Action completed"
+            completedSubtitle="Notification will be sent to the specified Slack webhook URL."
             actionEnabled={webhookEnabled}
             toggleActionEnabled={toggleWebhookEnabled}
+            canSubmit={!!url}
             onSubmit={onSubmit}
             onCancel={() => {}}
             canDelete={!!action}
             onDelete={onDelete}
+            _testStartOpen={_testStartOpen}
         >
             <Alert variant="info" className="mt-4">
                 Go to{' '}
@@ -79,8 +83,8 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                 <input
                     id="code-monitor-slack-webhook-url"
                     type="url"
-                    className="form-control mb-2 test-name-input"
-                    data-testid="name-input"
+                    className="form-control mb-2"
+                    data-testid="slack-webhook-url"
                     required={true}
                     onChange={event => {
                         setUrl(event.target.value)

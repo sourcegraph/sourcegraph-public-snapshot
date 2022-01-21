@@ -1,14 +1,14 @@
 import classNames from 'classnames'
 import React, { useState, useCallback, useEffect } from 'react'
 import { Observable } from 'rxjs'
-import { delay, startWith, tap, mergeMap, catchError } from 'rxjs/operators'
+import { tap, catchError, startWith, mergeMap, delay } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useEventObservable, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { MonitorEmailPriority } from '../../../../graphql-operations'
-import { triggerTestEmailAction } from '../../backend'
+import { triggerTestEmailAction as _triggerTestEmailAction } from '../../backend'
 import { ActionProps } from '../FormActionArea'
 import styles from '../FormActionArea.module.scss'
 
@@ -16,8 +16,9 @@ import { ActionEditor } from './ActionEditor'
 
 const LOADING = 'LOADING' as const
 
-interface EmailActionProps extends ActionProps {
+export interface EmailActionProps extends ActionProps {
     authenticatedUser: AuthenticatedUser
+    triggerTestEmailAction: typeof _triggerTestEmailAction
 }
 
 export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
@@ -28,6 +29,8 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
     disabled,
     authenticatedUser,
     monitorName,
+    triggerTestEmailAction,
+    _testStartOpen,
 }) => {
     const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(action ? action.enabled : true)
 
@@ -94,7 +97,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                         )
                     )
                 ),
-            [authenticatedUser, monitorName]
+            [authenticatedUser.id, monitorName, triggerTestEmailAction]
         )
     )
 
@@ -115,7 +118,9 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
     return (
         <ActionEditor
             title="Send email notifications"
+            label="Send email notifications"
             subtitle="Deliver email notifications to specified recipients."
+            idName="email"
             disabled={disabled}
             completed={actionCompleted}
             completedSubtitle={authenticatedUser.email}
@@ -124,8 +129,9 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
             onSubmit={onSubmit}
             canDelete={!!action}
             onDelete={onDelete}
+            _testStartOpen={_testStartOpen}
         >
-            <div className="form-group mt-4 test-action-form" data-testid="action-form">
+            <div className="form-group mt-4 test-action-form-email" data-testid="action-form-email">
                 <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
                 <input
                     id="code-monitoring-form-actions-recipients"
@@ -149,11 +155,18 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                     disabled={isSendTestEmailButtonDisabled}
                     onClick={triggerTestEmailActionRequest}
                     size="sm"
+                    data-testid="send-test-email"
                 >
                     {sendTestEmailButtonText}
                 </Button>
                 {isTestEmailSent && triggerTestEmailResult !== LOADING && (
-                    <Button className="p-0" onClick={triggerTestEmailActionRequest} variant="link" size="sm">
+                    <Button
+                        className="p-0"
+                        onClick={triggerTestEmailActionRequest}
+                        variant="link"
+                        size="sm"
+                        data-testid="send-test-email-again"
+                    >
                         Send again
                     </Button>
                 )}
@@ -163,7 +176,9 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                     </div>
                 )}
                 {isErrorLike(triggerTestEmailResult) && (
-                    <div className={classNames('mt-2', styles.testActionError)}>{triggerTestEmailResult.message}</div>
+                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-email-error">
+                        {triggerTestEmailResult.message}
+                    </div>
                 )}
             </div>
         </ActionEditor>

@@ -6,12 +6,14 @@ import { Button } from '@sourcegraph/wildcard'
 
 import styles from '../CodeMonitorForm.module.scss'
 
-interface Props {
+export interface ActionEditorProps {
     title: React.ReactNode
+    label: string // Similar to title, but for string-only labels
     subtitle: string
     disabled: boolean
     completed: boolean
     completedSubtitle: string
+    idName: string // Name used for generating IDs, including form control IDs and test IDs
 
     actionEnabled: boolean
     toggleActionEnabled: (enabled: boolean) => void
@@ -22,14 +24,19 @@ interface Props {
 
     canDelete: boolean
     onDelete: React.FormEventHandler
+
+    // For testing purposes only
+    _testStartOpen?: boolean
 }
 
-export const ActionEditor: React.FunctionComponent<Props> = ({
+export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
     title,
+    label,
     subtitle,
     disabled,
     completed,
     completedSubtitle,
+    idName,
     actionEnabled,
     toggleActionEnabled,
     canSubmit = true,
@@ -38,8 +45,9 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
     canDelete,
     onDelete,
     children,
+    _testStartOpen = false,
 }) => {
-    const [expanded, setExpanded] = useState(false)
+    const [expanded, setExpanded] = useState(_testStartOpen)
     const toggleExpanded = useCallback(() => {
         if (!disabled) {
             setExpanded(expanded => !expanded)
@@ -92,10 +100,11 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                                 value={actionEnabled}
                                 onToggle={toggleActionEnabled}
                                 className="mr-2"
-                                aria-labelledby="code-monitoring-form-actions-enable-toggle"
+                                aria-labelledby={`code-monitoring-${idName}-form-actions-enable-toggle`}
+                                data-testid={`enable-action-toggle-expanded-${idName}`}
                             />
                         </div>
-                        <span id="code-monitoring-form-actions-enable-toggle">
+                        <span id={`code-monitoring-${idName}-form-actions-enable-toggle`}>
                             {actionEnabled ? 'Enabled' : 'Disabled'}
                         </span>
                     </div>
@@ -103,8 +112,8 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                         <div>
                             <Button
                                 type="submit"
-                                data-testid="submit-action"
-                                className="mr-1 test-submit-action"
+                                data-testid={`submit-action-${idName}`}
+                                className={`mr-1 test-submit-action-${idName}`}
                                 onClick={submitHandler}
                                 onSubmit={submitHandler}
                                 disabled={!canSubmit}
@@ -112,12 +121,22 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                             >
                                 Continue
                             </Button>
-                            <Button onClick={cancelHandler} outline={true} variant="secondary">
+                            <Button
+                                onClick={cancelHandler}
+                                outline={true}
+                                variant="secondary"
+                                data-testid={`cancel-action-${idName}`}
+                            >
                                 Cancel
                             </Button>
                         </div>
                         {canDelete && (
-                            <Button onClick={deleteHandler} outline={true} variant="danger">
+                            <Button
+                                onClick={deleteHandler}
+                                outline={true}
+                                variant="danger"
+                                data-testid={`delete-action-${idName}`}
+                            >
                                 Delete
                             </Button>
                         )}
@@ -126,10 +145,15 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
             )}
             {!expanded && (
                 <CollapsedWrapperElement
-                    data-testid="form-action-toggle-email-notification"
-                    className={classNames('card test-action-button', styles.cardButton, disabled && 'disabled')}
+                    data-testid={`form-action-toggle-${idName}`}
+                    className={classNames(
+                        'card',
+                        styles.cardButton,
+                        disabled && 'disabled',
+                        `test-action-button-${idName}`
+                    )}
                     disabled={disabled}
-                    aria-label="Edit action: Send email notifications"
+                    aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
@@ -143,7 +167,10 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                                 {title}
                             </div>
                             {completed ? (
-                                <span className="text-muted font-weight-normal" data-testid="existing-action-email">
+                                <span
+                                    className="text-muted font-weight-normal"
+                                    data-testid={`existing-action-${idName}`}
+                                >
                                     {completedSubtitle}
                                 </span>
                             ) : (
@@ -158,6 +185,7 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                                         value={actionEnabled}
                                         onToggle={toggleActionEnabled}
                                         className="mr-3"
+                                        data-testid={`enable-action-toggle-collapsed-${idName}`}
                                     />
                                 </div>
                                 <Button variant="link" className="p-0">

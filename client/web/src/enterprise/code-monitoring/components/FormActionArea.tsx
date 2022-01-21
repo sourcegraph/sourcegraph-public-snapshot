@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
+import { triggerTestEmailAction } from '../backend'
 
 import { EmailAction } from './actions/EmailAction'
 import { SlackWebhookAction } from './actions/SlackWebhookAction'
@@ -25,6 +26,9 @@ export interface ActionProps {
     setActionCompleted: (actionCompleted: boolean) => void
     disabled: boolean
     monitorName: string
+
+    // For testing purposes only
+    _testStartOpen?: boolean
 }
 
 export type MonitorAction = CodeMonitorFields['actions']['nodes'][number]
@@ -90,6 +94,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 setActionCompleted={setEmailActionCompleted}
                 authenticatedUser={authenticatedUser}
                 monitorName={monitorName}
+                triggerTestEmailAction={triggerTestEmailAction}
             />
             {showWebhooks && (
                 <>

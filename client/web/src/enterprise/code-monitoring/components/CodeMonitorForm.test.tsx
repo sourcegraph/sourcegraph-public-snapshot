@@ -5,7 +5,7 @@ import { NEVER } from 'rxjs'
 
 import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
-import { AuthenticatedUser } from '../../../auth'
+import { mockAuthenticatedUser } from '../testing/util'
 
 import { CodeMonitorForm, CodeMonitorFormProps } from './CodeMonitorForm'
 
@@ -14,12 +14,7 @@ const PROPS: CodeMonitorFormProps = {
     location: createLocation('/code-monitoring/new'),
     onSubmit: () => NEVER,
     submitButtonLabel: '',
-    authenticatedUser: {
-        id: 'userID',
-        username: 'username',
-        email: 'user@me.com',
-        siteAdmin: true,
-    } as AuthenticatedUser,
+    authenticatedUser: mockAuthenticatedUser,
 }
 
 describe('CodeMonitorForm', () => {
