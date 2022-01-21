@@ -68,12 +68,15 @@ func TestTransformRecord(t *testing.T) {
 					"-associated-index-id", "42",
 				},
 				Dir: "web",
-				Env: []string{"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io"},
+				Env: []string{
+					"SRC_ENDPOINT=https://test.io",
+					"SRC_HEADER_AUTHORIZATION=token-executor hunter2",
+				},
 			},
 		},
 		RedactedValues: map[string]string{
-			"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
-			"hunter2":                             "PASSWORD_REMOVED",
+			"hunter2":                "PASSWORD_REMOVED",
+			"token-executor hunter2": "token-executor REDACTED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {
@@ -143,12 +146,15 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 					"-associated-index-id", "42",
 				},
 				Dir: "",
-				Env: []string{"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io"},
+				Env: []string{
+					"SRC_ENDPOINT=https://test.io",
+					"SRC_HEADER_AUTHORIZATION=token-executor hunter2",
+				},
 			},
 		},
 		RedactedValues: map[string]string{
-			"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
-			"hunter2":                             "PASSWORD_REMOVED",
+			"hunter2":                "PASSWORD_REMOVED",
+			"token-executor hunter2": "token-executor REDACTED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {
