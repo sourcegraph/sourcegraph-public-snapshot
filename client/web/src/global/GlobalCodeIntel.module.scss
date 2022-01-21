@@ -1,0 +1,14 @@
+.global-codeintel {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    background-color: var(--body-bg);
+}
+
+.cool-code-intel-status {
+    min-width: 24vw;
+    max-width: 50vw;
+
+    min-height: 27rem; /* avoid jitter when only loading indicator is shown */
+    max-height: 70vh;
+}
