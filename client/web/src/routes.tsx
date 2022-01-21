@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
@@ -16,7 +17,6 @@ import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
-import { lazyComponent } from './util/lazyComponent'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
@@ -80,12 +80,15 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.SearchConsole,
-        render: props =>
-            getExperimentalFeatures().showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} />
+        render: props => {
+            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
+
+            return showMultilineSearchConsole ? (
+                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
-            ),
+            )
+        },
         exact: true,
     },
     {
@@ -105,12 +108,15 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Notebook,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <SearchNotebookPage {...props} />
+        render: props => {
+            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
+
+            return showSearchNotebook ? (
+                <SearchNotebookPage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
-            ),
+            )
+        },
         exact: true,
     },
     {

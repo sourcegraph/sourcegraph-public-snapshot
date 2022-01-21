@@ -1,8 +1,8 @@
 import React from 'react'
 
+import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 
-import { SearchPatternTypeProps } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { CodeInsightsIcon } from '../../../insights/Icons'
 

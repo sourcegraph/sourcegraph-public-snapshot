@@ -49,12 +49,12 @@ export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost>
     return null
 }
 
-export interface SearchUserNeedsCodeHost {
+export interface SearchUserNeedsCodeHostProps {
     orgSearchContext?: string
     user: UserContext
 }
 
-export const SearchUserNeedsCodeHost: React.FunctionComponent<SearchUserNeedsCodeHost> = ({
+export const SearchUserNeedsCodeHost: React.FunctionComponent<SearchUserNeedsCodeHostProps> = ({
     orgSearchContext,
     user,
 }) => {

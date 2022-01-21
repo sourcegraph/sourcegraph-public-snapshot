@@ -4,6 +4,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, ReplaySubject } from 'rxjs'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
@@ -21,7 +22,6 @@ import {
     BatchChangesResult,
     BatchChangesByNamespaceVariables,
 } from '../../../graphql-operations'
-import { Settings } from '../../../schema/settings.schema'
 
 import {
     areBatchChangesLicensed as _areBatchChangesLicensed,

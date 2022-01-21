@@ -9,18 +9,17 @@ import { asError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { Config } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
-
 import {
     GitHubAuthProvider,
     GitLabAuthProvider,
     OpenIDConnectAuthProvider,
     SAMLAuthProvider,
     SiteConfiguration,
-} from '../../schema/site.schema'
+} from '@sourcegraph/shared/src/schema/site.schema'
+import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
+import { Config } from '@sourcegraph/shared/src/testing/config'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import {
     deleteUser,
