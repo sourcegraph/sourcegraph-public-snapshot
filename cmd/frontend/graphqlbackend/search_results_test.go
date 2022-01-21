@@ -921,6 +921,7 @@ func Test_toSearchInputs(t *testing.T) {
 	autogold.Want("commit", "Commit").Equal(t, test("type:commit test", query.ParseRegexp))
 	autogold.Want("diff", "Diff").Equal(t, test("type:diff test", query.ParseRegexp))
 	autogold.Want("file or commit", "JobWithOptional{Required: RepoUniverseText, Optional: Commit}").Equal(t, test("type:file type:commit test", query.ParseRegexp))
+	autogold.Want("many types", "JobWithOptional{Required: ParallelJob{RepoSubsetText, Repo}, Optional: ParallelJob{RepoSubsetSymbol, Commit}}").Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", query.ParseRegexp))
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {
