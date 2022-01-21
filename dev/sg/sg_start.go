@@ -154,7 +154,14 @@ func startExec(ctx context.Context, args []string) error {
 			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: check %s not found in config", name))
 			continue
 		}
-		checks = append(checks, check)
+		// TODO: Take new checks into account
+		if check.Cmd != "" {
+			checks = append(checks, run.Check{
+				Name:        check.Name,
+				FailMessage: check.FailMessage,
+				Cmd:         check.Cmd,
+			})
+		}
 	}
 
 	ok, err := run.Checks(ctx, globalConf.Env, checks...)

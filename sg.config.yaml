@@ -723,8 +723,9 @@ checks:
     failMessage: 'Failed to connect to Redis on port 6379. Please make sure Redis is running.'
 
   postgres:
-    cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
+    # cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
     failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
+    checkFunc: postgres
 
   git-version:
     cmd: |
