@@ -906,15 +906,15 @@ func Test_toSearchInputs(t *testing.T) {
 	// Job generation for global vs non-global search
 	autogold.Want("user search context", "RequiredAndOptionalJob{Required: ParallelJob{RepoSubsetText, Repo}, Optional: ParallelJob{}}").Equal(t, test(`foo context:@userA`, query.ParseLiteral))
 	autogold.Want("universal (AKA global) search context", "RequiredAndOptionalJob{Required: ParallelJob{RepoUniverseText, Repo}, Optional: ParallelJob{}}").Equal(t, test(`foo context:global`, query.ParseLiteral))
-	autogold.Want("universal (AKA global) search", "RepoUniverseText,Repo").Equal(t, test(`foo`, query.ParseLiteral))
-	autogold.Want("nonglobal repo", "RepoSubsetText,Repo").Equal(t, test(`foo repo:sourcegraph/sourcegraph`, query.ParseLiteral))
-	autogold.Want("nonglobal repo contains", "RepoSubsetText,Repo").Equal(t, test(`foo repo:contains(bar)`, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search", "RequiredAndOptionalJob{Required: ParallelJob{RepoUniverseText, Repo}, Optional: ParallelJob{}}").Equal(t, test(`foo`, query.ParseLiteral))
+	autogold.Want("nonglobal repo", "RequiredAndOptionalJob{Required: ParallelJob{RepoSubsetText, Repo}, Optional: ParallelJob{}}").Equal(t, test(`foo repo:sourcegraph/sourcegraph`, query.ParseLiteral))
+	autogold.Want("nonglobal repo contains", "RequiredAndOptionalJob{Required: ParallelJob{RepoSubsetText, Repo}, Optional: ParallelJob{}}").Equal(t, test(`foo repo:contains(bar)`, query.ParseLiteral))
 
 	// Job generation support for implied `type:repo` queries.
-	autogold.Want("supported Repo job", "RepoUniverseText,Repo").Equal(t, test("ok ok", query.ParseRegexp))
-	autogold.Want("supportedRepo job literal", "RepoUniverseText,Repo").Equal(t, test("ok @thing", query.ParseLiteral))
-	autogold.Want("unsupported Repo job prefix", "RepoUniverseText").Equal(t, test("@nope", query.ParseRegexp))
-	autogold.Want("unsupported Repo job regexp", "RepoUniverseText").Equal(t, test("foo @bar", query.ParseRegexp))
+	autogold.Want("supported Repo job", "RequiredAndOptionalJob{Required: ParallelJob{RepoUniverseText, Repo}, Optional: ParallelJob{}}").Equal(t, test("ok ok", query.ParseRegexp))
+	autogold.Want("supportedRepo job literal", "RequiredAndOptionalJob{Required: ParallelJob{RepoUniverseText, Repo}, Optional: ParallelJob{}}").Equal(t, test("ok @thing", query.ParseLiteral))
+	autogold.Want("unsupported Repo job prefix", "RequiredAndOptionalJob{Required: ParallelJob{RepoUniverseText}, Optional: ParallelJob{}}").Equal(t, test("@nope", query.ParseRegexp))
+	autogold.Want("unsupported Repo job regexp", "RequiredAndOptionalJob{Required: ParallelJob{RepoUniverseText}, Optional: ParallelJob{}}").Equal(t, test("foo @bar", query.ParseRegexp))
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {
