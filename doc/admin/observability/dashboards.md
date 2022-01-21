@@ -138,7 +138,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-page-load
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100020` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Cloud SaaS team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2049,7 +2049,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-internala
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101502` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Cloud SaaS team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
+<sub>*Managed by the [Sourcegraph Cloud Software-as-a-Service team](https://handbook.sourcegraph.com/engineering/cloud/saas).*</sub>
 
 <details>
 <summary>Technical details</summary>
