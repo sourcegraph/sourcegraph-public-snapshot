@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/graphql-go/graphql/gqlerrors"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
@@ -100,7 +102,7 @@ type gqlSearchResponse struct {
 			} `json:"results"`
 		} `json:"search"`
 	} `json:"data"`
-	Errors []interface{}
+	Errors []gqlerrors.FormattedError
 }
 
 type commitSearchResults []commitSearchResult
@@ -203,7 +205,11 @@ func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse
 		return nil, errors.Wrap(err, "Decode")
 	}
 	if len(res.Errors) > 0 {
-		return res, errors.Errorf("graphql: errors: %v", res.Errors)
+		var combined error
+		for _, err := range res.Errors {
+			combined = multierror.Append(combined, err)
+		}
+		return nil, combined
 	}
 	return res, nil
 }
