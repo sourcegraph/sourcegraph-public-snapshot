@@ -104,7 +104,7 @@ const CodeOwnersStatusContext: React.FunctionComponent<{
                 moreClassName="list-inline-item"
                 moreLinkClassName="text-muted small"
             >
-                {entity.codeOwners?.map(codeOwner => (
+                {entity.codeOwners?.edges.map(codeOwner => (
                     <li key={codeOwner.node.email} className="list-inline-item mr-2">
                         {codeOwner.node.email}
                         <span
@@ -136,7 +136,7 @@ const ContributorsStatusContext: React.FunctionComponent<{
                 moreClassName="list-inline-item"
                 moreLinkClassName="text-muted small"
             >
-                {entity.authors?.map(author => (
+                {entity.contributors?.edges.map(author => (
                     <li key={author.person.email} className="list-inline-item mr-2">
                         <PersonLink person={author.person} />
                         <span

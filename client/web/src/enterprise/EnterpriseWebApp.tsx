@@ -3,8 +3,8 @@ import React from 'react'
 import '../SourcegraphWebApp.scss'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
-import { lazyComponent } from '../util/lazyComponent'
 
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'

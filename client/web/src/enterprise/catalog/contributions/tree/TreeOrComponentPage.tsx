@@ -2,12 +2,12 @@ import classNames from 'classnames'
 import React, { useEffect } from 'react'
 import { Redirect } from 'react-router'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../components/alerts'
 import { PageTitle } from '../../../../components/PageTitle'
 import { TreeOrComponentPageResult, TreeOrComponentPageVariables } from '../../../../graphql-operations'
 import { isNotTreeError, TreePage, useTreePageBreadcrumb } from '../../../../repo/tree/TreePage'

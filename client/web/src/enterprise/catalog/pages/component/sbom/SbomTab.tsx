@@ -2,12 +2,11 @@
 import classNames from 'classnames'
 import React, { useMemo } from 'react'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery, gql } from '@sourcegraph/http-client'
-
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../components/alerts'
 import { SourceLocationSetSBOMResult, SourceLocationSetSBOMVariables } from '../../../../../graphql-operations'
 
 import { BOM, BOMRef } from './cyclonedx'

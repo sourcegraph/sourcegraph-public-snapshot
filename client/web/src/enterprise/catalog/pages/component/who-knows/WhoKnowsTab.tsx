@@ -1,10 +1,10 @@
 import React from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../components/alerts'
 import { SourceLocationSetWhoKnowsResult, SourceLocationSetWhoKnowsVariables } from '../../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { ComponentOverviewWhoKnows } from '../overview/ComponentOverviewWhoKnows'
