@@ -23,6 +23,7 @@ jobs:
           - client/shared
           - client/search
           - client/search-ui
+          - client/vscode
           - client/web
           - client/wildcard
           - client/common
