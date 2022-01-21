@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
@@ -34,10 +33,10 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
  */
 export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
     <section className={styles.emptySection}>
-        <Link to={`/insights/create?dashboardId=${props.dashboard.id}`} className={classNames(styles.itemCard, 'card')}>
+        <Card as={Link} to={`/insights/create?dashboardId=${props.dashboard.id}`} className={styles.itemCard}>
             <PlusIcon size="2rem" />
             <span>Create new insight</span>
-        </Link>
+        </Card>
         <span className="d-flex justify-content-center mt-3">
             <span>
                 or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>

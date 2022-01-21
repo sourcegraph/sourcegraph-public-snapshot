@@ -4,7 +4,7 @@ import React, { useCallback } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { Card, Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -55,9 +55,10 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
             <div className={styles.searchExamples}>
                 {examples.map(example => (
                     <div key={example.query} className={styles.searchExampleCardWrapper}>
-                        <Link
+                        <Card
+                            as={Link}
                             to={example.to}
-                            className={classNames('card', styles.searchExampleCard)}
+                            className={styles.searchExampleCard}
                             onClick={searchExampleClicked(example.trackEventName)}
                         >
                             <div className={classNames(styles.searchExampleIcon)}>{icon}</div>
@@ -66,7 +67,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
                                     <SyntaxHighlightedSearchQuery query={example.query} />
                                 </div>
                             </div>
-                        </Link>
+                        </Card>
                         <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
                             {example.label}
                         </Link>
@@ -102,13 +103,14 @@ const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
                 {examples.map(example => (
                     <div key={example.query} className={styles.tipsAndTricksExample}>
                         {example.label}
-                        <Link
+                        <Card
+                            as={Link}
                             to={example.to}
-                            className={classNames('card', styles.tipsAndTricksCard)}
+                            className={styles.tipsAndTricksCard}
                             onClick={searchExampleClicked(example.trackEventName)}
                         >
                             <SyntaxHighlightedSearchQuery query={example.query} />
-                        </Link>
+                        </Card>
                     </div>
                 ))}
             </div>
@@ -125,7 +127,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
     return (
         <DynamicWebFonts fonts={fonts}>
             <div className={styles.loggedOutHomepage}>
-                {isOnboardingFeatureEnabled && (
+                {!isOnboardingFeatureEnabled && (
                     <div className={styles.content}>
                         <OnboardingTour
                             isFixedHeight={true}
@@ -162,7 +164,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                         />
                     </div>
                 )}
-                {!isOnboardingFeatureEnabled && (
+                {isOnboardingFeatureEnabled && (
                     <div className={styles.helpContent}>
                         {isSearchNotebookFeatureEnabled ? (
                             <SearchExamples
