@@ -19,23 +19,24 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	AllRepos bool
 }) (*EmptyResponse, error) {
 	start := time.Now()
+	var err error
+	namespaceUserID, namespaceOrgID := int32(0), int32(0)
+	defer reportExternalServiceDuration(start, SetRepos, &err, &namespaceUserID, &namespaceOrgID)
+
 	id, err := UnmarshalExternalServiceID(args.ID)
 	if err != nil {
-		defer reportExternalServiceDuration(start, SetRepos, &err, 0, 0)
-
 		return nil, err
 	}
 
 	extsvcStore := r.db.ExternalServices()
 	es, err := extsvcStore.GetByID(ctx, id)
 	if err != nil {
-		defer reportExternalServiceDuration(start, SetRepos, &err, 0, 0)
 		return nil, err
 	}
-	defer reportExternalServiceDuration(start, SetRepos, &err, es.NamespaceUserID, es.NamespaceOrgID)
+	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
 
 	// 🚨 SECURITY: make sure the user has access to external service
-	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
 		return nil, err
 	}
 
@@ -46,7 +47,8 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 
 	ra, ok := cfg.(repoSetter)
 	if !ok {
-		return nil, errors.Errorf("ExternalService %s (kind %s) does not implement repoSetter", args.ID, es.Kind)
+		err = errors.Errorf("ExternalService %s (kind %s) does not implement repoSetter", args.ID, es.Kind)
+		return nil, err
 	}
 
 	var repos []string
@@ -56,7 +58,8 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		// their limit before hitting the code host
 		maxAllowed := conf.UserReposMaxPerUser()
 		if (es.NamespaceUserID != 0 || es.NamespaceOrgID != 0) && len(repos) > maxAllowed {
-			return nil, errors.Errorf("Too many repositories, %d. Sourcegraph supports adding a maximum of %d repositories.", len(repos), maxAllowed)
+			err = errors.Errorf("Too many repositories, %d. Sourcegraph supports adding a maximum of %d repositories.", len(repos), maxAllowed)
+			return nil, err
 		}
 	}
 	err = ra.SetRepos(args.AllRepos, repos)
@@ -79,7 +82,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
-	if err := syncExternalService(ctx, es, 5*time.Second, r.repoupdaterClient); err != nil {
+	if err = syncExternalService(ctx, es, 5*time.Second, r.repoupdaterClient); err != nil {
 		return nil, err
 	}
 
