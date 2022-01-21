@@ -247,14 +247,14 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		case "email":
 			user, err := db.Users().GetByVerifiedEmail(ctx, perm.BindID)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "getting user by email")
 			}
 			userID = user.ID
 
 		case "username":
 			user, err := db.Users().GetByUsername(ctx, perm.BindID)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "getting user by username")
 			}
 			userID = user.ID
 
