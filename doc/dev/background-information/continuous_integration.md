@@ -59,6 +59,8 @@ If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a k
 
 > NOTE: Our vulnerability management process (including this workflow) is under active development and in its early stages. All of the above is subject to change. See [https://github.com/sourcegraph/sourcegraph/pull/25756](https://github.com/sourcegraph/sourcegraph/pull/25756) for more context.
 
+We also run [separate vulnerability scans for our infrastructure](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/security/checkov).
+
 ### Pipeline health
 
 Maintaining [Buildkite pipeline](#buildkite-pipelines) health is a critical part of ensuring we ship a stable product - changes that make it to the `main` branch may be deployed to various Sourcegraph instances, and having a reliable and predictable pipeline is crucial to ensuring bugs do not make it to production environments.
