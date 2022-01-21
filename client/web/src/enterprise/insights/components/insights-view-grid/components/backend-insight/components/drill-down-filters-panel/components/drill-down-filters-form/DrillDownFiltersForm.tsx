@@ -95,23 +95,22 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
 
     return (
         <form ref={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
-            <header className="d-flex align-items-baseline pt-3 pb-0">
+            <header className={styles.header}>
                 <h4 className="mb-0">Filter repositories</h4>
 
+                <a
+                    href="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
+                    target="_blank"
+                    rel="noopener"
+                    className="small mr-auto"
+                >
+                    Learn more.
+                </a>
+
                 {hasAppliedFilters && (
-                    <span className="ml-auto">
-                        <Badge className="text-uppercase" variant="secondary">
-                            Default filters applied
-                        </Badge>{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
-                            target="_blank"
-                            rel="noopener"
-                            className="small"
-                        >
-                            Learn more.
-                        </a>
-                    </span>
+                    <Badge className="text-uppercase" variant="secondary">
+                        Default filters applied
+                    </Badge>
                 )}
             </header>
 

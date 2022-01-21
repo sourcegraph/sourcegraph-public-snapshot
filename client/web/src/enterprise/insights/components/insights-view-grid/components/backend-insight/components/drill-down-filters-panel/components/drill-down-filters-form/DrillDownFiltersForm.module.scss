@@ -1,3 +1,11 @@
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 1rem 0 0 0;
+}
+
 .description {
     display: inline-block;
     margin: 0.75rem 0;

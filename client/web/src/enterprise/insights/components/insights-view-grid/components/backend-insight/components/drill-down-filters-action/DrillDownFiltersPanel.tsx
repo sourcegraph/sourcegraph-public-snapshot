@@ -58,6 +58,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
             </PopoverTrigger>
 
             <PopoverContent
+                constrainToScrollParents={false}
                 position={Position.rightStart}
                 aria-label="Drill-down filters panel"
                 onMouseDown={handleMouseDown}
