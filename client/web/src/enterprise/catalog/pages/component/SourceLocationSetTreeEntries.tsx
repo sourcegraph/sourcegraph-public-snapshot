@@ -71,6 +71,7 @@ export const SourceLocationSetTreeEntries: React.FunctionComponent<Props> = ({
                     key={`${sourceLocation.repositoryName}:${sourceLocation.path || ''}`}
                     {...props}
                     sourceLocation={sourceLocation}
+                    recursive={sourceLocationSet.__typename === 'Component'}
                 />
             ))}
         </div>
@@ -80,13 +81,20 @@ export const SourceLocationSetTreeEntries: React.FunctionComponent<Props> = ({
 const SourceLocationTreeEntries: React.FunctionComponent<
     {
         sourceLocation: SourceLocation
+        recursive: boolean
         className?: string
     } & ExtensionsControllerProps &
         ThemeProps
-> = ({ sourceLocation, className, extensionsController, isLightTheme }) => {
-    const files = useMemo(() => sourceLocation.treeEntry.entries.filter(entry => !entry.isDirectory), [
-        sourceLocation.treeEntry.entries,
-    ])
+> = ({ sourceLocation, recursive, className, extensionsController, isLightTheme }) => {
+    const entries = useMemo(
+        () =>
+            recursive
+                ? sourceLocation.treeEntry.entries
+                : sourceLocation.treeEntry.entries.filter(entry => dirname(entry.path) === sourceLocation.path),
+        [recursive, sourceLocation.path, sourceLocation.treeEntry.entries]
+    )
+
+    const files = useMemo(() => entries.filter(entry => !entry.isDirectory), [entries])
 
     const fileDecorationsByPath =
         useObservable<FileDecorationsByPath>(
@@ -115,10 +123,20 @@ const SourceLocationTreeEntries: React.FunctionComponent<
         ) ?? {}
 
     const rootPath = sourceLocation.path || ''
-    const directories = useMemo(() => groupByParentDirectories(rootPath, sourceLocation.treeEntry.entries), [
-        rootPath,
-        sourceLocation.treeEntry.entries,
-    ])
+    const directories = useMemo(
+        () =>
+            recursive
+                ? groupByParentDirectories(rootPath, entries)
+                : [
+                      {
+                          path: rootPath,
+                          relativePath: '',
+                          url: '',
+                          files: entries,
+                      },
+                  ],
+        [recursive, rootPath, entries]
+    )
 
     return (
         <ul className={classNames('list-group list-group-flush', className)}>

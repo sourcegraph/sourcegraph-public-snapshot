@@ -142,13 +142,12 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
     repo,
 }) => (
     <Button
-        className="d-flex align-items-center text-nowrap"
+        className="d-flex align-items-center text-nowrap border-0 px-1"
         key="repo-revision"
         id="repo-revision-popover"
         aria-label="Change revision"
         outline={true}
         variant="secondary"
-        size="sm"
     >
         {(revision && revision === resolvedRevisionOrError.commitID
             ? resolvedRevisionOrError.commitID.slice(0, 7)

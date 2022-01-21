@@ -245,10 +245,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                         ? resolvedRevisionOrError.rootTreeURL
                                         : repoOrError.url
                                 }
-                                className="text-nowrap text-body d-flex align-items-center test-repo-header-repo-link"
+                                className="text-nowrap text-body border-0 px-1 d-flex align-items-center test-repo-header-repo-link"
                                 variant="secondary"
                                 outline={true}
-                                size="sm"
                                 as={Link}
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
