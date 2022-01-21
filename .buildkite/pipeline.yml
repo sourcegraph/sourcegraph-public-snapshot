@@ -15,3 +15,6 @@ steps:
       echo ""
       echo "--- upload pipeline"
       buildkite-agent pipeline upload generated-pipeline.yml
+
+  - label: ':lock: security - checkov'
+    command: .buildkite/ci-checkov.sh
