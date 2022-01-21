@@ -12,13 +12,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
+func NewRequiredAndOptionalJob(required Job, optional Job) *RequiredAndOptionalJob {
+	return &RequiredAndOptionalJob{
+		required: required,
+		optional: optional,
+	}
+}
+
 type RequiredAndOptionalJob struct {
-	Required Job
-	Optional Job
+	required Job
+	optional Job
 }
 
 func (r *RequiredAndOptionalJob) Name() string {
-	return fmt.Sprintf("RequiredAndOptionalJob{Required: %s, Optional: %s}", r.Required.Name(), r.Optional.Name())
+	return fmt.Sprintf("RequiredAndOptionalJob{Required: %s, Optional: %s}", r.required.Name(), r.optional.Name())
 }
 
 func (r *RequiredAndOptionalJob) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
@@ -29,10 +36,10 @@ func (r *RequiredAndOptionalJob) Run(ctx context.Context, s streaming.Sender, pa
 
 	var optionalGroup, requiredGroup multierror.Group
 	requiredGroup.Go(func() error {
-		return r.Required.Run(ctx, s, pager)
+		return r.required.Run(ctx, s, pager)
 	})
 	optionalGroup.Go(func() error {
-		return r.Optional.Run(ctx, s, pager)
+		return r.optional.Run(ctx, s, pager)
 	})
 
 	var errs *multierror.Error
@@ -53,13 +60,17 @@ func (r *RequiredAndOptionalJob) Run(ctx context.Context, s streaming.Sender, pa
 	return errs.ErrorOrNil()
 }
 
+func NewParallelJob(children ...Job) *ParallelJob {
+	return &ParallelJob{children: children}
+}
+
 type ParallelJob struct {
-	Children []Job
+	children []Job
 }
 
 func (p *ParallelJob) Name() string {
 	var childNames []string
-	for _, job := range p.Children {
+	for _, job := range p.children {
 		childNames = append(childNames, job.Name())
 	}
 	return fmt.Sprintf("ParallelJob{%s}", strings.Join(childNames, ", "))
@@ -67,7 +78,7 @@ func (p *ParallelJob) Name() string {
 
 func (p *ParallelJob) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
 	var g multierror.Group
-	for _, job := range p.Children {
+	for _, job := range p.children {
 		job := job
 		g.Go(func() error {
 			return job.Run(ctx, s, pager)
