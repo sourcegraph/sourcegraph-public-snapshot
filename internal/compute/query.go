@@ -66,7 +66,7 @@ func (p Comby) String() string {
 	return p.Value
 }
 
-func extractPattern(basic query.Basic) (*query.Pattern, error) {
+func extractPattern(basic *query.Basic) (*query.Pattern, error) {
 	if basic.Pattern == nil {
 		return nil, errors.New("compute endpoint expects nonempty pattern")
 	}
@@ -136,7 +136,12 @@ func parseArrowSyntax(args string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-func parseReplace(pattern *query.Pattern) (Command, bool, error) {
+func parseReplace(q *query.Basic) (Command, bool, error) {
+	pattern, err := extractPattern(q)
+	if err != nil {
+		return nil, false, err
+	}
+
 	name, args, ok := parseContentPredicate(pattern)
 	if !ok {
 		return nil, false, nil
@@ -165,7 +170,12 @@ func parseReplace(pattern *query.Pattern) (Command, bool, error) {
 	return &Replace{MatchPattern: matchPattern, ReplacePattern: right}, true, nil
 }
 
-func parseOutput(pattern *query.Pattern) (Command, bool, error) {
+func parseOutput(q *query.Basic) (Command, bool, error) {
+	pattern, err := extractPattern(q)
+	if err != nil {
+		return nil, false, err
+	}
+
 	name, args, ok := parseContentPredicate(pattern)
 	if !ok {
 		return nil, false, nil
@@ -195,7 +205,12 @@ func parseOutput(pattern *query.Pattern) (Command, bool, error) {
 	return &Output{MatchPattern: matchPattern, OutputPattern: right, Separator: "\n"}, true, nil
 }
 
-func parseMatchOnly(pattern *query.Pattern) (Command, bool, error) {
+func parseMatchOnly(q *query.Basic) (Command, bool, error) {
+	pattern, err := extractPattern(q)
+	if err != nil {
+		return nil, false, err
+	}
+
 	rp, err := toRegexpPattern(pattern.Value)
 	if err != nil {
 		return nil, false, err
@@ -203,13 +218,13 @@ func parseMatchOnly(pattern *query.Pattern) (Command, bool, error) {
 	return &MatchOnly{MatchPattern: rp}, true, nil
 }
 
-type commandParser func(pattern *query.Pattern) (Command, bool, error)
+type commandParser func(pattern *query.Basic) (Command, bool, error)
 
 // first returns the first parser that succeeds at parsing a command from a pattern.
 func first(parsers ...commandParser) commandParser {
-	return func(pattern *query.Pattern) (Command, bool, error) {
+	return func(q *query.Basic) (Command, bool, error) {
 		for _, parse := range parsers {
-			command, ok, err := parse(pattern)
+			command, ok, err := parse(q)
 			if err != nil {
 				return nil, false, err
 			}
@@ -217,7 +232,7 @@ func first(parsers ...commandParser) commandParser {
 				return command, true, nil
 			}
 		}
-		return nil, false, errors.Errorf("could not parse valid compute command from pattern %s", pattern.Value)
+		return nil, false, errors.Errorf("could not parse valid compute command from query %s", q)
 	}
 }
 
@@ -231,11 +246,7 @@ func toComputeQuery(plan query.Plan) (*Query, error) {
 	if len(plan) != 1 {
 		return nil, errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
 	}
-	pattern, err := extractPattern(plan[0])
-	if err != nil {
-		return nil, err
-	}
-	command, _, err := parseCommand(pattern)
+	command, _, err := parseCommand(&plan[0])
 	if err != nil {
 		return nil, err
 	}
