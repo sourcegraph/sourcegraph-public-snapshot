@@ -74,7 +74,7 @@ func (r *componentUsageResolver) cachedResults(ctx context.Context) (*gql.Search
 		SearchResults []result.Match
 	}
 	cachePath := func(search gql.SearchImplementer) string {
-		const dir = "/home/sqs/tmp/sqs-wip-cache/componentUsage"
+		const dir = "/tmp/sqs-wip-cache/componentUsage"
 		_ = os.MkdirAll(dir, 0700)
 
 		h := sha256.Sum256([]byte(r.search.Inputs().OriginalQuery))

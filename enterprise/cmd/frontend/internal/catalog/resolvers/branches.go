@@ -92,7 +92,7 @@ func getBranchesForRepo(ctx context.Context, repo api.RepoName, pathRegexp strin
 		Data []protocol.CommitMatch
 	}
 	cachePath := func(repoName api.RepoName, pathRegexp string) string {
-		dir := "/home/sqs/tmp/sqs-wip-cache/getBranchesForRepo/" + pathpkg.Base(string(repoName))
+		dir := "/tmp/sqs-wip-cache/getBranchesForRepo/" + pathpkg.Base(string(repoName))
 		_ = os.MkdirAll(dir, 0700)
 
 		b, err := json.Marshal([]interface{}{repoName, pathRegexp})

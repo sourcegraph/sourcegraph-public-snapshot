@@ -32,7 +32,7 @@ func getBlameAuthors(ctx context.Context, repoName api.RepoName, path string, op
 		Data []*git.Hunk
 	}
 	cachePath := func(repoName api.RepoName, path string, opt git.BlameOptions) string {
-		dir := "/home/sqs/tmp/sqs-wip-cache/getBlameAuthors/" + pathpkg.Base(string(repoName))
+		dir := "/tmp/sqs-wip-cache/getBlameAuthors/" + pathpkg.Base(string(repoName))
 		_ = os.MkdirAll(dir, 0700)
 
 		b, err := json.Marshal([]interface{}{repoName, path, opt})

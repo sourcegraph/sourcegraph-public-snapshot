@@ -64,7 +64,7 @@ func (r *componentResolver) labelData(ctx context.Context) ([]componentLabelData
 func (r *componentResolver) checkIfComponentMatchesLabelValueQuery(ctx context.Context, labelValueQuery string) (ok bool, err error) {
 	type cacheEntry bool
 	cachePath := func(componentName, labelValueQuery string) string {
-		const dir = "/home/sqs/tmp/sqs-wip-cache/labelData"
+		const dir = "/tmp/sqs-wip-cache/labelData"
 		_ = os.MkdirAll(dir, 0700)
 
 		b, err := json.Marshal([]interface{}{componentName, labelValueQuery})
