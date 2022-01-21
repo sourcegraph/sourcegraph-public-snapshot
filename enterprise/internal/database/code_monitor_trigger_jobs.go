@@ -19,8 +19,9 @@ type TriggerJob struct {
 	QueryString *string
 
 	// Whether we got any results.
-	Results    *bool
-	NumResults *int32
+	Results       *bool
+	NumResults    *int32
+	ResultPayload []byte
 
 	// Fields demanded for any dbworker.
 	State          string
@@ -202,6 +203,7 @@ func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
 		&m.NumResets,
 		&m.NumFailures,
 		&m.LogContents,
+		&m.ResultPayload,
 	)
 	return m, err
 }
@@ -220,4 +222,5 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.num_resets"),
 	sqlf.Sprintf("cm_trigger_jobs.num_failures"),
 	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
+	sqlf.Sprintf("cm_trigger_jobs.result_payload"),
 }
