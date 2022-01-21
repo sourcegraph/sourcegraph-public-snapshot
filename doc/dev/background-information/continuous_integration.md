@@ -21,17 +21,20 @@ sg ci preview
 
 <span class="badge badge-note">SOC2/GN-106</span>
 
-Many steps in our Buildkite pipelines allow [soft failures](https://buildkite.com/changelog/56-command-steps-can-now-be-made-to-soft-fail), which means that even if they fail they do not cause the entire build to be failed.
+Many steps in Sourcegraph's Buildkite pipelines allow for [soft failures](https://buildkite.com/changelog/56-command-steps-can-now-be-made-to-soft-fail), which means that even if they fail they do not cause the entire build to be failed.
 
 We use soft failures for the following reasons only:
 
 - Steps that determine whether a subsequent step should run, where soft failures are the only technical way to communicate that a later step should be skipped in this manner using Buildkite.
   - Examples: [hash comparison steps that determine if a build should run](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/operations%5C.go+compare-hash.sh&patternType=literal)
-- Regular analysis tasks, where soft failures serve as an monitoring indicator for the team responsible for fixing issues.
-  - Examples: [vulnerability scanning](#vulnerability-scanning)
+- Regular analysis tasks, where soft failures serve as an monitoring indicator to warn the team responsible for fixing issues.
+  - Examples: [vulnerability scanning](#vulnerability-scanning), linting tasks for catching deprecation warnings
 - Temporary exceptions to accomodate xperimental or in-progress work.
 
-You can find all usages of soft failures [with this query](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%7B...bk.SoftFail...%7D+OR+%28...bk.SoftFail...%29+count:all&patternType=structural).
+You can find all usages of soft failures with the following queries:
+
+- [Soft failures in the Sourcegraph pipeline generator](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%7B...bk.SoftFail...%7D+OR+%28...bk.SoftFail...%29+count:all&patternType=structural)
+- [Soft failures in Buildkite YAML pipelines](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/.*+soft_fail+lang:yaml+count:all&patternType=literal)
 
 All other failures are hard failures.
 
