@@ -33,30 +33,16 @@ const gqlSearchQuery = `query CodeMonitorSearch(
 			timedout { name }
 			results {
 				__typename
-				... on FileMatch {
-					limitHit
-					lineMatches {
-						preview
-						lineNumber
-						offsetAndLengths
-					}
-				}
 				... on CommitSearchResult {
 					refs {
 						name
 						displayName
 						prefix
-						repository {
-							name
-						}
 					}
 					sourceRefs {
 						name
 						displayName
 						prefix
-						repository {
-							name
-						}
 					}
 					messagePreview {
 						value
@@ -79,11 +65,9 @@ const gqlSearchQuery = `query CodeMonitorSearch(
 							name
 						}
 						oid
-						abbreviatedOID
 						author {
 							person {
 								displayName
-								avatarURL
 							}
 							date
 						}
