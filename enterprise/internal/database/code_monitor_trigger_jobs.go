@@ -125,7 +125,7 @@ func (o ListTriggerJobsOpts) Limit() *sqlf.Query {
 }
 
 const getEventsForQueryIDInt64FmtStr = `
-SELECT id, query, query_string, results, num_results, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
+SELECT %s
 FROM cm_trigger_jobs
 WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
 AND %s
@@ -136,6 +136,7 @@ LIMIT %s;
 func (s *codeMonitorStore) ListQueryTriggerJobs(ctx context.Context, opts ListTriggerJobsOpts) ([]*TriggerJob, error) {
 	q := sqlf.Sprintf(
 		getEventsForQueryIDInt64FmtStr,
+		sqlf.Join(TriggerJobsColumns, ","),
 		opts.Conds(),
 		opts.Limit(),
 	)
