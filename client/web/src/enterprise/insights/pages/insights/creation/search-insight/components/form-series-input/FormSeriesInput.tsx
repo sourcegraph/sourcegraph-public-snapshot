@@ -120,7 +120,6 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         formApi: formAPI,
     })
 
-    // TODO: Check composing card and card body and add ref support
     return (
         <Card data-testid="series-form" ref={ref} className={classNames('d-flex flex-column', className)}>
             <FormInput

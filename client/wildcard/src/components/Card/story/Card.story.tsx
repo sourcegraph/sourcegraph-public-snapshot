@@ -68,7 +68,7 @@ export const Simple: Story = () => (
 )
 
 const cardItem = (
-    <Card variant="interactive" className="mb-1 p-0 w-100">
+    <Card as="button" className="mb-1 p-0 w-100">
         <CardBody className="w-100 d-flex justify-content-between align-items-center">
             <div className="d-flex flex-column">
                 <CardTitle className="mb-0 text-left">Watch for secrets in new commits</CardTitle>

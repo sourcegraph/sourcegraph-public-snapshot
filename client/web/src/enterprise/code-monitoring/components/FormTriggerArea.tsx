@@ -323,7 +323,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         </div>
                         {triggerCompleted && <div className="btn-link">Edit</div>}
                     </div>
-                </Button>
+                </Card>
             )}
             <small className="text-muted">
                 {' '}

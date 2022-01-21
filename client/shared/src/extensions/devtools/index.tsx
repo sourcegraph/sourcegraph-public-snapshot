@@ -38,7 +38,6 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
 
     return (
         <Tabs
-            // TODO: Check works as expected
             as={Card}
             defaultIndex={tabIndex}
             className={classNames('border-0 rounded-0', styles.extensionStatus)}

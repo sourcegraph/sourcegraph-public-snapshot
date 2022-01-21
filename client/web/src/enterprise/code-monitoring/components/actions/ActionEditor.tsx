@@ -123,7 +123,6 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
             )}
             {!expanded && (
                 <CollapsedWrapperElement
-                    // TODO: Check works
                     as={Card}
                     data-testid="form-action-toggle-email-notification"
                     className={classNames('test-action-button', styles.cardButton, disabled && 'disabled')}

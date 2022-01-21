@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Button, CardBody } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
@@ -120,8 +120,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     </>
                 }
             >
-                {/* // TODO: Check this (composing card and card-body) */}
-                <CardBody className="card p-3">
+                <Card className="p-3">
                     <FormInput
                         title="Search query"
                         required={true}
@@ -160,7 +159,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                             automatically generated data series
                         </a>
                     </small>
-                </CardBody>
+                </Card>
             </FormGroup>
 
             <hr className="my-4 w-100" />
