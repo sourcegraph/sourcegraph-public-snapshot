@@ -94,15 +94,17 @@ type gqlSearchVars struct {
 type gqlSearchResponse struct {
 	Data struct {
 		Search struct {
-			Results struct {
-				ApproximateResultCount string
-				Cloning                []api.Repo
-				Timedout               []api.Repo
-				Results                commitSearchResults
-			} `json:"results"`
+			Results searchResults `json:"results"`
 		} `json:"search"`
 	} `json:"data"`
 	Errors []gqlerrors.FormattedError
+}
+
+type searchResults struct {
+	ApproximateResultCount string              `json:"approximateResultCount"`
+	Cloning                []api.Repo          `json:"cloning"`
+	Timedout               []api.Repo          `json:"timedout"`
+	Results                commitSearchResults `json:"results"`
 }
 
 type commitSearchResults []commitSearchResult
@@ -173,7 +175,7 @@ type commit struct {
 	} `json:"author"`
 }
 
-func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse, error) {
+func search(ctx context.Context, query string, userID int32) (*searchResults, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     gqlSearchQuery,
@@ -200,7 +202,7 @@ func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse
 	}
 	defer resp.Body.Close()
 
-	var res *gqlSearchResponse
+	var res gqlSearchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, errors.Wrap(err, "Decode")
 	}
@@ -211,7 +213,7 @@ func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse
 		}
 		return nil, combined
 	}
-	return res, nil
+	return &res.Data.Search.Results, nil
 }
 
 func gqlURL(queryName string) (string, error) {
