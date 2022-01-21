@@ -25,6 +25,8 @@ func (r *RequiredAndOptionalJob) Run(ctx context.Context, s streaming.Sender, pa
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	start := time.Now()
+
 	var optionalGroup, requiredGroup multierror.Group
 	requiredGroup.Go(func() error {
 		return r.Required.Run(ctx, s, pager)
@@ -41,7 +43,8 @@ func (r *RequiredAndOptionalJob) Run(ctx context.Context, s streaming.Sender, pa
 	// Give optional searches some minimum budget in case required searches return quickly.
 	// Cancel all remaining searches after this minimum budget.
 	budget := 100 * time.Millisecond
-	time.AfterFunc(budget, cancel)
+	elapsed := time.Since(start)
+	time.AfterFunc(budget-elapsed, cancel)
 
 	if err := optionalGroup.Wait(); err != nil {
 		errs = multierror.Append(errs, err)
@@ -51,12 +54,12 @@ func (r *RequiredAndOptionalJob) Run(ctx context.Context, s streaming.Sender, pa
 }
 
 type ParallelJob struct {
-	Jobs []Job
+	Children []Job
 }
 
 func (p *ParallelJob) Name() string {
 	var childNames []string
-	for _, job := range p.Jobs {
+	for _, job := range p.Children {
 		childNames = append(childNames, job.Name())
 	}
 	return fmt.Sprintf("ParallelJob{%s}", strings.Join(childNames, ", "))
@@ -64,7 +67,7 @@ func (p *ParallelJob) Name() string {
 
 func (p *ParallelJob) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
 	var g multierror.Group
-	for _, job := range p.Jobs {
+	for _, job := range p.Children {
 		job := job
 		g.Go(func() error {
 			return job.Run(ctx, s, pager)

@@ -921,8 +921,8 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 
 	return &run.Routine{
 		Job: &run.RequiredAndOptionalJob{
-			Required: &run.ParallelJob{Jobs: requiredJobs},
-			Optional: &run.ParallelJob{Jobs: optionalJobs},
+			Required: &run.ParallelJob{Children: requiredJobs},
+			Optional: &run.ParallelJob{Children: optionalJobs},
 		},
 		RepoOptions: repoOptions,
 		Timeout:     args.Timeout,

@@ -904,8 +904,8 @@ func Test_toSearchInputs(t *testing.T) {
 	}
 
 	// Job generation for global vs non-global search
-	autogold.Want("user search context", "RepoSubsetText,Repo").Equal(t, test(`foo context:@userA`, query.ParseLiteral))
-	autogold.Want("universal (AKA global) search context", "RepoUniverseText,Repo").Equal(t, test(`foo context:global`, query.ParseLiteral))
+	autogold.Want("user search context", "RequiredAndOptionalJob{Required: ParallelJob{RepoSubsetText, Repo}, Optional: ParallelJob{}}").Equal(t, test(`foo context:@userA`, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search context", "RequiredAndOptionalJob{Required: ParallelJob{RepoUniverseText, Repo}, Optional: ParallelJob{}}").Equal(t, test(`foo context:global`, query.ParseLiteral))
 	autogold.Want("universal (AKA global) search", "RepoUniverseText,Repo").Equal(t, test(`foo`, query.ParseLiteral))
 	autogold.Want("nonglobal repo", "RepoSubsetText,Repo").Equal(t, test(`foo repo:sourcegraph/sourcegraph`, query.ParseLiteral))
 	autogold.Want("nonglobal repo contains", "RepoSubsetText,Repo").Equal(t, test(`foo repo:contains(bar)`, query.ParseLiteral))
