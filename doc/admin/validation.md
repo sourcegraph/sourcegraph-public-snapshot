@@ -36,7 +36,7 @@ externalService:
     token: "{{ .github_token }}"
     orgs: []
     repos:
-      - footest/foo
+      - sourcegraph-testing/zap
   kind: GITHUB
   displayName: footest
   # set to true if this code host config should be deleted at the end of validation
@@ -44,14 +44,14 @@ externalService:
 
 # checks maxTries if specified repo is cloned and waits sleepBetweenTriesSeconds between checks 
 waitRepoCloned:
-  repo: github.com/footest/foo
+  repo: github.com/sourcegraph-testing/zap
   maxTries: 5
   sleepBetweenTriesSeconds: 2
 
 # performs the specified search and checks that at least one result is returned
 searchQuery: 
-  - repo:^github.com/footest/foo$ uniquelyFoo
-  - repo:^github.com/footest/foo$@v1.8.0 uniquelyFoo
+  - repo:^github.com/sourcegraph-testing/zap$ test
+  - repo:^github.com/sourcegraph-testing/zap$@v1.14.1 test
 ```
 #### JSON File Specification
 
@@ -68,7 +68,7 @@ searchQuery:
             "token": "{{ .github_token }}",
             "orgs": [],
             "repos": [
-                "footest/foo"
+                "sourcegraph-testing/zap"
             ]
         },
         "kind": "GITHUB",
@@ -76,13 +76,13 @@ searchQuery:
         "deleteWhenDone": true
     },
     "waitRepoCloned": {
-        "repo": "github.com/footest/foo",
+        "repo": "github.com/sourcegraph-testing/zap",
         "maxTries": 5,
         "sleepBetweenTriesSeconds": 5
     },
     "searchQuery": [
-        "repo:^github.com/footest/foo$ uniquelyFoo",
-        "repo:^github.com/footest/foo$@v1.8.0 uniquelyFoo"
+        "repo:^github.com/sourcegraph-testing/zap$ test",
+        "repo:^github.com/sourcegraph-testing/zap$@v1.14.1 test"
     ]
 }
 ```
