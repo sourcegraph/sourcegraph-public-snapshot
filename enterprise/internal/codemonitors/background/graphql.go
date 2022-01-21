@@ -225,12 +225,8 @@ func gqlURL(queryName string) (string, error) {
 }
 
 // extractTime extracts the time from the given search result.
-func extractTime(result commitSearchResult) (*time.Time, error) {
+func extractTime(result commitSearchResult) (time.Time, error) {
 	// This relies on the date format that our API returns. It was previously broken
 	// and should be checked first in case date extraction stops working.
-	t, err := time.Parse(time.RFC3339, result.Commit.Author.Date)
-	if err != nil {
-		return nil, err
-	}
-	return &t, nil
+	return time.Parse(time.RFC3339, result.Commit.Author.Date)
 }
