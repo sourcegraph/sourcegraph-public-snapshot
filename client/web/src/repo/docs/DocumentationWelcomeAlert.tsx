@@ -13,7 +13,7 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
         partialStorageKey="apidocs-welcome"
     >
         <Card>
-            <CardBody className="p-3">
+            <CardBody>
                 <h1>
                     <BookOpenBlankVariantIcon className="icon-inline mr-2" />
                     API docs, for your code

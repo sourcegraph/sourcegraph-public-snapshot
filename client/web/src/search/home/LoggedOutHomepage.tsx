@@ -127,7 +127,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
     return (
         <DynamicWebFonts fonts={fonts}>
             <div className={styles.loggedOutHomepage}>
-                {!isOnboardingFeatureEnabled && (
+                {isOnboardingFeatureEnabled && (
                     <div className={styles.content}>
                         <OnboardingTour
                             isFixedHeight={true}
@@ -164,7 +164,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                         />
                     </div>
                 )}
-                {isOnboardingFeatureEnabled && (
+                {!isOnboardingFeatureEnabled && (
                     <div className={styles.helpContent}>
                         {isSearchNotebookFeatureEnabled ? (
                             <SearchExamples

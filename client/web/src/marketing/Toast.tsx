@@ -16,7 +16,7 @@ interface ToastProps {
 
 export const Toast: React.FunctionComponent<ToastProps> = props => (
     <Card className={styles.toast}>
-        <CardBody className="p-3">
+        <CardBody>
             <CardTitle as="header" className={classNames(styles.header)}>
                 <h2 className="mb-0">{props.title}</h2>
                 <Button
