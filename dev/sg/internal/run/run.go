@@ -93,9 +93,9 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 }
 
 func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
-	stdout.Out.Write("")
-	stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Waiting for %d commands to finish installation...", len(cmdNames)))
-	stdout.Out.Write("")
+	// stdout.Out.Write("")
+	// stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Waiting for %d commands to finish installation...", len(cmdNames)))
+	// stdout.Out.Write("")
 
 	waitingMessages := []string{
 		"Still waiting for %s to finish installing...",
@@ -112,14 +112,28 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 	const tickInterval = 15 * time.Second
 	ticker := time.NewTicker(tickInterval)
 
+	done := 0.0
+	total := float64(len(cmdNames))
+	progress := stdout.Out.Progress([]output.ProgressBar{
+		{Label: fmt.Sprintf("Installing %d commands", len(cmdNames)), Max: total},
+	}, nil)
+
 	for {
 		select {
 		case cmdName := <-installed:
 			ticker.Reset(tickInterval)
+
 			delete(cmdNames, cmdName)
+			done += 1.0
+
+			progress.WriteLine(output.Linef("", output.StylePending, "%s installed", cmdName))
+
+			progress.SetValue(0, done)
+			progress.SetLabelAndRecalc(0, fmt.Sprintf("%d/%d commands installed", int(done), int(total)))
 
 			// Everything installed!
 			if len(cmdNames) == 0 {
+				progress.Complete()
 				stdout.Out.Write("")
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
 				stdout.Out.Write("")
@@ -143,7 +157,7 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 				idx = len(waitingMessages) - 1
 			}
 			msg := waitingMessages[idx]
-			stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, msg, strings.Join(names, ", ")))
+			progress.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, msg, strings.Join(names, ", ")))
 			messageCount += 1
 		}
 	}
@@ -284,7 +298,9 @@ func runWatch(
 	for {
 		// Build it
 		if cmd.Install != "" {
-			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
+			if startedOnce {
+				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
+			}
 
 			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
@@ -305,7 +321,9 @@ func runWatch(
 			default:
 			}
 
-			stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
+			if startedOnce {
+				stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
+			}
 
 			if cmd.CheckBinary != "" {
 				newHash, err := md5HashFile(filepath.Join(root, cmd.CheckBinary))
