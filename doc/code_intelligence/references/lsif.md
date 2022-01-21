@@ -54,7 +54,7 @@ once in the stream. Other field values may appear in any order.
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 |  **metadata** | Metadata | Metadata about this index.
-| repeated **document** | Document | Documents that belong to this index.
+| repeated **documents** | Document | Documents that belong to this index.
 | repeated **external_symbols** | SymbolInformation | (optional) Symbols that are referenced from this index but are defined in an external package (a separate `Index` message).  Leave this field empty if you assume the external package will get indexed separately. If the external package won't get indexed for some reason then you can use this field to provide hover documentation for those external symbols.
 
 
@@ -173,7 +173,7 @@ interchangeably with `Symbol`. The syntax for Symbol is the following:
 | ---- | ---- | ----------- |
 |  **scheme** | string | 
 |  **package** | Package | 
-| repeated **descriptor** | Descriptor | 
+| repeated **descriptors** | Descriptor | 
 
 
 

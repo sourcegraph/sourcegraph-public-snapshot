@@ -61,7 +61,7 @@ func NewResolver(db database.DB, clock func() time.Time) graphqlbackend.AuthzRes
 	}
 }
 
-func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (resp *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
@@ -207,6 +207,69 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 	if err := r.repoupdaterClient.SchedulePermsSync(ctx, req); err != nil {
 		return nil, err
 	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.SubRepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
+	if envvar.SourcegraphDotComMode() {
+		return nil, errDisabledSourcegraphDotCom
+	}
+
+	if err := r.checkLicense(); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins can mutate repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := r.db.Transact(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "start transaction")
+	}
+	defer func() { err = db.Done(err) }()
+
+	// Make sure the repo ID is valid.
+	if _, err = db.Repos().Get(ctx, repoID); err != nil {
+		return nil, err
+	}
+
+	cfg := globals.PermissionsUserMapping()
+	for _, perm := range args.UserPermissions {
+		var userID int32
+		switch cfg.BindID {
+		case "email":
+			user, err := db.Users().GetByVerifiedEmail(ctx, perm.BindID)
+			if err != nil {
+				return nil, errors.Wrap(err, "getting user by email")
+			}
+			userID = user.ID
+
+		case "username":
+			user, err := db.Users().GetByUsername(ctx, perm.BindID)
+			if err != nil {
+				return nil, errors.Wrap(err, "getting user by username")
+			}
+			userID = user.ID
+
+		default:
+			return nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
+		}
+
+		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
+			PathIncludes: perm.PathIncludes,
+			PathExcludes: perm.PathExcludes,
+		}); err != nil {
+			return nil, errors.Wrap(err, "upserting sub-repo permissions")
+		}
+	}
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
