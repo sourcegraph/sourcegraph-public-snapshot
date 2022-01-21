@@ -17,6 +17,7 @@ const defaultProps: EmailActionProps = {
     disabled: false,
     authenticatedUser: mockAuthenticatedUser,
     monitorName: 'Example code monitor',
+    triggerTestEmailAction: sinon.fake(),
 }
 
 const action: EmailActionProps['action'] = {
