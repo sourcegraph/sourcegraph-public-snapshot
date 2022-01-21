@@ -878,6 +878,12 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		})
 
 		db := edb.NewStrictMockEnterpriseDB()
+		db.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.DB, error) {
+			return db, nil
+		})
+		db.DoneFunc.SetDefaultHook(func(err error) error {
+			return nil
+		})
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
 		db.ReposFunc.SetDefaultReturn(reposStore)

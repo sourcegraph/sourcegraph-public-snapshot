@@ -229,8 +229,14 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		return nil, err
 	}
 
+	db, err := r.db.Transact(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "start transaction")
+	}
+	defer func() { err = db.Done(err) }()
+
 	// Make sure the repo ID is valid.
-	if _, err = r.db.Repos().Get(ctx, repoID); err != nil {
+	if _, err = db.Repos().Get(ctx, repoID); err != nil {
 		return nil, err
 	}
 
@@ -239,14 +245,14 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		var userID int32
 		switch cfg.BindID {
 		case "email":
-			user, err := r.db.Users().GetByVerifiedEmail(ctx, perm.BindID)
+			user, err := db.Users().GetByVerifiedEmail(ctx, perm.BindID)
 			if err != nil {
 				return nil, err
 			}
 			userID = user.ID
 
 		case "username":
-			user, err := r.db.Users().GetByUsername(ctx, perm.BindID)
+			user, err := db.Users().GetByUsername(ctx, perm.BindID)
 			if err != nil {
 				return nil, err
 			}
@@ -256,7 +262,7 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 			return nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
 		}
 
-		if err := r.db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
+		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
 			PathIncludes: perm.PathIncludes,
 			PathExcludes: perm.PathExcludes,
 		}); err != nil {
