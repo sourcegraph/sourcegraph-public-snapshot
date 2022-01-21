@@ -35,4 +35,3 @@ If you have planned unavailability this iteration (e.g., vacation), you can note
 - 🕵️ [Spike](https://en.wikipedia.org/wiki/Spike_(software_development))
 - 🔒 Security issue
 - 🙆 Stretch goal
-- :shipit: Pull Request

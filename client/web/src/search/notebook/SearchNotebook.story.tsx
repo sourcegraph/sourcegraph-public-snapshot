@@ -4,7 +4,11 @@ import { NEVER, of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { extensionsController, HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import {
+    extensionsController,
+    HIGHLIGHTED_FILE_LINES_LONG,
+    NOOP_PLATFORM_CONTEXT,
+} from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
 import { RepositoryFields } from '../../graphql-operations'
@@ -55,6 +59,8 @@ add('default', () => (
                 fetchRepository={fetchRepository}
                 resolveRevision={resolveRevision}
                 authenticatedUser={null}
+                showSearchContext={true}
+                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )}
     </WebStory>
@@ -80,6 +86,8 @@ add('default read-only', () => (
                 fetchRepository={fetchRepository}
                 resolveRevision={resolveRevision}
                 authenticatedUser={null}
+                showSearchContext={true}
+                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )}
     </WebStory>

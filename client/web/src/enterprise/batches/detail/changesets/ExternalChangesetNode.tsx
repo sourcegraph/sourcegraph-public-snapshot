@@ -5,6 +5,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useState, useCallback, useEffect } from 'react'
 
+import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -16,7 +17,6 @@ import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourceg
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
 import {

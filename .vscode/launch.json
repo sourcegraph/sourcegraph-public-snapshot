@@ -8,6 +8,32 @@
       "mode": "local",
     },
     {
+      "name": "Launch VS Code Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
+        "--disable-extension=kandalatj.sourcegraph-preview",
+      ],
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/client/vscode/dist/node/*.js"],
+    },
+    {
+      "name": "Launch VS Code Web Extension",
+      "type": "pwa-extensionHost",
+      "debugWebWorkerHost": true,
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
+        "--disable-extension=kandalatj.sourcegraph-preview",
+        "--extensionDevelopmentKind=web",
+        "--disable-web-security",
+      ],
+      "outFiles": ["${workspaceRoot}/client/vscode/dist/webworker/*.js"],
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "Browser extension E2E Tests",

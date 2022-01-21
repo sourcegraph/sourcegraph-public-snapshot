@@ -1,4 +1,4 @@
-import { cleanup, fireEvent } from '@testing-library/react'
+import { cleanup } from '@testing-library/react'
 import * as H from 'history'
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
@@ -57,14 +57,6 @@ const defaultProps = {
 
 describe('FileMatchChildren', () => {
     afterAll(cleanup)
-
-    it('calls onSelect callback when an item is clicked', () => {
-        const { container } = renderWithRouter(<FileMatchChildren {...defaultProps} onSelect={onSelect} />)
-        const item = container.querySelector('[data-testid="file-match-children-item"]')
-        expect(item).toBeVisible()
-        fireEvent.click(item!)
-        expect(onSelect.calledOnce).toBe(true)
-    })
 
     it('does not disable the highlighting timeout', () => {
         /*

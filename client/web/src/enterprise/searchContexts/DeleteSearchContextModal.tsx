@@ -4,13 +4,15 @@ import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { ALLOW_NAVIGATION } from '@sourcegraph/web/src/components/AwayPrompt'
 import { Button, LoadingSpinner, useEventObservable, Modal } from '@sourcegraph/wildcard'
 
-import { SearchContextProps } from '../../search'
-
-interface DeleteSearchContextModalProps extends Pick<SearchContextProps, 'deleteSearchContext'> {
+interface DeleteSearchContextModalProps
+    extends Pick<SearchContextProps, 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     isOpen: boolean
     searchContext: ISearchContext
     toggleDeleteModal: () => void
@@ -21,6 +23,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
     deleteSearchContext,
     toggleDeleteModal,
     searchContext,
+    platformContext,
 }) => {
     const LOADING = 'loading' as const
     const deleteLabelId = 'deleteSearchContextId'
@@ -31,7 +34,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
             (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 click.pipe(
                     mergeMap(() =>
-                        deleteSearchContext(searchContext.id).pipe(
+                        deleteSearchContext(searchContext.id, platformContext).pipe(
                             tap(() => {
                                 history.push('/contexts', ALLOW_NAVIGATION)
                             }),
@@ -40,7 +43,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
                         )
                     )
                 ),
-            [deleteSearchContext, history, searchContext]
+            [deleteSearchContext, history, searchContext, platformContext]
         )
     )
 

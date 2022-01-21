@@ -1,7 +1,8 @@
 import React from 'react'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { siteAdminOverviewComponents } from '../../../site-admin/overview/overviewComponents'
-import { lazyComponent } from '../../../util/lazyComponent'
 
 export const enterpriseSiteAdminOverviewComponents: readonly React.ComponentType<any>[] = [
     ...siteAdminOverviewComponents,

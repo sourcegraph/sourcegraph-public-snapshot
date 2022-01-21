@@ -4,10 +4,10 @@ import * as React from 'react'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 

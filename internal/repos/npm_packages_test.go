@@ -4,40 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"os"
-	"path"
 	"sort"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
 )
-
-func npmScript(t *testing.T, dir string) string {
-	t.Helper()
-	npmPath, err := os.OpenFile(path.Join(dir, "npm"), os.O_CREATE|os.O_RDWR, 07777)
-	require.Nil(t, err)
-	defer func() { require.Nil(t, npmPath.Close()) }()
-	script := `#!/usr/bin/env bash
-CLASSIFIER="$1"
-ARG="$2"
-if [[ "$CLASSIFIER" =~ "view" ]]; then
-  echo "$ARG"
-else
-  echo "invalid arguments for fake npm script: $@"
-  exit 1
-fi
-`
-	_, err = npmPath.WriteString(script)
-	require.Nil(t, err)
-	return npmPath.Name()
-}
 
 func TestGetNPMDependencyRepos(t *testing.T) {
 	_, store, ctx, _ := setupDependenciesInDB(t)
@@ -114,19 +94,28 @@ func setupDependenciesInDB(t *testing.T) (*sql.DB, *dbstore.Store, context.Conte
 
 func TestListRepos(t *testing.T) {
 	db, _, ctx, dependencies := setupDependenciesInDB(t)
+	sort.Strings(dependencies)
 
 	dir, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
-	npm.NPMBinary = npmScript(t, dir)
 	defer os.RemoveAll(dir)
 
 	svc := types.ExternalService{
 		Kind:   extsvc.KindNPMPackages,
-		Config: `{"registry": "https://placeholder.lol"}`,
+		Config: `{"registry": "https://placeholder.lol", "rateLimit": {"enabled": false}}`,
 	}
 	packageSource, err := NewNPMPackagesSource(&svc)
 	require.Nil(t, err)
 	packageSource.SetDB(db)
+	packageSource.client = &npmtest.MockClient{
+		TarballMap: func() map[string]string {
+			m := map[string]string{}
+			for _, dep := range dependencies {
+				m[dep] = ""
+			}
+			return m
+		}(),
+	}
 	results := make(chan SourceResult, 10)
 	go func() {
 		packageSource.ListRepos(ctx, results)

@@ -2,12 +2,12 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useContext, useState } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecFields } from '../../../graphql-operations'
 import { MultiSelectContext } from '../MultiSelectContext'
 
