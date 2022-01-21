@@ -41,16 +41,17 @@ func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handle
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
 
-		return basicAuthMiddleware(accessToken, base)
+		return authMiddleware(accessToken, base)
 	}
 
 	return factory, nil
 }
 
-// basicAuthMiddleware rejects requests that do not have a basic auth username and password matching
-// the expected username and password. This should only be used for internal _services_, not users,
-// in which a shared key exchange can be done so safely.
-func basicAuthMiddleware(accessToken func() string, next http.Handler) http.Handler {
+// authMiddleware rejects requests that do not have a Authorization header set
+// with the correct "token-executor <token>" value. This should only be used
+// for internal _services_, not users, in which a shared key exchange can be
+// done so safely.
+func authMiddleware(accessToken func() string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if validateExecutorToken(w, r, accessToken()) {
 			next.ServeHTTP(w, r)
