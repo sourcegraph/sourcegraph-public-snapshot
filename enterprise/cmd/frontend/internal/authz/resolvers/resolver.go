@@ -61,7 +61,7 @@ func NewResolver(db database.DB, clock func() time.Time) graphqlbackend.AuthzRes
 	}
 }
 
-func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (resp *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
@@ -210,7 +210,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.SubRepoPermsArgs) (resp *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.SubRepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
