@@ -899,9 +899,9 @@ func Test_toSearchInputs(t *testing.T) {
 				PatternType:  query.SearchTypeLiteral,
 			},
 		}
-		jobs, _, _, _ := resolver.toSearchInputs(q)
+		routine, _ := resolver.toSearchRoutine(q)
 		var jobNames []string
-		for _, j := range jobs {
+		for _, j := range routine.Jobs {
 			jobNames = append(jobNames, j.Name())
 		}
 		return strings.Join(jobNames, ",")
