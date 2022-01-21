@@ -41,7 +41,7 @@ export const SearchTypes: React.FunctionComponent<SearchTypesProps> = ({
     caseSensitive,
 }) => {
     const [collapsed, setCollapsed] = useState(false)
-    const { query, setQueryState, submitSearch } = useQueryState(selectFromQueryState, shallow)
+    const { query, setQueryState } = useQueryState(selectFromQueryState, shallow)
 
     return (
         <div className={styles.sidebarSection}>

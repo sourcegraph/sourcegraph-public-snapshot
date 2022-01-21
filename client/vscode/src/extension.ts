@@ -8,7 +8,7 @@ import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { LocalStorageService } from '../localStorageService'
 
-import { invalidateClient, requestGraphQLFromVSCode } from './backend/requestGraphQl'
+import { invalidateClient, requestGraphQLFromVSCode, hasValidatedToken } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/settings'
 import { toSourcegraphLanguage } from './code-intel/languages'
 import { SourcegraphDefinitionProvider } from './code-intel/SourcegraphDefinitionProvider'
@@ -34,7 +34,6 @@ import {
     initializeExtensionHostWebview,
     initializeSearchPanelWebview,
     initializeSearchSidebarWebview,
-    initializeHistorySidebarWebview,
 } from './webview/initialize'
 import { createSearchSidebarMediator } from './webview/search-sidebar/mediator'
 
@@ -48,6 +47,8 @@ export function activate(context: vscode.ExtensionContext): void {
     const instanceHostname = endpointHostnameSetting()
     const accessToken = endpointAccessTokenSetting()
     const corsSetting = endpointCorsSetting()
+    // const isValidatedToken = hasValidatedToken()
+    // const hasLocalSearch = storageManager.getLocalRecentSearch().length > 0
 
     vscode.workspace.onDidChangeConfiguration(async event => {
         if (event.affectsConfiguration('sourcegraph.url')) {
@@ -58,10 +59,6 @@ export function activate(context: vscode.ExtensionContext): void {
                 for (const subscription of context.subscriptions) {
                     subscription.dispose()
                 }
-
-                await vscode.window.showInformationMessage(
-                    'Restart VS Code to use the Sourcegraph extension after URL change.'
-                )
                 // TODO close editors from different instance.
                 // fs.purge()
                 // TODO Also validate that the extension host only adds documents from the current instance (explicit check, less likely to
@@ -134,43 +131,28 @@ export function activate(context: vscode.ExtensionContext): void {
                     sourcegraphVSCodeExtensionAPI,
                     initializedPanelIDs,
                 })
-
                 currentActiveWebviewPanel = webviewPanel
 
                 searchSidebarMediator.addSearchWebviewPanel(webviewPanel, sourcegraphVSCodeSearchWebviewAPI)
-
+                await vscode.commands.executeCommand('setContext', 'sourcegraph.activeSearchPanel', false)
                 webviewPanel.onDidDispose(async () => {
                     sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
                     currentActiveWebviewPanel = undefined
                     // Set showFileTree and activeSearchPanel to false
                     await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', false)
-                    await vscode.commands.executeCommand('setContext', 'sourcegraph.activeSearchPanel', false)
                     // Close sidebar when user closes the search panel by displaying their explorer instead
                     await vscode.commands.executeCommand('workbench.view.explorer')
                 })
             }
         })
     )
-    // Trigger initialization of extension host, bring search sidebar into view.
+
     vscode.commands.executeCommand('sourcegraph.searchSidebar.focus').then(
         () => {},
         error => {
             console.error(error)
         }
     )
-    // Check if searches have been performed before by checking localStorage
-    vscode.commands
-        .executeCommand(
-            'setContext',
-            'sourcegraph.searchHistoryFound',
-            storageManager.getLocalRecentSearch().length > 0
-        )
-        .then(
-            () => {},
-            error => {
-                console.error(error)
-            }
-        )
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
@@ -190,31 +172,6 @@ export function activate(context: vscode.ExtensionContext): void {
                     })
                     webviewView.onDidDispose(() => {
                         sourcegraphVSCodeSearchSidebarAPI[releaseProxy]()
-                    })
-                },
-            },
-            { webviewOptions: { retainContextWhenHidden: true } }
-        )
-    )
-
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(
-            'sourcegraph.historySidebar',
-            {
-                resolveWebviewView: (webviewView, _context, _token) => {
-                    const { sourcegraphVSCodeHistorySidebarAPI } = initializeHistorySidebarWebview({
-                        extensionUri: context.extensionUri,
-                        sourcegraphVSCodeExtensionAPI,
-                        webviewView,
-                    })
-                    // Bring search panel back if it was previously closed on sidebar visibility change
-                    webviewView.onDidChangeVisibility(async () => {
-                        if (webviewView.visible) {
-                            await vscode.commands.executeCommand('sourcegraph.search')
-                        }
-                    })
-                    webviewView.onDidDispose(() => {
-                        sourcegraphVSCodeHistorySidebarAPI[releaseProxy]()
                     })
                 },
             },
@@ -302,12 +259,12 @@ export function activate(context: vscode.ExtensionContext): void {
         requestGraphQL: requestGraphQLFromVSCode,
         getSettings: () => proxySubscribable(sourcegraphSettings.settings),
         ping: () => proxySubscribable(of('pong')),
-
         observeActiveWebviewQueryState: searchSidebarMediator.observeActiveWebviewQueryState,
         observeActiveWebviewDynamicFilters: searchSidebarMediator.observeActiveWebviewDynamicFilters,
         setActiveWebviewQueryState: searchSidebarMediator.setActiveWebviewQueryState,
         submitActiveWebviewSearch: searchSidebarMediator.submitActiveWebviewSearch,
         hasAccessToken: () => !!accessToken,
+        hasValidAccessToken: () => hasValidatedToken(),
         updateAccessToken: (token: string) => updateAccessTokenSetting(token),
         getInstanceHostname: () => instanceHostname,
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
@@ -366,16 +323,16 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     )
 
-    // Search Selected on Sourcegraph
+    // Search Selected on Sourcegraph Web
     context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.searchOnSourcegraph', async () => {
+        vscode.commands.registerCommand('sourcegraph.selectionSearchWeb', async () => {
             await searchSelection()
         })
     )
 
-    // Search Selected Text in Sourcegraph VSCE
+    // Search Selected Text in Sourcegraph Search Tab
     context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.searchInSourcegraph', async () => {
+        vscode.commands.registerCommand('sourcegraph.selectionSearch', async () => {
             const editor = vscode.window.activeTextEditor
             if (!editor) {
                 throw new Error('No active editor')

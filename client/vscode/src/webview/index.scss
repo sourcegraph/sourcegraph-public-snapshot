@@ -58,7 +58,6 @@ a,
 .btn-primary {
     background-color: var(--vscode-button-background) !important;
     color: var(--vscode-button-foreground) !important;
-    border-color: var(--vscode-button-border) !important;
 
     &:hover {
         background-color: var(--vscode-button-hoverBackground) !important;
@@ -69,12 +68,9 @@ a,
     color: var(--vscode-textLink-foreground) !important;
 }
 
-.test-file-match-children-item-wrapper {
-    background-color: var(--vscode-textCodeBlock-background) !important;
-}
-
 .description-text {
     color: var(--vscode-descriptionForeground) !important;
+    font-size: var(--vscode-editor-font-size) !important;
 }
 
 .textarea {
@@ -98,37 +94,14 @@ a,
     }
 }
 
-.search-example-example-icons {
-    color: var(--vscode-button-foreground) !important;
-
-    &:hover {
-        color: var(--vscode-button-background) !important;
-        background-color: var(--vscode-button-foreground) !important;
-    }
-}
-
-.search-example-card-wrapper {
-    margin-bottom: 0.5rem;
-
-    &:hover {
-        .search-example-icons {
-            color: var(--vscode-button-background) !important;
-            background-color: var(--vscode-button-foreground) !important;
-        }
-
-        a {
-            text-decoration: underline;
-        }
-    }
-}
-
 .text {
     color: var(--vscode-foreground);
+    font-size: var(--vscode-editor-font-size) !important;
 }
 
 .vsce-text {
     color: var(--vscode-foreground);
-    font-size: var(--vscode-font-size) !important;
+    font-size: var(--vscode-editor-font-size) !important;
 }
 
 .btn-outline-secondary {
@@ -142,6 +115,8 @@ a,
 .btn-link-sm {
     color: var(--vscode-textLink-foreground) !important;
 }
+
+// Override Result Page style with vscode theme
 
 .test-file-match-children-item-wrapper {
     a {
@@ -165,6 +140,10 @@ a,
     div {
         background-color: transparent !important;
     }
+}
+
+.test-file-match-children-item-wrapper {
+    background-color: var(--vscode-textCodeBlock-background) !important;
 }
 
 .selection-highlight,

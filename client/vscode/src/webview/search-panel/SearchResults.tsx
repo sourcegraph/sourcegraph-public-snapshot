@@ -1,9 +1,5 @@
-import classNames from 'classnames'
-import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
-import ShareOutlineIcon from 'mdi-react/ShareOutlineIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
-import { StreamingProgress } from '@sourcegraph/branded/src/search/results/progress/StreamingProgress'
 import { StreamingSearchResultsList } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
@@ -18,7 +14,6 @@ import {
     SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { ButtonDropdownCta, ButtonDropdownCtaProps } from '@sourcegraph/web/src/search/results/ButtonDropdownCta'
 
 import { SourcegraphUri } from '../../file-system/SourcegraphUri'
 import {
@@ -32,10 +27,10 @@ import {
 } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 
-import { BookmarkRadialGradientIcon } from './icons'
 import { createSavedSearchQuery } from './queries'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 import styles from './SearchResults.module.scss'
+import { VsceSearchResultsInfoBar } from './SearchResultsInfoBar'
 
 import { useQueryState } from '.'
 
@@ -214,30 +209,6 @@ export const SearchResults = React.memo<SearchResultsProps>(
             })
         }
 
-        interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
-            showExperimentalVersion: boolean
-            nonExperimentalLinkTo?: string
-            isNonExperimentalLinkDisabled?: boolean
-            onNonExperimentalLinkClick?: () => void
-            className?: string
-        }
-
-        const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButtonProps> = props => {
-            if (props.showExperimentalVersion) {
-                return <ButtonDropdownCta {...props} />
-            }
-            return (
-                <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary text-decoration-none"
-                    onClick={props.onNonExperimentalLinkClick}
-                    disabled={props.isNonExperimentalLinkDisabled}
-                >
-                    {props.button}
-                </button>
-            )
-        }
-
         const onShareResultsClick = (): void => {
             ;(async () => {
                 const host = await instanceHostname
@@ -249,66 +220,6 @@ export const SearchResults = React.memo<SearchResultsProps>(
                 console.log(error)
                 // TODO error handling
             })
-        }
-
-        const SearchResultsInfoBar: React.FunctionComponent = () => {
-            const showActionButtonExperimentalVersion = !authenticatedUser
-
-            const saveSearchButton = useMemo(
-                () => (
-                    <li className={classNames('mr-2', styles.navItem)}>
-                        <ExperimentalActionButton
-                            showExperimentalVersion={showActionButtonExperimentalVersion}
-                            onNonExperimentalLinkClick={() => setOpenSavedSearchCreateForm(!openSavedSearchCreateForm)}
-                            className="test-save-search-link"
-                            button={
-                                <>
-                                    <BookmarkOutlineIcon className="icon-inline mr-1" />
-                                    Save search
-                                </>
-                            }
-                            icon={<BookmarkRadialGradientIcon />}
-                            title="Saved searches"
-                            copyText="Save your searches and quickly run them again. Free for registered users."
-                            source="Saved"
-                            viewEventName="SearchResultSavedSeachCTAShown"
-                            returnTo=""
-                            telemetryService={platformContext.telemetryService}
-                            isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
-                        />
-                    </li>
-                ),
-                [showActionButtonExperimentalVersion]
-            )
-
-            return (
-                <div className={classNames('flex-grow-1', styles.searchResultsInfoBar)}>
-                    <div className={styles.row}>
-                        <StreamingProgress
-                            progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
-                            state={results?.state || 'loading'}
-                            // TODO IMPLEMENT ONSEARCHAGAIN
-                            onSearchAgain={() => console.log('Search Again')}
-                            showTrace={false}
-                        />
-                        <div className={styles.expander} />
-                        <ul className="nav align-items-center">
-                            <li className={styles.divider} aria-hidden="true" />
-                            {saveSearchButton}
-                            <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-secondary text-decoration-none"
-                                    onClick={onShareResultsClick}
-                                >
-                                    <ShareOutlineIcon className="icon-inline mr-1" />
-                                    Share
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            )
         }
 
         const onSubmitSaveSearch = (fields: Omit<SavedQueryFields, 'id'>): void => {
@@ -327,7 +238,12 @@ export const SearchResults = React.memo<SearchResultsProps>(
         return (
             <div className={styles.streamingSearchResultsContainer}>
                 {/* TODO: This is a temporary searchResultsInfoBar */}
-                <SearchResultsInfoBar />
+                <VsceSearchResultsInfoBar
+                    authenticatedUser={authenticatedUser}
+                    onShareResultsClick={onShareResultsClick}
+                    results={results}
+                    telemetryService={platformContext.telemetryService}
+                />
                 {authenticatedUser && openSavedSearchCreateForm && (
                     <SavedSearchForm
                         authenticatedUser={authenticatedUser}

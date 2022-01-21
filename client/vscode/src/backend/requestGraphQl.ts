@@ -7,6 +7,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointSetting, endpointCorsSetting } from '../settings/endpointSetting'
+import { currentAuthStateQuery } from '../webview/search-panel/queries'
 
 let invalidated = false
 
@@ -74,4 +75,16 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         }
         throw asError(error)
     }
+}
+
+// Check if the provided access token is valid or not
+export function hasValidatedToken(): boolean {
+    const accessToken = accessTokenSetting()
+    const authCheck = requestGraphQLFromVSCode(currentAuthStateQuery, {})
+        .then(response => response.data)
+        .catch(() => {})
+    if (accessToken && authCheck !== null) {
+        return true
+    }
+    return false
 }

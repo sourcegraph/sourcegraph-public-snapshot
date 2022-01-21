@@ -108,7 +108,7 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
                             </small>
                         </div>
                     ))}
-                    {showMore && <ShowMoreButton onClick={loadMoreItems} className="my-0" />}
+                    {showMore && <ShowMoreButton onClick={loadMoreItems} />}
                 </div>
             )}
             {!authenticatedUser && localRecentSearches && !collapsed && (
@@ -172,7 +172,7 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
 }
 
 const ShowMoreButton: React.FunctionComponent<{ onClick: () => void }> = ({ onClick }) => (
-    <div className="text-center py-3">
+    <div className="text-center py-3 my-0">
         <button type="button" className={classNames('btn', styles.sidebarSectionButtonLink)} onClick={onClick}>
             Show more
         </button>

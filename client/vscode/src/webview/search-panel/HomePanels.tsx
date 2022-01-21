@@ -41,7 +41,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
         <div className={styles.searchExamplesWrapper}>
             <div className={classNames('d-flex align-items-baseline mb-2', styles.searchExamplesTitleWrapper)}>
                 <div className={classNames('mr-2', styles.title, styles.searchExamplesTitle)}>{title}</div>
-                <div className="font-weight-normal text-muted">{subtitle}</div>
+                <div className={classNames(styles.searchExamplesSubtitle)}>{subtitle}</div>
             </div>
             <div className={styles.searchExamples}>
                 {examples.map(example => (
@@ -79,23 +79,25 @@ export const HomePanels: React.FunctionComponent<HomePanelsProps> = props => (
                     icon={<MagnifyingGlassSearchIcon />}
                     {...props}
                 />
-                <div className={styles.thumbnail}>
+                <div className={styles.thumbnailWrapper}>
                     <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
-                    <ModalVideo
-                        id="three-ways-to-search-title"
-                        title="Three ways to search"
-                        src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
-                        thumbnail={{
-                            src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
-                            alt: 'Watch and learn video thumbnail',
-                        }}
-                        onToggle={isOpen =>
-                            props.telemetryService.log(
-                                isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
-                            )
-                        }
-                        assetsRoot="https://sourcegraph.com/.assets/"
-                    />
+                    <div className={styles.thumbnail}>
+                        <ModalVideo
+                            id="three-ways-to-search-title"
+                            title="Three ways to search"
+                            src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
+                            thumbnail={{
+                                src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
+                                alt: 'Watch and learn video thumbnail',
+                            }}
+                            onToggle={isOpen =>
+                                props.telemetryService.log(
+                                    isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
+                                )
+                            }
+                            assetsRoot="https://sourcegraph.com/.assets/"
+                        />
+                    </div>
                 </div>
             </div>
 

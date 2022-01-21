@@ -16,7 +16,7 @@ export function accessTokenSetting(): string | undefined {
 // Ensure that only one access token error message is shown at a time.
 let showingAccessTokenErrorMessage = false
 
-export function handleAccessTokenError(badToken: string): Promise<void> {
+export function handleAccessTokenError(badToken: string): void {
     invalidAccessTokens.add(badToken)
 
     const currentValue = readConfiguration().get<string>('accessToken')
@@ -30,13 +30,14 @@ export function handleAccessTokenError(badToken: string): Promise<void> {
         // (e.g. user inputs bad token, we show error message and keep sidebar in "auth onboarding" state.)
 
         showingAccessTokenErrorMessage = true
-        console.error(badToken)
+        // console.error(badToken)
         // await vscode.window.showErrorMessage('Invalid Sourcegraph Access Token', {
         //     modal: true,
         //     detail: `The server at ${endpointHostnameSetting()} is unable to use the access token ${badToken}.`,
         // })
         showingAccessTokenErrorMessage = false
     }
+    return
 }
 
 export async function updateAccessTokenSetting(newToken: string): Promise<boolean> {

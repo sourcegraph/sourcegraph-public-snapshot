@@ -7,6 +7,7 @@ import { catchError, map } from 'rxjs/operators'
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { getFullQuery } from '@sourcegraph/branded/src/search/input/toggles/Toggles'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { getAvailableSearchContextSpecOrDefault } from '@sourcegraph/shared/src/search'
@@ -22,7 +23,6 @@ import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbi
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import {
-    AuthenticatedUser,
     CurrentAuthStateResult,
     CurrentAuthStateVariables,
     SearchResult,
@@ -343,7 +343,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                         src={`https://sourcegraph.com/.assets/img/sourcegraph-logo-${themeProperty}.svg`}
                         alt="Sourcegraph logo"
                     />
-                    <div className="text-muted text-center font-italic mt-3">
+                    <div className={classNames('mt-3', styles.logoText)}>
                         Search your code and 2M+ open source repositories
                     </div>
                     <div className={classNames(styles.searchContainer, styles.searchContainerWithContentBelow)}>

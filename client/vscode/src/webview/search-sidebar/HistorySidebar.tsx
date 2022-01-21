@@ -1,18 +1,16 @@
 import classNames from 'classnames'
-import React, { useEffect, useMemo, useState } from 'react'
-import create, { UseStore } from 'zustand'
+import React, { useEffect, useState } from 'react'
+import { UseStore } from 'zustand'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
-import { SearchQueryState, updateQuery } from '@sourcegraph/shared/src/search/searchQueryState'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { SearchQueryState } from '@sourcegraph/shared/src/search/searchQueryState'
 
-import { CurrentAuthStateResult, CurrentAuthStateVariables, SearchPatternType } from '../../graphql-operations'
+import { SearchPatternType } from '../../graphql-operations'
 import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
-import { currentAuthStateQuery, savedSearchQuery } from '../search-panel/queries'
+import { savedSearchQuery } from '../search-panel/queries'
 
 import styles from './HistorySidebar.module.scss'
 import { RecentFile } from './RecentFile'
@@ -21,106 +19,38 @@ import { RecentSearch } from './RecentSearch'
 import { SaveSearches } from './SaveSearches'
 import { SearchTypes } from './SearchType'
 
-interface HistorySidebarProps extends WebviewPageProps {}
+interface HistorySidebarProps extends WebviewPageProps {
+    authenticatedUser: AuthenticatedUser | null
+    patternType: SearchPatternType
+    caseSensitive: boolean
+    useQueryState: UseStore<SearchQueryState>
+    localRecentSearches: LocalRecentSeachProps[]
+}
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     sourcegraphVSCodeExtensionAPI,
     platformContext,
     theme,
+    authenticatedUser,
+    patternType,
+    caseSensitive,
+    useQueryState,
+    localRecentSearches,
 }) => {
-    const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
     const [localFileHistory, setLocalFileHistory] = useState<string[] | undefined>(undefined)
-    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null | undefined>(undefined)
     const [savedSearch, setSavedSearch] = useState<ISavedSearch[] | null | undefined>(undefined)
-    // Search Query
-    const [patternType, setPatternType] = useState<SearchPatternType>(SearchPatternType.literal)
-    const [caseSensitive, setCaseSensitive] = useState<boolean>(false)
-
-    const useQueryState: UseStore<SearchQueryState> = useMemo(() => {
-        const useStore = create<SearchQueryState>((set, get) => ({
-            queryState: { query: '' },
-            setQueryState: queryStateUpdate => {
-                const queryState =
-                    typeof queryStateUpdate === 'function' ? queryStateUpdate(get().queryState) : queryStateUpdate
-                set({ queryState })
-                // TODO error handling
-
-                sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState(queryState).then(
-                    () => {},
-                    () => {}
-                )
-            },
-            submitSearch: (_parameters, updates = []) => {
-                const updatedQuery = updateQuery(get().queryState.query, updates)
-                // TODO error handling
-                sourcegraphVSCodeExtensionAPI
-                    .submitActiveWebviewSearch({
-                        query: updatedQuery,
-                    })
-                    .then(
-                        () => {},
-                        () => {}
-                    )
-            },
-        }))
-        return useStore
-    }, [sourcegraphVSCodeExtensionAPI])
-
-    const activeQueryState = useObservable(
-        useMemo(() => wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.observeActiveWebviewQueryState()), [
-            sourcegraphVSCodeExtensionAPI,
-        ])
-    )
-
-    useEffect(() => {
-        // On changes that originate from user input in the search webview panel itself,
-        // we don't want to trigger another query state update, which would lead to an infinite loop.
-        // That's why we set the state directly, instead of using the `setQueryState` method which
-        // updates query state in the search webview panel.
-        if (activeQueryState) {
-            useQueryState.setState({ queryState: activeQueryState.queryState })
-            setPatternType(activeQueryState.patternType)
-            setCaseSensitive(activeQueryState.caseSensitive)
-        }
-    }, [activeQueryState, sourcegraphVSCodeExtensionAPI, useQueryState])
 
     useEffect(() => {
         // Get initial settings
         if (localRecentSearches === undefined) {
-            // Get Local Search History
             sourcegraphVSCodeExtensionAPI
-                .getLocalRecentSearch()
-                .then(response => {
-                    setLocalRecentSearches(response)
-                })
-                .catch(() => {
-                    // TODO error handling
-                })
-            sourcegraphVSCodeExtensionAPI
-                .getLocalStorageItem('sg-files-history')
+                .getLocalStorageItem('sg-files-history-test')
                 .then(response => {
                     setLocalFileHistory(response)
                 })
                 .catch(() => {
                     // TODO error handling
                 })
-        }
-        if (authenticatedUser === undefined) {
-            ;(async () => {
-                const currentUser = await platformContext
-                    .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
-                        request: currentAuthStateQuery,
-                        variables: {},
-                        mightContainPrivateInfo: true,
-                    })
-                    .toPromise()
-                // If user is detected, set valid access token to true
-                if (currentUser.data) {
-                    setAuthenticatedUser(currentUser.data.currentUser)
-                } else {
-                    setAuthenticatedUser(null)
-                }
-            })().catch(() => setAuthenticatedUser(null))
         }
         if (savedSearch === undefined && authenticatedUser) {
             ;(async () => {

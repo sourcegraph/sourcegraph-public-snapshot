@@ -29,6 +29,15 @@
     min-height: 54px;
 }
 
+.logo-text {
+    align-items: center;
+    font-style: italic;
+    font-weight: normal;
+    align-items: center;
+    color: var(--vscode-descriptionForeground) !important;
+    font-size: var(--vscode-font-size) !important;
+}
+
 .search-container {
     flex: 1 1 auto;
     margin-top: 2.5rem;
@@ -38,7 +47,7 @@
 
     &--with-content-below {
         flex-grow: 0;
-        margin-bottom: 5rem;
+        margin-bottom: 3rem;
     }
 }
 
@@ -124,50 +133,6 @@
 
     --home-marketing-drop: 0 4px 16px -6px rgba(46, 34, 119, 0.1);
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-
-    &__community-search-context-list {
-        &-cards {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-
-            @media (--md-breakpoint-down) {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-                grid-auto-rows: minmax(4rem, auto);
-                gap: $spacer * 0.75;
-            }
-
-            @media (--sm-breakpoint-down) {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: unset;
-            }
-        }
-
-        &-card {
-            max-width: 13.5rem;
-
-            @media (--sm-breakpoint-down) {
-                margin-right: 0.75rem;
-            }
-        }
-
-        &-icon {
-            width: 2rem;
-            height: 2rem;
-            object-fit: contain;
-        }
-    }
-
-    &__cta {
-        max-width: 38rem;
-        background-color: var(--color-bg-1);
-    }
-
-    &__community-search-contexts-listing-title {
-        margin-bottom: 0.25rem;
-    }
 }
 
 .help-content {
@@ -196,13 +161,25 @@
         flex-direction: column;
     }
 }
+
 .search-examples-title {
     @media (--md-breakpoint-down) {
         margin-bottom: 0.5rem;
     }
 }
+
+.search-examples-subtitle {
+    font-weight: 500;
+    color: var(--vscode-descriptionForeground) !important;
+    font-size: var(--vscode-editor-font-size) !important;
+
+    @media (--md-breakpoint-down) {
+        margin-bottom: 0.5rem;
+    }
+}
+
 .title {
-    font-size: 0.75rem;
+    font-size: var(--vscode-font-size);
     font-weight: 700;
     text-transform: uppercase;
 }
@@ -220,6 +197,7 @@
         grid-template-columns: 1fr;
     }
 }
+
 .search-example-card {
     display: flex;
     flex-direction: row;
@@ -227,6 +205,12 @@
     font-size: var(--vscode-editor-font-size);
     text-decoration: none !important;
     margin-bottom: 0.5rem;
+    &:hover {
+        .search-example-icon {
+            color: var(--vscode-button-secondaryHoverBackground) !important;
+            background-color: var(--vscode-button-foreground) !important;
+        }
+    }
 }
 .search-example-icon {
     color: var(--primary);
@@ -235,6 +219,13 @@
     align-items: center;
     border-top-left-radius: var(--border-radius);
     border-bottom-left-radius: var(--border-radius);
+    color: var(--vscode-button-foreground) !important;
+    background-color: var(--vscode-button-background) !important;
+
+    &:hover {
+        color: var(--vscode-button-secondaryHoverBackground) !important;
+        background-color: var(--vscode-button-foreground) !important;
+    }
 }
 .search-example-query-wrapper {
     padding: 0.5rem 0;
@@ -251,10 +242,19 @@
     padding: 0.75rem 1rem;
     background-color: var(--vscode-textCodeBlock-background) !important;
     font-size: var(--vscode-font-size);
+    margin-bottom: 1rem;
 }
-.thumbnail {
+
+.thumbnailWrapper {
+    padding: 0;
     @media (--sm-breakpoint-down) {
         margin-top: 3.5rem;
         text-align: center;
+    }
+}
+
+.thumbnail {
+    &:hover {
+        opacity: 0.3;
     }
 }

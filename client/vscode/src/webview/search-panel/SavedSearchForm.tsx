@@ -5,11 +5,10 @@ import { Omit } from 'utility-types'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Badge } from '@sourcegraph/branded/src/components/Badge'
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
-
-import { AuthenticatedUser } from '../../graphql-operations'
 
 import styles from './SearchResults.module.scss'
 

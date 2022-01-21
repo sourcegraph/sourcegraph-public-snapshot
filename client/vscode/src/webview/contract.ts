@@ -36,6 +36,8 @@ export interface SourcegraphVSCodeExtensionAPI
     getInstanceHostname: () => string
     // Get Access Token
     hasAccessToken: () => boolean
+    // If Access Token is valid
+    hasValidAccessToken: () => boolean
     // Update Access Token - return true when updated successfully
     updateAccessToken: (token: string) => Promise<boolean>
     /** TODO document. sourcegraph://${host}/${uri} */
@@ -89,8 +91,6 @@ export interface QueryStateWithInputProps {
 }
 
 export interface SourcegraphVSCodeSearchSidebarAPI {}
-
-export interface SourcegraphVSCodeHistorySidebarAPI {}
 
 /**
  * A subset of the Sourcegraph extension host API that is used by the VS Code extension.
