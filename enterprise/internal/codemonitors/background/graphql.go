@@ -4,17 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/url"
-	"runtime"
 	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-
-	"github.com/cockroachdb/errors"
 )
 
 type graphQLQuery struct {
@@ -96,13 +94,81 @@ type gqlSearchResponse struct {
 		Search struct {
 			Results struct {
 				ApproximateResultCount string
-				Cloning                []*api.Repo
-				Timedout               []*api.Repo
-				Results                []interface{}
-			}
-		}
-	}
+				Cloning                []api.Repo
+				Timedout               []api.Repo
+				Results                commitSearchResults
+			} `json:"results"`
+		} `json:"search"`
+	} `json:"data"`
 	Errors []interface{}
+}
+
+type commitSearchResults []commitSearchResult
+
+func (c *commitSearchResults) UnmarshalJSON(b []byte) error {
+	var rawMessages []json.RawMessage
+	if err := json.Unmarshal(b, &rawMessages); err != nil {
+		return err
+	}
+
+	var results []commitSearchResult
+	for _, rawMessage := range rawMessages {
+		var t struct {
+			Typename string `json:"__typename"`
+		}
+		if err := json.Unmarshal(rawMessage, &t); err != nil {
+			return err
+		}
+		if t.Typename != "CommitSearchResult" {
+			return errors.Errorf("expected result type %q, got %q", "CommitSearchResult", t.Typename)
+		}
+
+		var csr commitSearchResult
+		if err := json.Unmarshal(rawMessage, &csr); err != nil {
+			return err
+		}
+
+		results = append(results, csr)
+	}
+	*c = results
+	return nil
+}
+
+type commitSearchResult struct {
+	Refs           []ref              `json:"refs"`
+	SourceRefs     []ref              `json:"sourceRefs"`
+	MessagePreview *highlightedString `json:"messagePreview"`
+	DiffPreview    *highlightedString `json:"diffPreview"`
+	Commit         commit             `json:"commit"`
+}
+
+type ref struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+	Prefix      string `json:"prefix"`
+}
+
+type highlightedString struct {
+	Value      string `json:"value"`
+	Highlights []struct {
+		Line      int `json:"line"`
+		Character int `json:"character"`
+		Length    int `json:"length"`
+	} `json:"highlights"`
+}
+
+type commit struct {
+	Repository struct {
+		Name string `json:"name"`
+	} `json:"repository"`
+	Oid     string `json:"oid"`
+	Message string `json:"message"`
+	Author  struct {
+		Person struct {
+			DisplayName string `json:"displayName"`
+		} `json:"person"`
+		Date string `json:"date"`
+	} `json:"author"`
 }
 
 func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse, error) {
@@ -153,36 +219,12 @@ func gqlURL(queryName string) (string, error) {
 }
 
 // extractTime extracts the time from the given search result.
-func extractTime(result interface{}) (t *time.Time, err error) {
-	// Use recover because we assume the data structure here a lot, for less
-	// error checking.
-	defer func() {
-		if r := recover(); r != nil {
-			// Same as net/http
-			const size = 64 << 10
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			log.Printf("failed to extract time from search result: %v\n%s", r, buf)
-			err = errors.Errorf("failed to extract time from search result")
-		}
-	}()
-
-	m := result.(map[string]interface{})
-	typeName := m["__typename"].(string)
-	switch typeName {
-	case "CommitSearchResult":
-		commit := m["commit"].(map[string]interface{})
-		author := commit["author"].(map[string]interface{})
-		date := author["date"].(string)
-
-		// This relies on the date format that our API returns. It was previously broken
-		// and should be checked first in case date extraction stops working.
-		t, err := time.Parse(time.RFC3339, date)
-		if err != nil {
-			return nil, err
-		}
-		return &t, nil
-	default:
-		return nil, errors.Errorf("unexpected result __typename %q", typeName)
+func extractTime(result commitSearchResult) (*time.Time, error) {
+	// This relies on the date format that our API returns. It was previously broken
+	// and should be checked first in case date extraction stops working.
+	t, err := time.Parse(time.RFC3339, result.Commit.Author.Date)
+	if err != nil {
+		return nil, err
 	}
+	return &t, nil
 }
