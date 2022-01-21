@@ -102,8 +102,8 @@ type gqlSearchResponse struct {
 
 type searchResults struct {
 	ApproximateResultCount string              `json:"approximateResultCount"`
-	Cloning                []api.Repo          `json:"cloning"`
-	Timedout               []api.Repo          `json:"timedout"`
+	Cloning                []api.Repo          `json:"cloning,omitempty"`
+	Timedout               []api.Repo          `json:"timedout,omitempty"`
 	Results                commitSearchResults `json:"results"`
 }
 
