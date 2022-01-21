@@ -86,6 +86,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
         const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({ position: group.position })
+
         return appendLineRangeQueryParameter(
             appendSubtreeQueryParameter(getFileMatchUrl(result)),
             positionOrRangeQueryParameter

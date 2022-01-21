@@ -692,7 +692,7 @@ export const isExternalLink = (url: string): boolean =>
 export const appendSubtreeQueryParameter = (url: string): string => {
     const newUrl = new URL(url, window.location.href)
     newUrl.searchParams.set('subtree', 'true')
-    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
+    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + window.location.hash
 }
 
 /**
@@ -717,5 +717,5 @@ export const addLineRangeQueryParameter = (
 export const appendLineRangeQueryParameter = (url: string, range: string | undefined): string => {
     const newUrl = new URL(url, window.location.href)
     const searchQuery = formatSearchParameters(addLineRangeQueryParameter(newUrl.searchParams, range))
-    return newUrl.pathname + `?${searchQuery}` + newUrl.hash
+    return newUrl.pathname + `?${searchQuery}` + window.location.hash
 }
