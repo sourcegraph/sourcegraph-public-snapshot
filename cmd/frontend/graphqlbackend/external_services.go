@@ -31,26 +31,6 @@ var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_E
 
 const syncExternalServiceTimeout = 15 * time.Second
 
-type ExternalServiceMutationType int
-
-const (
-	Add ExternalServiceMutationType = iota
-	Update
-	Delete
-	SetRepos
-)
-
-func (d ExternalServiceMutationType) String() string {
-	return []string{"add", "update", "delete", "set-repos"}[d]
-}
-
-var extsvcMutationLables = []string{"success", "mutation", "namespace"}
-var mutationDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_extsvc_mutation_duration_seconds",
-	Help:    "ExternalService mutation latencies in seconds.",
-	Buckets: trace.UserLatencyBuckets,
-}, extsvcMutationLables)
-
 type addExternalServiceArgs struct {
 	Input addExternalServiceInput
 }
@@ -423,6 +403,25 @@ func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Conte
 func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }
+
+type ExternalServiceMutationType int
+
+const (
+	Add ExternalServiceMutationType = iota
+	Update
+	Delete
+	SetRepos
+)
+
+func (d ExternalServiceMutationType) String() string {
+	return []string{"add", "update", "delete", "set-repos"}[d]
+}
+
+var mutationDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_extsvc_mutation_duration_seconds",
+	Help:    "ExternalService mutation latencies in seconds.",
+	Buckets: trace.UserLatencyBuckets,
+}, []string{"success", "mutation", "namespace"})
 
 func reportExternalServiceDuration(startTime time.Time, mutation ExternalServiceMutationType, err *error, userId, orgId *int32) {
 	duration := time.Since(startTime)
