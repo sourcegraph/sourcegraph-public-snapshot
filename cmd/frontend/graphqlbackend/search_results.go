@@ -1924,9 +1924,9 @@ func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregato
 	}
 
 	ao := alertObserver{
-		searchResolver: r,
-		Inputs:         r.SearchInputs,
-		hasResults:     matchCount > 0,
+		Db:           r.db,
+		SearchInputs: r.SearchInputs,
+		hasResults:   matchCount > 0,
 	}
 	for _, err := range aggErrs.Errors {
 		ao.Error(ctx, err)
