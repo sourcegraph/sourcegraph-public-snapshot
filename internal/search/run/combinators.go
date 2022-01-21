@@ -12,23 +12,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-func NewRequiredAndOptionalJob(required Job, optional Job) *RequiredAndOptionalJob {
-	return &RequiredAndOptionalJob{
+func NewJobWithOptional(required Job, optional Job) Job {
+	if _, ok := optional.(*emptyJob); ok {
+		return required
+	}
+	return &JobWithOptional{
 		required: required,
 		optional: optional,
 	}
 }
 
-type RequiredAndOptionalJob struct {
+type JobWithOptional struct {
 	required Job
 	optional Job
 }
 
-func (r *RequiredAndOptionalJob) Name() string {
+func (r *JobWithOptional) Name() string {
 	return fmt.Sprintf("RequiredAndOptionalJob{Required: %s, Optional: %s}", r.required.Name(), r.optional.Name())
 }
 
-func (r *RequiredAndOptionalJob) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
+func (r *JobWithOptional) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -60,7 +63,13 @@ func (r *RequiredAndOptionalJob) Run(ctx context.Context, s streaming.Sender, pa
 	return errs.ErrorOrNil()
 }
 
-func NewParallelJob(children ...Job) *ParallelJob {
+func NewParallelJob(children ...Job) Job {
+	if len(children) == 0 {
+		return &emptyJob{}
+	}
+	if len(children) == 1 {
+		return children[0]
+	}
 	return &ParallelJob{children: children}
 }
 
@@ -86,3 +95,8 @@ func (p *ParallelJob) Run(ctx context.Context, s streaming.Sender, pager searchr
 	}
 	return g.Wait()
 }
+
+type emptyJob struct{}
+
+func (e *emptyJob) Run(context.Context, streaming.Sender, searchrepos.Pager) error { return nil }
+func (e *emptyJob) Name() string                                                   { return "EmptyJob" }

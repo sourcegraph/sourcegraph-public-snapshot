@@ -920,7 +920,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 	}
 
 	return &run.Routine{
-		Job: run.NewRequiredAndOptionalJob(
+		Job: run.NewJobWithOptional(
 			run.NewParallelJob(requiredJobs...),
 			run.NewParallelJob(optionalJobs...),
 		),
