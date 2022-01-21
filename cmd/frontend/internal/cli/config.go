@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 
@@ -442,7 +443,7 @@ var (
 
 func serviceConnections() conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
-		dsns, err := postgresdsn.DSNsBySchema()
+		dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
 		if err != nil {
 			panic(err.Error())
 		}

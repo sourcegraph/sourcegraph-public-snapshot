@@ -16,6 +16,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -71,7 +72,7 @@ func runMigration(ctx context.Context, options runner.Options) error {
 		return store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext))
 	}
 
-	return connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(), "sg", storeFactory).Run(ctx, options)
+	return connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(schemas.SchemaNames), "sg", storeFactory).Run(ctx, options)
 }
 
 func migrationAddExec(ctx context.Context, args []string) error {
