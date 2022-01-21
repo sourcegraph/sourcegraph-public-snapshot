@@ -21,8 +21,6 @@ import (
 type RepoSearch struct {
 	Args  *search.TextParameters
 	Limit int
-
-	IsRequired bool
 }
 
 func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) (err error) {
@@ -69,10 +67,6 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 
 func (*RepoSearch) Name() string {
 	return "Repo"
-}
-
-func (s *RepoSearch) Required() bool {
-	return s.IsRequired
 }
 
 func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisions) []result.Match {

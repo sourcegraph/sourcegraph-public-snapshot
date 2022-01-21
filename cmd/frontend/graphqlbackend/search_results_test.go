@@ -900,11 +900,7 @@ func Test_toSearchInputs(t *testing.T) {
 			},
 		}
 		routine, _ := resolver.toSearchRoutine(q)
-		var jobNames []string
-		for _, j := range routine.Jobs {
-			jobNames = append(jobNames, j.Name())
-		}
-		return strings.Join(jobNames, ",")
+		return routine.Job.Name()
 	}
 
 	// Job generation for global vs non-global search
