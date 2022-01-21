@@ -36,15 +36,8 @@ func transformRecord(index store.Index, accessToken string) (apiclient.Job, erro
 
 	frontendURL := conf.Get().ExternalURL
 
-	srcEndpoint, err := makeURL(frontendURL, accessToken)
-	if err != nil {
-		return apiclient.Job{}, err
-	}
-
-	redactedSrcEndpoint, err := makeURL(frontendURL, "PASSWORD_REMOVED")
-	if err != nil {
-		return apiclient.Job{}, err
-	}
+	authorizationHeader := fmt.Sprintf("token-executor %s", accessToken)
+	redactedAuthorizationHeader := "token-executor REDACTED"
 
 	root := index.Root
 	if root == "" {
@@ -75,15 +68,16 @@ func transformRecord(index store.Index, accessToken string) (apiclient.Job, erro
 				},
 				Dir: index.Root,
 				Env: []string{
-					fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
+					fmt.Sprintf("SRC_ENDPOINT=%s", frontendURL),
+					fmt.Sprintf("SRC_HEADER_AUTHORIZATION=%s", authorizationHeader),
 				},
 			},
 		},
 		RedactedValues: map[string]string{
-			// 🚨 SECURITY: Catch leak of upload endpoint. This is necessary in addition
+			// 🚨 SECURITY: Catch leak of authorization header. This is necessary in addition
 			// to the below in case the username or password contains illegal URL characters,
 			// which are then urlencoded and are not replaceable via byte comparison.
-			srcEndpoint: redactedSrcEndpoint,
+			authorizationHeader: redactedAuthorizationHeader,
 
 			// 🚨 SECURITY: Catch uses of fragments pulled from URL to construct another target
 			// (in src-cli). We only pass the constructed URL to src-cli, which we trust not to
