@@ -31,7 +31,7 @@ We use soft failures for the following reasons only:
   - Examples: [vulnerability scanning](#vulnerability-scanning), linting tasks for catching deprecation warnings
 - Temporary exceptions to accomodate xperimental or in-progress work.
 
-You can find all usages of soft failures with the following queries:
+You can find all usages of soft failures [with the following queries](https://sourcegraph.com/notebooks/Tm90ZWJvb2s6NTc=):
 
 - [Soft failures in the Sourcegraph pipeline generator](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%7B...bk.SoftFail...%7D+OR+%28...bk.SoftFail...%29+count:all&patternType=structural)
 - [Soft failures in Buildkite YAML pipelines](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/.*+soft_fail+lang:yaml+count:all&patternType=literal)
