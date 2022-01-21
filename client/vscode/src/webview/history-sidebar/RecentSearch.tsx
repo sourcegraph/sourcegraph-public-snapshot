@@ -40,14 +40,14 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
     const [collapsed, setCollapsed] = useState(false)
 
     function loadMoreItems(): void {
-        setItemsToLoad(current => current + 3)
-        telemetryService.log('RecentSearchesPanelShowMoreClicked')
+        setItemsToLoad(current => current + 5)
+        telemetryService.log('VSCERecentSearchesPanelShowMoreClicked')
     }
 
     const [processedResults, setProcessedResults] = useState<RecentSearch[] | null>(null)
 
     useEffect(() => {
-        if (authenticatedUser && itemsToLoad) {
+        if (authenticatedUser && itemsToLoad < 21) {
             ;(async () => {
                 const eventVariables = {
                     userId: authenticatedUser.id,
@@ -69,7 +69,11 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
         } else if (!authenticatedUser && localRecentSearches && itemsToLoad) {
             setShowMore(localRecentSearches.length > itemsToLoad)
         }
-    }, [authenticatedUser, itemsToLoad, localRecentSearches, platformContext])
+        // Limited to 20 counts
+        if (showMore && itemsToLoad >= 19) {
+            setShowMore(false)
+        }
+    }, [authenticatedUser, itemsToLoad, localRecentSearches, platformContext, showMore])
 
     return (
         <div className={styles.sidebarSection}>
@@ -112,7 +116,7 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
                     {localRecentSearches
                         ?.slice(0)
                         .reverse()
-                        .filter((search, index) => index < itemsToLoad)
+                        .filter((search, index) => index <= itemsToLoad - 1)
                         .map((search, index) => (
                             <div key={index}>
                                 <small key={index} className={styles.sidebarSectionListItem}>

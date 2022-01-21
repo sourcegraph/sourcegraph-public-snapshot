@@ -35,17 +35,15 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
 }) => {
     const [showMore, setShowMore] = useState(false)
     const [itemsToLoad, setItemsToLoad] = useState(5)
-
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + 5)
-        telemetryService.log('RecentSearchesPanelShowMoreClicked')
-    }
-
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
     const [collapsed, setCollapsed] = useState(false)
+    function loadMoreItems(): void {
+        setItemsToLoad(current => current + 5)
+        telemetryService.log('VSCERecentFilesPanelShowMoreClicked')
+    }
 
     useEffect(() => {
-        if (authenticatedUser && itemsToLoad) {
+        if (authenticatedUser && itemsToLoad < 21) {
             ;(async () => {
                 const eventVariables = {
                     userId: authenticatedUser.id,
@@ -65,9 +63,16 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
                 }
             })().catch(error => console.error(error))
         } else if (!authenticatedUser && localFileHistory) {
-            setProcessedResults(processLocalRecentFiles(localFileHistory))
+            if (processedResults === null) {
+                setProcessedResults(processLocalRecentFiles(localFileHistory))
+            } else {
+                setShowMore(localFileHistory.length > itemsToLoad)
+            }
         }
-    }, [authenticatedUser, itemsToLoad, localFileHistory, platformContext])
+        if (showMore && itemsToLoad > 20) {
+            setShowMore(false)
+        }
+    }, [authenticatedUser, itemsToLoad, localFileHistory, platformContext, processedResults, showMore])
 
     return (
         <div className={styles.sidebarSection}>
@@ -86,25 +91,27 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
             {/* Display results from cloud for registered users and results from local Storage for non registered users */}
             {processedResults && !collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
-                    {processedResults?.map((recentFile, index) => (
-                        <div key={index}>
-                            <small key={index} className={styles.sidebarSectionListItem}>
-                                <Link
-                                    data-testid="recent-files-item"
-                                    to="/"
-                                    onClick={() =>
-                                        authenticatedUser
-                                            ? sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
-                                                  query: `repo:^${recentFile.repoName}$ file:^${recentFile.filePath}`,
-                                              })
-                                            : sourcegraphVSCodeExtensionAPI.openFile(recentFile.url)
-                                    }
-                                >
-                                    {recentFile.repoName} › {recentFile.filePath}
-                                </Link>
-                            </small>
-                        </div>
-                    ))}
+                    {processedResults
+                        ?.filter((search, index) => index <= itemsToLoad - 1)
+                        .map((recentFile, index) => (
+                            <div key={index}>
+                                <small key={index} className={styles.sidebarSectionListItem}>
+                                    <Link
+                                        data-testid="recent-files-item"
+                                        to="/"
+                                        onClick={() =>
+                                            authenticatedUser
+                                                ? sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
+                                                      query: `repo:^${recentFile.repoName}$ file:^${recentFile.filePath}`,
+                                                  })
+                                                : sourcegraphVSCodeExtensionAPI.openFile(recentFile.url)
+                                        }
+                                    >
+                                        {recentFile.repoName} › {recentFile.filePath}
+                                    </Link>
+                                </small>
+                            </div>
+                        ))}
                     {showMore && <ShowMoreButton onClick={loadMoreItems} />}
                 </div>
             )}
@@ -143,7 +150,6 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
                 !recentFiles.some(file => file.repoName === repoName && file.filePath === filePath) // Don't show the same file twice
             ) {
                 const parsedUrl = new URL(node.url)
-                console.log(parsedUrl.pathname)
                 recentFiles.push({
                     url: parsedUrl.pathname.replace('https://', 'sourcegraph://') + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
                     repoName,

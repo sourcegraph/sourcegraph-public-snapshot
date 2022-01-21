@@ -43,7 +43,6 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
                 //   2. Execute "Reload window" command.
                 //   3. After VS Code loads, open the "Files" view.
                 this.didChangeTreeData.fire(undefined)
-
                 this.didFocus(this.activeUri).then(
                     () => {},
                     () => {}
@@ -56,6 +55,14 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
         treeView.onDidCollapseElement(event => {
             this.isExpandedNode.delete(event.element)
         })
+        // treeView.onDidChangeSelection(event => {
+        //     this.getTreeItem(event.selection[0])
+        //         .then(item => {
+        //             item.contextValue = 'selected'
+        //             console.log(item)
+        //         })
+        //         .catch(() => {})
+        // })
     }
 
     public async getParent(uriString?: string): Promise<string | undefined> {
@@ -208,9 +215,18 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
             ? {
                   command: 'extension.openFile',
                   title: 'Open file',
+                  toolbar: 'test',
                   arguments: [uri.uri],
               }
             : undefined
+        // Check if this is a currently selected file
+        let selectedFile = false
+        if (
+            vscode.window.activeTextEditor?.document &&
+            uri.path === SourcegraphUri.parse(vscode.window.activeTextEditor?.document.uri.toString()).path
+        ) {
+            selectedFile = true
+        }
         return {
             id: uri.uri,
             label: uri.treeItemLabel(parent),
@@ -222,7 +238,7 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
                 : vscode.TreeItemCollapsibleState.Collapsed,
             command,
             resourceUri: vscode.Uri.parse(uri.uri),
-            contextValue: uri.isFile() ? 'file' : 'directory',
+            contextValue: !uri.isFile() ? 'directory' : selectedFile ? 'selected' : 'file',
         }
     }
 }

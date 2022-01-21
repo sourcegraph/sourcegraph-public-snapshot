@@ -46,6 +46,10 @@ code {
     color: var(--vscode-editor-foreground) !important;
 }
 
+input {
+    background-color: var(--vscode-input-background) !important;
+}
+
 a,
 .infobar-button-link {
     color: var(--vscode-textLink-foreground) !important;
@@ -72,6 +76,7 @@ a,
 .description-text {
     color: var(--vscode-descriptionForeground) !important;
 }
+
 .textarea {
     background-color: var(--vscode-input-background) !important;
 }

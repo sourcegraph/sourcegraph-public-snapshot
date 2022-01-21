@@ -28,6 +28,7 @@
     "onView:sourcegraph.extensionHost",
     "onView:sourcegraph.historySidebar",
     "onView:sourcegraph.searchSidebar",
+    "onView:sourcegraph.files",
     "onWebviewPanel:sourcegraphSearch"
   ],
   "main": "./dist/node/extension.js",
@@ -37,22 +38,30 @@
       {
         "command": "sourcegraph.search",
         "category": "Sourcegraph",
-        "title": "Open Sourcegraph Search Tab"
-      },
-      {
-        "command": "sourcegraph.copyFileLink",
-        "category": "Sourcegraph",
-        "title": "Copy file link to Sourcegraph Web"
+        "title": "Open Search Tab",
+        "icon": {
+          "light": "images/logo.svg",
+          "dark": "images/logo.svg"
+        }
       },
       {
         "command": "sourcegraph.openInBrowser",
         "category": "Sourcegraph",
-        "title": "Open File in Sourcegraph Web"
+        "title": "Open File in Sourcegraph Web",
+        "icon": {
+          "light": "images/logomark_dark.svg",
+          "dark": "images/logomark_light.svg"
+        }
+      },
+      {
+        "command": "sourcegraph.copyFileLink",
+        "category": "Sourcegraph",
+        "title": "Copy Sourcegraph File Link"
       },
       {
         "command": "sourcegraph.searchInSourcegraph",
         "category": "Sourcegraph",
-        "title": "Search Selection in Sourcegraph Search Tab"
+        "title": "Search Selection in Sourcegraph Tab"
       },
       {
         "command": "sourcegraph.searchOnSourcegraph",
@@ -74,20 +83,20 @@
         {
           "type": "webview",
           "id": "sourcegraph.searchSidebar",
-          "name": "Sourcegraph Search",
+          "name": "Search",
           "visibility": "visible",
-          "when": "sourcegraph.activeSearchPanel && !sourcegraph.showFileTree && !sourcegraph.canFocusActiveDocument"
+          "when": "!sourcegraph.searchHistoryFound && !sourcegraph.showFileTree && !sourcegraph.canFocusActiveDocument"
         },
         {
           "type": "webview",
           "id": "sourcegraph.historySidebar",
-          "name": "Sourcegraph Search",
+          "name": "Search",
           "visibility": "visible",
           "when": "sourcegraph.searchHistoryFound && !sourcegraph.activeSearchPanel && !sourcegraph.showFileTree && !sourcegraph.canFocusActiveDocument"
         },
         {
           "id": "sourcegraph.files",
-          "name": "Files",
+          "name": "Sourcegraph Remote Files",
           "visibility": "visible",
           "when": "sourcegraph.showFileTree || sourcegraph.canFocusActiveDocument"
         },
@@ -95,7 +104,8 @@
           "type": "webview",
           "id": "sourcegraph.extensionHost",
           "name": "Sourcegraph Extensions",
-          "visibility": "visible"
+          "visibility": "visible",
+          "when": "sourcegraph.activeSearchPanel"
         }
       ]
     },
@@ -174,6 +184,13 @@
           "command": "sourcegraph.searchInSourcegraph",
           "group": "sourcegraph",
           "when": "editorHasSelection"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "sourcegraph.openInBrowser",
+          "when": "view == sourcegraph.files && viewItem == selected",
+          "group": "inline"
         }
       ]
     }

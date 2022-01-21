@@ -266,8 +266,8 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             if (selectedSearchContextSpec) {
                 queryString = appendContextFilter(queryString, selectedSearchContextSpec)
             }
-
-            if (fullQuery && localRecentSearches !== undefined && localRecentSearches.length < 12) {
+            // only save 20 searches locally
+            if (fullQuery && localRecentSearches !== undefined && localRecentSearches.length < 21) {
                 // query to add to search history
                 const newSearchHistory = {
                     lastQuery: queryToRun.query,
@@ -278,9 +278,9 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 }
                 if (localRecentSearches[localRecentSearches.length - 1]?.lastFullQuery !== fullQuery) {
                     let currentLocalSearchHistory = localRecentSearches
-                    // Local Search History is limited to 10
-                    if (localRecentSearches.length > 9) {
-                        currentLocalSearchHistory = localRecentSearches.slice(-9)
+                    // Local Search History is limited to 20
+                    if (localRecentSearches.length > 19) {
+                        currentLocalSearchHistory = localRecentSearches.slice(-19)
                     }
                     const newRecentSearches = [...currentLocalSearchHistory, newSearchHistory]
                     setLocalRecentSearches(newRecentSearches)
@@ -519,7 +519,7 @@ export const SearchPageCta: React.FunctionComponent<SearchPageCtaProps> = ({
         </div>
         <a
             className={classNames('btn', styles.streamingSearchResultsBtn)}
-            href="https://sourcegraph.com/sign-up?src=SearchCTA"
+            href="https://sourcegraph.com/sign-up?editor=vscode"
             onClick={onClickAction}
         >
             <span className={styles.streamingSearchResultsText}>{buttonText}</span>

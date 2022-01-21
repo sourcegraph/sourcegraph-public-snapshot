@@ -1,9 +1,8 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -22,15 +21,21 @@ export const SaveSearches: React.FunctionComponent<SaveSearchesProps> = ({
     telemetryService,
     platformContext,
 }) => {
-    const [showMore, setShowMore] = useState(false)
     const [itemsToLoad, setItemsToLoad] = useState(5)
+    const [showMore, setShowMore] = useState(savedSearches.length > itemsToLoad)
+    const [collapsed, setCollapsed] = useState(false)
 
     function loadMoreItems(): void {
         setItemsToLoad(current => current + 5)
-        telemetryService.log('RecentSearchesPanelShowMoreClicked')
+        telemetryService.log('VSCESavedSearchesPanelShowMoreClicked')
     }
-    // const [processedResults, setProcessedResults] = useState<string[] | null>(null)
-    const [collapsed, setCollapsed] = useState(false)
+
+    useEffect(() => {
+        // Limited to 20 counts
+        if (showMore && itemsToLoad > 19) {
+            setShowMore(false)
+        }
+    }, [itemsToLoad, platformContext, showMore])
 
     return (
         <div className={styles.sidebarSection}>
@@ -49,7 +54,7 @@ export const SaveSearches: React.FunctionComponent<SaveSearchesProps> = ({
             {!collapsed && savedSearches && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
                     {savedSearches
-                        .filter((search, index) => search.namespace.__typename === 'User')
+                        // .filter((search, index) => search.namespace.__typename === 'User')
                         .filter((search, index) => index < itemsToLoad)
                         .map((search, index) => (
                             <div key={index}>
@@ -62,7 +67,7 @@ export const SaveSearches: React.FunctionComponent<SaveSearchesProps> = ({
                                             })
                                         }
                                     >
-                                        <SyntaxHighlightedSearchQuery query={search.query} />
+                                        {search.description}
                                     </Link>
                                 </small>
                             </div>

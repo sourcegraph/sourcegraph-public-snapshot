@@ -138,7 +138,8 @@ export class SourcegraphUri {
             }
             return this.path
         }
-        return `${this.repositoryName}${this.revisionPart()}`
+        return `${this.repositoryName}`
+        // return `${this.repositoryName}${this.revisionPart()}`
     }
     public revisionPart(): string {
         return this.revision ? `@${this.revision}` : ''

@@ -5,7 +5,7 @@ import { TextEditor } from 'vscode'
 
 import { log } from '../../log'
 
-interface RepositoryInfo extends Branch {
+interface RepositoryInfo extends Branch, RemoteName {
     /** Git repository remote URL */
     remoteURL: string
 
@@ -51,7 +51,7 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         if (process.platform === 'win32') {
             fileRelative = fileRelative.replace(/\\/g, '/')
         }
-        return { remoteURL, branch, fileRelative }
+        return { remoteURL, branch, fileRelative, remoteName }
     } catch {
         return undefined
     }
@@ -177,17 +177,12 @@ export function getSourcegraphFileUrl(
     editor: TextEditor
 ): string {
     // construct final url
-    const finalUrl =
-        `${SourcegraphUrl}/-/editor` +
-        `?remote_url=${encodeURIComponent(remoteURL)}` +
-        `&branch=${encodeURIComponent(branch)}` +
-        `&file=${encodeURIComponent(fileRelative)}` +
-        `&editor=${encodeURIComponent('VSCode')}` +
-        `&version=${encodeURIComponent('0.0.2')}` +
-        `&start_row=${encodeURIComponent(String(editor.selection.start.line))}` +
-        `&start_col=${encodeURIComponent(String(editor.selection.start.character))}` +
-        `&end_row=${encodeURIComponent(String(editor.selection.end.line))}` +
-        `&end_col=${encodeURIComponent(String(editor.selection.end.character))}`
+    const repoName = remoteURL.replace('https://', '').replace(new RegExp('.git$'), '')
+    const finalUrl = `${SourcegraphUrl}/${encodeURIComponent(repoName)}@${encodeURIComponent(
+        branch
+    )}/-/blob/${encodeURIComponent(fileRelative)}?L${encodeURIComponent(
+        String(editor.selection.start.line + 1)
+    )}:${encodeURIComponent(String(editor.selection.end.line + 1))}`
 
     return finalUrl
 }

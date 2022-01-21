@@ -70,7 +70,7 @@ export function checkLink(uri: string): string {
     // Private instance user are required to provide access token
     // This is for users who has not provide an access token and is using dotcom by default
     if (uri.startsWith('/sign-up?')) {
-        return 'https://sourcegraph.com/sign-up?src=VSCE'
+        return 'https://sourcegraph.com/sign-up?editor=vscode'
     }
     if (uri.startsWith('https://')) {
         return uri

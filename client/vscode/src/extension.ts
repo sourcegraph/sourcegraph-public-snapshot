@@ -83,7 +83,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const filesTreeView = vscode.window.createTreeView<string>('sourcegraph.files', {
         treeDataProvider: files,
-        showCollapseAll: true,
+        showCollapseAll: false,
     })
 
     files.setTreeView(filesTreeView)

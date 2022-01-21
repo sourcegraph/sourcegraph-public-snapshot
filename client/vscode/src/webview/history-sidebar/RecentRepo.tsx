@@ -38,22 +38,23 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
     platformContext,
 }) => {
     const [showMore, setShowMore] = useState(false)
-    const [itemsToLoad, setItemsToLoad] = useState(5)
+    const [itemsToLoad, setItemsToLoad] = useState(4)
+    const [processedResults, setProcessedResults] = useState<string[] | null>(null)
+    const [calledAPI, setCalledAPI] = useState(false)
+    const [collapsed, setCollapsed] = useState(false)
 
     function loadMoreItems(): void {
         setItemsToLoad(current => current + 5)
-        telemetryService.log('RecentSearchesPanelShowMoreClicked')
+        telemetryService.log('VSCERecentRepoPanelShowMoreClicked')
     }
 
-    const [processedResults, setProcessedResults] = useState<string[] | null>(null)
-    const [collapsed, setCollapsed] = useState(false)
-
     useEffect(() => {
-        if (authenticatedUser && itemsToLoad) {
+        // only call API once
+        if (authenticatedUser && !calledAPI) {
             ;(async () => {
                 const eventVariables = {
                     userId: authenticatedUser.id,
-                    first: itemsToLoad,
+                    first: 200,
                     eventName: 'SearchResultsQueried',
                 }
                 const userSearchHistory = await platformContext
@@ -64,17 +65,24 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
                     })
                     .toPromise()
                 if (userSearchHistory.data?.node?.__typename === 'User') {
-                    setShowMore(userSearchHistory.data.node.eventLogs.pageInfo.hasNextPage)
-                    setProcessedResults(processRepositories(userSearchHistory.data.node.eventLogs))
+                    const results = processRepositories(userSearchHistory.data.node.eventLogs)
+                    setProcessedResults(results)
+                    setShowMore(processedResults !== null && processedResults.length > itemsToLoad && itemsToLoad < 20)
+                } else {
+                    setProcessedResults(null)
                 }
+                setCalledAPI(true)
             })().catch(error => console.error(error))
         }
-        if (!authenticatedUser) {
-            if (localRecentSearches) {
-                setProcessedResults(processLocalRepositories(localRecentSearches))
-            }
+        if (!authenticatedUser && localRecentSearches && !calledAPI) {
+            setProcessedResults(processLocalRepositories(localRecentSearches))
+            setCalledAPI(true)
         }
-    }, [authenticatedUser, itemsToLoad, localRecentSearches, platformContext])
+        // Limited to 20 counts
+        if (showMore && itemsToLoad > 19) {
+            setShowMore(false)
+        }
+    }, [authenticatedUser, calledAPI, itemsToLoad, localRecentSearches, platformContext, processedResults, showMore])
 
     if (!processedResults) {
         return null
@@ -96,29 +104,39 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
             </button>
             {!collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
-                    {processedResults?.map((repo, index) => (
-                        <div key={index}>
-                            <small key={index} className={styles.sidebarSectionListItem}>
-                                <Link
-                                    data-testid="recent-files-item"
-                                    to="/"
-                                    onClick={() =>
-                                        sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
-                                            query: `repo:${repo}`,
-                                        })
-                                    }
-                                >
-                                    <SyntaxHighlightedSearchQuery query={`r:${repo}`} />
-                                </Link>
-                            </small>
-                        </div>
-                    ))}
+                    {processedResults
+                        ?.filter((search, index) => index < itemsToLoad)
+                        .map((repo, index) => (
+                            <div key={index}>
+                                <small key={index} className={styles.sidebarSectionListItem}>
+                                    <Link
+                                        data-testid="recent-files-item"
+                                        to="/"
+                                        onClick={() =>
+                                            sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
+                                                query: `repo:${repo}`,
+                                            })
+                                        }
+                                    >
+                                        <SyntaxHighlightedSearchQuery query={`r:${repo}`} />
+                                    </Link>
+                                </small>
+                            </div>
+                        ))}
                     {showMore && <ShowMoreButton onClick={loadMoreItems} />}
                 </div>
             )}
         </div>
     )
 }
+
+const ShowMoreButton: React.FunctionComponent<{ onClick: () => void }> = ({ onClick }) => (
+    <div className="text-center py-3">
+        <button type="button" className={classNames('btn', styles.sidebarSectionButtonLink)} onClick={onClick}>
+            Show more
+        </button>
+    </div>
+)
 
 export function parseSearchURLQuery(query: string): string | undefined {
     const searchParameters = new URLSearchParams(query)
@@ -129,9 +147,7 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     if (!eventLogResult) {
         return null
     }
-
     const recentlySearchedRepos: string[] = []
-
     for (const node of eventLogResult.nodes) {
         if (node.url) {
             const url = new URL(node.url)
@@ -164,11 +180,3 @@ function processLocalRepositories(localRecentSearches: LocalRecentSeachProps[]):
 
     return recentlySearchedRepoNames ? [...recentlySearchedRepoNames].reverse() : null
 }
-
-const ShowMoreButton: React.FunctionComponent<{ onClick: () => void }> = ({ onClick }) => (
-    <div className="text-center py-3">
-        <button type="button" className={classNames('btn', styles.sidebarSectionButtonLink)} onClick={onClick}>
-            Show more
-        </button>
-    </div>
-)

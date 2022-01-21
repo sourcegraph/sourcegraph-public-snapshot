@@ -208,12 +208,10 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         ) : (
             <>
                 <OpenSearchPanelCta
-                    className={styles.sidebarContainer}
                     sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                     onDesktop={onDesktop}
                 />
                 <SidebarAuthCheck
-                    className={styles.sidebarContainer}
                     sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                     hasAccessToken={hasAccessToken}
                     telemetryService={platformContext.telemetryService}

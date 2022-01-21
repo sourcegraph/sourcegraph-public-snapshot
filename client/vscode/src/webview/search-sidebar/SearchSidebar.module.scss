@@ -34,7 +34,7 @@
 }
 
 .text {
-    font-size: var(--vscode-font-size) !important;
+    font-size: var(--vscode-editor-font-size) !important;
     color: var(--vscode-foreground);
 }
 
@@ -73,8 +73,76 @@
     color: var(--vscode-input-foreground);
 }
 
-.title {
+.cta-title {
+    letter-spacing: 0.5px;
     text-transform: uppercase;
-    font-size: var(--vscode-font-size) !important;
+    font-weight: 600;
+    font-size: var(--vscode-editor-font-size) !important;
     color: var(--vscode-textPreformat-foreground);
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+}
+
+.cta-container {
+    letter-spacing: 0.5px;
+    font-size: var(--vscode-editor-font-size) !important;
+    color: var(--vscode-foreground);
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.cta-paragraph {
+    margin-bottom: 0.5rem;
+}
+
+.cta-warning-text {
+    letter-spacing: 0.5px;
+    font-size: var(--vscode-editor-font-size) !important;
+    color: var(--vscode-errorForeground);
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+}
+
+.cta-error-container {
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    background: var(--vscode-inputValidation-errorBackground) !important;
+    font-size: var(--vscode-editor-font-size) !important;
+    color: var(--vscode-input-foreground) !important;
+    margin-top: 0.25rem;
+    padding: 0.2rem;
+}
+
+.cta-input {
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-input-background);
+    font-weight: var(--vscode-editor-font-weight);
+    border: 0;
+    width: 100%;
+    font-size: var(--vscode-editor-font-size) !important;
+
+    &:active {
+        border-color: var(--vscode-inputOption-activeBorder);
+    }
+
+    &:focus {
+        border-color: var(--vscode-inputOption-activeBorder);
+    }
+}
+
+.cta-button {
+    background-color: var(--vscode-button-background);
+    font-weight: var(--vscode-editor-font-weight);
+    border: 0;
+    width: 100%;
+    font-size: var(--vscode-editor-font-size) !important;
+
+    &:hover {
+        background-color: var(--vscode-button-hoverBackground);
+    }
+}
+
+.cta-link {
+    font-size: var(--vscode-font-size) !important;
+    color: var(--vscode-textLink-foreground) !important;
 }

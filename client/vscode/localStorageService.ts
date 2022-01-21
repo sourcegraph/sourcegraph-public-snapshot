@@ -21,12 +21,13 @@ export class LocalStorageService {
     }
 
     public getLocalRecentSearch(): LocalRecentSeachProps[] {
-        return this.storage.get<LocalRecentSeachProps[]>('recent_searches', [])
+        const searchHistory = this.storage.get<LocalRecentSeachProps[]>('sg-search-history-test', [])
+        return searchHistory
     }
 
     public async setLocalRecentSearch(newSearches: LocalRecentSeachProps[]): Promise<boolean> {
         try {
-            await this.storage.update('recent_searches', newSearches)
+            await this.storage.update('sg-search-history-test', newSearches)
             return true
         } catch (error) {
             console.log(error)
@@ -35,12 +36,12 @@ export class LocalStorageService {
     }
 
     public getFileHistory(): string[] {
-        return this.storage.get<string[]>('sg-files-test2', [])
+        return this.storage.get<string[]>('sg-files-history-test', [])
     }
 
     public async setFileHistory(newFile: string[]): Promise<boolean> {
         try {
-            await this.storage.update('sg-files-test2', newFile)
+            await this.storage.update('sg-files-history-test', newFile)
             return true
         } catch {
             return false
