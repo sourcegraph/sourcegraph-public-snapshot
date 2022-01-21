@@ -99,7 +99,7 @@ func Postgres() *monitoring.Container {
 						monitoring.Observable{
 							Name:           "migration_in_progress",
 							Description:    "active schema migration",
-							Owner:          monitoring.ObservableOwnerCloudDevOps,
+							Owner:          monitoring.ObservableOwnerDevOps,
 							DataMustExist:  false, // not deployed on docker-compose
 							Query:          "pg_sg_migration_status",
 							Panel:          monitoring.Panel().LegendFormat("{{app}}"),
