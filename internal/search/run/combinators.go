@@ -12,6 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
+// NewJobWithOptional creates a combinator job from a required job and an
+// optional job. When run, JobWithOptional run the required job and the
+// optional job in parallel, wait for the required job to complete, then give
+// the optional job a short additional amount of time (currently 100ms) before
+// canceling the optional job.
 func NewJobWithOptional(required Job, optional Job) Job {
 	if _, ok := optional.(*emptyJob); ok {
 		return required
@@ -63,6 +68,9 @@ func (r *JobWithOptional) Run(ctx context.Context, s streaming.Sender, pager sea
 	return errs.ErrorOrNil()
 }
 
+// NewParallelJob will create a job that runs all its child jobs in separate
+// goroutines, then waits for all to complete. It returns an aggregated error
+// if any of the child jobs failed.
 func NewParallelJob(children ...Job) Job {
 	if len(children) == 0 {
 		return &emptyJob{}
@@ -70,24 +78,22 @@ func NewParallelJob(children ...Job) Job {
 	if len(children) == 1 {
 		return children[0]
 	}
-	return &ParallelJob{children: children}
+	return ParallelJob(children)
 }
 
-type ParallelJob struct {
-	children []Job
-}
+type ParallelJob []Job
 
-func (p *ParallelJob) Name() string {
+func (p ParallelJob) Name() string {
 	var childNames []string
-	for _, job := range p.children {
+	for _, job := range p {
 		childNames = append(childNames, job.Name())
 	}
 	return fmt.Sprintf("ParallelJob{%s}", strings.Join(childNames, ", "))
 }
 
-func (p *ParallelJob) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
+func (p ParallelJob) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
 	var g multierror.Group
-	for _, job := range p.children {
+	for _, job := range p {
 		job := job
 		g.Go(func() error {
 			return job.Run(ctx, s, pager)
