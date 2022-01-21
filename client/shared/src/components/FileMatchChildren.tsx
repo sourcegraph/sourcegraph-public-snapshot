@@ -152,10 +152,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             }`}
                             className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
                         >
-                            <Link
-                                to={createCodeExcerptLink(group)}
-                                aria-label="Open file match"
-                            />
+                            <Link to={createCodeExcerptLink(group)} aria-label="Open file match" />
                             <div
                                 className={classNames(
                                     'test-file-match-children-item',
