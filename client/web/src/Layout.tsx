@@ -38,6 +38,7 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
+import { GlobalCodeIntel } from './global/GlobalCodeIntel'
 import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
 import styles from './Layout.module.scss'
@@ -103,6 +104,7 @@ export interface LayoutProps
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
 
+    onWebHoverOverlayClick: () => void
     authenticatedUser: AuthenticatedUser | null
 
     /**
@@ -187,6 +189,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const afterTosAccepted = useCallback(() => {
         setTosAccepted(true)
     }, [])
+
+    const [overlayClickUrl, onWebHoverOverlayClick] = useState('')
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -285,6 +289,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
+            <GlobalCodeIntel {...props} onWebHoverOverlayClick={onWebHoverOverlayClick} />
         </div>
     )
 }
