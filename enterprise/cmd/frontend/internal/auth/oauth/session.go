@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -89,7 +90,6 @@ func SessionIssuer(db database.DB, s SessionIssuerHelper, sessionKey string) htt
 			}
 			return c.Value
 		}
-
 		anonymousId, _ := cookie.AnonymousUID(r)
 		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
 		if err != nil {
@@ -97,7 +97,7 @@ func SessionIssuer(db database.DB, s SessionIssuerHelper, sessionKey string) htt
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
-
+		r.Context().
 		user, err := db.Users().GetByID(r.Context(), actr.UID)
 		if err != nil {
 			log15.Error("OAuth failed: error retrieving user from database.", "error", err)
