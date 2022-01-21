@@ -28,7 +28,7 @@ type JobWithOptional struct {
 }
 
 func (r *JobWithOptional) Name() string {
-	return fmt.Sprintf("RequiredAndOptionalJob{Required: %s, Optional: %s}", r.required.Name(), r.optional.Name())
+	return fmt.Sprintf("JobWithOptional{Required: %s, Optional: %s}", r.required.Name(), r.optional.Name())
 }
 
 func (r *JobWithOptional) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
@@ -93,7 +93,7 @@ func (p *ParallelJob) Run(ctx context.Context, s streaming.Sender, pager searchr
 			return job.Run(ctx, s, pager)
 		})
 	}
-	return g.Wait()
+	return g.Wait().ErrorOrNil()
 }
 
 type emptyJob struct{}
