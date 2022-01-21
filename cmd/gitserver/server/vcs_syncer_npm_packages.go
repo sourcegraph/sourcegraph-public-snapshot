@@ -16,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -36,8 +36,25 @@ var (
 )
 
 type NPMPackagesSyncer struct {
-	Config  *schema.NPMPackagesConnection
-	DBStore repos.NPMPackagesRepoStore
+	// Configuration object describing the connection to the NPM registry.
+	connection schema.NPMPackagesConnection
+	dbStore    repos.NPMPackagesRepoStore
+	// The client to use for making queries against NPM.
+	client npm.Client
+}
+
+// Create a new NPMPackagesSyncer. If customClient is nil, the client
+// for the syncer is configured based on the connection parameter.
+func NewNPMPackagesSyncer(
+	connection schema.NPMPackagesConnection,
+	dbStore repos.NPMPackagesRepoStore,
+	customClient npm.Client,
+) *NPMPackagesSyncer {
+	var client = customClient
+	if client == nil {
+		client = npm.NewHTTPClient(connection.Registry, connection.RateLimit)
+	}
+	return &NPMPackagesSyncer{connection, dbStore, client}
 }
 
 var _ VCSSyncer = &NPMPackagesSyncer{}
@@ -55,7 +72,7 @@ func (s *NPMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 	}
 
 	for _, dependency := range dependencies {
-		if err := npm.Exists(ctx, s.Config, dependency); err != nil {
+		if err := npm.Exists(ctx, s.client, dependency); err != nil {
 			return err
 		}
 	}
@@ -161,7 +178,7 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			}
 			configDependency := *depPtr
 
-			if err := npm.Exists(ctx, s.Config, configDependency); err != nil {
+			if err := npm.Exists(ctx, s.client, configDependency); err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
 					timedout = append(timedout, configDependency)
 					continue
@@ -184,7 +201,7 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 	if err != nil {
 		return nil, err
 	}
-	dbDeps, err := s.DBStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
+	dbDeps, err := s.dbStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
 		ArtifactName: parsedPackage.PackageSyntax(),
 	})
 	if err != nil {
@@ -217,10 +234,10 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 }
 
 func (s *NPMPackagesSyncer) npmDependencies() []string {
-	if s.Config == nil || s.Config.Dependencies == nil {
+	if s.connection.Dependencies == nil {
 		return nil
 	}
-	return s.Config.Dependencies
+	return s.connection.Dependencies
 }
 
 // gitPushDependencyTag pushes a git tag to the given bareGitDirectory path. The
@@ -234,18 +251,18 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	}
 	defer os.RemoveAll(tmpDirectory)
 
-	sourceCodePath, err := npm.FetchSources(ctx, s.Config, dependency)
+	tgzReadSeeker, err := npm.FetchSources(ctx, s.client, dependency)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(sourceCodePath)
+	defer tgzReadSeeker.Close()
 
 	cmd := exec.CommandContext(ctx, "git", "init")
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
 
-	err = s.commitTgz(ctx, dependency, tmpDirectory, sourceCodePath, s.Config)
+	err = s.commitTgz(ctx, dependency, tmpDirectory, tgzReadSeeker)
 	if err != nil {
 		return err
 	}
@@ -279,9 +296,10 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 // commitTgz creates a git commit in the given working directory that adds all
 // the file contents of the given tgz file.
 func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency reposource.NPMDependency,
-	workingDirectory, sourceCodeTgzPath string, connection *schema.NPMPackagesConnection) error {
-	if err := decompressTgz(sourceCodeTgzPath, workingDirectory); err != nil {
-		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s to %v", dependency.PackageManagerSyntax(), sourceCodeTgzPath)
+	workingDirectory string, tgzReadSeeker io.ReadSeeker) error {
+	namedReadSeeker := namedReadSeeker{dependency.PackageManagerSyntax(), tgzReadSeeker}
+	if err := decompressTgz(namedReadSeeker, workingDirectory); err != nil {
+		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dependency.PackageManagerSyntax())
 	}
 
 	// See [NOTE: LSIF-config-json] for why we don't create a JSON file here
@@ -310,13 +328,8 @@ func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency reposource
 
 // withTgz is a helper function to handling IO-related actions
 // so that the action argument can focus on reading the tarball.
-func withTgz(tgzPath string, action func(*tar.Reader) error) (err error) {
-	ioReader, err := os.Open(tgzPath)
-	errMsg := "unable to decompress tgz file with package source"
-	if err != nil {
-		return errors.Wrap(err, errMsg)
-	}
-	gzipReader, err := gzip.NewReader(ioReader)
+func withTgz(tgzReadSeeker namedReadSeeker, action func(*tar.Reader) error) (err error) {
+	gzipReader, err := gzip.NewReader(tgzReadSeeker.value)
 	defer func() {
 		errClose := gzipReader.Close()
 		if err != nil {
@@ -324,18 +337,23 @@ func withTgz(tgzPath string, action func(*tar.Reader) error) (err error) {
 		}
 	}()
 	if err != nil {
-		return errors.Wrap(err, errMsg)
+		return errors.Wrapf(err, "unable to decompress tar.gz (label=%s) with package source", tgzReadSeeker.name)
 	}
 	tarReader := tar.NewReader(gzipReader)
 
 	return action(tarReader)
 }
 
+type namedReadSeeker struct {
+	name  string
+	value io.ReadSeeker
+}
+
 // Decompress a tarball at tgzPath, putting the files under destination.
 //
 // Additionally, if all the files in the tarball have paths of the form
 // dir/<blah> for the same directory 'dir', the 'dir' will be stripped.
-func decompressTgz(tgzPath, destination string) (err error) {
+func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error) {
 	// [NOTE: npm-strip-outermost-directory]
 	// In practice, NPM tarballs seem to contain a superfluous directory which
 	// contains the files. For example, if you extract react's tarball,
@@ -350,14 +368,14 @@ func decompressTgz(tgzPath, destination string) (err error) {
 	// https://github.com/sourcegraph/sourcegraph/pull/28057#issuecomment-987890718
 	var superfluousDirName *string = nil
 	commonSuperfluousDirectory := true
-	err = withTgz(tgzPath, func(reader *tar.Reader) (err error) {
+	err = withTgz(tgzReadSeeker, func(reader *tar.Reader) (err error) {
 		for {
 			header, err := reader.Next()
 			if err == io.EOF {
 				return nil
 			}
 			if err != nil {
-				return errors.Wrapf(err, "failed to read tar file %s", tgzPath)
+				return errors.Wrapf(err, "failed to read tar file %s", tgzReadSeeker.name)
 			}
 			switch header.Typeflag {
 			case tar.TypeReg:
@@ -381,11 +399,14 @@ func decompressTgz(tgzPath, destination string) (err error) {
 	if err != nil {
 		return err
 	}
+	if _, err := tgzReadSeeker.value.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
 	if !commonSuperfluousDirectory {
-		log15.Warn("found npm tarball which doesn't have all files in one top-level directory", "tarball", path.Base(tgzPath))
+		log15.Warn("found npm tarball which doesn't have all files in one top-level directory", "label", tgzReadSeeker.name)
 	}
 
-	return withTgz(tgzPath, func(tarReader *tar.Reader) (err error) {
+	return withTgz(tgzReadSeeker, func(tarReader *tar.Reader) (err error) {
 		destinationDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
 		count := 0
 		tarballFileLimit := 10000
@@ -412,10 +433,10 @@ func decompressTgz(tgzPath, destination string) (err error) {
 				}
 				count++
 			default:
-				return errors.Errorf("unrecognized type of header %+v in tarball %+v", header.Typeflag, path.Base(tgzPath))
+				return errors.Errorf("unrecognized type of header %+v in tarball for %s", header.Typeflag, tgzReadSeeker.name)
 			}
 		}
-		return errors.Errorf("number of files in tarball %s exceeded limit (10000)", path.Base(tgzPath))
+		return errors.Errorf("number of files in tarball for %s exceeded limit (10000)", tgzReadSeeker.name)
 	})
 }
 
