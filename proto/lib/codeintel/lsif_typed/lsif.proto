@@ -147,42 +147,48 @@ message SymbolInformation {
   // documentation.  For example, it's nice to include both the signature of a
   // method (parameters and return type) along with the accompanying docstring.
   repeated string documentation = 3;
-  // (optional) When resolving "Find references", this field documents what
-  // other symbols should be included together with this symbol. For example,
-  // consider the following TypeScript code that defines two symbols
-  // `Animal#sound()` and `Dog#sound()`:
-  // ```ts
-  // interface Animal {
-  //           ^^^^^^ definition Animal#
-  //   sound(): string
-  //   ^^^^^ definition Animal#sound()
-  // }
-  // class Dog implements Animal {
-  //       ^^^ definition Dog#, implementation_symbols = Animal#
-  //   public sound(): string { return "woof" }
-  //          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound()
-  // }
-  // const animal: Animal = new Dog()
-  //               ^^^^^^ reference Animal#
-  // console.log(animal.sound())
-  //                    ^^^^^ reference Animal#sound()
-  // ```
-  // Doing "Find references" on the symbol `Animal#sound()` should return
-  // references to the `Dog#sound()` method as well. Vice-versa, doing "Find
-  // references" on the `Dog#sound()` method should include references to the
-  // `Animal#sound()` method as well.
-  repeated string reference_symbols = 4;
-  // (optional) Similar to `references_symbols` but for "Go to implementation".
-  // It's common for the `implementation_symbols` and `references_symbols` fields
-  // have the same values but that's not always the case.
-  // In the TypeScript example above, observe that `implementation_symbols` has
-  // the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is
-  // empty. When requesting "Find references" on the "Animal#" symbol we don't
-  // want to include references to "Dog#" even if "Go to implementation" on the
-  // "Animal#" symbol should navigate to the "Dog#" symbol.
-  repeated string implementation_symbols = 5;
-  // (optional) Similar to `references_symbols` but for "Go to type definition".
-  repeated string type_definition_symbols = 6;
+  // (optional) Relationships to other symbols (e.g., implements, type definition).
+  repeated Relationship relationships = 4;
+}
+
+message Relationship {
+    string symbol = 1;
+    // When resolving "Find references", this field documents what other symbols
+    // should be included together with this symbol. For example, consider the
+    // following TypeScript code that defines two symbols `Animal#sound()` and
+    // `Dog#sound()`:
+    // ```ts
+    // interface Animal {
+    //           ^^^^^^ definition Animal#
+    //   sound(): string
+    //   ^^^^^ definition Animal#sound()
+    // }
+    // class Dog implements Animal {
+    //       ^^^ definition Dog#, implementation_symbols = Animal#
+    //   public sound(): string { return "woof" }
+    //          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound()
+    // }
+    // const animal: Animal = new Dog()
+    //               ^^^^^^ reference Animal#
+    // console.log(animal.sound())
+    //                    ^^^^^ reference Animal#sound()
+    // ```
+    // Doing "Find references" on the symbol `Animal#sound()` should return
+    // references to the `Dog#sound()` method as well. Vice-versa, doing "Find
+    // references" on the `Dog#sound()` method should include references to the
+    // `Animal#sound()` method as well.
+    bool is_reference = 2;
+    // Similar to `references_symbols` but for "Go to implementation".
+    // It's common for the `implementation_symbols` and `references_symbols` fields
+    // have the same values but that's not always the case.
+    // In the TypeScript example above, observe that `implementation_symbols` has
+    // the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is
+    // empty. When requesting "Find references" on the "Animal#" symbol we don't
+    // want to include references to "Dog#" even if "Go to implementation" on the
+    // "Animal#" symbol should navigate to the "Dog#" symbol.
+    bool is_implementation = 3;
+    // Similar to `references_symbols` but for "Go to type definition".
+    bool is_type_definition = 4;
 }
 
 // SymbolRole declares what "role" a symbol has in an occurrence.  A role is

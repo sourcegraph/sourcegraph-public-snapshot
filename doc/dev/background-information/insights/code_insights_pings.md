@@ -19,7 +19,7 @@ Also, we track insight creating/editing/deleting events in the creation UI form 
 - Event Code: [InsightAddition](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightAddition%27&patternType=literal), [InsightEdit](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightEdit%27&patternType=literal), [InsightRemoval](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightRemoval%27&patternType=literal)
 - PRs: [#17805](https://github.com/sourcegraph/sourcegraph/pull/17805/files)
 - **Version Added:** 3.25
-- **Version(s) broken:**  3.31+ (does not count backend insights) ([fix PR](https://github.com/sourcegraph/sourcegraph/pull/25317))
+- **Version(s) broken:**  3.31-3.35.0 (does not count backend insights) ([fix PR](https://github.com/sourcegraph/sourcegraph/pull/25317))
 
 
 ### Hovers count
@@ -97,15 +97,15 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 **Intended purpose:** To track how many insights are visible by more than just the creator of the insight. 
 
-**Functional implementation:** we pull this out of the organization settings files (but this will change after the migration out of settings files). 
+**Functional implementation:** we gather this on the backend from TODO what table maybe?
 
-**Other considerations:** We should migrate this ping to use the new database after we finish the settings migration. 
+**Other considerations:** N/A
 
 - Aggregation: total time, by insight type
 - Event Code: [InsightOrgVisible](https://sourcegraph.com/search?q=context:global+insightorgvisible+r:sourcegraph/sourcegraph%24&patternType=literal)
 - PRs: [#21671](https://github.com/sourcegraph/sourcegraph/pull/21671/files)
 - **Version Added:** 3.29
-- **Version(s) broken:** 3.31+ (doesn't handle backend insights)
+- **Version(s) broken:** 3.31-3.35.0 (doesn't handle backend insights) [fix PR](https://github.com/sourcegraph/sourcegraph/pull/28425)
 
 ### First time insight creators count
 
@@ -113,25 +113,25 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 **Functional implementation:** This metric queries the insight table for new addition events, then filters by unique IDs that appeared for the first time that week. 
 
-**Other considerations:** This is broken and needs to be migrated when we migrate Insight Addition event. 
+**Other considerations:** TODO does this ping include creators who create via the API? 
 
 - Aggregation: By week
 - Event Code: [WeeklyFirstTimeInsightCreators](https://sourcegraph.com/search?q=context:global+WeeklyFirstTimeInsightCreators+r:sourcegraph/sourcegraph%24&patternType=regexp)
 - **Version Added:** 3.25
-- **Version(s) broken:** 3.31+ (doesn't handle backend insights, other bugs)
+- **Version(s) broken:** 3.31-3.35.0 (doesn't handle backend insights, other bugs)
 
 ### Total count of insights grouped by step size (days)
 
 **Intended purpose:** To track the x-axis (time window) set by users on frontend insights, to help prioritize features related to setting time windows. 
 
-**Functional implementation:** this metric runs on the backend over all the insights gathered from the settings files. 
+**Functional implementation:** this metric runs on the backend over all the insights. 
 
-**Other considerations:** This ping should be updated when we update the ability to set a custom time window on the backend. 
+**Other considerations:** N/A
 
 - Aggregation: total 
 - Event Code: [GetTimeStepCount](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+GetTimeStepCounts&patternType=literal)
 - **Version added:** 3.29
-- **Version(s) broken:** 3.31+ 
+- **Version(s) broken:** 3.31-3.35.0 [fix PR](https://github.com/sourcegraph/sourcegraph/pull/28425)
 
 ### Code Insights View/Click Creation Funnels
 
