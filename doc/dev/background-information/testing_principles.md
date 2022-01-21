@@ -17,7 +17,9 @@ A good automated test suite increases the velocity of our team because it allows
 
 Engineers should budget an appropriate amount of time for writing tests when making iteration plans.
 
-## Testing code <span class="badge badge-note">SOC2/GN-105</span>
+## Testing code
+
+<span class="badge badge-note">SOC2/GN-105</span>
 
 In order to ensure we are true to our [philosphy](#philosophy), we have various implementations of testing for our code base.
 
