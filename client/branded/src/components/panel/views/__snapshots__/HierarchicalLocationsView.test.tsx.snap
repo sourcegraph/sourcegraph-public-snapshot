@@ -92,9 +92,14 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
+                    aria-label="Open file match"
+                    class=""
+                    href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                  />
+                  <div
                     class="test-file-match-children-item item itemClickable"
                     data-testid="file-match-children-item"
-                    href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                    role="none"
                   >
                     <code
                       class="codeExcerpt"
@@ -141,7 +146,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                         </tbody>
                       </table>
                     </code>
-                  </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -318,9 +323,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
+                    aria-label="Open file match"
+                    class=""
+                    href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
+                  />
+                  <div
                     class="test-file-match-children-item item itemClickable"
                     data-testid="file-match-children-item"
-                    href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
+                    role="none"
                   >
                     <code
                       class="codeExcerpt"
@@ -391,7 +401,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                         </tbody>
                       </table>
                     </code>
-                  </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -495,9 +505,14 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
+                    aria-label="Open file match"
+                    class=""
+                    href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                  />
+                  <div
                     class="test-file-match-children-item item itemClickable"
                     data-testid="file-match-children-item"
-                    href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                    role="none"
                   >
                     <code
                       class="codeExcerpt"
@@ -544,7 +559,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                         </tbody>
                       </table>
                     </code>
-                  </a>
+                  </div>
                 </div>
               </div>
             </div>

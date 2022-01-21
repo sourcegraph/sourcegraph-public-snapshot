@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React from 'react'
+import React, { MouseEvent } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -22,6 +22,34 @@ import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import styles from './FileMatchChildren.module.scss'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { MatchGroup } from './ranking/PerFileResultRanking'
+
+const onCodeClick = (event: MouseEvent<HTMLDivElement>): void => {
+    // ResultContainer (ancestor component) also implements a click event
+    // handler which shouldn't be triggered (otherwise whatever action
+    event.stopPropagation()
+
+    // If no text was selected, act like a link. Also handle ctrl and cmd
+    // clicks.
+    if (event.ctrlKey || event.metaKey || !window.getSelection?.()?.toString()) {
+        // CTRL click will select the whole line in Firefox. Clear that
+        // selection.
+        window.getSelection?.()?.empty()
+
+        // Delegate click to a real link element. Let the browser handle
+        // modifier keys.
+        event.currentTarget.previousElementSibling?.dispatchEvent(
+            new window.MouseEvent('click', {
+                // bubbles is required for React handling this event
+                bubbles: true,
+                cancelable: true,
+                ctrlKey: event.ctrlKey,
+                metaKey: event.metaKey,
+                altKey: event.altKey,
+                shiftKey: event.shiftKey,
+            })
+        )
+    }
+}
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
@@ -126,12 +154,17 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         >
                             <Link
                                 to={createCodeExcerptLink(group)}
+                                aria-label="Open file match"
+                            />
+                            <div
                                 className={classNames(
                                     'test-file-match-children-item',
                                     styles.item,
                                     styles.itemClickable
                                 )}
+                                onClick={onCodeClick}
                                 data-testid="file-match-children-item"
+                                role="none"
                             >
                                 <CodeExcerpt
                                     repoName={result.repository}
@@ -144,7 +177,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     isFirst={index === 0}
                                     blobLines={group.blobLines}
                                 />
-                            </Link>
+                            </div>
                         </div>
                     ))}
                 </div>
