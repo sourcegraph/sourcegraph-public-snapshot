@@ -55,7 +55,7 @@
           }
         },
         "showCodeMonitoringTestEmailButton": {
-          "description": "REMOVED. Previusly, enables the 'Send test email' button in the code monitoring list.",
+          "description": "REMOVED. Previusly, enabled the 'Send test email' button in the code monitoring list.",
           "type": "boolean",
           "default": false,
           "!go": {
