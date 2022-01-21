@@ -3,7 +3,7 @@ import { upperFirst } from 'lodash'
 import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import hoverOverlayStyle from '../HoverOverlay.module.scss'
 import { HoverOverlayBaseProps } from '../HoverOverlay.types'
@@ -38,9 +38,12 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
 
     if (isErrorLike(hoverOrError)) {
         return (
-            <div className={classNames(errorAlertClassName, hoverOverlayStyle.hoverError)}>
+            <Alert
+                className={classNames(errorAlertClassName, hoverOverlayStyle.hoverError)}
+                variant={errorAlertVariant}
+            >
                 {upperFirst(hoverOrError.message)}
-            </div>
+            </Alert>
         )
     }
 
