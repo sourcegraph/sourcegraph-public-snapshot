@@ -915,6 +915,12 @@ func Test_toSearchInputs(t *testing.T) {
 	autogold.Want("supportedRepo job literal", "ParallelJob{RepoUniverseText, Repo}").Equal(t, test("ok @thing", query.ParseLiteral))
 	autogold.Want("unsupported Repo job prefix", "RepoUniverseText").Equal(t, test("@nope", query.ParseRegexp))
 	autogold.Want("unsupported Repo job regexp", "RepoUniverseText").Equal(t, test("foo @bar", query.ParseRegexp))
+
+	// Job generation for other types of search
+	autogold.Want("symbol", "RepoUniverseSymbol").Equal(t, test("type:symbol test", query.ParseRegexp))
+	autogold.Want("commit", "Commit").Equal(t, test("type:commit test", query.ParseRegexp))
+	autogold.Want("diff", "Diff").Equal(t, test("type:diff test", query.ParseRegexp))
+	autogold.Want("file or commit", "RequiredAndOptionalJob{Required: RepoUniverseText, Optional: Commit}").Equal(t, test("type:file type:commit test", query.ParseRegexp))
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {
