@@ -67,12 +67,13 @@ const logSearchFmtStr = `
 UPDATE cm_trigger_jobs
 SET query_string = %s,
     results = %s,
-    num_results = %s
+    num_results = %s,
+    result_payload = %s
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, numResults int) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, triggerJobID))
+func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, numResults int, payload []byte) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, payload, triggerJobID))
 }
 
 const deleteObsoleteJobLogsFmtStr = `

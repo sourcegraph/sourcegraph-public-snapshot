@@ -66,7 +66,7 @@ func TestActionRunner(t *testing.T) {
 			require.Len(t, triggerJobs, 1)
 			triggerEventID := triggerJobs[0].ID
 
-			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.numResults)
+			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.numResults, nil)
 			require.NoError(t, err)
 
 			_, err = ts.EnqueueActionJobsForMonitor(ctx, 1, triggerEventID)

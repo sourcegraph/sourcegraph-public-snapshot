@@ -320,7 +320,7 @@ func TestQueryMonitor(t *testing.T) {
 		func() error { _, err := r.store.EnqueueQueryTriggerJobs(ctx); return err },
 		// To have a consistent state we have to log the number of search results for
 		// each completed trigger job.
-		func() error { return r.store.UpdateTriggerJobWithResults(ctx, 1, "", 1) },
+		func() error { return r.store.UpdateTriggerJobWithResults(ctx, 1, "", 1, nil) },
 	})
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	require.NoError(t, err)

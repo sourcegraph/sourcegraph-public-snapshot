@@ -53,7 +53,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 		wantNumResults = 42
 		wantQuery      = testQuery + " after:\"" + s.Now().UTC().Format(time.RFC3339) + "\""
 	)
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, wantNumResults)
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, wantNumResults, nil)
 	require.NoError(t, err)
 
 	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, fixtures.monitor.ID, triggerJobID)
