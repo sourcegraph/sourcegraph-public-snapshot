@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 import { fromEvent } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
-import { NotificationType as NotificationEnumType } from 'sourcegraph'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -14,7 +13,7 @@ import { HoverThresholdProps } from '../../repo/RepoContainer'
 
 import styles from './WebHoverOverlay.module.scss'
 
-const iconKindToAlertVariant: Partial<Record<NotificationEnumType, AlertProps['variant']>> = {
+const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
     [NotificationType.Info]: 'secondary',
     [NotificationType.Error]: 'danger',
     [NotificationType.Warning]: 'warning',

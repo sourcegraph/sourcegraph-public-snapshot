@@ -9,7 +9,6 @@ import { Route, Router } from 'react-router'
 import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { NotificationType as NotificationTypeEnum } from 'sourcegraph'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -172,7 +171,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     featureFlags: FlagSet
 }
 
-const notificationVariants: Record<NotificationTypeEnum, AlertProps['variant']> = {
+const notificationVariants: Record<number, AlertProps['variant']> = {
     [NotificationType.Log]: 'secondary',
     [NotificationType.Success]: 'success',
     [NotificationType.Info]: 'info',
