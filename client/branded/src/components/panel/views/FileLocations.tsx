@@ -154,7 +154,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                     items={orderedURIs}
                     renderItem={(
                         item: OrderedURI,
-                        _index: number,
+                        index: number,
                         additionalProps: { locationsByURI: Map<string, Location[]> }
                     ) => this.renderFileMatch(item, additionalProps)}
                     itemProps={{ locationsByURI }}
