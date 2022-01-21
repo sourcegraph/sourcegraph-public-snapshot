@@ -1437,7 +1437,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 	matches := dedup.Results()
 	if len(matches) > 0 {
-		r.sortResults(matches)
+		sortResults(matches)
 	}
 
 	var alert *searchAlert
@@ -1933,7 +1933,7 @@ func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregato
 	}
 	alert, err := ao.Done(&common)
 
-	r.sortResults(matches)
+	sortResults(matches)
 
 	return &SearchResults{
 		Matches: matches,
@@ -2030,27 +2030,8 @@ func compareSearchResults(left, right result.Match, exactFilePatterns map[string
 	return arepo < brepo
 }
 
-func (r *searchResolver) sortResults(results []result.Match) {
-	var exactPatterns map[string]struct{}
-	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
-		exactPatterns = r.getExactFilePatterns()
-	}
-	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j], exactPatterns) })
-}
-
-// getExactFilePatterns returns the set of file patterns without glob syntax.
-func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
-	m := map[string]struct{}{}
-	query.VisitField(
-		r.Query,
-		query.FieldFile,
-		func(value string, negated bool, annotation query.Annotation) {
-			originalValue := r.OriginalQuery[annotation.Range.Start.Column+len(query.FieldFile)+1 : annotation.Range.End.Column]
-			if !negated && query.ContainsNoGlobSyntax(originalValue) {
-				m[originalValue] = struct{}{}
-			}
-		})
-	return m
+func sortResults(results []result.Match) {
+	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j], nil) })
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
