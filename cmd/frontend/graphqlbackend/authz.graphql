@@ -37,7 +37,7 @@ extend type Mutation {
         options: FetchPermissionsOptions
     ): EmptyResponse!
     """
-    Set the sub-repo permissions of a repository (i.e., which paths are allowed or disallowd for
+    Set the sub-repo permissions of a repository (i.e., which paths are allowed or disallowed for
     a particular user). This operation overwrites the previous sub-repo permissions for the
     repository.
     """
