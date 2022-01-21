@@ -5,7 +5,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Card, CardBody, CardHeader, CardSubtitle, CardText, CardTitle } from '..'
+import { Card, CardBody, CardFooter, CardHeader, CardSubtitle, CardText, CardTitle } from '..'
 import { Button, Grid } from '../..'
 
 const config: Meta = {
@@ -53,6 +53,7 @@ export const Simple: Story = () => (
                     </CardText>
                     <Button variant="primary">Do something</Button>
                 </CardBody>
+                <CardFooter>Card footer</CardFooter>
             </Card>
 
             <Card>
@@ -62,6 +63,7 @@ export const Simple: Story = () => (
                     <CardText>With supporting text below as a natural lead-in to additional content.</CardText>
                     <Button variant="primary">Do something</Button>
                 </CardBody>
+                <CardFooter>Card footer</CardFooter>
             </Card>
         </Grid>
     </>

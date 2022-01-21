@@ -8,7 +8,7 @@ import { catchError, map, startWith } from 'rxjs/operators'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, CardHeader, CardBody, Card, CardFooter } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -107,7 +107,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                         {productSubscription.invoiceItem ? (
                             <>
                                 <ProductSubscriptionBilling productSubscription={productSubscription} />
-                                <div className="card-footer">
+                                <CardFooter>
                                     <a
                                         href={mailtoSales({
                                             subject: `Change payment method for subscription ${productSubscription.name}`,
@@ -116,7 +116,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                                         Contact sales
                                     </a>{' '}
                                     to change your payment method.
-                                </div>
+                                </CardFooter>
                             </>
                         ) : (
                             <CardBody>

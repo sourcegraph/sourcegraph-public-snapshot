@@ -15,7 +15,7 @@ interface Props {
     /** The detail text of the certificate. */
     detail?: React.ReactFragment | null
 
-    /** Rendered after the certificate body (usually consists of a Bootstrap .card-footer). */
+    /** Rendered after the certificate body (usually consists of a Wildcard <CardFooter />. */
     footer?: React.ReactFragment | null
 
     className?: string
