@@ -23,6 +23,10 @@ sg ci preview
 
 Many steps in Sourcegraph's Buildkite pipelines allow for [soft failures](https://buildkite.com/changelog/56-command-steps-can-now-be-made-to-soft-fail), which means that even if they fail they do not cause the entire build to be failed.
 
+In the Buildkite UI, soft failures currently look like the following, with a _triangular_ warning sign (not to be mistaken for a hard failure!):
+
+![soft fail in Buildkite UI](https://user-images.githubusercontent.com/23356519/150558751-d8e0da19-0b6f-4645-aa12-7547d375330f.png)
+
 We use soft failures for the following reasons only:
 
 - Steps that determine whether a subsequent step should run, where soft failures are the only technical way to communicate that a later step should be skipped in this manner using Buildkite.
