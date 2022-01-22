@@ -1,12 +1,8 @@
 # Catalog
 
-Every codebase, except the very smallest, is made up of a bunch of "components" (in the most general sense). That's how the human mind and the human organization makes a complex system legible, by breaking it into smaller pieces. Each component has an owner, documentation, API, dependencies, etc. Sometimes these attributes of a component are explicitly defined, and sometimes they are informal.
+Every codebase, except the very smallest, is made up of a bunch of "components" (in the most general sense). That's how the human mind makes a complex system legible, by breaking it into smaller pieces. Each component has an owner, documentation, API, dependencies, etc. Sometimes these attributes of a component are defined explicitly, sometimes implicitly.
 
-The "component" concept is the natural way to comprehend and manage a codebase. than the "repository" concept for comprehending and managing a codebase, but
-
-Polyrepo: hard to
-
-This is a different way of comprehending a codebase from the usual way of breaking it into repositories, directories, and files.
+Why deal with "components" and not "repositories"? Because some teams use a monorepo, some use manyrepos, and some use both. A tool for understanding and managing code needs to work for all teams regardless of their repository layout.
 
 ## Components
 
