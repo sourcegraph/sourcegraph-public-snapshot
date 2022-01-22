@@ -15,24 +15,17 @@ import { formatPersonName } from '../../../../person/PersonLink'
 import { UserAvatar } from '../../../../user/UserAvatar'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
+import { GroupLink } from '../../components/group-link/GroupLink'
 
 import { GroupCatalogExplorer } from './GroupCatalogExplorer'
-import { GroupDetailContentCardProps } from './GroupDetailContent'
-import { GroupLink } from './GroupLink'
 import styles from './GroupOverviewTab.module.scss'
 
-interface Props extends GroupDetailContentCardProps {
+interface Props {
     group: GroupDetailFields
     className?: string
 }
 
-export const GroupOverviewTab: React.FunctionComponent<Props> = ({
-    group,
-    headerClassName,
-    titleClassName,
-    bodyClassName,
-    className,
-}) => (
+export const GroupOverviewTab: React.FunctionComponent<Props> = ({ group, className }) => (
     <div className={classNames('flex-1 row no-gutters', className)}>
         <div className="col-md-4 col-lg-3 col-xl-2 border-right p-3">
             <h2 className="d-flex align-items-center mb-1">
@@ -113,53 +106,38 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
 
             <GroupCatalogExplorer group={group.id} className="mb-3" />
 
-            {group.ownedEntities && group.ownedEntities.length > 0 && false && (
+            {group.components && group.components.length > 0 && false && (
                 <div className="mb-3">
                     <h4 className="font-weight-bold">
-                        {group.ownedEntities.length} {pluralize('component', group.ownedEntities.length)}
+                        {group.components.length} {pluralize('component', group.components.length)}
                     </h4>
                     <ul className={styles.boxGrid}>
-                        {group.ownedEntities.map(entity => (
+                        {group.components.map(component => (
                             <li
-                                key={entity.id}
+                                key={component.id}
                                 className={classNames(
                                     'position-relative border rounded d-flex flex-column',
                                     styles.boxGridItem
                                 )}
                             >
                                 <div className="mb-0 d-flex align-items-center">
-                                    <Link to={entity.url} className="d-inline-flex align-items-center stretched-link">
+                                    <Link
+                                        to={component.url}
+                                        className="d-inline-flex align-items-center stretched-link"
+                                    >
                                         <CatalogComponentIcon
-                                            component={entity}
+                                            component={component}
                                             className="icon-inline text-muted mr-1"
                                         />
 
-                                        {entity.name}
+                                        {component.name}
                                     </Link>
                                 </div>
-                                {entity.description && (
+                                {component.description && (
                                     <p className={classNames('my-1 text-muted small', styles.boxGridItemBody)}>
-                                        {entity.description}
+                                        {component.description}
                                     </p>
                                 )}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {group.ownedEntities && group.ownedEntities.length > 0 && false && (
-                <div className="card mb-3">
-                    <header className={classNames(headerClassName)}>
-                        <h4 className={classNames('mb-0 mr-2', titleClassName)}>Components</h4>
-                    </header>
-                    <ul className="list-group list-group-flush">
-                        {group.ownedEntities.map(entity => (
-                            <li key={entity.id} className="list-group-item d-flex align-items-center position-relative">
-                                <Link to={entity.url} className="d-flex align-items-center mr-1">
-                                    <CatalogComponentIcon component={entity} className="icon-inline text-muted mr-1" />
-                                    {entity.name}
-                                </Link>
                             </li>
                         ))}
                     </ul>

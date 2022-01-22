@@ -137,3 +137,4 @@ SRC_ACCESS_TOKEN= SRC_ENDPOINT=https://sourcegraph.com src search -json 'repo:gi
 - [ ] Add a redirect from /catalog/components/:name to the tree URL for the component so there is a canonical URL for the component. (But how do we scope that by org or other namespace?)
 - [ ] Add back a notion of component state, statuses, and health.
 - [ ] Make Component.kind a freeform string, not an enum.
+- [ ] Expose only <CatalogExplorer /> component, not the view options and list/graph subcomponents that require parent components to assemble them repetitively.

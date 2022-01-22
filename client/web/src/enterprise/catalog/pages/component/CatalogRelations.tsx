@@ -3,13 +3,13 @@ import React from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { CatalogOverviewGraph } from '../../components/catalog-overview/graph/CatalogOverviewGraph'
-import { CatalogExplorerRelationList } from '../../components/catalog-overview/relation-list/CatalogExplorerRelationList'
-import { CatalogExplorerViewOptionsRow } from '../../components/catalog-overview/view-options/CatalogExplorerViewOptionsRow'
+import { CatalogExplorerGraph } from '../../components/catalog-explorer/graph/CatalogExplorerGraph'
+import { CatalogExplorerRelationList } from '../../components/catalog-explorer/relation-list/CatalogExplorerRelationList'
+import { CatalogExplorerViewOptionsRow } from '../../components/catalog-explorer/view-options/CatalogExplorerViewOptionsRow'
 import {
     useViewModeTemporarySettings,
     ViewModeToggle,
-} from '../../components/catalog-overview/view-options/ViewModeToggle'
+} from '../../components/catalog-explorer/view-options/ViewModeToggle'
 import { useComponentFilters } from '../../core/component-query'
 
 interface Props {
@@ -18,7 +18,7 @@ interface Props {
     className?: string
 }
 
-export const CatalogExplorer: React.FunctionComponent<Props> = ({
+export const CatalogRelations: React.FunctionComponent<Props> = ({
     component,
     useURLForConnectionParams,
     className,
@@ -48,7 +48,7 @@ export const CatalogExplorer: React.FunctionComponent<Props> = ({
                     itemEndClassName="pr-3"
                 />
             ) : (
-                <CatalogOverviewGraph
+                <CatalogExplorerGraph
                     filters={filtersProps.filters}
                     queryScope={queryScope}
                     highlightID={component}

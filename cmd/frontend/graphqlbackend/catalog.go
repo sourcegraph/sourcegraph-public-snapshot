@@ -86,7 +86,7 @@ type GroupResolver interface {
 	ChildGroups() []GroupResolver
 	DescendentGroups() []GroupResolver
 	Members() []*PersonResolver
-	OwnedEntities() []ComponentResolver
+	Components() []ComponentResolver
 }
 
 type ComponentStatusResolver interface {

@@ -103,7 +103,7 @@ func (r *groupResolver) Members() []*gql.PersonResolver {
 	return members
 }
 
-func (r *groupResolver) OwnedEntities() []gql.ComponentResolver {
+func (r *groupResolver) Components() []gql.ComponentResolver {
 	var entities []gql.ComponentResolver
 
 	for _, c := range dummyComponents(r.db) {
@@ -112,7 +112,7 @@ func (r *groupResolver) OwnedEntities() []gql.ComponentResolver {
 		}
 	}
 	for _, childGroup := range r.ChildGroups() {
-		entities = append(entities, childGroup.OwnedEntities()...)
+		entities = append(entities, childGroup.Components()...)
 	}
 
 	return entities

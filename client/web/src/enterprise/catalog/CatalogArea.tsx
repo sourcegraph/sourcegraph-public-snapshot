@@ -11,7 +11,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '../../components/HeroPage'
 
 import { GroupDetailPage } from './pages/group/GroupDetailPage'
-import { CatalogOverviewPage } from './pages/overview/OverviewPage'
+import { GlobalOverviewPage } from './pages/overview/GlobalOverviewPage'
 
 interface Props
     extends TelemetryProps,
@@ -39,7 +39,7 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
                 )}
             </Route>
             <Route path={[match.url, `${match.url}/graph`]} exact={true}>
-                <CatalogOverviewPage basePathname={match.url} telemetryService={telemetryService} />
+                <GlobalOverviewPage basePathname={match.url} telemetryService={telemetryService} />
             </Route>
             <Route>
                 <HeroPage icon={MapSearchIcon} title="404: Not Found" />

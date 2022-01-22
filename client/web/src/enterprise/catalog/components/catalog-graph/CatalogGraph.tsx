@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { UncontrolledReactSVGPanZoom } from 'react-svg-pan-zoom'
 import AutoSizer from 'react-virtualized-auto-sizer'
+
 import { gql } from '@sourcegraph/http-client'
 
 import { CatalogGraphFields } from '../../../../graphql-operations'

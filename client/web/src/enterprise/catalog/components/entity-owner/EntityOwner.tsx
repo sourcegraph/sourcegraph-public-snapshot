@@ -2,7 +2,7 @@ import React from 'react'
 
 import { ComponentOwnerFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
-import { GroupLink } from '../../pages/group/GroupLink'
+import { GroupLink } from '../group-link/GroupLink'
 
 interface Props {
     owner: ComponentOwnerFields['owner']

@@ -5,9 +5,9 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { CatalogGraphResult, CatalogGraphVariables } from '../../../../../graphql-operations'
-import { CatalogGraph, CATALOG_GRAPH_FRAGMENT } from '../../catalog-graph/CatalogGraph'
+import { CatalogExplorerGraphResult, CatalogExplorerGraphVariables } from '../../../../../graphql-operations'
 import { ComponentFiltersProps } from '../../../core/component-query'
+import { CatalogGraph, CATALOG_GRAPH_FRAGMENT } from '../../catalog-graph/CatalogGraph'
 
 interface Props extends Pick<ComponentFiltersProps, 'filters'> {
     highlightID?: Scalars['ID']
@@ -16,16 +16,16 @@ interface Props extends Pick<ComponentFiltersProps, 'filters'> {
     errorClassName?: string
 }
 
-export const CatalogOverviewGraph: React.FunctionComponent<Props> = ({
+export const CatalogExplorerGraph: React.FunctionComponent<Props> = ({
     filters,
     highlightID,
     queryScope,
     className,
     errorClassName,
 }) => {
-    const { data, error, loading } = useQuery<CatalogGraphResult, CatalogGraphVariables>(
+    const { data, error, loading } = useQuery<CatalogExplorerGraphResult, CatalogExplorerGraphVariables>(
         gql`
-            query CatalogGraph($query: String!) {
+            query CatalogExplorerGraph($query: String!) {
                 graph(query: $query) {
                     ...CatalogGraphFields
                 }

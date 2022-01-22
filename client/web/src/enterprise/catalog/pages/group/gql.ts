@@ -44,9 +44,9 @@ const GROUP_CHILD_GROUPS_FRAGMENT = gql`
     ${GROUP_LINK_FRAGMENT}
 `
 
-const GROUP_OWNED_ENTITIES_FRAGMENT = gql`
-    fragment GroupOwnedEntitiesFields on Group {
-        ownedEntities {
+const GROUP_COMPONENTS_FRAGMENT = gql`
+    fragment GroupComponentsFields on Group {
+        components {
             id
             name
             description
@@ -70,13 +70,13 @@ const GROUP_DETAIL_FRAGMENT = gql`
         ...GroupParentGroupFields
         ...GroupAncestorGroupsFields
         ...GroupChildGroupsFields
-        ...GroupOwnedEntitiesFields
+        ...GroupComponentsFields
     }
     ${GROUP_MEMBERS_FRAGMENT}
     ${GROUP_PARENT_GROUP_FRAGMENT}
     ${GROUP_ANCESTOR_GROUPS_FRAGMENT}
     ${GROUP_CHILD_GROUPS_FRAGMENT}
-    ${GROUP_OWNED_ENTITIES_FRAGMENT}
+    ${GROUP_COMPONENTS_FRAGMENT}
 `
 
 export const GROUP_BY_NAME = gql`

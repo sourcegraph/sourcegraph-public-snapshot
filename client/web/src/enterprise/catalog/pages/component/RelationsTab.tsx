@@ -3,7 +3,7 @@ import React from 'react'
 
 import { ComponentStateDetailFields } from '../../../../graphql-operations'
 
-import { CatalogExplorer } from './CatalogExplorer'
+import { CatalogRelations } from './CatalogRelations'
 
 interface Props {
     component: Pick<ComponentStateDetailFields, 'id'>
@@ -12,6 +12,6 @@ interface Props {
 
 export const RelationsTab: React.FunctionComponent<Props> = ({ component, className }) => (
     <div className={classNames('p-3', className)}>
-        <CatalogExplorer component={component.id} useURLForConnectionParams={true} className="mb-3" />
+        <CatalogRelations component={component.id} useURLForConnectionParams={true} className="mb-3" />
     </div>
 )

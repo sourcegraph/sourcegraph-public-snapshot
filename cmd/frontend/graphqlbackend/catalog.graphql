@@ -37,7 +37,7 @@ type Group implements Node {
     childGroups: [Group!]!
     descendentGroups: [Group!]!
     members: [Person!]!
-    ownedEntities: [Component!]!
+    components: [Component!]!
 }
 
 type CatalogGraph {

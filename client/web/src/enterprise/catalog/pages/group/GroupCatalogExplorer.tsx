@@ -3,13 +3,13 @@ import React from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { CatalogOverviewGraph } from '../../components/catalog-overview/graph/CatalogOverviewGraph'
-import { CatalogExplorerList } from '../../components/catalog-overview/list/CatalogExplorerList'
-import { CatalogExplorerViewOptionsRow } from '../../components/catalog-overview/view-options/CatalogExplorerViewOptionsRow'
+import { CatalogExplorerGraph } from '../../components/catalog-explorer/graph/CatalogExplorerGraph'
+import { CatalogExplorerList } from '../../components/catalog-explorer/list/CatalogExplorerList'
+import { CatalogExplorerViewOptionsRow } from '../../components/catalog-explorer/view-options/CatalogExplorerViewOptionsRow'
 import {
     ViewModeToggle,
     useViewModeTemporarySettings,
-} from '../../components/catalog-overview/view-options/ViewModeToggle'
+} from '../../components/catalog-explorer/view-options/ViewModeToggle'
 import { useComponentFilters } from '../../core/component-query'
 
 interface Props {
@@ -41,7 +41,7 @@ export const GroupCatalogExplorer: React.FunctionComponent<Props> = ({ group, cl
                     itemEndClassName="pr-3"
                 />
             ) : (
-                <CatalogOverviewGraph filters={filtersProps.filters} queryScope={queryScope} />
+                <CatalogExplorerGraph filters={filtersProps.filters} queryScope={queryScope} />
             )}
         </div>
     )

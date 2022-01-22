@@ -14,7 +14,7 @@ import { Timestamp } from '../../../../../components/time/Timestamp'
 import { ComponentStateDetailFields } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
-import { CatalogExplorer } from '../CatalogExplorer'
+import { CatalogRelations } from '../CatalogRelations'
 import { ComponentInsights } from '../ComponentInsights'
 import { ComponentSourceLocations } from '../ComponentSourceLocations'
 import { OverviewStatusContexts } from '../OverviewStatusContexts'
@@ -60,7 +60,7 @@ export const ComponentOverviewMain: React.FunctionComponent<Props> = ({
         {component.status && component.status.contexts && (
             <OverviewStatusContexts component={component} itemClassName="mb-3" />
         )}
-        <CatalogExplorer component={component.id} useURLForConnectionParams={false} className="mb-3" />
+        <CatalogRelations component={component.id} useURLForConnectionParams={false} className="mb-3" />
         {false && (
             <ComponentInsights
                 component={component.id}

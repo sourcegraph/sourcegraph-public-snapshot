@@ -7,9 +7,9 @@ import { Page } from '@sourcegraph/web/src/components/Page'
 import { FeedbackBadge, PageHeader } from '@sourcegraph/wildcard'
 
 import { CatalogIcon } from '../../../../catalog'
-import { CatalogOverviewGraph } from '../../components/catalog-overview/graph/CatalogOverviewGraph'
-import { CatalogExplorerList } from '../../components/catalog-overview/list/CatalogExplorerList'
-import { CatalogExplorerViewOptionsRow } from '../../components/catalog-overview/view-options/CatalogExplorerViewOptionsRow'
+import { CatalogExplorerGraph } from '../../components/catalog-explorer/graph/CatalogExplorerGraph'
+import { CatalogExplorerList } from '../../components/catalog-explorer/list/CatalogExplorerList'
+import { CatalogExplorerViewOptionsRow } from '../../components/catalog-explorer/view-options/CatalogExplorerViewOptionsRow'
 import { useComponentFilters } from '../../core/component-query'
 
 interface Props extends TelemetryProps {
@@ -19,9 +19,9 @@ interface Props extends TelemetryProps {
 /**
  * The catalog overview page, which lists, searches, and visualizes components.
  */
-export const CatalogOverviewPage: React.FunctionComponent<Props> = ({ basePathname, telemetryService }) => {
+export const GlobalOverviewPage: React.FunctionComponent<Props> = ({ basePathname, telemetryService }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('CatalogOverview')
+        telemetryService.logViewEvent('CatalogGlobalOverview')
     }, [telemetryService])
 
     return (
@@ -32,12 +32,12 @@ export const CatalogOverviewPage: React.FunctionComponent<Props> = ({ basePathna
                 description="Explore software components, services, libraries, APIs, and more."
                 actions={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
             />
-            <CatalogOverview basePathname={basePathname} />
+            <GlobalCatalogExplorer basePathname={basePathname} />
         </Page>
     )
 }
 
-const CatalogOverview: React.FunctionComponent<{
+const GlobalCatalogExplorer: React.FunctionComponent<{
     basePathname: string
 }> = ({ basePathname }) => {
     const filtersProps = useComponentFilters('')
@@ -78,7 +78,7 @@ const CatalogOverview: React.FunctionComponent<{
                     <CatalogExplorerList filters={filtersProps.filters} onTagsChange={setTags} />
                 </Route>
                 <Route path={`${basePathname}/graph`} exact={true}>
-                    <CatalogOverviewGraph filters={filtersProps.filters} className="border-top" />
+                    <CatalogExplorerGraph filters={filtersProps.filters} className="border-top" />
                 </Route>
             </Switch>
         </>
