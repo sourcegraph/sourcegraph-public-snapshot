@@ -38,6 +38,47 @@ const batchSpecWorkspaceExecutionJobStalledJobMaximumAge = time.Second * 25
 // reset.
 const batchSpecWorkspaceExecutionJobMaximumNumResets = 3
 
+// batchSpecWorkspaceExecutionWorkerStoreOptions captures the configuration for
+// the dbworker store for the batch spec execution worker (our executors).
+//
+// This dbworker store behaves slightly different than the usual dbworker stores,
+// because it throttles the amount of jobs dequeueable at a given time.
+// Hence, the QueuedCount method does not return the total queue size, but only
+// the amount of _dequeueable_ jobs.
+// For this worker, we want to distribute the compute we got across multiple tenants
+// in a fair manner.
+// SSBC is a user-invoked workload. Hence, we do want every user to get a share of
+// the compute. The initiating user of an execution is the _tenant_ in this data model.
+//
+// Dequeue rules:
+// We partition the list of all jobs into partitions (subqueues) per tenant, by
+// partitioning in the view by the initiating_user_id.
+// Per subqueue, we track the queue length, number of currently processing jobs,
+// the last time this subqueue was able to dequeue a job at the tip of the queue,
+// and the amount of jobs dequeued in the past hour.
+// Inside a subqueue, we use simple ordering mechanisms, just as usual by
+// (process_after, created_at) to keep them in a timed order.
+// Using that information, we intertwine records from the different subqueues that
+// are currently asking for work to be processed, in a round-robin approach where
+// the subqueue that waited the longest for a dequeue will be up for a dequeue next.
+// From every queue, we only include up to max-subqueue-concurrency records in the view.
+// The default maximum concurrency per subqueue is configured to be 4. On a per-tenant
+// basis, this can be overwritten by writing a custom concurrency limit to the
+// batch_spec_workspace_execution_maximum_concurrencies table.
+// We limit concurrency so that a single tenant will not be able to use up all resources
+// when no one else scheduled a job when they did, hence delaying the dequeue of
+// another job when it comes in. Our goal here is to minimize delays for dequeues
+// for every tenant. Up to their allowed concurrency limit, every tenant is ideally
+// able to dequeue every record instantaneously. In the future, we will make sure
+// this holds by tracking dequeue times and autoscaling appropriately based on that.
+// A second limiting measure we have in place is hourly dequeue rate per subqueue.
+// Once a subqueue hits 500 jobs dequeued in the past hour, we will stop adding more
+// records to the view. This is meant as abuse protection mostly. It can be configured
+// by writing a custom value to the batch_spec_workspace_execution_hourly_quota
+// table. Within a subqueue, this should all be opaque and feel to the user as
+// if they just had a worker for themselves that they don't need to share.
+// That also means that the dequeue rank should be calculated based on a per-subqueue
+// basis.
 var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "batch_spec_workspace_execution_worker_store",
 	TableName:         "batch_spec_workspace_execution_jobs",
@@ -47,13 +88,14 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	},
 	// This needs to be kept in sync with the placeInQueue fragment in the batch
 	// spec execution jobs store.
-	// TODO: Make sure that the next job isn't only the subqueue that hasn't dequeued in the longest period but also that the queue
-	// has been waiting the longest.
+	// TODO: Make sure that the next job isn't only the subqueue that hasn't dequeued
+	// in the longest period but also that the queue has been waiting the longest.
+	// TODO: Is this order by expression required? I'd assume no because our view
+	// should handle all that just fine.
 	OrderByExpression: sqlf.Sprintf("rank ASC, latest_dequeue ASC NULLS FIRST"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
-	// TODO: Fix QueuedCount query used in metrics and auto scaling.
-	ViewName:     "batch_spec_workspace_execution_jobs_subqueues batch_spec_workspace_execution_jobs",
-	MaxNumResets: batchSpecWorkspaceExecutionJobMaximumNumResets,
+	ViewName:          "batch_spec_workspace_execution_jobs_subqueues batch_spec_workspace_execution_jobs",
+	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
 	// Explicitly disable retries.
 	MaxNumRetries: 0,
 }
