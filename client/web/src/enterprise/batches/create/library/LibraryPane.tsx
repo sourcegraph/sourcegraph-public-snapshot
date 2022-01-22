@@ -29,9 +29,9 @@ const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
 
 const LIBRARY_PANE_DEFAULT_COLLAPSED = 'batch-changes.ssbc-library-pane-default-collapsed'
 // Match to `.collapse-button` class width
-const BUTTON_WIDTH = 22
+const BUTTON_WIDTH = '1.25rem'
 // Match to `.list-container` class width
-const CONTENT_WIDTH = 220
+const CONTENT_WIDTH = '14rem'
 
 interface LibraryPaneProps {
     /**
@@ -53,7 +53,7 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
     }))
     const [headerStyle, animateHeader] = useSpring(() => ({
         opacity: collapsed ? 0 : 1,
-        width: collapsed ? 0 : CONTENT_WIDTH,
+        width: collapsed ? '0rem' : CONTENT_WIDTH,
     }))
     const [contentStyle, animateContent] = useSpring(() => ({
         display: collapsed ? 'none' : 'block',
@@ -79,7 +79,7 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                 },
                 /* eslint-enable callback-return */
             })
-            animateHeader.start({ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : 220 })
+            animateHeader.start({ opacity: collapsed ? 0 : 1, width: collapsed ? '0rem' : CONTENT_WIDTH })
         },
         [animateContainer, animateContent, animateHeader, setDefaultCollapsed]
     )

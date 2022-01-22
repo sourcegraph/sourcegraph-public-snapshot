@@ -1,15 +1,13 @@
 .list-container {
     margin: 0;
     padding: 0;
-    // We need to match the width in px to the animation width property in JS
-    /* stylelint-disable declaration-property-unit-whitelist */
-    width: 220px;
+    // Match this to the value in JS
+    width: 14rem;
 }
 
 .collapse-button {
-    // We need to match the width in px to the animation width property in JS
-    /* stylelint-disable declaration-property-unit-whitelist */
-    width: 22px;
+    // Match this to the value in JS
+    width: 1.25rem;
     z-index: 1000;
 }
 
