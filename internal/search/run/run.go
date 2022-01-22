@@ -44,9 +44,8 @@ type Job interface {
 // information to execute the runtime semantics for particular search
 // operations.
 type Routine struct {
-	Job         Job
-	RepoOptions search.RepoOptions
-	Timeout     time.Duration
+	Job     Job
+	Timeout time.Duration
 }
 
 // MaxResults computes the limit for the query.

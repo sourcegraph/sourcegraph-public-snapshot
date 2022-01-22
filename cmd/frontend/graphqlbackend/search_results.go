@@ -928,8 +928,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 			run.NewParallelJob(requiredJobs...),
 			run.NewParallelJob(optionalJobs...),
 		),
-		RepoOptions: repoOptions,
-		Timeout:     args.Timeout,
+		Timeout: args.Timeout,
 	}, nil
 }
 
