@@ -177,7 +177,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     )
 }
 
-const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec code."
+const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
 
 interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     batchChange: EditBatchChangeFields
