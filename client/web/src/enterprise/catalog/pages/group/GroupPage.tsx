@@ -96,7 +96,7 @@ export const GroupPage: React.FunctionComponent<Props> = ({ groupName, telemetry
 const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch overflow-auto'
 
 const GroupPageContent: React.FunctionComponent<{
-    group: GroupPageResult['group']
+    group: NonNullable<GroupPageResult['group']>
 }> = ({ group }) => {
     const tabs = useMemo<React.ComponentProps<typeof CatalogPage>['tabs']>(
         () =>
