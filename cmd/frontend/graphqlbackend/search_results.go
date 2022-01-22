@@ -924,11 +924,13 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 	})
 
 	return &run.Routine{
-		Job: run.NewJobWithOptional(
-			run.NewParallelJob(requiredJobs...),
-			run.NewParallelJob(optionalJobs...),
+		Job: run.NewTimeoutJob(
+			args.Timeout,
+			run.NewJobWithOptional(
+				run.NewParallelJob(requiredJobs...),
+				run.NewParallelJob(optionalJobs...),
+			),
 		),
-		Timeout: args.Timeout,
 	}, nil
 }
 
@@ -1799,9 +1801,6 @@ func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (r
 		}
 		tr.Finish()
 	}()
-
-	ctx, cancel := context.WithTimeout(ctx, routine.Timeout)
-	defer cancel()
 
 	limit := r.MaxResults()
 

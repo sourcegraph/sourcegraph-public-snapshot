@@ -102,6 +102,34 @@ func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender
 	return g.Wait().ErrorOrNil()
 }
 
+// NewTimeoutJob creates a new job that is canceled after the
+// timeout is hit. The timer starts with `Run()` is called.
+func NewTimeoutJob(timeout time.Duration, child Job) Job {
+	if _, ok := child.(*emptyJob); ok {
+		return child
+	}
+	return &TimeoutJob{
+		timeout: timeout,
+		child:   child,
+	}
+}
+
+type TimeoutJob struct {
+	child   Job
+	timeout time.Duration
+}
+
+func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+	ctx, cancel := context.WithTimeout(ctx, t.timeout)
+	defer cancel()
+
+	return t.child.Run(ctx, db, s)
+}
+
+func (t *TimeoutJob) Name() string {
+	return fmt.Sprintf("TimeoutJob{%s}", t.child.Name())
+}
+
 type emptyJob struct{}
 
 func (e *emptyJob) Run(context.Context, database.DB, streaming.Sender) error { return nil }
