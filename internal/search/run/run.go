@@ -2,7 +2,6 @@ package run
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -44,8 +43,7 @@ type Job interface {
 // information to execute the runtime semantics for particular search
 // operations.
 type Routine struct {
-	Job     Job
-	Timeout time.Duration
+	Job Job
 }
 
 // MaxResults computes the limit for the query.
