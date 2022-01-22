@@ -28,7 +28,6 @@ import (
 type Service struct {
 	allowUnsupported bool
 	allowIgnored     bool
-	allowFiles       bool
 	client           api.Client
 	features         batches.FeatureFlags
 	imageCache       *docker.ImageCache
@@ -37,7 +36,6 @@ type Service struct {
 type Opts struct {
 	AllowUnsupported bool
 	AllowIgnored     bool
-	AllowFiles       bool
 	Client           api.Client
 }
 
@@ -49,7 +47,6 @@ func New(opts *Opts) *Service {
 	return &Service{
 		allowUnsupported: opts.AllowUnsupported,
 		allowIgnored:     opts.AllowIgnored,
-		allowFiles:       opts.AllowFiles,
 		client:           opts.Client,
 		imageCache:       docker.NewImageCache(),
 	}
@@ -292,7 +289,6 @@ func (svc *Service) ParseBatchSpec(data []byte) (*batcheslib.BatchSpec, error) {
 		AllowArrayEnvironments: svc.features.AllowArrayEnvironments,
 		AllowTransformChanges:  svc.features.AllowTransformChanges,
 		AllowConditionalExec:   svc.features.AllowConditionalExec,
-		AllowFiles:             svc.allowFiles,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing batch spec")

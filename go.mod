@@ -10,7 +10,7 @@ require (
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gobwas/glob v0.2.3
-	github.com/google/go-cmp v0.5.6
+	github.com/google/go-cmp v0.5.7
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jig/teereadcloser v0.0.0-20181016160506-953720c48e05
 	github.com/json-iterator/go v1.1.12
@@ -20,7 +20,7 @@ require (
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220120143235-e3b0ce401473
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220122003450-8a45ff2c8826
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
@@ -49,7 +49,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/rogpeppe/go-internal v1.8.1-0.20211023094830-115ce09fd6b4 // indirect
+	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/sys v0.0.0-20220111092808-5a964db01320 // indirect

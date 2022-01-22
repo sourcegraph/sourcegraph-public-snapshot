@@ -61,7 +61,6 @@ Examples:
 			Client:           client,
 			AllowUnsupported: allowUnsupported,
 			AllowIgnored:     allowIgnored,
-			AllowFiles:       true,
 		})
 
 		if err := svc.DetermineFeatureFlags(ctx); err != nil {

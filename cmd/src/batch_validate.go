@@ -61,7 +61,6 @@ Examples:
 			Client:           cfg.apiClient(apiFlags, flagSet.Output()),
 			AllowUnsupported: allowUnsupported,
 			AllowIgnored:     allowIgnored,
-			AllowFiles:       true,
 		})
 
 		if err := svc.DetermineFeatureFlags(ctx); err != nil {

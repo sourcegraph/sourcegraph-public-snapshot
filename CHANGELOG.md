@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- `src exec` now allows the `files:` property. (internal use only)
+
 ### Fixed
 
 ## 3.36.0

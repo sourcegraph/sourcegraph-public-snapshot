@@ -209,7 +209,6 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	svc := service.New(&service.Opts{
 		AllowUnsupported: opts.flags.allowUnsupported,
 		AllowIgnored:     opts.flags.allowIgnored,
-		AllowFiles:       true,
 		Client:           opts.client,
 	})
 
