@@ -88,13 +88,13 @@ export function setVisibility(element: HTMLElement | null, isVisible: boolean): 
     }
 }
 
-// ------------- Private API methods ---------------
-
-function setStyle(element: HTMLElement | null, key: string, value: string): void {
+export function setStyle(element: HTMLElement | null, key: string, value: string): void {
     if (element !== null && element.style.getPropertyValue(key) !== value) {
         element.style.setProperty(key, value)
     }
 }
+
+// ------------- Private API methods ---------------
 
 /**
  * Collect all elements by the root element and below that have scroll.
