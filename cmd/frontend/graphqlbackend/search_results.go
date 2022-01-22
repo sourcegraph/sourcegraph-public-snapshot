@@ -568,7 +568,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 	}
 }
 
-// toSearchRoutine converts a query parse tree to the _internal_ representation
+// toSearchJob converts a query parse tree to the _internal_ representation
 // needed to run a search routine. To understand why this conversion matters, think
 // about the fact that the query parse tree doesn't know anything about our
 // backends or architecture. It doesn't decide certain defaults, like whether we
@@ -577,8 +577,8 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 // particular backend (e.g., skip repository resolution and just run a Zoekt
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
-// toSearchRoutine.
-func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
+// toSearchJob.
+func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
@@ -923,15 +923,13 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 		Options: repoOptions,
 	})
 
-	return &run.Routine{
-		Job: run.NewTimeoutJob(
-			args.Timeout,
-			run.NewJobWithOptional(
-				run.NewParallelJob(requiredJobs...),
-				run.NewParallelJob(optionalJobs...),
-			),
+	return run.NewTimeoutJob(
+		args.Timeout,
+		run.NewJobWithOptional(
+			run.NewParallelJob(requiredJobs...),
+			run.NewParallelJob(optionalJobs...),
 		),
-	}, nil
+	), nil
 }
 
 // intersect returns the intersection of two sets of search result content
@@ -1150,18 +1148,18 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
-			routine, err := r.toSearchRoutine(q.ToParseTree())
+			job, err := r.toSearchJob(q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateRoutine(ctx, routine)
+			return r.evaluateJob(ctx, job)
 		}
 	case query.Pattern:
-		routine, err := r.toSearchRoutine(q.ToParseTree())
+		job, err := r.toSearchJob(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateRoutine(ctx, routine)
+		return r.evaluateJob(ctx, job)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -1173,11 +1171,11 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
-		routine, err := r.toSearchRoutine(query.ToNodes(q.Parameters))
+		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateRoutine(ctx, routine)
+		return r.evaluateJob(ctx, job)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -1508,11 +1506,11 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 	return nodes, nil
 }
 
-// evaluateRoutine is a toplevel function that runs a search routine to yield results.
-// A search routine represents a terminal node in the evaluation tree. If the deadline
+// evaluateJob is a toplevel function that runs a search job to yield results.
+// A search job represents a tree of evaluation steps. If the deadline
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) evaluateRoutine(ctx context.Context, routine *run.Routine) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "evaluateRoutine", "")
 	defer func() {
 		tr.SetError(err)
@@ -1520,7 +1518,7 @@ func (r *searchResolver) evaluateRoutine(ctx context.Context, routine *run.Routi
 	}()
 
 	start := time.Now()
-	rr, err := r.doResults(ctx, routine)
+	rr, err := r.doResults(ctx, job)
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1701,11 +1699,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		routine, err := r.toSearchRoutine(r.Query)
+		job, err := r.toSearchJob(r.Query)
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.doResults(ctx, routine)
+		results, err := r.doResults(ctx, job)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1790,9 +1788,9 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 	return args
 }
 
-// doResults returns the results of running a search routine.
+// doResults returns the results of running a search job.
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (res *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1817,7 +1815,7 @@ func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (r
 
 	agg := run.NewAggregator(stream)
 
-	_ = agg.DoSearch(ctx, r.db, routine.Job)
+	_ = agg.DoSearch(ctx, r.db, job)
 
 	return r.toSearchResults(ctx, agg)
 }
