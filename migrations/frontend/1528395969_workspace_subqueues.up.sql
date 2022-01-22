@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS batch_spec_workspace_execution_hourly_quota (
     quota INTEGER NOT NULL
 );
 
-CREATE VIEW IF NOT EXISTS execution_jobs AS (
+CREATE VIEW execution_jobs AS (
     SELECT
         j.id,
         j.started_at,
@@ -26,12 +26,12 @@ CREATE VIEW IF NOT EXISTS execution_jobs AS (
         ROW_NUMBER() OVER (PARTITION BY b.user_id ORDER BY j.started_at, j.process_after) AS rank
     FROM batch_spec_workspace_execution_jobs j
     JOIN batch_spec_workspaces w ON w.id = j.batch_spec_workspace_id
-    JOIN batch_specs b ON b.id = w.batch_spec_id;
+    JOIN batch_specs b ON b.id = w.batch_spec_id
 );
 
 -- TODO: We need to make sure that execution jobs are never deleted to not lose
 -- track of dequeued jobs.
-CREATE VIEW IF NOT EXISTS batch_spec_workspace_execution_jobs_subqueues AS (
+CREATE VIEW batch_spec_workspace_execution_jobs_subqueues AS (
     -- First generate the tenant queues by getting all jobs grouped by the tenant (user) id.
     WITH tenant_queues AS (
     SELECT
