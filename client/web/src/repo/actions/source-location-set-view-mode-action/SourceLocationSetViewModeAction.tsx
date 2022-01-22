@@ -1,17 +1,17 @@
-import { MenuItems, MenuPopover } from '@reach/menu-button'
+import { MenuPopover } from '@reach/menu-button'
 import classNames from 'classnames'
 import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
-import React, { useRef } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { useQuery, gql } from '@sourcegraph/http-client'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Menu, MenuButton, MenuHeader, MenuLink, MenuDivider } from '@sourcegraph/wildcard'
+import { MenuItems } from '@sourcegraph/wildcard/src/components/Menu/MenuItems'
 
 import { ComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
 import { ComponentTitleWithIconAndKind } from '../../../enterprise/catalog/contributions/tree/SourceLocationSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../enterprise/catalog/contributions/tree/TreeOrComponent'
-import { positionBottomRight } from '../../../enterprise/insights/components/context-menu/utils'
 import {
     SourceLocationSetViewModeInfoResult,
     SourceLocationSetViewModeInfoVariables,
@@ -102,33 +102,26 @@ export const ComponentActionPopoverButton: React.FunctionComponent<
         component: ComponentFields
         buttonClassName?: string
     } & Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'>
-> = ({ component, buttonClassName, treeOrComponentViewMode, treeOrComponentViewModeURL }) => {
-    const targetButtonReference = useRef<HTMLButtonElement>(null)
-
-    return (
-        <Menu>
-            <MenuButton
-                variant="secondary"
-                outline={true}
-                className={classNames(
-                    'py-1 px-2',
-                    styles.btn,
-                    treeOrComponentViewMode === 'auto' ? styles.btnViewModeComponent : styles.btnViewModeTree,
-                    buttonClassName
-                )}
-                ref={targetButtonReference}
-            >
-                <ComponentTitleWithIconAndKind component={component} strong={treeOrComponentViewMode === 'auto'} />
-            </MenuButton>
-            <MenuPopover position={positionBottomRight}>
-                <SourceLocationSetViewModeActionMenuItems
-                    treeOrComponentViewMode={treeOrComponentViewMode}
-                    treeOrComponentViewModeURL={treeOrComponentViewModeURL}
-                />
-            </MenuPopover>
-        </Menu>
-    )
-}
+> = ({ component, buttonClassName, treeOrComponentViewMode, treeOrComponentViewModeURL }) => (
+    <Menu>
+        <MenuButton
+            variant="secondary"
+            outline={true}
+            className={classNames(
+                'py-1 px-2',
+                styles.btn,
+                treeOrComponentViewMode === 'auto' ? styles.btnViewModeComponent : styles.btnViewModeTree,
+                buttonClassName
+            )}
+        >
+            <ComponentTitleWithIconAndKind component={component} strong={treeOrComponentViewMode === 'auto'} />
+        </MenuButton>
+        <SourceLocationSetViewModeActionMenuItems
+            treeOrComponentViewMode={treeOrComponentViewMode}
+            treeOrComponentViewModeURL={treeOrComponentViewModeURL}
+        />
+    </Menu>
+)
 
 export const SourceLocationSetViewModeActionMenuItems: React.FunctionComponent<
     Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'>
@@ -137,15 +130,17 @@ export const SourceLocationSetViewModeActionMenuItems: React.FunctionComponent<
     const noCheckIcon = <CheckBoldIcon className="icon-inline invisible" />
 
     return (
-        <MenuItems>
-            <MenuHeader>View as...</MenuHeader>
-            <MenuDivider />
-            <MenuLink as={Link} to={treeOrComponentViewModeURL.auto}>
-                {treeOrComponentViewMode === 'auto' ? checkIcon : noCheckIcon} Component
-            </MenuLink>
-            <MenuLink as={Link} to={treeOrComponentViewModeURL.tree}>
-                {treeOrComponentViewMode === 'tree' ? checkIcon : noCheckIcon} Tree
-            </MenuLink>
-        </MenuItems>
+        <MenuPopover>
+            <MenuItems>
+                <MenuHeader>View as...</MenuHeader>
+                <MenuDivider />
+                <MenuLink as={Link} to={treeOrComponentViewModeURL.auto}>
+                    {treeOrComponentViewMode === 'auto' ? checkIcon : noCheckIcon} Component
+                </MenuLink>
+                <MenuLink as={Link} to={treeOrComponentViewModeURL.tree}>
+                    {treeOrComponentViewMode === 'tree' ? checkIcon : noCheckIcon} Tree
+                </MenuLink>
+            </MenuItems>
+        </MenuPopover>
     )
 }

@@ -1,8 +1,10 @@
+import { MenuItems } from '@reach/menu-button'
 import React, { useRef } from 'react'
 import { Link } from 'react-router-dom'
 
-import { MenuLink, MenuItems, Menu, MenuDivider, MenuHeader, MenuPopover, MenuButton } from '@sourcegraph/wildcard'
+import { MenuLink, Menu, MenuDivider, MenuHeader, MenuButton } from '@sourcegraph/wildcard'
 
+import { MenuList } from '@sourcegraph/wildcard/src/components/Menu'
 import { ComponentTagsFields } from '../../../../graphql-operations'
 import { positionBottomRight } from '../../../insights/components/context-menu/utils'
 import { ComponentIcon } from '../../components/ComponentIcon'
@@ -37,7 +39,7 @@ export const ComponentTag: React.FunctionComponent<{
             <MenuButton variant="link" className={buttonClassName} ref={targetButtonReference}>
                 {name}
             </MenuButton>
-            <MenuPopover position={positionBottomRight}>
+            <MenuList position={positionBottomRight}>
                 <MenuItems>
                     <MenuHeader>Tag: {name}</MenuHeader>
                     {components.slice(0, 15 /* TODO(sqs) */).map(component => (
@@ -55,7 +57,7 @@ export const ComponentTag: React.FunctionComponent<{
                         View as table...
                     </MenuLink>
                 </MenuItems>
-            </MenuPopover>
+            </MenuList>
         </Menu>
     )
 }

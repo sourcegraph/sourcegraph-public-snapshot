@@ -1,10 +1,9 @@
 import classNames from 'classnames'
-import React, { useRef } from 'react'
+import React from 'react'
 
-import { Menu, MenuButton, MenuPopover } from '@sourcegraph/wildcard'
+import { Menu, MenuButton } from '@sourcegraph/wildcard'
 
 import { SourceLocationSetViewModeActionMenuItems } from '../../../../../repo/actions/source-location-set-view-mode-action/SourceLocationSetViewModeAction'
-import { positionBottomRight } from '../../../../insights/components/context-menu/utils'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
 
 interface Props
@@ -17,24 +16,14 @@ export const SourceLocationSetSelectMenu: React.FunctionComponent<Props> = ({
     treeOrComponentViewMode,
     treeOrComponentViewModeURL,
     buttonClassName,
-}) => {
-    const targetButtonReference = useRef<HTMLButtonElement>(null)
-
-    return (
-        <Menu>
-            <MenuButton
-                variant="secondary"
-                className={classNames('bg-transparent border-0', buttonClassName)}
-                ref={targetButtonReference}
-            >
-                <span aria-hidden={true}>▾</span>
-            </MenuButton>
-            <MenuPopover position={positionBottomRight}>
-                <SourceLocationSetViewModeActionMenuItems
-                    treeOrComponentViewMode={treeOrComponentViewMode}
-                    treeOrComponentViewModeURL={treeOrComponentViewModeURL}
-                />
-            </MenuPopover>
-        </Menu>
-    )
-}
+}) => (
+    <Menu>
+        <MenuButton variant="secondary" className={classNames('bg-transparent border-0', buttonClassName)}>
+            <span aria-hidden={true}>▾</span>
+        </MenuButton>
+        <SourceLocationSetViewModeActionMenuItems
+            treeOrComponentViewMode={treeOrComponentViewMode}
+            treeOrComponentViewModeURL={treeOrComponentViewModeURL}
+        />
+    </Menu>
+)
