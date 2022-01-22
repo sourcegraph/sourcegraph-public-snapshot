@@ -18,6 +18,7 @@ interface VsceSearchResultsInfoBarProps extends TelemetryProps {
     setOpenSavedSearchCreateForm: (status: boolean) => void
     openSavedSearchCreateForm: boolean
     results: AggregateStreamingSearchResults
+    onFeedbackClick: () => void
 }
 
 interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
@@ -47,6 +48,7 @@ export const VsceSearchResultsInfoBar: React.FunctionComponent<VsceSearchResults
     results,
     setOpenSavedSearchCreateForm,
     openSavedSearchCreateForm,
+    onFeedbackClick,
 }) => {
     const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButtonProps> = props => {
         if (props.showExperimentalVersion) {
@@ -103,10 +105,22 @@ export const VsceSearchResultsInfoBar: React.FunctionComponent<VsceSearchResults
                     onSearchAgain={() => console.log('Search Again')}
                     showTrace={false}
                 />
+
                 <div className={styles.expander} />
                 <ul className="nav align-items-center">
                     <li className={styles.divider} aria-hidden="true" />
+                    {/* Feedback Button */}
+                    <li className={classNames('mr-2', styles.navItem)} data-tooltip="Feedback">
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-primary border-0 text-decoration-none"
+                            onClick={onFeedbackClick}
+                        >
+                            Feedback
+                        </button>
+                    </li>
                     {saveSearchButton}
+                    {/* Share Link Button */}
                     <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
                         <button
                             type="button"

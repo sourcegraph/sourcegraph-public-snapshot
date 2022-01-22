@@ -141,7 +141,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
          */
         const onSelect = (result: SearchMatch): void => {
             ;(async () => {
-                const host = await instanceHostname
+                const host = instanceHostname
                 switch (result.type) {
                     case 'commit': {
                         return sourcegraphVSCodeExtensionAPI.openFile(`sourcegraph://${host}${result.url}`)
@@ -211,7 +211,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
 
         const onShareResultsClick = (): void => {
             ;(async () => {
-                const host = await instanceHostname
+                const host = instanceHostname
                 const finalUri = `${host}/search?q=${encodeURIComponent(
                     executedQuery
                 )}&patternType=${patternType}&case=${caseSensitive}?utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=save-search`
@@ -239,6 +239,11 @@ export const SearchResults = React.memo<SearchResultsProps>(
             <div className={styles.streamingSearchResultsContainer}>
                 {/* TODO: This is a temporary searchResultsInfoBar */}
                 <VsceSearchResultsInfoBar
+                    onFeedbackClick={() =>
+                        sourcegraphVSCodeExtensionAPI.openLink(
+                            'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback'
+                        )
+                    }
                     authenticatedUser={authenticatedUser}
                     setOpenSavedSearchCreateForm={setOpenSavedSearchCreateForm}
                     openSavedSearchCreateForm={openSavedSearchCreateForm}

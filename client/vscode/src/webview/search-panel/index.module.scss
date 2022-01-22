@@ -22,7 +22,7 @@
     display: flex;
     align-items: center;
     width: 20rem;
-    margin-top: 6rem;
+    margin-top: 4rem;
     max-width: 90%;
 
     /* Reserve the image's height to avoid jitter before it loads. */
@@ -42,6 +42,7 @@
     flex: 1 1 auto;
     margin-top: 2.5rem;
     width: 100%;
+    max-width: var(--max-homepage-container-width);
 
     position: relative;
 
@@ -147,6 +148,7 @@
 }
 
 .search-examples-wrapper {
+    width: 100%;
     margin-right: 1.5rem;
 
     @media (--sm-breakpoint-down) {

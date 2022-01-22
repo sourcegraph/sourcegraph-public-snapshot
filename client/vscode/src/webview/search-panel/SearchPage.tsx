@@ -333,6 +333,19 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         <div>
             {!queryToRun.query ? (
                 <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
+                    <div className={classNames('d-flex justify-content-end w-100 p-3')}>
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-primary border-0 text-decoration-none"
+                            onClick={() =>
+                                sourcegraphVSCodeExtensionAPI.openLink(
+                                    'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback'
+                                )
+                            }
+                        >
+                            Give us Feedback
+                        </button>
+                    </div>
                     <img
                         className={classNames(styles.logo)}
                         src={`https://sourcegraph.com/.assets/img/sourcegraph-logo-${themeProperty}.svg`}
@@ -341,7 +354,13 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                     <div className={classNames('mt-3', styles.logoText)}>
                         Search your code and 2M+ open source repositories
                     </div>
-                    <div className={classNames(styles.searchContainer, styles.searchContainerWithContentBelow)}>
+                    <div
+                        className={classNames(
+                            'flex-grow-0',
+                            styles.searchContainer,
+                            styles.searchContainerWithContentBelow
+                        )}
+                    >
                         {!loading && (
                             <Form className="d-flex my-2" onSubmit={onSubmit}>
                                 {/* TODO temporary settings provider w/ mock in memory storage */}
@@ -381,20 +400,17 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                     globbing={globbing}
                                     // TODO(tj): instead of cssvar, can pipe in font settings from extension
                                     // to be able to pass it to Monaco!
-                                    className={classNames(
-                                        styles.withEditorFont,
-                                        'flex-grow-1 flex-shrink-past-contents'
-                                    )}
+                                    className={classNames(styles.withEditorFont, 'flex-shrink-past-contents')}
                                 />
                             </Form>
                         )}
-                    </div>
-                    <div className="flex-grow-1">
-                        <HomePanels
-                            telemetryService={platformContext.telemetryService}
-                            isLightTheme={theme === 'theme-light'}
-                            setQuery={searchActions.setQuery}
-                        />
+                        <div className="flex-grow-1">
+                            <HomePanels
+                                telemetryService={platformContext.telemetryService}
+                                isLightTheme={theme === 'theme-light'}
+                                setQuery={searchActions.setQuery}
+                            />
+                        </div>
                     </div>
                 </div>
             ) : (
