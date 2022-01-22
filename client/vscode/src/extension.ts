@@ -8,7 +8,7 @@ import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { LocalStorageService } from '../localStorageService'
 
-import { invalidateClient, requestGraphQLFromVSCode, hasValidatedToken } from './backend/requestGraphQl'
+import { invalidateClient, requestGraphQLFromVSCode, currentUserSettings } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/settings'
 import { toSourcegraphLanguage } from './code-intel/languages'
 import { SourcegraphDefinitionProvider } from './code-intel/SourcegraphDefinitionProvider'
@@ -22,13 +22,7 @@ import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSyst
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { log } from './log'
 import { updateAccessTokenSetting } from './settings/accessTokenSetting'
-import {
-    endpointHostnameSetting,
-    endpointSetting,
-    endpointAccessTokenSetting,
-    endpointCorsSetting,
-    updateCorsSetting,
-} from './settings/endpointSetting'
+import { updateCorsSetting } from './settings/endpointSetting'
 import { LocalRecentSeachProps, SourcegraphVSCodeExtensionAPI } from './webview/contract'
 import {
     initializeExtensionHostWebview,
@@ -43,12 +37,9 @@ export function activate(context: vscode.ExtensionContext): void {
     // TODO: Close all editors (search panel and remote files) and restart Sourcegraph extension host
     // any time sourcegraph url or TODO access token change to reduce risk of data leaks in logging.
     // Pass this to GraphQL client to avoid making requests to the new instance before restarting VS Code.
-    const initialSourcegraphUrl = endpointSetting()
-    const instanceHostname = endpointHostnameSetting()
-    const accessToken = endpointAccessTokenSetting()
-    const corsSetting = endpointCorsSetting()
-    // const isValidatedToken = hasValidatedToken()
-    // const hasLocalSearch = storageManager.getLocalRecentSearch().length > 0
+    const userSettings = currentUserSettings()
+    const initialSourcegraphUrl = userSettings.endpoint
+    const allLocalSearchHistory = storageManager.getUserLocalSearchHistory()
 
     vscode.workspace.onDidChangeConfiguration(async event => {
         if (event.affectsConfiguration('sourcegraph.url')) {
@@ -149,9 +140,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.commands.executeCommand('sourcegraph.searchSidebar.focus').then(
         () => {},
-        error => {
-            console.error(error)
-        }
+        () => {}
     )
 
     context.subscriptions.push(
@@ -263,10 +252,12 @@ export function activate(context: vscode.ExtensionContext): void {
         observeActiveWebviewDynamicFilters: searchSidebarMediator.observeActiveWebviewDynamicFilters,
         setActiveWebviewQueryState: searchSidebarMediator.setActiveWebviewQueryState,
         submitActiveWebviewSearch: searchSidebarMediator.submitActiveWebviewSearch,
-        hasAccessToken: () => !!accessToken,
-        hasValidAccessToken: () => hasValidatedToken(),
+        getUserSettings: () => userSettings,
+        getLocalSearchHistory: () => allLocalSearchHistory,
+        hasAccessToken: () => !!userSettings.token,
+        hasValidAccessToken: () => userSettings.validated,
         updateAccessToken: (token: string) => updateAccessTokenSetting(token),
-        getInstanceHostname: () => instanceHostname,
+        getInstanceHostname: () => userSettings.host,
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         // Call from webview's search results
         openFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
@@ -278,17 +269,17 @@ export function activate(context: vscode.ExtensionContext): void {
         // Check if on VS Code Desktop or VS Code Web
         onDesktop: () => vscode.env.appHost === 'desktop',
         // Get Cors from Setting
-        getCorsSetting: () => corsSetting,
+        getCorsSetting: () => userSettings.corsUrl,
         updateCorsUri: (uri: string) => updateCorsSetting(uri),
         // Get last selected search context from Setting
-        getLastSelectedSearchContext: () => storageManager.getValue('sg-last-selected-context')[0],
-        updateLastSelectedSearchContext: (spec: string) => storageManager.setValue('sg-last-selected-context', [spec]),
+        getLastSelectedSearchContext: () => storageManager.getValue('sg-last-selected-context'),
+        updateLastSelectedSearchContext: (spec: string) => storageManager.setValue('sg-last-selected-context', spec),
         // Get last selected search context from Setting
-        getLocalRecentSearch: () => storageManager.getLocalRecentSearch(),
+        getLocalRecentSearch: () => allLocalSearchHistory.searches,
         setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => storageManager.setLocalRecentSearch(searches),
         // Get last selected search context from Setting
         getLocalStorageItem: (key: string) => storageManager.getValue(key),
-        setLocalStorageItem: (key: string, value: string[]) => storageManager.setValue(key, value),
+        setLocalStorageItem: (key: string, value: string) => storageManager.setValue(key, value),
         // Show File Tree
         displayFileTree: (setting: boolean) =>
             vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', setting),

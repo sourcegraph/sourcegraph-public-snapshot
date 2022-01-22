@@ -25,6 +25,7 @@ interface HistorySidebarProps extends WebviewPageProps {
     caseSensitive: boolean
     useQueryState: UseStore<SearchQueryState>
     localRecentSearches: LocalRecentSeachProps[]
+    localFileHistory: string[]
 }
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
@@ -36,22 +37,11 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     caseSensitive,
     useQueryState,
     localRecentSearches,
+    localFileHistory,
 }) => {
-    const [localFileHistory, setLocalFileHistory] = useState<string[] | undefined>(undefined)
     const [savedSearch, setSavedSearch] = useState<ISavedSearch[] | null | undefined>(undefined)
 
     useEffect(() => {
-        // Get initial settings
-        if (localRecentSearches === undefined) {
-            sourcegraphVSCodeExtensionAPI
-                .getLocalStorageItem('sg-files-history-test')
-                .then(response => {
-                    setLocalFileHistory(response)
-                })
-                .catch(() => {
-                    // TODO error handling
-                })
-        }
         if (savedSearch === undefined && authenticatedUser) {
             ;(async () => {
                 const savedSearches = await platformContext
@@ -68,9 +58,16 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                 }
             })().catch(() => setSavedSearch(null))
         }
-    }, [sourcegraphVSCodeExtensionAPI, localRecentSearches, authenticatedUser, platformContext, savedSearch])
+    }, [
+        sourcegraphVSCodeExtensionAPI,
+        localRecentSearches,
+        authenticatedUser,
+        platformContext,
+        savedSearch,
+        localFileHistory,
+    ])
 
-    if (localRecentSearches && authenticatedUser !== undefined) {
+    if (localRecentSearches && authenticatedUser !== undefined && localFileHistory !== undefined) {
         return (
             <div className={styles.sidebarContainer}>
                 {useQueryState && (
@@ -107,16 +104,14 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                     theme={theme}
                 />
-                {localFileHistory && localFileHistory.length > 0 && (
-                    <RecentFile
-                        localFileHistory={localFileHistory}
-                        telemetryService={platformContext.telemetryService}
-                        authenticatedUser={authenticatedUser}
-                        platformContext={platformContext}
-                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                        theme={theme}
-                    />
-                )}
+                <RecentFile
+                    localFileHistory={localFileHistory}
+                    telemetryService={platformContext.telemetryService}
+                    authenticatedUser={authenticatedUser}
+                    platformContext={platformContext}
+                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                    theme={theme}
+                />
                 {!authenticatedUser && (
                     <div className={styles.sidebarSection}>
                         <h5 className="flex-grow-1 btn-outline-secondary my-2">Search Your Private Code</h5>

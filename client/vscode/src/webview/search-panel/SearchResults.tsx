@@ -36,7 +36,7 @@ import { useQueryState } from '.'
 
 interface SearchResultsProps extends WebviewPageProps {
     settings: SettingsCascadeOrError<Settings>
-    instanceHostname: Promise<string>
+    instanceHostname: string
     fullQuery: string
     getFiles: (variables: TreeEntriesVariables) => void
     authenticatedUser: AuthenticatedUser | null
@@ -240,6 +240,8 @@ export const SearchResults = React.memo<SearchResultsProps>(
                 {/* TODO: This is a temporary searchResultsInfoBar */}
                 <VsceSearchResultsInfoBar
                     authenticatedUser={authenticatedUser}
+                    setOpenSavedSearchCreateForm={setOpenSavedSearchCreateForm}
+                    openSavedSearchCreateForm={openSavedSearchCreateForm}
                     onShareResultsClick={onShareResultsClick}
                     results={results}
                     telemetryService={platformContext.telemetryService}

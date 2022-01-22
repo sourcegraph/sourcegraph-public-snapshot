@@ -4,14 +4,13 @@ import create, { UseStore } from 'zustand'
 import { SearchSidebar as BrandedSearchSidebar } from '@sourcegraph/branded/src/search/results/sidebar/SearchSidebar'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { SearchQueryState, updateQuery } from '@sourcegraph/shared/src/search/searchQueryState'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { CurrentAuthStateResult, CurrentAuthStateVariables, SearchPatternType } from '../../graphql-operations'
 import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
-import { currentAuthStateQuery } from '../search-panel/queries'
 
 import { HistorySidebar } from './HistorySidebar'
 import { OpenSearchPanelCta } from './OpenSearchPanelCta'
@@ -24,17 +23,17 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
     platformContext,
     theme,
 }) => {
+    const [validating, setValidating] = useState(true)
     // Check if there is any opened / active search panel
     const [activeSearchPanel, setActiveSearchPanel] = useState<boolean | undefined>(undefined)
     const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
-    const [validating, setValidating] = useState(true)
+    const [localFileHistory, setLocalFileHistory] = useState<string[] | undefined>(undefined)
     // Check if User is currently on VS Code Desktop or VS Code Web
     const [onDesktop, setOnDesktop] = useState<boolean | undefined>(undefined)
     const [corsUri, setCorsUri] = useState<string | undefined>(undefined)
     const [hasAccount, setHasAccount] = useState(false)
     const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
-    const [validAccessToken, setValidAccessToken] = useState<boolean | undefined>(undefined)
-    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
+    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null | undefined>(undefined)
     // Search Query
     const [patternType, setPatternType] = useState<SearchPatternType>(SearchPatternType.literal)
     const [caseSensitive, setCaseSensitive] = useState<boolean>(false)
@@ -43,42 +42,34 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
     useEffect(() => {
         setValidating(true)
         // Get initial settings
-        if (onDesktop === undefined) {
+        if (activeSearchPanel === undefined) {
             // Get Local Search History
             sourcegraphVSCodeExtensionAPI
-                .getLocalRecentSearch()
+                .getLocalSearchHistory()
                 .then(response => {
-                    setLocalRecentSearches(response)
+                    setLocalFileHistory(response.files)
+                    setLocalRecentSearches(response.searches)
                 })
                 .catch(() => {
                     // TODO error handling
                 })
             // Get Current platform
             sourcegraphVSCodeExtensionAPI
-                .onDesktop()
-                .then(isOnDesktop => setOnDesktop(isOnDesktop))
-                .catch(error => console.error(error))
-            // Get Cors from Setting
-            sourcegraphVSCodeExtensionAPI
-                .getCorsSetting()
-                .then(uri => {
-                    setCorsUri(uri)
-                })
-                .catch(error => console.error(error))
-            // Get Access Token from Setting
-            sourcegraphVSCodeExtensionAPI
-                .hasAccessToken()
+                .getUserSettings()
                 .then(response => {
-                    setHasAccessToken(response)
-                    setHasAccount(response)
+                    setOnDesktop(response.platform === 'desktop')
+                    setCorsUri(response.corsUrl)
+                    setHasAccessToken(response.token)
+                    setHasAccount(response.token)
                 })
-                .catch(() => setHasAccessToken(false))
+                .catch(error => console.error(error))
+            setActiveSearchPanel(false)
         }
-        if (hasAccessToken === false) {
-            setValidAccessToken(false)
+        if (!hasAccessToken) {
+            setAuthenticatedUser(null)
         }
         // Validate Token
-        if (hasAccount && hasAccessToken && validAccessToken === undefined) {
+        if (hasAccount && hasAccessToken && authenticatedUser === undefined) {
             ;(async () => {
                 const currentUser = await platformContext
                     .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
@@ -93,7 +84,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                 } else {
                     setAuthenticatedUser(null)
                 }
-            })().catch(() => setValidAccessToken(false))
+            })().catch(() => setAuthenticatedUser(null))
         }
         setValidating(false)
     }, [
@@ -101,10 +92,11 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         onDesktop,
         corsUri,
         hasAccessToken,
-        validAccessToken,
         hasAccount,
         platformContext,
         setHasAccessToken,
+        activeSearchPanel,
+        authenticatedUser,
     ])
 
     const useQueryState: UseStore<SearchQueryState> = useMemo(() => {
@@ -186,61 +178,61 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
     }
 
     // There's no ACTIVE search panel
-
     // We need to add API to query all open search panels
-
     // If no open, show button + CTA to open search panel (links to sign up etc.)
     if (
         !validating &&
         onDesktop !== undefined &&
         hasAccessToken !== undefined &&
         authenticatedUser !== undefined &&
-        localRecentSearches !== undefined
+        localRecentSearches !== undefined &&
+        localFileHistory !== undefined
     ) {
-        if (activeSearchPanel) {
-            return (
-                <BrandedSearchSidebar
-                    forceButton={true}
-                    className={styles.sidebarContainer}
-                    filters={dynamicFilters}
-                    useQueryState={useQueryState}
-                    patternType={patternType}
-                    caseSensitive={caseSensitive}
-                    settingsCascade={settingsCascade}
-                    telemetryService={{
-                        log: () => {},
-                        logViewEvent: () => {},
-                    }}
-                />
+        if (!activeSearchPanel) {
+            return authenticatedUser || localRecentSearches.length > 0 ? (
+                <>
+                    <HistorySidebar
+                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                        platformContext={platformContext}
+                        theme={theme}
+                        authenticatedUser={authenticatedUser}
+                        patternType={patternType}
+                        caseSensitive={caseSensitive}
+                        useQueryState={useQueryState}
+                        localRecentSearches={localRecentSearches}
+                        localFileHistory={localFileHistory}
+                    />
+                </>
+            ) : (
+                <>
+                    <OpenSearchPanelCta
+                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                        onDesktop={onDesktop}
+                    />
+                    <SidebarAuthCheck
+                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                        hasAccessToken={hasAccessToken}
+                        telemetryService={platformContext.telemetryService}
+                        onSubmitAccessToken={onSubmitAccessToken}
+                        validAccessToken={authenticatedUser !== null}
+                    />
+                </>
             )
         }
-        return authenticatedUser || localRecentSearches ? (
-            <>
-                <HistorySidebar
-                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                    platformContext={platformContext}
-                    theme={theme}
-                    authenticatedUser={authenticatedUser}
-                    patternType={patternType}
-                    caseSensitive={caseSensitive}
-                    useQueryState={useQueryState}
-                    localRecentSearches={localRecentSearches}
-                />
-            </>
-        ) : (
-            <>
-                <OpenSearchPanelCta
-                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                    onDesktop={onDesktop}
-                />
-                <SidebarAuthCheck
-                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                    hasAccessToken={hasAccessToken}
-                    telemetryService={platformContext.telemetryService}
-                    onSubmitAccessToken={onSubmitAccessToken}
-                    validAccessToken={authenticatedUser !== null}
-                />
-            </>
+        return (
+            <BrandedSearchSidebar
+                forceButton={true}
+                className={styles.sidebarContainer}
+                filters={dynamicFilters}
+                useQueryState={useQueryState}
+                patternType={patternType}
+                caseSensitive={caseSensitive}
+                settingsCascade={settingsCascade}
+                telemetryService={{
+                    log: () => {},
+                    logViewEvent: () => {},
+                }}
+            />
         )
     }
     return <LoadingSpinner />

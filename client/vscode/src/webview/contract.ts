@@ -7,6 +7,8 @@ import { QueryState } from '@sourcegraph/shared/src/search/helpers'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
+import { SourcegraphVsceUserSettingProps } from '../backend/requestGraphQl'
+
 import { SearchSidebarMediator } from './search-sidebar/mediator'
 
 /**
@@ -32,6 +34,10 @@ export interface SourcegraphVSCodeExtensionAPI
 
     // For search webview
     panelInitialized: (panelId: string) => void
+    // Get User Settings, including hostname, token, corsUrl, authUser info, platform name
+    getUserSettings: () => SourcegraphVsceUserSettingProps
+    // Get User Local Search History
+    getLocalSearchHistory: () => LocalSearchHistoryProps
     /** TODO explain, we deliberately do not react to URL changes in webviews. */
     getInstanceHostname: () => string
     // Get Access Token
@@ -54,10 +60,10 @@ export interface SourcegraphVSCodeExtensionAPI
     getCorsSetting: () => string
     // Update Cors Setting - return true when updated successfully
     updateCorsUri: (uri: string) => Promise<boolean>
-    // Get item from VSCE local storage
-    getLocalStorageItem: (key: string) => string[]
+    // Get item in VSCE local storage
+    getLocalStorageItem: (key: string) => string
     // Set item in VSCE local storage
-    setLocalStorageItem: (key: string, value: string[]) => Promise<boolean>
+    setLocalStorageItem: (key: string, value: string) => Promise<boolean>
     // Get Last Selected Search Context from Local Storage
     getLastSelectedSearchContext: () => string
     // Update Last Selected Search Context in Local Storage
@@ -123,4 +129,10 @@ export interface LocalFileHistoryProps {
     repoName: string
     filePath: string
     sgUri: string
+    timestamp: string
+}
+
+export interface LocalSearchHistoryProps {
+    searches: LocalRecentSeachProps[]
+    files: string[]
 }

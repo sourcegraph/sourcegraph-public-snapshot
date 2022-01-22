@@ -19,7 +19,7 @@ import { useQueryState } from '.'
 
 interface RepoPageProps extends WebviewPageProps {
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url' | 'path'>[]
-    instanceHostname: Promise<string>
+    instanceHostname: string
     getFiles: (variables: TreeEntriesVariables) => void
     selectedRepoName: string
     backToSearchResultPage: () => void

@@ -2,16 +2,16 @@
 // A memento represents a storage utility. It can store and retrieve values.
 import { Memento } from 'vscode'
 
-import { LocalRecentSeachProps } from './src/webview/contract'
+import { LocalRecentSeachProps, LocalSearchHistoryProps } from './src/webview/contract'
 
 export class LocalStorageService {
     constructor(private storage: Memento) {}
 
-    public getValue(key: string): string[] {
-        return this.storage.get<string[]>(key, [])
+    public getValue(key: string): string {
+        return this.storage.get<string>(key, '')
     }
 
-    public async setValue(key: string, value: string[]): Promise<boolean> {
+    public async setValue(key: string, value: string): Promise<boolean> {
         try {
             await this.storage.update(key, value)
             return true
@@ -36,6 +36,7 @@ export class LocalStorageService {
     }
 
     public getFileHistory(): string[] {
+        console.log(this.storage.get<string[]>('sg-files-history-test', []))
         return this.storage.get<string[]>('sg-files-history-test', [])
     }
 
@@ -45,6 +46,13 @@ export class LocalStorageService {
             return true
         } catch {
             return false
+        }
+    }
+
+    public getUserLocalSearchHistory(): LocalSearchHistoryProps {
+        return {
+            searches: this.storage.get<LocalRecentSeachProps[]>('sg-search-history-test', []),
+            files: this.storage.get<string[]>('sg-files-history-test', []),
         }
     }
 }

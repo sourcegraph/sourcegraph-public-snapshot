@@ -178,10 +178,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                     {notify && !isUnsupportedNotifyQuery && (
                         <div className="alert alert-warning mt-3 mb-0">
                             <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
-                            server.{' '}
-                            {props.authenticatedUser?.siteAdmin
-                                ? 'Use the email.smtp site configuration setting to enable sending emails.'
-                                : 'Contact your server admin for more information.'}
+                            server. {props.authenticatedUser && 'Contact your server admin to enable sending emails.'}
                         </div>
                     )}
                 </Container>

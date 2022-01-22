@@ -15,6 +15,8 @@ import styles from './SearchResults.module.scss'
 interface VsceSearchResultsInfoBarProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     onShareResultsClick: () => void
+    setOpenSavedSearchCreateForm: (status: boolean) => void
+    openSavedSearchCreateForm: boolean
     results: AggregateStreamingSearchResults
 }
 
@@ -43,9 +45,9 @@ export const VsceSearchResultsInfoBar: React.FunctionComponent<VsceSearchResults
     onShareResultsClick,
     telemetryService,
     results,
+    setOpenSavedSearchCreateForm,
+    openSavedSearchCreateForm,
 }) => {
-    const [openSavedSearchCreateForm, setOpenSavedSearchCreateForm] = useState<boolean>(false)
-
     const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButtonProps> = props => {
         if (props.showExperimentalVersion) {
             return <ButtonDropdownCta {...props} />
@@ -88,7 +90,7 @@ export const VsceSearchResultsInfoBar: React.FunctionComponent<VsceSearchResults
                 />
             </li>
         ),
-        [openSavedSearchCreateForm, showActionButtonExperimentalVersion, telemetryService]
+        [openSavedSearchCreateForm, setOpenSavedSearchCreateForm, showActionButtonExperimentalVersion, telemetryService]
     )
 
     return (

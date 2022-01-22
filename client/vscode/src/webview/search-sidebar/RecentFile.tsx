@@ -22,7 +22,7 @@ interface RecentFile {
 }
 
 interface RecentFileProps extends WebviewPageProps, TelemetryProps {
-    localFileHistory: string[] | undefined
+    localFileHistory: string[]
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -73,6 +73,10 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
             setShowMore(false)
         }
     }, [authenticatedUser, itemsToLoad, localFileHistory, platformContext, processedResults, showMore])
+
+    if (!authenticatedUser && localFileHistory.length === 0) {
+        return null
+    }
 
     return (
         <div className={styles.sidebarSection}>

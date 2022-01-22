@@ -56,12 +56,9 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     const selectedSearchContextSpec = useQueryState(({ state }) => state.selectedSearchContextSpec)
     const [fullQuery, setFullQuery] = useState<string | undefined>(undefined)
     // User Settings
+    const [instanceHostname, setInstanceHostname] = useState<string>('')
+    const [validAccessToken, setValidAccessToken] = useState<boolean | undefined>(undefined)
     const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
-    const instanceHostname = useMemo(() => sourcegraphVSCodeExtensionAPI.getInstanceHostname(), [
-        sourcegraphVSCodeExtensionAPI,
-    ])
-    const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
-    const [validAccessToken, setValidAccessToken] = useState<boolean>(false)
     // Local History
     const [lastSelectedSearchContext, setLastSelectedSearchContext] = useState<string | undefined>(undefined)
     const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
@@ -169,47 +166,47 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     )
 
     useEffect(() => {
-        // Check for Access Token to display sign up CTA
-        if (hasAccessToken === undefined) {
+        setLoading(true)
+        // Check for Access Token to display sign up CTA at start up
+        if (validAccessToken === undefined) {
             sourcegraphVSCodeExtensionAPI
-                .hasAccessToken()
-                .then(hasAccessToken => {
-                    setHasAccessToken(hasAccessToken)
-                })
-                // TODO error handling
-                .catch(() => setHasAccessToken(false))
-        }
-        if (!validAccessToken) {
-            ;(async () => {
-                const currentUser = await platformContext
-                    .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
-                        request: currentAuthStateQuery,
-                        variables: {},
-                        mightContainPrivateInfo: true,
-                    })
-                    .toPromise()
-                if (currentUser.data) {
-                    setAuthenticatedUser(currentUser.data.currentUser)
-                    setValidAccessToken(true)
-                } else {
-                    setValidAccessToken(false)
-                }
-            })().catch(error => console.error(error))
-        }
-
-        // Get Recent Search History from Local Storage
-        if (localRecentSearches === undefined) {
-            sourcegraphVSCodeExtensionAPI
-                .getLocalRecentSearch()
+                .getUserSettings()
                 .then(response => {
-                    setLocalRecentSearches(response)
+                    setValidAccessToken(response.validated)
+                    setInstanceHostname(response.host)
+                    if (response.validated) {
+                        ;(async () => {
+                            const currentUser = await platformContext
+                                .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
+                                    request: currentAuthStateQuery,
+                                    variables: {},
+                                    mightContainPrivateInfo: true,
+                                })
+                                .toPromise()
+                            if (currentUser.data) {
+                                setAuthenticatedUser(currentUser.data.currentUser)
+                            } else {
+                                setValidAccessToken(false)
+                            }
+                        })().catch(error => console.error(error))
+                    }
+                })
+                .catch(error => {
+                    console.error(error)
+                    setValidAccessToken(false)
+                    setAuthenticatedUser(null)
+                })
+            // Get Recent Search History from Local Storage
+            sourcegraphVSCodeExtensionAPI
+                .getLocalSearchHistory()
+                .then(response => {
+                    setLocalRecentSearches(response.searches)
                 })
                 .catch(() => {
                     // TODO error handling
                 })
         }
         if (lastSelectedSearchContext === undefined) {
-            setLoading(true)
             sourcegraphVSCodeExtensionAPI
                 .getLastSelectedSearchContext()
                 .then(spec => {
@@ -229,7 +226,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 })
                 // TODO error handling
                 .catch(error => console.log(error))
-            setLoading(false)
         }
 
         const subscriptions = new Subscription()
@@ -309,12 +305,11 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 .pipe(map(dataOrThrowErrors)) // TODO error handling
                 .subscribe(searchResults => {
                     searchActions.updateResults(searchResults)
-                    setLoading(false)
                 })
 
             subscriptions.add(subscription)
         }
-
+        setLoading(false)
         return () => subscriptions.unsubscribe()
     }, [
         sourcegraphVSCodeExtensionAPI,
@@ -324,7 +319,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         selectedSearchContextSpec,
         searchActions,
         platformContext,
-        hasAccessToken,
         lastSelectedSearchContext,
         localRecentSearches,
         fullQuery,
@@ -332,6 +326,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         instanceHostname,
         validAccessToken,
         openRepoFileTree,
+        authenticatedUser,
     ])
     const themeProperty = theme === 'theme-light' ? 'light' : 'dark'
     return (

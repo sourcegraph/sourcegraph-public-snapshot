@@ -71,7 +71,7 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         return response.json() as Promise<GraphQLResult<any>>
     } catch (error) {
         if (isHTTPAuthError(error)) {
-            await handleAccessTokenError(accessToken ?? '')
+            handleAccessTokenError(accessToken ?? '')
         }
         throw asError(error)
     }
@@ -87,4 +87,30 @@ export function hasValidatedToken(): boolean {
         return true
     }
     return false
+}
+
+export function currentUserSettings(): SourcegraphVsceUserSettingProps {
+    const currentEndpoint = endpointSetting()
+    const currentHost = new URL(currentEndpoint).hostname
+    const currentToken = accessTokenSetting() !== undefined
+    const currentCorsUrl = endpointCorsSetting()
+    const currentTokenValidated = hasValidatedToken()
+    const currentPlatform = vscode.env.appHost
+    return {
+        endpoint: currentEndpoint,
+        host: currentHost,
+        token: currentToken,
+        corsUrl: currentCorsUrl,
+        validated: currentTokenValidated,
+        platform: currentPlatform,
+    }
+}
+
+export interface SourcegraphVsceUserSettingProps {
+    endpoint: string
+    host: string
+    token: boolean
+    corsUrl: string
+    validated: boolean
+    platform: string
 }
