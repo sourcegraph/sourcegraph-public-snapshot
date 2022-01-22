@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { COMPONENT_OWNER_FRAGMENT } from '../../entity-owner/gql'
+import { COMPONENT_OWNER_LINK_FRAGMENT } from '../../component-owner-link/ComponentOwnerLink'
 
 export const COMPONENT_LIST_FRAGMENT = gql`
     fragment ComponentListFields on Component {
@@ -12,10 +12,10 @@ export const COMPONENT_LIST_FRAGMENT = gql`
         lifecycle
         url
         catalogURL
-        ...ComponentOwnerFields
+        ...ComponentOwnerLinkFields
         ...ComponentLastCommitFields
     }
-    ${COMPONENT_OWNER_FRAGMENT}
+    ${COMPONENT_OWNER_LINK_FRAGMENT}
     fragment ComponentLastCommitFields on Component {
         commits(first: 1) {
             nodes {

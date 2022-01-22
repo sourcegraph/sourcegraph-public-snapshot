@@ -1,8 +1,8 @@
-import { useQuery, gql } from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
 
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPage'
-import { COMPONENT_OWNER_FRAGMENT } from '../../components/entity-owner/gql'
+import { COMPONENT_OWNER_LINK_FRAGMENT } from '../../components/component-owner-link/ComponentOwnerLink'
 import { COMPONENT_LABELS_FRAGMENT, COMPONENT_TAGS_FRAGMENT } from '../../pages/component/gql'
 
 const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
@@ -196,7 +196,7 @@ export const TREE_OR_COMPONENT_PAGE = gql`
         catalogURL
         url
         ...TreeOrComponentSourceLocationSetFields
-        ...ComponentOwnerFields
+        ...ComponentOwnerLinkFields
         ...ComponentTagsFields
         ...ComponentLabelsFields
     }
@@ -209,7 +209,7 @@ export const TREE_OR_COMPONENT_PAGE = gql`
     }
 
     ${TREE_OR_COMPONENT_SOURCE_LOCATION_SET_FRAGMENT}
-    ${COMPONENT_OWNER_FRAGMENT}
+    ${COMPONENT_OWNER_LINK_FRAGMENT}
     ${COMPONENT_TAGS_FRAGMENT}
     ${COMPONENT_LABELS_FRAGMENT}
 `

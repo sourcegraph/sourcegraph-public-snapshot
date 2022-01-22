@@ -16,7 +16,7 @@ import {
 } from '../../../../graphql-operations'
 import { pathHasPrefix, pathRelative } from '../../../../util/path'
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
-import { COMPONENT_OWNER_FRAGMENT } from '../../components/entity-owner/gql'
+import { COMPONENT_OWNER_LINK_FRAGMENT } from '../../components/component-owner-link/gql'
 import {
     COMPONENT_STATUS_FRAGMENT,
     COMPONENT_CODE_OWNERS_FRAGMENT,
@@ -59,7 +59,7 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
         description
         lifecycle
         url
-        ...ComponentOwnerFields
+        ...ComponentOwnerLinkFields
         ...ComponentStatusFields
         ...ComponentCodeOwnersFields
         ...ComponentAuthorsFields
@@ -86,7 +86,7 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
         }
     }
 
-    ${COMPONENT_OWNER_FRAGMENT}
+    ${COMPONENT_OWNER_LINK_FRAGMENT}
     ${COMPONENT_STATUS_FRAGMENT}
     ${COMPONENT_CODE_OWNERS_FRAGMENT}
     ${COMPONENT_AUTHORS_FRAGMENT}

@@ -8,7 +8,7 @@ import { Timestamp } from '../../../../../components/time/Timestamp'
 import { ComponentListFields, ComponentRelationFields } from '../../../../../graphql-operations'
 import { catalogRelationTypeDisplayName } from '../../../core/edges'
 import { CatalogComponentIcon } from '../../ComponentIcon'
-import { ComponentOwner } from '../../entity-owner/EntityOwner'
+import { ComponentOwnerLink } from '../../component-owner-link/ComponentOwnerLink'
 
 import styles from './CatalogExplorerList.module.scss'
 
@@ -41,7 +41,7 @@ export const ComponentRow: React.FunctionComponent<Props> = ({
                 {node.name}
             </Link>
         </h3>
-        <ComponentOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
+        <ComponentOwnerLink owner={node.owner} className="text-nowrap" blankIfNone={true} />
         <span className="text-nowrap">{node.lifecycle?.toLowerCase()}</span>
         {node.__typename === 'Component' && node.commits ? (
             <Timestamp className="text-nowrap" date={node.commits.nodes[0].author.date} noAbout={true} strict={true} />

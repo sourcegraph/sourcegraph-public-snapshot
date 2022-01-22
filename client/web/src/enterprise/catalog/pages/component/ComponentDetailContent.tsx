@@ -10,7 +10,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { CatalogIcon } from '../../../../catalog'
-import { ComponentKind, ComponentOwnerFields, ComponentStateDetailFields } from '../../../../graphql-operations'
+import { ComponentKind, ComponentOwnerLinkFields, ComponentStateDetailFields } from '../../../../graphql-operations'
 import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { catalogComponentIconComponent } from '../../components/ComponentIcon'
@@ -29,7 +29,7 @@ interface Props
 export const TAB_CONTENT_CLASS_NAME = classNames('flex-1 align-self-stretch', styles.tabContent)
 
 export const catalogPagePathForComponent = (
-    component: { __typename: 'Component'; name: string; kind: ComponentKind; url: string } & ComponentOwnerFields
+    component: { __typename: 'Component'; name: string; kind: ComponentKind; url: string } & ComponentOwnerLinkFields
 ): React.ComponentProps<typeof CatalogPage>['path'] =>
     [
         { icon: CatalogIcon, to: '/catalog' },

@@ -11,10 +11,10 @@ import {
     ComponentStateDetailFields,
     ComponentCodeOwnersFields,
     ComponentStatusFields,
-    ComponentOwnerFields,
+    ComponentOwnerLinkFields,
 } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
-import { ComponentOwner } from '../../components/entity-owner/EntityOwner'
+import { ComponentOwnerLink } from '../../components/component-owner-link/ComponentOwnerLink'
 
 import { OverviewStatusContextItem } from './OverviewStatusContextItem'
 
@@ -81,12 +81,12 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ compone
 )
 
 const OwnerStatusContext: React.FunctionComponent<{
-    entity: ComponentOwnerFields
+    entity: ComponentOwnerLinkFields
     statusContext: ComponentStatusFields['status']['contexts'][0]
     className?: string
 }> = ({ entity, statusContext, className }) => (
     <OverviewStatusContextItem statusContext={statusContext} className={className}>
-        {!statusContext.description && <ComponentOwner owner={entity.owner} />}
+        {!statusContext.description && <ComponentOwnerLink owner={entity.owner} />}
     </OverviewStatusContextItem>
 )
 
