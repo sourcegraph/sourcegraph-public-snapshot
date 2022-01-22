@@ -856,8 +856,8 @@ func Test_toSearchInputs(t *testing.T) {
 				PatternType:  query.SearchTypeLiteral,
 			},
 		}
-		routine, _ := resolver.toSearchRoutine(q)
-		return routine.Job.Name()
+		job, _ := resolver.toSearchJob(q)
+		return job.Name()
 	}
 
 	// Job generation for global vs non-global search

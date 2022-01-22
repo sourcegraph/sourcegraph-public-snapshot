@@ -38,12 +38,12 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
 	srs.once.Do(func() {
-		routine, err := srs.sr.toSearchRoutine(srs.sr.Query)
+		job, err := srs.sr.toSearchJob(srs.sr.Query)
 		if err != nil {
 			srs.srsErr = err
 			return
 		}
-		results, err := srs.sr.doResults(ctx, routine)
+		results, err := srs.sr.doResults(ctx, job)
 		if err != nil {
 			srs.srsErr = err
 			return
