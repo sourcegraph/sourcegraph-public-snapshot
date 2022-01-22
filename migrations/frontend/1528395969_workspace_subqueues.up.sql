@@ -23,6 +23,7 @@ CREATE VIEW execution_jobs AS (
         j.created_at,
         j.state,
         b.user_id,
+        -- TODO: Unused.
         ROW_NUMBER() OVER (PARTITION BY b.user_id ORDER BY j.started_at, j.process_after) AS rank
     FROM batch_spec_workspace_execution_jobs j
     JOIN batch_spec_workspaces w ON w.id = j.batch_spec_workspace_id
