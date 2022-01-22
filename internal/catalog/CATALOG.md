@@ -139,3 +139,4 @@ SRC_ACCESS_TOKEN= SRC_ENDPOINT=https://sourcegraph.com src search -json 'repo:gi
 - [ ] Make Component.kind a freeform string, not an enum.
 - [ ] Expose only <CatalogExplorer /> component, not the view options and list/graph subcomponents that require parent components to assemble them repetitively.
 - [ ] Unify catalog groups and user groups.
+- [ ] Don't hardcode components and groups in code.
