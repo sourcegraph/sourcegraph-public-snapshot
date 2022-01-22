@@ -9,7 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -82,7 +82,7 @@ func (a *Aggregator) Error(err error) {
 	}
 }
 
-func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pager) (err error) {
+func (a *Aggregator) DoSearch(ctx context.Context, db database.DB, job Job) (err error) {
 	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
 	defer func() {
 		a.Error(err)
@@ -90,6 +90,6 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pa
 		tr.Finish()
 	}()
 
-	err = job.Run(ctx, a, repos)
+	err = job.Run(ctx, db, a)
 	return errors.Wrap(err, job.Name()+" search failed")
 }
