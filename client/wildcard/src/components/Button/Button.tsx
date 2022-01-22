@@ -91,7 +91,7 @@ export const Button = React.forwardRef(
         // disabled. See https://stackoverflow.com/a/3100395 for more.
         return disabled && tooltip ? (
             <div className={styles.container}>
-                {disabled && tooltip ? <div className={styles.disabledTooltip} data-tooltip={tooltip} /> : null}
+                <div className={styles.disabledTooltip} data-tooltip={tooltip} />
                 {buttonComponent}
             </div>
         ) : (
