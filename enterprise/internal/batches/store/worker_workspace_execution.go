@@ -92,7 +92,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	// in the longest period but also that the queue has been waiting the longest.
 	// TODO: Is this order by expression required? I'd assume no because our view
 	// should handle all that just fine.
-	OrderByExpression: sqlf.Sprintf("rank ASC, latest_dequeue ASC NULLS FIRST"),
+	OrderByExpression: sqlf.Sprintf("rank ASC"), // ,latest_dequeue ASC NULLS FIRST -- TODO: had this in here but don't remember why.
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
 	ViewName:          "batch_spec_workspace_execution_jobs_subqueues batch_spec_workspace_execution_jobs",
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,

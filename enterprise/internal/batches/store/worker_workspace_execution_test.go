@@ -25,14 +25,16 @@ import (
 
 func TestNewBatchSpecWorkspaceExecutionWorkerStore_Dequeue(t *testing.T) {
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	bs := New(db, &observation.TestContext, nil)
 	s := NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), &observation.TestContext)
 
+	// Create two tenants.
 	user1 := ct.CreateTestUser(t, db, false)
 	user2 := ct.CreateTestUser(t, db, false)
 
+	// Create two batch specs, one per tenant.
 	batchSpec1 := &btypes.BatchSpec{UserID: user1.ID, NamespaceUserID: user1.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
 		ChangesetTemplate: &batcheslib.ChangesetTemplate{},
 	}}
@@ -47,16 +49,22 @@ func TestNewBatchSpecWorkspaceExecutionWorkerStore_Dequeue(t *testing.T) {
 	}
 
 	tts := []struct {
-		records []*btypes.BatchSpecWorkspace
-		name    string
-		want    []int
+		user1HourlyRate  int
+		user2HourlyRate  int
+		user1Concurrency int
+		user2Concurrency int
+		records          []*btypes.BatchSpecWorkspace
+		name             string
+		want             []int
 	}{
 		{
 			name: "nothing in queue",
+
 			want: []int{},
 		},
 		{
 			name: "user 1 and user 2 are intertwined",
+
 			records: []*btypes.BatchSpecWorkspace{
 				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
 				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
@@ -66,7 +74,8 @@ func TestNewBatchSpecWorkspaceExecutionWorkerStore_Dequeue(t *testing.T) {
 			want: []int{1, 3, 2, 4},
 		},
 		{
-			name: "user 1 exceeds concurrency",
+			name: "user 1 exceeds global concurrency",
+
 			records: []*btypes.BatchSpecWorkspace{
 				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
 				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
@@ -75,7 +84,19 @@ func TestNewBatchSpecWorkspaceExecutionWorkerStore_Dequeue(t *testing.T) {
 				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
 			},
 			// Is missing ID 5.
-			want: []int{1, 3, 2, 4},
+			want: []int{1, 2, 3, 4},
+		},
+		{
+			name: "user 1 exceeds concurrency override",
+
+			user1Concurrency: 2,
+			records: []*btypes.BatchSpecWorkspace{
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+			},
+			// Is missing ID 5.
+			want: []int{1, 2},
 		},
 		{
 			name: "user 1 has dequeued last, user 2 has before and goes next",
@@ -87,16 +108,30 @@ func TestNewBatchSpecWorkspaceExecutionWorkerStore_Dequeue(t *testing.T) {
 			name: "user 1 dequeues errored record next",
 		},
 		{
-			name: "user 1 has concurrency limit left but has exceeded hourly rate",
+			name: "user 1 has concurrency limit left but has exceeded configured hourly rate",
+
+			user1Concurrency: 2,
+			user1HourlyRate:  1,
+			records: []*btypes.BatchSpecWorkspace{
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+			},
+			want: []int{1},
 		},
 	}
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				q := sqlf.Sprintf("DELETE FROM batch_spec_workspaces WHERE 1 = 1")
+			exec := func(q *sqlf.Query) {
 				if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 					t.Fatal(err)
 				}
+			}
+			t.Cleanup(func() {
+				exec(sqlf.Sprintf("DELETE FROM batch_spec_workspaces WHERE 1 = 1"))
+				exec(sqlf.Sprintf("DELETE FROM batch_spec_workspace_execution_maximum_concurrencies WHERE 1 = 1"))
+				exec(sqlf.Sprintf("DELETE FROM batch_spec_workspace_execution_hourly_quota WHERE 1 = 1"))
+				exec(sqlf.Sprintf("ALTER SEQUENCE batch_spec_workspace_execution_jobs_id_seq RESTART"))
 			})
 			for _, r := range tt.records {
 				// All records need a step to be considered when creating execution jobs.
@@ -110,6 +145,18 @@ func TestNewBatchSpecWorkspaceExecutionWorkerStore_Dequeue(t *testing.T) {
 			}
 			if err := bs.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec2.ID); err != nil {
 				t.Fatal(err)
+			}
+			if tt.user1Concurrency != 0 {
+				exec(sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_maximum_concurrencies (user_id, concurrency) VALUES (%s, %s)", user1.ID, tt.user1Concurrency))
+			}
+			if tt.user1HourlyRate != 0 {
+				exec(sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_hourly_quota (user_id, quota) VALUES (%s, %s)", user1.ID, tt.user1HourlyRate))
+			}
+			if tt.user2Concurrency != 0 {
+				exec(sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_maximum_concurrencies (user_id, concurrency) VALUES (%s, %s)", user2.ID, tt.user2Concurrency))
+			}
+			if tt.user2HourlyRate != 0 {
+				exec(sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_hourly_quota (user_id, quota) VALUES (%s, %s)", user2.ID, tt.user2HourlyRate))
 			}
 			records := make([]int, 0, len(tt.want))
 			for {
