@@ -11,7 +11,7 @@ import { PageTitle } from '../../../../components/PageTitle'
 import { GroupByNameResult, GroupByNameVariables } from '../../../../graphql-operations'
 
 import { GROUP_BY_NAME } from './gql'
-import { GroupDetailContent } from './GroupDetailContent'
+import { GroupDetailContent } from './GroupContent'
 
 export interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     /** The name of the group. */

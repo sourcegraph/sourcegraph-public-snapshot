@@ -4,11 +4,11 @@ import React from 'react'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { GroupMembersFields } from '../../../../graphql-operations'
-import { formatPersonName } from '../../../../person/PersonLink'
-import { UserAvatar } from '../../../../user/UserAvatar'
+import { GroupMembersFields } from '../../../../../../graphql-operations'
+import { formatPersonName } from '../../../../../../person/PersonLink'
+import { UserAvatar } from '../../../../../../user/UserAvatar'
 
-import { GroupDetailContentCardProps } from './GroupDetailContent'
+import { GroupDetailContentCardProps } from '../../GroupContent'
 
 interface Props extends GroupDetailContentCardProps {
     group: GroupMembersFields

@@ -10,7 +10,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { HeroPage } from '../../components/HeroPage'
 
-import { GroupDetailPage } from './pages/group/GroupDetailPage'
+import { GroupDetailPage } from './pages/group/GroupPage'
 import { GlobalOverviewPage } from './pages/overview/GlobalOverviewPage'
 
 interface Props

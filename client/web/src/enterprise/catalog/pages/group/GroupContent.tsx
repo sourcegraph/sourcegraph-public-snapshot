@@ -11,8 +11,8 @@ import { GroupDetailFields } from '../../../../graphql-operations'
 import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 
-import { GroupMembersTab } from './GroupMembersTab'
-import { GroupOverviewTab } from './OverviewTab'
+import { GroupMembersTab } from './tabs/members/GroupMembersTab'
+import { GroupOverviewTab } from './tabs/overview/GroupOverviewTab'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     group: GroupDetailFields
