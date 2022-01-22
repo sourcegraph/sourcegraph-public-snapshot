@@ -3,6 +3,7 @@ import React from 'react'
 
 import { ForwardReferenceComponent } from '../../types'
 
+import styles from './Button.module.scss'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 import { getButtonSize, getButtonStyle } from './utils'
 
@@ -28,6 +29,10 @@ export interface ButtonProps
      * Note: This component assumes `HTMLButtonElement` types, providing a different component here will change the potential types that can be passed to this component.
      */
     as?: React.ElementType
+    /**
+     * A tooltip to display when the user hovers the button.
+     */
+    ['data-tooltip']?: string
 }
 
 /**
@@ -48,21 +53,49 @@ export interface ButtonProps
  */
 export const Button = React.forwardRef(
     (
-        { children, as: Component = 'button', type = 'button', variant, size, outline, className, ...attributes },
+        {
+            children,
+            as: Component = 'button',
+            type = 'button',
+            variant,
+            size,
+            outline,
+            className,
+            disabled,
+            ...attributes
+        },
         reference
-    ) => (
-        <Component
-            ref={reference}
-            className={classNames(
-                'btn',
-                variant && getButtonStyle({ variant, outline }),
-                size && getButtonSize({ size }),
-                className
-            )}
-            type={Component === 'button' ? type : undefined}
-            {...attributes}
-        >
-            {children}
-        </Component>
-    )
+    ) => {
+        const tooltip = attributes['data-tooltip']
+
+        const buttonComponent = (
+            <Component
+                ref={reference}
+                className={classNames(
+                    'btn',
+                    variant && getButtonStyle({ variant, outline }),
+                    size && getButtonSize({ size }),
+                    className
+                )}
+                type={Component === 'button' ? type : undefined}
+                disabled={disabled}
+                {...attributes}
+            >
+                {children}
+            </Component>
+        )
+
+        // Disabled elements don't fire mouse events, but the `Tooltip` relies on mouse
+        // events. This restores the tooltip behavior for disabled buttons by rendering an
+        // invisible `div` with the tooltip on top of the button, in the case that it is
+        // disabled. See https://stackoverflow.com/a/3100395 for more.
+        return disabled && tooltip ? (
+            <div className={styles.container}>
+                {disabled && tooltip ? <div className={styles.disabledTooltip} data-tooltip={tooltip} /> : null}
+                {buttonComponent}
+            </div>
+        ) : (
+            buttonComponent
+        )
+    }
 ) as ForwardReferenceComponent<'button', ButtonProps>
