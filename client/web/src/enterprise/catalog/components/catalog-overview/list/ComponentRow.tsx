@@ -4,12 +4,11 @@ import { Link } from 'react-router-dom'
 
 import { isDefined } from '@sourcegraph/common'
 
-import { Timestamp } from '../../../../../../components/time/Timestamp'
-import { ComponentForExplorerFields, ComponentRelationFields } from '../../../../../../graphql-operations'
-import { ComponentIcon } from '../../../../components/ComponentIcon'
-import { ComponentOwner } from '../../../../components/entity-owner/EntityOwner'
-import { catalogRelationTypeDisplayName } from '../../../../core/edges'
-import { ComponentStateIndicator } from '../entity-state-indicator/ComponentStateIndicator'
+import { Timestamp } from '../../../../../components/time/Timestamp'
+import { ComponentListFields, ComponentRelationFields } from '../../../../../graphql-operations'
+import { catalogRelationTypeDisplayName } from '../../../core/edges'
+import { CatalogComponentIcon } from '../../ComponentIcon'
+import { ComponentOwner } from '../../entity-owner/EntityOwner'
 
 import styles from './CatalogExplorerList.module.scss'
 
@@ -20,7 +19,7 @@ export interface CatalogExplorerRowStyleProps {
 }
 
 interface Props extends CatalogExplorerRowStyleProps {
-    node: ComponentForExplorerFields
+    node: ComponentListFields
     before?: string
 }
 
@@ -35,10 +34,12 @@ export const ComponentRow: React.FunctionComponent<Props> = ({
         {before && <span className={classNames('text-nowrap', itemStartClassName)}>{before}</span>}
         <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center', !before && itemStartClassName)}>
             <Link to={node.catalogURL} className={classNames('d-block text-truncate')}>
-                <ComponentIcon component={node} className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')} />
+                <CatalogComponentIcon
+                    component={node}
+                    className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')}
+                />
                 {node.name}
             </Link>
-            <ComponentStateIndicator component={node} className="ml-1" />
         </h3>
         <ComponentOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
         <span className="text-nowrap">{node.lifecycle?.toLowerCase()}</span>

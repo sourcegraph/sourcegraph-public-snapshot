@@ -3,7 +3,7 @@ import React from 'react'
 
 import { ComponentKind } from '@sourcegraph/shared/src/graphql/schema'
 
-import { ComponentIcon } from '../../components/ComponentIcon'
+import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
 import { TreeOrComponentViewOptionsProps } from './TreeOrComponent'
 
@@ -36,7 +36,7 @@ export const ComponentTitleWithIconAndKind: React.FunctionComponent<{
     strong?: boolean
 }> = ({ component, strong = true }) => (
     <>
-        <ComponentIcon component={component} className="icon-inline mr-1" />
+        <CatalogComponentIcon component={component} className="icon-inline mr-1" />
         <span className={strong ? 'font-weight-bold' : undefined}>{component.name}</span>
         <span className="text-muted ml-1">{component.kind.toLowerCase()}</span>
     </>

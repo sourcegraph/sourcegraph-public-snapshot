@@ -14,7 +14,7 @@ import {
     RepositoryForTreeFields,
     TreeEntryForTreeFields,
 } from '../../../../graphql-operations'
-import { ComponentIcon } from '../../components/ComponentIcon'
+import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
 import { TreeOrComponentViewOptionsProps } from './TreeOrComponent'
 
@@ -101,7 +101,7 @@ const ComponentHeading: React.FunctionComponent<{
 }> = ({ component, tag: Tag, badgeLink, className, textClassName }) => (
     <Tag className={classNames('d-flex align-items-center', className)}>
         <Link to={component.url} className={classNames('d-flex align-items-center', textClassName)}>
-            <ComponentIcon component={component} className="icon-inline mr-2 flex-shrink-0" /> {component.name}
+            <CatalogComponentIcon component={component} className="icon-inline mr-2 flex-shrink-0" /> {component.name}
         </Link>
         <Badge
             variant="secondary"

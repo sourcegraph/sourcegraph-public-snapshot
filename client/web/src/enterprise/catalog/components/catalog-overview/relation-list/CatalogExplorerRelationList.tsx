@@ -1,10 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { useConnection } from '../../../../../../components/FilteredConnection/hooks/useConnection'
+import { useConnection } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -13,17 +13,17 @@ import {
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '../../../../../../components/FilteredConnection/ui'
+} from '../../../../../components/FilteredConnection/ui'
 import {
     ComponentRelationsForExplorerResult,
     ComponentRelationsForExplorerVariables,
     ComponentRelationFields,
-} from '../../../../../../graphql-operations'
-import { ComponentFiltersProps } from '../../../../core/component-query'
+} from '../../../../../graphql-operations'
+import { ComponentFiltersProps } from '../../../core/component-query'
+import { ComponentRelationRow, ComponentRelationRowsHeader, CatalogExplorerRowStyleProps } from '../list/ComponentRow'
+import { COMPONENT_LIST_FRAGMENT } from '../list/gql'
 
 import styles from './CatalogExplorerRelationList.module.scss'
-import { ComponentRelationRow, ComponentRelationRowsHeader, CatalogExplorerRowStyleProps } from './ComponentRow'
-import { COMPONENT_RELATIONS_FOR_EXPLORER } from './gqlForRelation'
 
 interface Props extends Pick<ComponentFiltersProps, 'filters'>, CatalogExplorerRowStyleProps {
     component: Scalars['ID']
@@ -49,7 +49,29 @@ export const CatalogExplorerRelationList: React.FunctionComponent<Props> = ({
         ComponentRelationsForExplorerVariables,
         ComponentRelationFields
     >({
-        query: COMPONENT_RELATIONS_FOR_EXPLORER,
+        query: gql`
+            query ComponentRelationsForExplorer($component: ID!, $query: String, $first: Int, $after: String) {
+                node(id: $component) {
+                    __typename
+                    ... on Component {
+                        relatedEntities(query: $query, first: $first, after: $after) {
+                            edges {
+                                ...ComponentRelationFields
+                            }
+                        }
+                    }
+                }
+            }
+
+            fragment ComponentRelationFields on ComponentRelatedEntityEdge {
+                type
+                node {
+                    ...ComponentListFields
+                }
+            }
+
+            ${COMPONENT_LIST_FRAGMENT}
+        `,
         variables: {
             component,
             query: `${queryScope || ''} ${filters.query || ''}`,

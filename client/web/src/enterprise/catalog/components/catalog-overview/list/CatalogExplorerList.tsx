@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React, { useEffect, useMemo } from 'react'
 
-import { dataOrThrowErrors } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
-import { useConnection } from '../../../../../../components/FilteredConnection/hooks/useConnection'
+import { useConnection } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -12,17 +12,17 @@ import {
     ConnectionSummary,
     ShowMoreButton,
     SummaryContainer,
-} from '../../../../../../components/FilteredConnection/ui'
+} from '../../../../../components/FilteredConnection/ui'
 import {
     ComponentsForExplorerResult,
     ComponentsForExplorerVariables,
-    ComponentForExplorerFields,
-} from '../../../../../../graphql-operations'
-import { ComponentFiltersProps } from '../../../../core/component-query'
+    ComponentListFields,
+} from '../../../../../graphql-operations'
+import { ComponentFiltersProps } from '../../../core/component-query'
 
 import styles from './CatalogExplorerList.module.scss'
 import { ComponentRow, ComponentRowsHeader, CatalogExplorerRowStyleProps } from './ComponentRow'
-import { COMPONENTS_FOR_EXPLORER } from './gql'
+import { COMPONENT_LIST_FRAGMENT } from './gql'
 
 interface Props extends Pick<ComponentFiltersProps, 'filters'>, CatalogExplorerRowStyleProps {
     queryScope?: string
@@ -47,9 +47,25 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
         ComponentsForExplorerResult,
         ComponentsForExplorerVariables,
-        ComponentForExplorerFields
+        ComponentListFields
     >({
-        query: COMPONENTS_FOR_EXPLORER,
+        query: gql`
+            query ComponentsForExplorer($query: String, $first: Int, $after: String) {
+                components(query: $query, first: $first, after: $after) {
+                    nodes {
+                        ...ComponentListFields
+                    }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                    }
+                    tags {
+                        name
+                    }
+                }
+            }
+            ${COMPONENT_LIST_FRAGMENT}
+        `,
         variables: {
             query: `${queryScope || ''} ${filters.query || ''}`,
             first: FIRST,

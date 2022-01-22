@@ -18,7 +18,6 @@ import { CatalogPage, CatalogPage2 } from '../../components/catalog-area-header/
 import { CodeTab } from '../../pages/component/code/CodeTab'
 import { TAB_CONTENT_CLASS_NAME } from '../../pages/component/ComponentDetailContent'
 import { RelationsTab } from '../../pages/component/RelationsTab'
-import { SbomTab } from '../../pages/component/sbom/SbomTab'
 import { UsageTab } from '../../pages/component/UsageTab'
 import { WhoKnowsTab } from '../../pages/component/who-knows/WhoKnowsTab'
 
@@ -107,13 +106,6 @@ export const TreeOrComponent: React.FunctionComponent<Props> = ({ data, useBread
                     text: 'Usage',
                     content: (
                         <UsageTab {...props} sourceLocationSet={sourceLocationSet.id} className={tabContentClassName} />
-                    ),
-                },
-                {
-                    path: 'sbom',
-                    text: 'SBOM',
-                    content: (
-                        <SbomTab {...props} sourceLocationSet={sourceLocationSet.id} className={tabContentClassName} />
                     ),
                 },
             ].filter(isDefined),

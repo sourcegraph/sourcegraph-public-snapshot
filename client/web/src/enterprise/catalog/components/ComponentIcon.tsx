@@ -26,7 +26,9 @@ const COMPONENT_ICON_BY_KIND: Record<ComponentKind, React.ComponentType<{ classN
     OTHER: TextureBoxIcon,
 }
 
-export function componentIconComponent(component: PartialComponent): React.ComponentType<{ className?: string }> {
+export function catalogComponentIconComponent(
+    component: PartialComponent
+): React.ComponentType<{ className?: string }> {
     switch (component.__typename) {
         case 'Component':
             return COMPONENT_ICON_BY_KIND[component.kind]
@@ -35,7 +37,7 @@ export function componentIconComponent(component: PartialComponent): React.Compo
     }
 }
 
-export const ComponentIcon: React.FunctionComponent<Props> = ({ component, className }) => {
-    const Icon = componentIconComponent(component) || TextureBoxIcon
+export const CatalogComponentIcon: React.FunctionComponent<Props> = ({ component, className }) => {
+    const Icon = catalogComponentIconComponent(component) || TextureBoxIcon
     return <Icon className={className} />
 }

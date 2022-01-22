@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react'
 import { useQuery, gql } from '@sourcegraph/http-client'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { ComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
+import { CatalogComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
 import { positionBottomRight } from '../../../enterprise/insights/components/context-menu/utils'
 import { Popover } from '../../../enterprise/insights/components/popover/Popover'
 import {
@@ -102,7 +102,7 @@ export const ComponentRepoHeaderAction: React.FunctionComponent<Props & RepoHead
     if (props.actionType === 'dropdown') {
         return (
             <RepoHeaderActionButtonLink to={component.url} className="btn" file={true}>
-                <ComponentIcon component={component} className="icon-inline mr-1" /> {component.name}
+                <CatalogComponentIcon component={component} className="icon-inline mr-1" /> {component.name}
             </RepoHeaderActionButtonLink>
         )
     }
@@ -126,7 +126,7 @@ const ComponentActionPopoverButton: React.FunctionComponent<{
         <>
             <div ref={targetButtonReference}>
                 <RepoHeaderActionButtonLink to={component.url} className={buttonClassName}>
-                    <ComponentIcon component={component} className="icon-inline mr-1" /> {component.name}
+                    <CatalogComponentIcon component={component} className="icon-inline mr-1" /> {component.name}
                 </RepoHeaderActionButtonLink>
             </div>
             <Popover
@@ -139,7 +139,7 @@ const ComponentActionPopoverButton: React.FunctionComponent<{
                 style={{ maxWidth: '50vw' }}
             >
                 <h3>
-                    <ComponentIcon component={component} className="icon-inline mr-1" /> {component.name}
+                    <CatalogComponentIcon component={component} className="icon-inline mr-1" /> {component.name}
                 </h3>
                 {component.description && <p className="mb-0">{component.description}</p>}
             </Popover>

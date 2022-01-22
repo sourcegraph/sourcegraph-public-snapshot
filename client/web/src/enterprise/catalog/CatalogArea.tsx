@@ -10,9 +10,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { HeroPage } from '../../components/HeroPage'
 
-import { ComponentDetailPage } from './pages/component/ComponentDetailPage'
 import { GroupDetailPage } from './pages/group/GroupDetailPage'
-import { ExplorePage } from './pages/overview/global/ExplorePage'
+import { CatalogOverviewPage } from './pages/overview/OverviewPage'
 
 interface Props
     extends TelemetryProps,
@@ -29,16 +28,6 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
 
     return (
         <Switch>
-            <Route path={`${match.url}/components/:name`}>
-                {(matchProps: RouteComponentProps<{ name: string }>) => (
-                    <ComponentDetailPage
-                        key={1}
-                        {...props}
-                        componentName={matchProps.match.params.name}
-                        telemetryService={telemetryService}
-                    />
-                )}
-            </Route>
             <Route path={`${match.url}/groups/:name`}>
                 {(matchProps: RouteComponentProps<{ name: string }>) => (
                     <GroupDetailPage
@@ -49,8 +38,8 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
                     />
                 )}
             </Route>
-            <Route path={match.url}>
-                <ExplorePage telemetryService={telemetryService} />
+            <Route path={[match.url, `${match.url}/graph`]} exact={true}>
+                <CatalogOverviewPage basePathname={match.url} telemetryService={telemetryService} />
             </Route>
             <Route>
                 <HeroPage icon={MapSearchIcon} title="404: Not Found" />

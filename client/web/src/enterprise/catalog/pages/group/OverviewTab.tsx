@@ -13,9 +13,8 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { GroupDetailFields } from '../../../../graphql-operations'
 import { formatPersonName } from '../../../../person/PersonLink'
 import { UserAvatar } from '../../../../user/UserAvatar'
-import { ComponentIcon } from '../../components/ComponentIcon'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
-import { ComponentStateIndicator } from '../overview/components/entity-state-indicator/ComponentStateIndicator'
+import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
 import { GroupCatalogExplorer } from './GroupCatalogExplorer'
 import { GroupDetailContentCardProps } from './GroupDetailContent'
@@ -130,13 +129,13 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                             >
                                 <div className="mb-0 d-flex align-items-center">
                                     <Link to={entity.url} className="d-inline-flex align-items-center stretched-link">
-                                        <ComponentIcon component={entity} className="icon-inline text-muted mr-1" />
+                                        <CatalogComponentIcon
+                                            component={entity}
+                                            className="icon-inline text-muted mr-1"
+                                        />
 
                                         {entity.name}
                                     </Link>
-                                    {entity.__typename === 'Component' && (
-                                        <ComponentStateIndicator component={entity} className="ml-1" />
-                                    )}
                                 </div>
                                 {entity.description && (
                                     <p className={classNames('my-1 text-muted small', styles.boxGridItemBody)}>
@@ -158,10 +157,9 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                         {group.ownedEntities.map(entity => (
                             <li key={entity.id} className="list-group-item d-flex align-items-center position-relative">
                                 <Link to={entity.url} className="d-flex align-items-center mr-1">
-                                    <ComponentIcon component={entity} className="icon-inline text-muted mr-1" />
+                                    <CatalogComponentIcon component={entity} className="icon-inline text-muted mr-1" />
                                     {entity.name}
                                 </Link>
-                                {entity.__typename === 'Component' && <ComponentStateIndicator component={entity} />}
                             </li>
                         ))}
                     </ul>

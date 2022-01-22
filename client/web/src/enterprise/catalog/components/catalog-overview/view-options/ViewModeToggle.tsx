@@ -1,7 +1,8 @@
 import classNames from 'classnames'
+import React from 'react'
+
 import { TemporarySettingsSchema } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import React from 'react'
 
 type ViewMode = TemporarySettingsSchema['catalog.explorer.viewMode']
 

@@ -130,3 +130,10 @@ SBOM:
 # Get sample repos.
 SRC_ACCESS_TOKEN= SRC_ENDPOINT=https://sourcegraph.com src search -json 'repo:github.com/sourcegraph/ f:package.json fork:no select:repo count:50' | jq '.Results[].name'
 ```
+
+## TODOs after 2022-01-22 simplification
+
+- [ ] Scope /catalog/groups/:name by org or namespace.
+- [ ] Add a redirect from /catalog/components/:name to the tree URL for the component so there is a canonical URL for the component. (But how do we scope that by org or other namespace?)
+- [ ] Add back a notion of component state, statuses, and health.
+- [ ] Make Component.kind a freeform string, not an enum.

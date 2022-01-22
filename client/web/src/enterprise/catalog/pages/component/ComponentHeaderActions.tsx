@@ -7,7 +7,7 @@ import { MenuLink, Menu, MenuDivider, MenuHeader, MenuButton } from '@sourcegrap
 import { MenuList } from '@sourcegraph/wildcard/src/components/Menu'
 import { ComponentTagsFields } from '../../../../graphql-operations'
 import { positionBottomRight } from '../../../insights/components/context-menu/utils'
-import { ComponentIcon } from '../../components/ComponentIcon'
+import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
 import styles from './ComponentHeaderActions.module.scss'
 
@@ -49,7 +49,7 @@ export const ComponentTag: React.FunctionComponent<{
                             to={component.url}
                             className="d-flex align-items-center overflow-hidden text-truncate"
                         >
-                            <ComponentIcon component={component} className="icon-inline mr-2" /> {component.name}
+                            <CatalogComponentIcon component={component} className="icon-inline mr-2" /> {component.name}
                         </MenuLink>
                     ))}
                     <MenuDivider />

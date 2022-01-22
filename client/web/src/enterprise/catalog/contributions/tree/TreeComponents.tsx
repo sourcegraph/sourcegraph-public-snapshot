@@ -15,7 +15,7 @@ import {
     ComponentsForTreeEntryVariables,
 } from '../../../../graphql-operations'
 import { pathHasPrefix, pathRelative } from '../../../../util/path'
-import { ComponentIcon } from '../../components/ComponentIcon'
+import { CatalogComponentIcon } from '../../components/ComponentIcon'
 import { COMPONENT_OWNER_FRAGMENT } from '../../components/entity-owner/gql'
 import {
     COMPONENT_STATUS_FRAGMENT,
@@ -155,7 +155,7 @@ const ComponentDetail: React.FunctionComponent<{
     <div className={className}>
         <h3>
             <Link to={component.url} className="d-flex align-items-center font-weight-bold">
-                <ComponentIcon component={component} className="icon-inline mr-1 text-muted" /> {component.name}
+                <CatalogComponentIcon component={component} className="icon-inline mr-1 text-muted" /> {component.name}
             </Link>
         </h3>
         <div className="text-muted small mb-2">
@@ -199,7 +199,7 @@ const ComponentGridItem: React.FunctionComponent<{
                             linkBigClickAreaClassName
                         )}
                     >
-                        <ComponentIcon component={component} className="icon-inline mr-1 text-muted" />
+                        <CatalogComponentIcon component={component} className="icon-inline mr-1 text-muted" />
                         {component.name}
                     </Link>
                 </h4>

@@ -19,7 +19,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { SourceLocationSetUsageResult, SourceLocationSetUsageVariables } from '../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { fetchHighlightedFileLineRanges } from '../../../../repo/backend'
-import { ComponentIcon } from '../../components/ComponentIcon'
+import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
 import { PersonList } from './PersonList'
 
@@ -151,7 +151,7 @@ export const UsageTab: React.FunctionComponent<Props> = ({
                     {componentEdges.map(edge => (
                         <li key={edge.node.id} className={classNames('list-group-item')}>
                             <Link to={edge.node.url} className="d-flex align-items-center text-body">
-                                <ComponentIcon component={edge.node} className="icon-inline text-muted mr-2" />
+                                <CatalogComponentIcon component={edge.node} className="icon-inline text-muted mr-2" />
                                 {edge.node.name}
                             </Link>
                         </li>

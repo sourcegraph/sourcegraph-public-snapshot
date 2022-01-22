@@ -3,11 +3,14 @@ import React from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
+import { CatalogOverviewGraph } from '../../components/catalog-overview/graph/CatalogOverviewGraph'
+import { CatalogExplorerRelationList } from '../../components/catalog-overview/relation-list/CatalogExplorerRelationList'
+import { CatalogExplorerViewOptionsRow } from '../../components/catalog-overview/view-options/CatalogExplorerViewOptionsRow'
+import {
+    useViewModeTemporarySettings,
+    ViewModeToggle,
+} from '../../components/catalog-overview/view-options/ViewModeToggle'
 import { useComponentFilters } from '../../core/component-query'
-import { CatalogExplorerRelationList } from '../overview/components/catalog-explorer/CatalogExplorerRelationList'
-import { CatalogExplorerViewOptionsRow } from '../overview/components/catalog-explorer/CatalogExplorerViewOptionsRow'
-import { useViewModeTemporarySettings, ViewModeToggle } from '../overview/components/catalog-explorer/ViewModeToggle'
-import { OverviewEntityGraph } from '../overview/components/overview-content/OverviewEntityGraph'
 
 interface Props {
     component: Scalars['ID']
@@ -45,7 +48,7 @@ export const CatalogExplorer: React.FunctionComponent<Props> = ({
                     itemEndClassName="pr-3"
                 />
             ) : (
-                <OverviewEntityGraph
+                <CatalogOverviewGraph
                     filters={filtersProps.filters}
                     queryScope={queryScope}
                     highlightID={component}

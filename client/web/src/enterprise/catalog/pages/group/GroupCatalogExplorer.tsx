@@ -3,11 +3,14 @@ import React from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
+import { CatalogOverviewGraph } from '../../components/catalog-overview/graph/CatalogOverviewGraph'
+import { CatalogExplorerList } from '../../components/catalog-overview/list/CatalogExplorerList'
+import { CatalogExplorerViewOptionsRow } from '../../components/catalog-overview/view-options/CatalogExplorerViewOptionsRow'
+import {
+    ViewModeToggle,
+    useViewModeTemporarySettings,
+} from '../../components/catalog-overview/view-options/ViewModeToggle'
 import { useComponentFilters } from '../../core/component-query'
-import { CatalogExplorerList } from '../overview/components/catalog-explorer/CatalogExplorerList'
-import { CatalogExplorerViewOptionsRow } from '../overview/components/catalog-explorer/CatalogExplorerViewOptionsRow'
-import { ViewModeToggle, useViewModeTemporarySettings } from '../overview/components/catalog-explorer/ViewModeToggle'
-import { OverviewEntityGraph } from '../overview/components/overview-content/OverviewEntityGraph'
 
 interface Props {
     group: Scalars['ID']
@@ -38,7 +41,7 @@ export const GroupCatalogExplorer: React.FunctionComponent<Props> = ({ group, cl
                     itemEndClassName="pr-3"
                 />
             ) : (
-                <OverviewEntityGraph filters={filtersProps.filters} queryScope={queryScope} />
+                <CatalogOverviewGraph filters={filtersProps.filters} queryScope={queryScope} />
             )}
         </div>
     )

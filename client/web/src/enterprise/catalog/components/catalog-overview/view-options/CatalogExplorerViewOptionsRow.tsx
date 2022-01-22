@@ -3,8 +3,8 @@ import { lowerCase, upperFirst } from 'lodash'
 import React, { useCallback, useState } from 'react'
 import { Form } from 'reactstrap'
 
-import { ComponentKind } from '../../../../../../graphql-operations'
-import { ComponentFiltersProps } from '../../../../core/component-query'
+import { ComponentKind } from '../../../../../graphql-operations'
+import { ComponentFiltersProps } from '../../../core/component-query'
 
 import { CatalogExplorerViewOptionInput } from './CatalogExplorerViewOptionInput'
 import styles from './CatalogExplorerViewOptionsRow.module.scss'

@@ -1,7 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
-import { COMPONENT_STATE_FRAGMENT } from '../overview/components/catalog-explorer/gql'
 
 import { GROUP_LINK_FRAGMENT } from './gql2'
 
@@ -55,10 +54,8 @@ const GROUP_OWNED_ENTITIES_FRAGMENT = gql`
             ... on Component {
                 kind
             }
-            ...ComponentStateFields
         }
     }
-    ${COMPONENT_STATE_FRAGMENT}
 `
 
 const GROUP_DETAIL_FRAGMENT = gql`

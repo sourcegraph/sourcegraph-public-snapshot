@@ -9,7 +9,7 @@ import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Menu, MenuButton, MenuHeader, MenuLink, MenuDivider } from '@sourcegraph/wildcard'
 import { MenuItems } from '@sourcegraph/wildcard/src/components/Menu/MenuItems'
 
-import { ComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
+import { CatalogComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
 import { ComponentTitleWithIconAndKind } from '../../../enterprise/catalog/contributions/tree/SourceLocationSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../enterprise/catalog/contributions/tree/TreeOrComponent'
 import {
@@ -78,7 +78,7 @@ export const SourceLocationSetViewModeAction: React.FunctionComponent<Props & Re
     if (props.actionType === 'dropdown') {
         return (
             <RepoHeaderActionButtonLink to={component.url} className="btn" file={true}>
-                <ComponentIcon component={component} className="icon-inline mr-1" /> {component.name}
+                <CatalogComponentIcon component={component} className="icon-inline mr-1" /> {component.name}
             </RepoHeaderActionButtonLink>
         )
     }

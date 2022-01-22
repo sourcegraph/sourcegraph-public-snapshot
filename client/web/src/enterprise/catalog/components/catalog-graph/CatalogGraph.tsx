@@ -5,10 +5,33 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { UncontrolledReactSVGPanZoom } from 'react-svg-pan-zoom'
 import AutoSizer from 'react-virtualized-auto-sizer'
+import { gql } from '@sourcegraph/http-client'
 
 import { CatalogGraphFields } from '../../../../graphql-operations'
 import { catalogRelationTypeDisplayName } from '../../core/edges'
-import { ComponentIcon } from '../ComponentIcon'
+import { CatalogComponentIcon } from '../ComponentIcon'
+
+export const CATALOG_GRAPH_FRAGMENT = gql`
+    fragment CatalogGraphFields on CatalogGraph {
+        nodes {
+            __typename
+            id
+            name
+            kind
+            description
+            url
+        }
+        edges {
+            type
+            outNode {
+                id
+            }
+            inNode {
+                id
+            }
+        }
+    }
+`
 
 interface Props {
     graph: CatalogGraphFields
@@ -51,7 +74,7 @@ const defaultEdgeConfig: RecursivePartial<EdgeOptions> = {
     },
 }
 
-export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeID, className }) => {
+export const CatalogGraph: React.FunctionComponent<Props> = ({ graph, activeNodeID, className }) => {
     const [stage, setStage] = useState(0)
     useEffect(() => setStage(stage => stage + 1), [graph])
 
@@ -185,7 +208,7 @@ const EntityNodeLabel: React.FunctionComponent<CustomNodeLabelProps> = ({
         to={entity.url}
         className={classNames('d-flex align-items-center text-body text-nowrap', { 'font-weight-bold': isActive })}
     >
-        <ComponentIcon component={entity} className="icon-inline mr-1" /> {entity.name}
+        <CatalogComponentIcon component={entity} className="icon-inline mr-1" /> {entity.name}
     </Link>
 )
 
