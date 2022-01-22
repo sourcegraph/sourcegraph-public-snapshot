@@ -1,17 +1,26 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { GroupMembersFields } from '../../../../../../graphql-operations'
-import { formatPersonName } from '../../../../../../person/PersonLink'
+import { GroupMembersTabFields } from '../../../../../../graphql-operations'
+import { formatPersonName, personLinkFieldsFragment } from '../../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../../user/UserAvatar'
 
-import { GroupDetailContentCardProps } from '../../GroupContent'
+export const GROUP_MEMBERS_TAB_FRAGMENT = gql`
+    fragment GroupMembersTabFields on Group {
+        members {
+            ...PersonLinkFields
+            avatarURL
+        }
+    }
+    ${personLinkFieldsFragment}
+`
 
-interface Props extends GroupDetailContentCardProps {
-    group: GroupMembersFields
+interface Props {
+    group: GroupMembersTabFields
     className?: string
 }
 

@@ -7,21 +7,45 @@ import SlackIcon from 'mdi-react/SlackIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { GroupDetailFields } from '../../../../../../graphql-operations'
-import { formatPersonName } from '../../../../../../person/PersonLink'
+import { GroupOverviewTabFields } from '../../../../../../graphql-operations'
+import { formatPersonName, personLinkFieldsFragment } from '../../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../../user/UserAvatar'
 import { CatalogGroupIcon } from '../../../../components/CatalogGroupIcon'
 import { CatalogComponentIcon } from '../../../../components/ComponentIcon'
 import { GroupLink } from '../../../../components/group-link/GroupLink'
+import { GROUP_LINK_FRAGMENT } from '../../gql2'
 
 import { GroupCatalogExplorer } from './GroupCatalogExplorer'
 import styles from './GroupOverviewTab.module.scss'
 
+export const GROUP_OVERVIEW_TAB_FRAGMENT = gql`
+    fragment GroupOverviewTabFields on Group {
+        name
+        title
+        description
+        url
+        members {
+            ...PersonLinkFields
+            avatarURL
+        }
+        childGroups {
+            ...GroupLinkFields
+            members {
+                __typename
+            }
+        }
+    }
+
+    ${GROUP_LINK_FRAGMENT}
+    ${personLinkFieldsFragment}
+`
+
 interface Props {
-    group: GroupDetailFields
+    group: GroupOverviewTabFields
     className?: string
 }
 

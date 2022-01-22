@@ -17,7 +17,7 @@ interface Props extends TelemetryProps {
 }
 
 /**
- * The catalog overview page, which lists, searches, and visualizes components.
+ * The global catalog overview page, which lists, searches, and visualizes components.
  */
 export const GlobalOverviewPage: React.FunctionComponent<Props> = ({ basePathname, telemetryService }) => {
     useEffect(() => {
