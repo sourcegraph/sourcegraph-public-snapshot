@@ -1,5 +1,12 @@
-.collapse-container {
-    width: 14rem;
+.list-container {
+    margin: 0;
+    padding: 0;
+    width: 220px;
+}
+
+.collapse-button {
+    width: 22px;
+    z-index: 1000;
 }
 
 .library-item {
