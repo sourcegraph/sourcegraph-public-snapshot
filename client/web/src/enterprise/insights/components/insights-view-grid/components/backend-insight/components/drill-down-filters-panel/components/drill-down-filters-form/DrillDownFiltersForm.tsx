@@ -4,7 +4,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Badge, Button } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
@@ -98,25 +98,24 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
             <header className={styles.header}>
                 <h4 className="mb-0">Filter repositories</h4>
 
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
-                    target="_blank"
-                    rel="noopener"
-                    className="small mr-auto"
-                >
-                    Learn more.
-                </a>
-
                 {hasAppliedFilters && (
-                    <Badge className="text-uppercase" variant="secondary">
-                        Default filters applied
-                    </Badge>
+                    <small className="ml-auto">
+                        <span className="text-muted">Default filters applied</span>{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
+                            target="_blank"
+                            rel="noopener"
+                            className="small"
+                        >
+                            Learn more.
+                        </a>
+                    </small>
                 )}
             </header>
 
-            <small className={styles.description}>
-                Use regular expression to include and exclude repositories from the scope of this insight
-            </small>
+            <hr className={styles.separator} />
+
+            <small className={styles.description}>Use regular expression to change the scope of this insight.</small>
 
             <fieldset>
                 <FormInput

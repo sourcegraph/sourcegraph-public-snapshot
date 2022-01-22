@@ -2,8 +2,12 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.5rem;
-    padding: 1rem 0 0 0;
+    padding: 0.5rem 0 0.5rem;
+}
+
+.separator {
+    border-color: var(--dropdown-border-color);
+    margin: 0 -1rem;
 }
 
 .description {
