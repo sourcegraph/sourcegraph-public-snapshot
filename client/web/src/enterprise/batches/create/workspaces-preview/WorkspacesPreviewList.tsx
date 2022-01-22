@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useHistory } from 'react-router'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import {
     useConnection,
@@ -47,7 +49,8 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
     isStale,
     excludeRepo,
 }) => {
-    const { connection, error, loading, hasNextPage, fetchMore } = useWorkspaces(batchSpecID)
+    const [filters, setFilters] = useState<WorkspacePreviewFilters>()
+    const { connection, error, loading, hasNextPage, fetchMore } = useWorkspaces(batchSpecID, filters?.search ?? null)
 
     if (loading) {
         return <PreviewLoadingSpinner className="my-4" />
@@ -56,6 +59,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
     return (
         <ConnectionContainer className="w-100">
             {error && <ConnectionError errors={[error.message]} />}
+            <WorkspacePreviewFilterRow onFiltersChange={setFilters} />
             <ConnectionList className="list-group list-group-flush w-100">
                 {connection?.nodes?.map((node, index) => (
                     <WorkspacesPreviewListItem
@@ -86,7 +90,10 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
     )
 }
 
-const useWorkspaces = (batchSpecID: Scalars['ID']): UseConnectionResult<PreviewBatchSpecWorkspaceFields> =>
+const useWorkspaces = (
+    batchSpecID: Scalars['ID'],
+    search: string | null
+): UseConnectionResult<PreviewBatchSpecWorkspaceFields> =>
     useConnection<
         BatchSpecWorkspacesPreviewResult,
         BatchSpecWorkspacesPreviewVariables,
@@ -97,6 +104,7 @@ const useWorkspaces = (batchSpecID: Scalars['ID']): UseConnectionResult<PreviewB
             batchSpec: batchSpecID,
             after: null,
             first: WORKSPACES_PER_PAGE_COUNT,
+            search,
         },
         options: {
             useURL: false,
@@ -117,3 +125,63 @@ const useWorkspaces = (batchSpecID: Scalars['ID']): UseConnectionResult<PreviewB
             return data.node.workspaceResolution.workspaces
         },
     })
+
+export interface WorkspacePreviewFilters {
+    search: string | null
+}
+
+export interface WorkspacePreviewFilterRowProps {
+    onFiltersChange: (newFilters: WorkspacePreviewFilters) => void
+}
+
+export const WorkspacePreviewFilterRow: React.FunctionComponent<WorkspacePreviewFilterRowProps> = ({
+    onFiltersChange,
+}) => {
+    const history = useHistory()
+    const searchElement = useRef<HTMLInputElement | null>(null)
+    const searchParameters = new URLSearchParams(history.location.search)
+    const [search, setSearch] = useState<string | undefined>(() => searchParameters.get('search') ?? undefined)
+    useEffect(() => {
+        const searchParameters = new URLSearchParams(history.location.search)
+        if (search) {
+            searchParameters.set('search', search)
+        } else {
+            searchParameters.delete('search')
+        }
+        if (history.location.search !== searchParameters.toString()) {
+            history.replace({ ...history.location, search: searchParameters.toString() })
+        }
+        // Update the filters in the parent component.
+        onFiltersChange({
+            search: search || null,
+        })
+        // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search])
+
+    const onSubmit = useCallback(
+        (event?: React.FormEvent<HTMLFormElement>): void => {
+            event?.preventDefault()
+            setSearch(searchElement.current?.value)
+        },
+        [setSearch, searchElement]
+    )
+
+    return (
+        <>
+            <div className="row no-gutters mr-1">
+                <div className="m-0 col">
+                    <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
+                        <input
+                            className="form-control flex-grow-1"
+                            type="search"
+                            ref={searchElement}
+                            defaultValue={search}
+                            placeholder="Search repository name"
+                        />
+                    </Form>
+                </div>
+            </div>
+        </>
+    )
+}
