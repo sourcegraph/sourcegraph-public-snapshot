@@ -28,6 +28,11 @@ aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile build
 unset AWS_SHARED_CREDENTIALS_FILE
 unset AWS_CONFIG_FILE
 
+# Skip on normal queues because standard agents do not have fresh asdf installs
+if [ "$BUILDKITE_AGENT_META_DATA_QUEUE" = "standard,default" ]; then 
+  exit 0
+fi
+
 asdf_checksum=$(sha1sum .tool-versions | awk '{print $1}')
 cache_file="cache-asdf-$asdf_checksum.tar.gz"
 cache_key="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_NAME/$cache_file"
