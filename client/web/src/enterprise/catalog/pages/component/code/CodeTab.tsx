@@ -134,9 +134,9 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                             </Link>
                         </div>
                         <div className="card mb-3">
-                            {sourceLocationSet.commits?.nodes[0] && (
+                            {sourceLocationSet.commitsForLastCommit?.nodes[0] && (
                                 <LastCommit
-                                    commit={sourceLocationSet.commits?.nodes[0]}
+                                    commit={sourceLocationSet.commitsForLastCommit?.nodes[0]}
                                     after={
                                         <Link to={`${match.url}${pathSeparator}commits`} className="ml-3 text-nowrap">
                                             All commits

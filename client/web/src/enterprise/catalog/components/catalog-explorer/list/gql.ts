@@ -13,11 +13,8 @@ export const COMPONENT_LIST_FRAGMENT = gql`
         url
         catalogURL
         ...ComponentOwnerLinkFields
-        ...ComponentLastCommitFields
-    }
-    ${COMPONENT_OWNER_LINK_FRAGMENT}
-    fragment ComponentLastCommitFields on Component {
-        commits(first: 1) {
+
+        commitsForLastCommitDate: commits(first: 1) {
             nodes {
                 author {
                     date
@@ -25,4 +22,5 @@ export const COMPONENT_LIST_FRAGMENT = gql`
             }
         }
     }
+    ${COMPONENT_OWNER_LINK_FRAGMENT}
 `

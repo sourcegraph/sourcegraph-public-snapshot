@@ -68,17 +68,6 @@ export const SOURCE_LOCATION_SET_README_FRAGMENT = gql`
     }
 `
 
-const SOURCE_LOCATION_SET_LAST_COMMIT_FRAGMENT = gql`
-    fragment SourceLocationSetLastCommitFields on SourceLocationSet {
-        commits(first: 1) {
-            nodes {
-                ...GitCommitFields
-            }
-        }
-    }
-    ${gitCommitFragment}
-`
-
 // TODO(sqs): dont fetch all
 const SOURCE_LOCATION_SET_CODE_OWNERS_FRAGMENT = gql`
     fragment SourceLocationSetCodeOwnersFields on SourceLocationSet {
@@ -130,21 +119,27 @@ export const TREE_OR_COMPONENT_SOURCE_LOCATION_SET_FRAGMENT = gql`
         id
         ...SourceLocationSetFilesFields
         ...SourceLocationSetReadmeFields
-        ...SourceLocationSetLastCommitFields
         ...SourceLocationSetCodeOwnersFields
         ...SourceLocationSetContributorsFields
         branches(first: 0, interactive: false) {
             totalCount
         }
+
+        commitsForLastCommit: commits(first: 1) {
+            nodes {
+                ...GitCommitFields
+            }
+        }
+
         usage {
             __typename
         }
     }
     ${SOURCE_LOCATION_SET_FILES_FRAGMENT}
     ${SOURCE_LOCATION_SET_README_FRAGMENT}
-    ${SOURCE_LOCATION_SET_LAST_COMMIT_FRAGMENT}
     ${SOURCE_LOCATION_SET_CODE_OWNERS_FRAGMENT}
     ${SOURCE_LOCATION_SET_CONTRIBUTORS_FRAGMENT}
+    ${gitCommitFragment}
 `
 
 export const TREE_OR_COMPONENT_PAGE = gql`

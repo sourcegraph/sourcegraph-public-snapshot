@@ -3,12 +3,12 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
-import { ComponentDetailFields } from '../../../../../graphql-operations'
+import { GitCommitFields } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 
 export const LastCommit: React.FunctionComponent<{
-    commit: NonNullable<ComponentDetailFields['commits']>['nodes'][0]
+    commit: GitCommitFields
     after?: React.ReactFragment
     className?: string
 }> = ({ commit, after, className }) => (
