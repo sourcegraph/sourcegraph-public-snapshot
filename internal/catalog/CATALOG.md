@@ -144,10 +144,11 @@ SRC_ACCESS_TOKEN= SRC_ENDPOINT=https://sourcegraph.com src search -json 'repo:gi
 
 Renames:
 - [ ] SourceLocationSet => SourceSet?
+- [ ] EntityOwner -> ComponentOwner
 
 UI:
 
 - [ ] Simplify CatalogPage/CatalogPage2 code.
-- [ ] Remove needless tabs from GroupPage.
+- [ ] Remove needless tabs from GroupPage. -> then clean up ComponentAncestorsPath
 - [ ] Refactor uses of ComponentDetailFields monolithic GraphQL type.
 - [ ] Remove COMPONENT_DETAIL_FRAGMENT.

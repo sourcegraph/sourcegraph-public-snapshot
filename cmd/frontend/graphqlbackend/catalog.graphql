@@ -87,17 +87,11 @@ type Component implements Node {
     description: String
     lifecycle: ComponentLifecycle!
     owner: EntityOwner
-    labels: [ComponentLabel!]!
     tags: [ComponentTag!]!
     sourceLocations: [ComponentSourceLocation!]!
     url: String!
     catalogURL: String!
     relatedEntities(query: String, first: Int, after: String): ComponentRelatedEntityConnection!
-}
-
-type ComponentLabel {
-    key: String!
-    values: [String!]!
 }
 
 type ComponentTag {

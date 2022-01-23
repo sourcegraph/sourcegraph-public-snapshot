@@ -2,16 +2,6 @@ import { gql } from '@sourcegraph/http-client'
 
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPage'
-import { COMPONENT_OWNER_LINK_FRAGMENT } from '../../components/component-owner-link/ComponentOwnerLink'
-
-export const COMPONENT_LABELS_FRAGMENT = gql`
-    fragment ComponentLabelsFields on Component {
-        labels {
-            key
-            values
-        }
-    }
-`
 
 export const COMPONENT_CODE_OWNERS_FRAGMENT = gql`
     fragment ComponentCodeOwnersFields on Component {
@@ -175,8 +165,6 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
         lifecycle
         url
         catalogURL
-        ...ComponentLabelsFields
-        ...ComponentOwnerLinkFields
         ...ComponentCodeOwnersFields
         ...ComponentSourceLocationsFields
         ...ComponentCommitsFields
@@ -184,8 +172,6 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
         ...ComponentUsageLocationsComponentsFields
         ...ComponentUsagePeopleFields
     }
-    ${COMPONENT_LABELS_FRAGMENT}
-    ${COMPONENT_OWNER_LINK_FRAGMENT}
     ${COMPONENT_CODE_OWNERS_FRAGMENT}
     ${COMPONENT_SOURCE_LOCATIONS_FRAGMENT}
     ${COMPONENT_COMMITS_FRAGMENT}

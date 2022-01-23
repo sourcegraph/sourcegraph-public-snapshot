@@ -130,7 +130,6 @@ type ComponentResolver interface {
 	Kind() ComponentKind
 	Lifecycle() ComponentLifecycle
 	Owner(context.Context) (*ComponentOwnerResolver, error)
-	Labels(context.Context) ([]ComponentLabelResolver, error)
 	Tags(context.Context) ([]ComponentTagResolver, error)
 	SourceLocations(context.Context) ([]ComponentSourceLocationResolver, error)
 	URL(context.Context) (string, error)
@@ -142,11 +141,6 @@ type ComponentResolver interface {
 }
 
 type ComponentKind string
-
-type ComponentLabelResolver interface {
-	Key() string
-	Values() []string
-}
 
 type ComponentTagResolver interface {
 	Name() string

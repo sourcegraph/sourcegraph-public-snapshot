@@ -12,7 +12,9 @@ export const COMPONENT_LIST_FRAGMENT = gql`
         lifecycle
         url
         catalogURL
-        ...ComponentOwnerLinkFields
+        owner {
+            ...ComponentOwnerLinkFields
+        }
 
         commitsForLastCommitDate: commits(first: 1) {
             nodes {

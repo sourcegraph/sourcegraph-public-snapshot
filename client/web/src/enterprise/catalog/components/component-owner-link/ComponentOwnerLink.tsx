@@ -6,24 +6,16 @@ import { ComponentOwnerLinkFields } from '../../../../graphql-operations'
 import { PersonLink, personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { GroupLink, GROUP_LINK_FRAGMENT } from '../group-link/GroupLink'
 
+// TODO(sqs): this is actually way too broad
 export const COMPONENT_OWNER_LINK_FRAGMENT = gql`
-    fragment ComponentOwnerLinkFields on Component {
-        owner {
-            __typename
-            ... on Person {
-                ...PersonLinkFields
-                avatarURL
-            }
-            ... on Group {
-                ...GroupLinkFields
-                members {
-                    ...PersonLinkFields
-                    avatarURL
-                }
-                ancestorGroups {
-                    ...GroupLinkFields
-                }
-            }
+    fragment ComponentOwnerLinkFields on EntityOwner {
+        __typename
+        ... on Person {
+            ...PersonLinkFields
+            avatarURL
+        }
+        ... on Group {
+            ...GroupLinkFields
         }
     }
     ${personLinkFieldsFragment}
@@ -31,7 +23,7 @@ export const COMPONENT_OWNER_LINK_FRAGMENT = gql`
 `
 
 interface Props {
-    owner: ComponentOwnerLinkFields['owner']
+    owner: ComponentOwnerLinkFields
     blankIfNone?: boolean
     className?: string
 }

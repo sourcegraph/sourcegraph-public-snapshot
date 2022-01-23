@@ -23,7 +23,6 @@ import { UserAvatar } from '../../../../../user/UserAvatar'
 import { PersonList } from '../../../components/person-list/PersonList'
 import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocationSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
-import { ComponentLabelsSidebarItem } from '../meta/ComponentLabelsSidebarItem'
 import { ComponentOwnerSidebarItem } from '../meta/ComponentOwnerSidebarItem'
 import { ComponentTagsSidebarItem } from '../meta/ComponentTagsSidebarItem'
 
@@ -37,7 +36,6 @@ interface Props
     tree: TreeEntryForTreeFields
     component: ComponentDetailFields | null
     sourceLocationSet: TreeOrComponentSourceLocationSetFields
-    isTree?: boolean
     useHash?: boolean
     className?: string
 }
@@ -52,11 +50,9 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
     repository,
     component,
     sourceLocationSet,
-    isTree,
     useHash,
     treeOrComponentViewMode,
     className,
-    ...props
 }) => {
     const match = useRouteMatch()
 
@@ -110,7 +106,7 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
             {featuredComponent && (
                 <section className={SECTION_CLASS_NAME}>
                     <h4 className="font-weight-bold">Owner</h4>
-                    <ComponentOwnerSidebarItem component={featuredComponent} />
+                    <ComponentOwnerSidebarItem owner={featuredComponent.owner} />
                 </section>
             )}
             {sourceLocationSet.codeOwners && sourceLocationSet.codeOwners.edges.length > 0 && (
@@ -207,12 +203,6 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
                         ))} */}
                 </ul>
             </section>
-            <hr className="my-3 d-none" />
-            {false && featuredComponent?.labels && featuredComponent.labels.length > 0 && (
-                <section className={classNames(SECTION_CLASS_NAME)}>
-                    <ComponentLabelsSidebarItem component={featuredComponent} />
-                </section>
-            )}
         </aside>
     )
 }

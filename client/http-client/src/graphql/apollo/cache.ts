@@ -39,6 +39,7 @@ export const generateCache = (): InMemoryCache =>
         possibleTypes: {
             TreeEntry: ['GitBlob', 'GitTree'],
             SourceLocationSet: ['Component', 'GitTree', 'GitBlob', 'TreeEntry'],
+            EntityOwner: ['Group', 'Person'],
         },
     })
 

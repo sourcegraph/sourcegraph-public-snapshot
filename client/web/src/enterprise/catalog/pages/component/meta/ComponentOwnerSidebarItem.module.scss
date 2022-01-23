@@ -1,0 +1,10 @@
+.owner-path-item {
+    &:not(:last-child):after {
+        content: ' › ';
+        vertical-align: top;
+        color: var(--text-muted);
+    }
+    &:last-child {
+        font-weight: bold;
+    }
+}

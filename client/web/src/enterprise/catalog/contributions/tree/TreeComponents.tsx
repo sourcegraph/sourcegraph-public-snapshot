@@ -15,7 +15,6 @@ import {
     ComponentsForTreeEntryVariables,
 } from '../../../../graphql-operations'
 import { pathHasPrefix, pathRelative } from '../../../../util/path'
-import { COMPONENT_OWNER_LINK_FRAGMENT } from '../../components/component-owner-link/ComponentOwnerLink'
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
 import {
     COMPONENT_CODE_OWNERS_FRAGMENT,
@@ -23,6 +22,7 @@ import {
     COMPONENT_USAGE_PEOPLE_FRAGMENT,
 } from '../../pages/component/gql'
 
+import { COMPONENT_OWNER_FRAGMENT } from '../../pages/component/meta/ComponentOwnerSidebarItem'
 import styles from './TreeComponents.module.scss'
 
 interface Props extends FileSpec {
@@ -57,7 +57,7 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
         description
         lifecycle
         url
-        ...ComponentOwnerLinkFields
+        ...ComponentOwnerFields
         ...ComponentCodeOwnersFields
         ...ComponentAuthorsFields
         ...ComponentUsagePeopleFields
@@ -83,7 +83,7 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
         }
     }
 
-    ${COMPONENT_OWNER_LINK_FRAGMENT}
+    ${COMPONENT_OWNER_FRAGMENT}
     ${COMPONENT_CODE_OWNERS_FRAGMENT}
     ${COMPONENT_AUTHORS_FRAGMENT}
     ${COMPONENT_USAGE_PEOPLE_FRAGMENT}
