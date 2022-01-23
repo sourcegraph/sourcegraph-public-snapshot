@@ -11,7 +11,7 @@ import { MenuItems } from '@sourcegraph/wildcard/src/components/Menu/MenuItems'
 
 import { CatalogComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
 import { ComponentTitleWithIconAndKind } from '../../../enterprise/catalog/contributions/tree/SourceSetTitle'
-import { SourceSetAtTreeViewOptionsProps } from '../../../enterprise/catalog/contributions/tree/useSourceSetAtTreeViewOptions'
+import { SourceSetAtTreeViewOptionsProps } from '../../../enterprise/catalog/pages/source-set-at-tree/useSourceSetAtTreeViewOptions'
 import {
     SourceSetViewModeInfoResult,
     SourceSetViewModeInfoVariables,
@@ -72,8 +72,6 @@ export const SourceSetViewModeAction: React.FunctionComponent<Props & RepoHeader
     }
 
     const component = components[0]
-
-    return null
 
     if (props.actionType === 'dropdown') {
         return (

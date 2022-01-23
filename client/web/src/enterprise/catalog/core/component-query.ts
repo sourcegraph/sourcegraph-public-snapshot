@@ -2,7 +2,7 @@ import * as H from 'history'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
-import { ComponentKind } from '@sourcegraph/shared/src/graphql/schema'
+import { ComponentKind } from '@sourcegraph/shared/src/schema'
 
 export interface ComponentFilters {
     query: string
