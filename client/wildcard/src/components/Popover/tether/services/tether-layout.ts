@@ -1,7 +1,8 @@
+import { createPoint, Point } from '../models/geometry/point';
 import { createRectangle, createRectangleFromPoints, EMPTY_RECTANGLE, Rectangle } from '../models/geometry/rectangle'
-import { Constraint, Flipping, Overlapping, Position } from '../models/tether-models'
+import { Constraint, Flipping, Overlapping, Position, Strategy } from '../models/tether-models'
 
-import { getScrollParents } from './tether-browser'
+import { getAbsoluteAnchorOffset, getScrollParents } from './tether-browser'
 import { Tether, TetherLayout } from './types'
 
 /**
@@ -16,7 +17,8 @@ export function getLayout(tether: Tether): TetherLayout {
         windowPadding = EMPTY_RECTANGLE,
         constraintPadding = EMPTY_RECTANGLE,
         overflowToScrollParents = true,
-        constrainToScrollParents,
+        strategy = Strategy.Fixed,
+        constrainToScrollParents
     } = tether
 
     const target = tether.pin
@@ -27,29 +29,32 @@ export function getLayout(tether: Tether): TetherLayout {
 
     const element = tether.element.getBoundingClientRect()
     const marker = getMarkerSize(tether.marker)
+    const anchorOffset = getAnchorOffset(tether.element, strategy)
 
     const overflows: Constraint[] = []
     const constraints: Constraint[] = []
 
-    overflows.push({
-        element: createRectangle(
-            document.documentElement.clientLeft,
-            document.documentElement.clientTop,
-            document.documentElement.clientWidth,
-            document.documentElement.clientHeight
-        ),
-        padding: windowPadding,
-    })
+    if (strategy === Strategy.Fixed) {
+        overflows.push({
+            element: createRectangle(
+                document.documentElement.clientLeft,
+                document.documentElement.clientTop,
+                document.documentElement.clientWidth,
+                document.documentElement.clientHeight
+            ),
+            padding: windowPadding,
+        })
 
-    constraints.push({
-        element: createRectangle(
-            document.documentElement.clientLeft,
-            document.documentElement.clientTop,
-            document.documentElement.clientWidth,
-            document.documentElement.clientHeight
-        ),
-        padding: windowPadding,
-    })
+        constraints.push({
+            element: createRectangle(
+                document.documentElement.clientLeft,
+                document.documentElement.clientTop,
+                document.documentElement.clientWidth,
+                document.documentElement.clientHeight
+            ),
+            padding: windowPadding,
+        })
+    }
 
     if (tether.constraint) {
         constraints.push({
@@ -69,7 +74,7 @@ export function getLayout(tether: Tether): TetherLayout {
         constraints.push(...scrollConstraints)
     }
 
-    if (tether.target !== null && overflowToScrollParents) {
+    if (tether.target !== null && overflowToScrollParents && strategy === Strategy.Fixed) {
         const containers = getScrollParents(tether.target)
 
         const overflowConstraints = containers.map(container => ({
@@ -89,7 +94,17 @@ export function getLayout(tether: Tether): TetherLayout {
         overlapping,
         overflows,
         constraints,
+        anchorOffset,
+        strategy,
     }
+}
+
+function getAnchorOffset(floating: HTMLElement, strategy: Strategy): Point {
+    if (strategy === Strategy.Fixed) {
+        return createPoint(0, 0)
+    }
+
+    return getAbsoluteAnchorOffset(floating)
 }
 
 function getMarkerSize(element?: HTMLElement | null): Rectangle {

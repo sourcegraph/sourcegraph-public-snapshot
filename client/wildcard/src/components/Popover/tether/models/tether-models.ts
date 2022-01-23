@@ -74,3 +74,8 @@ export enum Position {
     bottom = 'bottom',
     bottomEnd = 'bottomEnd',
 }
+
+export enum Strategy {
+    Fixed = 'fixed',
+    Absolute = 'absolute'
+}

@@ -70,7 +70,29 @@ export function isVisible(element: HTMLElement | null): boolean {
 
         current = current.parentElement
     }
+
     return true
+}
+
+export function getAbsoluteAnchorOffset(element: HTMLElement): Point {
+    let current = element.parentElement
+
+    while (current) {
+        const styles = getComputedStyle(current)
+
+        if (styles.position !== 'static') {
+            const rectangle = current.getBoundingClientRect()
+
+            return createPoint(
+                current.scrollLeft - rectangle.left ,
+                current.scrollTop - rectangle.top,
+            )
+        }
+
+        current = current.parentElement
+    }
+
+    return createPoint(0, 0)
 }
 
 export function setTransform(element: HTMLElement | null, angle: number, offset: Point): void {

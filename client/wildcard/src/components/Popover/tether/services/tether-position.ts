@@ -1,6 +1,6 @@
 import { createPoint, Point } from '../models/geometry/point'
 import { getIntersection, intersects, Rectangle } from '../models/geometry/rectangle'
-import { Position } from '../models/tether-models'
+import { Position, Strategy } from '../models/tether-models'
 
 import {
     getConstrainedElement,
@@ -43,16 +43,18 @@ export interface TetherState {
  * @param position - Another position value to fit tooltip element
  */
 export function getPositionState(layout: TetherLayout, position: Position): TetherState | null {
-    const { overlapping } = layout
+    const { overlapping, anchorOffset, strategy } = layout
     const { element, target, marker, overflow, constraint } = getNormalizedLayout(layout)
 
     const { markerAngle, markerOrigin, rotatedMarker } = getMarkerRotation(marker, position)
 
     // Apply overflow constraints to target element
-    const overflowedTarget = getIntersection(target, overflow)
+    const overflowedTarget = strategy === Strategy.Fixed
+        ? getIntersection(target, overflow)
+        : target
 
     // Force tooltip layout hide in case if target is outside of overflow constraint.
-    if (!isElementVisible(overflowedTarget)) {
+    if (!isElementVisible(overflowedTarget) ) {
         return null
     }
 
@@ -70,7 +72,7 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
 
     // Calculate element metric of the tooltip element after all constraint calculations
     const elementArea = constrainedElement.width * constrainedElement.height
-    const elementOffset = createPoint(constrainedElement.left, constrainedElement.top)
+    const elementOffset = createPoint(constrainedElement.left + anchorOffset.x, constrainedElement.top + anchorOffset.y)
     const elementBounds = getElementBounds(constrainedElement, element)
 
     // Change element tooltip coordinates to put the element right next target element
@@ -84,8 +86,8 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
     const markerOffset = getMarkerOffset(markerOrigin, constrainedMarker)
 
     // Check visibility and join geometry
-    const isTooltipVisible = isElementVisible(constrainedElement)
-    const isTooltipJoined = intersects(extendedTarget, constrainedElement)
+    const isTooltipVisible = strategy === Strategy.Fixed ? isElementVisible(constrainedElement) : true
+    const isTooltipJoined = strategy === Strategy.Fixed ? intersects(extendedTarget, constrainedElement) : true
     const isMarkerJoined = intersects(extendedTarget, constrainedMarker)
 
     if (!isTooltipVisible || (!isTooltipJoined && !isMarkerJoined)) {

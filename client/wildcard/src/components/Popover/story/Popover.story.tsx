@@ -8,7 +8,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Button, Position } from '@sourcegraph/wildcard'
 
 import { Popover, PopoverContent, PopoverOpenEvent, PopoverTrigger } from '../Popover'
-import { Point } from '../tether'
+import { Point, Strategy } from '../tether'
 
 import styles from './Popover.story.module.scss'
 
@@ -152,6 +152,30 @@ export const StandardExample = () => (
                 </PopoverTrigger>
 
                 <PopoverContent position={Position.rightStart} className={styles.floating}>
+                    Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
+                    Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
+                    career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
+                    in the Ukrainian SSR, where Limonov grew up. He studied at the H.S. Skovoroda Kharkiv National
+                    Pedagogical University.
+                    <div className="mt-2 d-flex" style={{ gap: 10 }}>
+                        <Button variant="secondary">Action 1</Button>
+                        <Button variant="secondary">Action 2</Button>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
+    </ScrollCenterBox>
+)
+
+export const AbsoluteStrategyExample = () => (
+    <ScrollCenterBox title="Root scroll block" className={styles.container}>
+        <div className={styles.content}>
+            <Popover>
+                <PopoverTrigger as={Button} variant="secondary" className={styles.target}>
+                    Hello
+                </PopoverTrigger>
+
+                <PopoverContent focusLocked={false} position={Position.rightStart} strategy={Strategy.Absolute} className={styles.floating}>
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
