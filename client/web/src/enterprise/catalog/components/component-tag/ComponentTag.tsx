@@ -8,7 +8,7 @@ import { MenuList } from '@sourcegraph/wildcard/src/components/Menu'
 
 import { ComponentTagFields } from '../../../../graphql-operations'
 import { positionBottomRight } from '../../../insights/components/context-menu/utils'
-import { CatalogComponentIcon } from '../../components/ComponentIcon'
+import { CatalogComponentIcon } from '../ComponentIcon'
 
 export const COMPONENT_TAG_FRAGMENT = gql`
     fragment ComponentTagFields on ComponentTag {

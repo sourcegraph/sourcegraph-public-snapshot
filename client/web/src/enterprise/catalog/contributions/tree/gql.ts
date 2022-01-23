@@ -2,7 +2,7 @@ import { gql } from '@sourcegraph/http-client'
 
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPage'
-import { COMPONENT_TAG_FRAGMENT } from '../../pages/component/ComponentTag'
+import { COMPONENT_TAG_FRAGMENT } from '../../components/component-tag/ComponentTag'
 import { COMPONENT_OWNER_FRAGMENT } from '../../pages/component/meta/ComponentOwnerSidebarItem'
 import { SOURCE_LOCATION_SET_README_FRAGMENT } from '../../pages/component/readme/ComponentReadme'
 

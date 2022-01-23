@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { ComponentTagFields } from '../../../../../graphql-operations'
-import { ComponentTag } from '../ComponentTag'
+import { ComponentTag } from '../../../components/component-tag/ComponentTag'
 
 export const ComponentTagsSidebarItem: React.FunctionComponent<{
     tags: ComponentTagFields[]
