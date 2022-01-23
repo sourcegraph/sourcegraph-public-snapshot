@@ -146,3 +146,4 @@ UI:
 
 - [ ] Simplify CatalogPage/CatalogPage2 code.
 - [ ] Remove needless tabs from GroupPage.
+- [ ] Refactor uses of ComponentDetailFields monolithic GraphQL type.

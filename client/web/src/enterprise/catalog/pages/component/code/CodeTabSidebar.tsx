@@ -27,7 +27,7 @@ import {
     ComponentOwnerSidebarItem,
     ComponentTagsSidebarItem,
 } from '../overview/OverviewTab'
-import { PersonList } from '../PersonList'
+import { PersonList } from '../../../components/person-list/PersonList'
 
 interface Props
     extends TelemetryProps,

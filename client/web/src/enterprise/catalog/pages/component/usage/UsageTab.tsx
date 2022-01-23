@@ -16,12 +16,11 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { SourceLocationSetUsageResult, SourceLocationSetUsageVariables } from '../../../../graphql-operations'
-import { personLinkFieldsFragment } from '../../../../person/PersonLink'
-import { fetchHighlightedFileLineRanges } from '../../../../repo/backend'
-import { CatalogComponentIcon } from '../../components/ComponentIcon'
-
-import { PersonList } from './PersonList'
+import { SourceLocationSetUsageResult, SourceLocationSetUsageVariables } from '../../../../../graphql-operations'
+import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
+import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
+import { CatalogComponentIcon } from '../../../components/ComponentIcon'
+import { PersonList } from '../../../components/person-list/PersonList'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
     sourceLocationSet: Scalars['ID']

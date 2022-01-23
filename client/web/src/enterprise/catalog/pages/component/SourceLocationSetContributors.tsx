@@ -20,7 +20,7 @@ import {
 } from '../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 
-import { PersonList } from './PersonList'
+import { PersonList } from '../../components/person-list/PersonList'
 
 interface Props {
     sourceLocationSet: Scalars['ID']

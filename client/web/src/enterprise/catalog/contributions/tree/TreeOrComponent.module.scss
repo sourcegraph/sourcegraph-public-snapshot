@@ -5,3 +5,8 @@
     padding-left: calc(1.5 * var(--spacer)) !important;
     padding-right: calc(1.5 * var(--spacer));
 }
+
+.tab-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+}

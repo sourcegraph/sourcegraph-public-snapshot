@@ -16,21 +16,19 @@ import {
 } from '../../../../graphql-operations'
 import { ComponentActionPopoverButton } from '../../../../repo/actions/source-location-set-view-mode-action/SourceLocationSetViewModeAction'
 import { CatalogPage, CatalogPage2 } from '../../components/catalog-area-header/CatalogPage'
+import { CatalogRelations } from '../../pages/component/CatalogRelations'
 import { CodeTab } from '../../pages/component/code/CodeTab'
-import { TAB_CONTENT_CLASS_NAME } from '../../pages/component/ComponentDetailContent'
-import { RelationsTab } from '../../pages/component/RelationsTab'
-import { UsageTab } from '../../pages/component/UsageTab'
+import { UsageTab } from '../../pages/component/usage/UsageTab'
 import { WhoKnowsTab } from '../../pages/component/who-knows/WhoKnowsTab'
 
 import styles from './TreeOrComponent.module.scss'
 import { TreeOrComponentHeader } from './TreeOrComponentHeader'
-import { CatalogRelations } from '../../pages/component/CatalogRelations'
 
 interface Props extends SettingsCascadeProps, TelemetryProps, BreadcrumbSetters {
     data: Extract<TreeOrComponentPageResult['node'], { __typename: 'Repository' }>
 }
 
-const tabContentClassName = `${TAB_CONTENT_CLASS_NAME} mt-3`
+const tabContentClassName = classNames('flex-1 align-self-stretch', styles.tabContent)
 
 export const TreeOrComponent: React.FunctionComponent<Props> = ({ data, useBreadcrumb, ...props }) => {
     const primaryComponent = data.primaryComponents.length > 0 ? data.primaryComponents[0] : null

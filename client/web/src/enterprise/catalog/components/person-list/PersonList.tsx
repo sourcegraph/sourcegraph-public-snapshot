@@ -9,9 +9,9 @@ import { PersonLinkFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { UserAvatar } from '../../../../user/UserAvatar'
 import { formatDistanceShortStrict } from '../../../../util/date'
+import { ScrollListHorizontal, ScrollListVertical } from '../scroll-list/ScrollList'
 
 import styles from './PersonList.module.scss'
-import { ScrollListHorizontal, ScrollListVertical } from './ScrollList'
 
 interface Item {
     person: PersonLinkFields & { avatarURL: string | null }

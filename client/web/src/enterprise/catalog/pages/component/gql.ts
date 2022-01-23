@@ -222,12 +222,3 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
     ${COMPONENT_USAGE_LOCATIONS_COMPONENTS_FRAGMENT}
     ${COMPONENT_USAGE_PEOPLE_FRAGMENT}
 `
-
-export const COMPONENT_BY_NAME = gql`
-    query ComponentByName($name: String!) {
-        component(name: $name) {
-            ...ComponentDetailFields
-        }
-    }
-    ${COMPONENT_DETAIL_FRAGMENT}
-`

@@ -3,7 +3,7 @@ import SlackIcon from 'mdi-react/SlackIcon'
 import React from 'react'
 
 import { ComponentDetailFields, SourceLocationSetWhoKnowsFields } from '../../../../../graphql-operations'
-import { PersonList } from '../PersonList'
+import { PersonList } from '../../../components/person-list/PersonList'
 
 interface Props {
     whoKnows: SourceLocationSetWhoKnowsFields['whoKnows']

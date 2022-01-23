@@ -3,30 +3,12 @@ import AccountIcon from 'mdi-react/AccountIcon'
 import React from 'react'
 
 import { isDefined } from '@sourcegraph/common'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { CatalogIcon } from '../../../../catalog'
-import { ComponentKind, ComponentOwnerLinkFields, ComponentDetailFields } from '../../../../graphql-operations'
+import { ComponentKind, ComponentOwnerLinkFields } from '../../../../graphql-operations'
 import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { catalogComponentIconComponent } from '../../components/ComponentIcon'
-
-import styles from './ComponentDetailContent.module.scss'
-
-interface Props
-    extends TelemetryProps,
-        ExtensionsControllerProps,
-        ThemeProps,
-        SettingsCascadeProps,
-        PlatformContextProps {
-    component: ComponentDetailFields
-}
-
-export const TAB_CONTENT_CLASS_NAME = classNames('flex-1 align-self-stretch', styles.tabContent)
 
 export const catalogPagePathForComponent = (
     component: { __typename: 'Component'; name: string; kind: ComponentKind; url: string } & ComponentOwnerLinkFields

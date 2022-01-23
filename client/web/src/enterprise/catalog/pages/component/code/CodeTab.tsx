@@ -21,7 +21,8 @@ import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocati
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
 import { SourceLocationSetCommits } from '../ComponentCommits'
 import { ComponentSourceLocations } from '../ComponentSourceLocations'
-import { ComponentReadme, LastCommit } from '../overview/ComponentOverviewMain'
+import { LastCommit } from './LastCommit'
+import { ComponentReadme } from '../readme/ComponentReadme'
 import { SourceLocationSetContributors } from '../SourceLocationSetContributors'
 import { SourceLocationSetTreeEntries } from '../SourceLocationSetTreeEntries'
 
