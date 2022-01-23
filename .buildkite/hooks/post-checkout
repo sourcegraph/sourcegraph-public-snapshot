@@ -46,8 +46,12 @@ else
   set -e
   echo "--- installing all asdf tool versions"
   asdf install
+  # Take note of awscli version that we installed, before switching to the home folder
+  awscli_version=$(asdf list awscli | head -n 1)
   echo "--- caching asdf installation"
   pushd "$HOME"
   tar chfz "$cache_file" .asdf
+  # Because we're in the home folder, we don't know which version to use, so we need to fix that.
+  asdf global awscli "$awscli_version"
   aws s3 cp --bucket "sourcegraph_buildkite_cache" --profile buildkite --endpoint-url 'https://storage.googleapis.com' "$cache_file" "s3://$cache_key" 
 fi
