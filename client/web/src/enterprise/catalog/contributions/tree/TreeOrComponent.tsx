@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { Location, LocationDescriptorObject } from 'history'
 import React, { useCallback, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
@@ -23,6 +24,7 @@ import { WhoKnowsTab } from '../../pages/component/who-knows/WhoKnowsTab'
 
 import styles from './TreeOrComponent.module.scss'
 import { TreeOrComponentHeader } from './TreeOrComponentHeader'
+import { CatalogRelations } from '../../pages/component/CatalogRelations'
 
 interface Props extends SettingsCascadeProps, TelemetryProps, BreadcrumbSetters {
     data: Extract<TreeOrComponentPageResult['node'], { __typename: 'Repository' }>
@@ -97,7 +99,13 @@ export const TreeOrComponent: React.FunctionComponent<Props> = ({ data, useBread
                           path: 'graph',
                           text: 'Graph',
                           content: (
-                              <RelationsTab {...props} component={sourceLocationSet} className={tabContentClassName} />
+                              <div className={classNames('p-3', tabContentClassName)}>
+                                  <CatalogRelations
+                                      component={sourceLocationSet.id}
+                                      useURLForConnectionParams={true}
+                                      className="mb-3"
+                                  />
+                              </div>
                           ),
                       }
                     : null,

@@ -11,13 +11,11 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
-import { ComponentStateDetailFields } from '../../../../../graphql-operations'
+import { ComponentDetailFields } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 import { CatalogRelations } from '../CatalogRelations'
-import { ComponentInsights } from '../ComponentInsights'
 import { ComponentSourceLocations } from '../ComponentSourceLocations'
-import { OverviewStatusContexts } from '../OverviewStatusContexts'
 
 interface Props
     extends TelemetryProps,
@@ -25,7 +23,7 @@ interface Props
         PlatformContextProps,
         ThemeProps,
         ExtensionsControllerProps {
-    component: ComponentStateDetailFields
+    component: ComponentDetailFields
 }
 
 const hideOnTree = true
@@ -57,25 +55,13 @@ export const ComponentOverviewMain: React.FunctionComponent<Props> = ({
             )}
             <ComponentSourceLocations {...props} component={component} className="card-body" />
         </div>
-        {component.status && component.status.contexts && (
-            <OverviewStatusContexts component={component} itemClassName="mb-3" />
-        )}
         <CatalogRelations component={component.id} useURLForConnectionParams={false} className="mb-3" />
-        {false && (
-            <ComponentInsights
-                component={component.id}
-                className="mb-3"
-                telemetryService={telemetryService}
-                settingsCascade={settingsCascade}
-                platformContext={platformContext}
-            />
-        )}
         {component.readme && <ComponentReadme readme={component.readme} />}
     </>
 )
 
 export const LastCommit: React.FunctionComponent<{
-    commit: NonNullable<ComponentStateDetailFields['commits']>['nodes'][0]
+    commit: NonNullable<ComponentDetailFields['commits']>['nodes'][0]
     after?: React.ReactFragment
     className?: string
 }> = ({ commit, after, className }) => (
@@ -96,7 +82,7 @@ export const LastCommit: React.FunctionComponent<{
 )
 
 export const ComponentReadme: React.FunctionComponent<{
-    readme: NonNullable<ComponentStateDetailFields['readme']>
+    readme: NonNullable<ComponentDetailFields['readme']>
 }> = ({ readme }) => (
     <div className="card mb-3">
         <header className="card-header bg-transparent">

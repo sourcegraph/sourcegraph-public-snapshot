@@ -29,20 +29,6 @@ export const COMPONENT_TAGS_FRAGMENT = gql`
     }
 `
 
-const COMPONENT_WHO_KNOWS_FRAGMENT = gql`
-    fragment ComponentWhoKnowsFields on Component {
-        whoKnows {
-            node {
-                ...PersonLinkFields
-                avatarURL
-            }
-            reasons
-            score
-        }
-    }
-    ${personLinkFieldsFragment}
-`
-
 export const COMPONENT_CODE_OWNERS_FRAGMENT = gql`
     fragment ComponentCodeOwnersFields on Component {
         codeOwners {
@@ -57,23 +43,6 @@ export const COMPONENT_CODE_OWNERS_FRAGMENT = gql`
         }
     }
     ${personLinkFieldsFragment}
-`
-
-export const COMPONENT_STATUS_FRAGMENT = gql`
-    fragment ComponentStatusFields on Component {
-        status {
-            id
-            state
-            contexts {
-                id
-                name
-                state
-                title
-                description
-                targetURL
-            }
-        }
-    }
 `
 
 export const COMPONENT_DOCUMENTATION_FRAGMENT = gql`
@@ -222,7 +191,7 @@ export const COMPONENT_USAGE_PEOPLE_FRAGMENT = gql`
 `
 
 export const COMPONENT_DETAIL_FRAGMENT = gql`
-    fragment ComponentStateDetailFields on Component {
+    fragment ComponentDetailFields on Component {
         __typename
         id
         name
@@ -234,7 +203,6 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
         ...ComponentLabelsFields
         ...ComponentTagsFields
         ...ComponentOwnerLinkFields
-        ...ComponentStatusFields
         ...ComponentCodeOwnersFields
         ...ComponentDocumentationFields
         ...ComponentSourceLocationsFields
@@ -246,7 +214,6 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
     ${COMPONENT_LABELS_FRAGMENT}
     ${COMPONENT_TAGS_FRAGMENT}
     ${COMPONENT_OWNER_LINK_FRAGMENT}
-    ${COMPONENT_STATUS_FRAGMENT}
     ${COMPONENT_CODE_OWNERS_FRAGMENT}
     ${COMPONENT_DOCUMENTATION_FRAGMENT}
     ${COMPONENT_SOURCE_LOCATIONS_FRAGMENT}
@@ -259,7 +226,7 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
 export const COMPONENT_BY_NAME = gql`
     query ComponentByName($name: String!) {
         component(name: $name) {
-            ...ComponentStateDetailFields
+            ...ComponentDetailFields
         }
     }
     ${COMPONENT_DETAIL_FRAGMENT}

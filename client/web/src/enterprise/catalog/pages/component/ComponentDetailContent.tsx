@@ -10,7 +10,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { CatalogIcon } from '../../../../catalog'
-import { ComponentKind, ComponentOwnerLinkFields, ComponentStateDetailFields } from '../../../../graphql-operations'
+import { ComponentKind, ComponentOwnerLinkFields, ComponentDetailFields } from '../../../../graphql-operations'
 import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { catalogComponentIconComponent } from '../../components/ComponentIcon'
@@ -23,7 +23,7 @@ interface Props
         ThemeProps,
         SettingsCascadeProps,
         PlatformContextProps {
-    component: ComponentStateDetailFields
+    component: ComponentDetailFields
 }
 
 export const TAB_CONTENT_CLASS_NAME = classNames('flex-1 align-self-stretch', styles.tabContent)

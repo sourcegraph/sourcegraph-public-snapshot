@@ -140,3 +140,9 @@ SRC_ACCESS_TOKEN= SRC_ENDPOINT=https://sourcegraph.com src search -json 'repo:gi
 - [ ] Expose only <CatalogExplorer /> component, not the view options and list/graph subcomponents that require parent components to assemble them repetitively.
 - [ ] Unify catalog groups and user groups.
 - [ ] Don't hardcode components and groups in code.
+- [ ] Allow collapsing file tree to make it more like browsing components (and remember this setting in temporary settings).
+
+UI:
+
+- [ ] Simplify CatalogPage/CatalogPage2 code.
+- [ ] Remove needless tabs from GroupPage.

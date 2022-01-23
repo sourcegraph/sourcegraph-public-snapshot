@@ -4,7 +4,7 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 import {
     ComponentLabelsFields,
-    ComponentStateDetailFields,
+    ComponentDetailFields,
     ComponentTagsFields,
 } from '../../../../../graphql-operations'
 import { formatPersonName } from '../../../../../person/PersonLink'
@@ -14,7 +14,7 @@ import { catalogPagePathForComponent } from '../ComponentDetailContent'
 import { ComponentTag } from '../ComponentHeaderActions'
 
 export const ComponentOwnerSidebarItem: React.FunctionComponent<{
-    component: Pick<ComponentStateDetailFields, 'owner' | 'name' | '__typename' | 'kind' | 'url'>
+    component: Pick<ComponentDetailFields, 'owner' | 'name' | '__typename' | 'kind' | 'url'>
     isTree?: boolean
 }> = ({ component, isTree }) => (
     <>

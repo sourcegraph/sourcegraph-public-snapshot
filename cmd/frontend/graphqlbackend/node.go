@@ -278,16 +278,6 @@ func (r *NodeResolver) ToGroup() (GroupResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToComponentStatus() (ComponentStatusResolver, bool) {
-	n, ok := r.Node.(ComponentStatusResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToComponentStatusContext() (ComponentStatusContextResolver, bool) {
-	n, ok := r.Node.(ComponentStatusContextResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToPackage() (PackageResolver, bool) {
 	n, ok := r.Node.(PackageResolver)
 	return n, ok

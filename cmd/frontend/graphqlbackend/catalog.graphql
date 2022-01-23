@@ -15,15 +15,6 @@ enum ComponentLifecycle {
     EXPERIMENTAL
 }
 
-enum ComponentStatusState {
-    EXPECTED
-    ERROR
-    FAILURE
-    PENDING
-    SUCCESS
-    INFO
-}
-
 union EntityOwner = Person | Group
 
 type Group implements Node {
@@ -67,25 +58,6 @@ type ComponentRelatedEntityEdge {
     type: ComponentRelationType!
 }
 
-type ComponentStatus implements Node {
-    id: ID!
-    contexts: [ComponentStatusContext!]!
-
-    """
-    The combined status (from all status contexts).
-    """
-    state: ComponentStatusState!
-}
-
-type ComponentStatusContext implements Node {
-    id: ID!
-    name: String!
-    state: ComponentStatusState!
-    title: String!
-    description: String
-    targetURL: String
-}
-
 type WhoKnowsEdge {
     node: Person!
     reasons: [String!]!
@@ -120,7 +92,6 @@ type Component implements Node {
     sourceLocations: [ComponentSourceLocation!]!
     url: String!
     catalogURL: String!
-    status: ComponentStatus!
     relatedEntities(query: String, first: Int, after: String): ComponentRelatedEntityConnection!
 }
 

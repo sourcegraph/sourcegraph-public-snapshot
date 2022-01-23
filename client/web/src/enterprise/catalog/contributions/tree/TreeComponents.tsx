@@ -15,15 +15,13 @@ import {
     ComponentsForTreeEntryVariables,
 } from '../../../../graphql-operations'
 import { pathHasPrefix, pathRelative } from '../../../../util/path'
+import { COMPONENT_OWNER_LINK_FRAGMENT } from '../../components/component-owner-link/ComponentOwnerLink'
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
-import { COMPONENT_OWNER_LINK_FRAGMENT } from '../../components/component-owner-link/gql'
 import {
-    COMPONENT_STATUS_FRAGMENT,
     COMPONENT_CODE_OWNERS_FRAGMENT,
     COMPONENT_AUTHORS_FRAGMENT,
     COMPONENT_USAGE_PEOPLE_FRAGMENT,
 } from '../../pages/component/gql'
-import { OverviewStatusContexts } from '../../pages/component/OverviewStatusContexts'
 
 import styles from './TreeComponents.module.scss'
 
@@ -60,7 +58,6 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
         lifecycle
         url
         ...ComponentOwnerLinkFields
-        ...ComponentStatusFields
         ...ComponentCodeOwnersFields
         ...ComponentAuthorsFields
         ...ComponentUsagePeopleFields
@@ -87,7 +84,6 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
     }
 
     ${COMPONENT_OWNER_LINK_FRAGMENT}
-    ${COMPONENT_STATUS_FRAGMENT}
     ${COMPONENT_CODE_OWNERS_FRAGMENT}
     ${COMPONENT_AUTHORS_FRAGMENT}
     ${COMPONENT_USAGE_PEOPLE_FRAGMENT}
@@ -162,7 +158,6 @@ const ComponentDetail: React.FunctionComponent<{
             {component.__typename === 'Component' && `${component.kind[0]}${component.kind.slice(1).toLowerCase()}`}
         </div>
         {component.description && <p>{component.description}</p>}
-        <OverviewStatusContexts component={component} itemClassName="mb-3" />
     </div>
 )
 

@@ -2,7 +2,7 @@ import EmailIcon from 'mdi-react/EmailIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
 import React from 'react'
 
-import { ComponentStateDetailFields, SourceLocationSetWhoKnowsFields } from '../../../../../graphql-operations'
+import { ComponentDetailFields, SourceLocationSetWhoKnowsFields } from '../../../../../graphql-operations'
 import { PersonList } from '../PersonList'
 
 interface Props {
@@ -57,6 +57,6 @@ export const ComponentOverviewWhoKnows: React.FunctionComponent<Props> = ({ whoK
     />
 )
 
-export function whoKnowsDescription(entity: Pick<ComponentStateDetailFields, 'name' | 'kind'>): string {
+export function whoKnowsDescription(entity: Pick<ComponentDetailFields, 'name' | 'kind'>): string {
     return `Need help with the ${entity.name} ${entity.kind.toLowerCase()}? See who knows about it.`
 }

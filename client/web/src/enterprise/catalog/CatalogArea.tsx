@@ -31,7 +31,6 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
             <Route path={`${match.url}/groups/:name`}>
                 {(matchProps: RouteComponentProps<{ name: string }>) => (
                     <GroupPage
-                        key={1}
                         {...props}
                         groupName={matchProps.match.params.name}
                         telemetryService={telemetryService}

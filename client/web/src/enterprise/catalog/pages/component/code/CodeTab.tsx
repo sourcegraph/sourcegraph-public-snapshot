@@ -11,7 +11,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import {
-    ComponentStateDetailFields,
+    ComponentDetailFields,
     RepositoryForTreeFields,
     TreeEntryForTreeFields,
     TreeOrComponentSourceLocationSetFields,
@@ -38,7 +38,7 @@ interface Props
         Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'> {
     repository: RepositoryForTreeFields
     tree: TreeEntryForTreeFields
-    component: ComponentStateDetailFields | null
+    component: ComponentDetailFields | null
     sourceLocationSet: TreeOrComponentSourceLocationSetFields
     isTree?: boolean
     useHash?: boolean

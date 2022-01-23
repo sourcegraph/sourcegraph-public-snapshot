@@ -89,23 +89,6 @@ type GroupResolver interface {
 	Components() []ComponentResolver
 }
 
-type ComponentStatusResolver interface {
-	ID() graphql.ID
-	Contexts() []ComponentStatusContextResolver
-	State() ComponentStatusState
-}
-
-type ComponentStatusState string
-
-type ComponentStatusContextResolver interface {
-	ID() graphql.ID
-	Name() string
-	State() ComponentStatusState
-	Title() string
-	Description() *string
-	TargetURL() *string
-}
-
 type ComponentRelationType string
 
 type ComponentRelationEdgeResolver interface {
@@ -152,7 +135,6 @@ type ComponentResolver interface {
 	SourceLocations(context.Context) ([]ComponentSourceLocationResolver, error)
 	URL(context.Context) (string, error)
 	CatalogURL() string
-	Status(context.Context) (ComponentStatusResolver, error)
 
 	RelatedEntities(context.Context, *ComponentRelatedEntitiesArgs) (ComponentRelatedEntityConnectionResolver, error)
 
