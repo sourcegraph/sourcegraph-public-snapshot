@@ -32,7 +32,7 @@ interface Props extends Partial<RevisionSpec>, Partial<FileSpec> {
     actionType?: 'nav' | 'dropdown'
 }
 
-const SOURCE_LOCATION_SET_VIEW_MODE_INFO = gql`
+const SOURCE_SET_VIEW_MODE_INFO = gql`
     query SourceSetViewModeInfo($repository: ID!, $path: String!) {
         node(id: $repository) {
             __typename
@@ -55,7 +55,7 @@ export const SourceSetViewModeAction: React.FunctionComponent<Props & RepoHeader
     const { data, error, loading } = useQuery<
         SourceSetViewModeInfoResult,
         SourceSetViewModeInfoVariables
-    >(SOURCE_LOCATION_SET_VIEW_MODE_INFO, {
+    >(SOURCE_SET_VIEW_MODE_INFO, {
         variables: { repository: props.repo.id, path: props.filePath || '' },
         fetchPolicy: 'cache-first',
     })

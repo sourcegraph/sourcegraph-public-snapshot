@@ -14,7 +14,7 @@ interface Props {
     className?: string
 }
 
-const SOURCE_LOCATION_SET_WHO_KNOWS = gql`
+const SOURCE_SET_WHO_KNOWS = gql`
     query SourceSetWhoKnows($node: ID!) {
         node(id: $node) {
             __typename
@@ -42,7 +42,7 @@ const SOURCE_LOCATION_SET_WHO_KNOWS = gql`
 
 export const WhoKnowsTab: React.FunctionComponent<Props> = ({ sourceSet: sourceSetID, className }) => {
     const { data, error, loading } = useQuery<SourceSetWhoKnowsResult, SourceSetWhoKnowsVariables>(
-        SOURCE_LOCATION_SET_WHO_KNOWS,
+        SOURCE_SET_WHO_KNOWS,
         {
             variables: { node: sourceSetID },
             fetchPolicy: 'cache-first',

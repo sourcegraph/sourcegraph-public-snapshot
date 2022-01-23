@@ -19,6 +19,60 @@ import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 import { dirname, pathRelative } from '../../../../../util/path'
 
 import { ComponentSourceLocations } from './ComponentSourceLocations'
+import { gql } from '@sourcegraph/http-client'
+
+export const SOURCE_SET_FILES_FRAGMENT = gql`
+    fragment SourceSetFilesFields on SourceSet {
+        __typename
+        ... on GitTree {
+            repository {
+                id
+                name
+                url
+            }
+            path
+            ...SourceSetGitTreeFilesFields
+        }
+        ... on Component {
+            sourceLocations {
+                isPrimary
+                repositoryName
+                repository {
+                    id
+                    name
+                    url
+                }
+                path
+                treeEntry {
+                    __typename
+                    url
+                    ... on GitBlob {
+                        commit {
+                            oid
+                        }
+                        path
+                        name
+                        isDirectory
+                    }
+                    ... on GitTree {
+                        ...SourceSetGitTreeFilesFields
+                    }
+                }
+            }
+        }
+    }
+    fragment SourceSetGitTreeFilesFields on GitTree {
+        commit {
+            oid
+        }
+        entries(recursive: true) {
+            path
+            name
+            isDirectory
+            url
+        }
+    }
+`
 
 interface Props extends ExtensionsControllerProps, ThemeProps {
     sourceSet: TreeOrComponentSourceSetFields & { __typename: 'Component' | 'GitTree' }
@@ -30,11 +84,7 @@ type SourceLocation = Pick<
     'repositoryName' | 'repository' | 'path'
 > & { treeEntry: Omit<SourceSetGitTreeFilesFields, '__typename'> }
 
-export const SourceSetTreeEntries: React.FunctionComponent<Props> = ({
-    sourceSet,
-    className,
-    ...props
-}) => {
+export const SourceSetTreeEntries: React.FunctionComponent<Props> = ({ sourceSet, className, ...props }) => {
     const sourceLocations = useMemo<SourceLocation[]>(
         () =>
             sourceSet.__typename === 'Component'

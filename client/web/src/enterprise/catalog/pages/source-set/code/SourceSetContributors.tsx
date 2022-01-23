@@ -26,7 +26,7 @@ interface Props {
     className?: string
 }
 
-const SOURCE_LOCATION_SET_CONTRIBUTORS = gql`
+const SOURCE_SET_CONTRIBUTORS = gql`
     query SourceSetContributors($node: ID!, $first: Int!) {
         node(id: $node) {
             ... on SourceSet {
@@ -63,7 +63,7 @@ export const SourceSetContributors: React.FunctionComponent<Props> = ({ sourceSe
         SourceSetContributorsVariables,
         NonNullable<SourceSetContributorsFields['contributors']>['edges'][number]
     >({
-        query: SOURCE_LOCATION_SET_CONTRIBUTORS,
+        query: SOURCE_SET_CONTRIBUTORS,
         variables: {
             node: sourceSet,
             first: FIRST,

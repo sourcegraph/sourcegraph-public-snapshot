@@ -7,7 +7,7 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 
 import { SourceSetReadmeFields } from '../../../../../graphql-operations'
 
-export const SOURCE_LOCATION_SET_README_FRAGMENT = gql`
+export const SOURCE_SET_README_FRAGMENT = gql`
     fragment SourceSetReadmeFields on SourceSet {
         readme {
             name

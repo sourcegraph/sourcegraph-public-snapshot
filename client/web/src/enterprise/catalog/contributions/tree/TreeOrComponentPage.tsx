@@ -25,7 +25,6 @@ import {
     TreeOrComponentSourceSetFields,
     PrimaryComponentForTreeFields,
 } from '../../../../graphql-operations'
-import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { ComponentActionPopoverButton } from '../../../../repo/actions/source-set-view-mode-action/SourceSetViewModeAction'
 import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPage'
 import { isNotTreeError, TreePage, useTreePageBreadcrumb } from '../../../../repo/tree/TreePage'
@@ -34,113 +33,18 @@ import { basename } from '../../../../util/path'
 import { CatalogPage, CatalogPage2 } from '../../components/catalog-area-header/CatalogPage'
 import { COMPONENT_TAG_FRAGMENT } from '../../components/component-tag/ComponentTag'
 import { CodeTab } from '../../pages/source-set/code/CodeTab'
+import { SOURCE_SET_FILES_FRAGMENT } from '../../pages/source-set/code/SourceSetTreeEntries'
 import { CatalogRelations } from '../../pages/source-set/graph/CatalogRelations'
 import { COMPONENT_OWNER_FRAGMENT } from '../../pages/source-set/meta/ComponentOwnerSidebarItem'
-import { SOURCE_LOCATION_SET_README_FRAGMENT } from '../../pages/source-set/readme/ComponentReadme'
+import { SOURCE_SET_CODE_OWNERS_FRAGMENT } from '../../pages/source-set/meta/SourceSetCodeOwnersSidebarItem'
+import { SOURCE_SET_CONTRIBUTORS_FRAGMENT } from '../../pages/source-set/meta/SourceSetContributorsSidebarItem'
+import { SOURCE_SET_README_FRAGMENT } from '../../pages/source-set/readme/ComponentReadme'
 import { UsageTab } from '../../pages/source-set/usage/UsageTab'
 import { WhoKnowsTab } from '../../pages/source-set/who-knows/WhoKnowsTab'
 
 import { SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT } from './SourceSetDescendentComponents'
 import { TreeOrComponentHeader } from './TreeOrComponentHeader'
 import styles from './TreeOrComponentPage.module.scss'
-
-const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
-    fragment SourceSetFilesFields on SourceSet {
-        __typename
-        ... on GitTree {
-            repository {
-                id
-                name
-                url
-            }
-            path
-            ...SourceSetGitTreeFilesFields
-        }
-        ... on Component {
-            sourceLocations {
-                isPrimary
-                repositoryName
-                repository {
-                    id
-                    name
-                    url
-                }
-                path
-                treeEntry {
-                    __typename
-                    url
-                    ... on GitBlob {
-                        commit {
-                            oid
-                        }
-                        path
-                        name
-                        isDirectory
-                    }
-                    ... on GitTree {
-                        ...SourceSetGitTreeFilesFields
-                    }
-                }
-            }
-        }
-    }
-    fragment SourceSetGitTreeFilesFields on GitTree {
-        commit {
-            oid
-        }
-        entries(recursive: true) {
-            path
-            name
-            isDirectory
-            url
-        }
-    }
-`
-
-// TODO(sqs): dont fetch all
-const SOURCE_LOCATION_SET_CODE_OWNERS_FRAGMENT = gql`
-    fragment SourceSetCodeOwnersFields on SourceSet {
-        codeOwners {
-            edges {
-                node {
-                    ...PersonLinkFields
-                    avatarURL
-                }
-                fileCount
-                fileProportion
-            }
-            totalCount
-            pageInfo {
-                hasNextPage
-            }
-        }
-    }
-`
-
-const SOURCE_LOCATION_SET_CONTRIBUTORS_FRAGMENT = gql`
-    fragment SourceSetContributorsFields on SourceSet {
-        contributors {
-            edges {
-                person {
-                    ...PersonLinkFields
-                    avatarURL
-                }
-                authoredLineCount
-                authoredLineProportion
-                lastCommit {
-                    author {
-                        date
-                    }
-                }
-            }
-            totalCount
-            pageInfo {
-                hasNextPage
-            }
-        }
-    }
-    ${personLinkFieldsFragment}
-`
 
 const TREE_OR_COMPONENT_PAGE = gql`
     query TreeOrComponentPage($repo: ID!, $commitID: String!, $inputRevspec: String!, $path: String!) {
@@ -216,10 +120,10 @@ const TREE_OR_COMPONENT_PAGE = gql`
     }
 
     ${SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT}
-    ${SOURCE_LOCATION_SET_FILES_FRAGMENT}
-    ${SOURCE_LOCATION_SET_README_FRAGMENT}
-    ${SOURCE_LOCATION_SET_CODE_OWNERS_FRAGMENT}
-    ${SOURCE_LOCATION_SET_CONTRIBUTORS_FRAGMENT}
+    ${SOURCE_SET_FILES_FRAGMENT}
+    ${SOURCE_SET_README_FRAGMENT}
+    ${SOURCE_SET_CODE_OWNERS_FRAGMENT}
+    ${SOURCE_SET_CONTRIBUTORS_FRAGMENT}
     ${gitCommitFragment}
     ${COMPONENT_OWNER_FRAGMENT}
     ${COMPONENT_TAG_FRAGMENT}

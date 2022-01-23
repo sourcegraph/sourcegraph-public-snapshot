@@ -26,7 +26,7 @@ interface Props {
     className?: string
 }
 
-const SOURCE_LOCATION_SET_CODE_OWNERS = gql`
+const SOURCE_SET_CODE_OWNERS = gql`
     query SourceSetCodeOwners($node: ID!, $first: Int!) {
         node(id: $node) {
             ... on SourceSet {
@@ -58,7 +58,7 @@ export const SourceSetCodeOwners: React.FunctionComponent<Props> = ({ sourceSet,
         SourceSetCodeOwnersVariables,
         NonNullable<SourceSetCodeOwnersFields['codeOwners']>['edges'][number]
     >({
-        query: SOURCE_LOCATION_SET_CODE_OWNERS,
+        query: SOURCE_SET_CODE_OWNERS,
         variables: {
             node: sourceSet,
             first: FIRST,

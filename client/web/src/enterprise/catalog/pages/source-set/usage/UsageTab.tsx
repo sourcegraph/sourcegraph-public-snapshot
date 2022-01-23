@@ -27,7 +27,7 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     className?: string
 }
 
-const SOURCE_LOCATION_SET_USAGE = gql`
+const SOURCE_SET_USAGE = gql`
     query SourceSetUsage($node: ID!) {
         node(id: $node) {
             ...SourceSetUsageFields
@@ -94,7 +94,7 @@ export const UsageTab: React.FunctionComponent<Props> = ({
     telemetryService,
 }) => {
     const { data, error, loading } = useQuery<SourceSetUsageResult, SourceSetUsageVariables>(
-        SOURCE_LOCATION_SET_USAGE,
+        SOURCE_SET_USAGE,
         {
             variables: { node: sourceSet },
             fetchPolicy: 'cache-first',

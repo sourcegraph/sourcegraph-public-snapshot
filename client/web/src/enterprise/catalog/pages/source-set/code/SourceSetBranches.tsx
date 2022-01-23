@@ -25,7 +25,7 @@ interface Props {
     className?: string
 }
 
-const SOURCE_LOCATION_SET_BRANCHES = gql`
+const SOURCE_SET_BRANCHES = gql`
     query SourceSetBranches($node: ID!, $first: Int!, $withBehindAhead: Boolean = true) {
         node(id: $node) {
             ... on SourceSet {
@@ -51,7 +51,7 @@ export const SourceSetBranches: React.FunctionComponent<Props> = ({ sourceSet, c
         SourceSetBranchesVariables,
         GitRefFields
     >({
-        query: SOURCE_LOCATION_SET_BRANCHES,
+        query: SOURCE_SET_BRANCHES,
         variables: {
             node: sourceSet,
             first: FIRST,

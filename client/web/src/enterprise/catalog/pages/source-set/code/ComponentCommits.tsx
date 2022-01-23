@@ -27,7 +27,7 @@ interface Props {
     className?: string
 }
 
-const SOURCE_LOCATION_SET_COMMITS = gql`
+const SOURCE_SET_COMMITS = gql`
     query SourceSetCommits($node: ID!, $first: Int!) {
         node(id: $node) {
             ... on SourceSet {
@@ -50,7 +50,7 @@ export const SourceSetCommits: React.FunctionComponent<Props> = ({ sourceSet, cl
         SourceSetCommitsVariables,
         GitCommitFields
     >({
-        query: SOURCE_LOCATION_SET_COMMITS,
+        query: SOURCE_SET_COMMITS,
         variables: {
             node: sourceSet,
             first: FIRST,

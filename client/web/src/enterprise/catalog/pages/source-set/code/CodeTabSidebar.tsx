@@ -7,7 +7,6 @@ import { useRouteMatch } from 'react-router'
 import { Link } from 'react-router-dom'
 
 import { ComponentKind } from '@sourcegraph/shared/src/schema'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import {
     ComponentOwnerFields,
@@ -17,11 +16,11 @@ import {
     TreeEntryForTreeFields,
     TreeOrComponentSourceSetFields,
 } from '../../../../../graphql-operations'
-import { PersonList } from '../../../components/person-list/PersonList'
 import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
 import { ComponentOwnerSidebarItem } from '../meta/ComponentOwnerSidebarItem'
 import { ComponentTagsSidebarItem } from '../meta/ComponentTagsSidebarItem'
+import { SourceSetCodeOwnersSidebarItem } from '../meta/SourceSetCodeOwnersSidebarItem'
 import { SourceSetContributorsSidebarItem } from '../meta/SourceSetContributorsSidebarItem'
 
 interface Props extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode'> {
@@ -112,21 +111,9 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
             )}
             {sourceSet.codeOwners && sourceSet.codeOwners.edges.length > 0 && (
                 <section className={SECTION_CLASS_NAME}>
-                    <PersonList
-                        title="Code owners"
+                    <SourceSetCodeOwnersSidebarItem
+                        codeOwners={sourceSet.codeOwners}
                         titleLink={`${match.url}${pathSeparator}code-owners`}
-                        titleCount={sourceSet.codeOwners.totalCount}
-                        listTag="ol"
-                        orientation="summary"
-                        items={sourceSet.codeOwners.edges.map(codeOwner => ({
-                            person: codeOwner.node,
-                            text:
-                                codeOwner.fileProportion >= 0.01
-                                    ? `${(codeOwner.fileProportion * 100).toFixed(0)}%`
-                                    : '<1%',
-                            textTooltip: `Owns ${codeOwner.fileCount} ${pluralize('line', codeOwner.fileCount)}`,
-                        }))}
-                        className={className}
                     />
                 </section>
             )}
