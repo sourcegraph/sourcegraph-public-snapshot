@@ -1,8 +1,8 @@
 package buildkite
 
-// const cachePluginName = "gencer/cache#v2.4.10"
+const cachePluginName = "gencer/cache#v2.4.10"
 
-const cachePluginName = "jhchabran/cache#a006be99a6d5bfbab177ddbf8c988bdce3bd2a0e"
+// const cachePluginName = "jhchabran/cache#a006be99a6d5bfbab177ddbf8c988bdce3bd2a0e"
 
 // CacheConfig represents the configuration data for https://github.com/gencer/cache-buildkite-plugin
 type CacheConfigPayload struct {
@@ -36,17 +36,24 @@ type CacheOptions struct {
 }
 
 func Cache(opts *CacheOptions) StepOpt {
-	return Plugin(cachePluginName, CacheConfigPayload{
-		ID:          opts.ID,
-		Key:         opts.Key,
-		RestoreKeys: opts.RestoreKeys,
-		Paths:       opts.Paths,
-		Backend:     "s3",
-		S3: CacheConfigS3Payload{
-			Bucket:   "sourcegraph_buildkite_cache",
-			Profile:  "buildkite",
-			Endpoint: "https://storage.googleapis.com",
-			Region:   "us-central1",
-		},
-	})
+	return FlattenStepOpts(
+		// Overrides the aws command configuration to use the buildkite cache
+		// configuration instead.
+		Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
+		Env("AWS_SHARED_CREDENTIALS_FILE", "/buildkite/.aws/credentials"),
+		Plugin(cachePluginName, CacheConfigPayload{
+			ID:          opts.ID,
+			Key:         opts.Key,
+			RestoreKeys: opts.RestoreKeys,
+			Paths:       opts.Paths,
+			Backend:     "s3",
+			Compress:    true,
+			S3: CacheConfigS3Payload{
+				Bucket:   "sourcegraph_buildkite_cache",
+				Profile:  "buildkite",
+				Endpoint: "https://storage.googleapis.com",
+				Region:   "us-central1",
+			},
+		}),
+	)
 }
