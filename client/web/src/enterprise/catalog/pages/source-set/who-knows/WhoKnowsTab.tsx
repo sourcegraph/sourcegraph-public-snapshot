@@ -114,6 +114,7 @@ const WhoKnows: React.FunctionComponent<{
             action: (
                 <>
                     <a
+                        // TODO(sqs): hacky
                         href={`https://slack.com/app_redirect?channel=@${person.email.slice(
                             0,
                             person.email.indexOf('@')
