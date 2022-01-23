@@ -28,6 +28,21 @@ aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile build
 unset AWS_SHARED_CREDENTIALS_FILE
 unset AWS_CONFIG_FILE
 
-# handle caching absolute paths
-mkdir -p .buildkite-cache
-ln -s ~/.asdf .buildkite-cache/asdf
+asdf_checksum=$(sha1sum .tool-versions | awk '{print $1}')
+cache_file="cache-asdf-$asdf_checksum.tar.gz"
+cache_key="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_NAME/$cache_file"
+
+if aws s3api head-object --bucket "sourcegraph_buildkite_cache" --profile buildkite --endpoint-url 'https://storage.googleapis.com' --key "$cache_key"; then
+  set -e
+  echo -e "ASDF 🔥 Cache hit: $cache_key"
+  aws s3 cp --bucket "sourcegraph_buildkite_cache" --profile buildkite --endpoint-url 'https://storage.googleapis.com' "s3://$cache_key" .
+  tar xzf "$cache_file" -C "$HOME/"
+else
+  set -e
+  echo "--- installing all asdf tool versions"
+  asdf install
+  echo "--- caching asdf installation"
+  pushd "$HOME"
+  tar chfz "$cache_file" .asdf
+  aws s3 cp --bucket "sourcegraph_buildkite_cache" --profile buildkite --endpoint-url 'https://storage.googleapis.com' "$cache_file" "s3://$cache_key" 
+fi
