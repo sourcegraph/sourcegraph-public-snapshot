@@ -4,7 +4,7 @@ import React from 'react'
 import { Menu, MenuButton } from '@sourcegraph/wildcard'
 
 import { SourceSetViewModeActionMenuItems } from '../../../../../repo/actions/source-set-view-mode-action/SourceSetViewModeAction'
-import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
+import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/useTreeOrComponentViewOptions'
 
 interface Props
     extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'> {

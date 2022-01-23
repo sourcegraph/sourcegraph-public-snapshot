@@ -1,11 +1,11 @@
 import FolderIcon from 'mdi-react/FolderIcon'
 import React from 'react'
 
-import { ComponentKind } from '@sourcegraph/shared/src/graphql/schema'
+import { ComponentKind } from '@sourcegraph/shared/src/schema'
 
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
-import { TreeOrComponentViewOptionsProps } from './TreeOrComponent'
+import { TreeOrComponentViewOptionsProps } from './useTreeOrComponentViewOptions'
 
 interface Props extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode'> {
     component: {

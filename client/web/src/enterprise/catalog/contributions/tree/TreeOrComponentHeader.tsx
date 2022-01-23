@@ -16,7 +16,7 @@ import {
 } from '../../../../graphql-operations'
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
-import { TreeOrComponentViewOptionsProps } from './TreeOrComponent'
+import { TreeOrComponentViewOptionsProps } from './useTreeOrComponentViewOptions'
 
 interface Props extends TreeOrComponentViewOptionsProps {
     repository: RepositoryForTreeFields

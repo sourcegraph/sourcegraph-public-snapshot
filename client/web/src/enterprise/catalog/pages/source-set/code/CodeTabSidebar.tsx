@@ -17,7 +17,7 @@ import {
     TreeOrComponentSourceSetFields,
 } from '../../../../../graphql-operations'
 import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
-import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
+import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/useTreeOrComponentViewOptions'
 import { ComponentOwnerSidebarItem } from '../meta/ComponentOwnerSidebarItem'
 import { ComponentTagsSidebarItem } from '../meta/ComponentTagsSidebarItem'
 import { SourceSetCodeOwnersSidebarItem } from '../meta/SourceSetCodeOwnersSidebarItem'

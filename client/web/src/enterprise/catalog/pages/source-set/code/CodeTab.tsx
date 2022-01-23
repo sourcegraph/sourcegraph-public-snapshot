@@ -17,7 +17,7 @@ import {
 } from '../../../../../graphql-operations'
 import { SourceSetDescendentComponents } from '../../../contributions/tree/SourceSetDescendentComponents'
 import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
-import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponentPage'
+import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/useTreeOrComponentViewOptions'
 import { SourceSetReadme } from '../readme/ComponentReadme'
 
 import { SourceSetCodeOwners } from './CodeOwners'
@@ -59,7 +59,7 @@ export const CodeTab: React.FunctionComponent<Props> = ({
     const pathSeparator = useHash ? '#' : '/'
 
     return (
-        <div className={classNames('row flex-wrap-reverse', className)}>
+        <div className={classNames('row flex-wrap-reverse ', className)}>
             <Switch
                 /* TODO(sqs): hack to make the router work with hashes */
                 location={useHash ? { ...location, pathname: location.pathname + location.hash } : undefined}

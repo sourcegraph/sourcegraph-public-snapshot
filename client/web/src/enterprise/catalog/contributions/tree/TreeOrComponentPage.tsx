@@ -1,7 +1,6 @@
 import classNames from 'classnames'
-import { Location, LocationDescriptorObject } from 'history'
-import React, { useEffect, useCallback, useMemo } from 'react'
-import { Redirect, useHistory, useLocation } from 'react-router'
+import React, { useEffect, useMemo } from 'react'
+import { Redirect } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isDefined } from '@sourcegraph/common'
@@ -45,6 +44,7 @@ import { WhoKnowsTab } from '../../pages/source-set/who-knows/WhoKnowsTab'
 import { SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT } from './SourceSetDescendentComponents'
 import { TreeOrComponentHeader } from './TreeOrComponentHeader'
 import styles from './TreeOrComponentPage.module.scss'
+import { useTreeOrComponentViewOptions } from './useTreeOrComponentViewOptions'
 
 const TREE_OR_COMPONENT_PAGE = gql`
     query TreeOrComponentPage($repo: ID!, $commitID: String!, $inputRevspec: String!, $path: String!) {
@@ -251,26 +251,28 @@ const TreeOrComponent: React.FunctionComponent<Props> = ({
                             component={primaryComponent}
                             sourceSet={sourceSet}
                             useHash={true}
-                            className={tabContentClassName}
+                            className={classNames('py-3', tabContentClassName)}
                         />
                     ),
                 },
                 {
                     path: 'who-knows',
                     text: 'Who knows?',
-                    content: <WhoKnowsTab {...props} sourceSet={sourceSet.id} className={tabContentClassName} />,
+                    content: (
+                        <WhoKnowsTab
+                            {...props}
+                            sourceSet={sourceSet.id}
+                            className={classNames('py-3', tabContentClassName)}
+                        />
+                    ),
                 },
                 sourceSet && sourceSet.__typename === 'Component'
                     ? {
                           path: 'graph',
                           text: 'Graph',
                           content: (
-                              <div className={classNames('p-3', tabContentClassName)}>
-                                  <CatalogRelations
-                                      component={sourceSet.id}
-                                      useURLForConnectionParams={true}
-                                      className="mb-3"
-                                  />
+                              <div className={classNames('py-3', tabContentClassName)}>
+                                  <CatalogRelations component={sourceSet.id} useURLForConnectionParams={true} />
                               </div>
                           ),
                       }
@@ -299,50 +301,4 @@ const TreeOrComponent: React.FunctionComponent<Props> = ({
             tabsClassName={styles.tabs}
         />
     )
-}
-
-type TreeOrComponentViewMode = 'auto' | 'tree'
-
-export interface TreeOrComponentViewOptionsProps {
-    treeOrComponentViewMode: TreeOrComponentViewMode
-    treeOrComponentViewModeURL: Record<TreeOrComponentViewMode, LocationDescriptorObject>
-    setTreeOrComponentViewMode: (mode: TreeOrComponentViewMode) => void
-}
-
-export function useTreeOrComponentViewOptions(): TreeOrComponentViewOptionsProps {
-    const location = useLocation()
-    const history = useHistory()
-
-    const treeOrComponentViewMode: TreeOrComponentViewMode = useMemo(
-        () => (new URLSearchParams(location.search).get('as') === 'tree' ? 'tree' : 'auto'),
-        [location.search]
-    )
-    const treeOrComponentViewModeURL = useMemo<TreeOrComponentViewOptionsProps['treeOrComponentViewModeURL']>(
-        () => ({
-            auto: makeTreeOrComponentViewURL(location, 'auto'),
-            tree: makeTreeOrComponentViewURL(location, 'tree'),
-        }),
-        [location]
-    )
-    const setTreeOrComponentViewMode = useCallback<TreeOrComponentViewOptionsProps['setTreeOrComponentViewMode']>(
-        mode => history.push(makeTreeOrComponentViewURL(location, mode)),
-        [history, location]
-    )
-
-    return useMemo(() => ({ treeOrComponentViewMode, treeOrComponentViewModeURL, setTreeOrComponentViewMode }), [
-        setTreeOrComponentViewMode,
-        treeOrComponentViewMode,
-        treeOrComponentViewModeURL,
-    ])
-}
-
-function makeTreeOrComponentViewURL(location: Location, mode: TreeOrComponentViewMode): LocationDescriptorObject {
-    const search = new URLSearchParams(location.search)
-    if (mode === 'tree') {
-        search.set('as', mode)
-    } else {
-        search.delete('as')
-    }
-
-    return { ...location, search: search.toString() }
 }

@@ -11,7 +11,7 @@ import { MenuItems } from '@sourcegraph/wildcard/src/components/Menu/MenuItems'
 
 import { CatalogComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
 import { ComponentTitleWithIconAndKind } from '../../../enterprise/catalog/contributions/tree/SourceSetTitle'
-import { TreeOrComponentViewOptionsProps } from '../../../enterprise/catalog/contributions/tree/TreeOrComponent'
+import { TreeOrComponentViewOptionsProps } from '../../../enterprise/catalog/contributions/tree/useTreeOrComponentViewOptions'
 import {
     SourceSetViewModeInfoResult,
     SourceSetViewModeInfoVariables,
@@ -52,13 +52,13 @@ const SOURCE_SET_VIEW_MODE_INFO = gql`
 `
 
 export const SourceSetViewModeAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
-    const { data, error, loading } = useQuery<
-        SourceSetViewModeInfoResult,
-        SourceSetViewModeInfoVariables
-    >(SOURCE_SET_VIEW_MODE_INFO, {
-        variables: { repository: props.repo.id, path: props.filePath || '' },
-        fetchPolicy: 'cache-first',
-    })
+    const { data, error, loading } = useQuery<SourceSetViewModeInfoResult, SourceSetViewModeInfoVariables>(
+        SOURCE_SET_VIEW_MODE_INFO,
+        {
+            variables: { repository: props.repo.id, path: props.filePath || '' },
+            fetchPolicy: 'cache-first',
+        }
+    )
     if (error) {
         throw error
     }
@@ -92,10 +92,7 @@ export const SourceSetViewModeAction: React.FunctionComponent<Props & RepoHeader
     )
 }
 
-type ComponentFields = Extract<
-    SourceSetViewModeInfoResult['node'],
-    { __typename: 'Repository' }
->['components'][number]
+type ComponentFields = Extract<SourceSetViewModeInfoResult['node'], { __typename: 'Repository' }>['components'][number]
 
 export const ComponentActionPopoverButton: React.FunctionComponent<
     {
