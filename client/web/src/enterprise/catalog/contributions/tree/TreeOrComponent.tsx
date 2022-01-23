@@ -16,7 +16,7 @@ import {
 } from '../../../../graphql-operations'
 import { ComponentActionPopoverButton } from '../../../../repo/actions/source-location-set-view-mode-action/SourceLocationSetViewModeAction'
 import { CatalogPage, CatalogPage2 } from '../../components/catalog-area-header/CatalogPage'
-import { CatalogRelations } from '../../pages/component/CatalogRelations'
+import { CatalogRelations } from '../../pages/component/graph/CatalogRelations'
 import { CodeTab } from '../../pages/component/code/CodeTab'
 import { UsageTab } from '../../pages/component/usage/UsageTab'
 import { WhoKnowsTab } from '../../pages/component/who-knows/WhoKnowsTab'

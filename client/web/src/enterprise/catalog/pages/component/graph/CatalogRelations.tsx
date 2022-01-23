@@ -3,14 +3,14 @@ import React from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { CatalogExplorerGraph } from '../../components/catalog-explorer/graph/CatalogExplorerGraph'
-import { CatalogExplorerRelationList } from '../../components/catalog-explorer/relation-list/CatalogExplorerRelationList'
-import { CatalogExplorerViewOptionsRow } from '../../components/catalog-explorer/view-options/CatalogExplorerViewOptionsRow'
+import { CatalogExplorerGraph } from '../../../components/catalog-explorer/graph/CatalogExplorerGraph'
+import { CatalogExplorerRelationList } from '../../../components/catalog-explorer/relation-list/CatalogExplorerRelationList'
+import { CatalogExplorerViewOptionsRow } from '../../../components/catalog-explorer/view-options/CatalogExplorerViewOptionsRow'
 import {
     useViewModeTemporarySettings,
     ViewModeToggle,
-} from '../../components/catalog-explorer/view-options/ViewModeToggle'
-import { useComponentFilters } from '../../core/component-query'
+} from '../../../components/catalog-explorer/view-options/ViewModeToggle'
+import { useComponentFilters } from '../../../core/component-query'
 
 interface Props {
     component: Scalars['ID']

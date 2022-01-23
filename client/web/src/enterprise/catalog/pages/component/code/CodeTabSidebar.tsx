@@ -20,14 +20,12 @@ import {
     TreeOrComponentSourceLocationSetFields,
 } from '../../../../../graphql-operations'
 import { UserAvatar } from '../../../../../user/UserAvatar'
+import { PersonList } from '../../../components/person-list/PersonList'
 import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocationSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
-import {
-    ComponentLabelsSidebarItem,
-    ComponentOwnerSidebarItem,
-    ComponentTagsSidebarItem,
-} from '../overview/OverviewTab'
-import { PersonList } from '../../../components/person-list/PersonList'
+import { ComponentLabelsSidebarItem } from '../meta/ComponentLabelsSidebarItem'
+import { ComponentOwnerSidebarItem } from '../meta/ComponentOwnerSidebarItem'
+import { ComponentTagsSidebarItem } from '../meta/ComponentTagsSidebarItem'
 
 interface Props
     extends TelemetryProps,

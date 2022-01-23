@@ -3,7 +3,8 @@ import { gql } from '@sourcegraph/http-client'
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPage'
 import { COMPONENT_OWNER_LINK_FRAGMENT } from '../../components/component-owner-link/ComponentOwnerLink'
-import { COMPONENT_LABELS_FRAGMENT, COMPONENT_TAGS_FRAGMENT } from '../../pages/component/gql'
+import { COMPONENT_TAG_FRAGMENT } from '../../pages/component/ComponentTag'
+import { COMPONENT_LABELS_FRAGMENT } from '../../pages/component/gql'
 
 const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
     fragment SourceLocationSetFilesFields on SourceLocationSet {
@@ -197,7 +198,9 @@ export const TREE_OR_COMPONENT_PAGE = gql`
         url
         ...TreeOrComponentSourceLocationSetFields
         ...ComponentOwnerLinkFields
-        ...ComponentTagsFields
+        tags {
+            ...ComponentTagFields
+        }
         ...ComponentLabelsFields
     }
     fragment OtherComponentForTreeFields on Component {
@@ -210,6 +213,6 @@ export const TREE_OR_COMPONENT_PAGE = gql`
 
     ${TREE_OR_COMPONENT_SOURCE_LOCATION_SET_FRAGMENT}
     ${COMPONENT_OWNER_LINK_FRAGMENT}
-    ${COMPONENT_TAGS_FRAGMENT}
+    ${COMPONENT_TAG_FRAGMENT}
     ${COMPONENT_LABELS_FRAGMENT}
 `

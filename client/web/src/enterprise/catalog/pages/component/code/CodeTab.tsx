@@ -19,17 +19,17 @@ import {
 import { RepoRevisionContainerBreadcrumb } from '../../../../../repo/RepoRevisionContainer'
 import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocationSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
-import { SourceLocationSetCommits } from '../ComponentCommits'
-import { ComponentSourceLocations } from '../ComponentSourceLocations'
-import { LastCommit } from './LastCommit'
 import { ComponentReadme } from '../readme/ComponentReadme'
-import { SourceLocationSetContributors } from '../SourceLocationSetContributors'
-import { SourceLocationSetTreeEntries } from '../SourceLocationSetTreeEntries'
 
 import { SourceLocationSetCodeOwners } from './CodeOwners'
 import { CodeTabSidebar } from './CodeTabSidebar'
+import { SourceLocationSetCommits } from './ComponentCommits'
+import { ComponentSourceLocations } from './ComponentSourceLocations'
+import { LastCommit } from './LastCommit'
 import { SourceLocationSetBranches } from './SourceLocationSetBranches'
+import { SourceLocationSetContributors } from './SourceLocationSetContributors'
 import { SourceLocationSetSelectMenu } from './SourceLocationSetSelectMenu'
+import { SourceLocationSetTreeEntries } from './SourceLocationSetTreeEntries'
 
 interface Props
     extends TelemetryProps,

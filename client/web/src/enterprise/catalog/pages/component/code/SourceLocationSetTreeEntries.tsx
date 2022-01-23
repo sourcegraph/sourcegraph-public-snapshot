@@ -9,14 +9,14 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { getFileDecorations } from '../../../../backend/features'
+import { getFileDecorations } from '../../../../../backend/features'
 import {
     TreeOrComponentSourceLocationSetFields,
     SourceLocationSetFilesFields,
     SourceLocationSetGitTreeFilesFields,
-} from '../../../../graphql-operations'
-import { TreeEntriesSection } from '../../../../repo/tree/TreeEntriesSection'
-import { dirname, pathRelative } from '../../../../util/path'
+} from '../../../../../graphql-operations'
+import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
+import { dirname, pathRelative } from '../../../../../util/path'
 
 interface Props extends ExtensionsControllerProps, ThemeProps {
     sourceLocationSet: TreeOrComponentSourceLocationSetFields & { __typename: 'Component' | 'GitTree' }

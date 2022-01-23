@@ -13,22 +13,6 @@ export const COMPONENT_LABELS_FRAGMENT = gql`
     }
 `
 
-export const COMPONENT_TAGS_FRAGMENT = gql`
-    fragment ComponentTagsFields on Component {
-        tags {
-            name
-            components {
-                nodes {
-                    id
-                    name
-                    kind
-                    url
-                }
-            }
-        }
-    }
-`
-
 export const COMPONENT_CODE_OWNERS_FRAGMENT = gql`
     fragment ComponentCodeOwnersFields on Component {
         codeOwners {
@@ -190,6 +174,7 @@ export const COMPONENT_USAGE_PEOPLE_FRAGMENT = gql`
     }
 `
 
+// TODO(sqs): remove
 export const COMPONENT_DETAIL_FRAGMENT = gql`
     fragment ComponentDetailFields on Component {
         __typename
@@ -201,7 +186,6 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
         url
         catalogURL
         ...ComponentLabelsFields
-        ...ComponentTagsFields
         ...ComponentOwnerLinkFields
         ...ComponentCodeOwnersFields
         ...ComponentDocumentationFields
@@ -212,7 +196,6 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
         ...ComponentUsagePeopleFields
     }
     ${COMPONENT_LABELS_FRAGMENT}
-    ${COMPONENT_TAGS_FRAGMENT}
     ${COMPONENT_OWNER_LINK_FRAGMENT}
     ${COMPONENT_CODE_OWNERS_FRAGMENT}
     ${COMPONENT_DOCUMENTATION_FRAGMENT}

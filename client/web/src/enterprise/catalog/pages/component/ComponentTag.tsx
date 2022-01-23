@@ -2,37 +2,34 @@ import { MenuItems } from '@reach/menu-button'
 import React, { useRef } from 'react'
 import { Link } from 'react-router-dom'
 
+import { gql } from '@sourcegraph/http-client'
 import { MenuLink, Menu, MenuDivider, MenuHeader, MenuButton } from '@sourcegraph/wildcard'
-
 import { MenuList } from '@sourcegraph/wildcard/src/components/Menu'
-import { ComponentTagsFields } from '../../../../graphql-operations'
+
+import { ComponentTagFields } from '../../../../graphql-operations'
 import { positionBottomRight } from '../../../insights/components/context-menu/utils'
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
-import styles from './ComponentHeaderActions.module.scss'
+export const COMPONENT_TAG_FRAGMENT = gql`
+    fragment ComponentTagFields on Component {
+        name
+        components {
+            nodes {
+                id
+                name
+                kind
+                url
+            }
+        }
+    }
+`
 
 interface Props {
-    component: ComponentTagsFields
+    tag: ComponentTagFields
+    buttonClassName?: string
 }
 
-export const ComponentHeaderActions: React.FunctionComponent<Props> = ({ component: { tags } }) => (
-    <nav className={styles.container}>
-        {tags.map(tag => (
-            <ComponentTag
-                key={tag.name}
-                name={tag.name}
-                components={tag.components.nodes}
-                buttonClassName="p-1 border small text-muted"
-            />
-        ))}
-    </nav>
-)
-
-export const ComponentTag: React.FunctionComponent<{
-    name: string
-    components: ComponentTagsFields['tags'][0]['components']['nodes']
-    buttonClassName?: string
-}> = ({ name, components, buttonClassName }) => {
+export const ComponentTag: React.FunctionComponent<Props> = ({ tag: { name, components }, buttonClassName }) => {
     const targetButtonReference = useRef<HTMLButtonElement>(null)
     return (
         <Menu>

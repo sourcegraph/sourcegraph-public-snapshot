@@ -17,10 +17,9 @@ import {
     SourceLocationSetContributorsFields,
     SourceLocationSetContributorsResult,
     SourceLocationSetContributorsVariables,
-} from '../../../../graphql-operations'
-import { personLinkFieldsFragment } from '../../../../person/PersonLink'
-
-import { PersonList } from '../../components/person-list/PersonList'
+} from '../../../../../graphql-operations'
+import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
+import { PersonList } from '../../../components/person-list/PersonList'
 
 interface Props {
     sourceLocationSet: Scalars['ID']

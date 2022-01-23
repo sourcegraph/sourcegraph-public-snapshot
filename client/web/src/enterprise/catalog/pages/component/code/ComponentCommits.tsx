@@ -18,9 +18,9 @@ import {
     GitCommitFields,
     SourceLocationSetCommitsResult,
     SourceLocationSetCommitsVariables,
-} from '../../../../graphql-operations'
-import { GitCommitNodeByline } from '../../../../repo/commits/GitCommitNodeByline'
-import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPage'
+} from '../../../../../graphql-operations'
+import { GitCommitNodeByline } from '../../../../../repo/commits/GitCommitNodeByline'
+import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
 
 interface Props {
     sourceLocationSet: Scalars['ID']
