@@ -55,7 +55,7 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         searchContextsEnabled={true}
         catalogEnabled={true}
         catalogTreePage={lazyComponent(
-            () => import('./catalog/contributions/tree/TreeOrComponentPage'),
+            () => import('./catalog/pages/source-set-at-tree/SourceSetAtTreePage'),
             'TreeOrComponentPage'
         )}
     />

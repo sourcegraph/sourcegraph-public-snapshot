@@ -78,7 +78,9 @@ You can run a batch change across specific components first.
 
 ## Implementation
 
-- A SourceSet is a Tree or Component. You can think of a tree as a (trivial) component that consists of all files in the tree. A tree has a readme, code owners, contributors, etc. You could imagine a milestone of this catalog feature where we don't actually let you explicitly define any components, but we just enhance the presentation of trees in the Sourcegraph UI with all of that information.
+- A SourceSet is a Tree or Component.
+  - You can think of a tree as a (trivial) component that consists of all files in the tree. A tree has a readme, code owners, contributors, etc. You could imagine a milestone of this catalog feature where we don't actually let you explicitly define any components, but we just enhance the presentation of trees in the Sourcegraph UI with all of that information.
+  - When you explicitly define a Component, you can "promote" a tree from being a trivial single-tree SourceSet to being a SourceSet with additional metadata, a description, a component owner, and multiple trees (if the component's implementation is spread across multiple places).
 
 ## TODOs
 

@@ -31,15 +31,15 @@ import treePageStyles from '../../../../repo/tree/TreePage.module.scss'
 import { basename } from '../../../../util/path'
 import { CatalogPage, CatalogPage2 } from '../../components/catalog-area-header/CatalogPage'
 import { COMPONENT_TAG_FRAGMENT } from '../../components/component-tag/ComponentTag'
-import { CodeTab } from '../../pages/source-set/code/CodeTab'
-import { SOURCE_SET_FILES_FRAGMENT } from '../../pages/source-set/code/SourceSetTreeEntries'
-import { CatalogRelations } from '../../pages/source-set/graph/CatalogRelations'
-import { COMPONENT_OWNER_FRAGMENT } from '../../pages/source-set/meta/ComponentOwnerSidebarItem'
-import { SOURCE_SET_CODE_OWNERS_FRAGMENT } from '../../pages/source-set/meta/SourceSetCodeOwnersSidebarItem'
-import { SOURCE_SET_CONTRIBUTORS_FRAGMENT } from '../../pages/source-set/meta/SourceSetContributorsSidebarItem'
-import { SOURCE_SET_README_FRAGMENT } from '../../pages/source-set/readme/ComponentReadme'
-import { UsageTab } from '../../pages/source-set/usage/UsageTab'
-import { WhoKnowsTab } from '../../pages/source-set/who-knows/WhoKnowsTab'
+import { CodeTab } from '../source-set/code/CodeTab'
+import { SOURCE_SET_FILES_FRAGMENT } from '../source-set/code/SourceSetTreeEntries'
+import { CatalogRelations } from '../source-set/graph/CatalogRelations'
+import { COMPONENT_OWNER_FRAGMENT } from '../source-set/meta/ComponentOwnerSidebarItem'
+import { SOURCE_SET_CODE_OWNERS_FRAGMENT } from '../source-set/meta/SourceSetCodeOwnersSidebarItem'
+import { SOURCE_SET_CONTRIBUTORS_FRAGMENT } from '../source-set/meta/SourceSetContributorsSidebarItem'
+import { SOURCE_SET_README_FRAGMENT } from '../source-set/readme/ComponentReadme'
+import { UsageTab } from '../source-set/usage/UsageTab'
+import { WhoKnowsTab } from '../source-set/who-knows/WhoKnowsTab'
 
 import { SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT } from './SourceSetDescendentComponents'
 import { TreeOrComponentHeader } from './TreeOrComponentHeader'
@@ -127,7 +127,15 @@ const TREE_OR_COMPONENT_PAGE = gql`
     ${COMPONENT_TAG_FRAGMENT}
 `
 
-export const TreeOrComponentPage: React.FunctionComponent<React.ComponentPropsWithoutRef<typeof TreePage>> = ({
+/**
+ * A page that fetches and displays the SourceSet at a given tree. If there is a component whose
+ * primary location is the tree, then the component is displayed. Otherwise, a trivial single-tree
+ * SourceSet is displayed.
+ *
+ * If the user wants to view the tree as "just a tree" and not see additional information from the
+ * component that lives at the tree, the user can select to "View as tree".
+ */
+export const SourceSetAtTreePage: React.FunctionComponent<React.ComponentPropsWithoutRef<typeof TreePage>> = ({
     repo,
     revision,
     commitID,
@@ -171,7 +179,7 @@ export const TreeOrComponentPage: React.FunctionComponent<React.ComponentPropsWi
             ) : !data.node.commit?.tree ? (
                 <ErrorAlert error="404 Not Found" />
             ) : (
-                <TreeOrComponent
+                <SourceSetAtTree
                     {...props}
                     filePath={filePath}
                     repoID={repo.id}
@@ -201,7 +209,7 @@ interface Props
 
 const tabContentClassName = classNames('flex-1 align-self-stretch', styles.tabContent)
 
-const TreeOrComponent: React.FunctionComponent<Props> = ({
+const SourceSetAtTree: React.FunctionComponent<Props> = ({
     filePath,
     repoID,
     repository,
