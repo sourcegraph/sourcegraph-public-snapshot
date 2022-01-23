@@ -29,16 +29,6 @@ export const COMPONENT_CODE_OWNERS_FRAGMENT = gql`
     ${personLinkFieldsFragment}
 `
 
-export const COMPONENT_DOCUMENTATION_FRAGMENT = gql`
-    fragment ComponentDocumentationFields on Component {
-        readme {
-            name
-            richHTML
-            url
-        }
-    }
-`
-
 export const COMPONENT_SOURCE_LOCATIONS_FRAGMENT = gql`
     fragment ComponentSourceLocationsFields on Component {
         sourceLocations {
@@ -188,7 +178,6 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
         ...ComponentLabelsFields
         ...ComponentOwnerLinkFields
         ...ComponentCodeOwnersFields
-        ...ComponentDocumentationFields
         ...ComponentSourceLocationsFields
         ...ComponentCommitsFields
         ...ComponentAuthorsFields
@@ -198,7 +187,6 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
     ${COMPONENT_LABELS_FRAGMENT}
     ${COMPONENT_OWNER_LINK_FRAGMENT}
     ${COMPONENT_CODE_OWNERS_FRAGMENT}
-    ${COMPONENT_DOCUMENTATION_FRAGMENT}
     ${COMPONENT_SOURCE_LOCATIONS_FRAGMENT}
     ${COMPONENT_COMMITS_FRAGMENT}
     ${COMPONENT_AUTHORS_FRAGMENT}

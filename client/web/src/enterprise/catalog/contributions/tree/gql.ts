@@ -5,6 +5,7 @@ import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPag
 import { COMPONENT_OWNER_LINK_FRAGMENT } from '../../components/component-owner-link/ComponentOwnerLink'
 import { COMPONENT_TAG_FRAGMENT } from '../../pages/component/ComponentTag'
 import { COMPONENT_LABELS_FRAGMENT } from '../../pages/component/gql'
+import { SOURCE_LOCATION_SET_README_FRAGMENT } from '../../pages/component/readme/ComponentReadme'
 
 const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
     fragment SourceLocationSetFilesFields on SourceLocationSet {
@@ -53,16 +54,6 @@ const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
             path
             name
             isDirectory
-            url
-        }
-    }
-`
-
-export const SOURCE_LOCATION_SET_README_FRAGMENT = gql`
-    fragment SourceLocationSetReadmeFields on SourceLocationSet {
-        readme {
-            name
-            richHTML
             url
         }
     }
@@ -117,10 +108,12 @@ const SOURCE_LOCATION_SET_CONTRIBUTORS_FRAGMENT = gql`
 export const TREE_OR_COMPONENT_SOURCE_LOCATION_SET_FRAGMENT = gql`
     fragment TreeOrComponentSourceLocationSetFields on SourceLocationSet {
         id
+
         ...SourceLocationSetFilesFields
         ...SourceLocationSetReadmeFields
         ...SourceLocationSetCodeOwnersFields
         ...SourceLocationSetContributorsFields
+
         branches(first: 0, interactive: false) {
             totalCount
         }

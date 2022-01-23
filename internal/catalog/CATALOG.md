@@ -142,6 +142,9 @@ SRC_ACCESS_TOKEN= SRC_ENDPOINT=https://sourcegraph.com src search -json 'repo:gi
 - [ ] Don't hardcode components and groups in code.
 - [ ] Allow collapsing file tree to make it more like browsing components (and remember this setting in temporary settings).
 
+Renames:
+- [ ] SourceLocationSet => SourceSet?
+
 UI:
 
 - [ ] Simplify CatalogPage/CatalogPage2 code.

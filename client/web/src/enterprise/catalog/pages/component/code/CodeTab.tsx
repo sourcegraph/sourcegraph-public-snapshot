@@ -19,7 +19,7 @@ import {
 import { RepoRevisionContainerBreadcrumb } from '../../../../../repo/RepoRevisionContainer'
 import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocationSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
-import { ComponentReadme } from '../readme/ComponentReadme'
+import { SourceLocationSetReadme } from '../readme/ComponentReadme'
 
 import { SourceLocationSetCodeOwners } from './CodeOwners'
 import { CodeTabSidebar } from './CodeTabSidebar'
@@ -155,7 +155,7 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </div>
-                        {sourceLocationSet.readme && <ComponentReadme readme={sourceLocationSet.readme} />}
+                        {sourceLocationSet.readme && <SourceLocationSetReadme readme={sourceLocationSet.readme} />}
                     </div>
                     <div className="col-md-3">
                         <CodeTabSidebar

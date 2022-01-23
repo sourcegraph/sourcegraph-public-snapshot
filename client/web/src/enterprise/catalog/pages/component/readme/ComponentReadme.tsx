@@ -2,15 +2,26 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { gql } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 
-import { ComponentDetailFields } from '../../../../../graphql-operations'
+import { SourceLocationSetReadmeFields } from '../../../../../graphql-operations'
+
+export const SOURCE_LOCATION_SET_README_FRAGMENT = gql`
+    fragment SourceLocationSetReadmeFields on SourceLocationSet {
+        readme {
+            name
+            richHTML
+            url
+        }
+    }
+`
 
 interface Props {
-    readme: NonNullable<ComponentDetailFields['readme']>
+    readme: NonNullable<SourceLocationSetReadmeFields['readme']>
 }
 
-export const ComponentReadme: React.FunctionComponent<Props> = ({ readme }) => (
+export const SourceLocationSetReadme: React.FunctionComponent<Props> = ({ readme }) => (
     <div className="card mb-3">
         <header className="card-header bg-transparent">
             <h4 className="card-title mb-0 font-weight-bold">
