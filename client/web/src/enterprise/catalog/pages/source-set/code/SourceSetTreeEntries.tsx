@@ -4,22 +4,18 @@ import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { propertyIsDefined } from '@sourcegraph/codeintellify/src/helpers'
+import { gql } from '@sourcegraph/http-client'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../../../../backend/features'
-import {
-    TreeOrComponentSourceSetFields,
-    SourceSetFilesFields,
-    SourceSetGitTreeFilesFields,
-} from '../../../../../graphql-operations'
+import { SourceSetFilesFields, SourceSetGitTreeFilesFields } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 import { dirname, pathRelative } from '../../../../../util/path'
 
 import { ComponentSourceLocations } from './ComponentSourceLocations'
-import { gql } from '@sourcegraph/http-client'
 
 export const SOURCE_SET_FILES_FRAGMENT = gql`
     fragment SourceSetFilesFields on SourceSet {
@@ -32,6 +28,17 @@ export const SOURCE_SET_FILES_FRAGMENT = gql`
             }
             path
             ...SourceSetGitTreeFilesFields
+        }
+        ... on GitBlob {
+            repository {
+                id
+                name
+                url
+            }
+            path
+            commit {
+                oid
+            }
         }
         ... on Component {
             sourceLocations {
@@ -75,7 +82,7 @@ export const SOURCE_SET_FILES_FRAGMENT = gql`
 `
 
 interface Props extends ExtensionsControllerProps, ThemeProps {
-    sourceSet: TreeOrComponentSourceSetFields & { __typename: 'Component' | 'GitTree' }
+    sourceSet: SourceSetFilesFields
     className?: string
 }
 
@@ -111,7 +118,10 @@ export const SourceSetTreeEntries: React.FunctionComponent<Props> = ({ sourceSet
                           repositoryName: sourceSet.repository.name,
                           repository: sourceSet.repository,
                           path: sourceSet.path,
-                          treeEntry: sourceSet,
+                          treeEntry:
+                              sourceSet.__typename === 'GitTree'
+                                  ? sourceSet
+                                  : { commit: sourceSet.commit, entries: [] },
                       },
                   ],
         [sourceSet]
