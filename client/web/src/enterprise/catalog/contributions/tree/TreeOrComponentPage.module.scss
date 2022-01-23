@@ -1,3 +1,12 @@
-.container {
-    padding-top: 0;
+.tabs {
+    // Make the horizontal border span the entire width of the container.
+    margin-left: calc(-1 * 1.5 * var(--spacer));
+    margin-right: calc(-1 * 1.5 * var(--spacer));
+    padding-left: calc(1.5 * var(--spacer)) !important;
+    padding-right: calc(1.5 * var(--spacer));
+}
+
+.tab-content {
+    overflow-y: auto;
+    overflow-x: hidden;
 }
