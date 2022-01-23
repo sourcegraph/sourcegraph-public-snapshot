@@ -2,8 +2,8 @@ import React from 'react'
 
 import '../SourcegraphWebApp.scss'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
@@ -56,7 +56,7 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         catalogEnabled={true}
         catalogTreePage={lazyComponent(
             () => import('./catalog/pages/source-set-at-tree/SourceSetAtTreePage'),
-            'TreeOrComponentPage'
+            'SourceSetAtTreePage'
         )}
     />
 )

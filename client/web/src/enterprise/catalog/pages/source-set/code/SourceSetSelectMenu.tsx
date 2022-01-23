@@ -4,17 +4,17 @@ import React from 'react'
 import { Menu, MenuButton } from '@sourcegraph/wildcard'
 
 import { SourceSetViewModeActionMenuItems } from '../../../../../repo/actions/source-set-view-mode-action/SourceSetViewModeAction'
-import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/useTreeOrComponentViewOptions'
+import { SourceSetAtTreeViewOptionsProps } from '../../../contributions/tree/useSourceSetAtTreeViewOptions'
 
 interface Props
-    extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'> {
+    extends Pick<SourceSetAtTreeViewOptionsProps, 'sourceSetAtTreeViewMode' | 'sourceSetAtTreeViewModeURL'> {
     buttonClassName?: string
 }
 
 // TODO(sqs): for clarity, instead make this a dropdown "Show info from <component>"
 export const SourceSetSelectMenu: React.FunctionComponent<Props> = ({
-    treeOrComponentViewMode,
-    treeOrComponentViewModeURL,
+    sourceSetAtTreeViewMode,
+    sourceSetAtTreeViewModeURL,
     buttonClassName,
 }) => (
     <Menu>
@@ -22,8 +22,8 @@ export const SourceSetSelectMenu: React.FunctionComponent<Props> = ({
             <span aria-hidden={true}>▾</span>
         </MenuButton>
         <SourceSetViewModeActionMenuItems
-            treeOrComponentViewMode={treeOrComponentViewMode}
-            treeOrComponentViewModeURL={treeOrComponentViewModeURL}
+            sourceSetAtTreeViewMode={sourceSetAtTreeViewMode}
+            sourceSetAtTreeViewModeURL={sourceSetAtTreeViewModeURL}
         />
     </Menu>
 )

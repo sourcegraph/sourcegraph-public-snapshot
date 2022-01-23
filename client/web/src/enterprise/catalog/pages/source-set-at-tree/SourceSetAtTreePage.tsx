@@ -17,11 +17,11 @@ import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import {
-    TreeOrComponentPageVariables,
+    SourceSetAtTreePageVariables,
     RepositoryForTreeFields,
     TreeEntryForTreeFields,
-    TreeOrComponentPageResult,
-    TreeOrComponentSourceSetFields,
+    SourceSetAtTreePageResult,
+    SourceSetAtTreeFields,
     PrimaryComponentForTreeFields,
 } from '../../../../graphql-operations'
 import { ComponentActionPopoverButton } from '../../../../repo/actions/source-set-view-mode-action/SourceSetViewModeAction'
@@ -41,13 +41,13 @@ import { SOURCE_SET_README_FRAGMENT } from '../source-set/readme/ComponentReadme
 import { UsageTab } from '../source-set/usage/UsageTab'
 import { WhoKnowsTab } from '../source-set/who-knows/WhoKnowsTab'
 
+import { SourceSetAtTreeHeader } from './SourceSetAtTreeHeader'
+import styles from './SourceSetAtTreePage.module.scss'
 import { SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT } from './SourceSetDescendentComponents'
-import { TreeOrComponentHeader } from './TreeOrComponentHeader'
-import styles from './TreeOrComponentPage.module.scss'
-import { useTreeOrComponentViewOptions } from './useTreeOrComponentViewOptions'
+import { useSourceSetAtTreeViewOptions } from './useSourceSetAtTreeViewOptions'
 
 const TREE_OR_COMPONENT_PAGE = gql`
-    query TreeOrComponentPage($repo: ID!, $commitID: String!, $inputRevspec: String!, $path: String!) {
+    query SourceSetAtTreePage($repo: ID!, $commitID: String!, $inputRevspec: String!, $path: String!) {
         node(id: $repo) {
             __typename
             ... on Repository {
@@ -78,7 +78,7 @@ const TREE_OR_COMPONENT_PAGE = gql`
         name
         isRoot
         url
-        ...TreeOrComponentSourceSetFields
+        ...SourceSetAtTreeFields
     }
 
     fragment PrimaryComponentForTreeFields on Component {
@@ -90,14 +90,14 @@ const TREE_OR_COMPONENT_PAGE = gql`
         lifecycle
         catalogURL
         url
-        ...TreeOrComponentSourceSetFields
+        ...SourceSetAtTreeFields
         ...ComponentOwnerFields
         tags {
             ...ComponentTagFields
         }
     }
 
-    fragment TreeOrComponentSourceSetFields on SourceSet {
+    fragment SourceSetAtTreeFields on SourceSet {
         id
         ...SourceSetDescendentComponentsFields
         ...SourceSetFilesFields
@@ -154,7 +154,7 @@ export const SourceSetAtTreePage: React.FunctionComponent<React.ComponentPropsWi
         useBreadcrumb: props.useBreadcrumb,
     })
 
-    const { data, error, loading } = useQuery<TreeOrComponentPageResult, TreeOrComponentPageVariables>(
+    const { data, error, loading } = useQuery<SourceSetAtTreePageResult, SourceSetAtTreePageVariables>(
         TREE_OR_COMPONENT_PAGE,
         {
             variables: { repo: repo.id, commitID, inputRevspec: revision, path: filePath },
@@ -204,7 +204,7 @@ interface Props
     repository: RepositoryForTreeFields
     tree: TreeEntryForTreeFields
     primaryComponent: PrimaryComponentForTreeFields | null
-    data: Extract<TreeOrComponentPageResult['node'], { __typename: 'Repository' }>
+    data: Extract<SourceSetAtTreePageResult['node'], { __typename: 'Repository' }>
 }
 
 const tabContentClassName = classNames('flex-1 align-self-stretch', styles.tabContent)
@@ -219,10 +219,10 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
     useBreadcrumb,
     ...props
 }) => {
-    const treeOrComponentViewOptions = useTreeOrComponentViewOptions()
+    const sourceSetAtTreeViewOptions = useSourceSetAtTreeViewOptions()
 
-    const sourceSet: TreeOrComponentSourceSetFields =
-        treeOrComponentViewOptions.treeOrComponentViewMode === 'auto' ? primaryComponent ?? tree : tree
+    const sourceSet: SourceSetAtTreeFields =
+        sourceSetAtTreeViewOptions.sourceSetAtTreeViewMode === 'auto' ? primaryComponent ?? tree : tree
 
     useBreadcrumb(
         useMemo(
@@ -234,13 +234,13 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
                           element: (
                               <ComponentActionPopoverButton
                                   component={primaryComponent}
-                                  {...treeOrComponentViewOptions}
+                                  {...sourceSetAtTreeViewOptions}
                               />
                           ),
                           divider: <span className="mx-1" />,
                       }
                     : null,
-            [primaryComponent, treeOrComponentViewOptions]
+            [primaryComponent, sourceSetAtTreeViewOptions]
         )
     )
 
@@ -253,7 +253,7 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
                     content: (
                         <CodeTab
                             {...props}
-                            {...treeOrComponentViewOptions}
+                            {...sourceSetAtTreeViewOptions}
                             repository={repository}
                             tree={tree}
                             component={primaryComponent}
@@ -291,17 +291,17 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
                     content: <UsageTab {...props} sourceSet={sourceSet.id} className={tabContentClassName} />,
                 },
             ].filter(isDefined),
-        [primaryComponent, props, repository, sourceSet, tree, treeOrComponentViewOptions]
+        [primaryComponent, props, repository, sourceSet, tree, sourceSetAtTreeViewOptions]
     )
 
     return (
         <CatalogPage2
             header={
-                <TreeOrComponentHeader
+                <SourceSetAtTreeHeader
                     repository={repository}
                     tree={tree}
                     primaryComponent={primaryComponent}
-                    {...treeOrComponentViewOptions}
+                    {...sourceSetAtTreeViewOptions}
                 />
             }
             tabs={tabs}

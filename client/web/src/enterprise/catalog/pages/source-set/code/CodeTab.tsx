@@ -13,11 +13,11 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import {
     RepositoryForTreeFields,
     TreeEntryForTreeFields,
-    TreeOrComponentSourceSetFields,
+    SourceSetAtTreeFields,
 } from '../../../../../graphql-operations'
-import { SourceSetDescendentComponents } from '../../../contributions/tree/SourceSetDescendentComponents'
 import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
-import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/useTreeOrComponentViewOptions'
+import { SourceSetDescendentComponents } from '../../source-set-at-tree/SourceSetDescendentComponents'
+import { SourceSetAtTreeViewOptionsProps } from '../../source-set-at-tree/useSourceSetAtTreeViewOptions'
 import { SourceSetReadme } from '../readme/ComponentReadme'
 
 import { SourceSetCodeOwners } from './CodeOwners'
@@ -34,11 +34,11 @@ interface Props
         ExtensionsControllerProps,
         ThemeProps,
         SettingsCascadeProps,
-        Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'> {
+        Pick<SourceSetAtTreeViewOptionsProps, 'sourceSetAtTreeViewMode' | 'sourceSetAtTreeViewModeURL'> {
     repository: RepositoryForTreeFields
     tree: TreeEntryForTreeFields
     component: React.ComponentPropsWithoutRef<typeof CodeTabSidebar>['component'] | null
-    sourceSet: TreeOrComponentSourceSetFields
+    sourceSet: SourceSetAtTreeFields
     useHash?: boolean
     className?: string
 }
@@ -48,8 +48,8 @@ export const CodeTab: React.FunctionComponent<Props> = ({
     tree,
     component,
     sourceSet,
-    treeOrComponentViewMode,
-    treeOrComponentViewModeURL,
+    sourceSetAtTreeViewMode,
+    sourceSetAtTreeViewModeURL,
     useHash,
     className,
     ...props
@@ -71,23 +71,23 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                                 <SourceSetTitle
                                     component={component}
                                     tree={tree}
-                                    treeOrComponentViewMode={treeOrComponentViewMode}
+                                    sourceSetAtTreeViewMode={sourceSetAtTreeViewMode}
                                 />
-                                {component !== null && treeOrComponentViewMode === 'auto' && (
+                                {component !== null && sourceSetAtTreeViewMode === 'auto' && (
                                     <>
                                         <span className="text-muted mx-1">in</span>
                                         <SourceSetTitle
                                             component={null}
                                             tree={tree}
-                                            treeOrComponentViewMode={treeOrComponentViewMode}
+                                            sourceSetAtTreeViewMode={sourceSetAtTreeViewMode}
                                         />
                                     </>
                                 )}
                             </h2>
                             {component && (
                                 <SourceSetSelectMenu
-                                    treeOrComponentViewMode={treeOrComponentViewMode}
-                                    treeOrComponentViewModeURL={treeOrComponentViewModeURL}
+                                    sourceSetAtTreeViewMode={sourceSetAtTreeViewMode}
+                                    sourceSetAtTreeViewModeURL={sourceSetAtTreeViewModeURL}
                                     buttonClassName="px-2 py-1 text-muted"
                                 />
                             )}
@@ -138,7 +138,7 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                             tree={tree}
                             component={component}
                             sourceSet={sourceSet}
-                            treeOrComponentViewMode={treeOrComponentViewMode}
+                            sourceSetAtTreeViewMode={sourceSetAtTreeViewMode}
                             useHash={useHash}
                         />
                     </div>

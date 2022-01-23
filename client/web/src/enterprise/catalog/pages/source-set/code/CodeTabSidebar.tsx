@@ -14,16 +14,16 @@ import {
     RepositoryForTreeFields,
     SourceSetContributorsFields,
     TreeEntryForTreeFields,
-    TreeOrComponentSourceSetFields,
+    SourceSetAtTreeFields,
 } from '../../../../../graphql-operations'
 import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
-import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/useTreeOrComponentViewOptions'
+import { SourceSetAtTreeViewOptionsProps } from '../../../contributions/tree/useSourceSetAtTreeViewOptions'
 import { ComponentOwnerSidebarItem } from '../meta/ComponentOwnerSidebarItem'
 import { ComponentTagsSidebarItem } from '../meta/ComponentTagsSidebarItem'
 import { SourceSetCodeOwnersSidebarItem } from '../meta/SourceSetCodeOwnersSidebarItem'
 import { SourceSetContributorsSidebarItem } from '../meta/SourceSetContributorsSidebarItem'
 
-interface Props extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode'> {
+interface Props extends Pick<SourceSetAtTreeViewOptionsProps, 'sourceSetAtTreeViewMode'> {
     repository: RepositoryForTreeFields
     tree: TreeEntryForTreeFields
     component:
@@ -35,7 +35,7 @@ interface Props extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentVi
               description: string | null
               tags: ComponentTagFields[]
           })
-    sourceSet: TreeOrComponentSourceSetFields & SourceSetContributorsFields
+    sourceSet: SourceSetAtTreeFields & SourceSetContributorsFields
     useHash?: boolean
     className?: string
 }
@@ -51,26 +51,26 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
     component,
     sourceSet,
     useHash,
-    treeOrComponentViewMode,
+    sourceSetAtTreeViewMode,
     className,
 }) => {
     const match = useRouteMatch()
 
     const pathSeparator = useHash ? '#' : '/'
 
-    const featuredComponent = treeOrComponentViewMode === 'auto' ? component : null
+    const featuredComponent = sourceSetAtTreeViewMode === 'auto' ? component : null
     const description = featuredComponent?.description || (tree.isRoot && repository.description) || null
 
     const SECTION_CLASS_NAME = 'mb-3'
 
     return (
         <aside>
-            {component !== null && treeOrComponentViewMode === 'auto' && (
+            {component !== null && sourceSetAtTreeViewMode === 'auto' && (
                 <h2 className="h5 mb-3">
                     <SourceSetTitle
                         component={component}
                         tree={tree}
-                        treeOrComponentViewMode={treeOrComponentViewMode}
+                        sourceSetAtTreeViewMode={sourceSetAtTreeViewMode}
                     />
                 </h2>
             )}

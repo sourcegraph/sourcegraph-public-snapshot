@@ -5,9 +5,9 @@ import { ComponentKind } from '@sourcegraph/shared/src/schema'
 
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
-import { TreeOrComponentViewOptionsProps } from './useTreeOrComponentViewOptions'
+import { SourceSetAtTreeViewOptionsProps } from './useSourceSetAtTreeViewOptions'
 
-interface Props extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode'> {
+interface Props extends Pick<SourceSetAtTreeViewOptionsProps, 'sourceSetAtTreeViewMode'> {
     component: {
         __typename: 'Component'
         name: string
@@ -18,8 +18,8 @@ interface Props extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentVi
     }
 }
 
-export const SourceSetTitle: React.FunctionComponent<Props> = ({ component, tree, treeOrComponentViewMode }) =>
-    treeOrComponentViewMode === 'auto' && component ? (
+export const SourceSetTitle: React.FunctionComponent<Props> = ({ component, tree, sourceSetAtTreeViewMode }) =>
+    sourceSetAtTreeViewMode === 'auto' && component ? (
         <ComponentTitleWithIconAndKind component={component} />
     ) : (
         <>

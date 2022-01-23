@@ -16,29 +16,29 @@ import {
 } from '../../../../graphql-operations'
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
-import { TreeOrComponentViewOptionsProps } from './useTreeOrComponentViewOptions'
+import { SourceSetAtTreeViewOptionsProps } from './useSourceSetAtTreeViewOptions'
 
-interface Props extends TreeOrComponentViewOptionsProps {
+interface Props extends SourceSetAtTreeViewOptionsProps {
     repository: RepositoryForTreeFields
     tree: TreeEntryForTreeFields
     primaryComponent: PrimaryComponentForTreeFields | null
 }
 
-export const TreeOrComponentHeader: React.FunctionComponent<Props> = ({
+export const SourceSetAtTreeHeader: React.FunctionComponent<Props> = ({
     repository,
     tree,
     primaryComponent: component,
-    treeOrComponentViewMode,
-    treeOrComponentViewModeURL,
+    sourceSetAtTreeViewMode,
+    sourceSetAtTreeViewModeURL,
 }) => {
-    const featuredComponent = treeOrComponentViewMode === 'auto' ? component : null
+    const featuredComponent = sourceSetAtTreeViewMode === 'auto' ? component : null
     // const description = featuredComponent?.description || (tree.isRoot && repository.description) || null
 
     const componentFragment = component && (
         <ComponentHeading
             component={component}
             tag={featuredComponent ? 'h1' : 'h4'}
-            badgeLink={featuredComponent ? undefined : treeOrComponentViewModeURL.auto}
+            badgeLink={featuredComponent ? undefined : sourceSetAtTreeViewModeURL.auto}
             className="mb-2"
             textClassName={featuredComponent ? 'text-body' : 'text-muted'}
         />
@@ -51,7 +51,7 @@ export const TreeOrComponentHeader: React.FunctionComponent<Props> = ({
                 repository={repository}
                 tree={tree}
                 tag={featuredComponent ? 'h4' : 'h1'}
-                badgeLink={featuredComponent ? treeOrComponentViewModeURL.tree : undefined}
+                badgeLink={featuredComponent ? sourceSetAtTreeViewModeURL.tree : undefined}
                 className="mb-2"
                 textClassName={featuredComponent ? 'text-muted' : 'text-body'}
             />

@@ -11,7 +11,7 @@ import { MenuItems } from '@sourcegraph/wildcard/src/components/Menu/MenuItems'
 
 import { CatalogComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
 import { ComponentTitleWithIconAndKind } from '../../../enterprise/catalog/contributions/tree/SourceSetTitle'
-import { TreeOrComponentViewOptionsProps } from '../../../enterprise/catalog/contributions/tree/useTreeOrComponentViewOptions'
+import { SourceSetAtTreeViewOptionsProps } from '../../../enterprise/catalog/contributions/tree/useSourceSetAtTreeViewOptions'
 import {
     SourceSetViewModeInfoResult,
     SourceSetViewModeInfoVariables,
@@ -98,8 +98,8 @@ export const ComponentActionPopoverButton: React.FunctionComponent<
     {
         component: ComponentFields
         buttonClassName?: string
-    } & Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'>
-> = ({ component, buttonClassName, treeOrComponentViewMode, treeOrComponentViewModeURL }) => (
+    } & Pick<SourceSetAtTreeViewOptionsProps, 'sourceSetAtTreeViewMode' | 'sourceSetAtTreeViewModeURL'>
+> = ({ component, buttonClassName, sourceSetAtTreeViewMode, sourceSetAtTreeViewModeURL }) => (
     <Menu>
         <MenuButton
             variant="secondary"
@@ -107,22 +107,22 @@ export const ComponentActionPopoverButton: React.FunctionComponent<
             className={classNames(
                 'py-1 px-2',
                 styles.btn,
-                treeOrComponentViewMode === 'auto' ? styles.btnViewModeComponent : styles.btnViewModeTree,
+                sourceSetAtTreeViewMode === 'auto' ? styles.btnViewModeComponent : styles.btnViewModeTree,
                 buttonClassName
             )}
         >
-            <ComponentTitleWithIconAndKind component={component} strong={treeOrComponentViewMode === 'auto'} />
+            <ComponentTitleWithIconAndKind component={component} strong={sourceSetAtTreeViewMode === 'auto'} />
         </MenuButton>
         <SourceSetViewModeActionMenuItems
-            treeOrComponentViewMode={treeOrComponentViewMode}
-            treeOrComponentViewModeURL={treeOrComponentViewModeURL}
+            sourceSetAtTreeViewMode={sourceSetAtTreeViewMode}
+            sourceSetAtTreeViewModeURL={sourceSetAtTreeViewModeURL}
         />
     </Menu>
 )
 
 export const SourceSetViewModeActionMenuItems: React.FunctionComponent<
-    Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'>
-> = ({ treeOrComponentViewMode, treeOrComponentViewModeURL }) => {
+    Pick<SourceSetAtTreeViewOptionsProps, 'sourceSetAtTreeViewMode' | 'sourceSetAtTreeViewModeURL'>
+> = ({ sourceSetAtTreeViewMode, sourceSetAtTreeViewModeURL }) => {
     const checkIcon = <CheckBoldIcon className="icon-inline" />
     const noCheckIcon = <CheckBoldIcon className="icon-inline invisible" />
 
@@ -131,11 +131,11 @@ export const SourceSetViewModeActionMenuItems: React.FunctionComponent<
             <MenuItems>
                 <MenuHeader>View as...</MenuHeader>
                 <MenuDivider />
-                <MenuLink as={Link} to={treeOrComponentViewModeURL.auto}>
-                    {treeOrComponentViewMode === 'auto' ? checkIcon : noCheckIcon} Component
+                <MenuLink as={Link} to={sourceSetAtTreeViewModeURL.auto}>
+                    {sourceSetAtTreeViewMode === 'auto' ? checkIcon : noCheckIcon} Component
                 </MenuLink>
-                <MenuLink as={Link} to={treeOrComponentViewModeURL.tree}>
-                    {treeOrComponentViewMode === 'tree' ? checkIcon : noCheckIcon} Tree
+                <MenuLink as={Link} to={sourceSetAtTreeViewModeURL.tree}>
+                    {sourceSetAtTreeViewMode === 'tree' ? checkIcon : noCheckIcon} Tree
                 </MenuLink>
             </MenuItems>
         </MenuPopover>
