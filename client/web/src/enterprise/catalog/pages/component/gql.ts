@@ -19,41 +19,6 @@ export const COMPONENT_CODE_OWNERS_FRAGMENT = gql`
     ${personLinkFieldsFragment}
 `
 
-export const COMPONENT_SOURCE_LOCATIONS_FRAGMENT = gql`
-    fragment ComponentSourceLocationsFields on Component {
-        sourceLocations {
-            repositoryName
-            repository {
-                name
-                url
-            }
-            path
-            treeEntry {
-                __typename
-                isDirectory
-                url
-                ... on GitTree {
-                    entries(recursive: true) {
-                        path
-                        name
-                        isDirectory
-                        url
-                    }
-                    commit {
-                        oid
-                    }
-                }
-                ... on GitBlob {
-                    commit {
-                        oid
-                    }
-                }
-            }
-            isPrimary
-        }
-    }
-`
-
 export const COMPONENT_COMMITS_FRAGMENT = gql`
     fragment ComponentCommitsFields on Component {
         commits(first: 10) {
@@ -86,55 +51,6 @@ export const COMPONENT_AUTHORS_FRAGMENT = gql`
     ${personLinkFieldsFragment}
 `
 
-const COMPONENT_USAGE_LOCATIONS_COMPONENTS_FRAGMENT = gql`
-    fragment ComponentUsageLocationsComponentsFields on Component {
-        usage {
-            locations {
-                nodes {
-                    range {
-                        start {
-                            line
-                            character
-                        }
-                        end {
-                            line
-                            character
-                        }
-                    }
-                    resource {
-                        path
-                        commit {
-                            oid
-                        }
-                        repository {
-                            name
-                        }
-                    }
-                }
-            }
-            people {
-                node {
-                    ...PersonLinkFields
-                    avatarURL
-                }
-                authoredLineCount
-                lastCommit {
-                    author {
-                        date
-                    }
-                }
-            }
-            components {
-                node {
-                    id
-                    name
-                    kind
-                    url
-                }
-            }
-        }
-    }
-`
 export const COMPONENT_USAGE_PEOPLE_FRAGMENT = gql`
     fragment ComponentUsagePeopleFields on Component {
         usage {
@@ -152,30 +68,4 @@ export const COMPONENT_USAGE_PEOPLE_FRAGMENT = gql`
             }
         }
     }
-`
-
-// TODO(sqs): remove
-export const COMPONENT_DETAIL_FRAGMENT = gql`
-    fragment ComponentDetailFields on Component {
-        __typename
-        id
-        name
-        kind
-        description
-        lifecycle
-        url
-        catalogURL
-        ...ComponentCodeOwnersFields
-        ...ComponentSourceLocationsFields
-        ...ComponentCommitsFields
-        ...ComponentAuthorsFields
-        ...ComponentUsageLocationsComponentsFields
-        ...ComponentUsagePeopleFields
-    }
-    ${COMPONENT_CODE_OWNERS_FRAGMENT}
-    ${COMPONENT_SOURCE_LOCATIONS_FRAGMENT}
-    ${COMPONENT_COMMITS_FRAGMENT}
-    ${COMPONENT_AUTHORS_FRAGMENT}
-    ${COMPONENT_USAGE_LOCATIONS_COMPONENTS_FRAGMENT}
-    ${COMPONENT_USAGE_PEOPLE_FRAGMENT}
 `

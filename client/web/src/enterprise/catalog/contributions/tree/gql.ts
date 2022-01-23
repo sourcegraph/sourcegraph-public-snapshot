@@ -20,6 +20,7 @@ const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
         }
         ... on Component {
             sourceLocations {
+                isPrimary
                 repositoryName
                 repository {
                     id
@@ -29,6 +30,7 @@ const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
                 path
                 treeEntry {
                     __typename
+                    url
                     ... on GitBlob {
                         commit {
                             oid
@@ -36,7 +38,6 @@ const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
                         path
                         name
                         isDirectory
-                        url
                     }
                     ... on GitTree {
                         ...SourceLocationSetGitTreeFilesFields

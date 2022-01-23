@@ -5,9 +5,10 @@ import React from 'react'
 
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { ComponentSourceLocationsFields } from '../../../../graphql-operations'
+import { SourceLocationSetFilesFields } from '../../../../../graphql-operations'
+
+type ComponentSourceLocationsFields = Extract<SourceLocationSetFilesFields, { __typename: 'Component' }>
 
 interface Props {
     component: ComponentSourceLocationsFields
@@ -65,13 +66,5 @@ const ComponentSourceLocation: React.FunctionComponent<{
                 )}
             </>
         )}
-
-        {sourceLocation.treeEntry &&
-            sourceLocation.treeEntry.__typename === 'GitTree' &&
-            sourceLocation.treeEntry.files && (
-                <span className="text-muted small ml-2">
-                    {sourceLocation.treeEntry.files.length} {pluralize('file', sourceLocation.treeEntry.files.length)}
-                </span>
-            )}
     </Tag>
 )

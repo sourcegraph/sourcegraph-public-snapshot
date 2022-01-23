@@ -140,7 +140,7 @@ SRC_ACCESS_TOKEN= SRC_ENDPOINT=https://sourcegraph.com src search -json 'repo:gi
 - [ ] Expose only <CatalogExplorer /> component, not the view options and list/graph subcomponents that require parent components to assemble them repetitively.
 - [ ] Unify catalog groups and user groups.
 - [ ] Don't hardcode components and groups in code.
-- [ ] Allow collapsing file tree to make it more like browsing components (and remember this setting in temporary settings).
+- [ ] Allow collapsing file tree to make it more like browsing components (and remember this setting in temporary settings). Also show all source locations when viewing a component.
 
 Renames:
 - [ ] SourceLocationSet => SourceSet?
@@ -152,3 +152,4 @@ UI:
 - [ ] Remove needless tabs from GroupPage. -> then clean up ComponentAncestorsPath
 - [ ] Refactor uses of ComponentDetailFields monolithic GraphQL type.
 - [ ] Remove COMPONENT_DETAIL_FRAGMENT.
+- [ ] Clean up source location list above tree entries.

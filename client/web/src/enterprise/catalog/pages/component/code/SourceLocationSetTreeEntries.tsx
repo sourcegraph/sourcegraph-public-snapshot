@@ -18,6 +18,8 @@ import {
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 import { dirname, pathRelative } from '../../../../../util/path'
 
+import { ComponentSourceLocations } from './ComponentSourceLocations'
+
 interface Props extends ExtensionsControllerProps, ThemeProps {
     sourceLocationSet: TreeOrComponentSourceLocationSetFields & { __typename: 'Component' | 'GitTree' }
     className?: string
@@ -66,6 +68,9 @@ export const SourceLocationSetTreeEntries: React.FunctionComponent<Props> = ({
     )
     return (
         <div className={className}>
+            {sourceLocationSet.__typename === 'Component' && sourceLocationSet.sourceLocations.length >= 2 && (
+                <ComponentSourceLocations component={sourceLocationSet} />
+            )}
             {sourceLocations.map(sourceLocation => (
                 <SourceLocationTreeEntries
                     key={`${sourceLocation.repositoryName}:${sourceLocation.path || ''}`}
