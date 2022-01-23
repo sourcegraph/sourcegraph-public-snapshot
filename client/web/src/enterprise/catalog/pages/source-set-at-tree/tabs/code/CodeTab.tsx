@@ -16,7 +16,6 @@ import {
     SourceSetAtTreeFields,
 } from '../../../../../../graphql-operations'
 import { SourceSetTitle } from '../../../../contributions/tree/SourceSetTitle'
-import { SourceSetDescendentComponents } from '../../SourceSetDescendentComponents'
 import { SourceSetAtTreeViewOptionsProps } from '../../useSourceSetAtTreeViewOptions'
 
 import { SourceSetCodeOwners } from './CodeOwners'
@@ -26,6 +25,7 @@ import { SourceSetReadme } from './ComponentReadme'
 import { LastCommit } from './LastCommit'
 import { SourceSetBranches } from './SourceSetBranches'
 import { SourceSetContributors } from './SourceSetContributors'
+import { SourceSetDescendentComponents } from './SourceSetDescendentComponents'
 import { SourceSetSelectMenu } from './SourceSetSelectMenu'
 import { SourceSetTreeEntries } from './SourceSetTreeEntries'
 

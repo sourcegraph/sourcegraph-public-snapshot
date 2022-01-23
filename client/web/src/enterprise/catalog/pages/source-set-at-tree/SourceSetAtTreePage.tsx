@@ -33,12 +33,12 @@ import { CatalogPage, CatalogPage2 } from '../../components/catalog-area-header/
 import { COMPONENT_TAG_FRAGMENT } from '../../components/component-tag/ComponentTag'
 
 import styles from './SourceSetAtTreePage.module.scss'
-import { SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT } from './SourceSetDescendentComponents'
 import { CodeTab } from './tabs/code/CodeTab'
 import { SOURCE_SET_README_FRAGMENT } from './tabs/code/ComponentReadme'
 import { COMPONENT_OWNER_FRAGMENT } from './tabs/code/sidebar/ComponentOwnerSidebarItem'
 import { SOURCE_SET_CODE_OWNERS_FRAGMENT } from './tabs/code/sidebar/SourceSetCodeOwnersSidebarItem'
 import { SOURCE_SET_CONTRIBUTORS_FRAGMENT } from './tabs/code/sidebar/SourceSetContributorsSidebarItem'
+import { SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT } from './tabs/code/SourceSetDescendentComponents'
 import { SOURCE_SET_FILES_FRAGMENT } from './tabs/code/SourceSetTreeEntries'
 import { CatalogRelations } from './tabs/graph/CatalogRelations'
 import { UsageTab } from './tabs/usage/UsageTab'

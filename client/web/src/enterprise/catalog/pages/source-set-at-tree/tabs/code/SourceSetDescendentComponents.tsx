@@ -8,9 +8,9 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { FileSpec } from '@sourcegraph/shared/src/util/url'
 
-import { SourceSetDescendentComponentsFields } from '../../../../graphql-operations'
-import { pathHasPrefix, pathRelative } from '../../../../util/path'
-import { CatalogComponentIcon } from '../../components/ComponentIcon'
+import { SourceSetDescendentComponentsFields } from '../../../../../../graphql-operations'
+import { pathHasPrefix, pathRelative } from '../../../../../../util/path'
+import { CatalogComponentIcon } from '../../../../components/ComponentIcon'
 
 import styles from './SourceSetDescendentComponents.module.scss'
 
