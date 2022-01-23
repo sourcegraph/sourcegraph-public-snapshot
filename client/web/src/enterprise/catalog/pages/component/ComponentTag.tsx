@@ -11,7 +11,7 @@ import { positionBottomRight } from '../../../insights/components/context-menu/u
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
 
 export const COMPONENT_TAG_FRAGMENT = gql`
-    fragment ComponentTagFields on Component {
+    fragment ComponentTagFields on ComponentTag {
         name
         components {
             nodes {
@@ -39,7 +39,7 @@ export const ComponentTag: React.FunctionComponent<Props> = ({ tag: { name, comp
             <MenuList position={positionBottomRight}>
                 <MenuItems>
                     <MenuHeader>Tag: {name}</MenuHeader>
-                    {components.slice(0, 15 /* TODO(sqs) */).map(component => (
+                    {components.nodes.slice(0, 15 /* TODO(sqs) */).map(component => (
                         <MenuLink
                             key={component.id}
                             as={Link}

@@ -104,13 +104,13 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
             )}
             {featuredComponent?.tags && featuredComponent.tags.length > 0 && (
                 <section className={SECTION_CLASS_NAME}>
-                    <ComponentTagsSidebarItem component={featuredComponent} />
+                    <ComponentTagsSidebarItem tags={featuredComponent.tags} />
                 </section>
             )}
             {featuredComponent && (
                 <section className={SECTION_CLASS_NAME}>
                     <h4 className="font-weight-bold">Owner</h4>
-                    <ComponentOwnerSidebarItem component={featuredComponent} isTree={isTree} />
+                    <ComponentOwnerSidebarItem component={featuredComponent} />
                 </section>
             )}
             {sourceLocationSet.codeOwners && sourceLocationSet.codeOwners.edges.length > 0 && (
