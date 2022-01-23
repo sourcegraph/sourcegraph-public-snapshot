@@ -61,25 +61,25 @@ func (bo BuildOptions) MarshalYAML() ([]byte, error) {
 // Matches Buildkite pipeline JSON schema:
 // https://github.com/buildkite/pipeline-schema/blob/master/schema.json
 type Step struct {
-	Label                  string                 `json:"label"`
-	Key                    string                 `json:"key,omitempty"`
-	Command                []string               `json:"command,omitempty"`
-	DependsOn              []string               `json:"depends_on,omitempty"`
-	AllowDependencyFailure bool                   `json:"allow_dependency_failure,omitempty"`
-	TimeoutInMinutes       string                 `json:"timeout_in_minutes,omitempty"`
-	Trigger                string                 `json:"trigger,omitempty"`
-	Async                  bool                   `json:"async,omitempty"`
-	Build                  *BuildOptions          `json:"build,omitempty"`
-	Env                    map[string]string      `json:"env,omitempty"`
-	Plugins                map[string]interface{} `json:"plugins,omitempty"`
-	ArtifactPaths          string                 `json:"artifact_paths,omitempty"`
-	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
-	Concurrency            int                    `json:"concurrency,omitempty"`
-	Parallelism            int                    `json:"parallelism,omitempty"`
-	Skip                   string                 `json:"skip,omitempty"`
-	SoftFail               []softFailExitStatus   `json:"soft_fail,omitempty"`
-	Retry                  *RetryOptions          `json:"retry,omitempty"`
-	Agents                 map[string]string      `json:"agents,omitempty"`
+	Label                  string                   `json:"label"`
+	Key                    string                   `json:"key,omitempty"`
+	Command                []string                 `json:"command,omitempty"`
+	DependsOn              []string                 `json:"depends_on,omitempty"`
+	AllowDependencyFailure bool                     `json:"allow_dependency_failure,omitempty"`
+	TimeoutInMinutes       string                   `json:"timeout_in_minutes,omitempty"`
+	Trigger                string                   `json:"trigger,omitempty"`
+	Async                  bool                     `json:"async,omitempty"`
+	Build                  *BuildOptions            `json:"build,omitempty"`
+	Env                    map[string]string        `json:"env,omitempty"`
+	Plugins                []map[string]interface{} `json:"plugins,omitempty"`
+	ArtifactPaths          string                   `json:"artifact_paths,omitempty"`
+	ConcurrencyGroup       string                   `json:"concurrency_group,omitempty"`
+	Concurrency            int                      `json:"concurrency,omitempty"`
+	Parallelism            int                      `json:"parallelism,omitempty"`
+	Skip                   string                   `json:"skip,omitempty"`
+	SoftFail               []softFailExitStatus     `json:"soft_fail,omitempty"`
+	Retry                  *RetryOptions            `json:"retry,omitempty"`
+	Agents                 map[string]string        `json:"agents,omitempty"`
 }
 
 var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
@@ -118,7 +118,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Label:   label,
 		Env:     make(map[string]string),
 		Agents:  make(map[string]string),
-		Plugins: make(map[string]interface{}),
+		Plugins: make([]map[string]interface{}, 0, 0),
 	}
 	for _, opt := range BeforeEveryStepOpts {
 		opt(step)
@@ -331,7 +331,9 @@ func Key(key string) StepOpt {
 
 func Plugin(name string, plugin interface{}) StepOpt {
 	return func(step *Step) {
-		step.Plugins[name] = plugin
+		wrapper := map[string]interface{}{}
+		wrapper[name] = plugin
+		step.Plugins = append(step.Plugins, wrapper)
 	}
 }
 
@@ -347,5 +349,16 @@ func DependsOn(dependency ...string) StepOpt {
 func AllowDependencyFailure() StepOpt {
 	return func(step *Step) {
 		step.AllowDependencyFailure = true
+	}
+}
+
+// FlattenStepOpts conveniently turns a list of StepOpt into a single StepOpt.
+// It is useful to build helpers that can then be used when defining operations,
+// when the helper wraps multiple stepOpts at once.
+func FlattenStepOpts(stepOpts ...StepOpt) StepOpt {
+	return func(step *Step) {
+		for _, stepOpt := range stepOpts {
+			stepOpt(step)
+		}
 	}
 }
