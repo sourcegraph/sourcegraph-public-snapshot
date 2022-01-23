@@ -26,8 +26,6 @@ type LimitStream struct {
 }
 
 func (s *LimitStream) Send(event SearchEvent) {
-	s.s.Send(event)
-
 	var count int64
 	for _, r := range event.Results {
 		count += int64(r.ResultCount())
@@ -38,15 +36,19 @@ func (s *LimitStream) Send(event SearchEvent) {
 		return
 	}
 
-	old := s.remaining.Load()
-	s.remaining.Sub(count)
+	after := s.remaining.Sub(count)
+	before := after + count
 
-	// Only send IsLimitHit once. Can race with other sends and be sent
-	// multiple times, but this is fine. Want to avoid lots of noop events
-	// after the first IsLimitHit.
-	if old >= 0 && s.remaining.Load() < 0 {
+	if after < 0 && before >= 0 {
+		matches := result.Matches(event.Results)
+		matches.Limit(int(before))
+		event.Results = matches
+		s.s.Send(event)
+
 		s.s.Send(SearchEvent{Stats: Stats{IsLimitHit: true}})
 		s.cancel()
+	} else if after >= 0 {
+		s.s.Send(event)
 	}
 }
 
