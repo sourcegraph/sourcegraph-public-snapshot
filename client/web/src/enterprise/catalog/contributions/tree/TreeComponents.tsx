@@ -16,13 +16,9 @@ import {
 } from '../../../../graphql-operations'
 import { pathHasPrefix, pathRelative } from '../../../../util/path'
 import { CatalogComponentIcon } from '../../components/ComponentIcon'
-import {
-    COMPONENT_CODE_OWNERS_FRAGMENT,
-    COMPONENT_AUTHORS_FRAGMENT,
-    COMPONENT_USAGE_PEOPLE_FRAGMENT,
-} from '../../pages/component/gql'
-
+import { COMPONENT_AUTHORS_FRAGMENT } from '../../pages/component/gql'
 import { COMPONENT_OWNER_FRAGMENT } from '../../pages/component/meta/ComponentOwnerSidebarItem'
+
 import styles from './TreeComponents.module.scss'
 
 interface Props extends FileSpec {
@@ -58,9 +54,6 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
         lifecycle
         url
         ...ComponentOwnerFields
-        ...ComponentCodeOwnersFields
-        ...ComponentAuthorsFields
-        ...ComponentUsagePeopleFields
     }
 
     fragment OtherComponentForTreeEntryFields on Component {
@@ -84,9 +77,6 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
     }
 
     ${COMPONENT_OWNER_FRAGMENT}
-    ${COMPONENT_CODE_OWNERS_FRAGMENT}
-    ${COMPONENT_AUTHORS_FRAGMENT}
-    ${COMPONENT_USAGE_PEOPLE_FRAGMENT}
 `
 
 export const TreeComponents: React.FunctionComponent<Props> = ({ repoID, filePath, className }) => {

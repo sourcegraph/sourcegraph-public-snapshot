@@ -3,7 +3,6 @@ import React from 'react'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { SourceLocationSetContributorsFields } from '../../../../../graphql-operations'
-
 import { PersonList } from '../../../components/person-list/PersonList'
 
 export const SourceSetContributorsSidebarItem: React.FunctionComponent<{
