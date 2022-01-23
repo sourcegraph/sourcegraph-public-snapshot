@@ -17,6 +17,7 @@ type SourceLocationSet interface {
 	Usage(context.Context) (ComponentUsageResolver, error)
 	WhoKnows(context.Context, *WhoKnowsArgs) ([]WhoKnowsEdgeResolver, error)
 	Cyclonedx(context.Context) (*string, error)
+	DescendentComponents(context.Context) ([]ComponentResolver, error)
 }
 
 func (r *GitTreeEntryResolver) Commits(ctx context.Context, args *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error) {
@@ -49,4 +50,8 @@ func (r *GitTreeEntryResolver) WhoKnows(ctx context.Context, args *WhoKnowsArgs)
 
 func (r *GitTreeEntryResolver) Cyclonedx(ctx context.Context) (*string, error) {
 	return EnterpriseResolvers.catalogRootResolver.GitTreeEntryCyclonedx(ctx, r)
+}
+
+func (r *GitTreeEntryResolver) DescendentComponents(ctx context.Context) ([]ComponentResolver, error) {
+	return EnterpriseResolvers.catalogRootResolver.GitTreeEntryDescendentComponents(ctx, r)
 }

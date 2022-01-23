@@ -191,7 +191,19 @@ export const TREE_OR_COMPONENT_PAGE = gql`
         id
         name
         kind
+        description
         url
+        sourceLocations {
+            repository {
+                id
+            }
+            path
+            isEntireRepository
+            treeEntry {
+                url
+            }
+            isPrimary
+        }
     }
 
     ${TREE_OR_COMPONENT_SOURCE_LOCATION_SET_FRAGMENT}

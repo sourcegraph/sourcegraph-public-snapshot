@@ -193,7 +193,8 @@ interface SourceLocationSet implements Node {
     contributors(first: Int): ContributorConnection
     usage: ComponentUsage
     whoKnows(query: String): [WhoKnowsEdge!]!
-    cyclonedx: String
+  cyclonedx: String
+  descendentComponents: [Component!]!
 }
 
 extend interface TreeEntry implements SourceLocationSet {
@@ -226,7 +227,8 @@ extend interface TreeEntry implements SourceLocationSet {
     contributors(first: Int): ContributorConnection
     usage: ComponentUsage
     whoKnows(query: String): [WhoKnowsEdge!]!
-    cyclonedx: String
+  cyclonedx: String
+  descendentComponents: [Component!]!
 }
 
 extend type GitBlob implements SourceLocationSet {
@@ -258,7 +260,8 @@ extend type GitBlob implements SourceLocationSet {
     contributors(first: Int): ContributorConnection
     usage: ComponentUsage
     whoKnows(query: String): [WhoKnowsEdge!]!
-    cyclonedx: String
+  cyclonedx: String
+  descendentComponents: [Component!]!
 }
 
 extend type GitTree implements SourceLocationSet {
@@ -290,7 +293,9 @@ extend type GitTree implements SourceLocationSet {
     contributors(first: Int): ContributorConnection
     usage: ComponentUsage
     whoKnows(query: String): [WhoKnowsEdge!]!
-    cyclonedx: String
+  cyclonedx: String
+  """TODO(sqs): remove duplication between GitTree.components and GitTree.descendentComponents"""
+  descendentComponents: [Component!]!
 }
 
 extend type Component implements SourceLocationSet {
@@ -320,5 +325,6 @@ extend type Component implements SourceLocationSet {
     contributors(first: Int): ContributorConnection
     usage: ComponentUsage
     whoKnows(query: String): [WhoKnowsEdge!]!
-    cyclonedx: String
+  cyclonedx: String
+  descendentComponents: [Component!]!
 }

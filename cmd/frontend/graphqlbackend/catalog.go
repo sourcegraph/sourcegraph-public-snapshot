@@ -31,6 +31,7 @@ type CatalogRootResolver interface {
 	GitTreeEntryBranches(context.Context, *GitTreeEntryResolver, *GitRefConnectionArgs) (GitRefConnectionResolver, error)
 	GitTreeEntryWhoKnows(context.Context, *GitTreeEntryResolver, *WhoKnowsArgs) ([]WhoKnowsEdgeResolver, error)
 	GitTreeEntryCyclonedx(context.Context, *GitTreeEntryResolver) (*string, error)
+	GitTreeEntryDescendentComponents(context.Context, *GitTreeEntryResolver) ([]ComponentResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
