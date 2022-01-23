@@ -15,7 +15,8 @@ export function invalidateClient(): void {
 
 export const requestGraphQLFromVSCode = async <R, V = object>(
     request: string,
-    variables: V
+    variables: V,
+    overrideAccessToken?: string
 ): Promise<GraphQLResult<R>> => {
     if (invalidated) {
         throw new Error(
@@ -31,7 +32,10 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     const accessToken = accessTokenSetting()
 
     // Add Access Token to request header
-    if (accessToken) {
+    // Used to validate access token.
+    if (overrideAccessToken) {
+        headers.push(['Authorization', `token ${overrideAccessToken}`])
+    } else if (accessToken) {
         headers.push(['Authorization', `token ${accessToken}`])
     } else {
         headers.push(['Content-Type', 'application/json'])
@@ -55,7 +59,10 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         return response.json() as Promise<GraphQLResult<any>>
     } catch (error) {
         if (isHTTPAuthError(error)) {
-            await handleAccessTokenError(accessToken ?? '')
+            handleAccessTokenError(accessToken).then(
+                () => {},
+                () => {}
+            )
         }
         throw asError(error)
     }
