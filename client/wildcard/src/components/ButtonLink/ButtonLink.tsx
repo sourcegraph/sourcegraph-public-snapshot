@@ -4,6 +4,8 @@ import { noop } from 'lodash'
 import React, { AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
 
+import { isDefined } from '@sourcegraph/common'
+
 import { Button, ButtonProps } from '../Button'
 import { RouterLink, AnchorLink } from '../Link'
 
@@ -43,6 +45,9 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as'> &
         id?: string
 
         disabled?: boolean
+
+        /** Override default tab index */
+        tabIndex?: number
     }
 
 /**
@@ -54,15 +59,19 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as'> &
 export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = React.forwardRef(
     (
         {
-            className,
+            className = 'nav-link',
             to,
+            target,
+            rel,
             disabled,
             disabledClassName,
             pressed,
-            id,
-            ref,
             'data-tooltip': tooltip,
             onSelect = noop,
+            children,
+            id,
+            'data-content': dataContent,
+            tabIndex,
             ...rest
         },
         reference
@@ -87,17 +96,18 @@ export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = React.forwar
         }
 
         const commonProps = {
-            disabled,
-            onClick: onSelect,
-            onKeyPress: handleKeyPress,
-            ref: reference,
             // `.disabled` will only be selected if the `.btn` class is applied as well
             className: classNames(className, disabled && ['disabled', disabledClassName]),
             'data-tooltip': tooltip,
             'aria-label': tooltip,
             role: typeof pressed === 'boolean' ? 'button' : undefined,
             'aria-pressed': pressed,
+            tabIndex: isDefined(tabIndex) ? tabIndex : disabled ? -1 : 0,
+            onClick: onSelect,
+            onKeyPress: handleKeyPress,
             id,
+            ref: reference,
+            disabled,
         }
 
         if (!to || disabled) {
