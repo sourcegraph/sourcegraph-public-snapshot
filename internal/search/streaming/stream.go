@@ -11,7 +11,7 @@ import (
 )
 
 type SearchEvent struct {
-	Results []result.Match
+	Results result.Matches
 	Stats   Stats
 }
 
@@ -40,9 +40,7 @@ func (s *LimitStream) Send(event SearchEvent) {
 	before := after + count
 
 	if after < 0 && before >= 0 {
-		matches := result.Matches(event.Results)
-		matches.Limit(int(before))
-		event.Results = matches
+		event.Results.Limit(int(before))
 		s.s.Send(event)
 
 		s.s.Send(SearchEvent{Stats: Stats{IsLimitHit: true}})
