@@ -6,11 +6,7 @@ import React from 'react'
 import { useRouteMatch } from 'react-router'
 import { Link } from 'react-router-dom'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ComponentKind } from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import {
@@ -28,12 +24,7 @@ import { ComponentOwnerSidebarItem } from '../meta/ComponentOwnerSidebarItem'
 import { ComponentTagsSidebarItem } from '../meta/ComponentTagsSidebarItem'
 import { SourceSetContributorsSidebarItem } from '../meta/SourceSetContributorsSidebarItem'
 
-interface Props
-    extends TelemetryProps,
-        ExtensionsControllerProps,
-        ThemeProps,
-        SettingsCascadeProps,
-        Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode'> {
+interface Props extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode'> {
     repository: RepositoryForTreeFields
     tree: TreeEntryForTreeFields
     component:

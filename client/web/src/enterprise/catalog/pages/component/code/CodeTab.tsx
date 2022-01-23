@@ -11,12 +11,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import {
-    ComponentDetailFields,
     RepositoryForTreeFields,
     TreeEntryForTreeFields,
     TreeOrComponentSourceLocationSetFields,
 } from '../../../../../graphql-operations'
-import { RepoRevisionContainerBreadcrumb } from '../../../../../repo/RepoRevisionContainer'
 import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocationSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
 import { SourceLocationSetReadme } from '../readme/ComponentReadme'
@@ -39,7 +37,7 @@ interface Props
         Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'> {
     repository: RepositoryForTreeFields
     tree: TreeEntryForTreeFields
-    component: ComponentDetailFields | null
+    component: React.ComponentPropsWithoutRef<typeof CodeTabSidebar>['component'] | null
     sourceLocationSet: TreeOrComponentSourceLocationSetFields
     isTree?: boolean
     useHash?: boolean
@@ -101,21 +99,6 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                                     buttonClassName="px-2 py-1 text-muted"
                                 />
                             )}
-                            {false && (
-                                <div>
-                                    <RepoRevisionContainerBreadcrumb
-                                        // TODO(sqs): actually use the passed-down values for these
-                                        revision="main"
-                                        resolvedRevisionOrError={{
-                                            commitID: '4aaa77a86c83a5802b355c64679223e327280bbf',
-                                            defaultBranch: 'main',
-                                            rootTreeURL: 'TODO(sqs)',
-                                        }}
-                                        repo={repository}
-                                        small={false}
-                                    />
-                                </div>
-                            )}
                             <Link to={`${match.url}${pathSeparator}branches`} className="ml-3">
                                 {sourceLocationSet.branches.totalCount}{' '}
                                 {pluralize('branch', sourceLocationSet.branches.totalCount, 'branches')}
@@ -164,7 +147,6 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                             component={component}
                             sourceLocationSet={sourceLocationSet}
                             treeOrComponentViewMode={treeOrComponentViewMode}
-                            isTree={isTree}
                             useHash={useHash}
                         />
                     </div>
