@@ -7,9 +7,12 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isDefined } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { FileSpec, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { BreadcrumbSetters } from '@sourcegraph/web/src/components/Breadcrumbs'
 import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -20,6 +23,7 @@ import {
     TreeEntryForTreeFields,
     TreeOrComponentPageResult,
     TreeOrComponentSourceSetFields,
+    PrimaryComponentForTreeFields,
 } from '../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { ComponentActionPopoverButton } from '../../../../repo/actions/source-set-view-mode-action/SourceSetViewModeAction'
@@ -221,9 +225,7 @@ const TREE_OR_COMPONENT_PAGE = gql`
     ${COMPONENT_TAG_FRAGMENT}
 `
 
-interface Props extends React.ComponentPropsWithoutRef<typeof TreePage> {}
-
-export const TreeOrComponentPage: React.FunctionComponent<Props> = ({
+export const TreeOrComponentPage: React.FunctionComponent<React.ComponentPropsWithoutRef<typeof TreePage>> = ({
     repo,
     revision,
     commitID,
@@ -267,25 +269,47 @@ export const TreeOrComponentPage: React.FunctionComponent<Props> = ({
             ) : !data.node.commit?.tree ? (
                 <ErrorAlert error="404 Not Found" />
             ) : (
-                <TreeOrComponent {...props} data={data.node} />
+                <TreeOrComponent
+                    {...props}
+                    filePath={filePath}
+                    repoID={repo.id}
+                    repository={data.node}
+                    tree={data.node.commit?.tree ?? null}
+                    primaryComponent={data.node.primaryComponents[0] ?? null}
+                    data={data.node}
+                />
             )}
         </Container>
     )
 }
 
-interface Props2 extends SettingsCascadeProps, TelemetryProps, BreadcrumbSetters {
+interface Props
+    extends SettingsCascadeProps,
+        TelemetryProps,
+        BreadcrumbSetters,
+        ExtensionsControllerProps,
+        ThemeProps,
+        FileSpec {
+    repoID: Scalars['ID']
+    repository: RepositoryForTreeFields
+    tree: TreeEntryForTreeFields
+    primaryComponent: PrimaryComponentForTreeFields | null
     data: Extract<TreeOrComponentPageResult['node'], { __typename: 'Repository' }>
 }
 
 const tabContentClassName = classNames('flex-1 align-self-stretch', styles.tabContent)
 
-export const TreeOrComponent: React.FunctionComponent<Props2> = ({ data, useBreadcrumb, ...props }) => {
-    const primaryComponent = data.primaryComponents.length > 0 ? data.primaryComponents[0] : null
-
+const TreeOrComponent: React.FunctionComponent<Props> = ({
+    filePath,
+    repoID,
+    repository,
+    tree,
+    primaryComponent,
+    data,
+    useBreadcrumb,
+    ...props
+}) => {
     const treeOrComponentViewOptions = useTreeOrComponentViewOptions()
-
-    const repository: RepositoryForTreeFields = data
-    const tree: TreeEntryForTreeFields | null = data.commit?.tree ?? null
 
     const sourceSet: TreeOrComponentSourceSetFields | null =
         treeOrComponentViewOptions.treeOrComponentViewMode === 'auto' ? primaryComponent ?? tree : tree
@@ -324,7 +348,6 @@ export const TreeOrComponent: React.FunctionComponent<Props2> = ({ data, useBrea
                             tree={tree}
                             component={primaryComponent}
                             sourceSet={sourceSet}
-                            isTree={true}
                             useHash={true}
                             className={tabContentClassName}
                         />
