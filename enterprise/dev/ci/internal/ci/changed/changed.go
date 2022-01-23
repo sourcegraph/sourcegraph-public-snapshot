@@ -30,6 +30,16 @@ func (c Files) AffectsSg() bool {
 	return false
 }
 
+// AffectsTerraformFiles returns whether the changes affects terraform files.
+func (c Files) AffectsTerraformFiles() bool {
+	for _, p := range c {
+		if strings.HasSuffix(p, ".tf")  {
+			return true
+		}
+	}
+	return false
+}
+
 // AffectsGo returns whether the changes affects go files.
 func (c Files) AffectsGo() bool {
 	for _, p := range c {
