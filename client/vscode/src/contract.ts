@@ -2,6 +2,7 @@ import { GraphQLResult } from '@sourcegraph/http-client'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ProxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { VSCEState, VSCEStateMachine } from './state'
@@ -21,6 +22,8 @@ export interface ExtensionCoreAPI {
 
     openLink: (uri: string) => void
     reloadWindow: () => void
+
+    streamSearch: (query: string, options: StreamSearchOptions) => ProxySubscribable<AggregateStreamingSearchResults>
 }
 
 export interface SearchPanelAPI {

@@ -5,9 +5,21 @@ import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import { displayRepoName } from '../components/RepoFileLink'
+// import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
+
+// TODO: move to search. remove dependency on UI here (so we can load it in node)
+/**
+ * Returns the friendly display form of the repository name (e.g., removing "github.com/").
+ */
+export function displayRepoName(repoName: string): string {
+    let parts = repoName.split('/')
+    if (parts.length >= 3 && parts[0].includes('.')) {
+        parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
+    }
+    return parts.join('/')
+}
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
 export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null

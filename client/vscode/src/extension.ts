@@ -1,14 +1,17 @@
 import 'cross-fetch/polyfill'
 import { of, ReplaySubject } from 'rxjs'
+import { throttleTime } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
+import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
 import { ExtensionCoreAPI } from './contract'
-import { updateAccessTokenSetting } from './settings/accessTokenSetting'
+import polyfillEventSource from './polyfills/eventSource'
+import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
 import { endpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { createVSCEStateMachine } from './state'
@@ -51,6 +54,11 @@ export function activate(context: vscode.ExtensionContext): void {
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
+    const initialAccessToken = accessTokenSetting()
+
+    // Sets global `EventSource` for Node, which is required for streaming search.
+    // Used for VS Code web as well to be able to add Authorization header.
+    polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}` } : {})
 
     // Add state to VS Code context to be used in context keys.
     // Used e.g. by file tree view to only be visible in `remote-browsing` state.
@@ -78,11 +86,16 @@ export function activate(context: vscode.ExtensionContext): void {
         // `useObservable` hook. Add `usePromise`s hook to fix.
         getAuthenticatedUser: () => proxySubscribable(authenticatedUser),
         getInstanceURL: () => proxySubscribable(of(initialInstanceURL)),
-        openLink: async uri => {
-            await vscode.env.openExternal(vscode.Uri.parse(uri))
-        },
+        openLink: uri => vscode.env.openExternal(vscode.Uri.parse(uri)),
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
+        streamSearch: (query, options) =>
+            proxySubscribable(
+                aggregateStreamingSearch(of(query), {
+                    ...options,
+                    sourcegraphURL: initialInstanceURL,
+                }).pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
+            ),
     }
 
     registerWebviews({ context, extensionCoreAPI, initializedPanelIDs, sourcegraphSettings })
