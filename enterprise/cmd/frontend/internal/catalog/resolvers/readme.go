@@ -8,7 +8,7 @@ import (
 )
 
 func (r *componentResolver) Readme(ctx context.Context) (gql.FileResolver, error) {
-	slocs, err := r.sourceLocationSetResolver(ctx)
+	slocs, err := r.sourceSetResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -16,10 +16,10 @@ func (r *componentResolver) Readme(ctx context.Context) (gql.FileResolver, error
 }
 
 func (r *rootResolver) GitTreeEntryReadme(ctx context.Context, treeEntry *gql.GitTreeEntryResolver) (gql.FileResolver, error) {
-	return sourceLocationSetResolverFromTreeEntry(treeEntry, r.db).Readme(ctx)
+	return sourceSetResolverFromTreeEntry(treeEntry, r.db).Readme(ctx)
 }
 
-func (r *sourceLocationSetResolver) Readme(ctx context.Context) (gql.FileResolver, error) {
+func (r *sourceSetResolver) Readme(ctx context.Context) (gql.FileResolver, error) {
 	for _, sloc := range r.slocs {
 		file, err := sloc.commit.File(ctx, &struct{ Path string }{Path: path.Join(sloc.path, "README.md")})
 		if file != nil || err != nil {

@@ -55,7 +55,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import { ComponentRepoHeaderAction } from './actions/component-action/ComponentRepoHeaderAction'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
-import { SourceLocationSetViewModeAction } from './actions/source-location-set-view-mode-action/SourceLocationSetViewModeAction'
+import { SourceSetViewModeAction } from './actions/source-set-view-mode-action/SourceSetViewModeAction'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import styles from './RepoContainer.module.scss'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -475,7 +475,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 {...repoHeaderContributionsLifecycleProps}
             >
                 {({ actionType }) => (
-                    <SourceLocationSetViewModeAction
+                    <SourceSetViewModeAction
                         key="source-location-set-view-mode"
                         repo={repoOrError}
                         filePath={filePath}

@@ -13,7 +13,7 @@ import (
 )
 
 func (r *componentResolver) Commits(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.GitCommitConnectionResolver, error) {
-	slocs, err := r.sourceLocationSetResolver(ctx)
+	slocs, err := r.sourceSetResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -21,10 +21,10 @@ func (r *componentResolver) Commits(ctx context.Context, args *graphqlutil.Conne
 }
 
 func (r *rootResolver) GitTreeEntryCommits(ctx context.Context, treeEntry *gql.GitTreeEntryResolver, args *graphqlutil.ConnectionArgs) (gql.GitCommitConnectionResolver, error) {
-	return sourceLocationSetResolverFromTreeEntry(treeEntry, r.db).Commits(ctx, args)
+	return sourceSetResolverFromTreeEntry(treeEntry, r.db).Commits(ctx, args)
 }
 
-func (r *sourceLocationSetResolver) Commits(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.GitCommitConnectionResolver, error) {
+func (r *sourceSetResolver) Commits(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.GitCommitConnectionResolver, error) {
 	// TODO(sqs): how to ensure both follow *and* sorting of results merged from `git log` over
 	// multiple paths? Which sort order (topo or date) and how is that handled when the results are
 	// merged? Follow doesn't work for multiple paths (see `git log --help`, "--follow ... works

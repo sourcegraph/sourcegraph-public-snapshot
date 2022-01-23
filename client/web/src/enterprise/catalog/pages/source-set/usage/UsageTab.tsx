@@ -16,25 +16,25 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { SourceLocationSetUsageResult, SourceLocationSetUsageVariables } from '../../../../../graphql-operations'
+import { SourceSetUsageResult, SourceSetUsageVariables } from '../../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
 import { CatalogComponentIcon } from '../../../components/ComponentIcon'
 import { PersonList } from '../../../components/person-list/PersonList'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
-    sourceLocationSet: Scalars['ID']
+    sourceSet: Scalars['ID']
     className?: string
 }
 
 const SOURCE_LOCATION_SET_USAGE = gql`
-    query SourceLocationSetUsage($node: ID!) {
+    query SourceSetUsage($node: ID!) {
         node(id: $node) {
-            ...SourceLocationSetUsageFields
+            ...SourceSetUsageFields
         }
     }
 
-    fragment SourceLocationSetUsageFields on SourceLocationSet {
+    fragment SourceSetUsageFields on SourceSet {
         __typename
         id
         usage {
@@ -88,15 +88,15 @@ const SOURCE_LOCATION_SET_USAGE = gql`
 `
 
 export const UsageTab: React.FunctionComponent<Props> = ({
-    sourceLocationSet,
+    sourceSet,
     className,
     settingsCascade,
     telemetryService,
 }) => {
-    const { data, error, loading } = useQuery<SourceLocationSetUsageResult, SourceLocationSetUsageVariables>(
+    const { data, error, loading } = useQuery<SourceSetUsageResult, SourceSetUsageVariables>(
         SOURCE_LOCATION_SET_USAGE,
         {
-            variables: { node: sourceLocationSet },
+            variables: { node: sourceSet },
             fetchPolicy: 'cache-first',
         }
     )

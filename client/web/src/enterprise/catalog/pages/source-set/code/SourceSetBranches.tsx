@@ -15,20 +15,20 @@ import {
 
 import {
     GitRefFields,
-    SourceLocationSetBranchesResult,
-    SourceLocationSetBranchesVariables,
+    SourceSetBranchesResult,
+    SourceSetBranchesVariables,
 } from '../../../../../graphql-operations'
 import { gitReferenceFragments, GitReferenceNode } from '../../../../../repo/GitReference'
 
 interface Props {
-    sourceLocationSet: Scalars['ID']
+    sourceSet: Scalars['ID']
     className?: string
 }
 
 const SOURCE_LOCATION_SET_BRANCHES = gql`
-    query SourceLocationSetBranches($node: ID!, $first: Int!, $withBehindAhead: Boolean = true) {
+    query SourceSetBranches($node: ID!, $first: Int!, $withBehindAhead: Boolean = true) {
         node(id: $node) {
-            ... on SourceLocationSet {
+            ... on SourceSet {
                 branches(first: $first) {
                     nodes {
                         ...GitRefFields
@@ -45,15 +45,15 @@ const SOURCE_LOCATION_SET_BRANCHES = gql`
 
 const FIRST = 50
 
-export const SourceLocationSetBranches: React.FunctionComponent<Props> = ({ sourceLocationSet, className }) => {
+export const SourceSetBranches: React.FunctionComponent<Props> = ({ sourceSet, className }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
-        SourceLocationSetBranchesResult,
-        SourceLocationSetBranchesVariables,
+        SourceSetBranchesResult,
+        SourceSetBranchesVariables,
         GitRefFields
     >({
         query: SOURCE_LOCATION_SET_BRANCHES,
         variables: {
-            node: sourceLocationSet,
+            node: sourceSet,
             first: FIRST,
         },
         options: {

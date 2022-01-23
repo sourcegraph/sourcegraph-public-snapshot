@@ -18,7 +18,7 @@ interface Props extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentVi
     }
 }
 
-export const SourceLocationSetTitle: React.FunctionComponent<Props> = ({ component, tree, treeOrComponentViewMode }) =>
+export const SourceSetTitle: React.FunctionComponent<Props> = ({ component, tree, treeOrComponentViewMode }) =>
     treeOrComponentViewMode === 'auto' && component ? (
         <ComponentTitleWithIconAndKind component={component} />
     ) : (

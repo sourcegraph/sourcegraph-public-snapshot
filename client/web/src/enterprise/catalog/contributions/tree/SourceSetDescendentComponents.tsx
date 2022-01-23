@@ -15,7 +15,7 @@ import { CatalogComponentIcon } from '../../components/ComponentIcon'
 import styles from './SourceSetDescendentComponents.module.scss'
 
 export const SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT = gql`
-    fragment SourceSetDescendentComponentsFields on SourceLocationSet {
+    fragment SourceSetDescendentComponentsFields on SourceSet {
         descendentComponents {
             __typename
             id

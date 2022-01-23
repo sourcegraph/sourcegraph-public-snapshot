@@ -11,12 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func (r *componentResolver) sourceLocationSetResolver(ctx context.Context) (*sourceLocationSetResolver, error) {
+func (r *componentResolver) sourceSetResolver(ctx context.Context) (*sourceSetResolver, error) {
 	slocs, err := r.sourceLocations(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &sourceLocationSetResolver{
+	return &sourceSetResolver{
 		slocs:            slocs,
 		getUsageResolver: r.getUsageResolver,
 		db:               r.db,
@@ -36,14 +36,14 @@ func sourceLocationFromTreeEntry(treeEntry *gql.GitTreeEntryResolver, isPrimary 
 	}
 }
 
-func sourceLocationSetResolverFromTreeEntry(treeEntry *gql.GitTreeEntryResolver, db database.DB) *sourceLocationSetResolver {
-	return &sourceLocationSetResolver{
+func sourceSetResolverFromTreeEntry(treeEntry *gql.GitTreeEntryResolver, db database.DB) *sourceSetResolver {
+	return &sourceSetResolver{
 		slocs: []*componentSourceLocationResolver{sourceLocationFromTreeEntry(treeEntry, true)},
 		db:    db,
 	}
 }
 
-type sourceLocationSetResolver struct {
+type sourceSetResolver struct {
 	slocs []*componentSourceLocationResolver
 
 	getUsageResolver func(context.Context) (gql.ComponentUsageResolver, error)
@@ -57,7 +57,7 @@ type fileInfo struct {
 	commit api.CommitID
 }
 
-func (r *sourceLocationSetResolver) allFiles(ctx context.Context) ([]fileInfo, error) {
+func (r *sourceSetResolver) allFiles(ctx context.Context) ([]fileInfo, error) {
 	var allFiles []fileInfo
 	for _, sloc := range r.slocs {
 		// TODO(sqs): doesnt check perms? SECURITY

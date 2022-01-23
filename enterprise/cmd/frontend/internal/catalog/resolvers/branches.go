@@ -20,7 +20,7 @@ import (
 )
 
 func (r *componentResolver) Branches(ctx context.Context, args *gql.GitRefConnectionArgs) (gql.GitRefConnectionResolver, error) {
-	slocs, err := r.sourceLocationSetResolver(ctx)
+	slocs, err := r.sourceSetResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -28,10 +28,10 @@ func (r *componentResolver) Branches(ctx context.Context, args *gql.GitRefConnec
 }
 
 func (r *rootResolver) GitTreeEntryBranches(ctx context.Context, treeEntry *gql.GitTreeEntryResolver, args *gql.GitRefConnectionArgs) (gql.GitRefConnectionResolver, error) {
-	return sourceLocationSetResolverFromTreeEntry(treeEntry, r.db).Branches(ctx, args)
+	return sourceSetResolverFromTreeEntry(treeEntry, r.db).Branches(ctx, args)
 }
 
-func (r *sourceLocationSetResolver) Branches(ctx context.Context, args *gql.GitRefConnectionArgs) (gql.GitRefConnectionResolver, error) {
+func (r *sourceSetResolver) Branches(ctx context.Context, args *gql.GitRefConnectionArgs) (gql.GitRefConnectionResolver, error) {
 	v := gql.GitRefTypeBranch
 	args.Type = &v
 

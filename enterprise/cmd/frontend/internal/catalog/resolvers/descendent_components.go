@@ -8,7 +8,7 @@ import (
 )
 
 func (r *componentResolver) DescendentComponents(ctx context.Context) ([]gql.ComponentResolver, error) {
-	slocs, err := r.sourceLocationSetResolver(ctx)
+	slocs, err := r.sourceSetResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -16,10 +16,10 @@ func (r *componentResolver) DescendentComponents(ctx context.Context) ([]gql.Com
 }
 
 func (r *rootResolver) GitTreeEntryDescendentComponents(ctx context.Context, treeEntry *gql.GitTreeEntryResolver) ([]gql.ComponentResolver, error) {
-	return sourceLocationSetResolverFromTreeEntry(treeEntry, r.db).DescendentComponents(ctx)
+	return sourceSetResolverFromTreeEntry(treeEntry, r.db).DescendentComponents(ctx)
 }
 
-func (r *sourceLocationSetResolver) DescendentComponents(ctx context.Context) ([]gql.ComponentResolver, error) {
+func (r *sourceSetResolver) DescendentComponents(ctx context.Context) ([]gql.ComponentResolver, error) {
 	var matches []gql.ComponentResolver
 	components := catalog.Components()
 	for _, c := range components {

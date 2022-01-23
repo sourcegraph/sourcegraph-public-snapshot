@@ -9,7 +9,7 @@ import (
 )
 
 func (r *componentResolver) Cyclonedx(ctx context.Context) (*string, error) {
-	slocs, err := r.sourceLocationSetResolver(context.TODO())
+	slocs, err := r.sourceSetResolver(context.TODO())
 	if err != nil {
 		return nil, err
 	}
@@ -17,10 +17,10 @@ func (r *componentResolver) Cyclonedx(ctx context.Context) (*string, error) {
 }
 
 func (r *rootResolver) GitTreeEntryCyclonedx(ctx context.Context, treeEntry *gql.GitTreeEntryResolver) (*string, error) {
-	return sourceLocationSetResolverFromTreeEntry(treeEntry, r.db).Cyclonedx(ctx)
+	return sourceSetResolverFromTreeEntry(treeEntry, r.db).Cyclonedx(ctx)
 }
 
-func (r *sourceLocationSetResolver) Cyclonedx(ctx context.Context) (*string, error) {
+func (r *sourceSetResolver) Cyclonedx(ctx context.Context) (*string, error) {
 	data, err := os.ReadFile(catalog.CycloneDXSampleFile)
 	if err != nil {
 		return nil, err

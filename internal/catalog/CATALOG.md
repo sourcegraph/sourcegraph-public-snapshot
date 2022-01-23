@@ -143,8 +143,7 @@ SRC_ACCESS_TOKEN= SRC_ENDPOINT=https://sourcegraph.com src search -json 'repo:gi
 - [ ] Allow collapsing file tree to make it more like browsing components (and remember this setting in temporary settings). Also show all source locations when viewing a component.
 
 Renames:
-- [ ] SourceLocationSet => SourceSet?
-- [ ] EntityOwner -> ComponentOwner
+- done
 
 UI:
 

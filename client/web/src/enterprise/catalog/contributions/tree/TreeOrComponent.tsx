@@ -12,9 +12,9 @@ import {
     RepositoryForTreeFields,
     TreeEntryForTreeFields,
     TreeOrComponentPageResult,
-    TreeOrComponentSourceLocationSetFields,
+    TreeOrComponentSourceSetFields,
 } from '../../../../graphql-operations'
-import { ComponentActionPopoverButton } from '../../../../repo/actions/source-location-set-view-mode-action/SourceLocationSetViewModeAction'
+import { ComponentActionPopoverButton } from '../../../../repo/actions/source-set-view-mode-action/SourceSetViewModeAction'
 import { CatalogPage, CatalogPage2 } from '../../components/catalog-area-header/CatalogPage'
 import { CodeTab } from '../../pages/source-set/code/CodeTab'
 import { CatalogRelations } from '../../pages/source-set/graph/CatalogRelations'
@@ -38,7 +38,7 @@ export const TreeOrComponent: React.FunctionComponent<Props> = ({ data, useBread
     const repository: RepositoryForTreeFields = data
     const tree: TreeEntryForTreeFields | null = data.commit?.tree ?? null
 
-    const sourceLocationSet: TreeOrComponentSourceLocationSetFields | null =
+    const sourceSet: TreeOrComponentSourceSetFields | null =
         treeOrComponentViewOptions.treeOrComponentViewMode === 'auto' ? primaryComponent ?? tree : tree
 
     useBreadcrumb(
@@ -74,7 +74,7 @@ export const TreeOrComponent: React.FunctionComponent<Props> = ({ data, useBread
                             repository={repository}
                             tree={tree}
                             component={primaryComponent}
-                            sourceLocationSet={sourceLocationSet}
+                            sourceSet={sourceSet}
                             isTree={true}
                             useHash={true}
                             className={tabContentClassName}
@@ -84,22 +84,16 @@ export const TreeOrComponent: React.FunctionComponent<Props> = ({ data, useBread
                 {
                     path: 'who-knows',
                     text: 'Who knows?',
-                    content: (
-                        <WhoKnowsTab
-                            {...props}
-                            sourceLocationSet={sourceLocationSet.id}
-                            className={tabContentClassName}
-                        />
-                    ),
+                    content: <WhoKnowsTab {...props} sourceSet={sourceSet.id} className={tabContentClassName} />,
                 },
-                sourceLocationSet && sourceLocationSet.__typename === 'Component'
+                sourceSet && sourceSet.__typename === 'Component'
                     ? {
                           path: 'graph',
                           text: 'Graph',
                           content: (
                               <div className={classNames('p-3', tabContentClassName)}>
                                   <CatalogRelations
-                                      component={sourceLocationSet.id}
+                                      component={sourceSet.id}
                                       useURLForConnectionParams={true}
                                       className="mb-3"
                                   />
@@ -107,15 +101,13 @@ export const TreeOrComponent: React.FunctionComponent<Props> = ({ data, useBread
                           ),
                       }
                     : null,
-                sourceLocationSet?.usage && {
+                sourceSet?.usage && {
                     path: 'usage',
                     text: 'Usage',
-                    content: (
-                        <UsageTab {...props} sourceLocationSet={sourceLocationSet.id} className={tabContentClassName} />
-                    ),
+                    content: <UsageTab {...props} sourceSet={sourceSet.id} className={tabContentClassName} />,
                 },
             ].filter(isDefined),
-        [primaryComponent, props, repository, sourceLocationSet, tree, treeOrComponentViewOptions]
+        [primaryComponent, props, repository, sourceSet, tree, treeOrComponentViewOptions]
     )
 
     return (

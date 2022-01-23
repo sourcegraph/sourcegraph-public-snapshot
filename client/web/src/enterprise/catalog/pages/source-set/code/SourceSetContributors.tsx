@@ -14,22 +14,22 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 
 import {
-    SourceLocationSetContributorsFields,
-    SourceLocationSetContributorsResult,
-    SourceLocationSetContributorsVariables,
+    SourceSetContributorsFields,
+    SourceSetContributorsResult,
+    SourceSetContributorsVariables,
 } from '../../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { PersonList } from '../../../components/person-list/PersonList'
 
 interface Props {
-    sourceLocationSet: Scalars['ID']
+    sourceSet: Scalars['ID']
     className?: string
 }
 
 const SOURCE_LOCATION_SET_CONTRIBUTORS = gql`
-    query SourceLocationSetContributors($node: ID!, $first: Int!) {
+    query SourceSetContributors($node: ID!, $first: Int!) {
         node(id: $node) {
-            ... on SourceLocationSet {
+            ... on SourceSet {
                 contributors(first: $first) {
                     edges {
                         person {
@@ -57,15 +57,15 @@ const SOURCE_LOCATION_SET_CONTRIBUTORS = gql`
 
 const FIRST = 50
 
-export const SourceLocationSetContributors: React.FunctionComponent<Props> = ({ sourceLocationSet, className }) => {
+export const SourceSetContributors: React.FunctionComponent<Props> = ({ sourceSet, className }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
-        SourceLocationSetContributorsResult,
-        SourceLocationSetContributorsVariables,
-        NonNullable<SourceLocationSetContributorsFields['contributors']>['edges'][number]
+        SourceSetContributorsResult,
+        SourceSetContributorsVariables,
+        NonNullable<SourceSetContributorsFields['contributors']>['edges'][number]
     >({
         query: SOURCE_LOCATION_SET_CONTRIBUTORS,
         variables: {
-            node: sourceLocationSet,
+            node: sourceSet,
             first: FIRST,
         },
         options: {

@@ -138,7 +138,7 @@ type ComponentResolver interface {
 
 	RelatedEntities(context.Context, *ComponentRelatedEntitiesArgs) (ComponentRelatedEntityConnectionResolver, error)
 
-	SourceLocationSet
+	SourceSet
 }
 
 type ComponentKind string

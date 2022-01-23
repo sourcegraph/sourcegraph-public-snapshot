@@ -14,22 +14,22 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 
 import {
-    SourceLocationSetCodeOwnersFields,
-    SourceLocationSetCodeOwnersResult,
-    SourceLocationSetCodeOwnersVariables,
+    SourceSetCodeOwnersFields,
+    SourceSetCodeOwnersResult,
+    SourceSetCodeOwnersVariables,
 } from '../../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { PersonList } from '../../../components/person-list/PersonList'
 
 interface Props {
-    sourceLocationSet: Scalars['ID']
+    sourceSet: Scalars['ID']
     className?: string
 }
 
 const SOURCE_LOCATION_SET_CODE_OWNERS = gql`
-    query SourceLocationSetCodeOwners($node: ID!, $first: Int!) {
+    query SourceSetCodeOwners($node: ID!, $first: Int!) {
         node(id: $node) {
-            ... on SourceLocationSet {
+            ... on SourceSet {
                 codeOwners(first: $first) {
                     edges {
                         node {
@@ -52,15 +52,15 @@ const SOURCE_LOCATION_SET_CODE_OWNERS = gql`
 
 const FIRST = 50
 
-export const SourceLocationSetCodeOwners: React.FunctionComponent<Props> = ({ sourceLocationSet, className }) => {
+export const SourceSetCodeOwners: React.FunctionComponent<Props> = ({ sourceSet, className }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
-        SourceLocationSetCodeOwnersResult,
-        SourceLocationSetCodeOwnersVariables,
-        NonNullable<SourceLocationSetCodeOwnersFields['codeOwners']>['edges'][number]
+        SourceSetCodeOwnersResult,
+        SourceSetCodeOwnersVariables,
+        NonNullable<SourceSetCodeOwnersFields['codeOwners']>['edges'][number]
     >({
         query: SOURCE_LOCATION_SET_CODE_OWNERS,
         variables: {
-            node: sourceLocationSet,
+            node: sourceSet,
             first: FIRST,
         },
         options: {

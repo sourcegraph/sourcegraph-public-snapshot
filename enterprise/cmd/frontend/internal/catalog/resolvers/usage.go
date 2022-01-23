@@ -17,7 +17,7 @@ import (
 )
 
 func (r *componentResolver) Usage(ctx context.Context) (gql.ComponentUsageResolver, error) {
-	slocsResolver, err := r.sourceLocationSetResolver(ctx)
+	slocsResolver, err := r.sourceSetResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func (r *componentResolver) Usage(ctx context.Context) (gql.ComponentUsageResolv
 }
 
 func (r *rootResolver) GitTreeEntryUsage(ctx context.Context, treeEntry *gql.GitTreeEntryResolver) (gql.ComponentUsageResolver, error) {
-	return sourceLocationSetResolverFromTreeEntry(treeEntry, r.db).Usage(ctx)
+	return sourceSetResolverFromTreeEntry(treeEntry, r.db).Usage(ctx)
 }
 
 func (r *componentResolver) getUsageResolver(ctx context.Context) (gql.ComponentUsageResolver, error) {
@@ -52,7 +52,7 @@ func (r *componentResolver) getUsageResolver(ctx context.Context) (gql.Component
 	}, nil
 }
 
-func (r *sourceLocationSetResolver) Usage(ctx context.Context) (gql.ComponentUsageResolver, error) {
+func (r *sourceSetResolver) Usage(ctx context.Context) (gql.ComponentUsageResolver, error) {
 	if r.getUsageResolver != nil {
 		return r.getUsageResolver(ctx)
 	}

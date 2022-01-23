@@ -5,10 +5,10 @@ import { Link } from 'react-router-dom'
 import { gql } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 
-import { SourceLocationSetReadmeFields } from '../../../../../graphql-operations'
+import { SourceSetReadmeFields } from '../../../../../graphql-operations'
 
 export const SOURCE_LOCATION_SET_README_FRAGMENT = gql`
-    fragment SourceLocationSetReadmeFields on SourceLocationSet {
+    fragment SourceSetReadmeFields on SourceSet {
         readme {
             name
             richHTML
@@ -18,10 +18,10 @@ export const SOURCE_LOCATION_SET_README_FRAGMENT = gql`
 `
 
 interface Props {
-    readme: NonNullable<SourceLocationSetReadmeFields['readme']>
+    readme: NonNullable<SourceSetReadmeFields['readme']>
 }
 
-export const SourceLocationSetReadme: React.FunctionComponent<Props> = ({ readme }) => (
+export const SourceSetReadme: React.FunctionComponent<Props> = ({ readme }) => (
     <div className="card mb-3">
         <header className="card-header bg-transparent">
             <h4 className="card-title mb-0 font-weight-bold">

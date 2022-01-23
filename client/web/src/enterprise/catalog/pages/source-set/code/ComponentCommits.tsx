@@ -16,21 +16,21 @@ import {
 
 import {
     GitCommitFields,
-    SourceLocationSetCommitsResult,
-    SourceLocationSetCommitsVariables,
+    SourceSetCommitsResult,
+    SourceSetCommitsVariables,
 } from '../../../../../graphql-operations'
 import { GitCommitNodeByline } from '../../../../../repo/commits/GitCommitNodeByline'
 import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
 
 interface Props {
-    sourceLocationSet: Scalars['ID']
+    sourceSet: Scalars['ID']
     className?: string
 }
 
 const SOURCE_LOCATION_SET_COMMITS = gql`
-    query SourceLocationSetCommits($node: ID!, $first: Int!) {
+    query SourceSetCommits($node: ID!, $first: Int!) {
         node(id: $node) {
-            ... on SourceLocationSet {
+            ... on SourceSet {
                 commits(first: $first) {
                     nodes {
                         ...GitCommitFields
@@ -44,15 +44,15 @@ const SOURCE_LOCATION_SET_COMMITS = gql`
 
 const FIRST = 10
 
-export const SourceLocationSetCommits: React.FunctionComponent<Props> = ({ sourceLocationSet, className }) => {
+export const SourceSetCommits: React.FunctionComponent<Props> = ({ sourceSet, className }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
-        SourceLocationSetCommitsResult,
-        SourceLocationSetCommitsVariables,
+        SourceSetCommitsResult,
+        SourceSetCommitsVariables,
         GitCommitFields
     >({
         query: SOURCE_LOCATION_SET_COMMITS,
         variables: {
-            node: sourceLocationSet,
+            node: sourceSet,
             first: FIRST,
         },
         options: {

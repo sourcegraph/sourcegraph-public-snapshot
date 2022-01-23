@@ -5,21 +5,21 @@ import { useQuery, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { SourceLocationSetWhoKnowsResult, SourceLocationSetWhoKnowsVariables } from '../../../../../graphql-operations'
+import { SourceSetWhoKnowsResult, SourceSetWhoKnowsVariables } from '../../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { ComponentOverviewWhoKnows } from '../overview/ComponentOverviewWhoKnows'
 
 interface Props {
-    sourceLocationSet: Scalars['ID']
+    sourceSet: Scalars['ID']
     className?: string
 }
 
 const SOURCE_LOCATION_SET_WHO_KNOWS = gql`
-    query SourceLocationSetWhoKnows($node: ID!) {
+    query SourceSetWhoKnows($node: ID!) {
         node(id: $node) {
             __typename
-            ... on SourceLocationSet {
-                ...SourceLocationSetWhoKnowsFields
+            ... on SourceSet {
+                ...SourceSetWhoKnowsFields
             }
             ... on Component {
                 name
@@ -27,7 +27,7 @@ const SOURCE_LOCATION_SET_WHO_KNOWS = gql`
             }
         }
     }
-    fragment SourceLocationSetWhoKnowsFields on SourceLocationSet {
+    fragment SourceSetWhoKnowsFields on SourceSet {
         whoKnows {
             node {
                 ...PersonLinkFields
@@ -40,11 +40,11 @@ const SOURCE_LOCATION_SET_WHO_KNOWS = gql`
     ${personLinkFieldsFragment}
 `
 
-export const WhoKnowsTab: React.FunctionComponent<Props> = ({ sourceLocationSet: sourceLocationSetID, className }) => {
-    const { data, error, loading } = useQuery<SourceLocationSetWhoKnowsResult, SourceLocationSetWhoKnowsVariables>(
+export const WhoKnowsTab: React.FunctionComponent<Props> = ({ sourceSet: sourceSetID, className }) => {
+    const { data, error, loading } = useQuery<SourceSetWhoKnowsResult, SourceSetWhoKnowsVariables>(
         SOURCE_LOCATION_SET_WHO_KNOWS,
         {
-            variables: { node: sourceLocationSetID },
+            variables: { node: sourceSetID },
             fetchPolicy: 'cache-first',
         }
     )
@@ -62,15 +62,15 @@ export const WhoKnowsTab: React.FunctionComponent<Props> = ({ sourceLocationSet:
         return <ErrorAlert error="No who-knows information" />
     }
 
-    const sourceLocationSet = data.node
+    const sourceSet = data.node
 
     return (
         <div className={className}>
             <ComponentOverviewWhoKnows
-                whoKnows={sourceLocationSet.whoKnows}
+                whoKnows={sourceSet.whoKnows}
                 noun={
-                    sourceLocationSet.__typename === 'Component'
-                        ? `the ${sourceLocationSet.name} ${sourceLocationSet.kind.toLowerCase()}`
+                    sourceSet.__typename === 'Component'
+                        ? `the ${sourceSet.name} ${sourceSet.kind.toLowerCase()}`
                         : 'the code in this directory'
                 }
             />

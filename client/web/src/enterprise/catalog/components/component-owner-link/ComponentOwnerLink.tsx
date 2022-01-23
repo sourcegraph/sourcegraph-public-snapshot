@@ -8,7 +8,7 @@ import { GroupLink, GROUP_LINK_FRAGMENT } from '../group-link/GroupLink'
 
 // TODO(sqs): this is actually way too broad
 export const COMPONENT_OWNER_LINK_FRAGMENT = gql`
-    fragment ComponentOwnerLinkFields on EntityOwner {
+    fragment ComponentOwnerLinkFields on ComponentOwner {
         __typename
         ... on Person {
             ...PersonLinkFields

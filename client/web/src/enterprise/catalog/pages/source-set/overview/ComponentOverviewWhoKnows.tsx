@@ -2,11 +2,11 @@ import EmailIcon from 'mdi-react/EmailIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
 import React from 'react'
 
-import { SourceLocationSetWhoKnowsFields } from '../../../../../graphql-operations'
+import { SourceSetWhoKnowsFields } from '../../../../../graphql-operations'
 import { PersonList } from '../../../components/person-list/PersonList'
 
 interface Props {
-    whoKnows: SourceLocationSetWhoKnowsFields['whoKnows']
+    whoKnows: SourceSetWhoKnowsFields['whoKnows']
     noun: string
 }
 

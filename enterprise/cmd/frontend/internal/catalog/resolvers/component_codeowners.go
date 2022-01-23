@@ -21,7 +21,7 @@ type codeOwnerData struct {
 }
 
 func (r *componentResolver) CodeOwners(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.CodeOwnerConnectionResolver, error) {
-	slocs, err := r.sourceLocationSetResolver(ctx)
+	slocs, err := r.sourceSetResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -29,10 +29,10 @@ func (r *componentResolver) CodeOwners(ctx context.Context, args *graphqlutil.Co
 }
 
 func (r *rootResolver) GitTreeEntryCodeOwners(ctx context.Context, treeEntry *gql.GitTreeEntryResolver, args *graphqlutil.ConnectionArgs) (gql.CodeOwnerConnectionResolver, error) {
-	return sourceLocationSetResolverFromTreeEntry(treeEntry, r.db).CodeOwners(ctx, args)
+	return sourceSetResolverFromTreeEntry(treeEntry, r.db).CodeOwners(ctx, args)
 }
 
-func (r *sourceLocationSetResolver) CodeOwners(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.CodeOwnerConnectionResolver, error) {
+func (r *sourceSetResolver) CodeOwners(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.CodeOwnerConnectionResolver, error) {
 	allFiles, err := r.allFiles(ctx)
 	if err != nil {
 		return nil, err

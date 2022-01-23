@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-type SourceLocationSet interface {
+type SourceSet interface {
 	ID() graphql.ID
 	Readme(context.Context) (FileResolver, error)
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)

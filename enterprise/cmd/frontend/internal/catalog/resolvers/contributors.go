@@ -12,7 +12,7 @@ import (
 )
 
 func (r *componentResolver) Contributors(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.ContributorConnectionResolver, error) {
-	slocs, err := r.sourceLocationSetResolver(ctx)
+	slocs, err := r.sourceSetResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -20,10 +20,10 @@ func (r *componentResolver) Contributors(ctx context.Context, args *graphqlutil.
 }
 
 func (r *rootResolver) GitTreeEntryContributors(ctx context.Context, treeEntry *gql.GitTreeEntryResolver, args *graphqlutil.ConnectionArgs) (gql.ContributorConnectionResolver, error) {
-	return sourceLocationSetResolverFromTreeEntry(treeEntry, r.db).Contributors(ctx, args)
+	return sourceSetResolverFromTreeEntry(treeEntry, r.db).Contributors(ctx, args)
 }
 
-func (r *sourceLocationSetResolver) Contributors(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.ContributorConnectionResolver, error) {
+func (r *sourceSetResolver) Contributors(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.ContributorConnectionResolver, error) {
 	allFiles, err := r.allFiles(ctx)
 	if err != nil {
 		return nil, err

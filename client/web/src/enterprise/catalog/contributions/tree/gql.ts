@@ -9,7 +9,7 @@ import { SOURCE_LOCATION_SET_README_FRAGMENT } from '../../pages/source-set/read
 import { SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT } from './SourceSetDescendentComponents'
 
 const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
-    fragment SourceLocationSetFilesFields on SourceLocationSet {
+    fragment SourceSetFilesFields on SourceSet {
         __typename
         ... on GitTree {
             repository {
@@ -18,7 +18,7 @@ const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
                 url
             }
             path
-            ...SourceLocationSetGitTreeFilesFields
+            ...SourceSetGitTreeFilesFields
         }
         ... on Component {
             sourceLocations {
@@ -42,13 +42,13 @@ const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
                         isDirectory
                     }
                     ... on GitTree {
-                        ...SourceLocationSetGitTreeFilesFields
+                        ...SourceSetGitTreeFilesFields
                     }
                 }
             }
         }
     }
-    fragment SourceLocationSetGitTreeFilesFields on GitTree {
+    fragment SourceSetGitTreeFilesFields on GitTree {
         commit {
             oid
         }
@@ -63,7 +63,7 @@ const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
 
 // TODO(sqs): dont fetch all
 const SOURCE_LOCATION_SET_CODE_OWNERS_FRAGMENT = gql`
-    fragment SourceLocationSetCodeOwnersFields on SourceLocationSet {
+    fragment SourceSetCodeOwnersFields on SourceSet {
         codeOwners {
             edges {
                 node {
@@ -83,7 +83,7 @@ const SOURCE_LOCATION_SET_CODE_OWNERS_FRAGMENT = gql`
 `
 
 const SOURCE_LOCATION_SET_CONTRIBUTORS_FRAGMENT = gql`
-    fragment SourceLocationSetContributorsFields on SourceLocationSet {
+    fragment SourceSetContributorsFields on SourceSet {
         contributors {
             edges {
                 person {
@@ -108,14 +108,14 @@ const SOURCE_LOCATION_SET_CONTRIBUTORS_FRAGMENT = gql`
 `
 
 export const TREE_OR_COMPONENT_SOURCE_LOCATION_SET_FRAGMENT = gql`
-    fragment TreeOrComponentSourceLocationSetFields on SourceLocationSet {
+    fragment TreeOrComponentSourceSetFields on SourceSet {
         id
 
         ...SourceSetDescendentComponentsFields
-        ...SourceLocationSetFilesFields
-        ...SourceLocationSetReadmeFields
-        ...SourceLocationSetCodeOwnersFields
-        ...SourceLocationSetContributorsFields
+        ...SourceSetFilesFields
+        ...SourceSetReadmeFields
+        ...SourceSetCodeOwnersFields
+        ...SourceSetContributorsFields
 
         branches(first: 0, interactive: false) {
             totalCount
@@ -170,7 +170,7 @@ export const TREE_OR_COMPONENT_PAGE = gql`
         name
         isRoot
         url
-        ...TreeOrComponentSourceLocationSetFields
+        ...TreeOrComponentSourceSetFields
     }
     fragment PrimaryComponentForTreeFields on Component {
         __typename
@@ -181,7 +181,7 @@ export const TREE_OR_COMPONENT_PAGE = gql`
         lifecycle
         catalogURL
         url
-        ...TreeOrComponentSourceLocationSetFields
+        ...TreeOrComponentSourceSetFields
         ...ComponentOwnerFields
         tags {
             ...ComponentTagFields

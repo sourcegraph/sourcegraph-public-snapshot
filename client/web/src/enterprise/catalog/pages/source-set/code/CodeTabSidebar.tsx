@@ -13,12 +13,12 @@ import {
     ComponentOwnerFields,
     ComponentTagFields,
     RepositoryForTreeFields,
-    SourceLocationSetContributorsFields,
+    SourceSetContributorsFields,
     TreeEntryForTreeFields,
-    TreeOrComponentSourceLocationSetFields,
+    TreeOrComponentSourceSetFields,
 } from '../../../../../graphql-operations'
 import { PersonList } from '../../../components/person-list/PersonList'
-import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocationSetTitle'
+import { SourceSetTitle } from '../../..../../../contributions/tree/SourceSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
 import { ComponentOwnerSidebarItem } from '../meta/ComponentOwnerSidebarItem'
 import { ComponentTagsSidebarItem } from '../meta/ComponentTagsSidebarItem'
@@ -36,7 +36,7 @@ interface Props extends Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentVi
               description: string | null
               tags: ComponentTagFields[]
           })
-    sourceLocationSet: TreeOrComponentSourceLocationSetFields & SourceLocationSetContributorsFields
+    sourceSet: TreeOrComponentSourceSetFields & SourceSetContributorsFields
     useHash?: boolean
     className?: string
 }
@@ -50,7 +50,7 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
     tree,
     repository,
     component,
-    sourceLocationSet,
+    sourceSet,
     useHash,
     treeOrComponentViewMode,
     className,
@@ -68,7 +68,7 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
         <aside>
             {component !== null && treeOrComponentViewMode === 'auto' && (
                 <h2 className="h5 mb-3">
-                    <SourceLocationSetTitle
+                    <SourceSetTitle
                         component={component}
                         tree={tree}
                         treeOrComponentViewMode={treeOrComponentViewMode}
@@ -110,15 +110,15 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
                     <ComponentOwnerSidebarItem owner={featuredComponent.owner} />
                 </section>
             )}
-            {sourceLocationSet.codeOwners && sourceLocationSet.codeOwners.edges.length > 0 && (
+            {sourceSet.codeOwners && sourceSet.codeOwners.edges.length > 0 && (
                 <section className={SECTION_CLASS_NAME}>
                     <PersonList
                         title="Code owners"
                         titleLink={`${match.url}${pathSeparator}code-owners`}
-                        titleCount={sourceLocationSet.codeOwners.totalCount}
+                        titleCount={sourceSet.codeOwners.totalCount}
                         listTag="ol"
                         orientation="summary"
-                        items={sourceLocationSet.codeOwners.edges.map(codeOwner => ({
+                        items={sourceSet.codeOwners.edges.map(codeOwner => ({
                             person: codeOwner.node,
                             text:
                                 codeOwner.fileProportion >= 0.01
@@ -130,10 +130,10 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
                     />
                 </section>
             )}
-            {sourceLocationSet.contributors && sourceLocationSet.contributors.edges.length > 0 && (
+            {sourceSet.contributors && sourceSet.contributors.edges.length > 0 && (
                 <section className={SECTION_CLASS_NAME}>
                     <SourceSetContributorsSidebarItem
-                        contributors={sourceLocationSet.contributors}
+                        contributors={sourceSet.contributors}
                         titleLink={`${match.url}${pathSeparator}contributors`}
                     />
                 </section>

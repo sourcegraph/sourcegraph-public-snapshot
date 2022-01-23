@@ -3,7 +3,7 @@ import React from 'react'
 
 import { Menu, MenuButton } from '@sourcegraph/wildcard'
 
-import { SourceLocationSetViewModeActionMenuItems } from '../../../../../repo/actions/source-location-set-view-mode-action/SourceLocationSetViewModeAction'
+import { SourceSetViewModeActionMenuItems } from '../../../../../repo/actions/source-set-view-mode-action/SourceSetViewModeAction'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
 
 interface Props
@@ -12,7 +12,7 @@ interface Props
 }
 
 // TODO(sqs): for clarity, instead make this a dropdown "Show info from <component>"
-export const SourceLocationSetSelectMenu: React.FunctionComponent<Props> = ({
+export const SourceSetSelectMenu: React.FunctionComponent<Props> = ({
     treeOrComponentViewMode,
     treeOrComponentViewModeURL,
     buttonClassName,
@@ -21,7 +21,7 @@ export const SourceLocationSetSelectMenu: React.FunctionComponent<Props> = ({
         <MenuButton variant="secondary" className={classNames('bg-transparent border-0', buttonClassName)}>
             <span aria-hidden={true}>▾</span>
         </MenuButton>
-        <SourceLocationSetViewModeActionMenuItems
+        <SourceSetViewModeActionMenuItems
             treeOrComponentViewMode={treeOrComponentViewMode}
             treeOrComponentViewModeURL={treeOrComponentViewModeURL}
         />

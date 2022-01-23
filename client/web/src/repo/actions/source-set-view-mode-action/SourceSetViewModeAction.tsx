@@ -10,17 +10,17 @@ import { Menu, MenuButton, MenuHeader, MenuLink, MenuDivider } from '@sourcegrap
 import { MenuItems } from '@sourcegraph/wildcard/src/components/Menu/MenuItems'
 
 import { CatalogComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
-import { ComponentTitleWithIconAndKind } from '../../../enterprise/catalog/contributions/tree/SourceLocationSetTitle'
+import { ComponentTitleWithIconAndKind } from '../../../enterprise/catalog/contributions/tree/SourceSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../enterprise/catalog/contributions/tree/TreeOrComponent'
 import {
-    SourceLocationSetViewModeInfoResult,
-    SourceLocationSetViewModeInfoVariables,
+    SourceSetViewModeInfoResult,
+    SourceSetViewModeInfoVariables,
     RepositoryFields,
 } from '../../../graphql-operations'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
-import styles from './SourceLocationSetViewModeAction.module.scss'
+import styles from './SourceSetViewModeAction.module.scss'
 
 // TODO(sqs): LICENSE move to enterprise/
 
@@ -33,7 +33,7 @@ interface Props extends Partial<RevisionSpec>, Partial<FileSpec> {
 }
 
 const SOURCE_LOCATION_SET_VIEW_MODE_INFO = gql`
-    query SourceLocationSetViewModeInfo($repository: ID!, $path: String!) {
+    query SourceSetViewModeInfo($repository: ID!, $path: String!) {
         node(id: $repository) {
             __typename
             ... on Repository {
@@ -51,10 +51,10 @@ const SOURCE_LOCATION_SET_VIEW_MODE_INFO = gql`
     }
 `
 
-export const SourceLocationSetViewModeAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
+export const SourceSetViewModeAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
     const { data, error, loading } = useQuery<
-        SourceLocationSetViewModeInfoResult,
-        SourceLocationSetViewModeInfoVariables
+        SourceSetViewModeInfoResult,
+        SourceSetViewModeInfoVariables
     >(SOURCE_LOCATION_SET_VIEW_MODE_INFO, {
         variables: { repository: props.repo.id, path: props.filePath || '' },
         fetchPolicy: 'cache-first',
@@ -93,7 +93,7 @@ export const SourceLocationSetViewModeAction: React.FunctionComponent<Props & Re
 }
 
 type ComponentFields = Extract<
-    SourceLocationSetViewModeInfoResult['node'],
+    SourceSetViewModeInfoResult['node'],
     { __typename: 'Repository' }
 >['components'][number]
 
@@ -116,14 +116,14 @@ export const ComponentActionPopoverButton: React.FunctionComponent<
         >
             <ComponentTitleWithIconAndKind component={component} strong={treeOrComponentViewMode === 'auto'} />
         </MenuButton>
-        <SourceLocationSetViewModeActionMenuItems
+        <SourceSetViewModeActionMenuItems
             treeOrComponentViewMode={treeOrComponentViewMode}
             treeOrComponentViewModeURL={treeOrComponentViewModeURL}
         />
     </Menu>
 )
 
-export const SourceLocationSetViewModeActionMenuItems: React.FunctionComponent<
+export const SourceSetViewModeActionMenuItems: React.FunctionComponent<
     Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode' | 'treeOrComponentViewModeURL'>
 > = ({ treeOrComponentViewMode, treeOrComponentViewModeURL }) => {
     const checkIcon = <CheckBoldIcon className="icon-inline" />

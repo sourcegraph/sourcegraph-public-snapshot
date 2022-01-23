@@ -11,9 +11,9 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../../../../backend/features'
 import {
-    TreeOrComponentSourceLocationSetFields,
-    SourceLocationSetFilesFields,
-    SourceLocationSetGitTreeFilesFields,
+    TreeOrComponentSourceSetFields,
+    SourceSetFilesFields,
+    SourceSetGitTreeFilesFields,
 } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 import { dirname, pathRelative } from '../../../../../util/path'
@@ -21,24 +21,24 @@ import { dirname, pathRelative } from '../../../../../util/path'
 import { ComponentSourceLocations } from './ComponentSourceLocations'
 
 interface Props extends ExtensionsControllerProps, ThemeProps {
-    sourceLocationSet: TreeOrComponentSourceLocationSetFields & { __typename: 'Component' | 'GitTree' }
+    sourceSet: TreeOrComponentSourceSetFields & { __typename: 'Component' | 'GitTree' }
     className?: string
 }
 
 type SourceLocation = Pick<
-    Extract<SourceLocationSetFilesFields, { __typename: 'Component' }>['sourceLocations'][number],
+    Extract<SourceSetFilesFields, { __typename: 'Component' }>['sourceLocations'][number],
     'repositoryName' | 'repository' | 'path'
-> & { treeEntry: Omit<SourceLocationSetGitTreeFilesFields, '__typename'> }
+> & { treeEntry: Omit<SourceSetGitTreeFilesFields, '__typename'> }
 
-export const SourceLocationSetTreeEntries: React.FunctionComponent<Props> = ({
-    sourceLocationSet,
+export const SourceSetTreeEntries: React.FunctionComponent<Props> = ({
+    sourceSet,
     className,
     ...props
 }) => {
     const sourceLocations = useMemo<SourceLocation[]>(
         () =>
-            sourceLocationSet.__typename === 'Component'
-                ? sourceLocationSet.sourceLocations.filter(propertyIsDefined('treeEntry')).map(sourceLocation =>
+            sourceSet.__typename === 'Component'
+                ? sourceSet.sourceLocations.filter(propertyIsDefined('treeEntry')).map(sourceLocation =>
                       sourceLocation.treeEntry.__typename === 'GitTree'
                           ? { ...sourceLocation, treeEntry: sourceLocation.treeEntry }
                           : {
@@ -58,25 +58,25 @@ export const SourceLocationSetTreeEntries: React.FunctionComponent<Props> = ({
                   )
                 : [
                       {
-                          repositoryName: sourceLocationSet.repository.name,
-                          repository: sourceLocationSet.repository,
-                          path: sourceLocationSet.path,
-                          treeEntry: sourceLocationSet,
+                          repositoryName: sourceSet.repository.name,
+                          repository: sourceSet.repository,
+                          path: sourceSet.path,
+                          treeEntry: sourceSet,
                       },
                   ],
-        [sourceLocationSet]
+        [sourceSet]
     )
     return (
         <div className={className}>
-            {sourceLocationSet.__typename === 'Component' && sourceLocationSet.sourceLocations.length >= 2 && (
-                <ComponentSourceLocations component={sourceLocationSet} />
+            {sourceSet.__typename === 'Component' && sourceSet.sourceLocations.length >= 2 && (
+                <ComponentSourceLocations component={sourceSet} />
             )}
             {sourceLocations.map(sourceLocation => (
                 <SourceLocationTreeEntries
                     key={`${sourceLocation.repositoryName}:${sourceLocation.path || ''}`}
                     {...props}
                     sourceLocation={sourceLocation}
-                    recursive={sourceLocationSet.__typename === 'Component'}
+                    recursive={sourceSet.__typename === 'Component'}
                 />
             ))}
         </div>

@@ -15,7 +15,7 @@ enum ComponentLifecycle {
     EXPERIMENTAL
 }
 
-union EntityOwner = Person | Group
+union ComponentOwner = Person | Group
 
 type Group implements Node {
     id: ID!
@@ -86,7 +86,7 @@ type Component implements Node {
     kind: ComponentKind!
     description: String
     lifecycle: ComponentLifecycle!
-    owner: EntityOwner
+    owner: ComponentOwner
     tags: [ComponentTag!]!
     sourceLocations: [ComponentSourceLocation!]!
     url: String!
@@ -165,7 +165,7 @@ extend type Repository {
     components(path: String = "", primary: Boolean = false, recursive: Boolean = true): [Component!]!
 }
 
-interface SourceLocationSet implements Node {
+interface SourceSet implements Node {
     id: ID!
     readme: File2
     commits(first: Int): GitCommitConnection
@@ -197,10 +197,10 @@ interface SourceLocationSet implements Node {
   descendentComponents: [Component!]!
 }
 
-extend interface TreeEntry implements SourceLocationSet {
+extend interface TreeEntry implements SourceSet {
     components: [Component!]!
 
-    # SourceLocationSet:
+    # SourceSet:
     readme: File2
     commits(first: Int): GitCommitConnection
     branches(
@@ -231,7 +231,7 @@ extend interface TreeEntry implements SourceLocationSet {
   descendentComponents: [Component!]!
 }
 
-extend type GitBlob implements SourceLocationSet {
+extend type GitBlob implements SourceSet {
     components: [Component!]!
 
     readme: File2
@@ -264,7 +264,7 @@ extend type GitBlob implements SourceLocationSet {
   descendentComponents: [Component!]!
 }
 
-extend type GitTree implements SourceLocationSet {
+extend type GitTree implements SourceSet {
     components: [Component!]!
 
     readme: File2
@@ -298,7 +298,7 @@ extend type GitTree implements SourceLocationSet {
   descendentComponents: [Component!]!
 }
 
-extend type Component implements SourceLocationSet {
+extend type Component implements SourceSet {
     readme: File2
     commits(first: Int): GitCommitConnection
     branches(

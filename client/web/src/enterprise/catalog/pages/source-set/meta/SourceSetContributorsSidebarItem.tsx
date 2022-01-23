@@ -2,11 +2,11 @@ import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { SourceLocationSetContributorsFields } from '../../../../../graphql-operations'
+import { SourceSetContributorsFields } from '../../../../../graphql-operations'
 import { PersonList } from '../../../components/person-list/PersonList'
 
 export const SourceSetContributorsSidebarItem: React.FunctionComponent<{
-    contributors: NonNullable<SourceLocationSetContributorsFields['contributors']>
+    contributors: NonNullable<SourceSetContributorsFields['contributors']>
     titleLink: string
     className?: string
 }> = ({ contributors, titleLink, className }) => (

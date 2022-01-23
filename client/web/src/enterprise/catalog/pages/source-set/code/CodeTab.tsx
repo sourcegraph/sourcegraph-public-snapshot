@@ -13,21 +13,21 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import {
     RepositoryForTreeFields,
     TreeEntryForTreeFields,
-    TreeOrComponentSourceLocationSetFields,
+    TreeOrComponentSourceSetFields,
 } from '../../../../../graphql-operations'
-import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocationSetTitle'
+import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
 import { SourceSetDescendentComponents } from '../../../contributions/tree/SourceSetDescendentComponents'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
-import { SourceLocationSetReadme } from '../readme/ComponentReadme'
+import { SourceSetReadme } from '../readme/ComponentReadme'
 
-import { SourceLocationSetCodeOwners } from './CodeOwners'
+import { SourceSetCodeOwners } from './CodeOwners'
 import { CodeTabSidebar } from './CodeTabSidebar'
-import { SourceLocationSetCommits } from './ComponentCommits'
+import { SourceSetCommits } from './ComponentCommits'
 import { LastCommit } from './LastCommit'
-import { SourceLocationSetBranches } from './SourceLocationSetBranches'
-import { SourceLocationSetContributors } from './SourceLocationSetContributors'
-import { SourceLocationSetSelectMenu } from './SourceLocationSetSelectMenu'
-import { SourceLocationSetTreeEntries } from './SourceLocationSetTreeEntries'
+import { SourceSetBranches } from './SourceSetBranches'
+import { SourceSetContributors } from './SourceSetContributors'
+import { SourceSetSelectMenu } from './SourceSetSelectMenu'
+import { SourceSetTreeEntries } from './SourceSetTreeEntries'
 
 interface Props
     extends TelemetryProps,
@@ -38,7 +38,7 @@ interface Props
     repository: RepositoryForTreeFields
     tree: TreeEntryForTreeFields
     component: React.ComponentPropsWithoutRef<typeof CodeTabSidebar>['component'] | null
-    sourceLocationSet: TreeOrComponentSourceLocationSetFields
+    sourceSet: TreeOrComponentSourceSetFields
     useHash?: boolean
     className?: string
 }
@@ -47,7 +47,7 @@ export const CodeTab: React.FunctionComponent<Props> = ({
     repository,
     tree,
     component,
-    sourceLocationSet,
+    sourceSet,
     treeOrComponentViewMode,
     treeOrComponentViewModeURL,
     useHash,
@@ -68,7 +68,7 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                     <div className="col-md-9">
                         <div className="pb-2 d-flex align-items-center">
                             <h2 className="d-flex align-items-center h6 mb-0">
-                                <SourceLocationSetTitle
+                                <SourceSetTitle
                                     component={component}
                                     tree={tree}
                                     treeOrComponentViewMode={treeOrComponentViewMode}
@@ -76,7 +76,7 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                                 {component !== null && treeOrComponentViewMode === 'auto' && (
                                     <>
                                         <span className="text-muted mx-1">in</span>
-                                        <SourceLocationSetTitle
+                                        <SourceSetTitle
                                             component={null}
                                             tree={tree}
                                             treeOrComponentViewMode={treeOrComponentViewMode}
@@ -85,15 +85,15 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                                 )}
                             </h2>
                             {component && (
-                                <SourceLocationSetSelectMenu
+                                <SourceSetSelectMenu
                                     treeOrComponentViewMode={treeOrComponentViewMode}
                                     treeOrComponentViewModeURL={treeOrComponentViewModeURL}
                                     buttonClassName="px-2 py-1 text-muted"
                                 />
                             )}
                             <Link to={`${match.url}${pathSeparator}branches`} className="ml-3">
-                                {sourceLocationSet.branches.totalCount}{' '}
-                                {pluralize('branch', sourceLocationSet.branches.totalCount, 'branches')}
+                                {sourceSet.branches.totalCount}{' '}
+                                {pluralize('branch', sourceSet.branches.totalCount, 'branches')}
                             </Link>
                             {tree.isRoot && (
                                 <Link to={`${match.url}${pathSeparator}tags`} className="ml-3">
@@ -109,9 +109,9 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                             </Link>
                         </div>
                         <div className="card mb-3">
-                            {sourceLocationSet.commitsForLastCommit?.nodes[0] && (
+                            {sourceSet.commitsForLastCommit?.nodes[0] && (
                                 <LastCommit
-                                    commit={sourceLocationSet.commitsForLastCommit?.nodes[0]}
+                                    commit={sourceSet.commitsForLastCommit?.nodes[0]}
                                     after={
                                         <Link to={`${match.url}${pathSeparator}commits`} className="ml-3 text-nowrap">
                                             All commits
@@ -121,44 +121,44 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                                 />
                             )}
                             {/* TODO(sqs): if a component, show a UI indication to the effect of "Also includes sources from other paths: ..." */}
-                            {(sourceLocationSet.__typename === 'Component' ||
-                                sourceLocationSet.__typename === 'GitTree') && (
-                                <SourceLocationSetTreeEntries
+                            {(sourceSet.__typename === 'Component' ||
+                                sourceSet.__typename === 'GitTree') && (
+                                <SourceSetTreeEntries
                                     {...props}
-                                    sourceLocationSet={sourceLocationSet}
+                                    sourceSet={sourceSet}
                                     className="card-body"
                                 />
                             )}
                         </div>
                         <SourceSetDescendentComponents
-                            descendentComponents={sourceLocationSet.descendentComponents}
+                            descendentComponents={sourceSet.descendentComponents}
                             repoID={repository.id}
                             filePath={tree.path}
                         />
-                        {sourceLocationSet.readme && <SourceLocationSetReadme readme={sourceLocationSet.readme} />}
+                        {sourceSet.readme && <SourceSetReadme readme={sourceSet.readme} />}
                     </div>
                     <div className="col-md-3">
                         <CodeTabSidebar
                             repository={repository}
                             tree={tree}
                             component={component}
-                            sourceLocationSet={sourceLocationSet}
+                            sourceSet={sourceSet}
                             treeOrComponentViewMode={treeOrComponentViewMode}
                             useHash={useHash}
                         />
                     </div>
                 </Route>
                 <Route path={`${match.url}${pathSeparator}contributors`}>
-                    <SourceLocationSetContributors sourceLocationSet={sourceLocationSet.id} className="mb-3" />
+                    <SourceSetContributors sourceSet={sourceSet.id} className="mb-3" />
                 </Route>
                 <Route path={`${match.url}${pathSeparator}code-owners`}>
-                    <SourceLocationSetCodeOwners sourceLocationSet={sourceLocationSet.id} className="mb-3" />
+                    <SourceSetCodeOwners sourceSet={sourceSet.id} className="mb-3" />
                 </Route>
                 <Route path={`${match.url}${pathSeparator}commits`}>
-                    <SourceLocationSetCommits sourceLocationSet={sourceLocationSet.id} className="mb-3 card w-100" />
+                    <SourceSetCommits sourceSet={sourceSet.id} className="mb-3 card w-100" />
                 </Route>
                 <Route path={`${match.url}${pathSeparator}branches`}>
-                    <SourceLocationSetBranches sourceLocationSet={sourceLocationSet.id} className="w-100" />
+                    <SourceSetBranches sourceSet={sourceSet.id} className="w-100" />
                 </Route>
             </Switch>
         </div>

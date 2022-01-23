@@ -38,8 +38,8 @@ export const generateCache = (): InMemoryCache =>
         // https://www.apollographql.com/docs/react/data/fragments/#defining-possibletypes-manually
         possibleTypes: {
             TreeEntry: ['GitBlob', 'GitTree'],
-            SourceLocationSet: ['Component', 'GitTree', 'GitBlob', 'TreeEntry'],
-            EntityOwner: ['Group', 'Person'],
+            SourceSet: ['Component', 'GitTree', 'GitBlob', 'TreeEntry'],
+            ComponentOwner: ['Group', 'Person'],
         },
     })
 

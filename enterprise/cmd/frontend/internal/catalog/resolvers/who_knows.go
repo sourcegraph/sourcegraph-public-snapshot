@@ -13,7 +13,7 @@ import (
 )
 
 func (r *componentResolver) WhoKnows(ctx context.Context, args *gql.WhoKnowsArgs) ([]gql.WhoKnowsEdgeResolver, error) {
-	slocs, err := r.sourceLocationSetResolver(ctx)
+	slocs, err := r.sourceSetResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -21,10 +21,10 @@ func (r *componentResolver) WhoKnows(ctx context.Context, args *gql.WhoKnowsArgs
 }
 
 func (r *rootResolver) GitTreeEntryWhoKnows(ctx context.Context, treeEntry *gql.GitTreeEntryResolver, args *gql.WhoKnowsArgs) ([]gql.WhoKnowsEdgeResolver, error) {
-	return sourceLocationSetResolverFromTreeEntry(treeEntry, r.db).WhoKnows(ctx, args)
+	return sourceSetResolverFromTreeEntry(treeEntry, r.db).WhoKnows(ctx, args)
 }
 
-func (r *sourceLocationSetResolver) WhoKnows(ctx context.Context, args *gql.WhoKnowsArgs) ([]gql.WhoKnowsEdgeResolver, error) {
+func (r *sourceSetResolver) WhoKnows(ctx context.Context, args *gql.WhoKnowsArgs) ([]gql.WhoKnowsEdgeResolver, error) {
 	contributorConnection, err := r.Contributors(ctx, &graphqlutil.ConnectionArgs{})
 	if err != nil {
 		return nil, err
