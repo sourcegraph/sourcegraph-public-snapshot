@@ -24,7 +24,7 @@ message Index {
   // Metadata about this index.
   Metadata metadata = 1;
   // Documents that belong to this index.
-  repeated Document document = 2;
+  repeated Document documents = 2;
   // (optional) Symbols that are referenced from this index but are defined in
   // an external package (a separate `Index` message).  Leave this field empty
   // if you assume the external package will get indexed separately. If the
@@ -110,7 +110,7 @@ message Document {
 message Symbol {
     string scheme = 1;
     Package package = 2;
-    repeated Descriptor descriptor = 3;
+    repeated Descriptor descriptors = 3;
 }
 
 message Package {

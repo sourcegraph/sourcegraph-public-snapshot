@@ -1,8 +1,8 @@
 import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -25,9 +25,10 @@ interface WorkspacesPreviewProps {
     hasPreviewed: boolean
     /**
      * Whether or not the preview button should be disabled due to their being a problem
-     * with the input batch spec YAML, or a preview request is already happening.
+     * with the input batch spec YAML, or a preview request is already happening. An
+     * optional tooltip string to display may be provided in place of `true`.
      */
-    previewDisabled: boolean
+    previewDisabled: boolean | string
     /**
      * Function to submit the current input batch spec YAML to trigger a workspaces
      * preview request.

@@ -5,7 +5,10 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Popover } from 'reactstrap'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -24,15 +27,13 @@ import { Button } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
-import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
-import { SearchContextProps, SearchStreamingProps } from '../search'
-import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
+import { SearchStreamingProps } from '../search'
 import { RouteDescriptor } from '../util/contributions'
 
 import { CopyPathAction } from './actions/CopyPathAction'

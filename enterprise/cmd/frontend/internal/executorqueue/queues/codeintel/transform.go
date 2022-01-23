@@ -2,7 +2,6 @@ package codeintel
 
 import (
 	"fmt"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -13,6 +12,7 @@ import (
 
 const defaultOutfile = "dump.lsif"
 const uploadRoute = "/.executors/lsif/upload"
+const schemeExecutorToken = "token-executor"
 
 func transformRecord(index store.Index, accessToken string) (apiclient.Job, error) {
 	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
@@ -36,15 +36,8 @@ func transformRecord(index store.Index, accessToken string) (apiclient.Job, erro
 
 	frontendURL := conf.Get().ExternalURL
 
-	srcEndpoint, err := makeURL(frontendURL, accessToken)
-	if err != nil {
-		return apiclient.Job{}, err
-	}
-
-	redactedSrcEndpoint, err := makeURL(frontendURL, "PASSWORD_REMOVED")
-	if err != nil {
-		return apiclient.Job{}, err
-	}
+	authorizationHeader := makeAuthHeaderValue(accessToken)
+	redactedAuthorizationHeader := makeAuthHeaderValue("REDACTED")
 
 	root := index.Root
 	if root == "" {
@@ -75,31 +68,25 @@ func transformRecord(index store.Index, accessToken string) (apiclient.Job, erro
 				},
 				Dir: index.Root,
 				Env: []string{
-					fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
+					fmt.Sprintf("SRC_ENDPOINT=%s", frontendURL),
+					fmt.Sprintf("SRC_HEADER_AUTHORIZATION=%s", authorizationHeader),
 				},
 			},
 		},
 		RedactedValues: map[string]string{
-			// 🚨 SECURITY: Catch leak of upload endpoint. This is necessary in addition
-			// to the below in case the username or password contains illegal URL characters,
-			// which are then urlencoded and are not replaceable via byte comparison.
-			srcEndpoint: redactedSrcEndpoint,
+			// 🚨 SECURITY: Catch leak of authorization header.
+			authorizationHeader: redactedAuthorizationHeader,
 
-			// 🚨 SECURITY: Catch uses of fragments pulled from URL to construct another target
-			// (in src-cli). We only pass the constructed URL to src-cli, which we trust not to
-			// ship the values to a third party, but not to trust to ensure the values are absent
-			// from the command's stdout or stderr streams.
+			// 🚨 SECURITY: Catch uses of fragments pulled from auth header to
+			// construct another target (in src-cli). We only pass the
+			// Authorization header to src-cli, which we trust not to ship the
+			// values to a third party, but not to trust to ensure the values
+			// are absent from the command's stdout or stderr streams.
 			accessToken: "PASSWORD_REMOVED",
 		},
 	}, nil
 }
 
-func makeURL(base, password string) (string, error) {
-	u, err := url.Parse(base)
-	if err != nil {
-		return "", err
-	}
-
-	u.User = url.UserPassword("sourcegraph", password)
-	return u.String(), nil
+func makeAuthHeaderValue(token string) string {
+	return fmt.Sprintf("%s %s", schemeExecutorToken, token)
 }

@@ -137,6 +137,17 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			continue
 		}
 
+		if strings.HasPrefix(args.Event, "search.ranking.") {
+			argumentPayload, err := decode(args.Argument)
+			if err != nil {
+				return nil, err
+			}
+			if err := exportPrometheusSearchRanking(argumentPayload); err != nil {
+				log15.Error("exportPrometheusSearchRanking", "error", err)
+			}
+			continue
+		}
+
 		argumentPayload, err := decode(args.Argument)
 		if err != nil {
 			return nil, err
@@ -208,5 +219,23 @@ func exportPrometheusSearchLatencies(event string, payload json.RawMessage) erro
 		searchType := strings.TrimSuffix(strings.TrimPrefix(event, "search.latencies.frontend."), ".first-result")
 		searchLatenciesFrontendFirstResult.WithLabelValues(searchType).Observe(v.DurationMS / 1000.0)
 	}
+	return nil
+}
+
+var searchRankingResultClicked = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_search_ranking_result_clicked",
+	Help:    "the index of the search result which was clicked on by the user",
+	Buckets: prometheus.LinearBuckets(1, 1, 10),
+}, []string{"type"})
+
+func exportPrometheusSearchRanking(payload json.RawMessage) error {
+	var v struct {
+		Index float64 `json:"index"`
+		Type  string  `json:"type"`
+	}
+	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+		return err
+	}
+	searchRankingResultClicked.WithLabelValues(v.Type).Observe(v.Index)
 	return nil
 }

@@ -2,6 +2,7 @@ package run
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -24,12 +25,10 @@ type SearchInputs struct {
 	DefaultLimit int
 }
 
-// Job is an interface shared by all search backends. Calling Run on a job
-// object runs a search. The relation with SearchInputs and Jobs is that
-// SearchInputs are static values, parsed and validated, to produce Jobs. Jobs
-// express semantic behavior at runtime across different backends and system
-// architecture. The third argument accepts resolved repositories (which may or
-// may not be required, depending on the job. E.g., a global search job does not
+// Job is an interface shared by all individual search operations in the backend
+// (e.g., text vs commit vs symbol search are represented as different jobs).
+// Calling Run on a job object runs a search. The third argument accepts resolved repositories (which may or may
+// not be required, depending on the job. E.g., a global search job does not
 // require upfront repository resolution).
 type Job interface {
 	Run(context.Context, streaming.Sender, searchrepos.Pager) error
@@ -41,6 +40,20 @@ type Job interface {
 	// set of required and optional jobs concurrently, and cancel optional
 	// jobs once we've guaranteed some required results, or after a timeout.
 	Required() bool
+}
+
+// Routine represents all inputs to run multiple search operations (i.e.,
+// multiple Jobs) in a single search routine. In other words, it executes all
+// jobs that may be implemented by different search engines (Zoekt vs Searcher)
+// or return different result types (text vs. symbols). The relation with
+// SearchInputs and Routine is that SearchInputs are static values, parsed and
+// validated, to produce one or more Routines. Routines express the complete
+// information to execute the runtime semantics for particular search
+// operations.
+type Routine struct {
+	Jobs        []Job
+	RepoOptions search.RepoOptions
+	Timeout     time.Duration
 }
 
 // MaxResults computes the limit for the query.

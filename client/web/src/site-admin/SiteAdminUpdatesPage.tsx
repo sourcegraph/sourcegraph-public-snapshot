@@ -4,11 +4,11 @@ import formatDistance from 'date-fns/formatDistance'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import React, { useMemo } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
 
 import { fetchSiteUpdateCheck } from './backend'

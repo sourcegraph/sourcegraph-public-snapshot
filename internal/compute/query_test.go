@@ -20,8 +20,12 @@ func TestParse(t *testing.T) {
 		Equal(t, test("not a(foo)"))
 
 	autogold.Want("`content` normalized",
-		"Command: `Match only: foo`").
+		"Command: `Match only: (?i:foo)`").
 		Equal(t, test("content:'foo'"))
+
+	autogold.Want("`case:yes` honored for `Match only` command",
+		"Command: `Match only: milk`, Parameters: `\"case:yes\"`").
+		Equal(t, test("milk case:yes"))
 
 	autogold.Want("no pattern",
 		"compute endpoint expects nonempty pattern").
@@ -59,7 +63,7 @@ func TestToSearchQuery(t *testing.T) {
 	}
 
 	autogold.Want("convert match-only to search query",
-		"repo:foo file:bar carolado").
+		"repo:foo file:bar (?i:carolado)").
 		Equal(t, test("repo:foo file:bar carolado"))
 
 	autogold.Want("convert replace-in-place to search query",
