@@ -6,6 +6,8 @@ import { COMPONENT_TAG_FRAGMENT } from '../../components/component-tag/Component
 import { COMPONENT_OWNER_FRAGMENT } from '../../pages/component/meta/ComponentOwnerSidebarItem'
 import { SOURCE_LOCATION_SET_README_FRAGMENT } from '../../pages/component/readme/ComponentReadme'
 
+import { SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT } from './SourceSetDescendentComponents'
+
 const SOURCE_LOCATION_SET_FILES_FRAGMENT = gql`
     fragment SourceLocationSetFilesFields on SourceLocationSet {
         __typename
@@ -109,6 +111,7 @@ export const TREE_OR_COMPONENT_SOURCE_LOCATION_SET_FRAGMENT = gql`
     fragment TreeOrComponentSourceLocationSetFields on SourceLocationSet {
         id
 
+        ...SourceSetDescendentComponentsFields
         ...SourceLocationSetFilesFields
         ...SourceLocationSetReadmeFields
         ...SourceLocationSetCodeOwnersFields
@@ -128,6 +131,7 @@ export const TREE_OR_COMPONENT_SOURCE_LOCATION_SET_FRAGMENT = gql`
             __typename
         }
     }
+    ${SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT}
     ${SOURCE_LOCATION_SET_FILES_FRAGMENT}
     ${SOURCE_LOCATION_SET_README_FRAGMENT}
     ${SOURCE_LOCATION_SET_CODE_OWNERS_FRAGMENT}
@@ -151,9 +155,6 @@ export const TREE_OR_COMPONENT_PAGE = gql`
                 }
                 primaryComponents: components(path: $path, primary: true, recursive: false) {
                     ...PrimaryComponentForTreeFields
-                }
-                otherComponents: components(path: $path, primary: false, recursive: false) {
-                    ...OtherComponentForTreeFields
                 }
             }
         }
@@ -184,25 +185,6 @@ export const TREE_OR_COMPONENT_PAGE = gql`
         ...ComponentOwnerFields
         tags {
             ...ComponentTagFields
-        }
-    }
-    fragment OtherComponentForTreeFields on Component {
-        __typename
-        id
-        name
-        kind
-        description
-        url
-        sourceLocations {
-            repository {
-                id
-            }
-            path
-            isEntireRepository
-            treeEntry {
-                url
-            }
-            isPrimary
         }
     }
 

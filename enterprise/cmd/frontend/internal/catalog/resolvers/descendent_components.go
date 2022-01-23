@@ -27,6 +27,9 @@ func (r *sourceLocationSetResolver) DescendentComponents(ctx context.Context) ([
 			for _, rSloc := range r.slocs {
 				if cSloc.Repo == rSloc.repoName {
 					for _, p := range cSloc.Paths {
+						if p == rSloc.path {
+							continue
+						}
 						if pathContainsComponent := pathHasPrefix(p, rSloc.path); pathContainsComponent {
 							matches = append(matches, &componentResolver{db: r.db, component: c})
 						}

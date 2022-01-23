@@ -16,13 +16,13 @@ import {
     TreeOrComponentSourceLocationSetFields,
 } from '../../../../../graphql-operations'
 import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocationSetTitle'
+import { SourceSetDescendentComponents } from '../../../contributions/tree/SourceSetDescendentComponents'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
 import { SourceLocationSetReadme } from '../readme/ComponentReadme'
 
 import { SourceLocationSetCodeOwners } from './CodeOwners'
 import { CodeTabSidebar } from './CodeTabSidebar'
 import { SourceLocationSetCommits } from './ComponentCommits'
-import { ComponentSourceLocations } from './ComponentSourceLocations'
 import { LastCommit } from './LastCommit'
 import { SourceLocationSetBranches } from './SourceLocationSetBranches'
 import { SourceLocationSetContributors } from './SourceLocationSetContributors'
@@ -39,7 +39,6 @@ interface Props
     tree: TreeEntryForTreeFields
     component: React.ComponentPropsWithoutRef<typeof CodeTabSidebar>['component'] | null
     sourceLocationSet: TreeOrComponentSourceLocationSetFields
-    isTree?: boolean
     useHash?: boolean
     className?: string
 }
@@ -51,7 +50,6 @@ export const CodeTab: React.FunctionComponent<Props> = ({
     sourceLocationSet,
     treeOrComponentViewMode,
     treeOrComponentViewModeURL,
-    isTree,
     useHash,
     className,
     ...props
@@ -68,12 +66,6 @@ export const CodeTab: React.FunctionComponent<Props> = ({
             >
                 <Route path={match.url} exact={true}>
                     <div className="col-md-9">
-                        {!isTree && (
-                            <>
-                                <h4 className="sr-only">Sources</h4>
-                                <ComponentSourceLocations component={component} className="mb-3" />
-                            </>
-                        )}
                         <div className="pb-2 d-flex align-items-center">
                             <h2 className="d-flex align-items-center h6 mb-0">
                                 <SourceLocationSetTitle
@@ -138,6 +130,11 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </div>
+                        <SourceSetDescendentComponents
+                            descendentComponents={sourceLocationSet.descendentComponents}
+                            repoID={repository.id}
+                            filePath={tree.path}
+                        />
                         {sourceLocationSet.readme && <SourceLocationSetReadme readme={sourceLocationSet.readme} />}
                     </div>
                     <div className="col-md-3">

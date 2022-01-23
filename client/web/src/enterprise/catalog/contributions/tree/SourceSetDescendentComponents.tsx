@@ -46,7 +46,7 @@ interface Props extends FileSpec {
     className?: string
 }
 
-export const TreeComponents: React.FunctionComponent<Props> = ({
+export const SourceSetDescendentComponents: React.FunctionComponent<Props> = ({
     descendentComponents,
     repoID,
     filePath,
