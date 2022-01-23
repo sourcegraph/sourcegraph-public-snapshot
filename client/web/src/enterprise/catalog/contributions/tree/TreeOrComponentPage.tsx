@@ -72,6 +72,7 @@ const TREE_OR_COMPONENT_PAGE = gql`
         name
         description
     }
+
     fragment TreeEntryForTreeFields on GitTree {
         path
         name
@@ -79,6 +80,7 @@ const TREE_OR_COMPONENT_PAGE = gql`
         url
         ...TreeOrComponentSourceSetFields
     }
+
     fragment PrimaryComponentForTreeFields on Component {
         __typename
         id
@@ -97,23 +99,19 @@ const TREE_OR_COMPONENT_PAGE = gql`
 
     fragment TreeOrComponentSourceSetFields on SourceSet {
         id
-
         ...SourceSetDescendentComponentsFields
         ...SourceSetFilesFields
         ...SourceSetReadmeFields
         ...SourceSetCodeOwnersFields
         ...SourceSetContributorsFields
-
         branches(first: 0, interactive: false) {
             totalCount
         }
-
         commitsForLastCommit: commits(first: 1) {
             nodes {
                 ...GitCommitFields
             }
         }
-
         usage {
             __typename
         }
