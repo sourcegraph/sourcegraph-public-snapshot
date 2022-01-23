@@ -15,9 +15,9 @@ import {
     TreeEntryForTreeFields,
     TreeOrComponentSourceSetFields,
 } from '../../../../../graphql-operations'
-import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
 import { SourceSetDescendentComponents } from '../../../contributions/tree/SourceSetDescendentComponents'
-import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
+import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
+import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponentPage'
 import { SourceSetReadme } from '../readme/ComponentReadme'
 
 import { SourceSetCodeOwners } from './CodeOwners'
@@ -121,13 +121,8 @@ export const CodeTab: React.FunctionComponent<Props> = ({
                                 />
                             )}
                             {/* TODO(sqs): if a component, show a UI indication to the effect of "Also includes sources from other paths: ..." */}
-                            {(sourceSet.__typename === 'Component' ||
-                                sourceSet.__typename === 'GitTree') && (
-                                <SourceSetTreeEntries
-                                    {...props}
-                                    sourceSet={sourceSet}
-                                    className="card-body"
-                                />
+                            {(sourceSet.__typename === 'Component' || sourceSet.__typename === 'GitTree') && (
+                                <SourceSetTreeEntries {...props} sourceSet={sourceSet} className="card-body" />
                             )}
                         </div>
                         <SourceSetDescendentComponents

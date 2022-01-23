@@ -213,7 +213,7 @@ const TreeOrComponent: React.FunctionComponent<Props> = ({
 }) => {
     const treeOrComponentViewOptions = useTreeOrComponentViewOptions()
 
-    const sourceSet: TreeOrComponentSourceSetFields | null =
+    const sourceSet: TreeOrComponentSourceSetFields =
         treeOrComponentViewOptions.treeOrComponentViewMode === 'auto' ? primaryComponent ?? tree : tree
 
     useBreadcrumb(
