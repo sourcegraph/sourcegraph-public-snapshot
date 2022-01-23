@@ -109,7 +109,7 @@ func addDocs(pipeline *bk.Pipeline) {
 }
 
 // Adds the terraform scanner step.  This executes very quickly ~6s
-func addGraphQLLint(pipeline *bk.Pipeline) {
+func addTerraformLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lock: security - checkov",
 		bk.Cmd("dev/ci/ci-checkov.sh"))
 }
