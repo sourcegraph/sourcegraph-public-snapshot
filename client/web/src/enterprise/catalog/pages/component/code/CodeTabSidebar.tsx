@@ -7,24 +7,26 @@ import { useRouteMatch } from 'react-router'
 import { Link } from 'react-router-dom'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ComponentKind } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Badge } from '@sourcegraph/wildcard'
 
 import {
-    ComponentDetailFields,
+    ComponentOwnerFields,
+    ComponentTagFields,
     RepositoryForTreeFields,
+    SourceLocationSetContributorsFields,
     TreeEntryForTreeFields,
     TreeOrComponentSourceLocationSetFields,
 } from '../../../../../graphql-operations'
-import { UserAvatar } from '../../../../../user/UserAvatar'
 import { PersonList } from '../../../components/person-list/PersonList'
 import { SourceLocationSetTitle } from '../../../contributions/tree/SourceLocationSetTitle'
 import { TreeOrComponentViewOptionsProps } from '../../../contributions/tree/TreeOrComponent'
 import { ComponentOwnerSidebarItem } from '../meta/ComponentOwnerSidebarItem'
 import { ComponentTagsSidebarItem } from '../meta/ComponentTagsSidebarItem'
+import { SourceSetContributorsSidebarItem } from '../meta/SourceSetContributorsSidebarItem'
 
 interface Props
     extends TelemetryProps,
@@ -34,8 +36,16 @@ interface Props
         Pick<TreeOrComponentViewOptionsProps, 'treeOrComponentViewMode'> {
     repository: RepositoryForTreeFields
     tree: TreeEntryForTreeFields
-    component: ComponentDetailFields | null
-    sourceLocationSet: TreeOrComponentSourceLocationSetFields
+    component:
+        | null
+        | (ComponentOwnerFields & {
+              __typename: 'Component'
+              name: string
+              kind: ComponentKind
+              description: string | null
+              tags: ComponentTagFields[]
+          })
+    sourceLocationSet: TreeOrComponentSourceLocationSetFields & SourceLocationSetContributorsFields
     useHash?: boolean
     className?: string
 }
@@ -131,78 +141,12 @@ export const CodeTabSidebar: React.FunctionComponent<Props> = ({
             )}
             {sourceLocationSet.contributors && sourceLocationSet.contributors.edges.length > 0 && (
                 <section className={SECTION_CLASS_NAME}>
-                    {/* TODO(sqs): For this, could show a visualization horizontal bar where width = % of person's contributions, bg color is recency of last contribution, and text overlay is the person's name */}
-                    <PersonList
-                        title="Contributors"
+                    <SourceSetContributorsSidebarItem
+                        contributors={sourceLocationSet.contributors}
                         titleLink={`${match.url}${pathSeparator}contributors`}
-                        titleCount={sourceLocationSet.contributors.totalCount}
-                        listTag="ol"
-                        orientation="summary"
-                        items={sourceLocationSet.contributors.edges.map(contributor => ({
-                            person: contributor.person,
-                            text:
-                                contributor.authoredLineProportion >= 0.01
-                                    ? `${(contributor.authoredLineProportion * 100).toFixed(0)}%`
-                                    : '<1%',
-                            textTooltip: `${contributor.authoredLineCount} ${pluralize(
-                                'line',
-                                contributor.authoredLineCount
-                            )}`,
-                            date: contributor.lastCommit.author.date,
-                        }))}
-                        className={className}
                     />
                 </section>
             )}
-            <hr className="my-3 d-none" />
-            <section className={classNames('d-none', SECTION_CLASS_NAME)}>
-                <h4 className="font-weight-bold">
-                    Depends on{' '}
-                    <Badge variant="secondary" small={true} pill={true} className="ml-1">
-                        171
-                    </Badge>
-                </h4>
-                <ul className="list-inline">
-                    {'x'
-                        .repeat(8)
-                        .split(/x/g)
-                        .map((_value, index) => (
-                            <li key={index} className="list-inline-item mb-1 mr-1">
-                                <UserAvatar size={19} user={{ displayName: `user ${index}`, avatarURL: null }} />
-                            </li>
-                        ))}
-                </ul>
-            </section>
-            <section className={classNames('d-none', SECTION_CLASS_NAME)}>
-                <h4 className="font-weight-bold">
-                    Used by{' '}
-                    {/*                     <Badge variant="secondary" small={true} pill={true} className="ml-1">
-                        21
-                    </Badge> */}
-                </h4>
-                <ul className="list-inline">
-                    <li className="list-inline-item mb-1 mr-1">
-                        <Badge variant="secondary" small={true} pill={true} className="ml-1">
-                            28
-                        </Badge>{' '}
-                        components
-                    </li>
-                    <li className="list-inline-item mb-1 mr-1">
-                        <Badge variant="secondary" small={true} pill={true} className="ml-1">
-                            11
-                        </Badge>{' '}
-                        people
-                    </li>
-                    {/* {'x'
-                        .repeat(8)
-                        .split(/x/g)
-                        .map((_value, index) => (
-                            <li key={index} className="list-inline-item mb-1 mr-1">
-                                <UserAvatar size={19} user={{ displayName: `user ${index}`, avatarURL: null }} />
-                            </li>
-                        ))} */}
-                </ul>
-            </section>
         </aside>
     )
 }

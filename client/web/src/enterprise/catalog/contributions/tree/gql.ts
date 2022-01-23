@@ -177,10 +177,6 @@ export const TREE_OR_COMPONENT_PAGE = gql`
         description
         kind
         lifecycle
-        labels {
-            key
-            values
-        }
         catalogURL
         url
         ...TreeOrComponentSourceLocationSetFields
