@@ -3,7 +3,7 @@ import React from 'react'
 
 import { Menu, MenuButton } from '@sourcegraph/wildcard'
 
-import { SourceSetViewModeActionMenuItems } from '../../../../../repo/actions/source-set-view-mode-action/SourceSetViewModeAction'
+import { SourceSetViewModeActionMenuItems } from '../../../../../../repo/actions/source-set-view-mode-action/SourceSetViewModeAction'
 import { SourceSetAtTreeViewOptionsProps } from '../../../contributions/tree/useSourceSetAtTreeViewOptions'
 
 interface Props

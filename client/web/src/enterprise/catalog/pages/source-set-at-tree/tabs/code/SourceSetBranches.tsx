@@ -13,12 +13,8 @@ import {
     ShowMoreButton,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 
-import {
-    GitRefFields,
-    SourceSetBranchesResult,
-    SourceSetBranchesVariables,
-} from '../../../../../graphql-operations'
-import { gitReferenceFragments, GitReferenceNode } from '../../../../../repo/GitReference'
+import { GitRefFields, SourceSetBranchesResult, SourceSetBranchesVariables } from '../../../../../../graphql-operations'
+import { gitReferenceFragments, GitReferenceNode } from '../../../../../../repo/GitReference'
 
 interface Props {
     sourceSet: Scalars['ID']

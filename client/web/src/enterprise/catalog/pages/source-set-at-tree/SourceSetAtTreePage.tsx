@@ -31,19 +31,18 @@ import treePageStyles from '../../../../repo/tree/TreePage.module.scss'
 import { basename } from '../../../../util/path'
 import { CatalogPage, CatalogPage2 } from '../../components/catalog-area-header/CatalogPage'
 import { COMPONENT_TAG_FRAGMENT } from '../../components/component-tag/ComponentTag'
-import { CodeTab } from '../source-set/code/CodeTab'
-import { SOURCE_SET_FILES_FRAGMENT } from '../source-set/code/SourceSetTreeEntries'
-import { CatalogRelations } from '../source-set/graph/CatalogRelations'
-import { COMPONENT_OWNER_FRAGMENT } from '../source-set/meta/ComponentOwnerSidebarItem'
-import { SOURCE_SET_CODE_OWNERS_FRAGMENT } from '../source-set/meta/SourceSetCodeOwnersSidebarItem'
-import { SOURCE_SET_CONTRIBUTORS_FRAGMENT } from '../source-set/meta/SourceSetContributorsSidebarItem'
-import { SOURCE_SET_README_FRAGMENT } from '../source-set/readme/ComponentReadme'
-import { UsageTab } from '../source-set/usage/UsageTab'
-import { WhoKnowsTab } from '../source-set/who-knows/WhoKnowsTab'
 
-import { SourceSetAtTreeHeader } from './SourceSetAtTreeHeader'
 import styles from './SourceSetAtTreePage.module.scss'
 import { SOURCE_SET_DESCENDENT_COMPONENTS_FRAGMENT } from './SourceSetDescendentComponents'
+import { CodeTab } from './tabs/code/CodeTab'
+import { SOURCE_SET_README_FRAGMENT } from './tabs/code/ComponentReadme'
+import { COMPONENT_OWNER_FRAGMENT } from './tabs/code/sidebar/ComponentOwnerSidebarItem'
+import { SOURCE_SET_CODE_OWNERS_FRAGMENT } from './tabs/code/sidebar/SourceSetCodeOwnersSidebarItem'
+import { SOURCE_SET_CONTRIBUTORS_FRAGMENT } from './tabs/code/sidebar/SourceSetContributorsSidebarItem'
+import { SOURCE_SET_FILES_FRAGMENT } from './tabs/code/SourceSetTreeEntries'
+import { CatalogRelations } from './tabs/graph/CatalogRelations'
+import { UsageTab } from './tabs/usage/UsageTab'
+import { WhoKnowsTab } from './tabs/who-knows/WhoKnowsTab'
 import { useSourceSetAtTreeViewOptions } from './useSourceSetAtTreeViewOptions'
 
 const TREE_OR_COMPONENT_PAGE = gql`
@@ -294,19 +293,5 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
         [primaryComponent, props, repository, sourceSet, tree, sourceSetAtTreeViewOptions]
     )
 
-    return (
-        <CatalogPage2
-            header={
-                <SourceSetAtTreeHeader
-                    repository={repository}
-                    tree={tree}
-                    primaryComponent={primaryComponent}
-                    {...sourceSetAtTreeViewOptions}
-                />
-            }
-            tabs={tabs}
-            useHash={true}
-            tabsClassName={styles.tabs}
-        />
-    )
+    return <CatalogPage2 tabs={tabs} useHash={true} tabsClassName={styles.tabs} />
 }

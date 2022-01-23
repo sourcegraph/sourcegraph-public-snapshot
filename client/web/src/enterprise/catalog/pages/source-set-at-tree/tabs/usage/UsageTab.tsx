@@ -16,11 +16,11 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { SourceSetUsageResult, SourceSetUsageVariables } from '../../../../../graphql-operations'
-import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
-import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
-import { CatalogComponentIcon } from '../../../components/ComponentIcon'
-import { PersonList } from '../../../components/person-list/PersonList'
+import { SourceSetUsageResult, SourceSetUsageVariables } from '../../../../../../graphql-operations'
+import { personLinkFieldsFragment } from '../../../../../../person/PersonLink'
+import { fetchHighlightedFileLineRanges } from '../../../../../../repo/backend'
+import { CatalogComponentIcon } from '../../../../components/ComponentIcon'
+import { PersonList } from '../../../../components/person-list/PersonList'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
     sourceSet: Scalars['ID']
@@ -93,13 +93,10 @@ export const UsageTab: React.FunctionComponent<Props> = ({
     settingsCascade,
     telemetryService,
 }) => {
-    const { data, error, loading } = useQuery<SourceSetUsageResult, SourceSetUsageVariables>(
-        SOURCE_SET_USAGE,
-        {
-            variables: { node: sourceSet },
-            fetchPolicy: 'cache-first',
-        }
-    )
+    const { data, error, loading } = useQuery<SourceSetUsageResult, SourceSetUsageVariables>(SOURCE_SET_USAGE, {
+        variables: { node: sourceSet },
+        fetchPolicy: 'cache-first',
+    })
 
     const location = useLocation()
 

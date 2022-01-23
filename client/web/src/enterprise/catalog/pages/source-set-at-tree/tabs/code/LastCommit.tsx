@@ -2,10 +2,10 @@ import classNames from 'classnames'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { Timestamp } from '../../../../../components/time/Timestamp'
-import { GitCommitFields } from '../../../../../graphql-operations'
-import { PersonLink } from '../../../../../person/PersonLink'
-import { UserAvatar } from '../../../../../user/UserAvatar'
+import { Timestamp } from '../../../../../../components/time/Timestamp'
+import { GitCommitFields } from '../../../../../../graphql-operations'
+import { PersonLink } from '../../../../../../person/PersonLink'
+import { UserAvatar } from '../../../../../../user/UserAvatar'
 
 export const LastCommit: React.FunctionComponent<{
     commit: GitCommitFields

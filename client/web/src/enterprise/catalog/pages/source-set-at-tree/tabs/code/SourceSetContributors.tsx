@@ -14,30 +14,35 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 
 import {
-    SourceSetCodeOwnersFields,
-    SourceSetCodeOwnersResult,
-    SourceSetCodeOwnersVariables,
-} from '../../../../../graphql-operations'
-import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
-import { PersonList } from '../../../components/person-list/PersonList'
+    SourceSetContributorsFields,
+    SourceSetContributorsResult,
+    SourceSetContributorsVariables,
+} from '../../../../../../graphql-operations'
+import { personLinkFieldsFragment } from '../../../../../../person/PersonLink'
+import { PersonList } from '../../../../components/person-list/PersonList'
 
 interface Props {
     sourceSet: Scalars['ID']
     className?: string
 }
 
-const SOURCE_SET_CODE_OWNERS = gql`
-    query SourceSetCodeOwners($node: ID!, $first: Int!) {
+const SOURCE_SET_CONTRIBUTORS = gql`
+    query SourceSetContributors($node: ID!, $first: Int!) {
         node(id: $node) {
             ... on SourceSet {
-                codeOwners(first: $first) {
+                contributors(first: $first) {
                     edges {
-                        node {
+                        person {
                             ...PersonLinkFields
                             avatarURL
                         }
-                        fileCount
-                        fileProportion
+                        authoredLineCount
+                        authoredLineProportion
+                        lastCommit {
+                            author {
+                                date
+                            }
+                        }
                     }
                     totalCount
                     pageInfo {
@@ -52,13 +57,13 @@ const SOURCE_SET_CODE_OWNERS = gql`
 
 const FIRST = 50
 
-export const SourceSetCodeOwners: React.FunctionComponent<Props> = ({ sourceSet, className }) => {
+export const SourceSetContributors: React.FunctionComponent<Props> = ({ sourceSet, className }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
-        SourceSetCodeOwnersResult,
-        SourceSetCodeOwnersVariables,
-        NonNullable<SourceSetCodeOwnersFields['codeOwners']>['edges'][number]
+        SourceSetContributorsResult,
+        SourceSetContributorsVariables,
+        NonNullable<SourceSetContributorsFields['contributors']>['edges'][number]
     >({
-        query: SOURCE_SET_CODE_OWNERS,
+        query: SOURCE_SET_CONTRIBUTORS,
         variables: {
             node: sourceSet,
             first: FIRST,
@@ -69,29 +74,33 @@ export const SourceSetCodeOwners: React.FunctionComponent<Props> = ({ sourceSet,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
-            if (!data.node || !('codeOwners' in data.node) || !data.node.codeOwners) {
+            if (!data.node || !('contributors' in data.node) || !data.node.contributors) {
                 throw new Error('no code owners associated with object')
             }
-            return { ...data.node.codeOwners, nodes: data.node.codeOwners.edges }
+            return { ...data.node.contributors, nodes: data.node.contributors.edges }
         },
     })
     return (
         <>
-            <h4 className="sr-only">Code owners</h4>
+            <h4 className="sr-only">Contributors</h4>
             <ConnectionContainer className={className}>
                 {error && <ConnectionError errors={[error.message]} />}
                 {connection?.nodes && connection?.nodes.length > 0 && (
                     <PersonList
-                        title="Code owners"
+                        title="Contributors"
                         listTag="ol"
                         orientation="vertical"
-                        items={connection.nodes.map(codeOwner => ({
-                            person: codeOwner.node,
+                        items={connection.nodes.map(contributor => ({
+                            person: contributor.person,
                             text:
-                                codeOwner.fileProportion >= 0.01
-                                    ? `${(codeOwner.fileProportion * 100).toFixed(0)}%`
+                                contributor.authoredLineProportion >= 0.01
+                                    ? `${(contributor.authoredLineProportion * 100).toFixed(0)}%`
                                     : '<1%',
-                            textTooltip: `Owns ${codeOwner.fileCount} ${pluralize('line', codeOwner.fileCount)}`,
+                            textTooltip: `${contributor.authoredLineCount} ${pluralize(
+                                'line',
+                                contributor.authoredLineCount
+                            )}`,
+                            date: contributor.lastCommit.author.date,
                         }))}
                         className={className}
                     />
@@ -103,10 +112,10 @@ export const SourceSetCodeOwners: React.FunctionComponent<Props> = ({ sourceSet,
                             noSummaryIfAllNodesVisible={true}
                             first={FIRST}
                             connection={connection}
-                            noun="code owner"
-                            pluralNoun="code owners"
+                            noun="contributor"
+                            pluralNoun="contributors"
                             hasNextPage={hasNextPage}
-                            emptyElement={<p>No code owners found</p>}
+                            emptyElement={<p>No contributors found</p>}
                         />
                         {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                     </SummaryContainer>

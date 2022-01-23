@@ -3,8 +3,8 @@ import React from 'react'
 import { gql } from '@sourcegraph/http-client'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { SourceSetCodeOwnersFields } from '../../../../../graphql-operations'
-import { PersonList } from '../../../components/person-list/PersonList'
+import { SourceSetCodeOwnersFields } from '../../../../../../../graphql-operations'
+import { PersonList } from '../../../../../components/person-list/PersonList'
 
 // TODO(sqs): dont fetch all
 export const SOURCE_SET_CODE_OWNERS_FRAGMENT = gql`

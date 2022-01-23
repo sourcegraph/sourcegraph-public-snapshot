@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { gql } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 
-import { SourceSetReadmeFields } from '../../../../../graphql-operations'
+import { SourceSetReadmeFields } from '../../../../../../graphql-operations'
 
 export const SOURCE_SET_README_FRAGMENT = gql`
     fragment SourceSetReadmeFields on SourceSet {

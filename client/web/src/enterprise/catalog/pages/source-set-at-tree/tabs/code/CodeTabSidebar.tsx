@@ -15,13 +15,13 @@ import {
     SourceSetContributorsFields,
     TreeEntryForTreeFields,
     SourceSetAtTreeFields,
-} from '../../../../../graphql-operations'
-import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
+} from '../../../../../../graphql-operations'
+import { SourceSetTitle } from '../../../../contributions/tree/SourceSetTitle'
 import { SourceSetAtTreeViewOptionsProps } from '../../../contributions/tree/useSourceSetAtTreeViewOptions'
-import { ComponentOwnerSidebarItem } from '../meta/ComponentOwnerSidebarItem'
-import { ComponentTagsSidebarItem } from '../meta/ComponentTagsSidebarItem'
-import { SourceSetCodeOwnersSidebarItem } from '../meta/SourceSetCodeOwnersSidebarItem'
-import { SourceSetContributorsSidebarItem } from '../meta/SourceSetContributorsSidebarItem'
+import { ComponentOwnerSidebarItem } from './sidebar/ComponentOwnerSidebarItem'
+import { ComponentTagsSidebarItem } from './sidebar/ComponentTagsSidebarItem'
+import { SourceSetCodeOwnersSidebarItem } from './sidebar/SourceSetCodeOwnersSidebarItem'
+import { SourceSetContributorsSidebarItem } from './sidebar/SourceSetContributorsSidebarItem'
 
 interface Props extends Pick<SourceSetAtTreeViewOptionsProps, 'sourceSetAtTreeViewMode'> {
     repository: RepositoryForTreeFields

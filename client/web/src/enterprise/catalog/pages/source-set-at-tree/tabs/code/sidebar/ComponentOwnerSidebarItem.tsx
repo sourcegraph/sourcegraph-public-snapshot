@@ -4,14 +4,14 @@ import { isDefined } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
-import { ComponentOwnerFields } from '../../../../../graphql-operations'
-import { formatPersonName, personLinkFieldsFragment } from '../../../../../person/PersonLink'
-import { UserAvatar } from '../../../../../user/UserAvatar'
+import { ComponentOwnerFields } from '../../../../../../../graphql-operations'
+import { formatPersonName, personLinkFieldsFragment } from '../../../../../../../person/PersonLink'
+import { UserAvatar } from '../../../../../../../user/UserAvatar'
 import {
     ComponentOwnerLink,
     COMPONENT_OWNER_LINK_FRAGMENT,
-} from '../../../components/component-owner-link/ComponentOwnerLink'
-import { GROUP_LINK_FRAGMENT } from '../../../components/group-link/GroupLink'
+} from '../../../../../components/component-owner-link/ComponentOwnerLink'
+import { GROUP_LINK_FRAGMENT } from '../../../../../components/group-link/GroupLink'
 
 import styles from './ComponentOwnerSidebarItem.module.scss'
 

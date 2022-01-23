@@ -6,7 +6,7 @@ import React from 'react'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 
-import { SourceSetFilesFields } from '../../../../../graphql-operations'
+import { SourceSetFilesFields } from '../../../../../../graphql-operations'
 
 type ComponentSourceLocationsFields = Extract<SourceSetFilesFields, { __typename: 'Component' }>
 

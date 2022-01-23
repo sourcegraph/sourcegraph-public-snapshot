@@ -14,15 +14,15 @@ import {
     RepositoryForTreeFields,
     TreeEntryForTreeFields,
     SourceSetAtTreeFields,
-} from '../../../../../graphql-operations'
-import { SourceSetTitle } from '../../../contributions/tree/SourceSetTitle'
-import { SourceSetDescendentComponents } from '../../source-set-at-tree/SourceSetDescendentComponents'
-import { SourceSetAtTreeViewOptionsProps } from '../../source-set-at-tree/useSourceSetAtTreeViewOptions'
-import { SourceSetReadme } from '../readme/ComponentReadme'
+} from '../../../../../../graphql-operations'
+import { SourceSetTitle } from '../../../../contributions/tree/SourceSetTitle'
+import { SourceSetDescendentComponents } from '../../SourceSetDescendentComponents'
+import { SourceSetAtTreeViewOptionsProps } from '../../useSourceSetAtTreeViewOptions'
 
 import { SourceSetCodeOwners } from './CodeOwners'
 import { CodeTabSidebar } from './CodeTabSidebar'
 import { SourceSetCommits } from './ComponentCommits'
+import { SourceSetReadme } from './ComponentReadme'
 import { LastCommit } from './LastCommit'
 import { SourceSetBranches } from './SourceSetBranches'
 import { SourceSetContributors } from './SourceSetContributors'

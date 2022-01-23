@@ -3,9 +3,9 @@ import React from 'react'
 import { gql } from '@sourcegraph/http-client'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { SourceSetContributorsFields } from '../../../../../graphql-operations'
-import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
-import { PersonList } from '../../../components/person-list/PersonList'
+import { SourceSetContributorsFields } from '../../../../../../../graphql-operations'
+import { personLinkFieldsFragment } from '../../../../../../../person/PersonLink'
+import { PersonList } from '../../../../../components/person-list/PersonList'
 
 // TODO(sqs): dont fetch all
 export const SOURCE_SET_CONTRIBUTORS_FRAGMENT = gql`

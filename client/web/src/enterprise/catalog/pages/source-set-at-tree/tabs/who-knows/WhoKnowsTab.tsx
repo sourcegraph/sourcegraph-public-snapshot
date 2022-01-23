@@ -11,9 +11,9 @@ import {
     SourceSetWhoKnowsFields,
     SourceSetWhoKnowsResult,
     SourceSetWhoKnowsVariables,
-} from '../../../../../graphql-operations'
-import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
-import { PersonList } from '../../../components/person-list/PersonList'
+} from '../../../../../../graphql-operations'
+import { personLinkFieldsFragment } from '../../../../../../person/PersonLink'
+import { PersonList } from '../../../../components/person-list/PersonList'
 
 interface Props {
     sourceSet: Scalars['ID']
