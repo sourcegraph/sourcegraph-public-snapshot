@@ -76,6 +76,10 @@ You can run a batch change across specific components first.
 - Sourcegraph requires less manual work because it's already integrated with all of your code and knows more about the code (which helps it discover and bootstrap the service catalog).
 - Sourcegraph isn't just a service catalog, it surfaces all software components (including libraries, programs, etc.). After all, you're liable for all code, not just what's running today.
 
+## Implementation
+
+- A SourceSet is a Tree or Component. You can think of a tree as a (trivial) component that consists of all files in the tree. A tree has a readme, code owners, contributors, etc. You could imagine a milestone of this catalog feature where we don't actually let you explicitly define any components, but we just enhance the presentation of trees in the Sourcegraph UI with all of that information.
+
 ## TODOs
 
 Data model:
