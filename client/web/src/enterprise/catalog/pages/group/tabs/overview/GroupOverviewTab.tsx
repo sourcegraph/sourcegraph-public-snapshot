@@ -15,15 +15,14 @@ import { GroupOverviewTabFields } from '../../../../../../graphql-operations'
 import { formatPersonName, personLinkFieldsFragment } from '../../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../../user/UserAvatar'
 import { CatalogGroupIcon } from '../../../../components/CatalogGroupIcon'
-import { CatalogComponentIcon } from '../../../../components/ComponentIcon'
 import { GroupLink } from '../../../../components/group-link/GroupLink'
-import { GROUP_LINK_FRAGMENT } from '../../gql2'
 
 import { GroupCatalogExplorer } from './GroupCatalogExplorer'
 import styles from './GroupOverviewTab.module.scss'
 
 export const GROUP_OVERVIEW_TAB_FRAGMENT = gql`
     fragment GroupOverviewTabFields on Group {
+        id
         name
         title
         description
@@ -33,14 +32,17 @@ export const GROUP_OVERVIEW_TAB_FRAGMENT = gql`
             avatarURL
         }
         childGroups {
-            ...GroupLinkFields
+            id
+            name
+            title
+            description
+            url
             members {
                 __typename
             }
         }
     }
 
-    ${GROUP_LINK_FRAGMENT}
     ${personLinkFieldsFragment}
 `
 
@@ -127,46 +129,7 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({ group, classN
                     </ul>
                 </div>
             )}
-
             <GroupCatalogExplorer group={group.id} className="mb-3" />
-
-            {group.components && group.components.length > 0 && false && (
-                <div className="mb-3">
-                    <h4 className="font-weight-bold">
-                        {group.components.length} {pluralize('component', group.components.length)}
-                    </h4>
-                    <ul className={styles.boxGrid}>
-                        {group.components.map(component => (
-                            <li
-                                key={component.id}
-                                className={classNames(
-                                    'position-relative border rounded d-flex flex-column',
-                                    styles.boxGridItem
-                                )}
-                            >
-                                <div className="mb-0 d-flex align-items-center">
-                                    <Link
-                                        to={component.url}
-                                        className="d-inline-flex align-items-center stretched-link"
-                                    >
-                                        <CatalogComponentIcon
-                                            component={component}
-                                            className="icon-inline text-muted mr-1"
-                                        />
-
-                                        {component.name}
-                                    </Link>
-                                </div>
-                                {component.description && (
-                                    <p className={classNames('my-1 text-muted small', styles.boxGridItemBody)}>
-                                        {component.description}
-                                    </p>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
         </div>
     </div>
 )

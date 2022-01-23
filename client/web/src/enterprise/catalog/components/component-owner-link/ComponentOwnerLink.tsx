@@ -15,13 +15,13 @@ export const COMPONENT_OWNER_LINK_FRAGMENT = gql`
                 avatarURL
             }
             ... on Group {
-                ...GroupLinkFields2
+                ...GroupLinkFields
                 members {
                     ...PersonLinkFields
                     avatarURL
                 }
                 ancestorGroups {
-                    ...GroupLinkFields2
+                    ...GroupLinkFields
                 }
             }
         }

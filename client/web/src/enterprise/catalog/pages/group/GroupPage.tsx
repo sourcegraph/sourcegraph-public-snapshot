@@ -41,7 +41,7 @@ export const GroupPage: React.FunctionComponent<Props> = ({ groupName, telemetry
                     url
 
                     ancestorGroups {
-                        ...GroupLinkFields2
+                        ...GroupLinkFields
                     }
 
                     ...GroupOverviewTabFields

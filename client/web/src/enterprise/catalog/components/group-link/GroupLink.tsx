@@ -4,20 +4,18 @@ import { Link } from 'react-router-dom'
 
 import { gql } from '@sourcegraph/http-client'
 
-import { GroupLinkFields2 } from '../../../../graphql-operations'
+import { GroupLinkFields } from '../../../../graphql-operations'
 import { CatalogGroupIcon } from '../CatalogGroupIcon'
 
-// TODO(sqs): handle 2 fragments wanting to be called GroupLinkFields
-
 export const GROUP_LINK_FRAGMENT = gql`
-    fragment GroupLinkFields2 on Group {
+    fragment GroupLinkFields on Group {
         url
         name
     }
 `
 
 interface Props {
-    group: GroupLinkFields2
+    group: GroupLinkFields
     className?: string
 }
 
