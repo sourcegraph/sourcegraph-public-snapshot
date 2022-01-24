@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { MouseEvent } from 'react'
+import React, { MouseEvent, KeyboardEvent, useCallback } from 'react'
+import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -23,34 +24,6 @@ import styles from './FileMatchChildren.module.scss'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { MatchGroup } from './ranking/PerFileResultRanking'
 
-const onCodeClick = (event: MouseEvent<HTMLDivElement>): void => {
-    // ResultContainer (ancestor component) also implements a click event
-    // handler which shouldn't be triggered (otherwise whatever action
-    event.stopPropagation()
-
-    // If no text was selected, act like a link. Also handle ctrl and cmd
-    // clicks.
-    if (event.ctrlKey || event.metaKey || !window.getSelection?.()?.toString()) {
-        // CTRL click will select the whole line in Firefox. Clear that
-        // selection.
-        window.getSelection?.()?.empty()
-
-        // Delegate click to a real link element. Let the browser handle
-        // modifier keys.
-        event.currentTarget.previousElementSibling?.dispatchEvent(
-            new window.MouseEvent('click', {
-                // bubbles is required for React handling this event
-                bubbles: true,
-                cancelable: true,
-                ctrlKey: event.ctrlKey,
-                metaKey: event.metaKey,
-                altKey: event.altKey,
-                shiftKey: event.shiftKey,
-            })
-        )
-    }
-}
-
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
@@ -70,6 +43,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
     const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
+    const history = useHistory()
     const fetchHighlightedFileRangeLines = React.useCallback(
         (isFirst, startLine, endLine) => {
             const startTime = Date.now()
@@ -116,6 +90,33 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
+    const navigateToFile = useCallback(
+        (event: KeyboardEvent<HTMLDivElement> | MouseEvent<HTMLDivElement>): void => {
+            let navigate = false
+            if (event.type === 'click') {
+                navigate = event.ctrlKey || event.metaKey || window.getSelection?.()?.toString() === ''
+            } else if ((event as KeyboardEvent).key === 'Enter') {
+                navigate = true
+            }
+
+            if (navigate) {
+                // CTRL click will select the whole line in Firefox. Clear that
+                // selection.
+                window.getSelection?.()?.empty()
+
+                const href = event.currentTarget.getAttribute('data-href')
+                if (!event.defaultPrevented && href) {
+                    if (event.ctrlKey || event.metaKey || event.shiftKey) {
+                        window.open(href, '_blank')
+                    } else {
+                        history.push(href)
+                    }
+                }
+            }
+        },
+        [history]
+    )
+
     return (
         <div className={styles.fileMatchChildren} data-testid="file-match-children">
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
@@ -152,16 +153,18 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             }`}
                             className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
                         >
-                            <Link to={createCodeExcerptLink(group)} aria-label="Open file match" />
                             <div
+                                data-href={createCodeExcerptLink(group)}
                                 className={classNames(
                                     'test-file-match-children-item',
                                     styles.item,
                                     styles.itemClickable
                                 )}
-                                onClick={onCodeClick}
+                                onClick={navigateToFile}
+                                onKeyDown={navigateToFile}
                                 data-testid="file-match-children-item"
-                                role="none"
+                                tabIndex={0}
+                                role="link"
                             >
                                 <CodeExcerpt
                                     repoName={result.repository}
