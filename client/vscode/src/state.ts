@@ -1,7 +1,9 @@
 import { cloneDeep } from 'lodash'
 import { BehaviorSubject, Observable } from 'rxjs'
 
+import { SearchQueryState } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 
 // State management in the Sourcegraph VS Code extension
 // -----
@@ -52,41 +54,65 @@ export type VSCEState = SearchHomeState | SearchResultsState | RemoteBrowsingSta
 
 export interface SearchHomeState {
     status: 'search-home'
-    context: CommonContext & {}
+    context: CommonContext
 }
 
 export interface SearchResultsState {
     status: 'search-results'
-    context: CommonContext & {}
+    context: CommonContext & {
+        submittedSearchQueryState: Pick<SearchQueryState, 'queryState' | 'searchCaseSensitivity' | 'searchPatternType'>
+    }
 }
 export interface RemoteBrowsingState {
     status: 'remote-browsing'
-    context: CommonContext & {}
+    context: CommonContext
 }
 
 export interface IdleState {
     status: 'idle'
-    context: CommonContext & {}
+    context: CommonContext
 }
 
 export interface ContextInvalidatedState {
     status: 'context-invalidated'
     context: CommonContext
 }
-
 interface CommonContext {
     authenticatedUser: AuthenticatedUser | null
-    // Whether a search has already been submitted.
-    dirty: boolean
+
+    // The search sidebar only needs submitted search query state.
+    // The search panel maintains its own local query state.
+    submittedSearchQueryState: Pick<
+        SearchQueryState,
+        'queryState' | 'searchCaseSensitivity' | 'searchPatternType'
+    > | null
+
+    // In common context and not just `search-results` to retain during `idle` or `remote-browsing` states.
+    searchResults: AggregateStreamingSearchResults | null
+
+    // TODO: search context (and persist.)
 }
 
-const INITIAL_STATE: VSCEState = { status: 'search-home', context: { authenticatedUser: null, dirty: false } }
+const INITIAL_STATE: VSCEState = {
+    status: 'search-home',
+    context: {
+        authenticatedUser: null,
+        submittedSearchQueryState: null,
+        searchResults: null,
+    },
+}
 
 // Temporary placeholder events. We will replace these with the actual events as we implement the webviews.
 
 export type VSCEEvent = SearchEvent | TabsEvent | SettingsEvent
 
-type SearchEvent = { type: 'set_query_state' } | { type: 'submit_search_query' }
+type SearchEvent =
+    | { type: 'set_query_state' }
+    | {
+          type: 'submit_search_query'
+          submittedSearchQueryState: NonNullable<CommonContext['submittedSearchQueryState']>
+      }
+    | { type: 'received_search_results'; searchResults: AggregateStreamingSearchResults }
 
 type TabsEvent =
     | { type: 'search_panel_unfocused' }
@@ -126,9 +152,23 @@ export function createVSCEStateMachine(): VSCEStateMachine {
                             status: 'search-results',
                             context: {
                                 ...state.context,
-                                dirty: true,
+                                submittedSearchQueryState: event.submittedSearchQueryState,
+                                searchResults: null, // Null out previous results.
                             },
                         }
+
+                    case 'received_search_results': {
+                        // Only accept this event in search-results state.
+                        if (state.status === 'search-results') {
+                            return {
+                                status: 'search-results',
+                                context: {
+                                    ...state.context,
+                                    searchResults: event.searchResults,
+                                },
+                            }
+                        }
+                    }
 
                     case 'search_panel_unfocused':
                         return {
@@ -146,12 +186,22 @@ export function createVSCEStateMachine(): VSCEStateMachine {
 
             case 'remote-browsing':
                 switch (event.type) {
-                    case 'search_panel_focused':
-                        return {
-                            ...state,
-                            status: state.context.dirty ? 'search-results' : 'search-home',
+                    case 'search_panel_focused': {
+                        if (state.context.submittedSearchQueryState) {
+                            return {
+                                status: 'search-results',
+                                context: {
+                                    ...state.context,
+                                    submittedSearchQueryState: state.context.submittedSearchQueryState,
+                                },
+                            }
                         }
 
+                        return {
+                            ...state,
+                            status: 'search-home',
+                        }
+                    }
                     case 'remote_file_unfocused':
                         return {
                             ...state,
@@ -163,11 +213,22 @@ export function createVSCEStateMachine(): VSCEStateMachine {
 
             case 'idle':
                 switch (event.type) {
-                    case 'search_panel_focused':
+                    case 'search_panel_focused': {
+                        if (state.context.submittedSearchQueryState) {
+                            return {
+                                status: 'search-results',
+                                context: {
+                                    ...state.context,
+                                    submittedSearchQueryState: state.context.submittedSearchQueryState,
+                                },
+                            }
+                        }
+
                         return {
                             ...state,
-                            status: state.context.dirty ? 'search-results' : 'search-home',
+                            status: 'search-home',
                         }
+                    }
 
                     case 'remote_file_focused':
                         return {

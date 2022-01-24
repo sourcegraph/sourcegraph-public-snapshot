@@ -44,7 +44,6 @@ import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
@@ -275,7 +274,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                             {...props}
                             {...themeProps}
                             repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         />
                     </Panel>
                 )}
