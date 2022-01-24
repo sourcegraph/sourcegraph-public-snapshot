@@ -9,7 +9,7 @@ export const CodeMonitoringNavItem: React.FunctionComponent = () => (
         to="/code-monitoring"
         text="Monitoring"
         icon={CodeMonitoringLogo}
-        className="nav-link btn btn-link text-decoration-none"
+        className="nav-link text-decoration-none"
         activeClassName="active"
     />
 )
