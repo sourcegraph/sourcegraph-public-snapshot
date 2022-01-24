@@ -144,7 +144,7 @@ type SearchResultsResolver struct {
 }
 
 type SearchResults struct {
-	Matches []result.Match
+	Matches result.Matches
 	Stats   streaming.Stats
 	Alert   *searchAlert
 }
@@ -198,11 +198,7 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 }
 
 func (sr *SearchResultsResolver) MatchCount() int32 {
-	var totalResults int
-	for _, result := range sr.Matches {
-		totalResults += result.ResultCount()
-	}
-	return int32(totalResults)
+	return int32(sr.Matches.ResultCount())
 }
 
 // Deprecated. Prefer MatchCount.
