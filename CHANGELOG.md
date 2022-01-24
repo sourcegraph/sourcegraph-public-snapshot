@@ -14,6 +14,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Added
 
 ### Changed
+- `src validate` can now execute default validation checks (add external service, clone repo, search repo, search non-indexed branch of that repo, remove external service) for Sourcegraph instance when no validation file is specified as well as continue to support JSON and YAML file validation files.  
 
 ### Fixed
 
