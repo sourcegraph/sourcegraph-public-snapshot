@@ -26,6 +26,7 @@ interface HistorySidebarProps extends WebviewPageProps {
     useQueryState: UseStore<SearchQueryState>
     localRecentSearches: LocalRecentSeachProps[]
     localFileHistory: string[]
+    validAccessToken: boolean
 }
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
@@ -38,6 +39,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     useQueryState,
     localRecentSearches,
     localFileHistory,
+    validAccessToken,
 }) => {
     const [savedSearch, setSavedSearch] = useState<ISavedSearch[] | null | undefined>(undefined)
 
@@ -79,7 +81,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                         sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                     />
                 )}
-                {authenticatedUser && savedSearch && (
+                {validAccessToken && savedSearch && (
                     <SaveSearches
                         savedSearches={savedSearch}
                         telemetryService={platformContext.telemetryService}
@@ -112,7 +114,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                     theme={theme}
                 />
-                {!authenticatedUser && (
+                {!validAccessToken && (
                     <div className={styles.sidebarSection}>
                         <h5 className="flex-grow-1 btn-outline-secondary my-2">Search Your Private Code</h5>
                         <div className={classNames('p-1', styles.sidebarSectionCta)}>

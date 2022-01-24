@@ -33,6 +33,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
     const [corsUri, setCorsUri] = useState<string | undefined>(undefined)
     const [hasAccount, setHasAccount] = useState(false)
     const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
+    const [validAccessToken, setValidAccessToken] = useState<boolean>(false)
     const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null | undefined>(undefined)
     // Search Query
     const [patternType, setPatternType] = useState<SearchPatternType>(SearchPatternType.literal)
@@ -61,15 +62,16 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     setCorsUri(response.corsUrl)
                     setHasAccessToken(response.token)
                     setHasAccount(response.token)
+                    setValidAccessToken(response.validated)
                 })
                 .catch(error => console.error(error))
             setActiveSearchPanel(false)
         }
-        if (!hasAccessToken) {
+        if (hasAccessToken !== undefined && !hasAccessToken) {
             setAuthenticatedUser(null)
         }
         // Validate Token
-        if (hasAccount && hasAccessToken && authenticatedUser === undefined) {
+        if (hasAccessToken && authenticatedUser === undefined) {
             ;(async () => {
                 const currentUser = await platformContext
                     .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
@@ -79,10 +81,13 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     })
                     .toPromise()
                 // If user is detected, set valid access token to true
+                console.log(currentUser)
                 if (currentUser.data) {
                     setAuthenticatedUser(currentUser.data.currentUser)
+                    setValidAccessToken(true)
                 } else {
                     setAuthenticatedUser(null)
+                    setValidAccessToken(false)
                 }
             })().catch(() => setAuthenticatedUser(null))
         }
@@ -97,8 +102,8 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         setHasAccessToken,
         activeSearchPanel,
         authenticatedUser,
+        validAccessToken,
     ])
-
     const useQueryState: UseStore<SearchQueryState> = useMemo(() => {
         const useStore = create<SearchQueryState>((set, get) => ({
             queryState: { query: '' },
@@ -170,6 +175,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                 // Updating below states  would call useEffect to validate the updated token
                 setHasAccessToken(true)
                 setHasAccount(true)
+                setAuthenticatedUser(undefined)
             }
         })().catch(error => {
             console.error(error)
@@ -189,12 +195,13 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         localFileHistory !== undefined
     ) {
         if (!activeSearchPanel) {
-            return authenticatedUser || localRecentSearches.length > 0 ? (
+            return validAccessToken || localRecentSearches.length > 0 ? (
                 <>
                     <HistorySidebar
                         sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                         platformContext={platformContext}
                         theme={theme}
+                        validAccessToken={validAccessToken}
                         authenticatedUser={authenticatedUser}
                         patternType={patternType}
                         caseSensitive={caseSensitive}
@@ -214,7 +221,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                         hasAccessToken={hasAccessToken}
                         telemetryService={platformContext.telemetryService}
                         onSubmitAccessToken={onSubmitAccessToken}
-                        validAccessToken={authenticatedUser !== null}
+                        validAccessToken={validAccessToken}
                     />
                 </>
             )
