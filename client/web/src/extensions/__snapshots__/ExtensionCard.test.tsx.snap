@@ -3,10 +3,10 @@
 exports[`ExtensionCard renders 1`] = `
 <DocumentFragment>
   <div
-    class="position-relative flex-1 extensionCard"
+    class="card position-relative flex-1 extensionCard"
   >
     <div
-      class="cardBody p-0 extension-card__body d-flex flex-column position-relative"
+      class="card-body p-0 extension-card__body d-flex flex-column position-relative"
     >
       <div
         class="d-flex align-items-center backgroundSection blue"

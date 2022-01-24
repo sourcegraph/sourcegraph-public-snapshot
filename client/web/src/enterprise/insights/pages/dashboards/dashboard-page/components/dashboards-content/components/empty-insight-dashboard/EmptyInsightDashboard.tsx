@@ -1,7 +1,8 @@
+import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
-import { Button, Link, Card } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
@@ -33,10 +34,10 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
  */
 export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
     <section className={styles.emptySection}>
-        <Card as={Link} to={`/insights/create?dashboardId=${props.dashboard.id}`} className={styles.itemCard}>
+        <Link to={`/insights/create?dashboardId=${props.dashboard.id}`} className={classNames(styles.itemCard, 'card')}>
             <PlusIcon size="2rem" />
             <span>Create new insight</span>
-        </Card>
+        </Link>
         <span className="d-flex justify-content-center mt-3">
             <span>
                 or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
@@ -62,14 +63,14 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                 variant="secondary"
                 className="p-0 w-100 border-0"
             >
-                <Card
+                <div
                     data-tooltip={!permissions.isConfigurable ? getTooltipMessage(dashboard, permissions) : undefined}
                     data-placement="right"
-                    className={styles.itemCard}
+                    className={classNames(styles.itemCard, 'card')}
                 >
                     <PlusIcon size="2rem" />
                     <span>Add insights</span>
-                </Card>
+                </div>
             </Button>
             <span className="d-flex justify-content-center mt-3">
                 <Link to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</Link>

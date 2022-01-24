@@ -50,7 +50,7 @@ export const WebhookAlert: React.FunctionComponent<Props> = ({
     const SITE_ADMIN_CONFIG_DOC_URL = 'https://docs.sourcegraph.com/batch_changes/how-tos/site_admin_configuration'
 
     return (
-        <DismissibleAlert variant="warning" partialStorageKey={id}>
+        <DismissibleAlert className="alert-warning" partialStorageKey={id}>
             <div>
                 <h4>Changeset information may not be up to date</h4>
                 <p className={styles.blurb}>

@@ -9,7 +9,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Card } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 
@@ -195,7 +195,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         <>
             <h3>Trigger</h3>
             {showQueryForm && (
-                <Card className={classNames(cardClassName, 'p-3')}>
+                <div className={classNames(cardClassName, 'card p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
                     <span className="text-muted">
                         This trigger will fire when new search results are found for a given search query.
@@ -288,13 +288,12 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             Cancel
                         </Button>
                     </div>
-                </Card>
+                </div>
             )}
             {!showQueryForm && (
-                <Card
+                <Button
                     data-testid="trigger-button"
-                    as={Button}
-                    className={classNames('test-trigger-button', cardBtnClassName)}
+                    className={classNames('card test-trigger-button', cardBtnClassName)}
                     aria-label="Edit trigger: When there are new search results"
                     onClick={toggleQueryForm}
                 >
@@ -323,7 +322,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         </div>
                         {triggerCompleted && <div className="btn-link">Edit</div>}
                     </div>
-                </Card>
+                </Button>
             )}
             <small className="text-muted">
                 {' '}

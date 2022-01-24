@@ -31,9 +31,10 @@ type Container struct {
 	// container, such as instances or shards.
 	Variables []ContainerVariable
 
-	// RawVariables exposes the underlying Grafana API to define
-	// variables that can be applied to the dashboard for this container,
-	// such as instances or shards.
+	// RawVariables is an alternative to Variables that exposes the underlying Grafana API
+	// to define variables that can be applied to the dashboard for this container.
+	//
+	// It is recommended to use or expand the standardized Variables field instead.
 	RawVariables []sdk.TemplateVar
 
 	// Groups of observable information about the container.

@@ -5,7 +5,7 @@ import { RouteComponentProps } from 'react-router'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
@@ -122,12 +122,12 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                 </a>{' '}
                 instead.
             </p>
-            <Alert variant="warning">
+            <div className="card-header alert alert-warning">
                 <div>
                     Please redact any secrets before sharing, whether on the public issue tracker or with
                     support@sourcegraph.com.
                 </div>
-            </Alert>
+            </div>
             {allConfig === undefined || monitoringStats === undefined ? (
                 <LoadingSpinner className="mt-2" />
             ) : (

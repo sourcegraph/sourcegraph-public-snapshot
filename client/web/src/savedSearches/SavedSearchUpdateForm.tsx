@@ -16,7 +16,7 @@ import {
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { NamespaceProps } from '../namespaces'
@@ -134,11 +134,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                         error={isErrorLike(this.state.updatedOrError) ? this.state.updatedOrError : undefined}
                     />
                 )}
-                {this.state.updatedOrError === true && (
-                    <Alert variant="success" as="p">
-                        Updated!
-                    </Alert>
-                )}
+                {this.state.updatedOrError === true && <p className="alert alert-success">Updated!</p>}
             </div>
         )
     }

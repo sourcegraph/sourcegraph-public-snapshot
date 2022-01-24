@@ -53,7 +53,7 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="my-3"
     />
     <div
-      class=""
+      class="alert alert-warning"
     >
       Limit hit. Add 
       <code>
@@ -118,10 +118,10 @@ exports[`SearchStatsPage renders 1`] = `
       class="my-3"
     />
     <div
-      class="mb-3"
+      class="card mb-3"
     >
       <h4
-        class="cardHeader"
+        class="card-header"
       >
         Languages
       </h4>

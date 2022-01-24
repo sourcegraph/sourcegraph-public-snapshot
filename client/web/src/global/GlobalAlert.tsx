@@ -5,7 +5,7 @@ import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
-import { DismissibleAlert, DismissibleAlertProps } from '../components/DismissibleAlert'
+import { DismissibleAlert } from '../components/DismissibleAlert'
 
 /**
  * A global alert that is shown at the top of the viewport.
@@ -15,14 +15,10 @@ export const GlobalAlert: React.FunctionComponent<{
     className: string
 }> = ({ alert, className: commonClassName }) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
-    const className = `${commonClassName} alert d-flex`
+    const className = `${commonClassName} alert alert-${alertClassForType(alert.type)} d-flex`
     if (alert.isDismissibleWithKey) {
         return (
-            <DismissibleAlert
-                partialStorageKey={`alert.${alert.isDismissibleWithKey}`}
-                className={className}
-                variant={alertVariantForType(alert.type)}
-            >
+            <DismissibleAlert partialStorageKey={`alert.${alert.isDismissibleWithKey}`} className={className}>
                 {content}
             </DismissibleAlert>
         )
@@ -30,7 +26,7 @@ export const GlobalAlert: React.FunctionComponent<{
     return <div className={className}>{content}</div>
 }
 
-function alertVariantForType(type: AlertType): DismissibleAlertProps['variant'] {
+function alertClassForType(type: AlertType): string {
     switch (type) {
         case AlertType.INFO:
             return 'info'

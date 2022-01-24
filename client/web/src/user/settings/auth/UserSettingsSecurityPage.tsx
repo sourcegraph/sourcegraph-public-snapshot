@@ -6,7 +6,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, asError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -186,29 +186,25 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 <PageTitle title="Account security" />
 
                 {this.props.authenticatedUser.id !== this.props.user.id && (
-                    <Alert variant="danger">
+                    <div className="alert alert-danger">
                         Only the user may change their password. Site admins may{' '}
                         <Link to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
                             reset a user's password
                         </Link>
                         .
-                    </Alert>
+                    </div>
                 )}
 
                 {this.state.accounts.lastRemoved && (
-                    <Alert role="alert" variant="warning">
+                    <div className="alert alert-warning" role="alert">
                         Sign in connection for {this.state.accounts.lastRemoved} removed. Please set a new password for
                         your account.
-                    </Alert>
+                    </div>
                 )}
 
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
-                {this.state.saved && (
-                    <Alert className="mb-3" variant="success">
-                        Password changed!
-                    </Alert>
-                )}
+                {this.state.saved && <div className="alert alert-success mb-3">Password changed!</div>}
 
                 <PageHeader
                     headingElement="h2"

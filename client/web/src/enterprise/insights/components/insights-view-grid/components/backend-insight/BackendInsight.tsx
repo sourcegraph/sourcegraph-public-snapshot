@@ -5,7 +5,7 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useDebounce, Alert } from '@sourcegraph/wildcard'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
@@ -172,9 +172,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
             ) : isErrorLike(error) ? (
                 <View.ErrorContent error={error} title={insight.id}>
                     {error instanceof InsightInProcessError ? (
-                        <Alert className="m-0" variant="info">
-                            {error.message}
-                        </Alert>
+                        <div className="alert alert-info m-0">{error.message}</div>
                     ) : null}
                 </View.ErrorContent>
             ) : (

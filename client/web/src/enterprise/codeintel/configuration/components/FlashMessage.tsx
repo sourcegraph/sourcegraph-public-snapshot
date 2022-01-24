@@ -1,6 +1,5 @@
+import classNames from 'classnames'
 import React from 'react'
-
-import { Alert } from '@sourcegraph/wildcard'
 
 interface FlashMessageProps {
     state: string
@@ -9,7 +8,7 @@ interface FlashMessageProps {
 }
 
 export const FlashMessage: React.FunctionComponent<FlashMessageProps> = ({ state, message, className }) => (
-    <Alert variant={state === 'SUCCESS' ? 'success' : 'warning'} className={className}>
+    <div className={classNames('alert', className, state === 'SUCCESS' ? 'alert-success' : 'alert-warning')}>
         {message}
-    </Alert>
+    </div>
 )

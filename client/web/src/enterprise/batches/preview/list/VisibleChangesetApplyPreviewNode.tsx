@@ -11,7 +11,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -275,18 +275,18 @@ const ExpandedSection: React.FunctionComponent<
     }, [])
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return (
-            <Alert className="mb-0" variant="info">
+            <div className="alert alert-info mb-0">
                 When run, the changeset <strong>{node.targets.changeset.title}</strong> in repo{' '}
                 <strong>{node.targets.changeset.repository.name}</strong> will be removed from this batch change.
-            </Alert>
+            </div>
         )
     }
     if (node.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
         return (
-            <Alert className="mb-0" variant="info">
+            <div className="alert alert-info mb-0">
                 When run, the changeset with ID <strong>{node.targets.changesetSpec.description.externalID}</strong>{' '}
                 will be imported from <strong>{node.targets.changesetSpec.description.baseRepository.name}</strong>.
-            </Alert>
+            </div>
         )
     }
     return (
@@ -381,10 +381,10 @@ const ExpandedSection: React.FunctionComponent<
             {selectedTab === 'diff' && (
                 <>
                     {node.delta.diffChanged && (
-                        <Alert variant="warning">
+                        <div className="alert alert-warning">
                             The files in this changeset have been altered from the previous version. These changes will
                             be pushed to the target branch.
-                        </Alert>
+                        </div>
                     )}
                     <ChangesetSpecFileDiffConnection
                         history={history}

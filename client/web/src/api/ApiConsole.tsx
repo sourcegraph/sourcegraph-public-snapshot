@@ -6,7 +6,7 @@ import { catchError, debounceTime } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Button, Alert, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -176,11 +176,11 @@ export class ApiConsole extends React.PureComponent<Props, State> {
                             <Button to="/help/api/graphql" variant="link" as={Link}>
                                 Docs
                             </Button>
-                            <Alert variant="warning" className="py-1 mb-0 ml-2 text-nowrap">
+                            <div className="alert alert-warning py-1 mb-0 ml-2 text-nowrap">
                                 <small>
                                     The API console uses <strong>real production data.</strong>
                                 </small>
-                            </Alert>
+                            </div>
                         </div>
                     </GraphiQL.Toolbar>
                 </GraphiQL>

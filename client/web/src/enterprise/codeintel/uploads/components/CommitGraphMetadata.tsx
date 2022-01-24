@@ -1,7 +1,7 @@
+import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
 
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Alert } from '@sourcegraph/wildcard'
 
 export interface CommitGraphMetadataProps {
     stale: boolean
@@ -17,10 +17,10 @@ export const CommitGraphMetadata: FunctionComponent<CommitGraphMetadataProps> = 
     now,
 }) => (
     <>
-        <Alert variant={stale ? 'primary' : 'success'} className={className}>
+        <div className={classNames('alert', stale ? 'alert-primary' : 'alert-success', className)}>
             {stale ? <StaleRepository /> : <FreshRepository />}{' '}
             {updatedAt && <LastUpdated updatedAt={updatedAt} now={now} />}
-        </Alert>
+        </div>
     </>
 )
 

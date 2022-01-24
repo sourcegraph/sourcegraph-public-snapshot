@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -141,10 +141,10 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
         <div className="site-admin-repositories-page">
             <PageTitle title="Repositories - Admin" />
             {showRepositoriesAddedBanner && (
-                <Alert variant="success" as="p">
+                <p className="alert alert-success">
                     Updating repositories. It may take a few moments to clone and index each repository. Repository
                     statuses are displayed below.
-                </Alert>
+                </p>
             )}
             <h2>Repositories</h2>
             <p>

@@ -144,14 +144,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		filters.Update(event)
 
 		// Truncate the event to the match limit before fetching repo metadata
-		for i, match := range event.Results {
-			if display <= 0 {
-				event.Results = event.Results[:i]
-				break
-			}
-
-			display = match.Limit(display)
-		}
+		display = event.Results.Limit(display)
 
 		repoMetadata, err := getEventRepoMetadata(ctx, h.db, event)
 		if err != nil {

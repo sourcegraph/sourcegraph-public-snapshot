@@ -1,10 +1,11 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
@@ -12,9 +13,9 @@ const PublishNewManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
     text: string
     buttonLabel: string
-    alertVariant: 'info' | 'danger'
-}> = ({ extension, text, buttonLabel, alertVariant }) => (
-    <Alert variant={alertVariant}>
+    alertClass: 'alert-info' | 'alert-danger'
+}> = ({ extension, text, buttonLabel, alertClass }) => (
+    <div className={classNames('alert', alertClass)}>
         {text}
         {extension.registryExtension?.viewerCanAdminister && (
             <>
@@ -29,7 +30,7 @@ const PublishNewManifestAlert: React.FunctionComponent<{
                 </Button>
             </>
         )}
-    </Alert>
+    </div>
 )
 
 export const ExtensionReadme: React.FunctionComponent<{
@@ -44,7 +45,7 @@ export const ExtensionReadme: React.FunctionComponent<{
         return (
             <PublishNewManifestAlert
                 extension={extension}
-                alertVariant="danger"
+                alertClass="alert-danger"
                 text={`This extension's manifest is invalid: ${
                     manifest?.message ? manifest.message : 'JSON parse error'
                 }`}
@@ -57,7 +58,7 @@ export const ExtensionReadme: React.FunctionComponent<{
         return (
             <PublishNewManifestAlert
                 extension={extension}
-                alertVariant="info"
+                alertClass="alert-info"
                 text="This extension has no README."
                 buttonLabel="Add README and publish new release"
             />
@@ -71,7 +72,7 @@ export const ExtensionReadme: React.FunctionComponent<{
         return (
             <PublishNewManifestAlert
                 extension={extension}
-                alertVariant="danger"
+                alertClass="alert-danger"
                 text="This extension's Markdown README is invalid."
                 buttonLabel="Fix README and publish new release"
             />

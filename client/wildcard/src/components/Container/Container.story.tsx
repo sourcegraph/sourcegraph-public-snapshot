@@ -4,8 +4,6 @@ import React from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Alert } from '..'
-
 import { Container } from './Container'
 
 const decorator: DecoratorFn = story => (
@@ -21,7 +19,7 @@ export default config
 
 export const Overview: Story = () => (
     <>
-        <Alert variant="info">
+        <div className="alert alert-info">
             <p>
                 A container is meant to group content semantically together. Every page using it should have a header,
                 optionally a description for the page and the container itself. Depending on the scope of a button, it
@@ -38,7 +36,7 @@ export const Overview: Story = () => (
                     live inside of the container, next to the content it is modifying. See example 2
                 </li>
             </ul>
-        </Alert>
+        </div>
         <hr />
         <h1>Example 1</h1>
         <h2>Some page explanation</h2>

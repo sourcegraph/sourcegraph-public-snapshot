@@ -8,7 +8,7 @@ import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, Button, useEventObservable, Alert } from '@sourcegraph/wildcard'
+import { Container, Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -276,7 +276,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         )}
                     </div>
                     {isErrorLike(codeMonitorOrError) && (
-                        <Alert variant="danger">Failed to create monitor: {codeMonitorOrError.message}</Alert>
+                        <div className="alert alert-danger">Failed to create monitor: {codeMonitorOrError.message}</div>
                     )}
                 </div>
             </Form>

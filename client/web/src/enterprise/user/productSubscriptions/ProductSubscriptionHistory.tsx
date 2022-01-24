@@ -5,7 +5,6 @@ import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { CardBody } from '@sourcegraph/wildcard'
 
 export const ProductSubscriptionHistory: React.FunctionComponent<{
     productSubscription: Pick<GQL.IProductSubscription, 'events'>
@@ -38,7 +37,7 @@ export const ProductSubscriptionHistory: React.FunctionComponent<{
             </tbody>
         </table>
     ) : (
-        <CardBody>
+        <div className="card-body">
             <span className="text-muted">No events</span>
-        </CardBody>
+        </div>
     )
