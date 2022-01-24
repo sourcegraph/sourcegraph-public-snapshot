@@ -281,6 +281,19 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			if got != tc.want {
 				t.Errorf("got %q, want %q", got, tc.want)
 			}
+			// Internal actor should always have access and ignore sub-repo permissions
+			newCtx := actor.WithActor(context.Background(), &actor.Actor{
+				UID:      1,
+				Internal: true,
+			})
+			gotCommit, err = FirstEverCommit(newCtx, repo, checkerWithoutAccessFirstCommit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got = gotCommit.Committer.Date.Format(time.RFC3339)
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
 		}
 	})
 }
