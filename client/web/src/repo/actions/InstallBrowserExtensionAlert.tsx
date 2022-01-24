@@ -1,7 +1,7 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
-import { Button, AlertLink, Alert } from '@sourcegraph/wildcard'
+import { Button, AlertLink } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -47,10 +47,9 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <Alert
-            className="m-3 d-flex justify-content-between flex-shrink-0"
+        <div
+            className="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
             data-testid="install-browser-extension-alert"
-            variant="info"
         >
             <div className="d-flex align-items-center">
                 <p className="my-0 mr-3">
@@ -116,7 +115,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
             <Button onClick={onAlertDismissed} aria-label="Close alert" className="btn-icon test-close-alert">
                 <CloseIcon className="icon-inline" />
             </Button>
-        </Alert>
+        </div>
     )
 }
 
@@ -133,7 +132,7 @@ export function isFirefoxCampaignActive(currentMs: number): boolean {
 }
 
 export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ onAlertDismissed, displayName }) => (
-    <Alert className="m-3 d-flex justify-content-between flex-shrink-0 percy-hide" variant="info">
+    <div className="alert alert-info m-3 d-flex justify-content-between flex-shrink-0 percy-hide">
         <div>
             <p className="font-weight-medium my-0 mr-3">
                 Sourcegraph is back at{' '}
@@ -163,7 +162,7 @@ export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ 
         <Button onClick={onAlertDismissed} aria-label="Close alert" className="btn-icon test-close-alert">
             <CloseIcon className="icon-inline" />
         </Button>
-    </Alert>
+    </div>
 )
 
 const onInstallLinkClick = (): void => {

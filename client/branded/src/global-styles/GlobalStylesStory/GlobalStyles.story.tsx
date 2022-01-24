@@ -17,6 +17,8 @@ import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
+import { AlertsStory } from './AlertsStory'
+import { CardsStory } from './CardsStory'
 import { ColorVariants } from './ColorVariants'
 import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
@@ -227,6 +229,25 @@ export const Layout: Story = () => (
         </div>
     </>
 )
+
+export const Alerts = AlertsStory
+
+Alerts.parameters = {
+    design: [
+        {
+            type: 'figma',
+            name: 'Figma Light',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
+        },
+        {
+            type: 'figma',
+            name: 'Figma Dark',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
+        },
+    ],
+}
 
 export const ButtonGroups: Story = () => {
     const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
@@ -489,6 +510,17 @@ Forms.parameters = {
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=30%3A24',
+    },
+}
+
+export const Cards = CardsStory
+
+Cards.parameters = {
+    design: {
+        name: 'Figma',
+        type: 'figma',
+        url:
+            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1172%3A285',
     },
 }
 

@@ -9,7 +9,7 @@ import { catchError, switchMap, tap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, LoadingSpinner, FeedbackText, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, FeedbackText, Button, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -208,24 +208,24 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                             <ErrorAlert className={styles.alert} error={this.state.errorDescription} />
                         )}
                         {this.state.loading && (
-                            <Alert className={classNames('mb-0', styles.alert)} variant="primary">
+                            <div className={classNames('alert alert-primary mb-0', styles.alert)}>
                                 <LoadingSpinner /> Checking connection...
-                            </Alert>
+                            </div>
                         )}
                         {this.state.result &&
                             (this.state.result.error === null ? (
-                                <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                                <div className={classNames('alert alert-success mb-0', styles.alert)}>
                                     The remote repository is reachable.
-                                </Alert>
+                                </div>
                             ) : (
-                                <Alert className={classNames('mb-0', styles.alert)} variant="danger">
+                                <div className={classNames('alert alert-danger mb-0', styles.alert)}>
                                     <p>The remote repository is unreachable. Logs follow.</p>
                                     <div>
                                         <pre className={styles.log}>
                                             <code>{this.state.result.error}</code>
                                         </pre>
                                     </div>
-                                </Alert>
+                                </div>
                             ))}
                     </>
                 }
@@ -335,7 +335,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                         history={this.props.history}
                     />
                     {typeof this.state.reachable === 'boolean' && !this.state.reachable && (
-                        <Alert variant="info">
+                        <div className="alert alert-info">
                             Problems cloning or updating this repository?
                             <ul className={styles.steps}>
                                 <li className={styles.step}>
@@ -362,7 +362,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     <FeedbackText headerText="Questions?" />
                                 </li>
                             </ul>
-                        </Alert>
+                        </div>
                     )}
                 </Container>
             </>

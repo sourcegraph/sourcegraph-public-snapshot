@@ -1,7 +1,5 @@
 import React from 'react'
 
-import { Alert } from '@sourcegraph/wildcard'
-
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 import { CopyableText } from '../CopyableText'
 
@@ -53,7 +51,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externa
     }
 
     return (
-        <Alert variant="info">
+        <div className="alert alert-info">
             <h3>Batch changes webhooks</h3>
             {description}
             <CopyableText className="mb-2" text={webhookURL} size={webhookURL.length} />
@@ -68,7 +66,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externa
                 </a>
                 .
             </p>
-        </Alert>
+        </div>
     )
 }
 

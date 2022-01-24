@@ -10,14 +10,12 @@ import { NotificationType } from '../api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '../extensions/controller'
 
 import { Notification } from './notification'
-import { NotificationItem, NotificationItemProps } from './NotificationItem'
+import { NotificationItem, NotificationClassNameProps } from './NotificationItem'
 import styles from './Notifications.module.scss'
 
-export interface NotificationsProps
-    extends ExtensionsControllerProps,
-        Pick<NotificationItemProps, 'notificationItemStyleProps'> {}
+interface Props extends ExtensionsControllerProps, NotificationClassNameProps {}
 
-interface NotificationsState {
+interface State {
     // TODO(tj): use remote progress observable type
     notifications: (Notification & { id: string })[]
 }
@@ -25,14 +23,14 @@ interface NotificationsState {
 /**
  * A notifications center that displays global, non-modal messages.
  */
-export class Notifications extends React.PureComponent<NotificationsProps, NotificationsState> {
+export class Notifications extends React.PureComponent<Props, State> {
     /**
      * The maximum number of notifications at a time. Older notifications are truncated when the length exceeds
      * this number.
      */
     private static MAX_RETAIN = 7
 
-    public state: NotificationsState = {
+    public state: State = {
         notifications: [],
     }
 
@@ -140,7 +138,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
                         notification={notification}
                         onDismiss={this.onDismiss}
                         className="sourcegraph-notifications__notification m-2"
-                        notificationItemStyleProps={this.props.notificationItemStyleProps}
+                        notificationClassNames={this.props.notificationClassNames}
                     />
                 ))}
             </div>

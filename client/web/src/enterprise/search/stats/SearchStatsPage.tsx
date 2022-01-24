@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { Badge, Button, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { Badge, Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -86,12 +86,12 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
             {stats === undefined ? (
                 <LoadingSpinner />
             ) : isErrorLike(stats) ? (
-                <Alert variant="danger">{stats.message}</Alert>
+                <div className="alert alert-danger">{stats.message}</div>
             ) : stats.limitHit ? (
-                <Alert variant="warning">
+                <div className="alert alert-warning">
                     Limit hit. Add <code>count:{DEFAULT_COUNT * 5}</code> (or an even larger number) to your query to
                     retry with a higher limit.
-                </Alert>
+                </div>
             ) : (
                 <SearchStatsLanguages query={query} stats={stats} />
             )}

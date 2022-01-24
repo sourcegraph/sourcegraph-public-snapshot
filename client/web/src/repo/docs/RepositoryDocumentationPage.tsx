@@ -12,15 +12,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import {
-    Container,
-    ProductStatusBadge,
-    LoadingSpinner,
-    useObservable,
-    Button,
-    Link,
-    Alert,
-} from '@sourcegraph/wildcard'
+import { Container, ProductStatusBadge, LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
@@ -39,9 +31,7 @@ import styles from './RepositoryDocumentationPage.module.scss'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <Alert className="m-2" variant="danger">
-        Error: {upperFirst(error.message)}
-    </Alert>
+    <div className="alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
 )
 
 const PageNotFound: React.FunctionComponent = () => (

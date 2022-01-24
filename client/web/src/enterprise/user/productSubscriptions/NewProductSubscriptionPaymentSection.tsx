@@ -11,7 +11,7 @@ import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -117,7 +117,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                             className="mb-2"
                         />
                         {previewInvoice.isDowngradeRequiringManualIntervention ? (
-                            <Alert className="mb-2" variant="danger">
+                            <div className="alert alert-danger mb-2">
                                 Self-service downgrades are not yet supported.{' '}
                                 <a
                                     href={mailtoSales({
@@ -127,7 +127,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                                     Contact sales
                                 </a>{' '}
                                 for help.
-                            </Alert>
+                            </div>
                         ) : (
                             !isEqual(previewInvoice.beforeInvoiceItem, previewInvoice.afterInvoiceItem) && (
                                 <div className="mb-2">Amount due: ${numberWithCommas(previewInvoice.price / 100)}</div>

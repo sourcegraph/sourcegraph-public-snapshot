@@ -8,7 +8,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { Container, PageHeader, useObservable, CardBody, Card } from '@sourcegraph/wildcard'
+import { Container, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -294,16 +294,16 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
 const GettingStartedFooter: React.FunctionComponent<{}> = () => (
     <div className="row">
         <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
-            <Card>
-                <CardBody className="text-center">
+            <div className="card">
+                <div className="card-body text-center">
                     <p>Create your first batch change</p>
                     <h2 className="mb-0">
                         <a href="https://docs.sourcegraph.com/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
                         </a>
                     </h2>
-                </CardBody>
-            </Card>
+                </div>
+            </div>
         </div>
     </div>
 )

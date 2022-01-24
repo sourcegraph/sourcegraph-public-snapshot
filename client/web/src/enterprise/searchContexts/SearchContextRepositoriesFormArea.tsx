@@ -9,7 +9,7 @@ import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useEventObservable, Alert } from '@sourcegraph/wildcard'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
@@ -147,14 +147,14 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
                 blockNavigationIfDirty={false}
             />
             {triggerTestConfigErrors && triggerTestConfigErrors !== LOADING && triggerTestConfigErrors.length > 0 && (
-                <Alert className="my-2" variant="danger">
+                <div className="alert alert-danger my-2">
                     <strong>The following problems were found:</strong>
                     <ul className="mt-2">
                         {triggerTestConfigErrors.map(error => (
                             <li key={error.message}>{error.message}</li>
                         ))}
                     </ul>
-                </Alert>
+                </div>
             )}
             <Button
                 className="mt-3"

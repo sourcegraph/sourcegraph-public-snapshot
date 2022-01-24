@@ -1,6 +1,5 @@
+import classNames from 'classnames'
 import React from 'react'
-
-import { Alert } from '@sourcegraph/wildcard'
 
 /**
  * Displays a warning in debug mode (which is on for local dev) that generated license keys aren't
@@ -13,10 +12,10 @@ import { Alert } from '@sourcegraph/wildcard'
  */
 export const LicenseGenerationKeyWarning: React.FunctionComponent<{ className?: string }> = ({ className = '' }) =>
     window.context?.debug ? (
-        <Alert className={className} variant="warning">
+        <div className={classNames('alert alert-warning', className)}>
             License keys generated in dev mode are <strong>NOT VALID</strong>.{' '}
             <a href="https://sourcegraph.com/site-admin/dotcom/product/subscriptions">
                 Use Sourcegraph.com to generate valid license keys.
             </a>
-        </Alert>
+        </div>
     ) : null

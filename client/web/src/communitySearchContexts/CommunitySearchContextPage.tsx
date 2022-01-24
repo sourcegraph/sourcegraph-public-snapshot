@@ -19,7 +19,7 @@ import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Button, useObservable, Link, Card } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
@@ -158,7 +158,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                     </div>
                     <div className={classNames('col-xs-12 col-lg-5', styles.column)}>
                         <div className="order-2-lg order-1-xs">
-                            <Card className={styles.repoCard}>
+                            <div className={classNames('card', styles.repoCard)}>
                                 <h2>
                                     <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
                                     Repositories
@@ -197,7 +197,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                             </div>
                                         </div>
                                     )}
-                            </Card>
+                            </div>
                         </div>
                     </div>
                 </div>

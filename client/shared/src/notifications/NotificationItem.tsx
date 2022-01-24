@@ -4,45 +4,32 @@ import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-import { Alert, AlertProps } from '@sourcegraph/wildcard'
-
 import { renderMarkdown } from '../util/markdown'
 
 import { Notification } from './notification'
 import styles from './NotificationItem.module.scss'
 
-export interface UnbrandedNotificationItemStyleProps {
-    notificationItemClassNames: Record<sourcegraph.NotificationType, string>
+export interface NotificationClassNameProps {
+    notificationClassNames: Record<sourcegraph.NotificationType, string>
 }
 
-export interface BrandedNotificationItemStyleProps {
-    notificationItemVariants: Record<sourcegraph.NotificationType, AlertProps['variant']>
-}
-
-/**
- * Note, we do not export this type because it is not intended to be used directly.
- * Consumers should use either `UnbrandedNotificationItemStyleProps` or `BrandedNotificationItemStyleProps` when configuring this component.
- */
-type NotificationItemStyleProps = UnbrandedNotificationItemStyleProps | BrandedNotificationItemStyleProps
-
-export interface NotificationItemProps {
+interface Props extends NotificationClassNameProps {
     notification: Notification
     onDismiss: (notification: Notification) => void
     className?: string
-    notificationItemStyleProps: NotificationItemStyleProps
 }
 
-interface NotificationItemState {
+interface State {
     progress?: Required<sourcegraph.Progress>
 }
 
 /**
  * A notification message displayed in a {@link module:./Notifications.Notifications} component.
  */
-export class NotificationItem extends React.PureComponent<NotificationItemProps, NotificationItemState> {
-    private componentUpdates = new Subject<NotificationItemProps>()
+export class NotificationItem extends React.PureComponent<Props, State> {
+    private componentUpdates = new Subject<Props>()
     private subscription = new Subscription()
-    constructor(props: NotificationItemProps) {
+    constructor(props: Props) {
         super(props)
         this.state = {
             progress: props.notification.progress && {
@@ -88,24 +75,14 @@ export class NotificationItem extends React.PureComponent<NotificationItemProps,
         this.subscription.unsubscribe()
     }
     public render(): JSX.Element | null {
-        const baseAlertClassName = classNames(styles.sourcegraphNotificationItem, this.props.className)
-
-        const { notificationItemStyleProps } = this.props
-        const alertProps =
-            'notificationItemVariants' in notificationItemStyleProps
-                ? {
-                      variant: notificationItemStyleProps.notificationItemVariants[this.props.notification.type],
-                      className: baseAlertClassName,
-                  }
-                : {
-                      className: classNames(
-                          baseAlertClassName,
-                          notificationItemStyleProps.notificationItemClassNames[this.props.notification.type]
-                      ),
-                  }
-
         return (
-            <Alert {...alertProps}>
+            <div
+                className={classNames(
+                    styles.sourcegraphNotificationItem,
+                    this.props.className,
+                    this.props.notificationClassNames[this.props.notification.type]
+                )}
+            >
                 <div className={styles.bodyContainer}>
                     <div className={styles.body}>
                         <div
@@ -145,7 +122,7 @@ export class NotificationItem extends React.PureComponent<NotificationItemProps,
                         />
                     </div>
                 )}
-            </Alert>
+            </div>
         )
     }
 

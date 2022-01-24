@@ -4,7 +4,7 @@ import { catchError, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { CreateNotebookBlockInput } from '../../graphql-operations'
@@ -50,9 +50,9 @@ export const CreateNotebookPage: React.FunctionComponent = () => {
                 </div>
             )}
             {isErrorLike(notebookOrError) && (
-                <Alert variant="danger">
+                <div className="alert alert-danger">
                     Error while creating the notebook: <strong>{notebookOrError.message}</strong>
-                </Alert>
+                </div>
             )}
         </Page>
     )

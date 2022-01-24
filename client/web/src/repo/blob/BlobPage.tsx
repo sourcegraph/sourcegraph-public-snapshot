@@ -18,7 +18,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { Alert, Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -334,12 +334,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div>
-                    <Alert variant="info">
+                    <div className="alert alert-info">
                         Syntax-highlighting this file took too long. &nbsp;
                         <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
                             Try again
                         </Button>
-                    </Alert>
+                    </div>
                 </div>
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}

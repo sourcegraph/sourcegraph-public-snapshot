@@ -11,11 +11,11 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { NotificationItem } from './NotificationItem'
 
 const notificationClassNames = {
-    [NotificationType.Log]: 'bg-secondary',
-    [NotificationType.Success]: 'bg-success',
-    [NotificationType.Info]: 'bg-info',
-    [NotificationType.Warning]: 'bg-warning',
-    [NotificationType.Error]: 'bg-danger',
+    [NotificationType.Log]: 'alert alert-secondary',
+    [NotificationType.Success]: 'alert alert-success',
+    [NotificationType.Info]: 'alert alert-info',
+    [NotificationType.Warning]: 'alert alert-warning',
+    [NotificationType.Error]: 'alert alert-danger',
 }
 
 const onDismiss = action('onDismiss')
@@ -43,7 +43,7 @@ export const WithoutProgress: Story = () => {
     return (
         <NotificationItem
             notification={{ message, type, source }}
-            notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
+            notificationClassNames={notificationClassNames}
             onDismiss={onDismiss}
         />
     )
@@ -70,7 +70,7 @@ export const WithProgress: Story = () => {
                     percentage: progressPercentage,
                 }),
             }}
-            notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
+            notificationClassNames={notificationClassNames}
             onDismiss={onDismiss}
         />
     )
