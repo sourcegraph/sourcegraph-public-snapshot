@@ -17,22 +17,18 @@ export interface CodeIntelUploadMetaProps {
 export const CodeIntelUploadMeta: FunctionComponent<CodeIntelUploadMetaProps> = ({ node, now }) => (
     <Card>
         <CardBody>
-            <Card className="border-0">
-                <CardBody>
-                    <CardTitle>
-                        <CodeIntelUploadOrIndexRepository node={node} />
-                    </CardTitle>
+            <CardTitle>
+                <CodeIntelUploadOrIndexRepository node={node} />
+            </CardTitle>
 
-                    <CardSubtitle className="mb-2 text-muted">
-                        <CodeIntelUploadOrIndexLastActivity node={{ ...node, queuedAt: null }} now={now} />
-                    </CardSubtitle>
+            <CardSubtitle className="mb-2 text-muted">
+                <CodeIntelUploadOrIndexLastActivity node={{ ...node, queuedAt: null }} now={now} />
+            </CardSubtitle>
 
-                    <CardText>
-                        Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
-                        <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
-                    </CardText>
-                </CardBody>
-            </Card>
+            <CardText>
+                Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
+                <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
+            </CardText>
         </CardBody>
     </Card>
 )
