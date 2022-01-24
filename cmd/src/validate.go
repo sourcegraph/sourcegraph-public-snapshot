@@ -33,9 +33,9 @@ type validationSpec struct {
 	WaitRepoCloned struct {
 		Repo                     string `yaml:"repo"`
 		MaxTries                 int    `yaml:"maxTries"`
-		SleepBetweenTriesSeconds int    `yaml:"sleepBetweenTriesSecond"`
+		SleepBetweenTriesSeconds int    `yaml:"sleepBetweenTriesSeconds"`
 	} `yaml:"waitRepoCloned"`
-	SearchQuery     string `yaml:"searchQuery"`
+	SearchQuery     []string `yaml:"searchQuery"`
 	ExternalService struct {
 		Kind           string                 `yaml:"kind"`
 		DisplayName    string                 `yaml:"displayName"`
@@ -49,6 +49,28 @@ type validator struct {
 	apiClient api.Client
 }
 
+const defaultVspec = `{
+	"externalService": {
+		"config": {
+			"url": "https://github.com",
+			"token": "{{ .github_token }}",
+			"orgs": [],
+			"repos": [
+				"gorilla/mux"
+			]
+		},
+		"kind": "GITHUB",
+		"displayName": "footest",
+		"deleteWhenDone": true
+	},
+	"waitRepoCloned": {
+		"repo": "github.com/gorilla/mux",
+		"maxTries": 5,
+		"sleepBetweenTriesSeconds": 5
+	},
+	"searchQuery": ["repo:^github.com/gorilla/mux$ Router", "repo:^github.com/gorilla/mux$@v1.8.0 Router"]
+}`
+
 func init() {
 	usage := `'src validate' is a tool that validates a Sourcegraph instance.
 
@@ -59,6 +81,10 @@ Usage:
 	src validate [options] src-validate.yml
 or
     cat src-validate.yml | src validate [options]
+
+if user is authenticated, user can also run default checks
+
+	src validate [options]
 
 Please visit https://docs.sourcegraph.com/admin/validation for documentation of the validate command.
 `
@@ -88,6 +114,7 @@ Please visit https://docs.sourcegraph.com/admin/validation for documentation of 
 
 		var script []byte
 		var isYaml bool
+		var isJSON bool
 
 		var err error
 		if len(flagSet.Args()) == 1 {
@@ -99,6 +126,9 @@ Please visit https://docs.sourcegraph.com/admin/validation for documentation of 
 			if strings.HasSuffix(filename, ".yaml") || strings.HasSuffix(filename, ".yml") {
 				isYaml = true
 			}
+			if strings.HasSuffix(filename, ".json") {
+				isJSON = true
+			}
 		}
 		if !isatty.IsTerminal(os.Stdin.Fd()) {
 			// stdin is a pipe not a terminal
@@ -107,6 +137,11 @@ Please visit https://docs.sourcegraph.com/admin/validation for documentation of 
 				return err
 			}
 			isYaml = true
+		}
+
+		if !isYaml && !isJSON {
+			script = []byte(defaultVspec)
+
 		}
 
 		ctxm := vd.parseKVPairs(*contextFlag, ",")
@@ -123,6 +158,7 @@ Please visit https://docs.sourcegraph.com/admin/validation for documentation of 
 		}
 
 		return vd.validate(script, ctxm, isYaml)
+
 	}
 
 	commands = append(commands, &command{
@@ -198,32 +234,44 @@ func (vd *validator) validate(script []byte, scriptContext map[string]string, is
 		if err != nil {
 			return err
 		}
+		fmt.Printf("External Service %s is being added \n", vspec.ExternalService.DisplayName)
 
 		defer func() {
 			if extSvcID != "" && vspec.ExternalService.DeleteWhenDone {
 				_ = vd.deleteExternalService(extSvcID)
+				fmt.Printf("External Service %s has been removed \n", vspec.ExternalService.DisplayName)
+				fmt.Println("Validation Completed")
+
 			}
 		}()
 	}
 
 	if vspec.WaitRepoCloned.Repo != "" {
+		fmt.Printf("repo %s clonining has began \n", vspec.WaitRepoCloned.Repo)
+
 		cloned, err := vd.waitRepoCloned(vspec.WaitRepoCloned.Repo, vspec.WaitRepoCloned.SleepBetweenTriesSeconds,
 			vspec.WaitRepoCloned.MaxTries)
 		if err != nil {
 			return err
 		}
 		if !cloned {
-			return fmt.Errorf("repo %s didn't clone", vspec.WaitRepoCloned.Repo)
+			return fmt.Errorf("repo %s didn't clone \n", vspec.WaitRepoCloned.Repo)
 		}
+
+		fmt.Printf("repo %s clonining was successful \n", vspec.WaitRepoCloned.Repo)
+
 	}
 
-	if vspec.SearchQuery != "" {
-		matchCount, err := vd.searchMatchCount(vspec.SearchQuery)
-		if err != nil {
-			return err
-		}
-		if matchCount == 0 {
-			return fmt.Errorf("search query %s returned no results", vspec.SearchQuery)
+	if vspec.SearchQuery != nil {
+		for i := 0; i < len(vspec.SearchQuery); i++ {
+			matchCount, err := vd.searchMatchCount(vspec.SearchQuery[i])
+			if err != nil {
+				return err
+			}
+			if matchCount == 0 {
+				return fmt.Errorf("search query %s returned no results \n", vspec.SearchQuery[i])
+			}
+			fmt.Printf("search query '%s' was successful \n", vspec.SearchQuery[i])
 		}
 	}
 
