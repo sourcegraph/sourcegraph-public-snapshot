@@ -976,3 +976,22 @@ type SearchInsightLivePreviewSeries {
     """
     label: String!
 }
+
+extend type Query {
+    compareTwoInsightSeries(input: CompareTwoInsightSeriesInput!): CompareTwoInsightSeriesResponse!
+}
+
+input CompareTwoInsightSeriesInput {
+    firstSeriesId: String!
+    secondSeriesId: String!
+    startingTime: DateTime
+    endingTime: DateTime
+}
+
+type CompareTwoInsightSeriesResponse {
+    firstSeriesValue: Int
+    secondSeriesValue: Int
+    diff: Int!
+    repoName: String!
+    time: DateTime!
+}
