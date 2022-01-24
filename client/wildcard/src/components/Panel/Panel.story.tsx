@@ -14,6 +14,7 @@ import { Tabs, Tab, TabList, TabPanel, TabPanels } from '../Tabs'
 
 import { PANEL_POSITIONS } from './constants'
 import { Panel } from './Panel'
+import { Button } from "@sourcegraph/wildcard";
 
 const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => <div>{story()}</div>}</BrandedStory>
 
@@ -100,16 +101,10 @@ export const WithChildren: Story = props => {
                         ))}
                     </TabList>
                     <div className="align-items-center d-flex mr-2">
-                        <button
-                            type="button"
-                            onClick={closePanel}
-                            className={classNames('btn btn-icon ml-2')}
-                            title="Close panel"
-                            data-tooltip="Close panel"
-                            data-placement="left"
+                        <Button onClick={closePanel} className={classNames('btn-icon ml-2')} title="Close panel" data-tooltip="Close panel" data-placement="left"
                         >
                             <CloseIcon className="icon-inline" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
                 <TabPanels>

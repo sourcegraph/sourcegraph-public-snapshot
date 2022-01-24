@@ -6,10 +6,10 @@ import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Link } from '@sourcegraph/wildcard'
 
 import { Button } from '../Button'
 import { FeedbackBadge } from '../Feedback'
+import { Link } from '../Link'
 
 import { PageHeader } from './PageHeader'
 
@@ -28,9 +28,9 @@ export const BasicHeader: Story = () => (
     <PageHeader
         path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
         actions={
-            <Link to={`${location.pathname}/close`} className="btn btn-secondary mr-1">
+            <Button to={`${location.pathname}/close`} className="mr-1" variant="secondary" as={Link}>
                 <SearchIcon className="icon-inline" /> Button with icon
-            </Link>
+            </Button>
         }
     />
 )

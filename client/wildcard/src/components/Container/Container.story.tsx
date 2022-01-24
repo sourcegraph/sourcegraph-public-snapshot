@@ -6,6 +6,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Button } from '../Button'
 import { Container } from './Container'
+import { Button } from "@sourcegraph/wildcard";
 
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
@@ -70,18 +71,18 @@ export const Overview: Story = () => (
             <div className="form-group">
                 <input type="text" className="form-control" />
             </div>
-            <button type="button" className="btn btn-secondary mb-2">
+            <Button className="mb-2" variant="secondary">
                 Save
-            </button>
+            </Button>
             <hr className="mb-2" />
             <h3>Section II</h3>
             <p>Here you change your email.</p>
             <div className="form-group">
                 <input type="text" className="form-control" />
             </div>
-            <button type="button" className="btn btn-secondary">
+            <Button variant="secondary">
                 Save
-            </button>
+            </Button>
         </Container>
     </>
 )

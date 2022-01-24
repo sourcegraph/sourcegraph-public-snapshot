@@ -332,12 +332,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         {actionItems => (
                             <>
                                 {actionItems.map(actionItem => (
-                                    <ActionItem
+                                    <Button
                                         {...props}
                                         {...actionItem}
                                         key={actionItem.action.id}
                                         showLoadingSpinnerDuringExecution={false}
-                                        className="btn btn-outline-secondary mr-2 text-decoration-none btn-sm"
+                                        className="mr-2 text-decoration-none" variant="secondary" outline={true} size="sm" as={ActionItem}
                                     />
                                 ))}
                             </>

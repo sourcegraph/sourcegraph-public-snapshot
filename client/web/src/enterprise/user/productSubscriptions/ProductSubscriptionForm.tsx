@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { ReactStripeElements } from 'react-stripe-elements'
@@ -251,10 +250,8 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                             <Button
                                 type="submit"
                                 disabled={disableForm || !accountID}
-                                className={classNames(
-                                    disableForm || !accountID ? 'btn-secondary' : 'btn-success',
-                                    'w-100 d-flex align-items-center justify-content-center'
-                                )}
+                                className="w-100 d-flex align-items-center justify-content-center"
+                                variant={disableForm || !accountID ? 'secondary' : 'success'}
                                 size="lg"
                             >
                                 {paymentToken === LOADING || submissionState === LOADING ? (
