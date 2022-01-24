@@ -38,6 +38,27 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
+
+	CompareTwoInsightSeries(ctx context.Context, args CompareTwoInsightSeriesArgs) ([]CompareTwoInsightSeriesDataPointResolver, error)
+}
+
+type CompareTwoInsightSeriesArgs struct {
+	Input CompareTwoInsightSeriesInput
+}
+
+type CompareTwoInsightSeriesInput struct {
+	FirstSeriesId  string
+	SecondSeriesId string
+	From           *DateTime
+	To             *DateTime
+}
+
+type CompareTwoInsightSeriesDataPointResolver interface {
+	FirstSeriesValue() *int32
+	SecondSeriesValue() *int32
+	Diff() int32
+	RepoName() string
+	Time() DateTime
 }
 
 type SearchInsightLivePreviewArgs struct {
