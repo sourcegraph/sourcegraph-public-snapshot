@@ -9,8 +9,6 @@ import { Button } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
 
-export const SIDEBAR_BUTTON_CLASS = classNames('btn text-left w-100', styles.linkInactive)
-
 /**
  * Item of `SideBarGroup`.
  */

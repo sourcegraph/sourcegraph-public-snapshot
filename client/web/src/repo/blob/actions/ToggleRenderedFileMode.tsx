@@ -34,7 +34,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFile
 
     if (actionType === 'dropdown') {
         return (
-            <RepoHeaderActionButtonLink className="btn" to={getURLForMode(location, otherMode)} file={true}>
+            <RepoHeaderActionButtonLink to={getURLForMode(location, otherMode)} file={true}>
                 <EyeIcon className="icon-inline" />
                 <span>{label}</span>
             </RepoHeaderActionButtonLink>
@@ -43,7 +43,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFile
 
     return (
         <RepoHeaderActionButtonLink
-            className="btn btn-icon"
+            className="btn-icon"
             file={false}
             to={getURLForMode(location, otherMode)}
             data-tooltip={label}

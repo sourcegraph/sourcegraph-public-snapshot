@@ -20,7 +20,6 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
             <InputTooltip
                 id={`select-changeset-${node.id}`}
                 type="checkbox"
-                className="btn"
                 checked={false}
                 disabled={true}
                 tooltip="You do not have permission to perform a bulk operation on this changeset"

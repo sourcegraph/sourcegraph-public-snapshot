@@ -74,7 +74,7 @@ export class ToggleLineWrap extends React.PureComponent<
     public render(): JSX.Element | null {
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink className="btn" file={true} onSelect={this.onClick}>
+                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
                     {this.state.value ? (
                         <WrapDisabledIcon className="icon-inline" />
                     ) : (
@@ -87,7 +87,7 @@ export class ToggleLineWrap extends React.PureComponent<
 
         return (
             <RepoHeaderActionButtonLink
-                className="btn btn-icon"
+                className="btn-icon"
                 file={false}
                 onSelect={this.onClick}
                 data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}

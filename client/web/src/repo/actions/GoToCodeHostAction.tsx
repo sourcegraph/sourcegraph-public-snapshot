@@ -214,7 +214,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     if (props.actionType === 'dropdown') {
         return (
             <RepoHeaderActionAnchor
-                className="btn test-go-to-code-host"
+                className="test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 href={hijackLink ? '' : url}
                 target="_blank"
@@ -233,7 +233,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     return (
         <>
             <RepoHeaderActionAnchor
-                className="btn btn-icon test-go-to-code-host"
+                className="btn-icon test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 href={hijackLink ? '' : url}
                 target="_blank"

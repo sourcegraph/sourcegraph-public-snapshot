@@ -1,8 +1,9 @@
 import classNames from 'classnames'
-import React from 'react'
+import React, { PropsWithChildren } from 'react'
 import { DropdownToggle, DropdownToggleProps } from 'reactstrap'
 
 import { ButtonLink, ButtonLinkProps } from '@sourcegraph/shared/src/components/LinkOrButton'
+import { Button } from '@sourcegraph/wildcard'
 
 import styles from './RepoHeaderActions.module.scss'
 
@@ -13,7 +14,7 @@ type RepoHeaderButtonLinkProps = ButtonLinkProps & {
     file?: boolean
 }
 
-type RepoHeaderActionAnchorProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+export type RepoHeaderActionAnchorProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
     /**
      * to determine if this anchor is for file or not
      */
@@ -26,9 +27,13 @@ export const RepoHeaderActionButtonLink: React.FunctionComponent<RepoHeaderButto
     file,
     ...rest
 }) => (
-    <ButtonLink className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
+    <Button<typeof ButtonLink, PropsWithChildren<ButtonLinkProps>>
+        as={ButtonLink}
+        className={classNames(file ? styles.fileAction : styles.action, className)}
+        {...rest}
+    >
         {children}
-    </ButtonLink>
+    </Button>
 )
 
 export const RepoHeaderActionDropdownToggle: React.FunctionComponent<DropdownToggleProps> = ({
@@ -36,9 +41,13 @@ export const RepoHeaderActionDropdownToggle: React.FunctionComponent<DropdownTog
     className,
     ...rest
 }) => (
-    <DropdownToggle className={classNames(styles.action, className)} {...rest}>
+    <Button<typeof DropdownToggle, DropdownToggleProps>
+        as={DropdownToggle}
+        className={classNames('btn-icon', styles.action, className)}
+        {...rest}
+    >
         {children}
-    </DropdownToggle>
+    </Button>
 )
 
 export const RepoHeaderActionAnchor: React.FunctionComponent<RepoHeaderActionAnchorProps> = ({
@@ -47,7 +56,11 @@ export const RepoHeaderActionAnchor: React.FunctionComponent<RepoHeaderActionAnc
     file,
     ...rest
 }) => (
-    <a className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
+    <Button<'a', RepoHeaderActionAnchorProps>
+        as="a"
+        className={classNames(file ? styles.fileAction : styles.action, className)}
+        {...rest}
+    >
         {children}
-    </a>
+    </Button>
 )

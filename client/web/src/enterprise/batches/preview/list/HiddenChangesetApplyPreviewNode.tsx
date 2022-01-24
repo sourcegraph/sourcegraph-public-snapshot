@@ -25,7 +25,6 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
             <InputTooltip
                 id="select-changeset-hidden"
                 type="checkbox"
-                className="btn"
                 checked={false}
                 disabled={true}
                 tooltip="You do not have permission to publish to this repository."
