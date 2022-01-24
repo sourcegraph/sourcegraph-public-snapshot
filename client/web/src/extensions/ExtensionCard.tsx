@@ -14,7 +14,7 @@ import {
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { useTimeoutManager, Link, CardBody, Card, Alert } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -181,12 +181,12 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     const iconClassName = classNames(styles.icon, featured && styles.iconFeatured)
 
     return (
-        <Card
-            className={classNames('position-relative flex-1', styles.extensionCard, {
+        <div
+            className={classNames('card position-relative flex-1', styles.extensionCard, {
                 [classNames('p-0 m-0', styles.extensionCardEnabled)]: change === 'enabled',
             })}
         >
-            <CardBody className="p-0 extension-card__body d-flex flex-column position-relative">
+            <div className="card-body p-0 extension-card__body d-flex flex-column position-relative">
                 {/* Section 1: Icon w/ background */}
                 <div
                     className={classNames(
@@ -284,15 +284,15 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         </div>
                     )}
                 </div>
-            </CardBody>
+            </div>
 
             {/* Visual feedback: alert when optimistic update fails */}
             {optimisticFailure && (
-                <Alert className={classNames('px-2 py-1', styles.alert)} variant="danger">
+                <div className={classNames('alert alert-danger px-2 py-1', styles.alert)}>
                     <span className="font-weight-medium">Error:</span> {actionableErrorMessage(optimisticFailure.error)}
-                </Alert>
+                </div>
             )}
-        </Card>
+        </div>
     )
 },
 areEqual)

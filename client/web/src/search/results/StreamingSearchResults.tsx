@@ -17,7 +17,7 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Card } from '@sourcegraph/wildcard'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -308,7 +308,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {showSignUpCta && (
-                    <Card className="my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
+                    <div className="card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
                         <div className="mr-md-3">
                             <SearchBetaIcon />
                         </div>
@@ -331,7 +331,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         >
                             Create a free account
                         </Button>
-                    </Card>
+                    </div>
                 )}
 
                 <StreamingSearchResultsList

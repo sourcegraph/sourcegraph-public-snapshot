@@ -14,7 +14,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import styles from './HierarchicalLocationsView.module.scss'
@@ -235,12 +235,12 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         return (
             <div>
                 {this.state.locationsOrError.result.isTruncated && (
-                    <Alert className="py-1 px-3 m-2 text-nowrap text-center" variant="warning">
+                    <div className="alert alert-warning py-1 px-3 m-2 text-nowrap text-center">
                         <small>
                             <strong>Large result set</strong> - only showing the first {this.maxLocationResults}{' '}
                             results.
                         </small>
-                    </Alert>
+                    </div>
                 )}
                 <div
                     className={classNames(styles.referencesContainer, this.props.className)}

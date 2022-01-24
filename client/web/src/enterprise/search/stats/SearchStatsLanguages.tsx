@@ -4,7 +4,7 @@ import { PieChart, Pie, Tooltip, ResponsiveContainer, PieLabelRenderProps, Cell,
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { CardHeader, Link, CardBody, Card } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 
@@ -76,8 +76,8 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
     )
 
     return (
-        <Card className="mb-3">
-            <CardHeader as="h4">Languages</CardHeader>
+        <div className="card mb-3">
+            <h4 className="card-header">Languages</h4>
             {stats.languages.length > 0 ? (
                 <div className="d-flex">
                     <div className="flex-0 border-right">
@@ -140,8 +140,8 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
                     </div>
                 </div>
             ) : (
-                <CardBody className="text-muted">No language statistics available.</CardBody>
+                <div className="card-body text-muted">No language statistics available.</div>
             )}
-        </Card>
+        </div>
     )
 }

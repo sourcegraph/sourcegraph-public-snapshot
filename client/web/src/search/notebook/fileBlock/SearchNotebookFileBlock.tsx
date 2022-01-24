@@ -13,7 +13,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '..'
 import blockStyles from '../SearchNotebookBlock.module.scss'
@@ -286,9 +286,7 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                     </div>
                 )}
                 {blobLines && blobLines !== LOADING && isErrorLike(blobLines) && (
-                    <Alert className="m-3" variant="danger">
-                        {blobLines.message}
-                    </Alert>
+                    <div className="alert alert-danger m-3">{blobLines.message}</div>
                 )}
             </div>
             {(isSelected || !isOtherBlockSelected) && (

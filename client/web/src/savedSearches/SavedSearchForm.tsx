@@ -5,7 +5,7 @@ import { Omit } from 'utility-types'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Container, PageHeader, ProductStatusBadge, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { NamespaceProps } from '../namespaces'
@@ -144,7 +144,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                 </label>
                             </div>
 
-                            <Alert variant="primary" className={classNames(styles.codeMonitoringAlert, 'p-3 mb-0')}>
+                            <div className={classNames(styles.codeMonitoringAlert, 'alert alert-primary p-3 mb-0')}>
                                 <div className="mb-2">
                                     <strong>New:</strong> Watch your code for changes with code monitoring to get
                                     notifications.
@@ -152,7 +152,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                 <Button to={codeMonitoringUrl} variant="primary" as={Link}>
                                     Go to code monitoring →
                                 </Button>
-                            </Alert>
+                            </div>
                         </div>
                     )}
 
@@ -176,19 +176,19 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         </div>
                     )}
                     {isUnsupportedNotifyQuery && (
-                        <Alert className="mt-3 mb-0" variant="warning">
+                        <div className="alert alert-warning mt-3 mb-0">
                             <strong>Warning:</strong> non-commit searches do not currently support notifications.
                             Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
-                        </Alert>
+                        </div>
                     )}
                     {notify && !window.context.emailEnabled && !isUnsupportedNotifyQuery && (
-                        <Alert className="mt-3 mb-0" variant="warning">
+                        <div className="alert alert-warning mt-3 mb-0">
                             <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
                             server.{' '}
                             {props.authenticatedUser?.siteAdmin
                                 ? 'Use the email.smtp site configuration setting to enable sending emails.'
                                 : 'Contact your server admin for more information.'}
-                        </Alert>
+                        </div>
                     )}
                 </Container>
                 <Button

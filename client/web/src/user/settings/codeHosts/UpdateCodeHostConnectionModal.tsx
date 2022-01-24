@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Modal, Link } from '@sourcegraph/wildcard'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { updateExternalService } from '../../../components/externalServices/backend'
@@ -81,7 +81,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                 </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
-                        <Alert variant="info" role="alert">
+                        <div className="alert alert-info" role="alert">
                             Updating the access token may affect which repositories can be synced with Sourcegraph.{' '}
                             <Link
                                 to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud"
@@ -92,7 +92,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 Learn more
                             </Link>
                             .
-                        </Alert>
+                        </div>
                         {didAckMachineUserHint ? (
                             <>
                                 {' '}

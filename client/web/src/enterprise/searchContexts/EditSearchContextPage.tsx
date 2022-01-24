@@ -17,7 +17,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -99,9 +99,9 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                         <SearchContextForm {...props} searchContext={searchContextOrError} onSubmit={onSubmit} />
                     )}
                     {isErrorLike(searchContextOrError) && (
-                        <Alert data-testid="search-contexts-alert-danger" variant="danger">
+                        <div data-testid="search-contexts-alert-danger" className="alert alert-danger">
                             Error while loading the search context: <strong>{searchContextOrError.message}</strong>
-                        </Alert>
+                        </div>
                     )}
                 </div>
             </Page>

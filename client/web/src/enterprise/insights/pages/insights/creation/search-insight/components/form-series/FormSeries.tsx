@@ -89,7 +89,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                         autofocus={series.length > 1}
                         onSubmit={onEditSeriesCommit}
                         onCancel={() => onEditSeriesCancel(line.id)}
-                        className={classNames('p-3', styles.formSeriesItem)}
+                        className={classNames('card card-body p-3', styles.formSeriesItem)}
                         onChange={(seriesValues, valid) => onLiveChange({ ...line, ...seriesValues }, valid, index)}
                     />
                 ) : (

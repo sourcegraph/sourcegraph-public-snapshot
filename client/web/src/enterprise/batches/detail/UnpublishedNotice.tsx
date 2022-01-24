@@ -1,7 +1,8 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { AlertLink, Alert } from '@sourcegraph/wildcard'
+import { AlertLink } from '@sourcegraph/wildcard'
 
 interface UnpublishedNoticeProps {
     unpublished: number
@@ -18,7 +19,7 @@ export const UnpublishedNotice: React.FunctionComponent<UnpublishedNoticeProps> 
         return <></>
     }
     return (
-        <Alert className={className} variant="secondary">
+        <div className={classNames('alert alert-secondary', className)}>
             {unpublished} unpublished {pluralize('changeset', unpublished, 'changesets')}. Select changeset(s) and
             choose the 'Publish changesets' action to publish them, or{' '}
             <AlertLink
@@ -29,6 +30,6 @@ export const UnpublishedNotice: React.FunctionComponent<UnpublishedNoticeProps> 
                 read more about publishing changesets
             </AlertLink>
             .
-        </Alert>
+        </div>
     )
 }

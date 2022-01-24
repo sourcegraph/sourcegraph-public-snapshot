@@ -14,8 +14,7 @@ import styles from './DockerForMacAlert.module.scss'
 export const DockerForMacAlert: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <DismissibleAlert
         partialStorageKey="DockerForMac"
-        variant="warning"
-        className={classNames('docker-for-mac-alert d-flex align-items-center', className)}
+        className={classNames('alert-warning docker-for-mac-alert d-flex align-items-center', className)}
     >
         <span className={styles.left}>
             It looks like you're using Docker for Mac. Due to known issues related to Docker for Mac's file system

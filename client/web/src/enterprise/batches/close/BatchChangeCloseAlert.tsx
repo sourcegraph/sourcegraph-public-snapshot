@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Button, AlertLink, LoadingSpinner, CardBody, Card, Alert } from '@sourcegraph/wildcard'
+import { Button, AlertLink, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../graphql-operations'
 
@@ -54,8 +54,8 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
     }, [history, closeChangesets, closeBatchChange, batchChangeID, batchChangeURL])
     return (
         <>
-            <Card className="mb-3">
-                <CardBody>
+            <div className="card mb-3">
+                <div className="card-body p-3">
                     <p>
                         <strong>
                             After closing this batch change, it will be read-only and no new batch specs can be applied.
@@ -86,13 +86,13 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                         </>
                     )}
                     {!viewerCanAdminister && (
-                        <Alert variant="warning">
+                        <div className="alert alert-warning">
                             You don't have permission to close this batch change. See{' '}
                             <AlertLink to="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes">
                                 Permissions in batch changes
                             </AlertLink>{' '}
                             for more information about the batch changes permission model.
-                        </Alert>
+                        </div>
                     )}
                     <div className="d-flex justify-content-end">
                         <Button
@@ -112,8 +112,8 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                             {isClosing === true && <LoadingSpinner />} Close batch change
                         </Button>
                     </div>
-                </CardBody>
-            </Card>
+                </div>
+            </div>
             {isErrorLike(isClosing) && <ErrorAlert error={isClosing} />}
         </>
     )

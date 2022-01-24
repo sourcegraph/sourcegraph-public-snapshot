@@ -9,7 +9,7 @@ import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Button, Container, LoadingSpinner, PageHeader, Alert } from '@sourcegraph/wildcard'
+import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { BranchTargetSettings } from '../components/BranchTargetSettings'
@@ -128,10 +128,10 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             )}
 
             {policy.protected ? (
-                <Alert variant="info">
+                <div className="alert alert-info">
                     This configuration policy is protected. Protected configuration policies may not be deleted and only
                     the retention duration and indexing options are editable.
-                </Alert>
+                </div>
             ) : (
                 policy.id !== '' && (
                     <Container className="mb-3">

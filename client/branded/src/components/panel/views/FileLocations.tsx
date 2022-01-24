@@ -17,14 +17,12 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { property } from '@sourcegraph/shared/src/util/types'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './FileLocations.module.scss'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <Alert className="m-2" variant="danger">
-        Error getting locations: {upperFirst(error.message)}
-    </Alert>
+    <div className="alert alert-danger m-2">Error getting locations: {upperFirst(error.message)}</div>
 )
 
 export const FileLocationsNotFound: React.FunctionComponent = () => (

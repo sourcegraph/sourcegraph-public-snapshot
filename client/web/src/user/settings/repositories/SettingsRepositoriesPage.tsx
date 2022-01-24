@@ -23,7 +23,6 @@ import {
     LoadingSpinner,
     useObservable,
     Button,
-    Alert,
     Link,
 } from '@sourcegraph/wildcard'
 
@@ -290,7 +289,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     }
 
     const getSearchContextBanner = (orgName: string): JSX.Element => (
-        <Alert className="my-3" role="alert" key="add-repos" variant="success">
+        <div className="alert alert-success my-3" role="alert" key="add-repos">
             <h4 className="align-middle mb-1">Added repositories</h4>
             <p className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
@@ -302,7 +301,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 </code>
                 .
             </p>
-        </Alert>
+        </div>
     )
 
     return (
@@ -313,10 +312,10 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 page="settings/repositories"
             />
             {status === 'scheduled' && (
-                <Alert variant="info">
+                <div className="alert alert-info">
                     <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories may not be
                     up-to-date and will refresh once sync is finished.
-                </Alert>
+                </div>
             )}
             {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}

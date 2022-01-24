@@ -8,7 +8,6 @@ import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Alert } from '@sourcegraph/wildcard'
 
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
@@ -147,7 +146,7 @@ function commitOIDForGitRevision(revision: GitRefSpecFields): string {
 }
 
 const DiffRenderingNotSupportedAlert: React.FunctionComponent<{}> = () => (
-    <Alert className="mb-0" variant="info">
+    <div className="alert alert-info mb-0">
         Diffs for processing, merged, closed and deleted changesets are currently only available on the code host.
-    </Alert>
+    </div>
 )

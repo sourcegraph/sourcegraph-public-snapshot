@@ -11,7 +11,7 @@ import (
 )
 
 type SearchEvent struct {
-	Results []result.Match
+	Results result.Matches
 	Stats   Stats
 }
 
@@ -28,18 +28,14 @@ type LimitStream struct {
 func (s *LimitStream) Send(event SearchEvent) {
 	s.s.Send(event)
 
-	var count int64
-	for _, r := range event.Results {
-		count += int64(r.ResultCount())
-	}
-
 	// Avoid limit checks if no change to result count.
+	count := event.Results.ResultCount()
 	if count == 0 {
 		return
 	}
 
 	old := s.remaining.Load()
-	s.remaining.Sub(count)
+	s.remaining.Sub(int64(count))
 
 	// Only send IsLimitHit once. Can race with other sends and be sent
 	// multiple times, but this is fine. Want to avoid lots of noop events
