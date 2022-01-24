@@ -1,4 +1,5 @@
 cmd/repo-updater/repos/testdata/** linguist-generated=true
 **/__fixtures__/** linguist-generated=true
 **/bindata.go linguist-generated=true
+**/*.pb.go linguist-generated=true
 CHANGELOG.md merge=union
