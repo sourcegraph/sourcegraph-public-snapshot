@@ -32,7 +32,6 @@ import { basename } from '../../../../util/path'
 import { CatalogPage, CatalogPage2 } from '../../components/catalog-area-header/CatalogPage'
 import { COMPONENT_TAG_FRAGMENT } from '../../components/component-tag/ComponentTag'
 
-import styles from './SourceSetAtTreePage.module.scss'
 import { CodeTab } from './tabs/code/CodeTab'
 import { SOURCE_SET_README_FRAGMENT } from './tabs/code/ComponentReadme'
 import { COMPONENT_OWNER_FRAGMENT } from './tabs/code/sidebar/ComponentOwnerSidebarItem'
@@ -44,6 +43,7 @@ import { CatalogRelations } from './tabs/graph/CatalogRelations'
 import { UsageTab } from './tabs/usage/UsageTab'
 import { WhoKnowsTab } from './tabs/who-knows/WhoKnowsTab'
 import { useSourceSetAtTreeViewOptions } from './useSourceSetAtTreeViewOptions'
+import styles from './SourceSetAtTreePage.module.scss'
 
 const TREE_OR_COMPONENT_PAGE = gql`
     query SourceSetAtTreePage($repo: ID!, $commitID: String!, $inputRevspec: String!, $path: String!) {
@@ -206,8 +206,6 @@ interface Props
     data: Extract<SourceSetAtTreePageResult['node'], { __typename: 'Repository' }>
 }
 
-const tabContentClassName = classNames('flex-1 align-self-stretch', styles.tabContent)
-
 const SourceSetAtTree: React.FunctionComponent<Props> = ({
     filePath,
     repoID,
@@ -258,7 +256,7 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
                             component={primaryComponent}
                             sourceSet={sourceSet}
                             useHash={true}
-                            className={classNames('py-3', tabContentClassName)}
+                            className={classNames('py-3', styles.tabContent)}
                         />
                     ),
                 },
@@ -269,7 +267,7 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
                         <WhoKnowsTab
                             {...props}
                             sourceSet={sourceSet.id}
-                            className={classNames('py-3', tabContentClassName)}
+                            className={classNames('py-3', styles.tabContent)}
                         />
                     ),
                 },
@@ -278,7 +276,7 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
                           path: 'graph',
                           text: 'Graph',
                           content: (
-                              <div className={classNames('py-3', tabContentClassName)}>
+                              <div className={classNames('py-3', styles.tabContent)}>
                                   <CatalogRelations component={sourceSet.id} useURLForConnectionParams={true} />
                               </div>
                           ),
@@ -287,7 +285,7 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
                 sourceSet?.usage && {
                     path: 'usage',
                     text: 'Usage',
-                    content: <UsageTab {...props} sourceSet={sourceSet.id} className={tabContentClassName} />,
+                    content: <UsageTab {...props} sourceSet={sourceSet.id} className={styles.tabContent} />,
                 },
             ].filter(isDefined),
         [primaryComponent, props, repository, sourceSet, tree, sourceSetAtTreeViewOptions]
@@ -295,7 +293,7 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
 
     return (
         <div className="flex-1 d-flex flex-column w-100">
-            <CatalogPage2 tabs={tabs} useHash={true} />
+            <CatalogPage2 tabs={tabs} useHash={true} tabsClassName={styles.tabs} />
         </div>
     )
 }

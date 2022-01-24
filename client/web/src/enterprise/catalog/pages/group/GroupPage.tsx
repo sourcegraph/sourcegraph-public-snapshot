@@ -11,11 +11,11 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { CatalogIcon } from '../../../../catalog'
 import { PageTitle } from '../../../../components/PageTitle'
 import { GroupPageResult, GroupPageVariables } from '../../../../graphql-operations'
-import { CatalogAreaHeader } from '../../components/catalog-area-header/CatalogAreaHeader'
 import { CatalogPage2 } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { GROUP_LINK_FRAGMENT } from '../../components/group-link/GroupLink'
 
+import { GroupPageHeader } from './components/GroupPageHeader'
 import { GroupMembersTab, GROUP_MEMBERS_TAB_FRAGMENT } from './tabs/members/GroupMembersTab'
 import { GroupOverviewTab, GROUP_OVERVIEW_TAB_FRAGMENT } from './tabs/overview/GroupOverviewTab'
 
@@ -135,7 +135,7 @@ const GroupPageContent: React.FunctionComponent<{
 
     return (
         <div className="flex-1 d-flex flex-column w-100">
-            <CatalogAreaHeader path={path} />
+            <GroupPageHeader path={path} />
             <CatalogPage2 tabs={tabs} />
         </div>
     )

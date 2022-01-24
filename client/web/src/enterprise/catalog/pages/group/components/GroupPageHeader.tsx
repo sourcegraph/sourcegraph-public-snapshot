@@ -4,7 +4,7 @@ import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
-import styles from './CatalogAreaHeader.module.scss'
+import styles from './GroupPageHeader.module.scss'
 
 interface PathComponent {
     to?: string
@@ -14,21 +14,17 @@ interface PathComponent {
 
 interface Props {
     path: PathComponent[]
-    actions?: React.ReactFragment
-    nav?: React.ReactFragment
 }
 
-export const CatalogAreaHeader: React.FunctionComponent<Props> = ({ path, actions, nav }) =>
+export const GroupPageHeader: React.FunctionComponent<Props> = ({ path }) =>
     path.length > 0 ? (
         <header className={styles.container}>
             <div className="d-flex flex-wrap w-100">
-                <ComponentAncestorsPath path={path} className={styles.ancestors} />
+                <ComponentAncestorsPath path={path.slice(0, -1)} className={styles.ancestors} />
                 <h1 className={classNames('mr-2', styles.header)}>
                     <PathComponent {...path[path.length - 1]} />
                 </h1>
-                {actions}
             </div>
-            {nav}
         </header>
     ) : null
 
@@ -39,7 +35,7 @@ const PathComponent: React.FunctionComponent<PathComponent> = ({ to, icon: Icon,
     </LinkOrSpan>
 )
 
-export const ComponentAncestorsPath: React.FunctionComponent<
+const ComponentAncestorsPath: React.FunctionComponent<
     Pick<Props, 'path'> & {
         divider?: '/' | '>'
         className?: string
@@ -58,12 +54,11 @@ export const ComponentAncestorsPath: React.FunctionComponent<
                 )}
             >
                 <PathComponent to={to} icon={icon} text={text} />
-                {index !== path.length - 1 &&
-                    (divider === '>' ? (
-                        <ChevronRightIcon className="icon-inline text-muted" />
-                    ) : (
-                        <span className={styles.divider}>{divider}</span>
-                    ))}
+                {divider === '>' ? (
+                    <ChevronRightIcon className="icon-inline text-muted" />
+                ) : (
+                    <span className={styles.divider}>{divider}</span>
+                )}
             </span>
         ))}
     </nav>

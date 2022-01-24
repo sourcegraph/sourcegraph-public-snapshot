@@ -14,13 +14,14 @@ interface Tab extends Pick<RouteProps, 'path' | 'exact'> {
 export const CatalogPage2: React.FunctionComponent<{
     tabs: Tab[]
     useHash?: boolean
-}> = ({ tabs, useHash }) => {
+    tabsClassName?: string
+}> = ({ tabs, useHash, tabsClassName }) => {
     const match = useRouteMatch()
     const location = useLocation()
     const separator = useHash ? '#' : '/'
     return (
         <>
-            <ul className={classNames('nav nav-tabs', styles.tabs)}>
+            <ul className={classNames('nav nav-tabs', styles.tabs, tabsClassName)}>
                 {tabs.map(({ path, exact, text }) => (
                     <li key={Array.isArray(path) ? path[0] : path} className="nav-item">
                         <NavLink
