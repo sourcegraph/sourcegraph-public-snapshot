@@ -1,14 +1,13 @@
 import 'cross-fetch/polyfill'
 import { of, ReplaySubject } from 'rxjs'
-import { throttleTime } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
-import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
+import { createStreamSearch } from './backend/streamSearch'
 import { ExtensionCoreAPI } from './contract'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
@@ -76,6 +75,8 @@ export function activate(context: vscode.ExtensionContext): void {
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
 
+    const streamSearch = createStreamSearch({ context, stateMachine, sourcegraphURL: initialInstanceURL })
+
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         observeState: () => proxySubscribable(stateMachine.observeState()),
@@ -89,13 +90,7 @@ export function activate(context: vscode.ExtensionContext): void {
         openLink: uri => vscode.env.openExternal(vscode.Uri.parse(uri)),
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
-        streamSearch: (query, options) =>
-            proxySubscribable(
-                aggregateStreamingSearch(of(query), {
-                    ...options,
-                    sourcegraphURL: initialInstanceURL,
-                }).pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
-            ),
+        streamSearch,
     }
 
     registerWebviews({ context, extensionCoreAPI, initializedPanelIDs, sourcegraphSettings })

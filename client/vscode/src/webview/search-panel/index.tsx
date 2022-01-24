@@ -5,11 +5,23 @@ import { of } from 'rxjs'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
-import { AnchorLink, setLinkComponent, useObservable } from '@sourcegraph/wildcard'
+import {
+    AnchorLink,
+    LoadingSpinner,
+    setLinkComponent,
+    useObservable,
+    WildcardThemeContext,
+} from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI, SearchPanelAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
+import { createPlatformContext, WebviewPageProps } from '../platform/context'
 import { adaptToEditorTheme } from '../theme'
+
+import { SearchHomeView } from './SearchHomeView'
+import { SearchResultsView } from './SearchResultsView'
+
+import './index.module.scss'
 
 const vsCodeApi = window.acquireVsCodeApi()
 
@@ -32,20 +44,79 @@ extensionCoreAPI.panelInitialized(document.documentElement.dataset.panelId!).cat
     // noop (TODO?)
 })
 
-// TODO create platform context.
+const platformContext = createPlatformContext(extensionCoreAPI)
 
 setLinkComponent(AnchorLink)
 
 const Main: React.FC = () => {
-    console.log('rendering webview', { themes })
-
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
 
-    return (
-        <div>
-            <h1>state: {state?.status}</h1>
-        </div>
+    const authenticatedUser = useObservable(
+        useMemo(() => wrapRemoteObservable(extensionCoreAPI.getAuthenticatedUser()), [])
     )
+
+    const instanceURL = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.getInstanceURL()), []))
+
+    const theme = useObservable(themes)
+
+    const settingsCascade = useObservable(
+        useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeSourcegraphSettings()), [])
+    )
+    // Do not block rendering on settings unless we observe UI jitter
+
+    // If any of the remote values have yet to load.
+    const initialized =
+        state !== undefined &&
+        authenticatedUser !== undefined &&
+        instanceURL !== undefined &&
+        theme !== undefined &&
+        settingsCascade !== undefined
+
+    if (!initialized) {
+        return <LoadingSpinner />
+    }
+
+    const webviewPageProps: WebviewPageProps = {
+        extensionCoreAPI,
+        platformContext,
+        theme,
+        authenticatedUser,
+        settingsCascade,
+        instanceURL,
+    }
+
+    if (state?.status === 'context-invalidated') {
+        // TODO context-invalidated state
+        return null
+    }
+
+    // Idle and remote browsing state should be same as search results.
+    if (state?.status === 'search-home') {
+        return <SearchHomeView {...webviewPageProps} context={state.context} />
+    }
+    if (state?.status === 'search-results') {
+        return <SearchResultsView {...webviewPageProps} context={state.context} />
+    }
+    // If state is remote browsing but the search panel is still visible in a different column,
+    // we should still show results. Determine state by whether submittedSearchQuery is not null.
+    if (state.context.submittedSearchQueryState !== null) {
+        return (
+            <SearchResultsView
+                {...webviewPageProps}
+                context={{
+                    ...state.context,
+                    submittedSearchQueryState: state.context.submittedSearchQueryState,
+                }}
+            />
+        )
+    }
+
+    return null
 }
 
-render(<Main />, document.querySelector('#root'))
+render(
+    <WildcardThemeContext.Provider value={{ isBranded: true }}>
+        <Main />
+    </WildcardThemeContext.Provider>,
+    document.querySelector('#root')
+)

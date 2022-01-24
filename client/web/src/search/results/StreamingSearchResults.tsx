@@ -13,7 +13,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
-import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -62,11 +62,6 @@ export interface StreamingSearchResultsProps
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
-
-// The latest supported version of our search syntax. Users should never be able to determine the search version.
-// The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
-// and will therefore default to V1.
-export const LATEST_VERSION = 'V2'
 
 export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResultsProps> = props => {
     const {
@@ -343,6 +338,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     renderSearchUserNeedsCodeHost={user => (
                         <SearchUserNeedsCodeHost user={user} orgSearchContext={props.selectedSearchContextSpec} />
                     )}
+                    executedQuery={location.search}
                 />
             </div>
         </div>

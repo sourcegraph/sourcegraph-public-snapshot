@@ -24,7 +24,7 @@ import { LastSyncedIcon } from './LastSyncedIcon'
 import { MatchGroup } from './ranking/PerFileResultRanking'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
-    location: H.Location
+    location?: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
     /* Called when the first result has fully loaded. */

@@ -41,7 +41,7 @@ export interface StreamingSearchResultsListProps
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
-    location: H.Location
+    location?: H.Location
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
@@ -50,6 +50,11 @@ export interface StreamingSearchResultsListProps
     assetsRoot?: string
     /** Render prop for `<SearchUserNeedsCodeHost>`  */
     renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
+    /**
+     * Latest run query. Resets scroll visibility state when changed.
+     * For example, `location.search` on web.
+     * */
+    executedQuery: string
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -67,9 +72,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     assetsRoot,
     renderSearchUserNeedsCodeHost,
     platformContext,
+    executedQuery,
 }) => {
     const resultsNumber = results?.results.length || 0
-    const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
+    const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
