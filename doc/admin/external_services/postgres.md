@@ -230,3 +230,10 @@ CREATE extension pg_trgm;
 CREATE extension pgcrypto; 
 CREATE extension intarray;
 ```
+After the database is configured, Sourcegraph will attempt to run migrations, this time using the CodeIntel DB. There are a few a migrations that may fail as they attempt to run actions that require `SUPERUSER` permissions. 
+
+These failures must be intepreted by the database administrator and resolved using guidance from [How to Troubleshoot a Dirty Database](https://docs.sourcegraph.com/admin/how-to/dirty_database). Generally-speaking this will involve looking up the migration source code and manually applying the necessary SQL code. The `codeintel_schema_migrations` table should be consulted for dirty migrations in this case.
+
+**Initial CodeIntel schema creation**
+
+Similar to the failure in the Sourcegraph DB (pgsql) migrations, the CodeIntel initial migration attempts to `COMMENT` on an extension. 
