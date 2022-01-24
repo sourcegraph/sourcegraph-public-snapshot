@@ -358,7 +358,9 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             {!authenticatedUser && (
                                 <Alert className="my-4" variant="info">
                                     <span>An account is required to create, enable and disable extensions. </span>
-                                    <AlertLink to="/sign-up?returnTo=/extensions">Register now!</AlertLink>
+                                    <AlertLink to="https://about.sourcegraph.com/get-started?returnTo=/extensions">
+                                        Register now!
+                                    </AlertLink>
                                 </Alert>
                             )}
                             <ExtensionsList
