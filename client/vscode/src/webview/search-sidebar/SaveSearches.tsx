@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
@@ -21,21 +21,8 @@ export const SaveSearches: React.FunctionComponent<SaveSearchesProps> = ({
     telemetryService,
     platformContext,
 }) => {
-    const [itemsToLoad, setItemsToLoad] = useState(5)
-    const [showMore, setShowMore] = useState(savedSearches.length > itemsToLoad)
+    const itemsToLoad = 15
     const [collapsed, setCollapsed] = useState(false)
-
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + 5)
-        telemetryService.log('VSCESavedSearchesPanelShowMoreClicked')
-    }
-
-    useEffect(() => {
-        // Limited to 20 counts
-        if (showMore && itemsToLoad > 19) {
-            setShowMore(false)
-        }
-    }, [itemsToLoad, platformContext, showMore])
 
     return (
         <div className={styles.sidebarSection}>
@@ -72,17 +59,8 @@ export const SaveSearches: React.FunctionComponent<SaveSearchesProps> = ({
                                 </small>
                             </div>
                         ))}
-                    {showMore && <ShowMoreButton onClick={loadMoreItems} />}
                 </div>
             )}
         </div>
     )
 }
-
-const ShowMoreButton: React.FunctionComponent<{ onClick: () => void }> = ({ onClick }) => (
-    <div className="text-center py-3">
-        <button type="button" className={classNames('btn', styles.sidebarSectionButtonLink)} onClick={onClick}>
-            Show more
-        </button>
-    </div>
-)

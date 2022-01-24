@@ -35,19 +35,13 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
     telemetryService,
     platformContext,
 }) => {
-    const [showMore, setShowMore] = useState(false)
-    const [itemsToLoad, setItemsToLoad] = useState(5)
+    const itemsToLoad = 15
     const [collapsed, setCollapsed] = useState(false)
-
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + 5)
-        telemetryService.log('VSCERecentSearchesPanelShowMoreClicked')
-    }
-
+    const [calledAPI, setCalledAPI] = useState(false)
     const [processedResults, setProcessedResults] = useState<RecentSearch[] | null>(null)
 
     useEffect(() => {
-        if (authenticatedUser && itemsToLoad < 21) {
+        if (authenticatedUser && !calledAPI) {
             ;(async () => {
                 const eventVariables = {
                     userId: authenticatedUser.id,
@@ -62,18 +56,12 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
                     })
                     .toPromise()
                 if (userSearchHistory.data?.node?.__typename === 'User') {
-                    setShowMore(userSearchHistory.data.node.eventLogs.pageInfo.hasNextPage)
                     setProcessedResults(processRecentSearches(userSearchHistory.data.node.eventLogs))
                 }
             })().catch(error => console.error(error))
-        } else if (!authenticatedUser && localRecentSearches && itemsToLoad) {
-            setShowMore(localRecentSearches.length > itemsToLoad)
         }
-        // Limited to 20 counts
-        if (showMore && itemsToLoad >= 19) {
-            setShowMore(false)
-        }
-    }, [authenticatedUser, itemsToLoad, localRecentSearches, platformContext, showMore])
+        setCalledAPI(true)
+    }, [authenticatedUser, calledAPI, itemsToLoad, localRecentSearches, platformContext])
 
     return (
         <div className={styles.sidebarSection}>
@@ -108,7 +96,6 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
                             </small>
                         </div>
                     ))}
-                    {showMore && <ShowMoreButton onClick={loadMoreItems} />}
                 </div>
             )}
             {!authenticatedUser && localRecentSearches && !collapsed && (
@@ -133,7 +120,6 @@ export const RecentSearch: React.FunctionComponent<SearchHistoryProps> = ({
                                 </small>
                             </div>
                         ))}
-                    {showMore && <ShowMoreButton onClick={loadMoreItems} />}
                 </div>
             )}
         </div>
@@ -170,11 +156,3 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
 
     return recentSearches
 }
-
-const ShowMoreButton: React.FunctionComponent<{ onClick: () => void }> = ({ onClick }) => (
-    <div className="text-center py-3 my-0">
-        <button type="button" className={classNames('btn', styles.sidebarSectionButtonLink)} onClick={onClick}>
-            Show more
-        </button>
-    </div>
-)

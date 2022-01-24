@@ -33,21 +33,17 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
     telemetryService,
     platformContext,
 }) => {
-    const [showMore, setShowMore] = useState(false)
-    const [itemsToLoad, setItemsToLoad] = useState(5)
+    const itemsToLoad = 15
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
+    const [calledAPI, setCalledAPI] = useState(false)
     const [collapsed, setCollapsed] = useState(false)
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + 5)
-        telemetryService.log('VSCERecentFilesPanelShowMoreClicked')
-    }
 
     useEffect(() => {
-        if (authenticatedUser && itemsToLoad < 21) {
+        if (authenticatedUser && !calledAPI) {
             ;(async () => {
                 const eventVariables = {
                     userId: authenticatedUser.id,
-                    first: itemsToLoad,
+                    first: 15,
                     eventName: 'ViewBlob',
                 }
                 const userSearchHistory = await platformContext
@@ -58,21 +54,16 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
                     })
                     .toPromise()
                 if (userSearchHistory.data?.node?.__typename === 'User') {
-                    setShowMore(userSearchHistory.data.node.eventLogs.pageInfo.hasNextPage)
                     setProcessedResults(processRecentFiles(userSearchHistory.data.node.eventLogs))
                 }
             })().catch(error => console.error(error))
         } else if (!authenticatedUser && localFileHistory) {
             if (processedResults === null) {
                 setProcessedResults(processLocalRecentFiles(localFileHistory))
-            } else {
-                setShowMore(localFileHistory.length > itemsToLoad)
             }
         }
-        if (showMore && itemsToLoad > 20) {
-            setShowMore(false)
-        }
-    }, [authenticatedUser, itemsToLoad, localFileHistory, platformContext, processedResults, showMore])
+        setCalledAPI(true)
+    }, [authenticatedUser, calledAPI, itemsToLoad, localFileHistory, platformContext, processedResults])
 
     if (!authenticatedUser && localFileHistory.length === 0) {
         return null
@@ -116,20 +107,11 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
                                 </small>
                             </div>
                         ))}
-                    {showMore && <ShowMoreButton onClick={loadMoreItems} />}
                 </div>
             )}
         </div>
     )
 }
-
-const ShowMoreButton: React.FunctionComponent<{ onClick: () => void }> = ({ onClick }) => (
-    <div className="text-center py-3">
-        <button type="button" className={classNames('btn', styles.sidebarSectionButtonLink)} onClick={onClick}>
-            Show more
-        </button>
-    </div>
-)
 
 function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | null {
     if (!eventLogResult) {

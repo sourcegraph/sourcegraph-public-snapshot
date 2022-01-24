@@ -37,16 +37,10 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
     telemetryService,
     platformContext,
 }) => {
-    const [showMore, setShowMore] = useState(false)
-    const [itemsToLoad, setItemsToLoad] = useState(4)
-    const [processedResults, setProcessedResults] = useState<string[] | null>(null)
+    const itemsToLoad = 15
     const [calledAPI, setCalledAPI] = useState(false)
     const [collapsed, setCollapsed] = useState(false)
-
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + 5)
-        telemetryService.log('VSCERecentRepoPanelShowMoreClicked')
-    }
+    const [processedResults, setProcessedResults] = useState<string[] | null>(null)
 
     useEffect(() => {
         // only call API once
@@ -67,7 +61,6 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
                 if (userSearchHistory.data?.node?.__typename === 'User') {
                     const results = processRepositories(userSearchHistory.data.node.eventLogs)
                     setProcessedResults(results)
-                    setShowMore(processedResults !== null && processedResults.length > itemsToLoad && itemsToLoad < 20)
                 } else {
                     setProcessedResults(null)
                 }
@@ -78,11 +71,7 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
             setProcessedResults(processLocalRepositories(localRecentSearches))
             setCalledAPI(true)
         }
-        // Limited to 20 counts
-        if (showMore && itemsToLoad > 19) {
-            setShowMore(false)
-        }
-    }, [authenticatedUser, calledAPI, itemsToLoad, localRecentSearches, platformContext, processedResults, showMore])
+    }, [authenticatedUser, calledAPI, itemsToLoad, localRecentSearches, platformContext, processedResults])
 
     if (!processedResults) {
         return null
@@ -123,20 +112,11 @@ export const RecentRepo: React.FunctionComponent<RecentRepoProps> = ({
                                 </small>
                             </div>
                         ))}
-                    {showMore && <ShowMoreButton onClick={loadMoreItems} />}
                 </div>
             )}
         </div>
     )
 }
-
-const ShowMoreButton: React.FunctionComponent<{ onClick: () => void }> = ({ onClick }) => (
-    <div className="text-center py-3">
-        <button type="button" className={classNames('btn', styles.sidebarSectionButtonLink)} onClick={onClick}>
-            Show more
-        </button>
-    </div>
-)
 
 export function parseSearchURLQuery(query: string): string | undefined {
     const searchParameters = new URLSearchParams(query)
