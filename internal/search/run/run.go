@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -31,7 +31,7 @@ type SearchInputs struct {
 // not be required, depending on the job. E.g., a global search job does not
 // require upfront repository resolution).
 type Job interface {
-	Run(context.Context, streaming.Sender, searchrepos.Pager) error
+	Run(context.Context, database.DB, streaming.Sender) error
 	Name() string
 }
 
@@ -44,9 +44,8 @@ type Job interface {
 // information to execute the runtime semantics for particular search
 // operations.
 type Routine struct {
-	Job         Job
-	RepoOptions search.RepoOptions
-	Timeout     time.Duration
+	Job     Job
+	Timeout time.Duration
 }
 
 // MaxResults computes the limit for the query.

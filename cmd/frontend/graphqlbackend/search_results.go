@@ -687,7 +687,6 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					FileMatchLimit:   args.PatternInfo.FileMatchLimit,
 
 					RepoOptions: repoOptions,
-					Db:          r.db,
 				})
 			}
 
@@ -714,7 +713,6 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					Limit:            r.MaxResults(),
 
 					RepoOptions: repoOptions,
-					Db:          r.db,
 				})
 			}
 		}
@@ -751,6 +749,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
 					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+					RepoOpts:          repoOptions,
 				})
 			}
 		}
@@ -779,6 +778,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
 					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+					RepoOpts:          repoOptions,
 				})
 			}
 		}
@@ -799,7 +799,6 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 				Diff:          diff,
 				HasTimeFilter: commit.HasTimeFilter(args.Query),
 				Limit:         int(args.PatternInfo.FileMatchLimit),
-				Db:            r.db,
 			})
 		}
 
@@ -831,6 +830,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 				UseIndex:          args.PatternInfo.Index,
 				ContainsRefGlobs:  query.ContainsRefGlobs(q),
 				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+				RepoOpts:          repoOptions,
 			})
 		}
 
@@ -920,7 +920,6 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 	}
 
 	addJob(true, &searchrepos.ComputeExcludedRepos{
-		DB:      r.db,
 		Options: repoOptions,
 	})
 
@@ -929,8 +928,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 			run.NewParallelJob(requiredJobs...),
 			run.NewParallelJob(optionalJobs...),
 		),
-		RepoOptions: repoOptions,
-		Timeout:     args.Timeout,
+		Timeout: args.Timeout,
 	}, nil
 }
 
@@ -1820,12 +1818,7 @@ func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (r
 
 	agg := run.NewAggregator(stream)
 
-	repos := &searchrepos.Resolver{
-		Opts: routine.RepoOptions,
-		DB:   r.db,
-	}
-
-	_ = agg.DoSearch(ctx, routine.Job, repos)
+	_ = agg.DoSearch(ctx, r.db, routine.Job)
 
 	return r.toSearchResults(ctx, agg)
 }

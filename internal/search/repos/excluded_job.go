@@ -9,12 +9,11 @@ import (
 )
 
 type ComputeExcludedRepos struct {
-	DB      database.DB
 	Options search.RepoOptions
 }
 
-func (c *ComputeExcludedRepos) Run(ctx context.Context, s streaming.Sender, _ Pager) (err error) {
-	repositoryResolver := Resolver{DB: c.DB}
+func (c *ComputeExcludedRepos) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
+	repositoryResolver := Resolver{DB: db}
 	excluded, err := repositoryResolver.Excluded(ctx, c.Options)
 	if err != nil {
 		return err
