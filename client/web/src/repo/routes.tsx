@@ -130,6 +130,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             match,
             globbing,
             featureFlags,
+            onHoverToken,
             ...context
         }: FeatureFlagProps &
             RepoRevisionContainerContext &
@@ -217,6 +218,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                                         repoHeaderContributionsLifecycleProps={
                                             context.repoHeaderContributionsLifecycleProps
                                         }
+                                        onHoverToken={onHoverToken}
                                     />
                                 ) : (
                                     <TreePage {...context} {...repoRevisionProps} repo={repo} />

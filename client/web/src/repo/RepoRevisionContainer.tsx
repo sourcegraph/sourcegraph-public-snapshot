@@ -6,6 +6,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Popover } from 'reactstrap'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { HoveredToken } from '@sourcegraph/codeintellify'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
@@ -80,6 +81,8 @@ export interface RepoRevisionContainerContext
     isMacPlatform: boolean
 
     isSourcegraphDotCom: boolean
+
+    onHoverToken: (hoveredToken: HoveredToken) => void
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
@@ -125,6 +128,8 @@ interface RepoRevisionContainerProps
     isMacPlatform: boolean
 
     isSourcegraphDotCom: boolean
+
+    onHoverToken: (hoverToken: HoveredToken) => void
 }
 
 interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {
@@ -272,6 +277,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         ...props,
         ...breadcrumbSetters,
         resolvedRev: props.resolvedRevisionOrError,
+        onHoverToken: props.onHoverToken,
     }
 
     const resolvedRevisionOrError = props.resolvedRevisionOrError

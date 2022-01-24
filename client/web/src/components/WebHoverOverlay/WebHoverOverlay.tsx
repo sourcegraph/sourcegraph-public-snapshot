@@ -3,6 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { fromEvent } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
+import { HoveredToken } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -23,7 +24,12 @@ const getAlertClassName: HoverOverlayProps['getAlertClassName'] = iconKind =>
     `alert alert-${iconKindToAlertKind[iconKind]}`
 
 export const WebHoverOverlay: React.FunctionComponent<
-    HoverOverlayProps & HoverThresholdProps & { hoveredTokenElement?: HTMLElement; nav?: (url: string) => void }
+    HoverOverlayProps &
+        HoverThresholdProps & {
+            hoveredTokenElement?: HTMLElement
+            nav?: (url: string) => void
+            onHoverToken: (hoveredToken: HoveredToken) => void
+        }
 > = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
@@ -44,7 +50,7 @@ export const WebHoverOverlay: React.FunctionComponent<
     }
 
     const { hoverOrError } = propsToUse
-    const { onHoverShown, hoveredToken } = props
+    const { onHoverShown, onHoverToken, hoveredToken } = props
 
     /** Whether the hover has actual content (that provides value to the user) */
     const hoverHasValue = hoverOrError !== 'loading' && !isErrorLike(hoverOrError) && !!hoverOrError?.contents?.length
@@ -53,7 +59,18 @@ export const WebHoverOverlay: React.FunctionComponent<
         if (hoverHasValue) {
             onHoverShown?.()
         }
-    }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
+        if (hoveredToken) {
+            onHoverToken(hoveredToken)
+        }
+    }, [
+        hoveredToken,
+        // hoveredToken?.filePath,
+        // hoveredToken?.line,
+        // hoveredToken?.character,
+        onHoverShown,
+        hoverHasValue,
+        onHoverToken,
+    ])
 
     useEffect(() => {
         const token = props.hoveredTokenElement
@@ -98,7 +115,15 @@ export const WebHoverOverlay: React.FunctionComponent<
             .subscribe()
 
         return () => subscription.unsubscribe()
-    }, [props.actionsOrError, props.hoveredTokenElement, props.location.hash, props.nav, props.telemetryService])
+    }, [
+        props.actionsOrError,
+        props.hoveredTokenElement,
+        props.location.hash,
+        props.nav,
+        props.telemetryService,
+        props.onHoverToken,
+        hoveredToken,
+    ])
 
     return (
         <HoverOverlay
