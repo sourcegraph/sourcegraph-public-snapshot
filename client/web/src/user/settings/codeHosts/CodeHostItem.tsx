@@ -154,9 +154,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         />
                     ) : (
                         <Button
-                            className={`btn ${
-                                !isUserOwner ? 'btn-link p-0 shadow-none font-weight-normal' : 'btn-merged'
-                            }`}
+                            className={classNames(!isUserOwner && 'p-0 shadow-none font-weight-normal')}
+                            variant={isUserOwner ? 'merged' : 'link'}
                             onClick={updateAction}
                         >
                             Update

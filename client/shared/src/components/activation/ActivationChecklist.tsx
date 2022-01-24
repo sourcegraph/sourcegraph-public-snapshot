@@ -6,7 +6,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
 import styles from './ActivationChecklist.module.scss'
@@ -68,8 +68,10 @@ export const ActivationChecklist: React.FunctionComponent<ActivationChecklistPro
             <Accordion collapsible={true}>
                 {steps.map(step => (
                     <AccordionItem key={step.id} className={classNames('list-group-item', styles.container)}>
-                        <AccordionButton
-                            className={classNames('list-group-item list-group-item-action btn-link', styles.button)}
+                        <Button
+                            as={AccordionButton}
+                            variant="link"
+                            className={classNames('list-group-item list-group-item-action', styles.button)}
                         >
                             <ActivationChecklistItem
                                 key={step.id}
@@ -77,7 +79,7 @@ export const ActivationChecklist: React.FunctionComponent<ActivationChecklistPro
                                 done={completed?.[step.id] || false}
                                 className={buttonClassName}
                             />
-                        </AccordionButton>
+                        </Button>
                         <AccordionPanel className="px-2">
                             <div className={classNames('pb-1', styles.detail)}>{step.detail}</div>
                         </AccordionPanel>
