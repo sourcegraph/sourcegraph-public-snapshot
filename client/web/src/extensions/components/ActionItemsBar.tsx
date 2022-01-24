@@ -212,7 +212,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
     )
 
     if (!isOpen) {
-        return <div className={styles.barCollapsed} />
+        return <div className={classNames(styles.bar, styles.barCollapsed)} />
     }
 
     return (
