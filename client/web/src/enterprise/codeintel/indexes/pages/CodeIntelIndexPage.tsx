@@ -12,7 +12,7 @@ import { Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegra
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
 import { LsifIndexFields } from '../../../../graphql-operations'
-import { CodeIntelStateBanner, CodeIntelStateBannerProps } from '../../shared/components/CodeIntelStateBanner'
+import { CodeIntelStateBanner } from '../../shared/components/CodeIntelStateBanner'
 import { CodeIntelAssociatedUpload } from '../components/CodeIntelAssociatedUpload'
 import { CodeIntelDeleteIndex } from '../components/CodeIntelDeleteIndex'
 import { CodeIntelIndexMeta } from '../components/CodeIntelIndexMeta'
@@ -26,9 +26,9 @@ export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: strin
     now?: () => Date
 }
 
-const variantByState = new Map<LSIFIndexState, CodeIntelStateBannerProps['variant']>([
-    [LSIFIndexState.COMPLETED, 'success'],
-    [LSIFIndexState.ERRORED, 'danger'],
+const classNamesByState = new Map([
+    [LSIFIndexState.COMPLETED, 'alert-success'],
+    [LSIFIndexState.ERRORED, 'alert-danger'],
 ])
 
 export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
@@ -134,7 +134,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                             failure={indexOrError.failure}
                             typeName="index"
                             pluralTypeName="indexes"
-                            variant={variantByState.get(indexOrError.state)}
+                            className={classNamesByState.get(indexOrError.state)}
                         />
                     </Container>
 

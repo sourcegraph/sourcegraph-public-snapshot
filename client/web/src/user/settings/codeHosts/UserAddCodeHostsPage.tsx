@@ -5,7 +5,7 @@ import { asError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { keyExistsIn } from '@sourcegraph/shared/src/util/types'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
@@ -146,21 +146,21 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
-            <Alert className="mb-4" role="alert" key="update-github" variant="info">
+            <div className="alert alert-info mb-4" role="alert" key="update-github">
                 Update your GitHub code host connection to search private code with Sourcegraph.
-            </Alert>
+            </div>
         ) : null
 
     const getGitLabUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
-            <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
+            <div className="alert alert-info mb-4" role="alert" key="update-gitlab">
                 Update your GitLab code host connection to search private code with Sourcegraph.
-            </Alert>
+            </div>
         ) : null
 
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
-            <Alert className="my-3" role="alert" key="add-repos" variant="success">
+            <div className="alert alert-success my-3" role="alert" key="add-repos">
                 <h4 className="align-middle mb-1">Connected with {services.join(', ')}</h4>
                 <p className="align-middle mb-0">
                     Next,{' '}
@@ -173,7 +173,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     </Link>{' '}
                     to search with Sourcegraph.
                 </p>
-            </Alert>
+            </div>
         ) : null
 
     interface serviceProblem {
@@ -237,7 +237,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
-        <Alert className="my-3" key={service.id} variant="warning">
+        <div className="alert alert-warning my-3" key={service.id}>
             <h4 className="align-middle mb-1">Can’t connect with {service.displayName}</h4>
             <p className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
@@ -254,7 +254,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 )}{' '}
                 <span className="align-middle">with {service.displayName} to restore access.</span>
             </p>
-        </Alert>
+        </div>
     )
 
     // auth providers by service type

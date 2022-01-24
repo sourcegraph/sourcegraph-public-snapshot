@@ -2,7 +2,7 @@
 
 exports[`Alert renders variant 'danger' correctly 1`] = `
 <div
-  class=""
+  class="alert alertDanger"
 >
   <h4>
     Too many matching repositories
@@ -13,7 +13,7 @@ exports[`Alert renders variant 'danger' correctly 1`] = `
 
 exports[`Alert renders variant 'info' correctly 1`] = `
 <div
-  class=""
+  class="alert alertInfo"
 >
   <h4>
     Too many matching repositories
@@ -24,7 +24,7 @@ exports[`Alert renders variant 'info' correctly 1`] = `
 
 exports[`Alert renders variant 'merged' correctly 1`] = `
 <div
-  class=""
+  class="alert alertMerged"
 >
   <h4>
     Too many matching repositories
@@ -35,7 +35,7 @@ exports[`Alert renders variant 'merged' correctly 1`] = `
 
 exports[`Alert renders variant 'primary' correctly 1`] = `
 <div
-  class=""
+  class="alert alertPrimary"
 >
   <h4>
     Too many matching repositories
@@ -46,7 +46,7 @@ exports[`Alert renders variant 'primary' correctly 1`] = `
 
 exports[`Alert renders variant 'secondary' correctly 1`] = `
 <div
-  class=""
+  class="alert alertSecondary"
 >
   <h4>
     Too many matching repositories
@@ -57,7 +57,7 @@ exports[`Alert renders variant 'secondary' correctly 1`] = `
 
 exports[`Alert renders variant 'success' correctly 1`] = `
 <div
-  class=""
+  class="alert alertSuccess"
 >
   <h4>
     Too many matching repositories
@@ -68,7 +68,7 @@ exports[`Alert renders variant 'success' correctly 1`] = `
 
 exports[`Alert renders variant 'warning' correctly 1`] = `
 <div
-  class=""
+  class="alert alertWarning"
 >
   <h4>
     Too many matching repositories

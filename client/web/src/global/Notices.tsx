@@ -5,36 +5,31 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Notice, Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 
 import styles from './Notices.module.scss'
 
-const getAlertVariant = (location: Notice['location']): AlertProps['variant'] =>
-    location === 'top' ? 'info' : undefined
-
-interface NoticeAlertProps {
-    notice: Notice
-    className?: string
-    testId?: string
-}
-
-const NoticeAlert: React.FunctionComponent<NoticeAlertProps> = ({ notice, className = '', testId }) => {
+const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string; testId?: string }> = ({
+    notice,
+    className = '',
+    testId,
+}) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(notice.message)} />
-
-    const sharedProps = {
-        'data-testid': testId,
-        variant: getAlertVariant(notice.location),
-        className: classNames(notice.location !== 'top' && 'bg transparent border', className),
-    }
+    const baseClassName = notice.location === 'top' ? 'alert-info' : 'bg-transparent border'
 
     return notice.dismissible ? (
-        <DismissibleAlert {...sharedProps} partialStorageKey={`notice.${notice.message}`}>
+        <DismissibleAlert
+            data-testid={testId}
+            className={classNames(baseClassName, className)}
+            partialStorageKey={`notice.${notice.message}`}
+        >
             {content}
         </DismissibleAlert>
     ) : (
-        <Alert {...sharedProps}>{content}</Alert>
+        <div data-testid={testId} className={classNames('alert', baseClassName, className)}>
+            {content}
+        </div>
     )
 }
 

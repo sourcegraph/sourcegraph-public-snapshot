@@ -53,7 +53,7 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="my-3"
     />
     <div
-      class=""
+      class="alert alert-warning"
     >
       Limit hit. Add 
       <code>

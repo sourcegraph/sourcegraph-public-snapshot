@@ -29,7 +29,6 @@ import {
     ResolvedRevisionSpec,
     RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { Alert } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -189,7 +188,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             >
                 <RepositoryCompareHeader className="my-3" {...commonProps} />
                 {spec === null ? (
-                    <Alert variant="danger">Invalid comparison specifier</Alert>
+                    <div className="alert alert-danger">Invalid comparison specifier</div>
                 ) : (
                     <Switch>
                         <Route

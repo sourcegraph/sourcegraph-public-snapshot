@@ -17,8 +17,7 @@ const onClickCTA = (): void => {
 export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <DismissibleAlert
         partialStorageKey="needsRepositoryConfiguration"
-        variant="success"
-        className={classNames('d-flex align-items-center', className)}
+        className={classNames('alert-success d-flex align-items-center', className)}
     >
         <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
             <span className="underline">Connect a code host</span>

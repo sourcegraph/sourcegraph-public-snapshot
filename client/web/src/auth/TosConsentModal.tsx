@@ -1,8 +1,6 @@
 import { gql, useMutation } from '@apollo/client'
 import React, { useCallback, useState } from 'react'
 
-import { Alert } from '@sourcegraph/wildcard'
-
 import { LoaderButton } from '../components/LoaderButton'
 
 import { SourcegraphIcon } from './icons'
@@ -78,9 +76,7 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                     account deleted.
                 </p>
                 {error && (
-                    <Alert className="mt-4" variant="danger">
-                        Error accepting Terms of Service: {error.message}
-                    </Alert>
+                    <div className="alert alert-danger mt-4">Error accepting Terms of Service: {error.message}</div>
                 )}
             </div>
         </div>

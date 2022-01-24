@@ -1,7 +1,6 @@
 import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Alert } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../../../../components/RadioButtons'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
@@ -66,10 +65,10 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
                     repo === undefined &&
                     (policy.repositoryPatterns || []).length === 0 &&
                     policy.indexingEnabled && (
-                        <Alert variant="danger">
+                        <div className="alert alert-danger">
                             This Sourcegraph instance has disabled global policies for auto-indexing. Create a more
                             constrained policy targeting an explicit set of repositories to enable this policy.
-                        </Alert>
+                        </div>
                     )}
 
                 <label className="ml-4" htmlFor="index-commit-max-age">
