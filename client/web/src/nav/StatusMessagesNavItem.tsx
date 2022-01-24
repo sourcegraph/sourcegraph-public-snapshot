@@ -19,7 +19,7 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { requestGraphQL } from '../backend/graphql'
@@ -481,9 +481,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 toggle={this.toggleIsOpen}
                 className="nav-link py-0 px-0 percy-hide chromatic-ignore"
             >
-                <DropdownToggle caret={false} className="btn btn-link" nav={true}>
+                <Button caret={false} nav={true} variant="link" as={DropdownToggle}>
                     {this.renderIcon()}
-                </DropdownToggle>
+                </Button>
 
                 <DropdownMenu right={true} className={classNames('p-0', styles.dropdownMenu)}>
                     <div className={styles.dropdownMenuContent}>

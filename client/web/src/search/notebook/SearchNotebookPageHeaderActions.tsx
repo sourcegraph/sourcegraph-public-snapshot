@@ -82,9 +82,9 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
     return (
         <>
             <ButtonDropdown isOpen={isOpen} toggle={toggleOpen} group={false}>
-                <DropdownToggle className="btn btn-outline" tag="button">
+                <Button tag="button" outline={true} as={DropdownToggle}>
                     <DotsHorizontalIcon />
-                </DropdownToggle>
+                </Button>
                 <DropdownMenu right={true}>
                     <DropdownItem disabled={true}>Settings</DropdownItem>
                     <DropdownItem divider={true} />
@@ -128,11 +128,7 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleOpen} group={false}>
-            <DropdownToggle
-                className={classNames('btn', viewerCanManage && 'btn-outline')}
-                tag="button"
-                disabled={!viewerCanManage}
-            >
+            <Button tag="button" outline={viewerCanManage} disabled={!viewerCanManage} as={DropdownToggle}>
                 {isPublic ? (
                     <span>
                         <WebIcon className="icon-inline" /> Public
@@ -142,7 +138,7 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
                         <LockIcon className="icon-inline" /> Private
                     </span>
                 )}
-            </DropdownToggle>
+            </Button>
             <DropdownMenu right={true} className={styles.visibilityDropdownMenu}>
                 <DropdownItem disabled={true}>Change notebook visibility</DropdownItem>
                 <DropdownItem divider={true} />

@@ -70,9 +70,9 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
             <hr className={classNames('my-3', styles.divider)} />
 
             <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="ml-2">
-                <DropdownToggle className="btn-sm" caret={true} color="outline-secondary">
+                <Button caret={true} color="outline-secondary" size="sm" as={DropdownToggle}>
                     {enablementFilterToLabel[enablementFilter]}
-                </DropdownToggle>
+                </Button>
                 <DropdownMenu>
                     <DropdownItem onClick={showAll} disabled={enablementFilter === 'all'}>
                         Show all
