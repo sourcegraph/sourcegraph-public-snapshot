@@ -112,7 +112,9 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     {showCta && (
                                         <Alert className={classNames('mb-0 py-1', styles.alert)} variant="info">
                                             An account is required to create and configure extensions.{' '}
-                                            <AlertLink to="/sign-up">Register now!</AlertLink>
+                                            <AlertLink to="https://about.sourcegraph.com/get-started">
+                                                Register now!
+                                            </AlertLink>
                                         </Alert>
                                     )}
                                     {/* If site admin, render user toggle and site toggle (both small) */}
