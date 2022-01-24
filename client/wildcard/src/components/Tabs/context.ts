@@ -8,7 +8,7 @@ TabsSettingsContext.displayName = 'TabsSettingsContext'
 export const useTabsSettings = (): TabsSettings => {
     const context = React.useContext(TabsSettingsContext)
     if (!context) {
-        throw new Error('useTabsSettingsContext or Tabs inner components cannot be used outside <Tabs>')
+        throw new Error('useTabsSettingsContext or Tabs inner components cannot be used outside <Tabs> sub-tree')
     }
 
     return context
@@ -20,7 +20,7 @@ TabPanelIndexContext.displayName = 'TabPanelIndexContext'
 export const useTablePanelIndex = (): number => {
     const context = React.useContext(TabPanelIndexContext)
     if (context === undefined) {
-        throw new Error('TabsIndexContext can not be used outside the <Tabs> component scope')
+        throw new Error('TabPanelIndexContext cannot be used outside <Tabs> sub-tree')
     }
     return context
 }

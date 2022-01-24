@@ -20,7 +20,7 @@ export function useShouldPanelRender(children: React.ReactNode): boolean {
                 setWasRendered(true)
             }
         }
-    }, [lazy, children, index, selectedIndex, ])
+    }, [lazy, children, index, selectedIndex])
 
     if (lazy) {
         if (behavior === 'forceRender') {
@@ -30,5 +30,5 @@ export function useShouldPanelRender(children: React.ReactNode): boolean {
             return wasRendered
         }
     }
-    return true;
+    return true
 }

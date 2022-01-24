@@ -8,7 +8,8 @@ import {
     TabPanelsProps as ReachTabPanelsProps,
     TabProps as ReachTabProps,
     Tabs as ReachTabs,
-    TabsProps as ReachTabsProps } from '@reach/tabs'
+    TabsProps as ReachTabsProps
+} from '@reach/tabs'
 import classNames from 'classnames'
 import React from 'react'
 
