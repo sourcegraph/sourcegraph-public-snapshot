@@ -86,3 +86,14 @@ type Matches []Match
 func (m Matches) Len() int           { return len(m) }
 func (m Matches) Less(i, j int) bool { return m[i].Key().Less(m[j].Key()) }
 func (m Matches) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
+
+func (m *Matches) Limit(limit int) int {
+	for i, match := range *m {
+		if limit <= 0 {
+			*m = (*m)[:i]
+			return 0
+		}
+		limit = match.Limit(limit)
+	}
+	return limit
+}
