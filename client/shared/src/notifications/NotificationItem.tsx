@@ -11,27 +11,26 @@ import { renderMarkdown } from '../util/markdown'
 import { Notification } from './notification'
 import styles from './NotificationItem.module.scss'
 
-interface BaseNotificationItemProps {
+export interface UnbrandedNotificationItemStyleProps {
+    notificationItemClassNames: Record<sourcegraph.NotificationType, string>
+}
+
+export interface BrandedNotificationItemStyleProps {
+    notificationItemVariants: Record<sourcegraph.NotificationType, AlertProps['variant']>
+}
+
+/**
+ * Note, we do not export this type because it is not intended to be used directly.
+ * Consumers should use either `UnbrandedNotificationItemStyleProps` or `BrandedNotificationItemStyleProps` when configuring this component.
+ */
+type NotificationItemStyleProps = UnbrandedNotificationItemStyleProps | BrandedNotificationItemStyleProps
+
+export interface NotificationItemProps {
     notification: Notification
     onDismiss: (notification: Notification) => void
     className?: string
+    notificationItemStyleProps: NotificationItemStyleProps
 }
-
-export interface BrandedNotificationItemProps extends BaseNotificationItemProps {
-    /**
-     * Allows providing a specific variant style for use in branded Sourcegraph applications.
-     */
-    notificationVariants: Record<sourcegraph.NotificationType, AlertProps['variant']>
-}
-
-export interface UnbrandedNotificationItemProps extends BaseNotificationItemProps {
-    /**
-     * Allows providing any custom className to style the notifications as desired.
-     */
-    notificationClassNames: Record<sourcegraph.NotificationType, string>
-}
-
-export type NotificationItemProps = BrandedNotificationItemProps | UnbrandedNotificationItemProps
 
 interface NotificationItemState {
     progress?: Required<sourcegraph.Progress>
@@ -90,16 +89,18 @@ export class NotificationItem extends React.PureComponent<NotificationItemProps,
     }
     public render(): JSX.Element | null {
         const baseAlertClassName = classNames(styles.sourcegraphNotificationItem, this.props.className)
+
+        const { notificationItemStyleProps } = this.props
         const alertProps =
-            'notificationVariants' in this.props
+            'notificationVariants' in notificationItemStyleProps
                 ? {
-                      variant: this.props.notificationVariants[this.props.notification.type],
+                      variant: notificationItemStyleProps.notificationItemVariants[this.props.notification.type],
                       className: baseAlertClassName,
                   }
                 : {
                       className: classNames(
                           baseAlertClassName,
-                          this.props.notificationClassNames[this.props.notification.type]
+                          notificationItemStyleProps.notificationItemClassNames[this.props.notification.type]
                       ),
                   }
 
