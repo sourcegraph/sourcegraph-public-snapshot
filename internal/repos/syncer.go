@@ -443,7 +443,7 @@ func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
 
 // ErrCloudDefaultSync is returned by SyncExternalService if an attempt to
 // sync a cloud default external service is done. We can't sync these external services
-// becaause their repos are added via the lazy-syncing mechanism on sourcegraph.com
+// because their repos are added via the lazy-syncing mechanism on sourcegraph.com
 // instead of config (which is empty), so attempting to sync them would delete all of
 // the lazy-added repos.
 var ErrCloudDefaultSync = errors.New("cloud default external services can't be synced")
