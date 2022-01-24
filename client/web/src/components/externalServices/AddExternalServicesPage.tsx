@@ -3,7 +3,7 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage, Button } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Alert } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
@@ -82,7 +82,7 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
             </div>
             <p className="mt-2">Add repositories from one of these code hosts.</p>
             {!hasDismissedPrivacyWarning && (
-                <div className="alert alert-info">
+                <Alert variant="info">
                     {!userID && (
                         <p>
                             This Sourcegraph installation will never send your code, repository names, file names, or
@@ -126,7 +126,7 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                             Do not show this again
                         </Button>
                     </div>
-                </div>
+                </Alert>
             )}
             {Object.entries(codeHostExternalServices).map(([id, externalService]) => (
                 <div className={styles.addExternalServicesPageCard} key={id}>

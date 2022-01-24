@@ -33,13 +33,6 @@ type SearchInputs struct {
 type Job interface {
 	Run(context.Context, streaming.Sender, searchrepos.Pager) error
 	Name() string
-
-	// Required sets whether the results of this job are required. If true,
-	// we must wait for its routines to complete. If false, the job is
-	// optional, expressing that we may cancel the job. We typically run a
-	// set of required and optional jobs concurrently, and cancel optional
-	// jobs once we've guaranteed some required results, or after a timeout.
-	Required() bool
 }
 
 // Routine represents all inputs to run multiple search operations (i.e.,
@@ -51,7 +44,7 @@ type Job interface {
 // information to execute the runtime semantics for particular search
 // operations.
 type Routine struct {
-	Jobs        []Job
+	Job         Job
 	RepoOptions search.RepoOptions
 	Timeout     time.Duration
 }
