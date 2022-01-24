@@ -133,6 +133,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             globbing,
             featureFlags,
             onExtensionAlertDismissed,
+            onHoverToken,
             ...context
         }: FeatureFlagProps &
             RepoRevisionContainerContext &
@@ -230,6 +231,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                                             repoHeaderContributionsLifecycleProps={
                                                 context.repoHeaderContributionsLifecycleProps
                                             }
+                                            onHoverToken={onHoverToken}
                                         />
                                     </>
                                 ) : (

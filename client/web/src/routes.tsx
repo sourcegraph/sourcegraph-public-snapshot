@@ -1,8 +1,10 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
+import { HoveredToken } from '@sourcegraph/codeintellify'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
@@ -40,6 +42,7 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         UserExternalServicesOrRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
+    onHoverToken: (hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec) => void
 }
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
