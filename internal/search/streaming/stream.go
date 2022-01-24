@@ -11,7 +11,7 @@ import (
 )
 
 type SearchEvent struct {
-	Results []result.Match
+	Results result.Matches
 	Stats   Stats
 }
 
