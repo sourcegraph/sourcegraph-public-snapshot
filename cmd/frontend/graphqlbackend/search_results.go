@@ -568,7 +568,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 	}
 }
 
-// toSearchRoutine converts a query parse tree to the _internal_ representation
+// toSearchJob converts a query parse tree to the _internal_ representation
 // needed to run a search routine. To understand why this conversion matters, think
 // about the fact that the query parse tree doesn't know anything about our
 // backends or architecture. It doesn't decide certain defaults, like whether we
@@ -577,8 +577,8 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 // particular backend (e.g., skip repository resolution and just run a Zoekt
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
-// toSearchRoutine.
-func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
+// toSearchJob.
+func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
@@ -617,7 +617,15 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
 	args.RepoOptions = repoOptions
 
-	var jobs []run.Job
+	var requiredJobs, optionalJobs []run.Job
+	addJob := func(required bool, job run.Job) {
+		if required {
+			requiredJobs = append(requiredJobs, job)
+		} else {
+			optionalJobs = append(optionalJobs, job)
+		}
+	}
+
 	{
 		// This code block creates search jobs under specific
 		// conditions, and depending on generic process of `args` above.
@@ -673,13 +681,12 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					Zoekt:          args.Zoekt,
 				}
 
-				jobs = append(jobs, &unindexed.RepoUniverseTextSearch{
+				addJob(true, &unindexed.RepoUniverseTextSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 					FileMatchLimit:   args.PatternInfo.FileMatchLimit,
 
 					RepoOptions: repoOptions,
-					Db:          r.db,
 				})
 			}
 
@@ -699,14 +706,13 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					Zoekt:          args.Zoekt,
 				}
 
-				jobs = append(jobs, &symbol.RepoUniverseSymbolSearch{
+				addJob(true, &symbol.RepoUniverseSymbolSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 					PatternInfo:      args.PatternInfo,
 					Limit:            r.MaxResults(),
 
 					RepoOptions: repoOptions,
-					Db:          r.db,
 				})
 			}
 		}
@@ -735,7 +741,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					UseFullDeadline: args.UseFullDeadline,
 				}
 
-				jobs = append(jobs, &unindexed.RepoSubsetTextSearch{
+				addJob(true, &unindexed.RepoSubsetTextSearch{
 					ZoektArgs:         zoektArgs,
 					SearcherArgs:      searcherArgs,
 					FileMatchLimit:    args.PatternInfo.FileMatchLimit,
@@ -743,6 +749,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
 					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+					RepoOpts:          repoOptions,
 				})
 			}
 		}
@@ -762,7 +769,8 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					Zoekt:          args.Zoekt,
 				}
 
-				jobs = append(jobs, &symbol.RepoSubsetSymbolSearch{
+				required := args.UseFullDeadline || args.ResultTypes.Without(result.TypeSymbol) == 0
+				addJob(required, &symbol.RepoSubsetSymbolSearch{
 					ZoektArgs:         zoektArgs,
 					PatternInfo:       args.PatternInfo,
 					Limit:             r.MaxResults(),
@@ -770,19 +778,27 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
 					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+					RepoOpts:          repoOptions,
 				})
 			}
 		}
 
 		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
 			diff := args.ResultTypes.Has(result.TypeDiff)
-			jobs = append(jobs, &commit.CommitSearch{
+			var required bool
+			if args.UseFullDeadline {
+				required = true
+			} else if diff {
+				required = args.ResultTypes.Without(result.TypeDiff) == 0
+			} else {
+				required = args.ResultTypes.Without(result.TypeCommit) == 0
+			}
+			addJob(required, &commit.CommitSearch{
 				Query:         commit.QueryToGitQuery(args.Query, diff),
 				RepoOpts:      repoOptions,
 				Diff:          diff,
 				HasTimeFilter: commit.HasTimeFilter(args.Query),
 				Limit:         int(args.PatternInfo.FileMatchLimit),
-				Db:            r.db,
 			})
 		}
 
@@ -806,7 +822,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 				UseFullDeadline: args.UseFullDeadline,
 			}
 
-			jobs = append(jobs, &unindexed.StructuralSearch{
+			addJob(true, &unindexed.StructuralSearch{
 				ZoektArgs:    zoektArgs,
 				SearcherArgs: searcherArgs,
 
@@ -814,6 +830,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 				UseIndex:          args.PatternInfo.Index,
 				ContainsRefGlobs:  query.ContainsRefGlobs(q),
 				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+				RepoOpts:          repoOptions,
 			})
 		}
 
@@ -893,7 +910,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 			if valid() {
 				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
 					args.RepoOptions = repoOptions
-					jobs = append(jobs, &run.RepoSearch{
+					addJob(true, &run.RepoSearch{
 						Args:  &args,
 						Limit: r.MaxResults(),
 					})
@@ -902,42 +919,17 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 		}
 	}
 
-	for _, job := range jobs {
-		switch j := job.(type) {
-		case *commit.CommitSearch:
-			if args.UseFullDeadline {
-				j.IsRequired = true
-				continue
-			}
+	addJob(true, &searchrepos.ComputeExcludedRepos{
+		Options: repoOptions,
+	})
 
-			if job.Name() == "Diff" {
-				j.IsRequired = (args.ResultTypes.Without(result.TypeDiff) == 0)
-			} else {
-				j.IsRequired = (args.ResultTypes.Without(result.TypeCommit) == 0)
-			}
-		case *symbol.RepoSubsetSymbolSearch:
-			if args.UseFullDeadline {
-				j.IsRequired = true
-				continue
-			}
-
-			j.IsRequired = (args.ResultTypes.Without(result.TypeSymbol) == 0)
-		case *symbol.RepoUniverseSymbolSearch:
-			j.IsRequired = true
-		case *run.RepoSearch:
-			j.IsRequired = true
-		case *unindexed.RepoSubsetTextSearch:
-			j.IsRequired = true
-		case *unindexed.RepoUniverseTextSearch:
-			j.IsRequired = true
-		case *unindexed.StructuralSearch:
-			j.IsRequired = true
-
-		default:
-			panic(fmt.Sprintf("unknown job type: %q", j))
-		}
-	}
-	return &run.Routine{Jobs: jobs, RepoOptions: repoOptions, Timeout: args.Timeout}, nil
+	return run.NewTimeoutJob(
+		args.Timeout,
+		run.NewJobWithOptional(
+			run.NewParallelJob(requiredJobs...),
+			run.NewParallelJob(optionalJobs...),
+		),
+	), nil
 }
 
 // intersect returns the intersection of two sets of search result content
@@ -1156,18 +1148,18 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
-			routine, err := r.toSearchRoutine(q.ToParseTree())
+			job, err := r.toSearchJob(q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateRoutine(ctx, routine)
+			return r.evaluateJob(ctx, job)
 		}
 	case query.Pattern:
-		routine, err := r.toSearchRoutine(q.ToParseTree())
+		job, err := r.toSearchJob(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateRoutine(ctx, routine)
+		return r.evaluateJob(ctx, job)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -1179,11 +1171,11 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
-		routine, err := r.toSearchRoutine(query.ToNodes(q.Parameters))
+		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateRoutine(ctx, routine)
+		return r.evaluateJob(ctx, job)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -1514,11 +1506,11 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 	return nodes, nil
 }
 
-// evaluateRoutine is a toplevel function that runs a search routine to yield results.
-// A search routine represents a terminal node in the evaluation tree. If the deadline
+// evaluateJob is a toplevel function that runs a search job to yield results.
+// A search job represents a tree of evaluation steps. If the deadline
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) evaluateRoutine(ctx context.Context, routine *run.Routine) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "evaluateRoutine", "")
 	defer func() {
 		tr.SetError(err)
@@ -1526,7 +1518,7 @@ func (r *searchResolver) evaluateRoutine(ctx context.Context, routine *run.Routi
 	}()
 
 	start := time.Now()
-	rr, err := r.doResults(ctx, routine)
+	rr, err := r.doResults(ctx, job)
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1707,11 +1699,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		routine, err := r.toSearchRoutine(r.Query)
+		job, err := r.toSearchJob(r.Query)
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.doResults(ctx, routine)
+		results, err := r.doResults(ctx, job)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1796,9 +1788,9 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 	return args
 }
 
-// doResults returns the results of running a search routine.
+// doResults returns the results of running a search job.
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (res *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1808,23 +1800,7 @@ func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (r
 		tr.Finish()
 	}()
 
-	start := time.Now()
-
-	ctx, cancel := context.WithTimeout(ctx, routine.Timeout)
-	defer cancel()
-
 	limit := r.MaxResults()
-	var (
-		requiredWg sync.WaitGroup
-		optionalWg sync.WaitGroup
-	)
-
-	waitGroup := func(required bool) *sync.WaitGroup {
-		if required {
-			return &requiredWg
-		}
-		return &optionalWg
-	}
 
 	// For streaming search we want to limit based on all results, not just
 	// per backend. This works better than batch based since we have higher
@@ -1839,75 +1815,7 @@ func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (r
 
 	agg := run.NewAggregator(stream)
 
-	// This ensures we properly cleanup in the case of an early return. In
-	// particular we want to cancel global searches before returning early.
-	hasStartedAllBackends := false
-	defer func() {
-		if hasStartedAllBackends {
-			return
-		}
-		cancel()
-		requiredWg.Wait()
-		optionalWg.Wait()
-		_, _, _, _ = agg.Get()
-	}()
-
-	repoOptionsCopy := routine.RepoOptions
-	{
-		wg := waitGroup(true)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-
-			repositoryResolver := searchrepos.Resolver{DB: r.db}
-			excluded, err := repositoryResolver.Excluded(ctx, repoOptionsCopy)
-			if err != nil {
-				agg.Error(err)
-				return
-			}
-
-			agg.Send(streaming.SearchEvent{
-				Stats: streaming.Stats{
-					ExcludedArchived: excluded.Archived,
-					ExcludedForks:    excluded.Forks,
-				},
-			})
-
-			tr.LazyPrintf("sent excluded stats %#v", excluded)
-		})
-	}
-
-	repos := &searchrepos.Resolver{
-		Opts: routine.RepoOptions,
-		DB:   r.db,
-	}
-
-	// Start all specific search jobs, if any.
-	for _, job := range routine.Jobs {
-		job := job
-		wg := waitGroup(job.Required())
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoSearch(ctx, job, repos)
-		})
-	}
-
-	hasStartedAllBackends = true
-
-	// Wait for required searches.
-	requiredWg.Wait()
-
-	// Give optional searches some minimum budget in case required searches return quickly.
-	// Cancel all remaining searches after this minimum budget.
-	budget := 100 * time.Millisecond
-	elapsed := time.Since(start)
-	timer := time.AfterFunc(budget-elapsed, cancel)
-
-	// Wait for remaining optional searches to finish or get cancelled.
-	optionalWg.Wait()
-
-	timer.Stop()
+	_ = agg.DoSearch(ctx, r.db, job)
 
 	return r.toSearchResults(ctx, agg)
 }

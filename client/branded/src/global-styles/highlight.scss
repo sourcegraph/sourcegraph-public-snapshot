@@ -458,6 +458,14 @@
         }
     }
 
+    .hl-json {
+        .hl-key {
+            .hl-string {
+                color: var(--hl-orange);
+            }
+        }
+    }
+
     .hl-ts {
         .hl-keyword.hl-control {
             color: var(--hl-orange);
@@ -756,6 +764,14 @@
         .hl-markup.hl-inserted {
             color: var(--hl-white);
             background: var(--diff-add-bg);
+        }
+    }
+
+    .hl-json {
+        .hl-key {
+            .hl-string {
+                color: var(--hl-green-2);
+            }
         }
     }
 }

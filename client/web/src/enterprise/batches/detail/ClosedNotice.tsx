@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import { Alert } from '@sourcegraph/wildcard'
 
 import { BatchChangeFields } from '../../../graphql-operations'
 
@@ -14,9 +15,9 @@ export const ClosedNotice: React.FunctionComponent<ClosedNoticeProps> = ({ close
     }
 
     return (
-        <div className={classNames('alert alert-info', className)}>
+        <Alert className={className} variant="info">
             Information on this page may be out of date because changesets that only exist in closed batch changes are
             not synced with the code host.
-        </div>
+        </Alert>
     )
 }

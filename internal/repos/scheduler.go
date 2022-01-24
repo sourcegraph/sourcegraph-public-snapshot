@@ -202,10 +202,10 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
-					log15.Warn("runUpdateLoop: error requesting repo update", "uri", repo.Name, "err", err)
+					log15.Error("runUpdateLoop: error requesting repo update", "uri", repo.Name, "err", err)
 				} else if resp != nil && resp.Error != "" {
 					schedError.WithLabelValues("repoUpdateResponse").Inc()
-					log15.Warn("runUpdateLoop: error updating repo", "uri", repo.Name, "err", resp.Error)
+					log15.Error("runUpdateLoop: error updating repo", "uri", repo.Name, "err", resp.Error)
 				}
 				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
 					s.schedule.updateInterval(repo, interval)

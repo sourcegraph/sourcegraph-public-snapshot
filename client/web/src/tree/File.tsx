@@ -97,7 +97,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
                 )}
                 {props.index === maxEntries - 1 && (
                     <TreeRowAlert
-                        className="alert-warning"
+                        variant="warning"
                         style={treePadding(props.depth, true)}
                         error="Too many entries. Use search to find a specific file."
                     />

@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { useWildcardTheme } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 
 import styles from './Alert.module.scss'
@@ -13,13 +14,14 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const Alert = React.forwardRef(
-    ({ children, as: Component = 'div', variant, className, ...attributes }, reference) => (
-        <Component
-            ref={reference}
-            className={classNames(styles.alert, variant && getAlertStyle({ variant }), className)}
-            {...attributes}
-        >
-            {children}
-        </Component>
-    )
+    ({ children, as: Component = 'div', variant, className, ...attributes }, reference) => {
+        const { isBranded } = useWildcardTheme()
+        const brandedClassName = isBranded && classNames(styles.alert, variant && getAlertStyle({ variant }))
+
+        return (
+            <Component ref={reference} className={classNames(brandedClassName, className)} {...attributes}>
+                {children}
+            </Component>
+        )
+    }
 ) as ForwardReferenceComponent<'div', AlertProps>

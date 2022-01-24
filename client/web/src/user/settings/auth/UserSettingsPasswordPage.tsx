@@ -5,7 +5,7 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -94,17 +94,21 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                 <PageTitle title="Change password" />
                 <PageHeader headingElement="h2" path={[{ text: 'Change password' }]} className="mb-3" />
                 {this.props.authenticatedUser.id !== this.props.user.id ? (
-                    <div className="alert alert-danger">
+                    <Alert variant="danger">
                         Only the user may change their password. Site admins may{' '}
                         <Link to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
                             reset a user's password
                         </Link>
                         .
-                    </div>
+                    </Alert>
                 ) : (
                     <>
                         {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
-                        {this.state.saved && <div className="alert alert-success mb-3">Password changed!</div>}
+                        {this.state.saved && (
+                            <Alert className="mb-3" variant="success">
+                                Password changed!
+                            </Alert>
+                        )}
                         <Form onSubmit={this.handleSubmit}>
                             <Container className="mb-3">
                                 {/* Include a username field as a hint for password managers to update the saved password. */}
