@@ -1,25 +1,19 @@
-# How to remove users with the GraphQL API
+# How to update or remove users with the GraphQL API console
 
-This document walk you through the steps of removing users with the GraphQL API. 
+This document walk you through the steps of using mutation queries to update or remove users via the GraphQL API console. 
 
 ## Prerequisites
 
 * This document assumes that you have site-admin level permissions on your Sourcegraph instance
 * Assumes that you have set up your query token [via the steps here](https://docs.sourcegraph.com/api/graphql#quickstart)
 
-## Steps to remove a user
-
-### There are two different options for removing a user:
-
-**Option A) Deleting a user:** the user and *all* associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
-
-**Option B) Nuking a user:** the user and *all* associated data is deleted forever. *Note: You cannot undo this and this is considered the less safe option.*
+## Update a user
 
 First, query the user's ID by using their email address or user name
 
 Example:
 
-```json
+```graphql
 {
   user(email: "someone@gmail.com") {
     id
@@ -27,7 +21,58 @@ Example:
 }
 ```
 
-```json
+```graphql
+{
+  user(username: "username") {    
+  id
+  }
+}
+```
+
+Once you've got a user's ID use the `updateUser` mutation query, to change user metadata. An example of updating a user's username can be found below:
+
+```graphql
+mutation {
+  updateUser(user: "REDACTED", username: "doombot") {
+    username
+  } 
+}
+```
+> NOTE: `REDACTED` is a placeholder for a user ID
+
+This query will return the username after altering the user's username data as seen below:
+```graphql
+{
+  "data": {
+    "updateUser": {
+      "username": "doombot"
+    }
+  }
+}
+```
+Learn more about the options available with the `updateUser` query in the graphQL API consule Documentation Explorer.
+
+## Remove a user
+
+### There are two different options for removing a user:
+
+**Option A) Deleting a user:** the user and *all* associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
+
+**Option B) Nuking a user:** the user and *all* associated data is deleted forever. *Note: You cannot undo this and this is considered the less safe option.*
+
+First, query the user's ID by using their email address or user name, as seen [above](#update-a-user).
+
+Example:
+
+```graphql
+{
+  user(email: "someone@gmail.com") {
+    id
+  }
+}
+```
+
+```graphql
 {
   user(username: "username") {    
   id
@@ -39,7 +84,7 @@ Next, plug the user ID into either Option A. or B. to delete the account.
 
 Option A) example:
 
-```json
+```graphql
 mutation {
   deleteUser(user: "THE_USER_ID") {
     alwaysNil
@@ -49,7 +94,7 @@ mutation {
 
 Option B) example, include `hard: true`:
 
-```json
+```graphql
 mutation {
   deleteUser(user: "THE_USER_ID" hard: true) {
     alwaysNil
@@ -61,7 +106,7 @@ mutation {
 
 Example:
 
-```json
+```graphql
 {
   "errors": [
     {
