@@ -540,10 +540,10 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 		groups = append(groups, repoAffiliatedGroup{cachedGroup: group, adminsOnly: adminsOnly})
 	}
 
-	var r *github.Repository
 	// The visibility field on a repo is only returned if this feature flag is set. As a result
 	// there's no point in making an extra API call if this feature flag is not set explicitly.
 	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
+		var r *github.Repository
 		r, err = p.client.GetRepository(ctx, owner, name)
 		if err != nil {
 			// Maybe the repo doesn't belong to this org? Or Another error occurred in trying to get the

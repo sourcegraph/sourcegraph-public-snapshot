@@ -37,12 +37,12 @@ type client interface {
 	ListOrganizationMembers(ctx context.Context, owner string, page int, adminsOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error)
 	ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
 
-	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
 	GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
 	GetAuthenticatedUserTeams(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
 	GetOrganization(ctx context.Context, login string) (org *github.OrgDetails, err error)
 	GetRepository(ctx context.Context, owner, name string) (*github.Repository, error)
 
+	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
 	WithToken(token string) client
 }
 
