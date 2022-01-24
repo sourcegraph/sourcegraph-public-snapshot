@@ -1,10 +1,10 @@
-import { MenuItems } from '@reach/menu-button'
+import { MenuPopover } from '@reach/menu-button'
 import React, { useRef } from 'react'
 import { Link } from 'react-router-dom'
 
 import { gql } from '@sourcegraph/http-client'
 import { MenuLink, Menu, MenuDivider, MenuHeader, MenuButton } from '@sourcegraph/wildcard'
-import { MenuList } from '@sourcegraph/wildcard/src/components/Menu'
+import { MenuItems } from '@sourcegraph/wildcard/src/components/Menu/MenuItems'
 
 import { ComponentTagFields } from '../../../../graphql-operations'
 import { positionBottomRight } from '../../../insights/components/context-menu/utils'
@@ -15,6 +15,7 @@ export const COMPONENT_TAG_FRAGMENT = gql`
         name
         components {
             nodes {
+                __typename
                 id
                 name
                 kind
@@ -36,7 +37,7 @@ export const ComponentTag: React.FunctionComponent<Props> = ({ tag: { name, comp
             <MenuButton variant="link" className={buttonClassName} ref={targetButtonReference}>
                 {name}
             </MenuButton>
-            <MenuList position={positionBottomRight}>
+            <MenuPopover position={positionBottomRight}>
                 <MenuItems>
                     <MenuHeader>Tag: {name}</MenuHeader>
                     {components.nodes.slice(0, 15 /* TODO(sqs) */).map(component => (
@@ -54,7 +55,7 @@ export const ComponentTag: React.FunctionComponent<Props> = ({ tag: { name, comp
                         View as table...
                     </MenuLink>
                 </MenuItems>
-            </MenuList>
+            </MenuPopover>
         </Menu>
     )
 }

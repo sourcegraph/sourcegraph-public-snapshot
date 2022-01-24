@@ -227,16 +227,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         items={searchNavBarItems}
                     />
                     {catalog && (
-                        <NavDropdown
-                            toggleItem={{ path: '/catalog', icon: CatalogIcon, content: 'Catalog' }}
-                            mobileHomeItem={{ content: 'Catalog home' }}
-                            items={[
-                                {
-                                    path: '/catalog/graph',
-                                    content: <>Graph</>,
-                                },
-                            ]}
-                        />
+                        <NavItem icon={CatalogIcon}>
+                            <NavLink to="/catalog">Catalog</NavLink>
+                        </NavItem>
                     )}
                     {enableCodeMonitoring && false && (
                         <NavItem icon={CodeMonitoringLogo}>

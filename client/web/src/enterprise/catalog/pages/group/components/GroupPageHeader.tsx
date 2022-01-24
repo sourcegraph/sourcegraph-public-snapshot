@@ -46,6 +46,7 @@ const ComponentAncestorsPath: React.FunctionComponent<
     <nav className={className}>
         {path.map(({ to, icon, text }, index) => (
             <span
+                // eslint-disable-next-line react/no-array-index-key
                 key={index}
                 className={classNames(
                     'text-nowrap',
