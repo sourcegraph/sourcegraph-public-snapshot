@@ -112,14 +112,18 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
         return <ButtonDropdownCta {...props} />
     }
     return (
-        <ButtonLink
-            className={classNames('btn btn-sm btn-outline-secondary text-decoration-none', props.className)}
+        <Button
+            className={classNames('text-decoration-none', props.className)}
             to={props.nonExperimentalLinkTo}
             onSelect={props.onNonExperimentalLinkClick}
             disabled={props.isNonExperimentalLinkDisabled}
+            variant="secondary"
+            outline={true}
+            size="sm"
+            as={ButtonLink}
         >
             {props.button}
-        </ButtonLink>
+        </Button>
     )
 }
 

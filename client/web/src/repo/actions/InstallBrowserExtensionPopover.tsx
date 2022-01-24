@@ -7,6 +7,7 @@ import { Popover } from 'reactstrap'
 
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../auth/icons'
 
@@ -85,32 +86,40 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                         </div>
 
                         <div className="d-flex justify-content-end">
-                            <ButtonLink
-                                className="btn btn-outline-secondary mr-2"
+                            <Button
+                                className="mr-2"
                                 onSelect={onReject}
                                 to={url}
                                 {...linkProps}
+                                variant="secondary"
+                                outline={true}
+                                as={ButtonLink}
                             >
                                 No, thanks
-                            </ButtonLink>
+                            </Button>
 
-                            <ButtonLink
-                                className="btn btn-outline-secondary mr-2"
+                            <Button
+                                className="mr-2"
                                 onSelect={onClose}
                                 to={url}
                                 {...linkProps}
+                                variant="secondary"
+                                outline={true}
+                                as={ButtonLink}
                             >
                                 Remind me later
-                            </ButtonLink>
+                            </Button>
 
-                            <ButtonLink
-                                className="btn btn-primary mr-2"
+                            <Button
+                                className="mr-2"
                                 onSelect={onInstall}
                                 to="/help/integration/browser_extension"
                                 {...linkProps}
+                                variant="primary"
+                                as={ButtonLink}
                             >
                                 Install browser extension
-                            </ButtonLink>
+                            </Button>
                         </div>
                     </div>
                 </FocusLock>
