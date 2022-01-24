@@ -3,6 +3,7 @@ import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-r
 import { Observable } from 'rxjs'
 
 import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
+import { HoveredToken } from '@sourcegraph/codeintellify'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -19,7 +20,13 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import {
+    FileSpec,
+    parseQueryAndHash,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+} from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
@@ -103,7 +110,6 @@ export interface LayoutProps
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
 
-    onWebHoverOverlayClick: () => void
     authenticatedUser: AuthenticatedUser | null
 
     /**
@@ -190,7 +196,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     //     setTosAccepted(true)
     // }, [])
 
-    const [overlayClickUrl, onWebHoverOverlayClick] = useState('')
+    const [hoveredToken, onHoverToken] = useState<
+        HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+    >()
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -211,6 +219,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform: isMacPlatform(),
+        onHoverToken,
     }
 
     return (
@@ -290,7 +299,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
-            <GlobalCodeIntel {...props} onWebHoverOverlayClick={onWebHoverOverlayClick} />
+            <GlobalCodeIntel {...props} hoveredToken={hoveredToken} />
         </div>
     )
 }

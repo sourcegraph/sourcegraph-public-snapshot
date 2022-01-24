@@ -94,6 +94,7 @@ interface BlobProps
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
     blobInfo: BlobInfo
+    onHoverToken: (hoveredToken: HoveredToken) => void
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -611,6 +612,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         {...props}
                         {...hoverState.hoverOverlayProps}
                         nav={url => props.history.push(url)}
+                        onHoverToken={props.onHoverToken}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
                         extensionsController={extensionsController}
