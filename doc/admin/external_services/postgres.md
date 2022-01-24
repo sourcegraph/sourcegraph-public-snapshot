@@ -136,3 +136,97 @@ Please refer to our [Postgres](https://docs.sourcegraph.com/admin/postgres) docu
 Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc). See http://www.postgresql.org/docs/current/static/libpq-envars.html for a full list.
 
 > NOTE: On Mac/Windows, if trying to connect to a PostgreSQL server on the same host machine, remember that Sourcegraph is running inside a Docker container inside of the Docker virtual machine. You may need to specify your actual machine IP address and not `localhost` or `127.0.0.1` as that refers to the Docker VM itself.
+
+
+## Postgres Permissions
+
+By default, the migrations ran by Sourcegraph expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles.
+
+This may not be acceptable in all environments. At minimum we expect that the `PGUSER`
+and `CODEINTEL_PGUSER` have the `ALL` permissions on `PGDATABASE` and `CODEINTEL_PGDATABASE` respectively.
+
+<!--
+When https://github.com/sourcegraph/deploy-sourcegraph/pull/4058 is merged, 
+we will want to make sure these instructions are updated to reflect any additional
+actions necessary to accomodate the migrator.
+-->
+
+----
+
+### Workaround for pgsql (sourcegraph)
+
+Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
+
+```sql
+# Create the application database
+CREATE DATABASE $PGDATABASE;
+
+# Create the application service user
+CREATE USER $PGUSER with encrypted password '$PGPASSWORD';
+
+# Give the application service permissions to the application database
+GRANT ALL PRIVILEGES ON DATABASE $PGDATABASE to $PGUSER;
+
+# Let the application service user own the application database
+ALTER DATABASE $PGDATABASE OWNER TO $PGUSER;
+
+# Select the application database
+\c $PGDATABASE;
+
+# Install necessary extensions
+CREATE extension citext; 
+CREATE extension hstore; 
+CREATE extension pg_stat_statements;
+CREATE extension pg_trgm;
+CREATE extension pgcrypto; 
+CREATE extension intarray;
+```
+
+After the database is configured, Sourcegraph will attempt to run migrations. There are a few a migrations that may fail as they attempt to run actions that require `SUPERUSER` permissions. 
+
+These failures must be intepreted by the database administrator and resolved using guidance from [How to Troubleshoot a Dirty Database](https://docs.sourcegraph.com/admin/how-to/dirty_database). Generally-speaking this will involve looking up the migration source code and manually applying the necessary SQL code.
+
+**Initial Schema Creation**
+
+The first migration fails since it attempts to add `COMMENT`s to installed extensions. You may see the following error message:
+
+```
+failed to run migration for schema "frontend": failed upgrade migration 1528395834: ERROR: current transaction is aborted, commands ignored until end of transaction block (SQLSTATE 25P02)
+```
+
+In this case, locate the UP [migration 1528395834](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/frontend/1528395834_squashed_migrations.up.sql) and apply all SQL after the final `COMMENT ON EXTENSION` command following the [dirty database procedure](https://docs.sourcegraph.com/admin/how-to/dirty_database)
+
+**Dropping the `sg_service` role**
+
+The `sg_service` database role is a legacy role that should be removed from all Sourcegraph installations at this time. Migration `remove_sg_service_role` attempts to enforce this with a `DROP ROLE` command. The `PGUSER` does not have permissions to perform this action, therefore the migration fails. You can safely skip this migration.
+
+----
+
+### Workaround for CodeIntel DB
+
+CodeIntel requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
+
+```sql
+# Create the CodeIntel database
+CREATE DATABASE $PGDATABASE;
+
+# Create the CodeIntel service user
+CREATE USER $PGUSER with encrypted password '$PGPASSWORD';
+
+# Give the CodeIntel  permissions to the application database
+GRANT ALL PRIVILEGES ON DATABASE $PGDATABASE to $PGUSER;
+
+# Let the CodeIntel user own the application database
+ALTER DATABASE $PGDATABASE OWNER TO $PGUSER;
+
+# Select the application database
+\c $PGDATABASE;
+
+# Install necessary extensions
+CREATE extension citext; 
+CREATE extension hstore; 
+CREATE extension pg_stat_statements;
+CREATE extension pg_trgm;
+CREATE extension pgcrypto; 
+CREATE extension intarray;
+```
