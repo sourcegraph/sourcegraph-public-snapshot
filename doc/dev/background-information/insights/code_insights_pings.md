@@ -97,7 +97,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 **Intended purpose:** To track how many insights are visible by more than just the creator of the insight. 
 
-**Functional implementation:** we gather this on the backend from TODO what table maybe?
+**Functional implementation:** we gather this on the backend by joining the `insight_view` and `insight_view_grants` tables and counting the insights with org level grants. 
 
 **Other considerations:** N/A
 
@@ -129,7 +129,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 **Other considerations:** N/A
 
 - Aggregation: total 
-- Event Code: [GetTimeStepCount](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+GetTimeStepCounts&patternType=literal)
+- Event Code: [InsightTimeIntervals](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+InsightTimeIntervals&patternType=literal)
 - **Version added:** 3.29
 - **Version(s) broken:** 3.31-3.35.0 [fix PR](https://github.com/sourcegraph/sourcegraph/pull/28425)
 
