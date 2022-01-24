@@ -13,6 +13,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
+import { CatalogProps } from '../../catalog'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -75,6 +76,7 @@ interface UserAreaProps
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
+        Pick<CatalogProps, 'catalogEnabled'>,
         UserExternalServicesOrRepositoriesUpdateProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
@@ -104,6 +106,7 @@ export interface UserAreaRouteContext
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
+        Pick<CatalogProps, 'catalogEnabled'>,
         UserExternalServicesOrRepositoriesUpdateProps {
     /** The user area main URL. */
     url: string

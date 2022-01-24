@@ -4,6 +4,7 @@ import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
+import { CatalogProps } from '../../catalog'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
 
@@ -15,7 +16,10 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     className?: string
 }
 
-export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
+export interface OrgAreaHeaderContext
+    extends BatchChangesProps,
+        Pick<CatalogProps, 'catalogEnabled'>,
+        Pick<Props, 'org'> {
     isSourcegraphDotCom: boolean
 }
 
@@ -28,6 +32,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
     batchChangesEnabled,
     batchChangesExecutionEnabled,
     batchChangesWebhookLogsEnabled,
+    catalogEnabled,
     org,
     navItems,
     match,
@@ -65,6 +70,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                         batchChangesEnabled,
                                         batchChangesExecutionEnabled,
                                         batchChangesWebhookLogsEnabled,
+                                        catalogEnabled,
                                         org,
                                         isSourcegraphDotCom,
                                     }) && (

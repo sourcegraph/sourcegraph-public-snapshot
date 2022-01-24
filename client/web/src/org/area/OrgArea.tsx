@@ -18,6 +18,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
+import { CatalogProps } from '../../catalog'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -90,7 +91,8 @@ interface Props
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionsControllerProps,
-        BatchChangesProps {
+        BatchChangesProps,
+        Pick<CatalogProps, 'catalogEnabled'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
@@ -120,7 +122,8 @@ export interface OrgAreaPageProps
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps {
+        BatchChangesProps,
+        Pick<CatalogProps, 'catalogEnabled'> {
     /** The org that is the subject of the page. */
     org: OrgAreaOrganizationFields
 
@@ -237,6 +240,7 @@ export class OrgArea extends React.Component<Props> {
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
+            catalogEnabled: this.props.catalogEnabled,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

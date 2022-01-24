@@ -11,6 +11,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
+import { CatalogProps } from '../catalog'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 
@@ -35,7 +36,8 @@ interface Props
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps {
+        BatchChangesProps,
+        Pick<CatalogProps, 'catalogEnabled'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
