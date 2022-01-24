@@ -1,4 +1,4 @@
-import { createPoint, Point } from '../models/geometry/point';
+import { createPoint, Point } from '../models/geometry/point'
 import { createRectangle, createRectangleFromPoints, EMPTY_RECTANGLE, Rectangle } from '../models/geometry/rectangle'
 import { Constraint, Flipping, Overlapping, Position, Strategy } from '../models/tether-models'
 
@@ -18,7 +18,7 @@ export function getLayout(tether: Tether): TetherLayout {
         constraintPadding = EMPTY_RECTANGLE,
         overflowToScrollParents = true,
         strategy = Strategy.Fixed,
-        constrainToScrollParents
+        constrainToScrollParents,
     } = tether
 
     const target = tether.pin
@@ -34,27 +34,25 @@ export function getLayout(tether: Tether): TetherLayout {
     const overflows: Constraint[] = []
     const constraints: Constraint[] = []
 
-    if (strategy === Strategy.Fixed) {
-        overflows.push({
-            element: createRectangle(
-                document.documentElement.clientLeft,
-                document.documentElement.clientTop,
-                document.documentElement.clientWidth,
-                document.documentElement.clientHeight
-            ),
-            padding: windowPadding,
-        })
+    overflows.push({
+        element: createRectangle(
+            document.documentElement.clientLeft,
+            document.documentElement.clientTop,
+            document.documentElement.clientWidth,
+            document.documentElement.clientHeight
+        ),
+        padding: windowPadding,
+    })
 
-        constraints.push({
-            element: createRectangle(
-                document.documentElement.clientLeft,
-                document.documentElement.clientTop,
-                document.documentElement.clientWidth,
-                document.documentElement.clientHeight
-            ),
-            padding: windowPadding,
-        })
-    }
+    constraints.push({
+        element: createRectangle(
+            document.documentElement.clientLeft,
+            document.documentElement.clientTop,
+            document.documentElement.clientWidth,
+            document.documentElement.clientHeight
+        ),
+        padding: windowPadding,
+    })
 
     if (tether.constraint) {
         constraints.push({

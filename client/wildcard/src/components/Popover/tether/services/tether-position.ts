@@ -15,6 +15,7 @@ import {
     getTargetElement,
     isElementVisible,
 } from './geometry'
+import { getExtendedConstraint } from './geometry/actions/get-extended-constraint'
 import { TetherLayout } from './types'
 
 export interface TetherState {
@@ -49,12 +50,10 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
     const { markerAngle, markerOrigin, rotatedMarker } = getMarkerRotation(marker, position)
 
     // Apply overflow constraints to target element
-    const overflowedTarget = strategy === Strategy.Fixed
-        ? getIntersection(target, overflow)
-        : target
+    const overflowedTarget = strategy === Strategy.Fixed ? getIntersection(target, overflow) : target
 
     // Force tooltip layout hide in case if target is outside of overflow constraint.
-    if (!isElementVisible(overflowedTarget) ) {
+    if (!isElementVisible(overflowedTarget)) {
         return null
     }
 
@@ -64,8 +63,11 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
     // Change element tooltip coordinates to put this element right next extended target element
     const joinedElement = getJoinedElement(element, extendedTarget, position)
 
+    const extendedConstraint =
+        strategy === Strategy.Absolute ? getExtendedConstraint(extendedTarget, constraint) : constraint
+
     // Calculate constraint rectangle by target position and default constraint
-    const elementConstraint = getElementConstraint(extendedTarget, constraint, position, overlapping)
+    const elementConstraint = getElementConstraint(extendedTarget, extendedConstraint, position, overlapping)
 
     // Change tooltip element rectangle by element constraint
     const constrainedElement = getConstrainedElement(joinedElement, elementConstraint)
@@ -86,8 +88,8 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
     const markerOffset = getMarkerOffset(markerOrigin, constrainedMarker)
 
     // Check visibility and join geometry
-    const isTooltipVisible = strategy === Strategy.Fixed ? isElementVisible(constrainedElement) : true
-    const isTooltipJoined = strategy === Strategy.Fixed ? intersects(extendedTarget, constrainedElement) : true
+    const isTooltipVisible = isElementVisible(constrainedElement)
+    const isTooltipJoined = intersects(extendedTarget, constrainedElement)
     const isMarkerJoined = intersects(extendedTarget, constrainedMarker)
 
     if (!isTooltipVisible || (!isTooltipJoined && !isMarkerJoined)) {

@@ -83,10 +83,7 @@ export function getAbsoluteAnchorOffset(element: HTMLElement): Point {
         if (styles.position !== 'static') {
             const rectangle = current.getBoundingClientRect()
 
-            return createPoint(
-                current.scrollLeft - rectangle.left ,
-                current.scrollTop - rectangle.top,
-            )
+            return createPoint(current.scrollLeft - rectangle.left, current.scrollTop - rectangle.top)
         }
 
         current = current.parentElement

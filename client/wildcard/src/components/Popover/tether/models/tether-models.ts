@@ -77,5 +77,5 @@ export enum Position {
 
 export enum Strategy {
     Fixed = 'fixed',
-    Absolute = 'absolute'
+    Absolute = 'absolute',
 }
