@@ -8,6 +8,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Link } from '@sourcegraph/wildcard'
 
+import { Button } from '../Button'
 import { FeedbackBadge } from '../Feedback'
 
 import { PageHeader } from './PageHeader'
@@ -57,12 +58,12 @@ export const ComplexHeader: Story = () => (
         description="Enter the description for your section here. This is useful on list and create pages."
         actions={
             <div className="d-flex">
-                <Link to="/page" className="btn btn-secondary mr-2">
+                <Button as={Link} to="/page" variant="primary" className="mr-2">
                     Secondary
-                </Link>
-                <Link to="/page" className="btn btn-primary text-nowrap">
+                </Button>
+                <Button as={Link} to="/page" variant="primary" className="text-nowrap">
                     <PlusIcon className="icon-inline" /> Create
-                </Link>
+                </Button>
             </div>
         }
     />

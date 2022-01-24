@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
@@ -30,7 +29,8 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
     return (
         <Button
             onClick={onClick}
-            className={classNames('text-left sidebar__link--inactive d-flex w-100', active && 'btn-primary')}
+            className="text-left sidebar__link--inactive d-flex w-100"
+            variant={active ? 'primary' : undefined}
         >
             {sample.name}
         </Button>

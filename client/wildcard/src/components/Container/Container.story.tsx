@@ -4,6 +4,7 @@ import React from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Button } from '../Button'
 import { Container } from './Container'
 
 const decorator: DecoratorFn = story => (
@@ -54,12 +55,10 @@ export const Overview: Story = () => (
             </div>
         </Container>
         <div className="mb-3">
-            <button type="button" className="btn btn-primary mr-2">
+            <Button variant="primary" className="mr-2">
                 Save
-            </button>
-            <button type="button" className="btn btn-secondary">
-                Cancel
-            </button>
+            </Button>
+            <Button variant="secondary">Cancel</Button>
         </div>
         <hr />
         <h1>Example 2</h1>

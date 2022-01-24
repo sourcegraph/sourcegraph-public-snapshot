@@ -76,7 +76,8 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 action={
                     <>
                         <Button
-                            className={classNames(styles.btn, this.props.buttonClassName || 'btn-primary')}
+                            className={classNames(styles.btn, this.props.buttonClassName)}
+                            variant={this.props.buttonClassName ? undefined : 'primary'}
                             onClick={this.onClick}
                             data-tooltip={this.props.buttonSubtitle}
                             disabled={this.props.buttonDisabled || this.state.loading}

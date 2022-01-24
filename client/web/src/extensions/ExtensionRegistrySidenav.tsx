@@ -56,10 +56,8 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                 <SidebarGroupHeader label="Categories" />
                 {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
                     <Button
-                        className={classNames(
-                            'text-left sidebar__link--inactive d-flex w-100',
-                            selectedCategory === category && 'btn-primary'
-                        )}
+                        className="text-left sidebar__link--inactive d-flex w-100"
+                        variant={selectedCategory === category ? 'primary' : undefined}
                         data-test-extension-category={category}
                         key={category}
                         onClick={() => onSelectCategory(category)}

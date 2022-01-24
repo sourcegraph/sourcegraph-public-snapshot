@@ -142,7 +142,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                             <Button
                                 type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
                                 disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                className={viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'}
+                                variant={viewerCanAddUserToOrganization ? 'secondary' : 'primary'}
                                 data-tooltip={
                                     emailInvitesEnabled
                                         ? 'Send invitation email with link to join this organization'
