@@ -182,6 +182,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
                         extensionsController={props.extensionsController}
                         hoverifier={hoverifier}
                         openMatchesInNewTab={true}
+                        executedQuery={location.search}
                     />
                 </div>
             )}

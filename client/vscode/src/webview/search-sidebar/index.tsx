@@ -38,6 +38,7 @@ setLinkComponent(AnchorLink)
 const themes = adaptToEditorTheme()
 
 const Main: React.FC = () => {
+    // TODO: make sure we only rerender on necessary changes
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
 
     const authenticatedUser = useObservable(
@@ -48,10 +49,18 @@ const Main: React.FC = () => {
 
     const theme = useObservable(themes)
 
+    const settingsCascade = useObservable(
+        useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeSourcegraphSettings()), [])
+    )
+    // Do not block rendering on settings unless we observe UI jitter
+
     // If any of the remote values have yet to load.
     const initialized =
-        state !== undefined && authenticatedUser !== undefined && instanceURL !== undefined && theme !== undefined
-
+        state !== undefined &&
+        authenticatedUser !== undefined &&
+        instanceURL !== undefined &&
+        theme !== undefined &&
+        settingsCascade !== undefined
     if (!initialized) {
         return <LoadingSpinner />
     }
@@ -60,6 +69,8 @@ const Main: React.FC = () => {
         extensionCoreAPI,
         platformContext,
         theme,
+        authenticatedUser,
+        settingsCascade,
         instanceURL,
     }
 
@@ -92,4 +103,10 @@ const Main: React.FC = () => {
     )
 }
 
-render(<Main />, document.querySelector('#root'))
+render(
+    // TODO zustand context (search query state)
+    <WildcardThemeContext.Provider value={{ isBranded: true }}>
+        <Main />
+    </WildcardThemeContext.Provider>,
+    document.querySelector('#root')
+)

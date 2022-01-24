@@ -4,7 +4,9 @@ import { BehaviorSubject, from, Observable } from 'rxjs'
 
 import { GraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ExtensionCoreAPI } from '../../contract'
@@ -64,5 +66,7 @@ export interface WebviewPageProps {
     extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI>
     platformContext: VSCodePlatformContext
     theme: 'theme-dark' | 'theme-light'
+    authenticatedUser: AuthenticatedUser | null
+    settingsCascade: SettingsCascadeOrError
     instanceURL: string
 }
