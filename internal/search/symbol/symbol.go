@@ -417,12 +417,14 @@ type RepoSubsetSymbolSearch struct {
 	UseIndex          query.YesNoOnly
 	ContainsRefGlobs  bool
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+	RepoOpts          search.RepoOptions
 }
 
-func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
+func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, s.Limit)
 	defer cancel()
 
+	repos := searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
 		if err != nil {
@@ -451,10 +453,9 @@ type RepoUniverseSymbolSearch struct {
 	Limit            int
 
 	RepoOptions search.RepoOptions
-	Db          database.DB
 }
 
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sender, _ searchrepos.Pager) error {
+func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
 	defer cleanup()
 
@@ -466,7 +467,7 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sen
 		}
 	}
 
-	userPrivateRepos := repos.PrivateReposForUser(ctx, s.Db, userID, s.RepoOptions)
+	userPrivateRepos := repos.PrivateReposForUser(ctx, db, userID, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}

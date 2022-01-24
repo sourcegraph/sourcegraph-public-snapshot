@@ -6,15 +6,16 @@ import (
 
 	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -23,7 +24,7 @@ type RepoSearch struct {
 	Limit int
 }
 
-func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) (err error) {
+func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
 	tr, ctx := trace.New(ctx, "RepoSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -34,12 +35,11 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 		otlog.String("pattern", s.Args.PatternInfo.Pattern),
 		otlog.Int("limit", s.Limit))
 
-	opts := s.Args.RepoOptions // copy
-
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
 	defer cleanup()
 
-	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+	repos := &searchrepos.Resolver{DB: db, Opts: s.Args.RepoOptions}
+	err = repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 
 		// Filter the repos if there is a repohasfile: or -repohasfile field.

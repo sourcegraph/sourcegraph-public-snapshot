@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -36,7 +36,7 @@ func (r *JobWithOptional) Name() string {
 	return fmt.Sprintf("JobWithOptional{Required: %s, Optional: %s}", r.required.Name(), r.optional.Name())
 }
 
-func (r *JobWithOptional) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
+func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -44,10 +44,10 @@ func (r *JobWithOptional) Run(ctx context.Context, s streaming.Sender, pager sea
 
 	var optionalGroup, requiredGroup multierror.Group
 	requiredGroup.Go(func() error {
-		return r.required.Run(ctx, s, pager)
+		return r.required.Run(ctx, db, s)
 	})
 	optionalGroup.Go(func() error {
-		return r.optional.Run(ctx, s, pager)
+		return r.optional.Run(ctx, db, s)
 	})
 
 	var errs *multierror.Error
@@ -91,18 +91,46 @@ func (p ParallelJob) Name() string {
 	return fmt.Sprintf("ParallelJob{%s}", strings.Join(childNames, ", "))
 }
 
-func (p ParallelJob) Run(ctx context.Context, s streaming.Sender, pager searchrepos.Pager) error {
+func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
 	var g multierror.Group
 	for _, job := range p {
 		job := job
 		g.Go(func() error {
-			return job.Run(ctx, s, pager)
+			return job.Run(ctx, db, s)
 		})
 	}
 	return g.Wait().ErrorOrNil()
 }
 
+// NewTimeoutJob creates a new job that is canceled after the
+// timeout is hit. The timer starts with `Run()` is called.
+func NewTimeoutJob(timeout time.Duration, child Job) Job {
+	if _, ok := child.(*emptyJob); ok {
+		return child
+	}
+	return &TimeoutJob{
+		timeout: timeout,
+		child:   child,
+	}
+}
+
+type TimeoutJob struct {
+	child   Job
+	timeout time.Duration
+}
+
+func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+	ctx, cancel := context.WithTimeout(ctx, t.timeout)
+	defer cancel()
+
+	return t.child.Run(ctx, db, s)
+}
+
+func (t *TimeoutJob) Name() string {
+	return fmt.Sprintf("TimeoutJob{%s}", t.child.Name())
+}
+
 type emptyJob struct{}
 
-func (e *emptyJob) Run(context.Context, streaming.Sender, searchrepos.Pager) error { return nil }
-func (e *emptyJob) Name() string                                                   { return "EmptyJob" }
+func (e *emptyJob) Run(context.Context, database.DB, streaming.Sender) error { return nil }
+func (e *emptyJob) Name() string                                             { return "EmptyJob" }
