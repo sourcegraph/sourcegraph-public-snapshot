@@ -32,10 +32,10 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       </button>
     </div>
     <div
-      class="mt-3"
+      class="card mt-3"
     >
       <div
-        class="cardHeader"
+        class="card-header"
       >
         Details
       </div>
@@ -150,10 +150,10 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       </table>
     </div>
     <div
-      class="mt-1"
+      class="card mt-1"
     >
       <div
-        class="cardHeader d-flex align-items-center justify-content-between"
+        class="card-header d-flex align-items-center justify-content-between"
       >
         Licenses
         <button
@@ -265,15 +265,15 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       </div>
     </div>
     <div
-      class="mt-3"
+      class="card mt-3"
     >
       <div
-        class="cardHeader"
+        class="card-header"
       >
         History
       </div>
       <div
-        class="cardBody"
+        class="card-body"
       >
         <span
           class="text-muted"

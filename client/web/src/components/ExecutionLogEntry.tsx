@@ -3,7 +3,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { LoadingSpinner, CardBody, Card } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'
 import { LogOutput } from './LogOutput'
@@ -22,8 +22,8 @@ interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
 }
 
 export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> = ({ logEntry, children, now }) => (
-    <Card className="mb-3">
-        <CardBody>
+    <div className="card mb-3">
+        <div className="card-body">
             {logEntry.command.length > 0 ? (
                 <LogOutput text={logEntry.command.join(' ')} className="mb-3" />
             ) : (
@@ -53,7 +53,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                 )}
             </div>
             {children}
-        </CardBody>
+        </div>
 
         <div className="p-2">
             {logEntry.out ? (
@@ -66,7 +66,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                 </div>
             )}
         </div>
-    </Card>
+    </div>
 )
 
 const timeOrders: [number, string][] = [

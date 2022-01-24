@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { useEffect } from 'react'
 
-import { PageHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CtaBanner } from '../../../components/CtaBanner'
@@ -34,8 +34,8 @@ export const DotcomGettingStartedPage: React.FunctionComponent<DotcomGettingStar
 
 const DotcomGettingStartedPageFooter: React.FunctionComponent<{}> = () => (
     <div className="d-flex justify-content-between">
-        <Card className={classNames(styles.requirementsCard, 'mr-3')}>
-            <CardBody>
+        <div className={classNames(styles.requirementsCard, 'card mr-3')}>
+            <div className="card-body p-3">
                 <p>
                     <strong>Batch Changes requirements</strong>
                 </p>
@@ -44,8 +44,8 @@ const DotcomGettingStartedPageFooter: React.FunctionComponent<{}> = () => (
                     <li>Unlicensed users can create 5 changesets per batch change</li>
                     <li>Enterprise plan (or trial) allows unlimited use </li>
                 </ul>
-            </CardBody>
-        </Card>
+            </div>
+        </div>
         <CtaBanner
             bodyText="Batch Changes requires a local Sourcegraph installation. You can check it out for free by installing with a single line of code."
             title="Install locally to get started"

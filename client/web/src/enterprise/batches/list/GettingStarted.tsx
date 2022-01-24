@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Container, CardBody, Card } from '@sourcegraph/wildcard'
+import { Container } from '@sourcegraph/wildcard'
 
 import styles from './GettingStarted.module.scss'
 
@@ -56,8 +56,8 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
         <h3 className="mb-3">Tutorials to help with your first batch change</h3>
         <div className="row">
             <div className="col-12 col-md-6 mb-2">
-                <Card className="h-100">
-                    <CardBody className="d-flex">
+                <div className="card h-100 p-2">
+                    <div className="card-body d-flex">
                         <FindReplaceIcon className="mr-3" />
                         <div>
                             <h4>
@@ -73,12 +73,12 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                                 to manage a large scale change.
                             </p>
                         </div>
-                    </CardBody>
-                </Card>
+                    </div>
+                </div>
             </div>
             <div className="col-12 col-md-6 mb-3">
-                <Card className="h-100">
-                    <CardBody className="d-flex">
+                <div className="card h-100 p-2">
+                    <div className="card-body d-flex">
                         <RefactorCombyIcon className="mr-3" />
                         <div>
                             <h4>
@@ -98,8 +98,8 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                                 but clearer execution.
                             </p>
                         </div>
-                    </CardBody>
-                </Card>
+                    </div>
+                </div>
             </div>
             <div className="col-12 mb-4 text-right">
                 <p>
@@ -151,8 +151,8 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                 </p>
             </div>
             <div className="col-12 col-md-4">
-                <Card className={styles.overviewCard}>
-                    <CardBody>
+                <div className={classNames(styles.overviewCard, 'card')}>
+                    <div className="card-body p-3">
                         <p>
                             <strong>Overview</strong>
                         </p>
@@ -163,8 +163,8 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                         <a href="https://about.sourcegraph.com/batch-changes" rel="noopener">
                             Batch Changes marketing page
                         </a>
-                    </CardBody>
-                </Card>
+                    </div>
+                </div>
             </div>
         </div>
         <h2>Batch changes demo</h2>
