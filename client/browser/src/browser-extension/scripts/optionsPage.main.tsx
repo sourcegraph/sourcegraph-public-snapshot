@@ -105,7 +105,7 @@ const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
     )
 
 const observingIsActivated = observeStorageKey('sync', 'disableExtension').pipe(map(isDisabled => !isDisabled))
-const observingPreviouslyUsedUrls = observeStorageKey('sync', 'previouslyUsedURLs')
+const observingPreviouslyUsedUrls = observeStorageKey('sync', 'previouslyUsedURLs').pipe(distinctUntilChanged())
 const observingSourcegraphUrl = observeSourcegraphURL(true).pipe(distinctUntilChanged())
 const observingOptionFlagsWithValues = observeOptionFlagsWithValues(IS_EXTENSION)
 const observingSendTelemetry = observeSendTelemetry(IS_EXTENSION)
@@ -183,7 +183,12 @@ const Options: React.FunctionComponent = () => {
                 return
             }
             storage.sync
-                .set({ sourcegraphURL: url, previouslyUsedURLs: uniq([...(previouslyUsedUrls || []), url]) })
+                .set({
+                    sourcegraphURL: url,
+                    previouslyUsedURLs: uniq([...(previouslyUsedUrls || []), url, sourcegraphUrl]).filter(
+                        value => !!value
+                    ) as string[],
+                })
                 .catch(console.error)
         },
         [previouslyUsedUrls, sourcegraphUrl]
