@@ -754,15 +754,6 @@ func TestMessage(t *testing.T) {
 }
 
 func TestParseCommitsUniqueToBranch(t *testing.T) {
-	mustParseDate := func(s string) time.Time {
-		date, err := time.Parse(time.RFC3339, s)
-		if err != nil {
-			t.Fatalf("unexpected error parsing date string: %s", err)
-		}
-
-		return date
-	}
-
 	commits, err := parseCommitsUniqueToBranch([]string{
 		"c165bfff52e9d4f87891bba497e3b70fea144d89:2020-08-04T08:23:30-05:00",
 		"f73ee8ed601efea74f3b734eeb073307e1615606:2020-04-16T16:06:21-04:00",
@@ -777,13 +768,13 @@ func TestParseCommitsUniqueToBranch(t *testing.T) {
 	}
 
 	expectedCommits := map[string]time.Time{
-		"c165bfff52e9d4f87891bba497e3b70fea144d89": mustParseDate("2020-08-04T08:23:30-05:00"),
-		"f73ee8ed601efea74f3b734eeb073307e1615606": mustParseDate("2020-04-16T16:06:21-04:00"),
-		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": mustParseDate("2020-04-16T16:20:26-04:00"),
-		"7886287b8758d1baf19cf7b8253856128369a2a7": mustParseDate("2020-04-16T16:55:58-04:00"),
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": mustParseDate("2020-04-20T12:10:49-04:00"),
-		"172b7fcf8b8c49b37b231693433586c2bfd1619e": mustParseDate("2020-04-20T12:37:36-04:00"),
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": mustParseDate("2020-05-05T12:53:18-05:00"),
+		"c165bfff52e9d4f87891bba497e3b70fea144d89": mustParseDate("2020-08-04T08:23:30-05:00", t),
+		"f73ee8ed601efea74f3b734eeb073307e1615606": mustParseDate("2020-04-16T16:06:21-04:00", t),
+		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": mustParseDate("2020-04-16T16:20:26-04:00", t),
+		"7886287b8758d1baf19cf7b8253856128369a2a7": mustParseDate("2020-04-16T16:55:58-04:00", t),
+		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": mustParseDate("2020-04-20T12:10:49-04:00", t),
+		"172b7fcf8b8c49b37b231693433586c2bfd1619e": mustParseDate("2020-04-20T12:37:36-04:00", t),
+		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": mustParseDate("2020-05-05T12:53:18-05:00", t),
 	}
 	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
 		t.Errorf("unexpected commits (-want +got):\n%s", diff)
@@ -897,21 +888,12 @@ func TestParseRefDescriptions(t *testing.T) {
 		t.Fatalf("unexpected error parsing ref descriptions: %s", err)
 	}
 
-	mustParseDate := func(s string) time.Time {
-		date, err := time.Parse(time.RFC3339, s)
-		if err != nil {
-			t.Fatalf("unexpected error parsing date string: %s", err)
-		}
-
-		return date
-	}
-
 	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate)}
+		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
 	}
 
 	makeTag := func(name, createdDate string) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate)}
+		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate, t)}
 	}
 
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
@@ -988,17 +970,8 @@ func TestRefDescriptions(t *testing.T) {
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file", "file-with-no-access")...)
 	repo := MakeGitRepository(t, gitCommands...)
 
-	mustParseDate := func(s string) time.Time {
-		date, err := time.Parse(time.RFC3339, s)
-		if err != nil {
-			t.Fatalf("unexpected error parsing date string: %s", err)
-		}
-
-		return date
-	}
-
 	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate)}
+		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
 	}
 
 	t.Run("basic", func(t *testing.T) {
@@ -1027,6 +1000,48 @@ func TestRefDescriptions(t *testing.T) {
 			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
 		}
 		if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
+			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestCommitsUniqueToBranch(t *testing.T) {
+	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := append([]string{"git checkout -b my-branch"}, getGitCommandsWithFiles("file1", "file2")...)
+	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
+	repo := MakeGitRepository(t, gitCommands...)
+
+	t.Run("basic", func(t *testing.T) {
+		commits, err := CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, nil)
+		if err != nil {
+			t.Errorf("err calling RefDescriptions: %s", err)
+		}
+		expectedCommits := map[string]time.Time{
+			"2775e60f523d3151a2a34ffdc659f500d0e73022": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"791ce7cd8ca2d855e12f47f8692a62bc42477edc": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": mustParseDate("2006-01-02T15:04:05-00:00", t),
+		}
+		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
+			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("with sub-repo enabled", func(t *testing.T) {
+		checker := getTestSubRepoPermsChecker("file-with-no-access")
+		commits, err := CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, checker)
+		if err != nil {
+			t.Errorf("err calling RefDescriptions: %s", err)
+		}
+		expectedCommits := map[string]time.Time{
+			"2775e60f523d3151a2a34ffdc659f500d0e73022": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": mustParseDate("2006-01-02T15:04:05-00:00", t),
+		}
+		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
 			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
 		}
 	})
@@ -1132,4 +1147,13 @@ func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
 		fmt.Sprintf("git add %s", fileName2),
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
+}
+
+func mustParseDate(s string, t *testing.T) time.Time {
+	t.Helper()
+	date, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		t.Fatalf("unexpected error parsing date string: %s", err)
+	}
+	return date
 }

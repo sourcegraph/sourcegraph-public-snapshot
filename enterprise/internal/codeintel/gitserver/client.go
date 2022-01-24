@@ -181,7 +181,7 @@ func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, br
 		return nil, err
 	}
 
-	return git.CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge)
+	return git.CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge, authz.DefaultSubRepoPermsChecker)
 }
 
 // BranchesContaining returns a map from branch names to branch tip hashes for each branch

@@ -181,8 +181,7 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 // commits on {branchName} not also on the tip of the default branch. If the
 // supplied branch name is the default branch, then this method instead returns
 // all commits reachable from HEAD.
-// TODO: sub-repo filtering
-func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time, checker authz.SubRepoPermissionChecker) (_ map[string]time.Time, err error) {
 	args := []string{"log", "--pretty=format:%H:%cI"}
 	if maxAge != nil {
 		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
@@ -200,7 +199,21 @@ func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName st
 		return nil, err
 	}
 
-	return parseCommitsUniqueToBranch(strings.Split(string(out), "\n"))
+	commits, err := parseCommitsUniqueToBranch(strings.Split(string(out), "\n"))
+	if authz.SubRepoEnabled(checker) && err == nil {
+		return filterCommitsUniqueToBranch(ctx, repo, commits, checker), nil
+	}
+	return commits, err
+}
+
+func filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time, checker authz.SubRepoPermissionChecker) map[string]time.Time {
+	filtered := make(map[string]time.Time, len(commitsMap))
+	for commitID, timeStamp := range commitsMap {
+		if _, err := GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			filtered[commitID] = timeStamp
+		}
+	}
+	return filtered
 }
 
 func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
