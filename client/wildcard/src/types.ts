@@ -19,6 +19,9 @@ export interface ForwardReferenceComponent<
      * Merges original own props (without DOM props) and the inferred props
      * from `as` element with the own props taking precendence.
      *
+     * The exception is made for the `ref` prop that changes based on the `as` prop value.
+     * Inferred `ref` props overwrites the original `ref` type.
+     *
      * We explicitly avoid `React.ElementType` and manually narrow the prop types
      * so that events are typed when using JSX.IntrinsicElements.
      */
@@ -26,9 +29,9 @@ export interface ForwardReferenceComponent<
         props: As extends ''
             ? { as: keyof JSX.IntrinsicElements }
             : As extends React.ComponentType<infer P>
-            ? Merge<P, OwnProps & { as: As }>
+            ? Merge<P, Omit<OwnProps, 'ref'> & { as: As }>
             : As extends keyof JSX.IntrinsicElements
-            ? Merge<JSX.IntrinsicElements[As], OwnProps & { as: As }>
+            ? Merge<JSX.IntrinsicElements[As], Omit<OwnProps, 'ref'> & { as: As }>
             : never
     ): React.ReactElement | null
 }

@@ -299,14 +299,16 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
-                            <div
+                            <Button
+                                as="div"
+                                variant="link"
                                 className={classNames(
                                     'font-weight-bold',
-                                    !triggerCompleted && classNames(cardLinkClassName, 'btn-link')
+                                    !triggerCompleted && classNames(cardLinkClassName)
                                 )}
                             >
                                 When there are new search results
-                            </div>
+                            </Button>
                             {triggerCompleted ? (
                                 <code
                                     className={classNames('text-break text-muted', styles.queryLabel)}
@@ -320,7 +322,11 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 </span>
                             )}
                         </div>
-                        {triggerCompleted && <div className="btn-link">Edit</div>}
+                        {triggerCompleted && (
+                            <Button variant="link" as="div">
+                                Edit
+                            </Button>
+                        )}
                     </div>
                 </Button>
             )}

@@ -131,14 +131,13 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
-                            <div
-                                className={classNames(
-                                    'font-weight-bold',
-                                    !completed && classNames(styles.cardLink, 'btn-link')
-                                )}
+                            <Button
+                                as="div"
+                                variant="link"
+                                className={classNames('font-weight-bold', !completed && styles.cardLink)}
                             >
                                 {title}
-                            </div>
+                            </Button>
                             {completed ? (
                                 <span className="text-muted font-weight-normal" data-testid="existing-action-email">
                                     {completedSubtitle}
