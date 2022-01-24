@@ -9,18 +9,20 @@ import (
 
 // 🚨 SECURITY: Call sites should take care to provide this valid values and use the return
 // value appropriately to ensure org repo access are only provided to valid users.
-func canViewOrgRepos(org *github.OrgDetailsAndMembership) bool {
-	if org == nil {
+func canViewOrgRepos(odm *github.OrgDetailsAndMembership) bool {
+	if odm == nil {
 		return false
 	}
-	// If user is active org admin, they can see all org repos
-	if org.OrgMembership != nil && org.OrgMembership.State == "active" && org.OrgMembership.Role == "admin" {
+
+	// If user is active org admin, they can see all org repos.
+	if odm.IsAdmin() {
 		return true
 	}
+
 	// https://github.com/organizations/$ORG/settings/member_privileges -> "Base permissions"
-	return org.OrgDetails != nil && (org.DefaultRepositoryPermission == "read" ||
-		org.DefaultRepositoryPermission == "write" ||
-		org.DefaultRepositoryPermission == "admin")
+	return odm.OrgDetails != nil && (odm.DefaultRepositoryPermission == "read" ||
+		odm.DefaultRepositoryPermission == "write" ||
+		odm.DefaultRepositoryPermission == "admin")
 }
 
 // client defines the set of GitHub API client methods used by the authz provider.
