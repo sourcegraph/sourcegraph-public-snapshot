@@ -486,7 +486,8 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 			Committer: &gitdomain.Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
 			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[8]), "\n")),
 			Parents:   parents,
-		}, files: fileNames}
+		}, files: fileNames,
+	}
 
 	if len(parts) == partsPerCommit+1 {
 		rest = parts[partsPerCommit]
@@ -555,7 +556,7 @@ func parseBranchesContaining(lines []string) []string {
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
 func RefDescriptions(ctx context.Context, repo api.RepoName) (_ map[string][]gitdomain.RefDescription, err error) {
-	args := []string{"for-each-ref", "--format=%(objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)"}
+	args := []string{"for-each-ref", "--format=%(*objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)"}
 	for prefix := range refPrefixes {
 		args = append(args, prefix)
 	}
