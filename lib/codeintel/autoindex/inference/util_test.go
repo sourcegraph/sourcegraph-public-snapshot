@@ -53,3 +53,22 @@ func TestPathMapContains(t *testing.T) {
 		}
 	}
 }
+
+func TestPathMapInsert(t *testing.T) {
+	pathMap := newPathMap([]string{})
+
+	pathMap.insert("a/", "b.txt")
+	require.True(t, pathMap.contains("a/", "b.txt"))
+
+	pathMap.insert("c/", "b.txt")
+	require.True(t, pathMap.contains("a/", "b.txt"))
+	require.True(t, pathMap.contains("c", "b.txt"))
+
+	pathMap.insert("a/", "d.txt")
+	require.True(t, pathMap.contains("a/", "b.txt"))
+	require.True(t, pathMap.contains("a/", "d.txt"))
+	require.False(t, pathMap.contains("c", "d.txt"))
+
+	pathMap.insert("e/", "a")
+	require.False(t, pathMap.contains("e/a", "b.txt"))
+}

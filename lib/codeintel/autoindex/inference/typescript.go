@@ -29,19 +29,18 @@ var tscSegmentBlockList = append([]string{"node_modules"}, segmentBlockList...)
 func InferTypeScriptIndexJobs(gitclient GitClient, paths []string) (indexes []config.IndexJob) {
 	pathMap := newPathMap(paths)
 
-	tsConfigEntry, tsConfigPresent := pathMap["tsconfig.json"]
-	if !tsConfigPresent {
+	tsConfigPaths := pathMap.pathsFor("tsconfig.json")
+	if len(tsConfigPaths) == 0 {
 		return indexes
 	}
 
-	for _, tsConfigIndex := range tsConfigEntry.indexes {
-		path := paths[tsConfigIndex]
-		if !containsNoSegments(path, tscSegmentBlockList...) {
+	for _, tsConfigPath := range tsConfigPaths {
+		if !containsNoSegments(tsConfigPath, tscSegmentBlockList...) {
 			continue
 		}
-		isYarn := checkLernaFile(gitclient, path, pathMap)
+		isYarn := checkLernaFile(gitclient, tsConfigPath, pathMap)
 		var dockerSteps []config.DockerStep
-		for _, dir := range ancestorDirs(path) {
+		for _, dir := range ancestorDirs(tsConfigPath) {
 			if !pathMap.contains(dir, "package.json") {
 				continue
 			}
@@ -61,7 +60,7 @@ func InferTypeScriptIndexJobs(gitclient GitClient, paths []string) (indexes []co
 		}
 
 		var localSteps []string
-		if checkCanDeriveNodeVersion(gitclient, path, pathMap) {
+		if checkCanDeriveNodeVersion(gitclient, tsConfigPath, pathMap) {
 			for i, step := range dockerSteps {
 				step.Commands = append([]string{nMuslCommand}, step.Commands...)
 				dockerSteps[i] = step
@@ -78,7 +77,7 @@ func InferTypeScriptIndexJobs(gitclient GitClient, paths []string) (indexes []co
 		indexes = append(indexes, config.IndexJob{
 			Steps:       dockerSteps,
 			LocalSteps:  localSteps,
-			Root:        dirWithoutDot(path),
+			Root:        dirWithoutDot(tsConfigPath),
 			Indexer:     lsifTscImage,
 			IndexerArgs: []string{"lsif-tsc", "-p", "."},
 			Outfile:     "",
@@ -88,7 +87,7 @@ func InferTypeScriptIndexJobs(gitclient GitClient, paths []string) (indexes []co
 	return indexes
 }
 
-func checkLernaFile(gitclient GitClient, path string, pathMap pathMap) (isYarn bool) {
+func checkLernaFile(gitclient GitClient, path string, pathMap *pathMap) (isYarn bool) {
 	lernaConfig := struct {
 		NPMClient string `json:"npmClient"`
 	}{}
@@ -106,7 +105,7 @@ func checkLernaFile(gitclient GitClient, path string, pathMap pathMap) (isYarn b
 	return false
 }
 
-func checkCanDeriveNodeVersion(gitclient GitClient, path string, pathMap pathMap) bool {
+func checkCanDeriveNodeVersion(gitclient GitClient, path string, pathMap *pathMap) bool {
 	for _, dir := range ancestorDirs(path) {
 		packageJSONPath := filepath.Join(dir, "package.json")
 		if (pathMap.contains(dir, "package.json") && hasEnginesField(gitclient, packageJSONPath)) ||
