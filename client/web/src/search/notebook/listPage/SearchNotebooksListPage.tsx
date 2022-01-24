@@ -227,7 +227,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                 )}
                 {(selectedTab === 'my' || selectedTab === 'starred') && !authenticatedUser && (
                     <UnauthenticatedNotebooksSection
-                        cta={selectedTab === 'my' ? 'Sign up to create notebooks' : 'Sign up to star notebooks'}
+                        cta={selectedTab === 'my' ? 'Get started creating notebooks' : 'Get started starring notebooks'}
                         telemetryService={telemetryService}
                         onSelectExploreNotebooks={() =>
                             onSelectTab('explore', 'SearchNotebooksExploreNotebooksTabClick')
@@ -258,7 +258,7 @@ const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMy
         <div className="d-flex justify-content-center align-items-center flex-column p-3">
             <Link
                 onClick={onClick}
-                to={`/sign-up?returnTo=${encodeURIComponent('/notebooks')}`}
+                to={`https://about.sourcegraph.com/get-started?returnTo=${encodeURIComponent('/notebooks')}`}
                 className="btn btn-primary"
             >
                 {cta}
