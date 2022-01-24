@@ -919,6 +919,11 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 		}
 	}
 
+	addJob(true, &searchrepos.ComputeExcludedRepos{
+		DB:      r.db,
+		Options: repoOptions,
+	})
+
 	return &run.Routine{
 		Job: run.NewJobWithOptional(
 			run.NewParallelJob(requiredJobs...),
@@ -1814,31 +1819,6 @@ func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (r
 	}
 
 	agg := run.NewAggregator(stream)
-
-	repoOptionsCopy := routine.RepoOptions
-	var wg sync.WaitGroup
-	{
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-
-			repositoryResolver := searchrepos.Resolver{DB: r.db}
-			excluded, err := repositoryResolver.Excluded(ctx, repoOptionsCopy)
-			if err != nil {
-				agg.Error(err)
-				return
-			}
-
-			agg.Send(streaming.SearchEvent{
-				Stats: streaming.Stats{
-					ExcludedArchived: excluded.Archived,
-					ExcludedForks:    excluded.Forks,
-				},
-			})
-
-			tr.LazyPrintf("sent excluded stats %#v", excluded)
-		})
-	}
 
 	repos := &searchrepos.Resolver{
 		Opts: routine.RepoOptions,
