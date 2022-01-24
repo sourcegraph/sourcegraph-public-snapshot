@@ -83,72 +83,74 @@ the following:
 
 > NOTE: This feature is only available in versions `3.36` and later
 
-By default, when you execute `kubectl-apply-all.sh` a `migrator` Job should be created that will perform the database migrations before applying the updates to the rest of the Kubernetes manifests. This job will block execution of subsequent `kubectl` commands and _must_ succeed before continuing. Sourcegraph will check that the database is migrated appropriately on startup and error if it's not.
+By default, database migrations will be performed during application startup by the `frontend` application. These migrations _must_ succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
 
-In some situations, administrators may wish to migrate their databases before upgrading the rest of the system such as when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
+In some situations, administrators may wish to migrate their databases before upgrading the rest of the system to reduce downtime. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
 
-To execute the database migrations independently, run the following commands in your fork of `deploy-sourcegraph` (substituting in the version you'd like to migrate to) before updating your local checkout of `deploy-sourcegraph`. All manifests should be at their existing, deployed versions.
+To execute the database migrations independently, run the following commands in your fork of `deploy-sourcegraph`.
 
-> NOTE: These values will work for a standard deployment of Sourcegraph with all three databases running in-cluster. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables in `base/migrator/migrator.Job.yaml` accordingly.
-
-```bash
-
-# This will output the current migration version for the frontend db
-kubectl exec $(kubectl get pod -l app=pgsql -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM schema_migrations;"
-
-  version   | dirty 
-------------+-------
- 1528395964 | f
-(1 row)
+> NOTE: These values will work for a standard deployment of Sourcegraph with all three databases running in-cluster. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables in `configure/migrator/migrator.Job.yaml` accordingly.
 
 
-# This will output the current migration version for the codeintel db
-kubectl exec $(kubectl get pod -l app=codeintel-db -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
+1. Check the current migration versions of all three databases:
+    ```
+    # This will output the current migration version for the frontend db
+    kubectl exec $(kubectl get pod -l app=pgsql -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM schema_migrations;"
 
-  version   | dirty 
-------------+-------
- 1000000030 | f
-(1 row)
+    version   | dirty
+    ------------+-------
+    1528395964 | f
+    (1 row)
 
-# This will output the current migration version for the codeinsights db
-kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath="{.items[0].metadata.name}") -- psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
+    # This will output the current migration version for the codeintel db
+    kubectl exec $(kubectl get pod -l app=codeintel-db -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
 
-  version   | dirty 
-------------+-------
- 1000000024 | f
-(1 row)
+    version   | dirty
+    ------------+-------
+    1000000030 | f
+    (1 row)
+
+    # This will output the current migration version for the codeinsights db
+    kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath="{.items[0].metadata.name}") -- psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
+
+    version   | dirty
+    ------------+-------
+    1000000024 | f
+    (1 row)
+    ```
+
+1. Start the migrations:
+    > NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
+    
+    ```
+    # Update the "image" value of the migrator container in the manifest
+    export SOURCEGRAPH_VERSION="the version you're upgrading to"
+    yq eval -i '.spec.template.spec.containers[0].image = strenv(SOURCEGRAPH_VERSION)' configure/migrator/migrator.Job.yaml
+
+    # Apply and wait for migrations to complete before continuing
+    kubectl delete -f configure/migrator/migrator.Job.yaml --ignore-not-found=true
+    kubectl apply -f configure/migrator/migrator.Job.yaml
+    # -1s timeout will wait "forever"
+    kubectl wait -f configure/migrator/migrator.job.yaml --for=condition=complete --timeout=-1s
+    ```
+
+    You should see something like the following printed to the terminal:
+
+    > job.batch "migrator" deleted
+    > job.batch/migrator created
+    > job.batch/migrator condition met
+
+    The log output of the `migrator` container should look similar to:
+    > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
+    > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
+    > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+    > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+    > t=2022-01-14T23:47:47+0000 lvl=info msg="Upgrading schema" schema=codeinsights
 
 
-# Update the "image" value of the migrator container in the manifest
-export SOURCEGRAPH_VERSION="the version you're upgrading to"
-yq eval -i '.spec.template.spec.containers[0].image = strenv(SOURCEGRAPH_VERSION)' base/migrator/migrator.Job.yaml
+1. Repeat the three `psql` commands from the first step to verify the migration versions and that none of the databases are flagged as `dirty`. The versions reported should match the last output version from the migrator container.
 
-# These commands are from `kubectl-apply-all.sh`.
-kubectl delete -f base/migrator/migrator.Job.yaml --ignore-not-found=true
-kubectl apply -f base/migrator/migrator.Job.yaml
-kubectl wait -f base/migrator/migrator.job.yaml --for=condition=complete --timeout=3h
-```
-
-You should see something that looks like:
-> job.batch "migrator" deleted
-> job.batch/migrator created
-> job.batch/migrator condition met
-
-printed on your terminal.
-
-The log output of the `migrator` container should look like:
-> t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
-> t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
-> t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-> t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-> t=2022-01-14T23:47:47+0000 lvl=info msg="Upgrading schema" schema=codeinsights
-
-showing migrations being performed. The specific version numbers may not match what is shown here.
-
-> NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
-
-If you see an error message, please re-run the three prior `psql` commands to determine your DB migration status and contact support at support@sourcegraph.com for further assistance. Your database may not have been migrated correctly. Otherwise, you are now safe to upgrade Sourcegraph.
-
+If you see an error message or any of the databases have been flagged as dirty, contact support at support@sourcegraph.com for further assistance and provide the output of the three `psql` commands. Your database may not have been migrated correctly. Otherwise, you are now safe to upgrade Sourcegraph.
 
 ### Migrating Without Code Insights
 If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the default migration process will fail. To work around this, the `migrator.Job.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph`'s `migrator.Job.yaml` file. If you use `kustomize` to generate your cluster, it will be in the generated cluster location. Otherwise, it can be found in `base/migrator/migrator.Job.yaml`:
