@@ -1,14 +1,11 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import styles from './Card.module.scss'
-import { CARD_VARIANTS } from './constants'
+import { ForwardReferenceComponent, useWildcardTheme } from '../..'
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-    /**
-     * Interactive variants, shows blue border on hover and focus
-     */
-    variant?: typeof CARD_VARIANTS[number]
+import styles from './Card.module.scss'
+
+interface CardProps {
     /**
      * Used to change the element that renders card content.
      * Useful if needing to provide interactive elements for the interactive-card variant.
@@ -20,17 +17,12 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 /**
  * Card Element
  */
-export const Card: React.FunctionComponent<CardProps> = ({
-    children,
-    className,
-    variant = 'default',
-    as: Component = variant === 'interactive' ? 'button' : 'div',
-    ...attributes
-}) => (
-    <Component
-        className={classNames(styles.card, className, variant === 'interactive' && styles.cardInteractive)}
-        {...attributes}
-    >
-        {children}
-    </Component>
-)
+export const Card = React.forwardRef(({ children, className, as: Component = 'div', ...attributes }, reference) => {
+    const { isBranded } = useWildcardTheme()
+
+    return (
+        <Component className={classNames(isBranded && styles.card, className)} ref={reference} {...attributes}>
+            {children}
+        </Component>
+    )
+}) as ForwardReferenceComponent<'div', CardProps>

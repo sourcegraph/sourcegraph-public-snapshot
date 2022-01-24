@@ -15,7 +15,7 @@ import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Alert } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
@@ -222,7 +222,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 }
 
 const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerError }) => (
-    <div className="alert alert-danger" role="alert">
+    <Alert role="alert" variant="danger">
         <h4 className={classNames(styles.alertHeading)}>
             Encountered error during last attempt to sync changeset data from code host
         </h4>
@@ -231,7 +231,7 @@ const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerE
         <p className="mb-0">
             <small>This might be an ephemeral error that resolves itself at the next sync.</small>
         </p>
-    </div>
+    </Alert>
 )
 
 const ChangesetError: React.FunctionComponent<{
@@ -242,10 +242,10 @@ const ChangesetError: React.FunctionComponent<{
     }
 
     return (
-        <div className="alert alert-danger" role="alert">
+        <Alert role="alert" variant="danger">
             <h4 className={classNames(styles.alertHeading)}>Failed to run operations on changeset</h4>
             <ErrorMessage error={node.error} />
-        </div>
+        </Alert>
     )
 }
 

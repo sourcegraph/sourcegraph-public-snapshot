@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import styles from '../CodeMonitorForm.module.scss'
 
@@ -80,14 +80,10 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
         [onDelete]
     )
 
-    // When the action is completed, the wrapper cannot be a button because we show nested buttons inside it.
-    // Use a div instead. The edit button will still allow keyboard users to activate the form.
-    const CollapsedWrapperElement = completed ? 'div' : Button
-
     return (
         <>
             {expanded && (
-                <div className={classNames(styles.card, 'card p-3')}>
+                <Card className={classNames(styles.card, 'p-3')}>
                     <div className="font-weight-bold">{title}</div>
                     <span className="text-muted">{subtitle}</span>
 
@@ -141,20 +137,16 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                             </Button>
                         )}
                     </div>
-                </div>
+                </Card>
             )}
             {!expanded && (
-                <CollapsedWrapperElement
+                <Card
                     data-testid={`form-action-toggle-${idName}`}
-                    className={classNames(
-                        'card',
-                        styles.cardButton,
-                        disabled && 'disabled',
-                        `test-action-button-${idName}`
-                    )}
-                    disabled={disabled}
+                    className={classNames(styles.cardButton, disabled && 'disabled', `test-action-button-${idName}`)}
                     aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
+                    as={Button}
+                    disabled={disabled}
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
@@ -194,7 +186,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                             </div>
                         )}
                     </div>
-                </CollapsedWrapperElement>
+                </Card>
             )}
         </>
     )

@@ -1,12 +1,13 @@
 import { Meta } from '@storybook/react'
 import classNames from 'classnames'
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { noop } from 'rxjs'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Button, Position } from '@sourcegraph/wildcard'
 
-import { Popover, PopoverContent, PopoverTrigger, PopoverOpenEvent } from '../Popover'
+import { Popover, PopoverContent, PopoverOpenEvent, PopoverTrigger } from '../Popover'
 import { Point } from '../tether'
 
 import styles from './Popover.story.module.scss'
@@ -24,7 +25,7 @@ export const PositionSettingsGallery = () => {
     return (
         <div className={classNames(styles.container, 'd-flex justify-content-center align-items-center')}>
             <div className={styles.positionsContainer}>
-                <Popover isOpen={true}>
+                <Popover isOpen={true} onOpenChange={noop}>
                     <PopoverTrigger className={styles.positionsTarget} as="div">
                         Target
                     </PopoverTrigger>

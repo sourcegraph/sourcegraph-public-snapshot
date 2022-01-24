@@ -105,16 +105,14 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 // returns 0 repos or fails, it returns false. It is a helper function for
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
-func (r *searchResolver) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	options.UserSettings = r.UserSettings
-	repositoryResolver := &searchrepos.Resolver{DB: r.db}
+func (o *alertObserver) reposExist(ctx context.Context, options search.RepoOptions) bool {
+	options.UserSettings = o.UserSettings
+	repositoryResolver := &searchrepos.Resolver{DB: o.Db}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
 
-func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q) *searchAlert {
-	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
-
+func (o *alertObserver) alertForNoResolvedRepos(ctx context.Context, q query.Q) *searchAlert {
 	repoFilters, minusRepoFilters := q.Repositories()
 	contextFilters, _ := q.StringValues(query.FieldContext)
 	onlyForks, noForks, forksNotSet := false, false, true
@@ -138,7 +136,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 		proposedQueries := []*searchQueryDescription{{
 			description: "search in the global context",
 			query:       fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
-			patternType: r.PatternType,
+			patternType: o.PatternType,
 		}}
 
 		return &searchAlert{
@@ -148,9 +146,9 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 		}
 	}
 
-	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
+	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
 	if !envvar.SourcegraphDotComMode() {
-		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
+		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, o.Db); err == nil && needsRepoConfig {
 			if isSiteAdmin {
 				return &searchAlert{
 					title:       "No repositories or code hosts configured",
@@ -165,14 +163,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 		}
 	}
 
-	if globbing {
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__generic",
-			title:          "No repositories found",
-			description:    "Try using a different `repo:<regexp>` filter to see results",
-		}
-	}
-
 	proposedQueries := []*searchQueryDescription{}
 	if forksNotSet {
 		tryIncludeForks := search.RepoOptions{
@@ -180,11 +170,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 			MinusRepoFilters: minusRepoFilters,
 			NoForks:          false,
 		}
-		if r.reposExist(ctx, tryIncludeForks) {
+		if o.reposExist(ctx, tryIncludeForks) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include forked repositories in your query.",
-				query:       r.OriginalQuery + " fork:yes",
-				patternType: r.PatternType,
+				query:       o.OriginalQuery + " fork:yes",
+				patternType: o.PatternType,
 			})
 		}
 	}
@@ -197,11 +187,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 			NoForks:          noForks,
 			OnlyArchived:     true,
 		}
-		if r.reposExist(ctx, tryIncludeArchived) {
+		if o.reposExist(ctx, tryIncludeArchived) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include archived repositories in your query.",
-				query:       r.OriginalQuery + " archived:yes",
-				patternType: r.PatternType,
+				query:       o.OriginalQuery + " archived:yes",
+				patternType: o.PatternType,
 			})
 		}
 	}
@@ -318,14 +308,14 @@ func capFirst(s string) string {
 	}, s)
 }
 
-func (r *searchResolver) errorToAlert(ctx context.Context, err error) (*searchAlert, error) {
+func (o *alertObserver) errorToAlert(ctx context.Context, err error) (*searchAlert, error) {
 	if err == nil {
 		return nil, nil
 	}
 
 	var e *multierror.Error
 	if errors.As(err, &e) {
-		return r.multierrorToAlert(ctx, e)
+		return o.multierrorToAlert(ctx, e)
 	}
 
 	var (
@@ -347,7 +337,7 @@ func (r *searchResolver) errorToAlert(ctx context.Context, err error) (*searchAl
 	}
 
 	if err == searchrepos.ErrNoResolvedRepos {
-		return r.alertForNoResolvedRepos(ctx, r.Query), nil
+		return o.alertForNoResolvedRepos(ctx, o.Query), nil
 	}
 
 	if errors.As(err, &oErr) {
@@ -422,9 +412,9 @@ func maxAlertByPriority(a, b *searchAlert) *searchAlert {
 // multierrorToAlert converts a multierror.Error into the highest priority alert
 // for the errors contained in it, and a new error with all the errors that could
 // not be converted to alerts.
-func (r *searchResolver) multierrorToAlert(ctx context.Context, me *multierror.Error) (resAlert *searchAlert, resErr error) {
+func (o *alertObserver) multierrorToAlert(ctx context.Context, me *multierror.Error) (resAlert *searchAlert, resErr error) {
 	for _, err := range me.Errors {
-		alert, err := r.errorToAlert(ctx, err)
+		alert, err := o.errorToAlert(ctx, err)
 		resAlert = maxAlertByPriority(resAlert, alert)
 		resErr = multierror.Append(resErr, err)
 	}
@@ -449,10 +439,10 @@ func alertForInvalidRevision(revision string) *searchAlert {
 }
 
 type alertObserver struct {
-	*searchResolver
+	Db database.DB
 
 	// Inputs are used to generate alert messages based on the query.
-	Inputs *run.SearchInputs
+	*run.SearchInputs
 
 	// Update state.
 	hasResults bool
@@ -495,8 +485,8 @@ func (o *alertObserver) update(alert *searchAlert) {
 //  Done returns the highest priority alert and a multierror.Error containing
 //  all errors that could not be converted to alerts.
 func (o *alertObserver) Done(stats *streaming.Stats) (*searchAlert, error) {
-	if !o.hasResults && o.Inputs.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.Inputs.OriginalQuery) {
-		o.update(alertForStructuralSearchNotSet(o.Inputs.OriginalQuery))
+	if !o.hasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
+		o.update(alertForStructuralSearchNotSet(o.OriginalQuery))
 	}
 
 	if o.hasResults && o.err != nil {

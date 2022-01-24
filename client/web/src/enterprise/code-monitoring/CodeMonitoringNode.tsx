@@ -5,7 +5,7 @@ import { switchMap, catchError, startWith, takeUntil, tap, delay } from 'rxjs/op
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useEventObservable, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Link, Alert } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
@@ -108,7 +108,9 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     </Button>
                 </div>
             </div>
-            {}
+            {isErrorLike(toggleMonitorOrError) && (
+                <Alert variant="danger">Failed to toggle monitor: {toggleMonitorOrError.message}</Alert>
+            )}
         </div>
     )
 }

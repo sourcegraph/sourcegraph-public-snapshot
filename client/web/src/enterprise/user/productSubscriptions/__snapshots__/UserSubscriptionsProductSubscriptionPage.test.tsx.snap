@@ -30,15 +30,15 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
       Subscription 
     </h2>
     <div
-      class="card mt-3"
+      class="mt-3"
     >
       <div
-        class="card-header"
+        class="cardHeader"
       >
         Billing
       </div>
       <div
-        class="card-body"
+        class="cardBody"
       >
         <span
           class="text-muted "
@@ -54,10 +54,10 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
       </div>
     </div>
     <div
-      class="card mt-3"
+      class="mt-3"
     >
       <div
-        class="card-header"
+        class="cardHeader"
       >
         History
       </div>

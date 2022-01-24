@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React, { PropsWithChildren, ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
+import { Card } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 
@@ -30,12 +31,13 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
     const hasHeader = title || subtitle || actions
 
     return (
-        <section
+        <Card
+            as="section"
             {...otherProps}
             /* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */
             tabIndex={0}
             ref={innerRef}
-            className={classNames('card', otherProps.className, styles.view)}
+            className={classNames(otherProps.className, styles.view)}
         >
             <ErrorBoundary className="pt-0" location={useLocation()}>
                 {hasHeader && (
@@ -63,6 +65,6 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
 
                 {children}
             </ErrorBoundary>
-        </section>
+        </Card>
     )
 }

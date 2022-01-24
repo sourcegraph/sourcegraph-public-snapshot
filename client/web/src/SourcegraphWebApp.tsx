@@ -35,6 +35,7 @@ import {
 } from '@sourcegraph/shared/src/extensions/controller'
 import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -168,12 +169,14 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     featureFlags: FlagSet
 }
 
-const notificationClassNames = {
-    [NotificationType.Log]: 'alert alert-secondary',
-    [NotificationType.Success]: 'alert alert-success',
-    [NotificationType.Info]: 'alert alert-info',
-    [NotificationType.Warning]: 'alert alert-warning',
-    [NotificationType.Error]: 'alert alert-danger',
+const notificationStyles: BrandedNotificationItemStyleProps = {
+    notificationItemVariants: {
+        [NotificationType.Log]: 'secondary',
+        [NotificationType.Success]: 'success',
+        [NotificationType.Info]: 'info',
+        [NotificationType.Warning]: 'warning',
+        [NotificationType.Error]: 'danger',
+    },
 }
 
 const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
@@ -477,7 +480,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         <Notifications
                                             key={2}
                                             extensionsController={this.extensionsController}
-                                            notificationClassNames={notificationClassNames}
+                                            notificationItemStyleProps={notificationStyles}
                                         />
                                         <UserSessionStores />
                                     </SearchQueryStateStoreProvider>

@@ -6,6 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -157,10 +158,11 @@ type StructuralSearch struct {
 	ContainsRefGlobs  bool
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
 
-	IsRequired bool
+	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
+func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
+	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
 		if err != nil {
@@ -184,8 +186,4 @@ func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, rep
 
 func (*StructuralSearch) Name() string {
 	return "Structural"
-}
-
-func (s *StructuralSearch) Required() bool {
-	return s.IsRequired
 }

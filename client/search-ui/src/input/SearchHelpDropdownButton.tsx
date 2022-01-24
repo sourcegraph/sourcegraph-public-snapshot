@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Alert } from '@sourcegraph/wildcard'
 
 interface SearchHelpDropdownButtonProps extends TelemetryProps {
     isSourcegraphDotCom?: boolean
@@ -124,10 +125,10 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                     <ExternalLinkIcon className="icon-inline small" /> All search keywords
                 </a>
                 {isSourcegraphDotCom && (
-                    <div className="alert alert-info small rounded-0 mb-0 mt-1">
+                    <Alert className="small rounded-0 mb-0 mt-1" variant="info">
                         On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
                         repositories.
-                    </div>
+                    </Alert>
                 )}
             </DropdownMenu>
         </ButtonDropdown>

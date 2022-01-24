@@ -5,7 +5,7 @@ import React, { useCallback } from 'react'
 import { SyntaxHighlightedSearchQuery, ModalVideo } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { Card, Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
@@ -54,9 +54,10 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
             <div className={styles.searchExamples}>
                 {examples.map(example => (
                     <div key={example.query} className={styles.searchExampleCardWrapper}>
-                        <Link
+                        <Card
+                            as={Link}
                             to={example.to}
-                            className={classNames('card', styles.searchExampleCard)}
+                            className={styles.searchExampleCard}
                             onClick={searchExampleClicked(example.trackEventName)}
                         >
                             <div className={classNames(styles.searchExampleIcon)}>{icon}</div>
@@ -65,7 +66,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
                                     <SyntaxHighlightedSearchQuery query={example.query} />
                                 </div>
                             </div>
-                        </Link>
+                        </Card>
                         <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
                             {example.label}
                         </Link>
@@ -101,13 +102,14 @@ const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
                 {examples.map(example => (
                     <div key={example.query} className={styles.tipsAndTricksExample}>
                         {example.label}
-                        <Link
+                        <Card
+                            as={Link}
                             to={example.to}
-                            className={classNames('card', styles.tipsAndTricksCard)}
+                            className={styles.tipsAndTricksCard}
                             onClick={searchExampleClicked(example.trackEventName)}
                         >
                             <SyntaxHighlightedSearchQuery query={example.query} />
-                        </Link>
+                        </Card>
                     </div>
                 ))}
             </div>

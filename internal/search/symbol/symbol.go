@@ -417,14 +417,14 @@ type RepoSubsetSymbolSearch struct {
 	UseIndex          query.YesNoOnly
 	ContainsRefGlobs  bool
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
-
-	IsRequired bool
+	RepoOpts          search.RepoOptions
 }
 
-func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
+func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, s.Limit)
 	defer cancel()
 
+	repos := searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
 		if err != nil {
@@ -446,10 +446,6 @@ func (*RepoSubsetSymbolSearch) Name() string {
 	return "RepoSubsetSymbol"
 }
 
-func (s *RepoSubsetSymbolSearch) Required() bool {
-	return s.IsRequired
-}
-
 type RepoUniverseSymbolSearch struct {
 	GlobalZoektQuery *zoektutil.GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
@@ -457,12 +453,9 @@ type RepoUniverseSymbolSearch struct {
 	Limit            int
 
 	RepoOptions search.RepoOptions
-	Db          database.DB
-
-	IsRequired bool
 }
 
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sender, _ searchrepos.Pager) error {
+func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
 	defer cleanup()
 
@@ -474,7 +467,7 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sen
 		}
 	}
 
-	userPrivateRepos := repos.PrivateReposForUser(ctx, s.Db, userID, s.RepoOptions)
+	userPrivateRepos := repos.PrivateReposForUser(ctx, db, userID, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}
@@ -486,8 +479,4 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sen
 
 func (*RepoUniverseSymbolSearch) Name() string {
 	return "RepoUniverseSymbol"
-}
-
-func (s *RepoUniverseSymbolSearch) Required() bool {
-	return s.IsRequired
 }

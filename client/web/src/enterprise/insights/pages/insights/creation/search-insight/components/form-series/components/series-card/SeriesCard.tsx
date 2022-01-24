@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { ReactElement } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import { DEFAULT_ACTIVE_COLOR } from '../../../form-color-input/FormColorInput'
 
@@ -39,10 +39,11 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
     } = props
 
     return (
-        <li
+        <Card
+            as="li"
             data-testid="series-card"
             aria-label={`${name} data series`}
-            className={classNames(styles.card, className, 'card d-flex flex-row p-3')}
+            className={classNames(styles.card, className, 'd-flex flex-row p-3')}
         >
             <div className={styles.cardInfo}>
                 <div className={classNames('mb-1 ', styles.cardTitle)}>
@@ -86,6 +87,6 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
                     Remove
                 </Button>
             </div>
-        </li>
+        </Card>
     )
 }
