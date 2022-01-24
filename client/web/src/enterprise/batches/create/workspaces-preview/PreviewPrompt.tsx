@@ -45,8 +45,8 @@ interface PreviewPromptProps {
 export const PreviewPrompt: React.FunctionComponent<PreviewPromptProps> = ({ preview, disabled, form }) => {
     const previewButton = (
         <ButtonTooltip
-            type="button"
-            className="btn btn-success mb-2"
+            className="mb-2"
+            variant="success"
             disabled={!!disabled}
             tooltip={typeof disabled === 'string' ? disabled : undefined}
             onClick={preview}

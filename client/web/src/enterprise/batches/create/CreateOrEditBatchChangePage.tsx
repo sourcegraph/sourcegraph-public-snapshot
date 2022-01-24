@@ -319,8 +319,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     const buttons = (
         <>
             <ButtonTooltip
-                type="button"
-                className="btn btn-primary mb-2"
+                className="mb-2"
+                variant="primary"
                 onClick={executeBatchSpec}
                 disabled={disableExecution}
                 tooltip={executionTooltip}
