@@ -10,7 +10,7 @@ and any manual migration steps you must perform.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.35 -> 3.36
+## 3.35 -> 3.36.1
 
 The `backend` service has been removed, so if you deploy with a method other than `kubectl-apply-all.sh`, a manual removal of the service may be necessary.
 

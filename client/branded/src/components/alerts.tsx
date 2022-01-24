@@ -12,8 +12,8 @@ export const renderError = (error: unknown): string =>
         .replace(/^<p>/, '')
         .replace(/<\/p>$/, '')
 
-export const ErrorMessage: React.FunctionComponent<{ error: unknown }> = ({ error }) => (
-    <Markdown wrapper="span" dangerousInnerHTML={renderError(error)} />
+export const ErrorMessage: React.FunctionComponent<{ className?: string; error: unknown }> = ({ className, error }) => (
+    <Markdown className={className} wrapper="span" dangerousInnerHTML={renderError(error)} />
 )
 
 export type ErrorAlertProps = {

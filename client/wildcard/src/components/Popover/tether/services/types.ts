@@ -39,7 +39,9 @@ export interface Tether {
      */
     overlapping?: Overlapping
 
-    /** A custom constrain element for the tooltip element position. */
+    /**
+     * A custom constrain element for the tooltip element position.
+     */
     constraint?: HTMLElement
 
     windowPadding?: Rectangle

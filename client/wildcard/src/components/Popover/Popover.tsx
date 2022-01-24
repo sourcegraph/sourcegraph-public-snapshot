@@ -52,11 +52,15 @@ const DEFAULT_CONTEXT_VALUE: PopoverContextData = {
 
 const PopoverContext = createContext<PopoverContextData>(DEFAULT_CONTEXT_VALUE)
 
-interface PopoverProps {
+type PopoverControlledProps =
+    | { isOpen?: undefined; onOpenChange?: never }
+    | { isOpen: boolean; onOpenChange: (event: PopoverOpenEvent) => void }
+
+interface PopoverCommonProps {
     anchor?: MutableRefObject<HTMLElement | null>
-    isOpen?: boolean
-    onOpenChange?: (event: PopoverOpenEvent) => void
 }
+
+type PopoverProps = PopoverCommonProps & PopoverControlledProps
 
 export const Popover: React.FunctionComponent<PopoverProps> = props => {
     const { children, anchor, isOpen, onOpenChange = noop } = props
@@ -71,6 +75,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
         event => {
             if (!isControlled) {
                 setInternalOpen(event.isOpen)
+                return
             }
 
             onOpenChange(event)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -556,48 +555,6 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	}
 }
 
-func TestGetExactFilePatterns(t *testing.T) {
-	tests := []struct {
-		in   string
-		want map[string]struct{}
-	}{
-		{
-			in:   "file:foo.bar file:*.bas",
-			want: map[string]struct{}{"foo.bar": {}},
-		},
-		{
-			in:   "file:foo.bar file:foo.bas",
-			want: map[string]struct{}{"foo.bar": {}, "foo.bas": {}},
-		},
-		{
-			in:   "file:*.bar",
-			want: map[string]struct{}{},
-		},
-		{
-			in:   "repo:github.com/foo/bar file:foo.bar",
-			want: map[string]struct{}{"foo.bar": {}},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.in, func(t *testing.T) {
-			plan, err := query.Pipeline(query.InitLiteral(tt.in), query.Globbing)
-			if err != nil {
-				t.Fatal(err)
-			}
-			r := searchResolver{
-				SearchInputs: &run.SearchInputs{
-					Plan:          plan,
-					Query:         plan.ToParseTree(),
-					OriginalQuery: tt.in,
-				},
-			}
-			if got := r.getExactFilePatterns(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getExactFilePatterns() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestCompareSearchResults(t *testing.T) {
 	makeResult := func(repo, file string) *result.FileMatch {
 		return &result.FileMatch{File: result.File{
@@ -899,9 +856,9 @@ func Test_toSearchInputs(t *testing.T) {
 				PatternType:  query.SearchTypeLiteral,
 			},
 		}
-		jobs, _, _, _ := resolver.toSearchInputs(q)
+		routine, _ := resolver.toSearchRoutine(q)
 		var jobNames []string
-		for _, j := range jobs {
+		for _, j := range routine.Jobs {
 			jobNames = append(jobNames, j.Name())
 		}
 		return strings.Join(jobNames, ",")
