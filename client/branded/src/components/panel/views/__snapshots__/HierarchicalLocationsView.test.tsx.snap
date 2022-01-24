@@ -91,15 +91,12 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 <div
                   class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
-                  <a
-                    aria-label="Open file match"
-                    class=""
-                    href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                  />
                   <div
                     class="test-file-match-children-item item itemClickable"
+                    data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                     data-testid="file-match-children-item"
-                    role="none"
+                    role="link"
+                    tabindex="0"
                   >
                     <code
                       class="codeExcerpt"
@@ -322,15 +319,12 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 <div
                   class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
-                  <a
-                    aria-label="Open file match"
-                    class=""
-                    href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
-                  />
                   <div
                     class="test-file-match-children-item item itemClickable"
+                    data-href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
                     data-testid="file-match-children-item"
-                    role="none"
+                    role="link"
+                    tabindex="0"
                   >
                     <code
                       class="codeExcerpt"
@@ -504,15 +498,12 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 <div
                   class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
-                  <a
-                    aria-label="Open file match"
-                    class=""
-                    href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                  />
                   <div
                     class="test-file-match-children-item item itemClickable"
+                    data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                     data-testid="file-match-children-item"
-                    role="none"
+                    role="link"
+                    tabindex="0"
                   >
                     <code
                       class="codeExcerpt"
