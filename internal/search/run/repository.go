@@ -35,10 +35,15 @@ func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.S
 		otlog.String("pattern", s.Args.PatternInfo.Pattern),
 		otlog.Int("limit", s.Limit))
 
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
-	defer cleanup()
-
 	repos := &searchrepos.Resolver{DB: db, Opts: s.Args.RepoOptions}
+
+	// By default, RepoOptions on TextParameters doesn't have a limit set because we want to find
+	// results for all repos that match. However, for repo search, we want to limit the number of
+	// results returned. The top-level stream limiter will keep us from returning too many results,
+	// but we want to keep load on the DB to a minimum. We request one more than the limit in order
+	// to know whether the limit was hit.
+	repos.Opts.Limit = s.Limit + 1
+
 	err = repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 

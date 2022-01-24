@@ -690,7 +690,6 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				addJob(true, &unindexed.RepoUniverseTextSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
-					FileMatchLimit:   args.PatternInfo.FileMatchLimit,
 
 					RepoOptions: repoOptions,
 				})
@@ -750,7 +749,6 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				addJob(true, &unindexed.RepoSubsetTextSearch{
 					ZoektArgs:         zoektArgs,
 					SearcherArgs:      searcherArgs,
-					FileMatchLimit:    args.PatternInfo.FileMatchLimit,
 					NotSearcherOnly:   !searcherOnly,
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
