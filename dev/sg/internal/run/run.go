@@ -93,9 +93,9 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 }
 
 func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
-	// stdout.Out.Write("")
-	// stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Waiting for %d commands to finish installation...", len(cmdNames)))
-	// stdout.Out.Write("")
+	stdout.Out.Write("")
+	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", len(cmdNames)))
+	stdout.Out.Write("")
 
 	waitingMessages := []string{
 		"Still waiting for %s to finish installing...",
@@ -126,7 +126,7 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 			delete(cmdNames, cmdName)
 			done += 1.0
 
-			progress.WriteLine(output.Linef("", output.StylePending, "%s installed", cmdName))
+			progress.WriteLine(output.Linef("", output.StyleSuccess, "%s installed", cmdName))
 
 			progress.SetValue(0, done)
 			progress.SetLabelAndRecalc(0, fmt.Sprintf("%d/%d commands installed", int(done), int(total)))
@@ -142,6 +142,8 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 			}
 
 		case failure := <-failures:
+			progress.Destroy()
+
 			// Something went wrong with an installation, no need to wait for the others
 			printCmdError(stdout.Out, failure.cmdName, failure.err)
 			return failure
@@ -157,7 +159,13 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 				idx = len(waitingMessages) - 1
 			}
 			msg := waitingMessages[idx]
-			progress.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, msg, strings.Join(names, ", ")))
+
+			emoji := output.EmojiHourglass
+			if idx > 3 {
+				emoji = output.EmojiShrug
+			}
+
+			progress.WriteLine(output.Linef(emoji, output.StyleBold, msg, strings.Join(names, ", ")))
 			messageCount += 1
 		}
 	}
