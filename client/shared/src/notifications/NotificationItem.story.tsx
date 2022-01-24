@@ -43,7 +43,7 @@ export const WithoutProgress: Story = () => {
     return (
         <NotificationItem
             notification={{ message, type, source }}
-            notificationClassNames={notificationClassNames}
+            notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
             onDismiss={onDismiss}
         />
     )
@@ -70,7 +70,7 @@ export const WithProgress: Story = () => {
                     percentage: progressPercentage,
                 }),
             }}
-            notificationClassNames={notificationClassNames}
+            notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
             onDismiss={onDismiss}
         />
     )
