@@ -17,7 +17,7 @@ import {
     SearchBasedInsight,
 } from '../../../core/types'
 
-const MIN_WIDTHS_LANDSCAPE_MODE: Record<BreakpointName, number> = { xs: 1, sm: 3, md: 4, lg: 4 }
+const MIN_WIDTHS_LANDSCAPE_MODE: Record<BreakpointName, number> = { xs: 1, lg: 4 }
 
 type InsightWithLegend = SearchBasedInsight | CaptureGroupInsight
 
@@ -74,9 +74,7 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
 
     function generateLayout(breakpointName: BreakpointName): Layout[] {
         switch (breakpointName) {
-            case 'xs':
-            case 'sm':
-            case 'md': {
+            case 'xs': {
                 return insights.map((insight, index) => {
                     const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
 
@@ -175,5 +173,75 @@ export const recalculateGridLayout = (nextLayouts: ReactGridLayouts, insights: I
         })
     }
 
+    return persistOrder(adjustedLayouts)
+}
+
+export const recalculateGridLayoutOnResize = (nextLayouts: Layout[]): void => {
+    // eslint-disable-next-line id-length
+    const { lg } = persistOrder({ lg: nextLayouts })
+    const nextLayoutsMap = Object.fromEntries(nextLayouts.map(layout => [layout.i, layout]))
+
+    for (const layout of lg ) {
+        const origin = nextLayoutsMap[layout.i]
+
+        if (origin) {
+            origin.x = layout.x
+            origin.y = layout.y
+        }
+    }
+}
+
+export const persistOrder = (nextLayouts: ReactGridLayouts): ReactGridLayouts => {
+    const keys = (Object.keys(nextLayouts) as unknown) as BreakpointName[]
+    const adjustedLayouts: ReactGridLayouts = {}
+
+    for (const key of keys) {
+        const layout = nextLayouts[key]
+        const columnsInRow = COLUMNS[key]
+
+        adjustedLayouts[key] = layout.reduce<Layout[][]>((rows, layout) => {
+            const currentRow = rows[rows.length - 1]
+            const rowsItemsWidth = currentRow.reduce((width, item) => width + item.w, 0)
+
+            if ((rowsItemsWidth + layout.w) > columnsInRow) {
+                rows.push([{
+                    ...layout,
+                    x: 0,
+                    y: getHeightInLayoutRange(0, layout.w, currentRow)
+                }])
+            } else {
+                const previousRow = rows[rows.length - 2] ?? []
+
+                currentRow.push({
+                    ...layout,
+                    x: rowsItemsWidth,
+                    y: getHeightInLayoutRange(rowsItemsWidth, rowsItemsWidth + layout.w, previousRow)
+                })
+            }
+
+            return rows
+        }, [[]]).flat()
+    }
+
     return adjustedLayouts
+}
+
+function getHeightInLayoutRange(start: number, end: number, layouts: Layout[]): number {
+    const sortedByXLayouts = [...layouts].sort((a, b) => a.x - b.x)
+    let maxHeight = 0;
+
+    for (const layout of sortedByXLayouts) {
+        const layoutStart = layout.x
+        const layoutEnd = layout.x + layout.w
+
+        const hasEndIntersection = layoutEnd > start && layoutEnd <= end
+        const hadStartIntersection = layoutStart > start && layoutStart <= end
+        const hasRangeIntersection = layoutStart <= start && layoutEnd >= end
+
+        if (hasEndIntersection || hadStartIntersection || hasRangeIntersection) {
+            maxHeight = Math.max(layout.h, maxHeight)
+        }
+    }
+
+    return maxHeight
 }

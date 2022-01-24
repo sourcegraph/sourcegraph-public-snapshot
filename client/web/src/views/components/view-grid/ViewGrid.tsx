@@ -18,15 +18,15 @@ import styles from './ViewGrid.module.scss'
 // (WidthProvider only listens to window resize events)
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
-export const BREAKPOINTS_NAMES = ['xs', 'sm', 'md', 'lg'] as const
+export const BREAKPOINTS_NAMES = ['xs', 'lg'] as const
 
 export type BreakpointName = typeof BREAKPOINTS_NAMES[number]
 
 /** Minimum size in px after which a breakpoint is active. */
-export const BREAKPOINTS: Record<BreakpointName, number> = { xs: 0, sm: 576, md: 768, lg: 992 } // no xl because TreePage's max-width is the xl breakpoint.
-export const COLUMNS: Record<BreakpointName, number> = { xs: 1, sm: 6, md: 8, lg: 12 }
-export const DEFAULT_ITEMS_PER_ROW: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 2, lg: 3 }
-export const MIN_WIDTHS: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 3, lg: 3 }
+export const BREAKPOINTS: Record<BreakpointName, number> = { xs: 0, lg: 512 } // no xl because TreePage's max-width is the xl breakpoint.
+export const COLUMNS: Record<BreakpointName, number> = { xs: 1, lg: 12 }
+export const DEFAULT_ITEMS_PER_ROW: Record<BreakpointName, number> = { xs: 1, lg: 3 }
+export const MIN_WIDTHS: Record<BreakpointName, number> = { xs: 1, lg: 3 }
 export const DEFAULT_HEIGHT = 3.25
 
 const DEFAULT_VIEWS_LAYOUT_GENERATOR = (viewIds: string[]): ReactGridLayouts =>
@@ -75,6 +75,7 @@ interface ViewGridCommonProps {
     className?: string
 
     onLayoutChange?: (currentLayout: Layout[], allLayouts: Layouts) => void
+    onResize?: (currentLayout: Layout[]) => void
     onResizeStart?: (newItem: Layout) => void
     onResizeStop?: (newItem: Layout) => void
     onDragStart?: (newItem: Layout) => void
@@ -90,6 +91,7 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps &
         children,
         className,
         onLayoutChange,
+        onResize = noop,
         onResizeStart = noop,
         onResizeStop = noop,
         onDragStart = noop,
@@ -130,8 +132,11 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps &
                 rowHeight={6 * 16}
                 containerPadding={[0, 0]}
                 useCSSTransforms={useCSSTransforms}
+                compactType={null}
+                verticalCompact={false}
                 margin={[12, 12]}
                 onResizeStart={handleResizeStart}
+                onResize={onResize}
                 onResizeStop={handleResizeStop}
                 onLayoutChange={onLayoutChange}
                 onDragStart={handleDragStart}

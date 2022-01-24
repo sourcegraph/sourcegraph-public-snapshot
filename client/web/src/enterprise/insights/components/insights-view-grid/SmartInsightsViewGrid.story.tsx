@@ -44,6 +44,36 @@ const insights: Insight[] = [
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
+    {
+        id: 'searchInsights.insight.Backend_3',
+        type: InsightExecutionType.Backend,
+        viewType: InsightType.SearchBased,
+        title: 'Backend insight #3',
+        series: [],
+        visibility: 'personal',
+        step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+    },
+    {
+        id: 'searchInsights.insight.Backend_4',
+        type: InsightExecutionType.Backend,
+        viewType: InsightType.SearchBased,
+        title: 'Backend insight #4',
+        series: [],
+        visibility: 'personal',
+        step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+    },
+    {
+        id: 'searchInsights.insight.Backend_5',
+        type: InsightExecutionType.Backend,
+        viewType: InsightType.SearchBased,
+        title: 'Backend insight #5',
+        series: [],
+        visibility: 'personal',
+        step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+    },
 ]
 
 class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {

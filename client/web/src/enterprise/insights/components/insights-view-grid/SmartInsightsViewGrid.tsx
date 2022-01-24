@@ -8,7 +8,11 @@ import { ViewGrid } from '../../../../views'
 import { Insight } from '../../core/types'
 
 import { SmartInsight } from './components/smart-insight/SmartInsight'
-import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
+import {
+    insightLayoutGenerator,
+    recalculateGridLayout,
+    recalculateGridLayoutOnResize
+} from './utils/grid-layout-generator'
 
 interface SmartInsightsViewGridProps extends TelemetryProps {
     /**
@@ -72,9 +76,14 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
         [insights]
     )
 
+    const handleLayoutResize = useCallback((currentLayout: Layout[]) => {
+        recalculateGridLayoutOnResize(currentLayout)
+    }, [])
+
     return (
         <ViewGrid
             layouts={layouts}
+            onResize={handleLayoutResize}
             onResizeStart={handleResizeStart}
             onResizeStop={handleResizeStop}
             onDragStart={trackUICustomization}
