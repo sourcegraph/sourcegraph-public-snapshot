@@ -120,6 +120,8 @@ To execute the database migrations independently, run the following commands in 
     ```
 
 1. Start the migrations:
+    > NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
+    
     ```
     # Update the "image" value of the migrator container in the manifest
     export SOURCEGRAPH_VERSION="the version you're upgrading to"
@@ -145,9 +147,18 @@ To execute the database migrations independently, run the following commands in 
     > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
     > t=2022-01-14T23:47:47+0000 lvl=info msg="Upgrading schema" schema=codeinsights
 
+
 1. Repeat the three `psql` commands from the first step to verify the migration versions and that none of the databases are flagged as `dirty`. The versions reported should match the last output version from the migrator container.
 
 If you see an error message or any of the databases have been flagged as dirty, contact support at support@sourcegraph.com for further assistance and provide the output of the three `psql` commands. Your database may not have been migrated correctly. Otherwise, you are now safe to upgrade Sourcegraph.
+
+### Migrating Without Code Insights
+If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the default migration process will fail. To work around this, the `migrator.Job.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph`'s `migrator.Job.yaml` file. If you use `kustomize` to generate your cluster, it will be in the generated cluster location. Otherwise, it can be found in `base/migrator/migrator.Job.yaml`:
+
+1. Comment out the existing job `migrator`
+1. Uncomment out the two jobs `migrator-frontend` and `migrator-codeintel`.
+
+You should now be able to apply the file and continue the migration and upgrade process as normal.
 
 ### Troubleshooting
 
