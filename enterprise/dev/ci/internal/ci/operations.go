@@ -235,7 +235,10 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 func clientIntegrationTests(pipeline *bk.Pipeline) {
 	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
-	skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
+	// TODO check with Valery about this. Because we're running stateless agents,
+	// this runs on a fresh instance and the hooks are not present at all, which
+	// breaks the step.
+	// skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
 
 	// Build web application used for integration tests to share it between multiple parallel steps.
 	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
@@ -275,7 +278,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		// just retry a few times.
 		bk.AutomaticRetry(3),
 		// Finalize just uses a remote package.
-		skipGitCloneStep,
+		// skipGitCloneStep,
 		bk.Cmd("npx @percy/cli build:finalize"),
 	}
 
