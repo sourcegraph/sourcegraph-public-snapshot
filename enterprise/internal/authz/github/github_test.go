@@ -754,7 +754,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				MockGetOrganization: func(ctx context.Context, login string) (org *github.OrgDetails, err error) {
 					if login == "org" {
 						return &github.OrgDetails{
-							DefaultRepositoryPermission: "read",
+							DefaultRepositoryPermission: "none",
 						}, nil
 					}
 
