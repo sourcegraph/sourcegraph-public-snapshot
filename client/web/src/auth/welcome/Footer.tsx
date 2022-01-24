@@ -39,11 +39,11 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
                     </Button>
                 )}
                 <LoaderButton
-                    type="button"
                     alwaysShowLabel={true}
                     label={currentStep.isLastStep ? 'Start searching' : 'Continue'}
-                    className="btn btn-primary float-right ml-2"
+                    className="float-right ml-2"
                     disabled={!currentStep.isComplete}
+                    variant="primary"
                     onClick={event => {
                         if (currentStep.isLastStep) {
                             onFinish(event, { eventName: 'StartSearching_Clicked' })

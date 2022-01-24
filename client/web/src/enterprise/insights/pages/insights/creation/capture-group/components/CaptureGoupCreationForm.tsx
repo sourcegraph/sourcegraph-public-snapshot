@@ -199,7 +199,8 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     disabled={submitting}
                     data-testid="insight-save-button"
-                    className="btn btn-primary mr-2 mb-2"
+                    className="mr-2 mb-2"
+                    variant="primary"
                 />
 
                 <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>

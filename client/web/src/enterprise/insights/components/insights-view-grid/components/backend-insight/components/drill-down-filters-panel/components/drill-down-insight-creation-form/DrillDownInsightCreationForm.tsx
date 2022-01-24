@@ -78,7 +78,7 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
                     label={formAPI.submitting ? 'Saving' : 'Save'}
                     disabled={formAPI.submitting}
                     data-testid="insight-save-button"
-                    className="btn btn-primary"
+                    variant="primary"
                 />
             </footer>
         </form>

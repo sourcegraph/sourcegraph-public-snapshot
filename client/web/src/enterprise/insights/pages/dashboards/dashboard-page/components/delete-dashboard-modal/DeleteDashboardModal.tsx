@@ -62,13 +62,12 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
                 </Button>
 
                 <LoaderButton
-                    type="button"
                     alwaysShowLabel={true}
                     loading={isDeleting}
                     label={isDeleting ? 'Deleting' : 'Delete forever'}
                     disabled={isDeleting}
-                    className="btn btn-danger"
                     onClick={handler}
+                    variant="danger"
                 />
             </div>
         </Modal>

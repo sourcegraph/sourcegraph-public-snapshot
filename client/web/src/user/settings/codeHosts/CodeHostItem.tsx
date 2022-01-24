@@ -131,12 +131,11 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 {!service?.id ? (
                     oauthInFlight ? (
                         <LoaderButton
-                            type="button"
-                            className="btn btn-primary"
                             loading={true}
                             disabled={true}
                             label="Connecting..."
                             alwaysShowLabel={true}
+                            variant="primary"
                         />
                     ) : (
                         <Button onClick={connectAction} variant="primary">
@@ -147,12 +146,11 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     (isTokenUpdateRequired || !isUserOwner) &&
                     (oauthInFlight ? (
                         <LoaderButton
-                            type="button"
-                            className="btn btn-merged"
                             loading={true}
                             disabled={true}
                             label="Updating..."
                             alwaysShowLabel={true}
+                            variant="merged"
                         />
                     ) : (
                         <Button

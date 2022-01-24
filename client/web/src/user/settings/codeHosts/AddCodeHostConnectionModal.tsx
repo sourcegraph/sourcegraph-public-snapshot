@@ -118,11 +118,11 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                         {didAckMachineUserHint ? (
                             <LoaderButton
                                 type="submit"
-                                className="btn btn-primary"
                                 loading={isLoading}
                                 disabled={!token || isLoading}
                                 label="Add code host connection"
                                 alwaysShowLabel={true}
+                                variant="primary"
                             />
                         ) : (
                             <Button

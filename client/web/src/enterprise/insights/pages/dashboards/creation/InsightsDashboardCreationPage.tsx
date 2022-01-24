@@ -89,7 +89,8 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                                 label={formAPI.submitting ? 'Creating' : 'Create dashboard'}
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="btn btn-primary ml-2 mb-2"
+                                className="ml-2 mb-2"
+                                variant="primary"
                             />
                         </>
                     )}

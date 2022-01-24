@@ -114,12 +114,13 @@ export const EarlyAccessOrgsCodeForm: FunctionComponent<any> = () => {
             <div className="d-flex justify-content-start align-items-end">
                 <Input label="Name" value={name} onChange={onChange} className="mb-0" />
                 <LoaderButton
-                    className="btn btn-primary ml-3"
+                    className="ml-3"
                     type="submit"
                     loading={loading}
                     disabled={loading || name.trim().length < 3}
                     alwaysShowLabel={true}
                     label="Enable"
+                    variant="primary"
                 />
             </div>
 

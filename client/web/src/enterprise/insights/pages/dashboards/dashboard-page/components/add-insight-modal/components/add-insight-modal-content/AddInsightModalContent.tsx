@@ -102,7 +102,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                     label={formAPI.submitting ? 'Saving' : 'Save'}
                     type="submit"
                     disabled={formAPI.submitting}
-                    className="btn btn-primary"
+                    variant="primary"
                 />
             </div>
         </form>

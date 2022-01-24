@@ -91,11 +91,11 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
                     </Button>
                     <LoaderButton
                         type="submit"
-                        className="btn btn-danger"
                         loading={isLoading}
                         disabled={isLoading}
                         label="Yes, remove connection"
                         alwaysShowLabel={true}
+                        variant="danger"
                     />
                 </div>
             </Form>

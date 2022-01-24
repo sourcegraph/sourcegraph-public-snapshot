@@ -69,9 +69,9 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
                     <LoaderButton
                         loading={isLoading}
                         label="Add"
-                        type="button"
-                        className="btn btn-block btn-success"
+                        className="btn-block"
                         onClick={navigateToAuthProvider}
+                        variant="success"
                     />
                 )}
             </div>

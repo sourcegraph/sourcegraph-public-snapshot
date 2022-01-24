@@ -14,7 +14,7 @@ add('Inline', () => (
     <WebStory>
         {() => (
             <p>
-                <LoaderButton loading={true} label="loader button" className="btn btn-primary" />
+                <LoaderButton loading={true} label="loader button" variant="primary" />
             </p>
         )}
     </WebStory>
@@ -22,7 +22,7 @@ add('Inline', () => (
 
 add('Block', () => (
     <WebStory>
-        {() => <LoaderButton loading={true} label="loader button" className="btn btn-block btn-primary" />}
+        {() => <LoaderButton loading={true} label="loader button" className="btn-block" variant="primary" />}
     </WebStory>
 ))
 
@@ -33,7 +33,8 @@ add('With label', () => (
                 alwaysShowLabel={true}
                 loading={true}
                 label="loader button"
-                className="btn btn-block btn-primary"
+                className="btn-block"
+                variant="primary"
             />
         )}
     </WebStory>

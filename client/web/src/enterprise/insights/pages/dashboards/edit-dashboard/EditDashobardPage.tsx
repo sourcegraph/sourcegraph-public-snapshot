@@ -142,7 +142,8 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                                 label={formAPI.submitting ? 'Saving' : 'Save changes'}
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="btn btn-primary ml-2 mb-2"
+                                className="ml-2 mb-2"
+                                variant="primary"
                             />
                         </>
                     )}
