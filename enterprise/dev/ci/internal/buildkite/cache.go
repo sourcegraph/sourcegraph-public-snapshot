@@ -33,6 +33,7 @@ type CacheOptions struct {
 	Key         string
 	RestoreKeys []string
 	Paths       []string
+	Compress    bool
 }
 
 func Cache(opts *CacheOptions) StepOpt {
@@ -46,8 +47,8 @@ func Cache(opts *CacheOptions) StepOpt {
 			Key:         opts.Key,
 			RestoreKeys: opts.RestoreKeys,
 			Paths:       opts.Paths,
+			Compress:    opts.Compress,
 			Backend:     "s3",
-			Compress:    true,
 			S3: CacheConfigS3Payload{
 				Bucket:   "sourcegraph_buildkite_cache",
 				Profile:  "buildkite",
