@@ -19,7 +19,7 @@ export const CatalogPage2: React.FunctionComponent<{
     const location = useLocation()
     const separator = useHash ? '#' : '/'
     return (
-        <div className="flex-1 d-flex flex-column w-100">
+        <>
             <ul className={classNames('nav nav-tabs', styles.tabs)}>
                 {tabs.map(({ path, exact, text }) => (
                     <li key={Array.isArray(path) ? path[0] : path} className="nav-item">
@@ -56,7 +56,7 @@ export const CatalogPage2: React.FunctionComponent<{
                     </Route>
                 ))}
             </Switch>
-        </div>
+        </>
     )
 }
 
