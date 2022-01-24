@@ -17,7 +17,7 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Card } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -326,12 +326,14 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             </div>
                         </div>
                         <Button
-                            to={`/sign-up?src=SearchCTA&returnTo=${encodeURIComponent('/user/settings/repositories')}`}
+                            href={`https://about.sourcegraph.com/get-started?src=SearchCTA&returnTo=${encodeURIComponent(
+                                '/user/settings/repositories'
+                            )}`}
                             onClick={onSignUpClick}
                             variant="primary"
-                            as={Link}
+                            as="a"
                         >
-                            Create a free account
+                            Get started searching your public and private repositorie
                         </Button>
                     </Card>
                 )}
