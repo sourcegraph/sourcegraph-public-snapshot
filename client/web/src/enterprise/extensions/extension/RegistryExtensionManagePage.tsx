@@ -11,7 +11,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -169,12 +169,12 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                         {extensionID &&
                             this.state.name &&
                             this.state.name !== this.props.extension.registryExtension.name && (
-                                <div className="alert alert-primary">
+                                <Alert variant="primary">
                                     Extension will be renamed. New extension ID:{' '}
                                     <code id="registry-extension__extensionID">
                                         <strong>{extensionID}</strong>
                                     </code>
-                                </div>
+                                </Alert>
                             )}
                         <Button type="submit" disabled={this.state.updateOrError === 'loading'} variant="primary">
                             {this.state.updateOrError === 'loading' ? <LoadingSpinner /> : 'Update extension'}

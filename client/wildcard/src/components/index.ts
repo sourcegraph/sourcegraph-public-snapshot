@@ -1,3 +1,4 @@
+/** Component exports */
 export { Button } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
@@ -17,9 +18,14 @@ export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink } from '.
 export { Code, H1, H2, H3, H4, H5, H6, Label, Text } from './Typography'
 export * as Typography from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'
-// Export type is required to avoid Webpack warnings.
-export type { LinkProps } from './Link'
 export { Modal } from './Modal'
 export { FeedbackBadge, FeedbackText } from './Feedback'
 export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReason } from './Popover'
+
+/**
+ * Type Exports
+ * `export type` is required to avoid Webpack warnings.
+ */
+export type { LinkProps } from './Link'
+export type { AlertProps, AlertLinkProps } from './Alert'
 export type { PopoverOpenEvent } from './Popover'

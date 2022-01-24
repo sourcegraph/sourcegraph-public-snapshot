@@ -6,20 +6,19 @@ import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { useLocalStorage } from '@sourcegraph/wildcard'
+import { useLocalStorage, AlertProps } from '@sourcegraph/wildcard'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
 import styles from './WebHoverOverlay.module.scss'
 
-const iconKindToAlertKind = {
+const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
     [NotificationType.Info]: 'secondary',
     [NotificationType.Error]: 'danger',
     [NotificationType.Warning]: 'warning',
 }
 
-const getAlertClassName: HoverOverlayProps['getAlertClassName'] = iconKind =>
-    `alert alert-${iconKindToAlertKind[iconKind]}`
+const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
 export const WebHoverOverlay: React.FunctionComponent<
     HoverOverlayProps & HoverThresholdProps & { hoveredTokenElement?: HTMLElement; nav?: (url: string) => void }
@@ -105,7 +104,7 @@ export const WebHoverOverlay: React.FunctionComponent<
             className={styles.webHoverOverlay}
             actionItemClassName="btn btn-sm btn-secondary border-0"
             onAlertDismissed={onAlertDismissed}
-            getAlertClassName={getAlertClassName}
+            getAlertVariant={getAlertVariant}
         />
     )
 }

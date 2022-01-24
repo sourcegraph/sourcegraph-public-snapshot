@@ -1,7 +1,7 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Alert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 
@@ -21,10 +21,10 @@ export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchCh
             headerLine={
                 <>
                     <p>Add access tokens to enable Batch Changes changeset creation for all users.</p>
-                    <div className="alert alert-info">
+                    <Alert variant="info">
                         You are configuring <strong>global credentials</strong> for Batch Changes. The credentials on
                         this page can be used by all users of this Sourcegraph instance to create and sync changesets.
-                    </div>
+                    </Alert>
                 </>
             }
             userID={null}
