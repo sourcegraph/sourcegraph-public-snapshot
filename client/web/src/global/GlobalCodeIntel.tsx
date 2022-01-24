@@ -139,6 +139,38 @@ const FETCH_REFERENCES_QUERY = gql`
 `
 export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
     <>
+        {props.hoveredToken && (
+            <>
+                <div className="card-header">Token under cursor</div>
+                <div className="card-body border-bottom">
+                    <table className="table text-sm">
+                        <tbody>
+                            <tr>
+                                <td>Line</td>
+                                <td>{props.hoveredToken.line}</td>
+                            </tr>
+                            <tr>
+                                <td>Character</td>
+                                <td>{props.hoveredToken.character}</td>
+                            </tr>
+                            <tr>
+                                <td>Repo</td>
+                                <td>{props.hoveredToken.repoName}</td>
+                            </tr>
+                            <tr>
+                                <td>Commit</td>
+                                <td>{props.hoveredToken.commitID}</td>
+                            </tr>
+                            <tr>
+                                <td>Path</td>
+                                <td>{props.hoveredToken.filePath}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </>
+        )}
+
         <div className="card-header">
             References{' '}
             <small>
@@ -146,18 +178,6 @@ export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabPro
             </small>
         </div>
         <div className="card-body border-top">
-            {props.hoveredToken && (
-                <>
-                    <h4>
-                        <b>Token under cursor</b>
-                    </h4>
-                    <p>Line: {props.hoveredToken.line}</p>
-                    <p>Character: {props.hoveredToken.character}</p>
-                    <p>RepoName: {props.hoveredToken.repoName}</p>
-                    <p>CommitID: {props.hoveredToken.commitID}</p>
-                    <p>FilePath: {props.hoveredToken.filePath}</p>
-                </>
-            )}
             {props.hoveredToken && <ReferencesList hoveredToken={props.hoveredToken} />}
         </div>
     </>
