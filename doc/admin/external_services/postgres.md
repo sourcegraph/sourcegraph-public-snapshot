@@ -140,7 +140,7 @@ Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc).
 
 ## Postgres Permissions
 
-By default, the migrations ran by Sourcegraph expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles.
+By default, the migrations that Sourcegraph runs expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles. 
 
 This may not be acceptable in all environments. At minimum we expect that the `PGUSER`
 and `CODEINTEL_PGUSER` have the `ALL` permissions on `PGDATABASE` and `CODEINTEL_PGDATABASE` respectively.
