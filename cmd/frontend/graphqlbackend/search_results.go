@@ -617,7 +617,15 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
 	args.RepoOptions = repoOptions
 
-	var jobs []run.Job
+	var requiredJobs, optionalJobs []run.Job
+	addJob := func(required bool, job run.Job) {
+		if required {
+			requiredJobs = append(requiredJobs, job)
+		} else {
+			optionalJobs = append(optionalJobs, job)
+		}
+	}
+
 	{
 		// This code block creates search jobs under specific
 		// conditions, and depending on generic process of `args` above.
@@ -673,7 +681,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					Zoekt:          args.Zoekt,
 				}
 
-				jobs = append(jobs, &unindexed.RepoUniverseTextSearch{
+				addJob(true, &unindexed.RepoUniverseTextSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 					FileMatchLimit:   args.PatternInfo.FileMatchLimit,
@@ -699,7 +707,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					Zoekt:          args.Zoekt,
 				}
 
-				jobs = append(jobs, &symbol.RepoUniverseSymbolSearch{
+				addJob(true, &symbol.RepoUniverseSymbolSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 					PatternInfo:      args.PatternInfo,
@@ -735,7 +743,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					UseFullDeadline: args.UseFullDeadline,
 				}
 
-				jobs = append(jobs, &unindexed.RepoSubsetTextSearch{
+				addJob(true, &unindexed.RepoSubsetTextSearch{
 					ZoektArgs:         zoektArgs,
 					SearcherArgs:      searcherArgs,
 					FileMatchLimit:    args.PatternInfo.FileMatchLimit,
@@ -762,7 +770,8 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 					Zoekt:          args.Zoekt,
 				}
 
-				jobs = append(jobs, &symbol.RepoSubsetSymbolSearch{
+				required := args.UseFullDeadline || args.ResultTypes.Without(result.TypeSymbol) == 0
+				addJob(required, &symbol.RepoSubsetSymbolSearch{
 					ZoektArgs:         zoektArgs,
 					PatternInfo:       args.PatternInfo,
 					Limit:             r.MaxResults(),
@@ -776,7 +785,15 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 
 		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
 			diff := args.ResultTypes.Has(result.TypeDiff)
-			jobs = append(jobs, &commit.CommitSearch{
+			var required bool
+			if args.UseFullDeadline {
+				required = true
+			} else if diff {
+				required = args.ResultTypes.Without(result.TypeDiff) == 0
+			} else {
+				required = args.ResultTypes.Without(result.TypeCommit) == 0
+			}
+			addJob(required, &commit.CommitSearch{
 				Query:         commit.QueryToGitQuery(args.Query, diff),
 				RepoOpts:      repoOptions,
 				Diff:          diff,
@@ -806,7 +823,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 				UseFullDeadline: args.UseFullDeadline,
 			}
 
-			jobs = append(jobs, &unindexed.StructuralSearch{
+			addJob(true, &unindexed.StructuralSearch{
 				ZoektArgs:    zoektArgs,
 				SearcherArgs: searcherArgs,
 
@@ -893,7 +910,7 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 			if valid() {
 				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
 					args.RepoOptions = repoOptions
-					jobs = append(jobs, &run.RepoSearch{
+					addJob(true, &run.RepoSearch{
 						Args:  &args,
 						Limit: r.MaxResults(),
 					})
@@ -902,42 +919,14 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 		}
 	}
 
-	for _, job := range jobs {
-		switch j := job.(type) {
-		case *commit.CommitSearch:
-			if args.UseFullDeadline {
-				j.IsRequired = true
-				continue
-			}
-
-			if job.Name() == "Diff" {
-				j.IsRequired = (args.ResultTypes.Without(result.TypeDiff) == 0)
-			} else {
-				j.IsRequired = (args.ResultTypes.Without(result.TypeCommit) == 0)
-			}
-		case *symbol.RepoSubsetSymbolSearch:
-			if args.UseFullDeadline {
-				j.IsRequired = true
-				continue
-			}
-
-			j.IsRequired = (args.ResultTypes.Without(result.TypeSymbol) == 0)
-		case *symbol.RepoUniverseSymbolSearch:
-			j.IsRequired = true
-		case *run.RepoSearch:
-			j.IsRequired = true
-		case *unindexed.RepoSubsetTextSearch:
-			j.IsRequired = true
-		case *unindexed.RepoUniverseTextSearch:
-			j.IsRequired = true
-		case *unindexed.StructuralSearch:
-			j.IsRequired = true
-
-		default:
-			panic(fmt.Sprintf("unknown job type: %q", j))
-		}
-	}
-	return &run.Routine{Jobs: jobs, RepoOptions: repoOptions, Timeout: args.Timeout}, nil
+	return &run.Routine{
+		Job: run.NewJobWithOptional(
+			run.NewParallelJob(requiredJobs...),
+			run.NewParallelJob(optionalJobs...),
+		),
+		RepoOptions: repoOptions,
+		Timeout:     args.Timeout,
+	}, nil
 }
 
 // intersect returns the intersection of two sets of search result content
@@ -1808,23 +1797,10 @@ func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (r
 		tr.Finish()
 	}()
 
-	start := time.Now()
-
 	ctx, cancel := context.WithTimeout(ctx, routine.Timeout)
 	defer cancel()
 
 	limit := r.MaxResults()
-	var (
-		requiredWg sync.WaitGroup
-		optionalWg sync.WaitGroup
-	)
-
-	waitGroup := func(required bool) *sync.WaitGroup {
-		if required {
-			return &requiredWg
-		}
-		return &optionalWg
-	}
 
 	// For streaming search we want to limit based on all results, not just
 	// per backend. This works better than batch based since we have higher
@@ -1839,22 +1815,9 @@ func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (r
 
 	agg := run.NewAggregator(stream)
 
-	// This ensures we properly cleanup in the case of an early return. In
-	// particular we want to cancel global searches before returning early.
-	hasStartedAllBackends := false
-	defer func() {
-		if hasStartedAllBackends {
-			return
-		}
-		cancel()
-		requiredWg.Wait()
-		optionalWg.Wait()
-		_, _, _, _ = agg.Get()
-	}()
-
 	repoOptionsCopy := routine.RepoOptions
+	var wg sync.WaitGroup
 	{
-		wg := waitGroup(true)
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
@@ -1882,32 +1845,7 @@ func (r *searchResolver) doResults(ctx context.Context, routine *run.Routine) (r
 		DB:   r.db,
 	}
 
-	// Start all specific search jobs, if any.
-	for _, job := range routine.Jobs {
-		job := job
-		wg := waitGroup(job.Required())
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoSearch(ctx, job, repos)
-		})
-	}
-
-	hasStartedAllBackends = true
-
-	// Wait for required searches.
-	requiredWg.Wait()
-
-	// Give optional searches some minimum budget in case required searches return quickly.
-	// Cancel all remaining searches after this minimum budget.
-	budget := 100 * time.Millisecond
-	elapsed := time.Since(start)
-	timer := time.AfterFunc(budget-elapsed, cancel)
-
-	// Wait for remaining optional searches to finish or get cancelled.
-	optionalWg.Wait()
-
-	timer.Stop()
+	_ = agg.DoSearch(ctx, routine.Job, repos)
 
 	return r.toSearchResults(ctx, agg)
 }
