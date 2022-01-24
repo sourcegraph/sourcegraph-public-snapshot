@@ -29,7 +29,7 @@ aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile build
 # TODO remove this when making job the default queue
 # Skip on normal queues because standard agents do not have fresh asdf installs
 if [ "$BUILDKITE_AGENT_META_DATA_QUEUE" = "standard,default" ]; then 
-  exit 0
+    exit 0
 fi
 
 asdf_checksum=$(sha1sum .tool-versions | awk '{print $1}')
@@ -37,21 +37,21 @@ cache_file="cache-asdf-$asdf_checksum.tar.gz"
 cache_key="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_NAME/$cache_file"
 
 if aws s3api head-object --bucket "sourcegraph_buildkite_cache" --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" --key "$cache_key"; then
-  set -e
-  echo -e "ASDF 🔥 Cache hit: $cache_key"
-  aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "s3://sourcegraph_buildkite_cache/$cache_key" "$HOME/"
-  pushd "$HOME"
-  tar xzf "$cache_file"
-  popd
+    set -e
+    echo -e "ASDF 🔥 Cache hit: $cache_key"
+    aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "s3://sourcegraph_buildkite_cache/$cache_key" "$HOME/"
+    pushd "$HOME"
+    tar xzf "$cache_file"
+    popd
 else
-  set -e
-  echo "--- installing all asdf tool versions"
-  asdf install
-  echo "--- caching asdf installation"
-  pushd "$HOME"
-  tar cfz "$cache_file" .asdf
-  popd
-  aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "$HOME/$cache_file" "s3://sourcegraph_buildkite_cache/$cache_key" 
+    set -e
+    echo "--- installing all asdf tool versions"
+    asdf install
+    echo "--- caching asdf installation"
+    pushd "$HOME"
+    tar cfz "$cache_file" .asdf
+    popd
+    aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "$HOME/$cache_file" "s3://sourcegraph_buildkite_cache/$cache_key" 
 fi
 
 unset AWS_SHARED_CREDENTIALS_FILE
