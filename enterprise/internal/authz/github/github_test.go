@@ -15,8 +15,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func mustURL(t *testing.T, u string) *url.URL {
@@ -719,14 +721,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		})
 
 		t.Run("internal repo in org", func(t *testing.T) {
-			// conf.Mock(&conf.Unified{
-			// 	SiteConfiguration: schema.SiteConfiguration{
-			// 		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			// 			EnableGithubInternalRepoVisibility: true,
-			// 		},
-			// 	},
-			// })
-
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
 			})
@@ -766,26 +760,57 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
-			accountIDs, err := p.FetchRepoPerms(
-				context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
+			t.Run("feature flag disabled", func(t *testing.T) {
 
-			wantAccountIDs := []extsvc.AccountID{
-				// mockListCollaborators members
-				"57463526",
-				"67471",
-				"187831",
-				// dedpulicated MockListOrganizationMembers users
-				"1234",
-				"5678",
-			}
-			if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
-			}
+				accountIDs, err := p.FetchRepoPerms(
+					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
 
+				// These account IDs will have access to the internal repo.
+				wantAccountIDs := []extsvc.AccountID{
+					// mockListCollaborators members only because the feature is disabled.
+					"57463526",
+					"67471",
+					"187831",
+				}
+				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
+					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				}
+			})
+
+			t.Run("feature flag enabled", func(t *testing.T) {
+				conf.Mock(&conf.Unified{
+					SiteConfiguration: schema.SiteConfiguration{
+						ExperimentalFeatures: &schema.ExperimentalFeatures{
+							EnableGithubInternalRepoVisibility: true,
+						},
+					},
+				})
+
+				accountIDs, err := p.FetchRepoPerms(
+					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// These account IDs will have access to the internal repo.
+				wantAccountIDs := []extsvc.AccountID{
+					// mockListCollaborators members.
+					"57463526",
+					"67471",
+					"187831",
+					// dedpulicated MockListOrganizationMembers users as well since the feature is enabled
+					"1234",
+					"5678",
+				}
+				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
+					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				}
+			})
 		})
 
 		t.Run("repo in non-read org but in teams", func(t *testing.T) {
