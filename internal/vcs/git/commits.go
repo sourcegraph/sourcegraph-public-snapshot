@@ -625,10 +625,11 @@ func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRe
 func filterRefDescriptions(ctx context.Context,
 	repo api.RepoName,
 	refDescriptions map[string][]gitdomain.RefDescription,
-	checker authz.SubRepoPermissionChecker) map[string][]gitdomain.RefDescription {
+	checker authz.SubRepoPermissionChecker,
+) map[string][]gitdomain.RefDescription {
 	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
 	for commitID, descriptions := range refDescriptions {
-		if _, err := GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if _, err := GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.Is(err, &gitdomain.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
 	}
