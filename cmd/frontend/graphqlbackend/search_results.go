@@ -575,6 +575,16 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
 func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
+	// MaxResults depends on the query's `count:` parameter, and we should
+	// use the passed-in query to do this. However, `r.MaxResults()` uses
+	// the query stored on the resolver's SearchInputs rather than the passed-in
+	// query. This means for things like `evaluateAnd`, which modify the query
+	// count, the query on the resolver does not match the query passed in here,
+	// which leads to incorrect counts.
+	inputs := *r.SearchInputs // copy search inputs to update q
+	inputs.Query = q
+	maxResults := inputs.MaxResults()
+
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
@@ -706,7 +716,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 					PatternInfo:      args.PatternInfo,
-					Limit:            r.MaxResults(),
+					Limit:            maxResults,
 
 					RepoOptions: repoOptions,
 				})
@@ -769,7 +779,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				addJob(required, &symbol.RepoSubsetSymbolSearch{
 					ZoektArgs:         zoektArgs,
 					PatternInfo:       args.PatternInfo,
-					Limit:             r.MaxResults(),
+					Limit:             maxResults,
 					NotSearcherOnly:   !searcherOnly,
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
@@ -908,7 +918,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 					args.RepoOptions = repoOptions
 					addJob(true, &run.RepoSearch{
 						Args:  &args,
-						Limit: r.MaxResults(),
+						Limit: maxResults,
 					})
 				}
 			}
@@ -919,11 +929,14 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 		Options: repoOptions,
 	})
 
-	return run.NewTimeoutJob(
-		args.Timeout,
-		run.NewJobWithOptional(
-			run.NewParallelJob(requiredJobs...),
-			run.NewParallelJob(optionalJobs...),
+	return run.NewLimitJob(
+		maxResults,
+		run.NewTimeoutJob(
+			args.Timeout,
+			run.NewJobWithOptional(
+				run.NewParallelJob(requiredJobs...),
+				run.NewParallelJob(optionalJobs...),
+			),
 		),
 	), nil
 }
@@ -1796,20 +1809,7 @@ func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *Searc
 		tr.Finish()
 	}()
 
-	limit := r.MaxResults()
-
-	// For streaming search we want to limit based on all results, not just
-	// per backend. This works better than batch based since we have higher
-	// defaults.
-	stream := r.stream
-
-	if stream != nil {
-		var cancelOnLimit context.CancelFunc
-		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
-		defer cancelOnLimit()
-	}
-
-	agg := run.NewAggregator(stream)
+	agg := run.NewAggregator(r.stream)
 
 	_ = agg.DoSearch(ctx, r.db, job)
 
