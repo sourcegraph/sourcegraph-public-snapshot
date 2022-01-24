@@ -23,7 +23,6 @@ func (r RepoMatch) RepoName() types.MinimalRepo {
 	}
 }
 
-// Limit implements Match.Limit()
 func (r RepoMatch) Limit(limit int) int {
 	// Always represents one result and limit > 0 so we just return limit - 1.
 	return limit - 1
