@@ -3,7 +3,7 @@
 exports[`LoaderButton should not render a loading spinner when loading prop is false 1`] = `
 <DocumentFragment>
   <button
-    class="d-flex justify-content-center align-items-center"
+    class="btn d-flex justify-content-center align-items-center"
     type="button"
   >
     Test
@@ -14,7 +14,7 @@ exports[`LoaderButton should not render a loading spinner when loading prop is f
 exports[`LoaderButton should render a loading spinner when loading prop is true 1`] = `
 <DocumentFragment>
   <button
-    class="d-flex justify-content-center align-items-center"
+    class="btn d-flex justify-content-center align-items-center"
     type="button"
   >
     <div
