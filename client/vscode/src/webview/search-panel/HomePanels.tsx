@@ -80,7 +80,7 @@ export const HomePanels: React.FunctionComponent<HomePanelsProps> = props => (
                     {...props}
                 />
                 <div className={styles.thumbnailWrapper}>
-                    <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
+                    <div className={classNames(styles.title, styles.searchExamplesTitle, 'mb-2')}>Watch and learn</div>
                     <div className={styles.thumbnail}>
                         <ModalVideo
                             id="three-ways-to-search-title"

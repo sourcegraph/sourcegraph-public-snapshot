@@ -336,7 +336,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                     <div className={classNames('d-flex justify-content-end w-100 p-3')}>
                         <button
                             type="button"
-                            className="btn btn-sm btn-primary border-0 text-decoration-none"
+                            className="btn btn-primary text border-0 text-decoration-none px-3"
                             onClick={() =>
                                 sourcegraphVSCodeExtensionAPI.openLink(
                                     'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback'
@@ -518,8 +518,10 @@ export const SearchPageCta: React.FunctionComponent<SearchPageCtaProps> = ({
     buttonText,
     onClickAction,
 }) => (
-    <div className="cta-card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
-        <div className="mr-md-3">{icon}</div>
+    <div className="cta-card d-flex flex-md-row flex-column align-items-center p-1">
+        <div className="mr-md-3 ml-3">
+            <div className="w-50">{icon}</div>
+        </div>
         <div className={classNames('flex-1 my-md-0 my-2', styles.streamingSearchResultsCtaContainer)}>
             <div className={classNames('mb-1', styles.streamingSearchResultsCtaTitle)}>
                 <strong>{ctaTitle}</strong>

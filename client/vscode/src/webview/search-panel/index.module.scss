@@ -75,28 +75,29 @@
         grid-column: 2;
         grid-row: 3;
 
-        @media (--md-breakpoint-down) {
+        @media (--sm-breakpoint-down) {
             grid-column: 1;
             grid-row: 4;
-            padding-left: 1rem;
         }
     }
 
     &__cta {
         &-container {
+            padding: 1rem;
             flex: 1;
         }
 
         &-title {
-            font-size: 1rem;
+            font-size: var(--vscode-font-size) !important;
         }
 
         &-description {
-            font-size: 0.875rem;
+            font-size: var(--vscode-font-size) !important;
         }
     }
 
     &__btn {
+        margin-right: 1rem;
         font-size: var(--vscode-font-size) !important;
         background-color: var(--vscode-button-background) !important;
         color: var(--vscode-button-foreground) !important;
@@ -119,6 +120,7 @@
 
 .vsce-search-homepage {
     width: 100%;
+    margin-top: 3rem;
 
     @media (--xl-breakpoint-up) {
         max-width: var(--max-homepage-container-width);
@@ -141,31 +143,30 @@
     justify-content: center;
     margin-bottom: 3rem;
 
-    @media (--sm-breakpoint-down) {
+    @media (--xs-breakpoint-down) {
         align-items: stretch;
         flex-direction: column;
     }
 }
 
 .search-examples-wrapper {
-    width: 100%;
+    flex: 1;
     margin-right: 1.5rem;
 
-    @media (--sm-breakpoint-down) {
+    @media (--xs-breakpoint-down) {
         margin-right: 0;
     }
-
-    flex: 1;
 }
 
 .search-examples-title-wrapper {
-    @media (--md-breakpoint-down) {
+    @media (--sm-breakpoint-down) {
         flex-direction: column;
     }
 }
 
 .search-examples-title {
-    @media (--md-breakpoint-down) {
+    font-size: var(--vscode-editor-font-size) !important;
+    @media (--sm-breakpoint-down) {
         margin-bottom: 0.5rem;
     }
 }
@@ -175,7 +176,7 @@
     color: var(--vscode-descriptionForeground) !important;
     font-size: var(--vscode-editor-font-size) !important;
 
-    @media (--md-breakpoint-down) {
+    @media (--sm-breakpoint-down) {
         margin-bottom: 0.5rem;
     }
 }
@@ -191,11 +192,15 @@
     grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
 
-    @media (--lg-breakpoint-down) {
+    @media (--md-breakpoint-down) {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    @media (--sm-breakpoint-down) {
         grid-template-columns: 1fr 1fr;
     }
 
-    @media (--md-breakpoint-down) {
+    @media (--xs-breakpoint-down) {
         grid-template-columns: 1fr;
     }
 }
@@ -249,8 +254,8 @@
 
 .thumbnailWrapper {
     padding: 0;
-    @media (--sm-breakpoint-down) {
-        margin-top: 3.5rem;
+    @media (--xs-breakpoint-down) {
+        margin-top: 1.5rem;
         text-align: center;
     }
 }

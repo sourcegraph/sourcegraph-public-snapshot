@@ -96,7 +96,7 @@ export const VsceSearchResultsInfoBar: React.FunctionComponent<VsceSearchResults
     )
 
     return (
-        <div className={classNames('flex-grow-1', styles.searchResultsInfoBar)}>
+        <div className={classNames('flex-grow-1 my-2', styles.searchResultsInfoBar)}>
             <div className={styles.row}>
                 <StreamingProgress
                     progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}

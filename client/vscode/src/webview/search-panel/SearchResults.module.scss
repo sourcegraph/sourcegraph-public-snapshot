@@ -26,7 +26,6 @@
         @media (--md-breakpoint-down) {
             grid-column: 1;
             grid-row: 4;
-            padding-left: 1rem;
         }
     }
 }
@@ -50,7 +49,6 @@
     flex-direction: column;
     justify-content: space-between;
     align-self: stretch;
-    margin-right: 1rem;
     margin-bottom: 0.5rem;
 
     :global(.alert) {
@@ -239,10 +237,8 @@
     }
 
     &__wrapper {
-        justify-content: center;
-        align-items: center;
         display: flex;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
     }
 
     &__button {
