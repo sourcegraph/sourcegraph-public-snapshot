@@ -547,7 +547,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 		r, err = p.client.GetRepository(ctx, owner, name)
 		if err != nil {
 			// Maybe the repo doesn't belong to this org? Or Another error occurred in trying to get the
-			// repo. Either way,
+			// repo. Either way, we are not going to syncGroup for this repo.
 			return
 		}
 
