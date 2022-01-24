@@ -1,14 +1,14 @@
 BEGIN;
 
 CREATE TABLE rockskip_ancestry (
-    id       VARCHAR(40) PRIMARY KEY,
-    height   INTEGER     NOT NULL,
-    ancestor VARCHAR(40) NOT NULL
+    commit_id   VARCHAR(40) PRIMARY KEY,
+    height      INTEGER     NOT NULL,
+    ancestor_id VARCHAR(40) NOT NULL
 );
 
 CREATE TABLE rockskip_blobs (
     id           SERIAL        PRIMARY KEY,
-    commit       VARCHAR(40)   NOT NULL,
+    commit_id    VARCHAR(40)   NOT NULL,
     path         TEXT          NOT NULL,
     added        VARCHAR(40)[] NOT NULL,
     deleted      VARCHAR(40)[] NOT NULL,

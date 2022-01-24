@@ -473,9 +473,9 @@ func (git SubprocessGit) CatFile(commit string, path string) ([]byte, error) {
 
 func GetCommit(db Queryable, givenCommit string) (ancestor string, height int, present bool, err error) {
 	err = db.QueryRow(`
-		SELECT ancestor, height
+		SELECT ancestor_id, height
 		FROM rockskip_ancestry
-		WHERE id = $1
+		WHERE commit_id = $1
 	`, givenCommit).Scan(&ancestor, &height)
 	if err == sql.ErrNoRows {
 		return "", 0, false, nil
@@ -487,7 +487,7 @@ func GetCommit(db Queryable, givenCommit string) (ancestor string, height int, p
 
 func InsertCommit(db Queryable, commit string, height int, ancestor string) error {
 	_, err := db.Exec(`
-		INSERT INTO rockskip_ancestry (id, height, ancestor)
+		INSERT INTO rockskip_ancestry (commit_id, height, ancestor_id)
 		VALUES ($1, $2, $3)
 	`, commit, height, ancestor)
 	return errors.Wrap(err, "InsertCommit")
@@ -526,7 +526,7 @@ func InsertBlob(db Queryable, blob Blob) (id int, err error) {
 
 	lastInsertId := 0
 	err = db.QueryRow(`
-		INSERT INTO rockskip_blobs (commit, path, added, deleted, symbol_names, symbol_data)
+		INSERT INTO rockskip_blobs (commit_id, path, added, deleted, symbol_names, symbol_data)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id
 	`, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
@@ -554,7 +554,7 @@ func Search(db Queryable, commit string, query *string) ([]Blob, error) {
 	var rows *sql.Rows
 	if query != nil {
 		rows, err = db.Query(`
-			SELECT id, commit, path, added, deleted, symbol_data
+			SELECT id, commit_id, path, added, deleted, symbol_data
 			FROM rockskip_blobs
 			WHERE
 				$1 && added
@@ -563,7 +563,7 @@ func Search(db Queryable, commit string, query *string) ([]Blob, error) {
 		`, pg.Array(hops), pg.Array([]string{*query}))
 	} else {
 		rows, err = db.Query(`
-			SELECT id, commit, path, added, deleted, symbol_data
+			SELECT id, commit_id, path, added, deleted, symbol_data
 			FROM rockskip_blobs
 			WHERE
 				$1 && added
@@ -606,7 +606,7 @@ func PrintInternals(db Queryable) error {
 
 	// print all rows in the rockskip_ancestry table
 	rows, err := db.Query(`
-		SELECT id, height, ancestor
+		SELECT commit_id, height, ancestor_id
 		FROM rockskip_ancestry
 		ORDER BY height ASC
 	`)
