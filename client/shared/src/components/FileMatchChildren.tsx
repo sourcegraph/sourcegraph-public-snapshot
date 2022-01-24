@@ -33,7 +33,7 @@ import { MatchGroup } from './ranking/PerFileResultRanking'
 import styles from './FileMatchChildren.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
-    location: H.Location
+    location?: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
