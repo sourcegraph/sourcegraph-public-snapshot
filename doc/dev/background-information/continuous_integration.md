@@ -114,6 +114,8 @@ For most basic PR checks, see [Creating PR checks](#creating-pr-checks) for how 
 
 For more advanced usage for specific run types, see [Run types](#run-types).
 
+For caching artefacts to speed up builds, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
+
 #### Creating PR checks
 
 To create a new check that can run on pull requests on relevant files, check the [`changed.Files`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/changed/changed.go) type to see if a relevant `affectsXyz` check already exists.
