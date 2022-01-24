@@ -97,3 +97,11 @@ func (m *Matches) Limit(limit int) int {
 	}
 	return limit
 }
+
+func (m Matches) ResultCount() int {
+	count := 0
+	for _, match := range m {
+		count += match.ResultCount()
+	}
+	return count
+}
