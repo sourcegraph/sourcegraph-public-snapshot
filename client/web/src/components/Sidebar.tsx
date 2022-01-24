@@ -19,8 +19,7 @@ export const SidebarNavItem: React.FunctionComponent<{
     source?: string
 }> = ({ children, className, to, exact, source }) => {
     const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
-    // TODO: double check that when online
-    const routeMatch = useRouteMatch()
+    const routeMatch = useRouteMatch(to)
 
     if (source === 'server') {
         return (
@@ -35,7 +34,7 @@ export const SidebarNavItem: React.FunctionComponent<{
             to={to}
             exact={exact}
             className={buttonClassNames}
-            variant={routeMatch.isExact ? 'primary' : undefined}
+            variant={routeMatch?.isExact ? 'primary' : undefined}
             as={NavLink}
         >
             {children}
