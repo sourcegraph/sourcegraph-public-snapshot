@@ -31,16 +31,13 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
         ? `Add your ${repositoriesVisibility} from GitHub or Gitlab to Sourcegraph and power up your searches with your personal search context.`
         : `Connect with GitHub or Gitlab to add your ${repositoriesVisibility} to Sourcegraph and power up your searches with your personal search context.`
 
-    const buttonText = authenticatedUser
-        ? hasUserAddedExternalServices
-            ? 'Add repositories'
-            : 'Connect with code host'
-        : 'Sign up for Sourcegraph'
+    const buttonText = hasUserAddedExternalServices ? 'Add repositories' : 'Connect with code host'
+
     const linkTo = authenticatedUser
         ? hasUserAddedExternalServices
             ? `/users/${authenticatedUser.username}/settings/repositories`
             : `/users/${authenticatedUser.username}/settings/code-hosts`
-        : `/sign-up?src=Context&returnTo=${encodeURIComponent('/user/settings/repositories')}`
+        : ''
 
     const onClick = (): void => {
         const authenticatedActionKind = hasUserAddedExternalServices ? 'AddRepositories' : 'ConnectCodeHost'
@@ -61,16 +58,31 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             </div>
             <div className="text-muted">{copyText}</div>
 
-            <Button
-                className={styles.searchContextCtaPromptButton}
-                to={linkTo}
-                onClick={onClick}
-                variant="primary"
-                size="sm"
-                as={Link}
-            >
-                {buttonText}
-            </Button>
+            {authenticatedUser ? (
+                <Button
+                    className={styles.searchContextCtaPromptButton}
+                    to={linkTo}
+                    onClick={onClick}
+                    variant="primary"
+                    size="sm"
+                    as={Link}
+                >
+                    {buttonText}
+                </Button>
+            ) : (
+                <Button
+                    className={styles.searchContextCtaPromptButton}
+                    href={`https://about.sourcegraph.com/get-started?src=Context&returnTo=${encodeURIComponent(
+                        '/user/settings/repositories'
+                    )}`}
+                    onClick={onClick}
+                    variant="primary"
+                    size="sm"
+                    as="a"
+                >
+                    Get started
+                </Button>
+            )}
             <Button
                 className={classNames('border-0 ml-2', styles.searchContextCtaPromptButton)}
                 onClick={onDismissClick}
