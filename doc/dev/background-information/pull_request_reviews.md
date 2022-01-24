@@ -146,7 +146,7 @@ It should be obvious to any other teammate from the PR description and/or diff t
 Here are some examples of reasons to skip review that are NOT acceptable:
 
 - "I promised that I would ship this to $CUSTOMER by $DEADLINE"
-  - The customer expects the feature to work and be maintained. review helps ensure both of these things by increasing the quality and distributing ownership.
+  - The customer expects the feature to work and be maintained. Review helps ensure both of these things by increasing the quality and distributing ownership.
 - "This code is experimental"
   - Our goal is to have a review culture such that engineers who are working on "experimental" code still find reviews valuable and worth doing (for all the benefits mentioned in the rest of this document).
   - All code that is in `main` has the potential to impact customers (e.g. by causing a bug) and other developers at Sourcegraph (e.g. by making it harder to refactor code). As such, it is in our interest to ensure a certain quality level on all code whether or not it is considered "experimental".
