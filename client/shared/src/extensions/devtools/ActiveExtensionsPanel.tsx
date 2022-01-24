@@ -3,7 +3,7 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Link, CardHeader, CardBody } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 
@@ -36,7 +36,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
 
     return (
         <>
-            <div className="card-header">Active extensions (DEBUG)</div>
+            <CardHeader>Active extensions (DEBUG)</CardHeader>
             {extensionsOrError ? (
                 isErrorLike(extensionsOrError) ? (
                     <div className="alert alert-danger mb-0 rounded-0">{extensionsOrError.message}</div>
@@ -52,14 +52,14 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                         ))}
                     </div>
                 ) : (
-                    <span className="card-body">No active extensions.</span>
+                    <CardBody>No active extensions.</CardBody>
                 )
             ) : (
-                <span className="card-body">
+                <CardBody>
                     <LoadingSpinner /> Loading extensions...
-                </span>
+                </CardBody>
             )}
-            <div className="card-body border-top">
+            <CardBody className="border-top">
                 <h4>Sideload extension</h4>
                 {sideloadedExtensionURL ? (
                     <div>
@@ -88,7 +88,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                         </div>
                     </div>
                 )}
-            </div>
+            </CardBody>
         </>
     )
 }
