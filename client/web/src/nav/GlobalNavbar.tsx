@@ -310,8 +310,13 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     >
                                         Log in
                                     </Button>
-                                    <Button className={styles.signUp} to="/sign-up" size="sm" as={Link}>
-                                        Sign up
+                                    <Button
+                                        className={styles.signUp}
+                                        href="https://about.sourcegraph.com/get-started"
+                                        size="sm"
+                                        as="a"
+                                    >
+                                        Get started
                                     </Button>
                                 </div>
                             </NavAction>
