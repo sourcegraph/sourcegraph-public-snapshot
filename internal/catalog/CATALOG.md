@@ -12,6 +12,8 @@ Some repositories contain a single component, and some repositories contain many
 
 ### Defining components
 
+TODO: NOTE: Very little of what's described in this doc is actually implemented.
+
 A component is defined by a file stored in a repository (usually alongside the component's source code). Sourcegraph searches for component definition files in the following locations:
 
 - `sourcegraph.yaml` files in all repositories' default branches
