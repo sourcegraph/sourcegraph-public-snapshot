@@ -1,4 +1,4 @@
-# How to update or remove users with the GraphQL API consule
+# How to update or remove users with the GraphQL API console
 
 This document walk you through the steps of using mutation queries to update or remove users via the GraphQL API console. 
 
