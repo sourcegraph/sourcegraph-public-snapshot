@@ -3,6 +3,7 @@ import {
     isVisible,
     setMaxSize,
     setScrollPositions,
+    setStyle,
     setTransform,
     setVisibility,
 } from './tether-browser'
@@ -17,11 +18,13 @@ import { Tether } from './types'
  * @param tether - settings tooltip information.
  * @param eventTarget - event target element event of which has triggered tooltip
  * position update.
+ * @param preserveSize - tells render function do not removing max width|height sizes before
+ * size measuring.
  */
-export function render(tether: Tether, eventTarget: HTMLElement | null): void {
+export function render(tether: Tether, eventTarget: HTMLElement | null, preserveSize?: boolean): void {
     const positions = getScrollPositions(tether.element)
 
-    if (!positions.points.has(eventTarget as Element)) {
+    if (!positions.points.has(eventTarget as Element) && !preserveSize) {
         setMaxSize(tether.element, null)
     }
 
@@ -43,7 +46,26 @@ export function render(tether: Tether, eventTarget: HTMLElement | null): void {
     setTransform(tether.marker ?? null, state.markerAngle, state.markerOffset)
 
     if (!positions.points.has(eventTarget as Element)) {
-        setMaxSize(tether.element, state.elementBounds)
+        const bounds = state.elementBounds ?? state.constrainedElement
+        const elementMaxWidth = Math.min(bounds.width, state.constrainedElement.width)
+
+        // Bound width of the floating element
+        setStyle(tether.element, 'max-width', `${elementMaxWidth}px`)
+
+        const nextElement = tether.element.getBoundingClientRect()
+
+        // If height has been changed by bounding max-width it might change the whole
+        // position calculation. In this case we need to run render algorithm again
+        // to take into account a new width of the floating element.
+        if (layout.element.height !== nextElement.height) {
+            render(tether, eventTarget, true)
+        } else {
+            const elementMaxHeight = Math.min(bounds.height, state.constrainedElement.height)
+
+            setStyle(tether.element, 'max-height', `${elementMaxHeight}px`)
+        }
+
+        // Restore containers scroll positions
         setScrollPositions(positions)
     }
 }

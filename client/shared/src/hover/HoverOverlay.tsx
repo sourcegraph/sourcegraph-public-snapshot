@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React, { CSSProperties } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { Card } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
@@ -105,7 +106,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
     }
 
     return (
-        <div
+        <Card
             // needed for dynamic styling
             data-testid="hover-overlay"
             // eslint-disable-next-line react/forbid-dom-props
@@ -175,6 +176,6 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                         {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
                     </div>
                 )}
-        </div>
+        </Card>
     )
 }

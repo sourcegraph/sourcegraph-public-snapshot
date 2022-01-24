@@ -1,5 +1,5 @@
 import { Menu as ReachMenu, MenuProps as ReachMenuProps } from '@reach/menu-button'
-import { isFunction } from 'lodash'
+import { isFunction, noop } from 'lodash'
 import React from 'react'
 
 import { Popover } from '../Popover'
@@ -18,7 +18,7 @@ export type MenuProps = ReachMenuProps
 export const Menu: React.FunctionComponent<ReachMenuProps> = ({ children, ...props }) => (
     <ReachMenu {...props}>
         {({ isExpanded }) => (
-            <Popover isOpen={isExpanded}>
+            <Popover isOpen={isExpanded} onOpenChange={noop}>
                 {isFunction(children) ? children({ isExpanded, isOpen: isExpanded }) : children}
             </Popover>
         )}

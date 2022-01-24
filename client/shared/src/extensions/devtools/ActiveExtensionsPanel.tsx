@@ -3,17 +3,11 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Link, CardHeader, CardBody, Alert } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
-
-/**
- * TODO: Check if this component will break styles
- * 1. Previously seemed to rely on Bootstrap alert classNames
- * 2. Used in GlobalDebug.tsx which is used both in /web and /browser
- */
 
 export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
     const extensionsOrError = useObservable(
@@ -42,7 +36,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
 
     return (
         <>
-            <div className="card-header">Active extensions (DEBUG)</div>
+            <CardHeader>Active extensions (DEBUG)</CardHeader>
             {extensionsOrError ? (
                 isErrorLike(extensionsOrError) ? (
                     <Alert className="mb-0 rounded-0" variant="danger">
@@ -60,14 +54,14 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                         ))}
                     </div>
                 ) : (
-                    <span className="card-body">No active extensions.</span>
+                    <CardBody>No active extensions.</CardBody>
                 )
             ) : (
-                <span className="card-body">
+                <CardBody>
                     <LoadingSpinner /> Loading extensions...
-                </span>
+                </CardBody>
             )}
-            <div className="card-body border-top">
+            <CardBody className="border-top">
                 <h4>Sideload extension</h4>
                 {sideloadedExtensionURL ? (
                     <div>
@@ -96,7 +90,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                         </div>
                     </div>
                 )}
-            </div>
+            </CardBody>
         </>
     )
 }

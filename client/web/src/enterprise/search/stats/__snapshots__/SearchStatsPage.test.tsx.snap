@@ -118,10 +118,10 @@ exports[`SearchStatsPage renders 1`] = `
       class="my-3"
     />
     <div
-      class="card mb-3"
+      class="mb-3"
     >
       <h4
-        class="card-header"
+        class="cardHeader"
       >
         Languages
       </h4>

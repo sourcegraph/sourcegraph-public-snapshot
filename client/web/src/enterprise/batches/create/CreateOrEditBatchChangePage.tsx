@@ -1,6 +1,6 @@
 import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
-import { noop } from 'lodash'
+import { compact, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
@@ -33,6 +33,7 @@ import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import styles from './CreateOrEditBatchChangePage.module.scss'
+import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
@@ -176,6 +177,8 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     )
 }
 
+const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
+
 interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     batchChange: EditBatchChangeFields
     refetchBatchChange: () => Promise<ApolloQueryResult<GetBatchChangeToEditResult>>
@@ -263,7 +266,10 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
 
     // Disable the preview button if the batch spec code is invalid or the on: statement
     // is missing, or if we're already processing a preview.
-    const previewDisabled = useMemo(() => isValid !== true || isLoadingPreview, [isValid, isLoadingPreview])
+    const previewDisabled = useMemo(() => (isValid !== true ? INVALID_BATCH_SPEC_TOOLTIP : isLoadingPreview), [
+        isValid,
+        isLoadingPreview,
+    ])
 
     const workspacesPreviewResolution = useBatchSpecWorkspaceResolution(batchSpec, { fetchPolicy: 'cache-first' })
 
@@ -290,7 +296,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
             isValid === false || previewError
-                ? "There's a problem with your batch spec."
+                ? INVALID_BATCH_SPEC_TOOLTIP
                 : !hasPreviewed
                 ? 'Preview workspaces first before you run.'
                 : batchSpecStale
@@ -309,16 +315,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         batchSpecStale,
         workspacesPreviewResolution?.state,
     ])
-
-    const errors =
-        codeErrors.update || codeErrors.validation || previewError || executeError ? (
-            <div className="w-100">
-                {codeErrors.update && <ErrorAlert error={codeErrors.update} />}
-                {codeErrors.validation && <ErrorAlert error={codeErrors.validation} />}
-                {previewError && <ErrorAlert error={previewError} />}
-                {executeError && <ErrorAlert error={executeError} />}
-            </div>
-        ) : null
 
     const buttons = (
         <>
@@ -353,13 +349,15 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
-                    <h4>Batch spec</h4>
                     <MonacoBatchSpecEditor
                         batchChangeName={batchChange.name}
                         className={styles.editor}
                         isLightTheme={isLightTheme}
                         value={code}
                         onChange={clearErrorsAndHandleCodeChange}
+                    />
+                    <EditorFeedbackPanel
+                        errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
                 </div>
                 <div
@@ -368,7 +366,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                         'd-flex flex-column align-items-center pl-4'
                     )}
                 >
-                    {errors}
                     <WorkspacesPreview
                         batchSpec={batchSpec}
                         hasPreviewed={hasPreviewed}
