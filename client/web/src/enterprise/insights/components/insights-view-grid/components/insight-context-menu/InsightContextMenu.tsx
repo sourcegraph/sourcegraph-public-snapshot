@@ -4,7 +4,7 @@ import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import { Insight, InsightDashboard, isSearchBasedInsight } from '../../../../core/types'
 
@@ -35,9 +35,11 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
             {({ isOpen }) => (
                 <>
                     <MenuButton
+                        as={Button}
                         data-testid="InsightContextMenuButton"
-                        className={classNames(menuButtonClassName, 'btn btn-outline p-1', styles.button)}
+                        className={classNames(menuButtonClassName, 'p-1', styles.button)}
                         aria-label="Insight options"
+                        outline={true}
                     >
                         <DotsVerticalIcon
                             className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}

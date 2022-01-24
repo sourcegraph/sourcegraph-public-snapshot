@@ -86,7 +86,7 @@ export const ViewWithErrorLikeContent: Story = () => (
 function ContextMenu() {
     return (
         <Menu>
-            <MenuButton className="btn btn-icon p-1">
+            <MenuButton as={Button} className="btn-icon p-1">
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuPopover>

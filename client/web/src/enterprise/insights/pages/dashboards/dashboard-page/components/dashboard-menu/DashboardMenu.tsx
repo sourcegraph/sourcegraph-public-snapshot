@@ -37,10 +37,11 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
     return (
         <Menu>
             <MenuButton
+                as={Button}
                 ref={innerRef}
                 data-tooltip={tooltipText}
                 data-placement="right"
-                className={classNames(styles.triggerButton, 'btn btn-icon')}
+                className={classNames(styles.triggerButton, 'btn-icon')}
             >
                 <VisuallyHidden>Dashboard options</VisuallyHidden>
                 <DotsVerticalIcon size={16} />
