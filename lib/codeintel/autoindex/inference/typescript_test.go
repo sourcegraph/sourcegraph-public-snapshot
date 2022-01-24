@@ -91,7 +91,7 @@ func TestInferTypeScriptIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "",
 					Image:    lsifTscImage,
-					Commands: []string{"npm install"},
+					Commands: []string{"npm install --ignore-scripts"},
 				},
 			},
 			Root:        "",
@@ -104,7 +104,7 @@ func TestInferTypeScriptIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "",
 					Image:    lsifTscImage,
-					Commands: []string{"npm install"},
+					Commands: []string{"npm install --ignore-scripts"},
 				},
 			},
 			Root:        "foo/baz",
@@ -117,7 +117,7 @@ func TestInferTypeScriptIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "",
 					Image:    lsifTscImage,
-					Commands: []string{"npm install"},
+					Commands: []string{"npm install --ignore-scripts"},
 				},
 				{
 					Root:     "foo/bar",
@@ -135,7 +135,7 @@ func TestInferTypeScriptIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "",
 					Image:    lsifTscImage,
-					Commands: []string{"npm install"},
+					Commands: []string{"npm install --ignore-scripts"},
 				},
 				{
 					Root:     "foo/bar",
@@ -145,7 +145,7 @@ func TestInferTypeScriptIndexJobsInstallSteps(t *testing.T) {
 				{
 					Root:     "foo/bar/bonk",
 					Image:    lsifTscImage,
-					Commands: []string{"npm install"},
+					Commands: []string{"npm install --ignore-scripts"},
 				},
 			},
 			Root:        "foo/bar/bonk",
@@ -223,7 +223,7 @@ func TestInferTypeScriptIndexJobsTscLernaConfig(t *testing.T) {
 					{
 						Root:     "",
 						Image:    lsifTscImage,
-						Commands: []string{"npm install"},
+						Commands: []string{"npm install --ignore-scripts"},
 					},
 				},
 				LocalSteps:  nil,
@@ -239,7 +239,7 @@ func TestInferTypeScriptIndexJobsTscLernaConfig(t *testing.T) {
 					{
 						Root:     "",
 						Image:    lsifTscImage,
-						Commands: []string{"npm install"},
+						Commands: []string{"npm install --ignore-scripts"},
 					},
 				},
 				LocalSteps:  nil,
@@ -305,7 +305,7 @@ func TestInferTypeScriptIndexJobsNodeVersionInferrence(t *testing.T) {
 					{
 						Root:     "",
 						Image:    lsifTscImage,
-						Commands: []string{nMuslCommand, "npm install"},
+						Commands: []string{nMuslCommand, "npm install --ignore-scripts"},
 					},
 				},
 				LocalSteps: []string{
@@ -323,7 +323,7 @@ func TestInferTypeScriptIndexJobsNodeVersionInferrence(t *testing.T) {
 					{
 						Root:     "",
 						Image:    lsifTscImage,
-						Commands: []string{nMuslCommand, "npm install"},
+						Commands: []string{nMuslCommand, "npm install --ignore-scripts"},
 					},
 				},
 				LocalSteps: []string{
