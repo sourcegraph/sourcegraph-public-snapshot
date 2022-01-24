@@ -1,12 +1,19 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React from 'react'
-import { Observable } from 'rxjs'
+import React, { useEffect, useMemo } from 'react'
+import { Observable, ReplaySubject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard'
 
+import { ActionItemAction } from '../actions/ActionItem'
+import { HoverMerged } from '../api/client/types/hover'
+import { ViewerId } from '../api/viewerTypes'
+import { Controller as ExtensionsController } from '../extensions/controller'
+import { HoverContext } from '../hover/HoverOverlay.types'
+import { getModeFromPath } from '../languages'
 import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
@@ -16,9 +23,9 @@ import {
     appendLineRangeQueryParameter,
     toPositionOrRangeQueryParameter,
     appendSubtreeQueryParameter,
+    toURIWithPath,
 } from '../util/url'
 
-import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import styles from './FileMatchChildren.module.scss'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { MatchGroup } from './ranking/PerFileResultRanking'
@@ -30,6 +37,10 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+
+    showCodeIntel?: boolean
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
@@ -88,6 +99,73 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
+    // Inform the extension host about the file (if we have code to render).
+    // Code excerpt will call `hoverifier.hoverify`.
+    const viewerUpdates = useMemo(
+        () =>
+            new ReplaySubject<
+                {
+                    viewerId: ViewerId
+                } & HoverContext
+            >(1),
+        []
+    )
+    useEffect(() => {
+        let previousViewerId: ViewerId | undefined
+
+        // TODO extensionsController can be a proxy for enablement
+        if (props.showCodeIntel && props.extensionsController && result.type === 'content' && grouped) {
+            const commitID = result.commit || 'HEAD'
+            const uri = toURIWithPath({
+                repoName: result.repository,
+                filePath: result.path,
+                commitID,
+            })
+            const languageId = getModeFromPath(result.path)
+            const text = ''
+            // HACK: code intel extensions don't depend on the `text` field.
+            // Fix to support other hover extensions on search results
+            // (likely too expensive).
+
+            props.extensionsController.extHostAPI
+                .then(extensionHostAPI =>
+                    Promise.all([
+                        // This call should be made before adding viewer, but since
+                        // messages to web worker are handled in order, we can use Promise.all
+                        extensionHostAPI.addTextDocumentIfNotExists({
+                            uri,
+                            languageId,
+                            text,
+                        }),
+                        extensionHostAPI.addViewerIfNotExists({
+                            type: 'CodeEditor' as const,
+                            resource: uri,
+                            selections: [],
+                            isActive: true,
+                        }),
+                    ])
+                )
+                .then(([, viewerId]) => {
+                    viewerUpdates.next({
+                        viewerId,
+                        repoName: result.repository,
+                        revision: commitID,
+                        commitID,
+                        filePath: result.path,
+                    })
+                })
+                .catch(error => {
+                    console.error('Extension host API error', error)
+                })
+        }
+        return () => {
+            // Remove from extension host
+            props.extensionsController?.extHostAPI
+                .then(extensionHostAPI => previousViewerId && extensionHostAPI.removeViewer(previousViewerId))
+                .catch(error => console.error('Error removing viewer from extension host', error))
+        }
+    }, [grouped, result, viewerUpdates, props.extensionsController, props.showCodeIntel])
+
     return (
         <div className={styles.fileMatchChildren} data-testid="file-match-children">
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
@@ -133,7 +211,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                 )}
                                 data-testid="file-match-children-item"
                             >
-                                <CodeExcerpt
                                     repoName={result.repository}
                                     commitID={result.commit || ''}
                                     filePath={result.path}
@@ -143,6 +220,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                                     isFirst={index === 0}
                                     blobLines={group.blobLines}
+                                    viewerUpdates={viewerUpdates}
+                                    hoverifier={props.hoverifier}
                                 />
                             </Link>
                         </div>

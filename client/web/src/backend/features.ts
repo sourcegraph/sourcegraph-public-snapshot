@@ -27,7 +27,7 @@ import {
  */
 export function getHover(
     context: RepoSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec,
-    { extensionsController }: ExtensionsControllerProps
+    { extensionsController }: ExtensionsControllerProps<'extHostAPI'>
 ): Observable<MaybeLoadingResult<HoverMerged | null>> {
     return concat(
         [{ isLoading: true, result: null }],
@@ -57,7 +57,7 @@ export function getHover(
  */
 export function getDocumentHighlights(
     context: RepoSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec,
-    { extensionsController }: ExtensionsControllerProps
+    { extensionsController }: ExtensionsControllerProps<'extHostAPI'>
 ): Observable<DocumentHighlight[]> {
     return concat(
         [[]],
@@ -89,7 +89,7 @@ export const getFileDecorations = ({
     files: { url: string; isDirectory: boolean; name: string; path: string }[]
     /** uri of node from which this request is made. Used to construct cache key  */
     parentNodeUri: string
-} & ExtensionsControllerProps &
+} & ExtensionsControllerProps<'extHostAPI'> &
     RepoSpec &
     ResolvedRevisionSpec): Observable<FileDecorationsByPath> =>
     from(extensionsController.extHostAPI).pipe(

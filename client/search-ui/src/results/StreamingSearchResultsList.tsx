@@ -8,13 +8,18 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { SearchResult } from '@sourcegraph/search-ui'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     AggregateStreamingSearchResults,
@@ -38,7 +43,8 @@ export interface StreamingSearchResultsListProps
         SettingsCascadeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        PlatformContextProps<'requestGraphQL'> {
+        PlatformContextProps<'requestGraphQL'>,
+        ExtensionsControllerProps<'extHostAPI'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
     location: H.Location
@@ -50,6 +56,8 @@ export interface StreamingSearchResultsListProps
     assetsRoot?: string
     /** Render prop for `<SearchUserNeedsCodeHost>`  */
     renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
+    showCodeIntel?: boolean // TODO This may not be neccesary, just make ext controller + hoverifier optional
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -67,6 +75,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     assetsRoot,
     renderSearchUserNeedsCodeHost,
     platformContext,
+    extensionsController,
+    showCodeIntel,
+    hoverifier,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
@@ -100,6 +111,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
                             settingsCascade={settingsCascade}
+                            showCodeIntel={showCodeIntel}
+                            extensionsController={extensionsController}
+                            hoverifier={hoverifier}
                         />
                     )
                 case 'commit':
@@ -132,6 +146,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             fetchHighlightedFileLineRanges,
             settingsCascade,
             platformContext,
+            extensionsController,
+            showCodeIntel,
+            hoverifier,
         ]
     )
 

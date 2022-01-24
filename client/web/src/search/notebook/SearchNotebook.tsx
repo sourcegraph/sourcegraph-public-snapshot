@@ -7,7 +7,8 @@ import { startWith, switchMap, tap } from 'rxjs/operators'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { useQueryIntelligence } from '@sourcegraph/search/src/useQueryIntelligence'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -32,7 +33,6 @@ export interface SearchNotebookProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
-        ExtensionsControllerProps<'extHostAPI'>,
         FileBlockValidationFunctions {
     globbing: boolean
     isMacPlatform: boolean
@@ -40,6 +40,8 @@ export interface SearchNotebookProps
     onSerializeBlocks: (blocks: Block[]) => void
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
+    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
+    platformContext: Pick<PlatformContext, 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>
 }
 
 const LOADING = 'LOADING' as const
@@ -276,6 +278,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                             {...block}
                             {...blockProps}
                             sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                            extensionsController={extensionsController}
                         />
                     )
             }
@@ -292,6 +295,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             props,
             selectedBlockId,
             sourcegraphSearchLanguageId,
+            extensionsController,
         ]
     )
 

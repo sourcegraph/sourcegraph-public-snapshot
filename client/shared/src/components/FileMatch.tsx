@@ -3,9 +3,14 @@ import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { AggregableBadge } from 'sourcegraph'
 
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import { Badge } from '@sourcegraph/wildcard'
 
+import { ActionItemAction } from '../actions/ActionItem'
+import { HoverMerged } from '../api/client/types/hover'
+import { Controller as ExtensionsController } from '../extensions/controller'
+import { HoverContext } from '../hover/HoverOverlay.types'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -61,6 +66,10 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
      * CSS class name to be applied to the ResultContainer Component
      */
     containerClassName?: string
+
+    showCodeIntel?: boolean
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
