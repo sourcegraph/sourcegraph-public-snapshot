@@ -19,10 +19,11 @@ import {
     commentOnIssue,
     queryIssues,
     IssueLabel,
+    createRelease,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker } from './util'
+import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker, changelogURL } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -594,14 +595,31 @@ Batch change: ${batchChangeURL}`,
             const { upcoming: release } = await releaseVersions(config)
             const githubClient = await getAuthenticatedGitHubClient()
 
+            // Create final GitHub release
+            let githubRelease = ''
+            try {
+                githubRelease = await createRelease(
+                    githubClient,
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        release,
+                    },
+                    dryRun.tags
+                )
+            } catch (error) {
+                console.error('Failed to generate GitHub release:', error)
+                // Do not block process
+            }
+
             // Set up announcement message
-            const versionAnchor = release.format().replace(/\./g, '-')
             const batchChangeURL = batchChanges.batchChangeURL(
                 batchChanges.releaseTrackingBatchChange(release.version, await batchChanges.sourcegraphCLIConfig())
             )
             const releaseMessage = `*Sourcegraph ${release.version} has been published*
 
-* Changelog: https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}
+* Changelog: ${changelogURL(release.format())}
+* GitHub release: ${githubRelease || 'Failed to generate release'}
 * Release batch change: ${batchChangeURL}`
 
             // Slack
