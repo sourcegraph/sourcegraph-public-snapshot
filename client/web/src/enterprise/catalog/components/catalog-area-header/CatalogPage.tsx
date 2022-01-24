@@ -3,7 +3,6 @@ import React from 'react'
 import { matchPath, RouteProps, useLocation, useRouteMatch } from 'react-router'
 import { NavLink, Switch, Route } from 'react-router-dom'
 
-import { CatalogAreaHeader } from './CatalogAreaHeader'
 import styles from './CatalogPage.module.scss'
 
 interface Tab extends Pick<RouteProps, 'path' | 'exact'> {
@@ -12,33 +11,16 @@ interface Tab extends Pick<RouteProps, 'path' | 'exact'> {
     content: React.ReactFragment
 }
 
-interface Props {
-    path: React.ComponentProps<typeof CatalogAreaHeader>['path']
-    tabs: Tab[]
-    actions?: React.ReactFragment
-}
-
-export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs, actions }) => (
-    <CatalogPage2 header={<CatalogAreaHeader path={path} actions={actions} />} tabs={tabs} actions={actions} />
-)
-
-function pathWithPrefix(path: string | string[], prefix: string, separator: string): string[] {
-    return toPaths(path).map(path => (path ? `${prefix}${separator}${path}` : prefix))
-}
-
 export const CatalogPage2: React.FunctionComponent<{
-    header?: React.ReactFragment
     tabs: Tab[]
     useHash?: boolean
-    tabsClassName?: string
-}> = ({ header, tabs, useHash, tabsClassName }) => {
+}> = ({ tabs, useHash }) => {
     const match = useRouteMatch()
     const location = useLocation()
     const separator = useHash ? '#' : '/'
     return (
         <div className="flex-1 d-flex flex-column w-100">
-            {header}
-            <ul className={classNames('nav nav-tabs', tabsClassName)} style={{ marginBottom: '-1px' }}>
+            <ul className={classNames('nav nav-tabs', styles.tabs)}>
                 {tabs.map(({ path, exact, text }) => (
                     <li key={Array.isArray(path) ? path[0] : path} className="nav-item">
                         <NavLink
@@ -77,9 +59,15 @@ export const CatalogPage2: React.FunctionComponent<{
         </div>
     )
 }
+
+function pathWithPrefix(path: string | string[], prefix: string, separator: string): string[] {
+    return toPaths(path).map(path => (path ? `${prefix}${separator}${path}` : prefix))
+}
+
 function toPaths(path: string | string[]): string[] {
     return Array.isArray(path) ? path : [path]
 }
+
 function pathMatchesHash(path: string | string[], hash: string): boolean {
     return toPaths(path).some(path => (path === '' && hash === '') || hash === `#${path}`)
 }

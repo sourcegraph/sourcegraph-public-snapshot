@@ -293,5 +293,9 @@ const SourceSetAtTree: React.FunctionComponent<Props> = ({
         [primaryComponent, props, repository, sourceSet, tree, sourceSetAtTreeViewOptions]
     )
 
-    return <CatalogPage2 tabs={tabs} useHash={true} tabsClassName={styles.tabs} />
+    return (
+        <div className="flex-1 d-flex flex-column w-100">
+            <CatalogPage2 tabs={tabs} useHash={true} />
+        </div>
+    )
 }

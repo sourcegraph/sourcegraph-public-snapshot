@@ -11,7 +11,8 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { CatalogIcon } from '../../../../catalog'
 import { PageTitle } from '../../../../components/PageTitle'
 import { GroupPageResult, GroupPageVariables } from '../../../../graphql-operations'
-import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
+import { CatalogAreaHeader } from '../../components/catalog-area-header/CatalogAreaHeader'
+import { CatalogPage2 } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { GROUP_LINK_FRAGMENT } from '../../components/group-link/GroupLink'
 
@@ -98,7 +99,7 @@ const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch overflow-auto'
 const GroupPageContent: React.FunctionComponent<{
     group: NonNullable<GroupPageResult['group']>
 }> = ({ group }) => {
-    const tabs = useMemo<React.ComponentProps<typeof CatalogPage>['tabs']>(
+    const tabs = useMemo<React.ComponentProps<typeof CatalogPage2>['tabs']>(
         () =>
             [
                 {
@@ -117,9 +118,10 @@ const GroupPageContent: React.FunctionComponent<{
             ].filter(isDefined),
         [group]
     )
-    return (
-        <CatalogPage
-            path={[
+
+    const path = useMemo(
+        () =>
+            [
                 { icon: CatalogIcon, to: '/catalog' },
                 ...group.ancestorGroups.map(group => ({ icon: CatalogGroupIcon, text: group.name, to: group.url })),
                 {
@@ -127,8 +129,14 @@ const GroupPageContent: React.FunctionComponent<{
                     text: group.name,
                     to: group.url,
                 },
-            ].filter(isDefined)}
-            tabs={tabs}
-        />
+            ].filter(isDefined),
+        [group.ancestorGroups, group.name, group.url]
+    )
+
+    return (
+        <div className="flex-1 d-flex flex-column w-100">
+            <CatalogAreaHeader path={path} />
+            <CatalogPage2 tabs={tabs} />
+        </div>
     )
 }

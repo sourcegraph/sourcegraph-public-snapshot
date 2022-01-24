@@ -1,3 +1,8 @@
+.tabs {
+    // So that the bottom border color of the active tab appears to be the active color.
+    margin-bottom: -1px;
+}
+
 .tab {
     // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
     &::after {
