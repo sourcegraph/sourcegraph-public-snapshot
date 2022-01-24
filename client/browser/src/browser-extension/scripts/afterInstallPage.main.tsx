@@ -10,8 +10,12 @@ import { ThemeWrapper } from '../ThemeWrapper'
 
 const AfterInstallPage: React.FunctionComponent = () => (
     <ThemeWrapper>
-        <WildcardThemeProvider>{AfterInstallPageContent}</WildcardThemeProvider>
+        {({ isLightTheme }) => (
+            <WildcardThemeProvider>
+                <AfterInstallPageContent isLightTheme={isLightTheme} />
+            </WildcardThemeProvider>
+        )}
     </ThemeWrapper>
 )
 
-render(<AfterInstallPage />, document.querySelector('#root'))
+document.addEventListener('DOMContentLoaded', () => render(<AfterInstallPage />, document.querySelector('#root')))
