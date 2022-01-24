@@ -8,6 +8,9 @@ args=$*
 
 tracedCommand=$(printf 'buildevents cmd %s %s '"'"'%s'"'" "$BUILDKITE_BUILD_ID" "$BUILDKITE_STEP_ID" "$args")
 eval "$tracedCommand -- $args"
+exit_code="$?"
 
 unset BUILDEVENT_APIKEY
 unset BUILDEVENT_DATASET
+
+exit "$exit_code"
