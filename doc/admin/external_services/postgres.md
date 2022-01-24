@@ -145,6 +145,20 @@ By default, the migrations ran by Sourcegraph expect `SUPERUSER` permissions. So
 This may not be acceptable in all environments. At minimum we expect that the `PGUSER`
 and `CODEINTEL_PGUSER` have the `ALL` permissions on `PGDATABASE` and `CODEINTEL_PGDATABASE` respectively.
 
+`ALL` privileges on the [Database object](https://www.postgresql.org/docs/current/sql-grant.html) include:
+ * `SELECT`
+ * `INSERT`
+ * `UPDATE`
+ * `DELETE`
+ * `TRUNCATE`
+ * `REFERENCES`
+ * `TRIGGER`
+ * `CREATE`
+ * `CONNECT`
+ * `TEMPORARY`
+ * `EXECUTE`
+ * `USAGE`
+
 <!--
 When https://github.com/sourcegraph/deploy-sourcegraph/pull/4058 is merged, 
 we will want to make sure these instructions are updated to reflect any additional
@@ -166,9 +180,6 @@ CREATE USER $PGUSER with encrypted password '$PGPASSWORD';
 
 # Give the application service permissions to the application database
 GRANT ALL PRIVILEGES ON DATABASE $PGDATABASE to $PGUSER;
-
-# Let the application service user own the application database
-ALTER DATABASE $PGDATABASE OWNER TO $PGUSER;
 
 # Select the application database
 \c $PGDATABASE;
@@ -208,19 +219,16 @@ CodeIntel requires some initial setup that requires `SUPERUSER` permissions. A d
 
 ```sql
 # Create the CodeIntel database
-CREATE DATABASE $PGDATABASE;
+CREATE DATABASE $CODEINTEL_PGDATABASE;
 
 # Create the CodeIntel service user
-CREATE USER $PGUSER with encrypted password '$PGPASSWORD';
+CREATE USER $CODEINTEL_PGUSER with encrypted password '$CODEINTEL_PGPASSWORD';
 
 # Give the CodeIntel  permissions to the application database
-GRANT ALL PRIVILEGES ON DATABASE $PGDATABASE to $PGUSER;
-
-# Let the CodeIntel user own the application database
-ALTER DATABASE $PGDATABASE OWNER TO $PGUSER;
+GRANT ALL PRIVILEGES ON DATABASE $CODEINTEL_PGDATABASE to $CODEINTEL_PGUSER;
 
 # Select the application database
-\c $PGDATABASE;
+\c $CODEINTEL_PGDATABASE;
 
 # Install necessary extensions
 CREATE extension citext; 
@@ -236,4 +244,15 @@ These failures must be intepreted by the database administrator and resolved usi
 
 **Initial CodeIntel schema creation**
 
-Similar to the failure in the Sourcegraph DB (pgsql) migrations, the CodeIntel initial migration attempts to `COMMENT` on an extension. 
+Like the failure in the Sourcegraph DB (pgsql) migrations, the CodeIntel initial migration attempts to `COMMENT` on an extension. Resolve this in a similar manner by executing the SQL in the `1000000015_squashed_migrations.up` migration after the `COMMENT` SQL statement.
+
+The following error is a nudge to check the `codeintel_schema_migrations` table in `$CODEINTEL_PGDATABASE`.
+
+```
+Failed to connect to codeintel database: 1 error occurred:
+	* dirty database: schema is marked as dirty but no migrator instance appears to be running
+
+The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
+```
+
+
