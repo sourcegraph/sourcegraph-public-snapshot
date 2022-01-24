@@ -33,7 +33,7 @@ func (c Files) AffectsSg() bool {
 // AffectsTerraformFiles returns whether the changes affects terraform files.
 func (c Files) AffectsTerraformFiles() bool {
 	for _, p := range c {
-		if strings.HasSuffix(p, ".tf")  {
+		if strings.HasSuffix(p, ".tf") {
 			return true
 		}
 	}
