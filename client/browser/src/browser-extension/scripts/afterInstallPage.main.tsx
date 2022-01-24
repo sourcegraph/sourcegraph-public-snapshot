@@ -18,4 +18,4 @@ const AfterInstallPage: React.FunctionComponent = () => (
     </ThemeWrapper>
 )
 
-document.addEventListener('DOMContentLoaded', () => render(<AfterInstallPage />, document.querySelector('#root')))
+render(<AfterInstallPage />, document.querySelector('#root'))
