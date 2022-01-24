@@ -38,7 +38,7 @@ func (s *LimitStream) Send(event SearchEvent) {
 	after := s.remaining.Sub(count)
 	before := after + count
 
-	// Check if the event needs truncated before being sent
+	// Check if the event needs truncating before being sent
 	if after < 0 {
 		limit := before
 		if before < 0 {
