@@ -81,7 +81,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     })
                     .toPromise()
                 // If user is detected, set valid access token to true
-                console.log(currentUser)
                 if (currentUser.data) {
                     setAuthenticatedUser(currentUser.data.currentUser)
                     setValidAccessToken(true)

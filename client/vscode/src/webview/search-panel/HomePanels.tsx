@@ -100,25 +100,6 @@ export const HomePanels: React.FunctionComponent<HomePanelsProps> = props => (
                     </div>
                 </div>
             </div>
-
-            <div className="d-flex justify-content-center">
-                <div className={classNames('card', styles.ctaCard)}>
-                    <div className="d-flex align-items-center">
-                        <span className="badge badge-merged text-uppercase mr-2">Beta</span>
-                    </div>
-                    <span>
-                        Search your public and private code. Read our{' '}
-                        <a
-                            href="https://about.sourcegraph.com/blog/why-index-the-oss-universe/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            blog post
-                        </a>{' '}
-                        to learn more.
-                    </span>
-                </div>
-            </div>
         </div>
     </>
 )
@@ -131,3 +112,24 @@ const MagnifyingGlassSearchIcon = React.memo(() => (
         />
     </svg>
 ))
+
+export const HomePageCta: React.FunctionComponent = () => (
+    <div className="d-flex justify-content-center">
+        <div className={classNames('card', styles.ctaCard)}>
+            <div className="d-flex align-items-center">
+                <span className="badge badge-merged text-uppercase mr-2">Beta</span>
+            </div>
+            <span>
+                Search your public and private code. Read our{' '}
+                <a
+                    href="https://about.sourcegraph.com/blog/why-index-the-oss-universe/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    blog post
+                </a>{' '}
+                to learn more.
+            </span>
+        </div>
+    </div>
+)

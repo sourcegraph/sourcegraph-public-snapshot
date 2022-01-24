@@ -29,7 +29,7 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
     }
     public setTreeView(treeView: vscode.TreeView<string>): void {
         this.treeView = treeView
-        treeView.onDidChangeVisibility(event => {
+        treeView.onDidChangeVisibility(async event => {
             const didBecomeVisible = !this._isViewVisible && event.visible
             this._isViewVisible = event.visible
             if (didBecomeVisible) {
@@ -43,10 +43,8 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
                 //   2. Execute "Reload window" command.
                 //   3. After VS Code loads, open the "Files" view.
                 this.didChangeTreeData.fire(undefined)
-                this.didFocus(this.activeUri).then(
-                    () => {},
-                    () => {}
-                )
+                await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', true)
+                await this.didFocus(this.activeUri)
             }
         })
         treeView.onDidExpandElement(event => {

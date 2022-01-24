@@ -44,7 +44,6 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     fileURL,
     className,
 }) => {
-    console.log(repoName, repoDisplayName)
     const [fileBase, fileName] = splitPath(filePath)
     return (
         <div className={className}>

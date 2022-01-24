@@ -71,7 +71,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const filesTreeView = vscode.window.createTreeView<string>('sourcegraph.files', {
         treeDataProvider: files,
-        showCollapseAll: false,
+        showCollapseAll: true,
     })
 
     files.setTreeView(filesTreeView)
@@ -88,13 +88,11 @@ export function activate(context: vscode.ExtensionContext): void {
                 const sgUri = fs.sourcegraphUri(vsceUri).uri
                 const fileHistorySet = new Set(currentFileHistory).add(sgUri)
                 await storageManager.setFileHistory([...fileHistorySet].slice(-9))
-            } else {
-                await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', false)
             }
         })
     )
     files.didFocus(vscode.window.activeTextEditor?.document.uri).then(
-        () => {},
+        async () => {},
         () => {}
     )
 
@@ -124,12 +122,19 @@ export function activate(context: vscode.ExtensionContext): void {
                 })
                 currentActiveWebviewPanel = webviewPanel
 
+                webviewPanel.onDidChangeViewState(async () => {
+                    if (webviewPanel.visible) {
+                        await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', false)
+                    }
+                })
+
                 searchSidebarMediator.addSearchWebviewPanel(webviewPanel, sourcegraphVSCodeSearchWebviewAPI)
                 await vscode.commands.executeCommand('setContext', 'sourcegraph.activeSearchPanel', false)
                 webviewPanel.onDidDispose(async () => {
                     sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
                     currentActiveWebviewPanel = undefined
                     // Set showFileTree and activeSearchPanel to false
+                    await vscode.commands.executeCommand('setContext', 'sourcegraph.activeSearchPanel', false)
                     await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', false)
                     // Close sidebar when user closes the search panel by displaying their explorer instead
                     await vscode.commands.executeCommand('workbench.view.explorer')

@@ -36,7 +36,6 @@ export class LocalStorageService {
     }
 
     public getFileHistory(): string[] {
-        console.log(this.storage.get<string[]>('sg-files-history-test', []))
         return this.storage.get<string[]>('sg-files-history-test', [])
     }
 

@@ -351,9 +351,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                         src={`https://sourcegraph.com/.assets/img/sourcegraph-logo-${themeProperty}.svg`}
                         alt="Sourcegraph logo"
                     />
-                    <div className={classNames('mt-3', styles.logoText)}>
-                        Search your code and 2M+ open source repositories
-                    </div>
+                    <div className={classNames(styles.logoText)}>Search your code and 2M+ open source repositories</div>
                     <div
                         className={classNames(
                             'flex-grow-0',

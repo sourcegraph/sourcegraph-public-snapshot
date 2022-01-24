@@ -84,18 +84,18 @@
           "id": "sourcegraph.searchSidebar",
           "name": "Search",
           "visibility": "visible",
-          "when": "!sourcegraph.showFileTree && !sourcegraph.canFocusActiveDocument"
+          "when": "!sourcegraph.showFileTree"
         },
         {
           "id": "sourcegraph.files",
           "name": "Sourcegraph Remote Files",
           "visibility": "visible",
-          "when": "sourcegraph.showFileTree || sourcegraph.canFocusActiveDocument"
+          "when": "sourcegraph.canFocusActiveDocument"
         },
         {
           "type": "webview",
           "id": "sourcegraph.extensionHost",
-          "name": "Sourcegraph Extensions",
+          "name": "Extension Host",
           "visibility": "visible",
           "when": "sourcegraph.activeSearchPanel || sourcegraph.showFileTree || sourcegraph.canFocusActiveDocument"
         }

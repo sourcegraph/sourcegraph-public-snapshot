@@ -15,9 +15,11 @@ export async function openSourcegraphUriCommand(fs: SourcegraphFileSystemProvide
     }
     const textDocument = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri.uri))
     const selection = getSelection(uri, textDocument)
+    await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', true)
     await vscode.window.showTextDocument(textDocument, {
         selection,
         viewColumn: vscode.ViewColumn.Active,
+        preview: false,
     })
 }
 

@@ -21,8 +21,8 @@
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    width: 20rem;
-    margin-top: 4rem;
+    width: 14.5rem;
+    margin-top: 7rem;
     max-width: 90%;
 
     /* Reserve the image's height to avoid jitter before it loads. */
@@ -30,6 +30,7 @@
 }
 
 .logo-text {
+    margin-top: 0.5rem;
     align-items: center;
     font-style: italic;
     font-weight: normal;
@@ -40,7 +41,7 @@
 
 .search-container {
     flex: 1 1 auto;
-    margin-top: 2.5rem;
+    margin-top: 2rem;
     width: 100%;
     max-width: var(--max-homepage-container-width);
 
@@ -48,7 +49,7 @@
 
     &--with-content-below {
         flex-grow: 0;
-        margin-bottom: 3rem;
+        margin-bottom: 4.5rem;
     }
 }
 
@@ -151,7 +152,7 @@
 
 .search-examples-wrapper {
     flex: 1;
-    margin-right: 1.5rem;
+    margin-right: 1rem;
 
     @media (--xs-breakpoint-down) {
         margin-right: 0;
@@ -227,7 +228,7 @@
     border-top-left-radius: var(--border-radius);
     border-bottom-left-radius: var(--border-radius);
     color: var(--vscode-button-foreground) !important;
-    background-color: var(--vscode-button-background) !important;
+    // background-color: var(--vscode-button-background) !important;
 
     &:hover {
         color: var(--vscode-button-secondaryHoverBackground) !important;
@@ -263,5 +264,9 @@
 .thumbnail {
     &:hover {
         opacity: 0.3;
+    }
+
+    img {
+        width: 9rem !important;
     }
 }
