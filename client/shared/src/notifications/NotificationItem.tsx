@@ -92,7 +92,7 @@ export class NotificationItem extends React.PureComponent<NotificationItemProps,
 
         const { notificationItemStyleProps } = this.props
         const alertProps =
-            'notificationVariants' in notificationItemStyleProps
+            'notificationItemVariants' in notificationItemStyleProps
                 ? {
                       variant: notificationItemStyleProps.notificationItemVariants[this.props.notification.type],
                       className: baseAlertClassName,
