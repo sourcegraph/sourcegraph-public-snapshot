@@ -915,8 +915,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
 					args.RepoOptions = repoOptions
 					addJob(true, &run.RepoSearch{
-						Args:  &args,
-						Limit: maxResults,
+						Args: &args,
 					})
 				}
 			}
