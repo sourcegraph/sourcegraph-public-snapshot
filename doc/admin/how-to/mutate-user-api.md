@@ -38,7 +38,7 @@ mutation {
   } 
 }
 ```
-> NOTE: `REDACTED` is a place holder for a user ID
+> NOTE: `REDACTED` is a placeholder for a user ID
 
 This query will return the username after altering the user's username data as seen below:
 ```graphql
