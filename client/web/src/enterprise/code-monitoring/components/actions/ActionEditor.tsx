@@ -145,7 +145,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                     className={classNames(styles.cardButton, disabled && 'disabled', `test-action-button-${idName}`)}
                     aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
-                    as={Button}
+                    as={completed ? 'div' : Button}
                     disabled={disabled}
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
