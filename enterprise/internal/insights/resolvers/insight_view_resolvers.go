@@ -789,7 +789,7 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 
 		r.views = r.insightStore.GroupByView(ctx, viewSeries)
 
-		if len(r.views) > 0 {
+		if len(r.views) > 0 && len(r.views) == args.Limit {
 			r.next = r.views[len(r.views)-1].UniqueID
 		}
 	})
