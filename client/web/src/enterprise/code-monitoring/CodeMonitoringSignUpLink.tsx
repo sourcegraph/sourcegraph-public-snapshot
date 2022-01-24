@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Link, Button } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -15,10 +15,12 @@ export const CodeMonitorSignUpLink: React.FunctionComponent<{
     return (
         <Button
             onClick={onClick}
-            to={`/sign-up?returnTo=${encodeURIComponent('/code-monitoring/new')}&src=Monitor`}
+            href={`https://about.sourcegraph.com/get-started?returnTo=${encodeURIComponent(
+                '/code-monitoring/new'
+            )}&src=Monitor`}
             className={className}
             variant="primary"
-            as={Link}
+            as="a"
         >
             {text}
         </Button>
