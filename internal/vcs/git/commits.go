@@ -759,7 +759,6 @@ type CommitGraphOptions struct {
 // from a commit to its parents. If a commit is supplied, the returned graph will
 // be rooted at the given commit. If a non-zero limit is supplied, at most that
 // many commits will be returned.
-// TODO: sub-repo filtering
 func CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
 	args := []string{"log", "--pretty=%H %P", "--topo-order"}
 	if opts.AllRefs {
