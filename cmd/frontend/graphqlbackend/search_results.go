@@ -919,11 +919,14 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 		Options: repoOptions,
 	})
 
-	return run.NewTimeoutJob(
-		args.Timeout,
-		run.NewJobWithOptional(
-			run.NewParallelJob(requiredJobs...),
-			run.NewParallelJob(optionalJobs...),
+	return run.NewLimitJob(
+		r.MaxResults(),
+		run.NewTimeoutJob(
+			args.Timeout,
+			run.NewJobWithOptional(
+				run.NewParallelJob(requiredJobs...),
+				run.NewParallelJob(optionalJobs...),
+			),
 		),
 	), nil
 }
@@ -1796,20 +1799,7 @@ func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *Searc
 		tr.Finish()
 	}()
 
-	limit := r.MaxResults()
-
-	// For streaming search we want to limit based on all results, not just
-	// per backend. This works better than batch based since we have higher
-	// defaults.
-	stream := r.stream
-
-	if stream != nil {
-		var cancelOnLimit context.CancelFunc
-		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
-		defer cancelOnLimit()
-	}
-
-	agg := run.NewAggregator(stream)
+	agg := run.NewAggregator(r.stream)
 
 	_ = agg.DoSearch(ctx, r.db, job)
 
