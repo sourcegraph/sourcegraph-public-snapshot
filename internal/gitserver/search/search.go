@@ -34,8 +34,6 @@ const (
 )
 
 var (
-	partsPerCommit = len(commitFields)
-
 	commitFields = []string{
 		hash,
 		refNames,
@@ -61,6 +59,14 @@ var (
 	sep = []byte{0x0}
 )
 
+func partsPerCommit(includeModifiedFiles bool) int {
+	n := len(commitFields)
+	if includeModifiedFiles {
+		return n + 1
+	}
+	return n
+}
+
 type job struct {
 	batch      []*RawCommit
 	resultChan chan *protocol.CommitMatch
@@ -73,10 +79,11 @@ const (
 )
 
 type CommitSearcher struct {
-	RepoDir     string
-	Query       MatchTree
-	Revisions   []protocol.RevisionSpecifier
-	IncludeDiff bool
+	RepoDir              string
+	Query                MatchTree
+	Revisions            []protocol.RevisionSpecifier
+	IncludeDiff          bool
+	IncludeModifiedFiles bool
 }
 
 // Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
@@ -124,7 +131,11 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 
 func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
 	revArgs := revsToGitArgs(cs.Revisions)
-	cmd := exec.CommandContext(ctx, "git", append(logArgs, revArgs...)...)
+	args := append(logArgs, revArgs...)
+	if cs.IncludeModifiedFiles {
+		args = append(args, "--name-only")
+	}
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = cs.RepoDir
 	stdoutReader, err := cmd.StdoutPipe()
 	if err != nil {
@@ -155,7 +166,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		batch = make([]*RawCommit, 0, batchSize)
 	}
 
-	scanner := NewCommitScanner(stdoutReader)
+	scanner := NewCommitScanner(stdoutReader, cs.IncludeModifiedFiles)
 	for scanner.Scan() {
 		if ctx.Err() != nil {
 			return nil
@@ -262,20 +273,24 @@ type RawCommit struct {
 	CommitterDate  []byte
 	Message        []byte
 	ParentHashes   []byte
+	ModifiedFiles  []byte
 }
 
 type CommitScanner struct {
-	scanner *bufio.Scanner
-	next    *RawCommit
-	err     error
+	scanner              *bufio.Scanner
+	next                 *RawCommit
+	err                  error
+	includeModifiedFiles bool
 }
 
 // NewCommitScanner creates a scanner that does a shallow parse of the stdout of git log.
 // Like the bufio.Scanner() API, call Scan() to ingest the next result, which will return
 // false if it hits an error or EOF, then call NextRawCommit() to get the scanned commit.
-func NewCommitScanner(r io.Reader) *CommitScanner {
+func NewCommitScanner(r io.Reader, includeModifiedFiles bool) *CommitScanner {
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 1024), 1<<22)
+
+	ppc := partsPerCommit(includeModifiedFiles)
 
 	// Split by commit
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
@@ -284,11 +299,11 @@ func NewCommitScanner(r io.Reader) *CommitScanner {
 		}
 
 		// See if we have enough null bytes to constitute a full commit
-		// Look for one more than the number of parts because the each message ends with a null byte too
+		// Look for one more than the number of parts because each message ends with a null byte too
 		sepCount := bytes.Count(data, sep)
-		if sepCount < partsPerCommit+1 {
+		if sepCount < ppc+1 {
 			if atEOF {
-				if sepCount == partsPerCommit {
+				if sepCount == ppc {
 					return len(data), data, nil
 				}
 				return 0, nil, errors.Errorf("incomplete line")
@@ -297,7 +312,7 @@ func NewCommitScanner(r io.Reader) *CommitScanner {
 		}
 
 		// If we do, expand token to the end of that commit
-		for i := 0; i < partsPerCommit; i++ {
+		for i := 0; i < ppc; i++ {
 			idx := bytes.IndexByte(data[len(token):], 0x0)
 			if idx == -1 {
 				panic("we already counted enough bytes in data")
@@ -308,7 +323,8 @@ func NewCommitScanner(r io.Reader) *CommitScanner {
 	})
 
 	return &CommitScanner{
-		scanner: scanner,
+		scanner:              scanner,
+		includeModifiedFiles: includeModifiedFiles,
 	}
 }
 
@@ -321,8 +337,10 @@ func (c *CommitScanner) Scan() bool {
 	buf := make([]byte, len(c.scanner.Bytes()))
 	copy(buf, c.scanner.Bytes())
 
-	parts := bytes.SplitN(buf, sep, partsPerCommit+1)
-	if len(parts) < partsPerCommit+1 {
+	ppc := partsPerCommit(c.includeModifiedFiles)
+
+	parts := bytes.SplitN(buf, sep, ppc+1)
+	if len(parts) < ppc+1 {
 		c.err = errors.Errorf("invalid commit log entry: %q", parts)
 		return false
 	}
@@ -339,6 +357,9 @@ func (c *CommitScanner) Scan() bool {
 		CommitterDate:  parts[8],
 		Message:        bytes.TrimSpace(parts[9]),
 		ParentHashes:   parts[10],
+	}
+	if c.includeModifiedFiles {
+		c.next.ModifiedFiles = parts[11]
 	}
 
 	return true
@@ -373,7 +394,7 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool) (*pro
 	}
 
 	return &protocol.CommitMatch{
-		Oid: api.CommitID(string(lc.Hash)),
+		Oid: api.CommitID(lc.Hash),
 		Author: protocol.Signature{
 			Name:  string(lc.AuthorName),
 			Email: string(lc.AuthorEmail),
@@ -391,6 +412,7 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool) (*pro
 			Content:       string(lc.Message),
 			MatchedRanges: hc.Message,
 		},
-		Diff: diff,
+		Diff:          diff,
+		ModifiedFiles: lc.ModifiedFiles(),
 	}, nil
 }

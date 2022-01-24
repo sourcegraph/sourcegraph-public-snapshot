@@ -80,6 +80,7 @@ func TestSearch(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Len(t, matches, 1)
+		require.Empty(t, matches[0].ModifiedFiles)
 	})
 
 	t.Run("match both, in order", func(t *testing.T) {
@@ -188,6 +189,27 @@ func TestSearch(t *testing.T) {
 		require.Equal(t, matches[0].Author.Name, "camden1")
 		require.Len(t, strings.Split(matches[0].Diff.Content, "\n"), 4)
 	})
+
+	t.Run("match both, in order with modified files", func(t *testing.T) {
+		query := &protocol.MessageMatches{Expr: "c"}
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir:              dir,
+			Query:                tree,
+			IncludeModifiedFiles: true,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
+		})
+		require.NoError(t, err)
+		require.Len(t, matches, 2)
+		require.Equal(t, matches[0].Author.Name, "camden2")
+		require.Equal(t, matches[1].Author.Name, "camden1")
+		require.Equal(t, []string{"file2"}, matches[0].ModifiedFiles)
+		require.Equal(t, []string{"file1"}, matches[1].ModifiedFiles)
+	})
 }
 
 func TestCommitScanner(t *testing.T) {
@@ -211,6 +233,7 @@ func TestCommitScanner(t *testing.T) {
 			CommitterDate:  []byte("1632251505"),
 			Message:        []byte("fix import"),
 			ParentHashes:   []byte("5230097b75dcbb2c214618dd171da4053aff18a6"),
+			ModifiedFiles:  nil,
 		}, {
 			Hash:           []byte("5230097b75dcbb2c214618dd171da4053aff18a6"),
 			RefNames:       []byte(""),
@@ -223,12 +246,13 @@ func TestCommitScanner(t *testing.T) {
 			CommitterDate:  []byte("1632248499"),
 			Message:        []byte("only set matches if they exist"),
 			ParentHashes:   []byte(""),
+			ModifiedFiles:  nil,
 		}},
 	}}
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
-			scanner := NewCommitScanner(bytes.NewReader(tc.input))
+			scanner := NewCommitScanner(bytes.NewReader(tc.input), false)
 			var output []*RawCommit
 			for scanner.Scan() {
 				output = append(output, scanner.NextRawCommit())

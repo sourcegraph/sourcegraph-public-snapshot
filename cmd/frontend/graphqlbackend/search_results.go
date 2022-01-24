@@ -777,12 +777,13 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
 			diff := args.ResultTypes.Has(result.TypeDiff)
 			jobs = append(jobs, &commit.CommitSearch{
-				Query:         commit.QueryToGitQuery(args.Query, diff),
-				RepoOpts:      repoOptions,
-				Diff:          diff,
-				HasTimeFilter: commit.HasTimeFilter(args.Query),
-				Limit:         int(args.PatternInfo.FileMatchLimit),
-				Db:            r.db,
+				Query:                     commit.QueryToGitQuery(args.Query, diff),
+				RepoOpts:                  repoOptions,
+				Diff:                      diff,
+				HasTimeFilter:             commit.HasTimeFilter(args.Query),
+				Limit:                     int(args.PatternInfo.FileMatchLimit),
+				Db:                        r.db,
+				SubRepoPermissionsChecker: authz.DefaultSubRepoPermsChecker,
 			})
 		}
 
