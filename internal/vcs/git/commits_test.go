@@ -16,13 +16,75 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
+var (
+	fileWithAccess    = "file-with-access"
+	fileWithoutAccess = "file-without-access"
+)
+
 func TestRepository_GetCommit(t *testing.T) {
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
+	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
+
+	oldRunCommitLog := runCommitLog
+
+	type testCase struct {
+		repo                  api.RepoName
+		id                    api.CommitID
+		wantCommit            *gitdomain.Commit
+		noEnsureRevision      bool
+		revisionNotFoundError bool
+	}
+
+	runGetCommitTests := func(checker authz.SubRepoPermissionChecker, tests map[string]testCase) {
+		for label, test := range tests {
+			t.Run(label, func(t *testing.T) {
+				var noEnsureRevision bool
+				t.Cleanup(func() {
+					runCommitLog = oldRunCommitLog
+				})
+				runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*wrappedCommit, error) {
+					// Track the value of NoEnsureRevision we pass to gitserver
+					noEnsureRevision = opt.NoEnsureRevision
+					return oldRunCommitLog(ctx, cmd, opt)
+				}
+
+				resolveRevisionOptions := ResolveRevisionOptions{
+					NoEnsureRevision: test.noEnsureRevision,
+				}
+				commit, err := GetCommit(ctx, test.repo, test.id, resolveRevisionOptions, checker)
+				if err != nil {
+					if test.revisionNotFoundError {
+						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+							t.Errorf("%s: GetCommit: expected a RevisionNotFoundError, got %s", label, err)
+						}
+						return
+					}
+					t.Errorf("%s: GetCommit: %s", label, err)
+				}
+
+				if !CommitsEqual(commit, test.wantCommit) {
+					t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
+				}
+
+				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
+				if _, err := GetCommit(ctx, test.repo, NonExistentCommitID, resolveRevisionOptions, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
+				}
+
+				if noEnsureRevision != test.noEnsureRevision {
+					t.Fatalf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
+				}
+			})
+		}
+	}
+
 	wantGitCommit := &gitdomain.Commit{
 		ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
 		Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
@@ -30,12 +92,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		Message:   "bar",
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
-	tests := map[string]struct {
-		repo             api.RepoName
-		id               api.CommitID
-		wantCommit       *gitdomain.Commit
-		noEnsureRevision bool
-	}{
+	tests := map[string]testCase{
 		"git cmd with NoEnsureRevision false": {
 			repo:             MakeGitRepository(t, gitCommands...),
 			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
@@ -49,42 +106,30 @@ func TestRepository_GetCommit(t *testing.T) {
 			noEnsureRevision: true,
 		},
 	}
-
-	oldRunCommitLog := runCommitLog
-
-	for label, test := range tests {
-		var noEnsureRevision bool
-		t.Cleanup(func() {
-			runCommitLog = oldRunCommitLog
-		})
-		runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*wrappedCommit, error) {
-			// Track the value of NoEnsureRevision we pass to gitserver
-			noEnsureRevision = opt.NoEnsureRevision
-			return oldRunCommitLog(ctx, cmd, opt)
-		}
-
-		resolveRevisionOptions := ResolveRevisionOptions{
-			NoEnsureRevision: test.noEnsureRevision,
-		}
-		commit, err := GetCommit(ctx, test.repo, test.id, resolveRevisionOptions)
-		if err != nil {
-			t.Errorf("%s: GetCommit: %s", label, err)
-			continue
-		}
-
-		if !CommitsEqual(commit, test.wantCommit) {
-			t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
-		}
-
-		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := GetCommit(ctx, test.repo, NonExistentCommitID, resolveRevisionOptions); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
-		}
-
-		if noEnsureRevision != test.noEnsureRevision {
-			t.Fatalf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
-		}
+	// Run basic tests w/o sub-repo permissions checker
+	runGetCommitTests(nil, tests)
+	checker := getTestSubRepoPermsChecker(fileWithoutAccess)
+	// Add test cases with file names for sub-repo permissions testing
+	tests["with sub-repo permissions and access to file"] = testCase{
+		repo: MakeGitRepository(t, gitCommandsWithFiles...),
+		id:   "da50eed82c8ff3c17bb642000d8aad9d434283c1",
+		wantCommit: &gitdomain.Commit{
+			ID:        "da50eed82c8ff3c17bb642000d8aad9d434283c1",
+			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message:   "commit1",
+		},
+		noEnsureRevision: true,
 	}
+	tests["with sub-repo permissions and NO access to file"] = testCase{
+		repo:                  MakeGitRepository(t, gitCommandsWithFiles...),
+		id:                    "ee7773505e98390e809cbf518b2a92e4748b0187",
+		wantCommit:            &gitdomain.Commit{},
+		noEnsureRevision:      true,
+		revisionNotFoundError: true,
+	}
+	// Run test w/ sub-repo permissions filtering
+	runGetCommitTests(checker, tests)
 }
 
 func TestRepository_HasCommitAfter(t *testing.T) {
@@ -165,7 +210,9 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 
 func TestRepository_FirstEverCommit(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	testCases := []struct {
 		commitDates []string
@@ -188,71 +235,165 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			want: "2007-01-02T15:04:05Z",
 		},
 	}
-	for _, tc := range testCases {
-		gitCommands := make([]string, len(tc.commitDates))
-		for i, date := range tc.commitDates {
-			gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
-		}
+	t.Run("basic", func(t *testing.T) {
+		for _, tc := range testCases {
+			gitCommands := make([]string, len(tc.commitDates))
+			for i, date := range tc.commitDates {
+				gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+			}
 
-		repo := MakeGitRepository(t, gitCommands...)
-		gotCommit, err := FirstEverCommit(ctx, repo)
-		if err != nil {
-			t.Fatal(err)
+			repo := MakeGitRepository(t, gitCommands...)
+			gotCommit, err := FirstEverCommit(ctx, repo, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := gotCommit.Committer.Date.Format(time.RFC3339)
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
 		}
-		got := gotCommit.Committer.Date.Format(time.RFC3339)
-		if got != tc.want {
-			t.Errorf("got %q, want %q", got, tc.want)
+	})
+
+	t.Run("with sub-repo permissions", func(t *testing.T) {
+		checkerWithoutAccessFirstCommit := getTestSubRepoPermsChecker("file0")
+		checkerWithAccessFirstCommit := getTestSubRepoPermsChecker("file1")
+		for _, tc := range testCases {
+			gitCommands := make([]string, 0, len(tc.commitDates))
+			for i, date := range tc.commitDates {
+				fileName := fmt.Sprintf("file%d", i)
+				gitCommands = append(gitCommands, fmt.Sprintf("touch %s", fileName))
+				gitCommands = append(gitCommands, fmt.Sprintf("git add %s", fileName))
+				gitCommands = append(gitCommands, fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit -m foo --author='a <a@a.com>'", date))
+			}
+
+			repo := MakeGitRepository(t, gitCommands...)
+			// Try to get first commit when user doesn't have permission to view
+			_, err := FirstEverCommit(ctx, repo, checkerWithoutAccessFirstCommit)
+			if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				t.Errorf("expected a RevisionNotFoundError since the user does not have access to view this commit, got :%s", err)
+			}
+			// Try to get first commit when user does have permission to view, should succeed
+			gotCommit, err := FirstEverCommit(ctx, repo, checkerWithAccessFirstCommit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := gotCommit.Committer.Date.Format(time.RFC3339)
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+			// Internal actor should always have access and ignore sub-repo permissions
+			newCtx := actor.WithActor(context.Background(), &actor.Actor{
+				UID:      1,
+				Internal: true,
+			})
+			gotCommit, err = FirstEverCommit(newCtx, repo, checkerWithoutAccessFirstCommit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got = gotCommit.Committer.Date.Format(time.RFC3339)
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
 		}
-	}
+	})
 }
 
 func TestHead(t *testing.T) {
 	t.Parallel()
 
-	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	}
-	repo := MakeGitRepository(t, gitCommands...)
-	ctx := context.Background()
+	t.Run("basic", func(t *testing.T) {
+		gitCommands := []string{
+			"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		}
+		repo := MakeGitRepository(t, gitCommands...)
+		ctx := context.Background()
 
-	head, exists, err := Head(ctx, repo)
-	if err != nil {
-		t.Fatal(err)
-	}
-	wantHead := "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"
-	if head != wantHead {
-		t.Fatalf("Want %q, got %q", wantHead, head)
-	}
-	if !exists {
-		t.Fatal("Should exist")
-	}
+		head, exists, err := Head(ctx, repo, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantHead := "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"
+		if head != wantHead {
+			t.Fatalf("Want %q, got %q", wantHead, head)
+		}
+		if !exists {
+			t.Fatal("Should exist")
+		}
+	})
+
+	t.Run("with sub-repo permissions", func(t *testing.T) {
+		gitCommands := []string{
+			"touch file",
+			"git add file",
+			"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		}
+		repo := MakeGitRepository(t, gitCommands...)
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
+			UID: 1,
+		})
+		checker := getTestSubRepoPermsChecker("file")
+		// call Head() when user doesn't have access to view the commit
+		_, exists, err := Head(ctx, repo, checker)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists {
+			t.Fatalf("exists should be false since the user doesn't have access to view the commit")
+		}
+		readAllChecker := getTestSubRepoPermsChecker()
+		// call Head() when user has access to view the commit; should return expected commit
+		head, exists, err := Head(ctx, repo, readAllChecker)
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantHead := "46619ad353dbe4ed4108ebde9aa59ef676994a0b"
+		if head != wantHead {
+			t.Fatalf("Want %q, got %q", wantHead, head)
+		}
+		if !exists {
+			t.Fatal("Should exist")
+		}
+	})
 }
 
 func TestCommitExists(t *testing.T) {
 	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+
+	testCommitExists := func(label string, gitCommands []string, commitID, nonExistentCommitID api.CommitID, checker authz.SubRepoPermissionChecker) {
+		t.Run(label, func(t *testing.T) {
+			repo := MakeGitRepository(t, gitCommands...)
+
+			exists, err := CommitExists(ctx, repo, commitID, checker)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !exists {
+				t.Fatal("Should exist")
+			}
+
+			exists, err = CommitExists(ctx, repo, NonExistentCommitID, checker)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if exists {
+				t.Fatal("Should not exist")
+			}
+		})
+	}
 
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
-	repo := MakeGitRepository(t, gitCommands...)
-	ctx := context.Background()
-
-	wantCommit := api.CommitID("ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8")
-	exists, err := CommitExists(ctx, repo, wantCommit)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !exists {
-		t.Fatal("Should exist")
-	}
-
-	exists, err = CommitExists(ctx, repo, NonExistentCommitID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if exists {
-		t.Fatal("Should not exist")
-	}
+	testCommitExists("basic", gitCommands, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", NonExistentCommitID, nil)
+	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
+	commitIDWithAccess := api.CommitID("da50eed82c8ff3c17bb642000d8aad9d434283c1")
+	commitIDWithoutAccess := api.CommitID("ee7773505e98390e809cbf518b2a92e4748b0187")
+	// Test that the commit ID the user has access to exists, and CommitExists returns false for the commit ID the user
+	// doesn't have access to (since a file was modified in the commit that the user doesn't have permissions to view)
+	testCommitExists("with sub-repo permissions filtering", gitCommandsWithFiles, commitIDWithAccess, commitIDWithoutAccess, getTestSubRepoPermsChecker(fileWithoutAccess))
 }
 
 func TestRepository_Commits(t *testing.T) {
@@ -798,13 +939,29 @@ func checkCommits(t *testing.T, label string, commits, wantCommits []*gitdomain.
 }
 
 // get a test sub-repo permissions checker which allows access to all files (so should be a no-op)
-func getTestSubRepoPermsChecker() authz.SubRepoPermissionChecker {
+func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermissionChecker {
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
 	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		for _, noAccessPath := range noAccessPaths {
+			if content.Path == noAccessPath {
+				return authz.None, nil
+			}
+		}
 		return authz.Read, nil
 	})
 	return checker
+}
+
+func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
+	return []string{
+		fmt.Sprintf("touch %s", fileName1),
+		fmt.Sprintf("git add %s", fileName1),
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		fmt.Sprintf("touch %s", fileName2),
+		fmt.Sprintf("git add %s", fileName2),
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
 }

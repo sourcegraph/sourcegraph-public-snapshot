@@ -42,7 +42,7 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	if err != nil {
 		return false, err
 	}
-	return git.CommitExists(ctx, repo, api.CommitID(commit))
+	return git.CommitExists(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 }
 
 // Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
@@ -59,7 +59,7 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 		return "", false, err
 	}
 
-	return git.Head(ctx, repo)
+	return git.Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
 }
 
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
