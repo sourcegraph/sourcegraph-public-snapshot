@@ -2,7 +2,6 @@ package ci
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -107,7 +106,7 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 
 // Run enterprise/dev/ci/scripts tests
 func addCIScriptsTests(pipeline *bk.Pipeline) {
-	files, err := ioutil.ReadDir("./enterprise/dev/ci/scripts/tests")
+	files, err := os.ReadDir("./enterprise/dev/ci/scripts/tests")
 	if err != nil {
 		log.Fatalf("Failed to list CI scripts tests scripts: %s", err)
 	}
@@ -115,7 +114,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 	var stepOpts []bk.StepOpt
 	for _, f := range files {
 		if filepath.Ext(f.Name()) == ".sh" {
-			stepOpts = append(stepOpts, bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/tests/%s", f.Name())))
+			stepOpts = append(stepOpts, bk.RawCmd(fmt.Sprintf("./enterprise/dev/ci/scripts/tests/%s", f.Name())))
 		}
 	}
 
