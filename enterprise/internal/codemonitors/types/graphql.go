@@ -23,7 +23,10 @@ func (c *CommitSearchResults) UnmarshalJSON(b []byte) error {
 		if err := json.Unmarshal(rawMessage, &t); err != nil {
 			return err
 		}
-		if t.Typename != "CommitSearchResult" {
+
+		switch t.Typename {
+		case "CommitSearchResults", "":
+		default:
 			return errors.Errorf("expected result type %q, got %q", "CommitSearchResult", t.Typename)
 		}
 
