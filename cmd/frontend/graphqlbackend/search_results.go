@@ -798,12 +798,12 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				required = args.ResultTypes.Without(result.TypeCommit) == 0
 			}
 			addJob(required, &commit.CommitSearch{
-				Query:         commit.QueryToGitQuery(args.Query, diff),
-				RepoOpts:      repoOptions,
-				Diff:          diff,
-				HasTimeFilter: commit.HasTimeFilter(args.Query),
-				Limit:         int(args.PatternInfo.FileMatchLimit),
-				SubRepoPermissionsChecker: authz.DefaultSubRepoPermsChecker,
+				Query:                commit.QueryToGitQuery(args.Query, diff),
+				RepoOpts:             repoOptions,
+				Diff:                 diff,
+				HasTimeFilter:        commit.HasTimeFilter(args.Query),
+				Limit:                int(args.PatternInfo.FileMatchLimit),
+				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 			})
 		}
 

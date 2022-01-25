@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -24,13 +23,12 @@ import (
 )
 
 type CommitSearch struct {
-	Query         gitprotocol.Node
-	RepoOpts      search.RepoOptions
-	Diff          bool
-	HasTimeFilter bool
-	Limit         int
-
-	SubRepoPermissionsChecker authz.SubRepoPermissionChecker
+	Query                gitprotocol.Node
+	RepoOpts             search.RepoOptions
+	Diff                 bool
+	HasTimeFilter        bool
+	Limit                int
+	IncludeModifiedFiles bool
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
@@ -75,7 +73,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 			Query:                j.Query,
 			IncludeDiff:          j.Diff,
 			Limit:                j.Limit,
-			IncludeModifiedFiles: authz.SubRepoEnabled(j.SubRepoPermissionsChecker),
+			IncludeModifiedFiles: j.IncludeModifiedFiles,
 		}
 
 		onMatches := func(in []protocol.CommitMatch) {
