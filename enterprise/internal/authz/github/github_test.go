@@ -561,12 +561,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			},
 		}
 
-		mockInternalOrgRepo = github.Repository{
-			ID:         "github_repo_id",
-			IsPrivate:  true,
-			Visibility: github.VisibilityInternal,
-		}
-
 		mockListCollaborators = func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
 			switch page {
 			case 1:
@@ -721,6 +715,12 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		})
 
 		t.Run("internal repo in org", func(t *testing.T) {
+			mockInternalOrgRepo := github.Repository{
+				ID:         "github_repo_id",
+				IsPrivate:  true,
+				Visibility: github.VisibilityInternal,
+			}
+
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
 			})

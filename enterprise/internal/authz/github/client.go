@@ -70,9 +70,10 @@ type mockClient struct {
 	MockGetAuthenticatedUserOrgsDetailsAndMembership func(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
 	MockGetAuthenticatedUserTeams                    func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
 	MockGetOrganization                              func(ctx context.Context, login string) (org *github.OrgDetails, err error)
-	MockGetAuthenticatedOAuthScopes                  func(ctx context.Context) ([]string, error)
 	MockGetRepository                                func(ctx context.Context, owner, repo string) (*github.Repository, error)
-	MockWithToken                                    func(token string) client
+
+	MockGetAuthenticatedOAuthScopes func(ctx context.Context) ([]string, error)
+	MockWithToken                   func(token string) client
 }
 
 func (m *mockClient) ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
@@ -115,12 +116,12 @@ func (m *mockClient) GetOrganization(ctx context.Context, login string) (org *gi
 	return m.MockGetOrganization(ctx, login)
 }
 
-func (m *mockClient) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error) {
-	return m.MockGetAuthenticatedOAuthScopes(ctx)
-}
-
 func (m *mockClient) GetRepository(ctx context.Context, owner, name string) (*github.Repository, error) {
 	return m.MockGetRepository(ctx, owner, name)
+}
+
+func (m *mockClient) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error) {
+	return m.MockGetAuthenticatedOAuthScopes(ctx)
 }
 
 func (m *mockClient) WithToken(token string) client {
