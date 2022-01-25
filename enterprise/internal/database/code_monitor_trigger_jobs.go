@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -18,10 +19,7 @@ type TriggerJob struct {
 	// The query we ran including after: filter.
 	QueryString *string
 
-	// Whether we got any results.
-	Results       *bool
-	NumResults    *int32
-	ResultPayload []byte
+	SearchResults cmtypes.CommitSearchResults
 
 	// Fields demanded for any dbworker.
 	State          string
@@ -67,19 +65,17 @@ func (s *codeMonitorStore) EnqueueQueryTriggerJobs(ctx context.Context) ([]*Trig
 const logSearchFmtStr = `
 UPDATE cm_trigger_jobs
 SET query_string = %s,
-    results = %s,
-    num_results = %s,
-    result_payload = %s
+    search_results = %s
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, numResults int, payload []byte) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, payload, triggerJobID))
+func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results cmtypes.CommitSearchResults) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, results, triggerJobID))
 }
 
 const deleteObsoleteJobLogsFmtStr = `
 DELETE FROM cm_trigger_jobs
-WHERE results IS NOT TRUE
+WHERE jsonb_array_length(search_results) = 0
 AND state = 'completed'
 `
 
@@ -127,7 +123,7 @@ func (o ListTriggerJobsOpts) Limit() *sqlf.Query {
 const getEventsForQueryIDInt64FmtStr = `
 SELECT %s
 FROM cm_trigger_jobs
-WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
+WHERE ((state = 'completed' AND jsonb_array_length(search_results) > 0) OR (state != 'completed'))
 AND %s
 ORDER BY id ASC
 LIMIT %s;
@@ -151,7 +147,7 @@ func (s *codeMonitorStore) ListQueryTriggerJobs(ctx context.Context, opts ListTr
 const totalCountEventsForQueryIDInt64FmtStr = `
 SELECT COUNT(*)
 FROM cm_trigger_jobs
-WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
+WHERE ((state = 'completed' AND jsonb_array_len(search_results) > 0) OR (state != 'completed'))
 AND query = %s
 `
 
@@ -194,8 +190,7 @@ func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
 		&m.ID,
 		&m.Query,
 		&m.QueryString,
-		&m.Results,
-		&m.NumResults,
+		&m.SearchResults,
 		&m.State,
 		&m.FailureMessage,
 		&m.StartedAt,
@@ -204,7 +199,6 @@ func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
 		&m.NumResets,
 		&m.NumFailures,
 		&m.LogContents,
-		&m.ResultPayload,
 	)
 	return m, err
 }
@@ -213,8 +207,7 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.id"),
 	sqlf.Sprintf("cm_trigger_jobs.query"),
 	sqlf.Sprintf("cm_trigger_jobs.query_string"),
-	sqlf.Sprintf("cm_trigger_jobs.results"),
-	sqlf.Sprintf("cm_trigger_jobs.num_results"),
+	sqlf.Sprintf("cm_trigger_jobs.search_results"),
 	sqlf.Sprintf("cm_trigger_jobs.state"),
 	sqlf.Sprintf("cm_trigger_jobs.failure_message"),
 	sqlf.Sprintf("cm_trigger_jobs.started_at"),
@@ -223,5 +216,4 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.num_resets"),
 	sqlf.Sprintf("cm_trigger_jobs.num_failures"),
 	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
-	sqlf.Sprintf("cm_trigger_jobs.result_payload"),
 }

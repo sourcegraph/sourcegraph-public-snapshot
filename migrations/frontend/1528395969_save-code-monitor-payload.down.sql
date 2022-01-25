@@ -1,6 +1,6 @@
 BEGIN;
 
 ALTER TABLE cm_trigger_jobs
-    DROP COLUMN result_payload;
+    DROP COLUMN search_results;
 
 COMMIT;

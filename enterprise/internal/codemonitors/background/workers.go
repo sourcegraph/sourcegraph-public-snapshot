@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -183,13 +182,8 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
-	payload, err := json.Marshal(results)
-	if err != nil {
-		return err
-	}
-
 	// Log the actual query we ran and whether we got any new results.
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, len(results.Results), payload)
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, results.Results)
 	if err != nil {
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
