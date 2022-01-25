@@ -683,8 +683,8 @@ describe('e2e test suite', () => {
                                         ).length
                                 )
                             ).toEqual(
-                                // Basic code intel finds 8 references with some overlapping context, resulting in 5 hunks.
-                                5
+                                // Basic code intel finds 8 references with some overlapping context, resulting in 4 hunks.
+                                4
                             )
                         )
 
