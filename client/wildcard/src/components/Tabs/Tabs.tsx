@@ -18,11 +18,15 @@ import styles from './Tabs.module.scss'
 import { useShouldPanelRender } from './useShouldPanelRender'
 
 export interface TabsSettings {
-    /* Tab component font size.
-     * Default is "small" */
+    /**
+     * Tab component font size.
+     * Default is "small"
+     */
     size?: 'small' | 'medium' | 'large'
-    /* true: only load the initial tab when tab component mounts
-     * false: render all the TabPanel children when tab component mounts */
+    /**
+     * true: only load the initial tab when tab component mounts
+     * false: render all the TabPanel children when tab component mounts
+     */
     lazy?: boolean
     /**
      * This prop is lazy dependant, only should be used when lazy is true
@@ -57,7 +61,7 @@ export interface TabPanelProps extends ReachTabPanelProps {}
  * See: https://reach.tech/tabs/
  *
  */
-export const Tabs: React.FC<TabsProps> = props => {
+export const Tabs: React.FunctionComponent<TabsProps> = props => {
     const { lazy, size, behavior, className, ...reachProps } = props
 
     return (
@@ -71,7 +75,7 @@ export const Tabs: React.FC<TabsProps> = props => {
     )
 }
 
-export const TabList: React.FC<TabListProps> = props => {
+export const TabList: React.FunctionComponent<TabListProps> = props => {
     const { actions, ...reachProps } = props
     return (
         <div className={styles.tablistWrapper}>
@@ -81,7 +85,7 @@ export const TabList: React.FC<TabListProps> = props => {
     )
 }
 
-export const Tab: React.FC<TabProps> = props => {
+export const Tab: React.FunctionComponent<TabProps> = props => {
     const { size = 'small' } = useTabsSettings()
     return (
         <ReachTab className={styles[size]} data-testid="wildcard-tab" {...props}>
@@ -90,7 +94,7 @@ export const Tab: React.FC<TabProps> = props => {
     )
 }
 
-export const TabPanels: React.FC<TabPanelsProps> = ({ children }) => (
+export const TabPanels: React.FunctionComponent<TabPanelsProps> = ({ children }) => (
     <ReachTabPanels data-testid="wildcard-tab-panel-list">
         {React.Children.map(children, (child, index) => (
             <TabPanelIndexContext.Provider value={index}>
@@ -100,7 +104,7 @@ export const TabPanels: React.FC<TabPanelsProps> = ({ children }) => (
     </ReachTabPanels>
 )
 
-export const TabPanel: React.FC = ({ children }) => {
+export const TabPanel: React.FunctionComponent = ({ children }) => {
     const shouldRender = useShouldPanelRender(children)
     return (
         <ReachTabPanel data-testid="wildcard-tab-panel">
