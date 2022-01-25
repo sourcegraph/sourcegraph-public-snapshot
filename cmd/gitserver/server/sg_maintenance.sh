@@ -51,7 +51,7 @@ git reflog expire --all
 # https://github.blog/2021-04-29-scaling-monorepo-maintenance/
 # --write-midx reqiures git>=2.34.1.
 # [NOTE: git-version-min-requirement]
-git repack --write-midx --write-bitmap-index -d --geometric=2
+git -c pack.windowMemory=100m repack --write-midx --write-bitmap-index -d --geometric=2
 
 # Usually run by git gc. Prune all unreachable objects form the object database.
 git prune --expire 2.weeks.ago
