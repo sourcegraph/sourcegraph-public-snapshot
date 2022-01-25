@@ -1083,6 +1083,7 @@ type FileAndSearchPageUserAndEventCounts struct {
 // on the "search result" and "file" pages over the current month.
 type CTAUsage struct {
 	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
+	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
 }
 
 // SavedSearches represents the total number of saved searches, users
