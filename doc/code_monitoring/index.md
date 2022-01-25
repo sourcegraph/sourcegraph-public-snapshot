@@ -56,11 +56,14 @@ Watch your code with code monitors and trigger actions to run automatically in r
   </a>
 </div>
 
-## Explanations
+## [Explanations](explanations/index.md)
 
 - [Core concepts](explanations/core_concepts.md)
 - [Best practices](explanations/best_practices.md)
+
+## [How-tos](how-tos/index.md)
 - [Starting points and ideas](how-tos/starting_points.md)
+- <span class="badge badge-experimental">Experimental</span> [Setting up Slack notifications](how-tos/slack.md)
 
 ## Questions & Feedback
 
