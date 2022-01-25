@@ -27,8 +27,6 @@ export interface TetherState {
     /** Constrained tooltip element due to constraints */
     elementBounds: Rectangle | null
 
-    constrainedElement: Rectangle
-
     /** Tooltip tail angle based on tooltip element position */
     markerAngle: number
 
@@ -73,7 +71,7 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
     // Calculate element metric of the tooltip element after all constraint calculations
     const elementArea = constrainedElement.width * constrainedElement.height
     const elementOffset = createPoint(constrainedElement.left, constrainedElement.top)
-    const elementBounds = getElementBounds(constrainedElement, element, elementConstraint)
+    const elementBounds = getElementBounds(constrainedElement, element)
 
     // Change element tooltip coordinates to put the element right next target element
     const joinedMarker = getJoinedElement(rotatedMarker, overflowedTarget, position)
@@ -100,7 +98,6 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
         elementBounds,
         markerAngle,
         markerOffset,
-        constrainedElement,
     }
 }
 

@@ -32,13 +32,9 @@ export function getRoundedElement(element: Rectangle): Rectangle {
  * @param element - constrained tooltip element
  * @param originalElement - original sized tooltip element
  */
-export function getElementBounds(
-    element: Rectangle,
-    originalElement: Rectangle,
-    elementConstraint: Rectangle
-): Rectangle | null {
+export function getElementBounds(element: Rectangle, originalElement: Rectangle): Rectangle | null {
     if (element.width < originalElement.width || element.height < originalElement.height) {
-        return elementConstraint
+        return element
     }
 
     return null
