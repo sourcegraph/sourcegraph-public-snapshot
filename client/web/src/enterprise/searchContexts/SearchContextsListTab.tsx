@@ -4,29 +4,31 @@ import { useHistory, useLocation } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
 import {
-    FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionFilterValue,
-} from '@sourcegraph/web/src/components/FilteredConnection'
-import { Badge, useObservable, Link } from '@sourcegraph/wildcard'
-
-import { AuthenticatedUser } from '../../auth'
-import {
+    SearchContextProps,
     ListSearchContextsResult,
     ListSearchContextsVariables,
     SearchContextFields,
     SearchContextsOrderBy,
-} from '../../graphql-operations'
-import { SearchContextProps } from '../../search'
+} from '@sourcegraph/search'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import {
+    FilteredConnection,
+    FilteredConnectionFilter,
+    FilteredConnectionFilterValue,
+} from '@sourcegraph/web/src/components/FilteredConnection'
+import { Badge, useObservable, Link, Card } from '@sourcegraph/wildcard'
+
+import { AuthenticatedUser } from '../../auth'
 
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 import styles from './SearchContextsListTab.module.scss'
 
 export interface SearchContextsListTabProps
     extends Pick<
-        SearchContextProps,
-        'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
-    > {
+            SearchContextProps,
+            'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
+        >,
+        PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
@@ -37,6 +39,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
     getUserSearchContextNamespaces,
     fetchSearchContexts,
     fetchAutoDefinedSearchContexts,
+    platformContext,
 }) => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) => {
@@ -56,13 +59,17 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                 namespaces,
                 orderBy,
                 descending,
+                platformContext,
             })
         },
-        [authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces]
+        [authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces, platformContext]
     )
 
     const autoDefinedSearchContexts = useObservable(
-        useMemo(() => fetchAutoDefinedSearchContexts().pipe(catchError(() => [])), [fetchAutoDefinedSearchContexts])
+        useMemo(() => fetchAutoDefinedSearchContexts(platformContext).pipe(catchError(() => [])), [
+            fetchAutoDefinedSearchContexts,
+            platformContext,
+        ])
     )
 
     const ownerNamespaceFilterValues: FilteredConnectionFilterValue[] = authenticatedUser
@@ -163,7 +170,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     )}
                 >
                     {autoDefinedSearchContexts?.map(context => (
-                        <div key={context.spec} className="card p-3">
+                        <Card key={context.spec} className="p-3">
                             <div>
                                 <Link to={`/contexts/${context.spec}`}>
                                     <strong>{context.spec}</strong>
@@ -178,7 +185,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                                 </Badge>
                             </div>
                             <div className="text-muted mt-1">{context.description}</div>
-                        </div>
+                        </Card>
                     ))}
                 </div>
             )}

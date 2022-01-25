@@ -2,11 +2,12 @@ import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { ErrorMessage } from '@sourcegraph/web/src/components/alerts'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
@@ -16,7 +17,6 @@ import {
     BatchChangeByNamespaceVariables,
     BatchChangeFields,
 } from '../../../graphql-operations'
-import { Settings } from '../../../schema/settings.schema'
 import { Description } from '../Description'
 
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
@@ -99,9 +99,9 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             {/* If we received an error after we already had data, we keep the
                 data on the page but also surface the error with an alert. */}
             {error && (
-                <div className="alert alert-danger">
+                <Alert variant="danger">
                     <ErrorMessage error={error.message} />
-                </div>
+                </Alert>
             )}
             <PageHeader
                 path={[

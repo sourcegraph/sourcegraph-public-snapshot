@@ -8,6 +8,7 @@ import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { asError } from '@sourcegraph/common'
 import {
@@ -17,7 +18,6 @@ import {
 } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { LoaderButton } from '../components/LoaderButton'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'

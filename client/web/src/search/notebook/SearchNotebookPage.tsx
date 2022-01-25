@@ -7,19 +7,26 @@ import { Observable } from 'rxjs'
 import { catchError, debounceTime, delay, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { FeedbackBadge, LoadingSpinner, PageHeader, useEventObservable, useObservable } from '@sourcegraph/wildcard'
+import {
+    FeedbackBadge,
+    LoadingSpinner,
+    PageHeader,
+    useEventObservable,
+    useObservable,
+    Alert,
+} from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
 import { resolveRevision as _resolveRevision, fetchRepository as _fetchRepository } from '../../repo/backend'
-import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
 import {
     fetchNotebook as _fetchNotebook,
@@ -151,14 +158,14 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
             <PageTitle title={notebookTitle || 'Notebook'} />
             <Page>
                 {isErrorLike(notebookOrError) && (
-                    <div className="alert alert-danger">
+                    <Alert variant="danger">
                         Error while loading the notebook: <strong>{notebookOrError.message}</strong>
-                    </div>
+                    </Alert>
                 )}
                 {isErrorLike(updatedNotebookOrError) && (
-                    <div className="alert alert-danger">
+                    <Alert variant="danger">
                         Error while updating the notebook: <strong>{updatedNotebookOrError.message}</strong>
-                    </div>
+                    </Alert>
                 )}
                 {notebookOrError === LOADING && (
                     <div className="d-flex justify-content-center">

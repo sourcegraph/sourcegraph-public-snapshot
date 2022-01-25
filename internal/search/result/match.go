@@ -10,7 +10,12 @@ import (
 // to ensure only those types implement Match.
 type Match interface {
 	ResultCount() int
+
+	// Limit truncates the match such that, after limiting,
+	// `Match.ResultCount() == limit`. It should never be called with
+	// `limit <= 0`, since a single match cannot be truncated to zero results.
 	Limit(int) int
+
 	Select(filter.SelectPath) Match
 	RepoName() types.MinimalRepo
 
@@ -86,3 +91,24 @@ type Matches []Match
 func (m Matches) Len() int           { return len(m) }
 func (m Matches) Less(i, j int) bool { return m[i].Key().Less(m[j].Key()) }
 func (m Matches) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
+
+// Limit truncates the slice of matches such that, after limiting, `m.ResultCount() == limit`
+func (m *Matches) Limit(limit int) int {
+	for i, match := range *m {
+		if limit <= 0 {
+			*m = (*m)[:i]
+			return 0
+		}
+		limit = match.Limit(limit)
+	}
+	return limit
+}
+
+// ResultCount returns the sum of the result counts of each match in the slice
+func (m Matches) ResultCount() int {
+	count := 0
+	for _, match := range m {
+		count += match.ResultCount()
+	}
+	return count
+}

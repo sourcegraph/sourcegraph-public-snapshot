@@ -6,6 +6,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useState } from 'react'
 import { Link, useHistory } from 'react-router-dom'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -13,7 +14,6 @@ import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/searc
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
-import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
 import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
 import { useSearchStackState, restorePreviousSession, SearchEntry, SearchStackEntry } from '../stores/searchStack'

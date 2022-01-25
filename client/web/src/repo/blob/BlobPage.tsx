@@ -7,7 +7,10 @@ import { Redirect } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -15,15 +18,13 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { Alert, Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { SearchContextProps, SearchStreamingProps } from '../../search'
-import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
+import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
 import { toTreeURL } from '../../util/url'
 import { fetchRepository, resolveRevision } from '../backend'
@@ -73,6 +74,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     let renderMode = getModeFromURL(props.location)
     const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
         props.location.hash,
@@ -324,6 +326,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     markdown={blobInfoOrError.content}
                     resolveRevision={resolveRevision}
                     fetchRepository={fetchRepository}
+                    showSearchContext={showSearchContext}
                 />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
@@ -331,12 +334,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div>
-                    <div className="alert alert-info">
+                    <Alert variant="info">
                         Syntax-highlighting this file took too long. &nbsp;
                         <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
                             Try again
                         </Button>
-                    </div>
+                    </Alert>
                 </div>
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}

@@ -3,7 +3,7 @@ import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback } from 'react'
 import { UncontrolledPopover } from 'reactstrap'
 
-import { Tab, TabList, TabPanel, TabPanels, Tabs , Button, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, Card, Tab, TabList, TabPanel, TabPanels, Tabs, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { PlatformContextProps } from '../../platform/context'
 import { ExtensionsControllerProps } from '../controller'
@@ -37,8 +37,9 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
 
     return (
         <Tabs
+            as={Card}
             defaultIndex={tabIndex}
-            className={classNames('card border-0 rounded-0', styles.extensionStatus)}
+            className={classNames('border-0 rounded-0', styles.extensionStatus)}
             onChange={handleTabsChange}
         >
             <TabList>

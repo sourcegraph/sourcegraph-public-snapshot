@@ -6,15 +6,15 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
-import { ErrorAlert } from '../../components/alerts'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
@@ -248,11 +248,11 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 )}
                             </>
                         ) : (
-                            <div className="alert alert-info mb-0">
+                            <Alert className="mb-0" variant="info">
                                 This Sourcegraph site has not enabled indexed search. See{' '}
                                 <Link to="/help/admin/search">search documentation</Link> for information on how to
                                 enable it.
-                            </div>
+                            </Alert>
                         ))}
                 </Container>
             </>

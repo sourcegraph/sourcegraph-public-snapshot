@@ -185,7 +185,7 @@ const PublicationStatesUpdateAlerts: React.FunctionComponent<{}> = () => {
     return (
         <div className="mt-2">
             {recalculationUpdates.map(timestamp => (
-                <DismissibleAlert className="alert-success" key={timestamp}>
+                <DismissibleAlert variant="success" key={timestamp}>
                     Publication state actions were recalculated.
                 </DismissibleAlert>
             ))}

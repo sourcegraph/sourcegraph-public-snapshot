@@ -3,11 +3,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
 import {
     FilteredConnectionFilter,
@@ -23,6 +23,7 @@ import {
     LoadingSpinner,
     useObservable,
     Button,
+    Alert,
     Link,
 } from '@sourcegraph/wildcard'
 
@@ -289,7 +290,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     }
 
     const getSearchContextBanner = (orgName: string): JSX.Element => (
-        <div className="alert alert-success my-3" role="alert" key="add-repos">
+        <Alert className="my-3" role="alert" key="add-repos" variant="success">
             <h4 className="align-middle mb-1">Added repositories</h4>
             <p className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
@@ -301,7 +302,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 </code>
                 .
             </p>
-        </div>
+        </Alert>
     )
 
     return (
@@ -312,10 +313,10 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 page="settings/repositories"
             />
             {status === 'scheduled' && (
-                <div className="alert alert-info">
+                <Alert variant="info">
                     <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories may not be
                     up-to-date and will refresh once sync is finished.
-                </div>
+                </Alert>
             )}
             {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}

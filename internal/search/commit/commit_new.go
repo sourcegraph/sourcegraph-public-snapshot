@@ -28,14 +28,10 @@ type CommitSearch struct {
 	Diff          bool
 	HasTimeFilter bool
 	Limit         int
-
-	Db database.DB
-
-	IsRequired bool
 }
 
-func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	if err := j.ExpandUsernames(ctx, j.Db); err != nil {
+func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
+	if err := j.ExpandUsernames(ctx, db); err != nil {
 		return err
 	}
 
@@ -50,6 +46,7 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 	}
 
 	var repoRevs []*search.RepositoryRevisions
+	repos := searchrepos.Resolver{DB: db, Opts: j.RepoOpts}
 	err := repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
 		if repoRevs = page.RepoRevs; page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
@@ -107,10 +104,6 @@ func (j CommitSearch) Name() string {
 		return "Diff"
 	}
 	return "Commit"
-}
-
-func (j CommitSearch) Required() bool {
-	return j.IsRequired
 }
 
 func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {

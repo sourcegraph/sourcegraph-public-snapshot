@@ -10,7 +10,11 @@ import { ThemeWrapper } from '../ThemeWrapper'
 
 const AfterInstallPage: React.FunctionComponent = () => (
     <ThemeWrapper>
-        <WildcardThemeProvider>{AfterInstallPageContent}</WildcardThemeProvider>
+        {({ isLightTheme }) => (
+            <WildcardThemeProvider>
+                <AfterInstallPageContent isLightTheme={isLightTheme} />
+            </WildcardThemeProvider>
+        )}
     </ThemeWrapper>
 )
 

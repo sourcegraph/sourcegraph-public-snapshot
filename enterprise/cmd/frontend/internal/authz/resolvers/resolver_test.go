@@ -820,3 +820,104 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		subrepos := database.NewStrictMockSubRepoPermsStore()
+		subrepos.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
+			return nil
+		})
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.SubRepoPermsFunc.SetDefaultReturn(subrepos)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{db: db}).SetSubRepositoryPermissionsForUsers(ctx, &graphqlbackend.SubRepoPermsArgs{})
+		if want := backend.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("set sub-repo perms", func(t *testing.T) {
+		usersStore := database.NewStrictMockUserStore()
+		usersStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
+			ID:        1,
+			SiteAdmin: true,
+		}, nil)
+		usersStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, s string) (*types.User, error) {
+			return &types.User{
+				ID:       1,
+				Username: "foo",
+			}, nil
+		})
+		usersStore.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, s string) (*types.User, error) {
+			return &types.User{
+				ID:       1,
+				Username: "foo",
+			}, nil
+		})
+
+		subReposStore := database.NewStrictMockSubRepoPermsStore()
+		subReposStore.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
+			return nil
+		})
+
+		reposStore := database.NewStrictMockRepoStore()
+		reposStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+			return &types.Repo{
+				ID:   1,
+				Name: "foo",
+			}, nil
+		})
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.DB, error) {
+			return db, nil
+		})
+		db.DoneFunc.SetDefaultHook(func(err error) error {
+			return nil
+		})
+		db.UsersFunc.SetDefaultReturn(usersStore)
+		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
+		db.ReposFunc.SetDefaultReturn(reposStore)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		test := &gqltesting.Test{
+			Context: ctx,
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+						mutation {
+  setSubRepositoryPermissionsForUsers(
+    repository: "UmVwb3NpdG9yeTox"
+    userPermissions: [{bindID: "alice", pathIncludes: ["*"], pathExcludes: ["*_test.go"]}]
+  ) {
+    alwaysNil
+  }
+}
+					`,
+			ExpectedResult: `
+						{
+							"setSubRepositoryPermissionsForUsers": {
+								"alwaysNil": null
+							}
+						}
+					`,
+		}
+
+		gqltesting.RunTests(t, []*gqltesting.Test{test})
+
+		// Assert that we actually tried to store perms
+		h := subReposStore.UpsertFunc.History()
+		if len(h) != 1 {
+			t.Fatalf("Wanted 1 call, got %d", len(h))
+		}
+	})
+}

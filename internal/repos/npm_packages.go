@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -25,9 +25,10 @@ import (
 // A NPMPackagesSource creates git repositories from `*-sources.tar.gz` files of
 // published NPM dependencies from the JS ecosystem.
 type NPMPackagesSource struct {
-	svc     *types.ExternalService
-	config  *schema.NPMPackagesConnection
-	dbStore NPMPackagesRepoStore
+	svc        *types.ExternalService
+	connection schema.NPMPackagesConnection
+	dbStore    NPMPackagesRepoStore
+	client     npm.Client
 }
 
 // NewNPMPackagesSource returns a new NPMSource from the given external
@@ -37,7 +38,7 @@ func NewNPMPackagesSource(svc *types.ExternalService) (*NPMPackagesSource, error
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return &NPMPackagesSource{svc: svc, config: &c /*dbStore initialized in SetDB */}, nil
+	return &NPMPackagesSource{svc: svc, connection: c /*dbStore initialized in SetDB */, client: npm.NewHTTPClient(c.Registry, c.RateLimit)}, nil
 }
 
 var _ Source = &NPMPackagesSource{}
@@ -48,7 +49,7 @@ var _ Source = &NPMPackagesSource{}
 // [FIXME: deduplicate-listed-repos] The current implementation will return
 // multiple repos with the same URL if there are different versions of it.
 func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	npmPackages, err := npmPackages(*s.config)
+	npmPackages, err := npmPackages(s.connection)
 	if err != nil {
 		results <- SourceResult{Err: err}
 		return
@@ -65,6 +66,7 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 		return
 	}
 	totalDBFetched, totalDBResolved, lastID := 0, 0, 0
+	pkgVersions := map[string]map[string]struct{}{}
 	for {
 		dbDeps, err := s.dbStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
 			After: lastID,
@@ -86,8 +88,22 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 				continue
 			}
 			npmDependency := reposource.NPMDependency{Package: *parsedDbPackage, Version: dbDep.Version}
-			if err = npm.Exists(ctx, s.config, npmDependency); err != nil {
-				log15.Warn("failed to resolve npm dependency", "package", npmDependency.PackageManagerSyntax(), "message", err)
+			pkgKey := npmDependency.Package.PackageSyntax()
+			versions, found := pkgVersions[pkgKey]
+			if !found {
+				versions, err = s.client.AvailablePackageVersions(ctx, npmDependency.Package)
+				if err != nil {
+					pkgVersions[pkgKey] = map[string]struct{}{}
+					log15.Warn("npm package not found in registry", "package", pkgKey, "err", err)
+					continue
+				}
+				pkgVersions[pkgKey] = versions
+			}
+			if _, hasVersion := versions[npmDependency.Version]; !hasVersion {
+				if len(versions) != 0 { // We must've already logged a package not found earlier if len is 0.
+					log15.Warn("npm dependency does not exist",
+						"dependency", npmDependency.PackageManagerSyntax())
+				}
 				continue
 			}
 			repo := s.makeRepo(npmDependency.Package)
