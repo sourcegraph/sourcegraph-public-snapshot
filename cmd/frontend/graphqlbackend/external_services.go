@@ -123,7 +123,7 @@ type updateExternalServiceInput struct {
 func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
 	start := time.Now()
 	var err error
-	namespaceUserID, namespaceOrgID := int32(0), int32(0)
+	var namespaceUserID, namespaceOrgID int32
 	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
@@ -222,7 +222,7 @@ type deleteExternalServiceArgs struct {
 func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
 	start := time.Now()
 	var err error
-	namespaceUserID, namespaceOrgID := int32(0), int32(0)
+	var namespaceUserID, namespaceOrgID int32
 	defer reportExternalServiceDuration(start, Delete, &err, &namespaceUserID, &namespaceOrgID)
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")

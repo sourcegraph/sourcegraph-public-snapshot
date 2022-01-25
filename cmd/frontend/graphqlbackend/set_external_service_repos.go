@@ -20,7 +20,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 }) (*EmptyResponse, error) {
 	start := time.Now()
 	var err error
-	namespaceUserID, namespaceOrgID := int32(0), int32(0)
+	var namespaceUserID, namespaceOrgID int32
 	defer reportExternalServiceDuration(start, SetRepos, &err, &namespaceUserID, &namespaceOrgID)
 
 	id, err := UnmarshalExternalServiceID(args.ID)
