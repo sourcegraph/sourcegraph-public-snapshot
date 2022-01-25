@@ -9,6 +9,7 @@ import { AnchorLink, setLinkComponent, useObservable } from '@sourcegraph/wildca
 
 import { ExtensionCoreAPI, SearchPanelAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
+import { adaptToEditorTheme } from '../theme'
 
 const vsCodeApi = window.acquireVsCodeApi()
 
@@ -25,6 +26,8 @@ Comlink.expose(searchPanelAPI, expose)
 
 export const extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI> = Comlink.wrap(proxy)
 
+const themes = adaptToEditorTheme()
+
 extensionCoreAPI.panelInitialized(document.documentElement.dataset.panelId!).catch(() => {
     // noop (TODO?)
 })
@@ -34,7 +37,7 @@ extensionCoreAPI.panelInitialized(document.documentElement.dataset.panelId!).cat
 setLinkComponent(AnchorLink)
 
 const Main: React.FC = () => {
-    console.log('rendering webview')
+    console.log('rendering webview', { themes })
 
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
 

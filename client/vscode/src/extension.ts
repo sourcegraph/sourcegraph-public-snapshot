@@ -1,13 +1,16 @@
 import 'cross-fetch/polyfill'
-import { ReplaySubject } from 'rxjs'
+import { of, ReplaySubject } from 'rxjs'
 import * as vscode from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 
+import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
 import { ExtensionCoreAPI } from './contract'
-import { invalidateContextOnEndpointChange } from './settings/endpointSetting'
+import { updateAccessTokenSetting } from './settings/accessTokenSetting'
+import { endpointSetting } from './settings/endpointSetting'
+import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { createVSCEStateMachine } from './state'
 import { registerWebviews } from './webview/commands'
 
@@ -44,8 +47,10 @@ import { registerWebviews } from './webview/commands'
 export function activate(context: vscode.ExtensionContext): void {
     const stateMachine = createVSCEStateMachine()
 
-    invalidateContextOnEndpointChange({ context, stateMachine })
+    invalidateContextOnSettingsChange({ context, stateMachine })
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
+    const authenticatedUser = observeAuthenticatedUser({ context })
+    const initialInstanceURL = endpointSetting()
 
     // Add state to VS Code context to be used in context keys.
     // Used e.g. by file tree view to only be visible in `remote-browsing` state.
@@ -69,6 +74,15 @@ export function activate(context: vscode.ExtensionContext): void {
         emit: event => stateMachine.emit(event),
         requestGraphQL: requestGraphQLFromVSCode,
         observeSourcegraphSettings: () => proxySubscribable(sourcegraphSettings.settings),
+        // Debt: converting Promises into Observables for ease of use with
+        // `useObservable` hook. Add `usePromise`s hook to fix.
+        getAuthenticatedUser: () => proxySubscribable(authenticatedUser),
+        getInstanceURL: () => proxySubscribable(of(initialInstanceURL)),
+        openLink: async uri => {
+            await vscode.env.openExternal(vscode.Uri.parse(uri))
+        },
+        setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
+        reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
     }
 
     registerWebviews({ context, extensionCoreAPI, initializedPanelIDs, sourcegraphSettings })
