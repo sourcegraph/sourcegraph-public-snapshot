@@ -12,12 +12,12 @@
 html,
 body,
 #root {
-    height: 100%;
+    min-height: 100%;
 }
 
 .selection-highlight,
 .selection-highlight-sticky {
-    background-color: var(--mark-bg);
+    background-color: var(--vscode-editor-selectionBackground);
 }
 
 // Used for <MonacoQueryInput/>
@@ -145,11 +145,6 @@ a,
 
 .test-file-match-children-item-wrapper {
     background-color: var(--vscode-textCodeBlock-background) !important;
-}
-
-.selection-highlight,
-.selection-highlight-sticky {
-    background-color: var(--vscode-editorError-foreground) !important;
 }
 
 .btn-link-sm {

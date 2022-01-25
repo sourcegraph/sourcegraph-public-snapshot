@@ -166,16 +166,21 @@
 }
 
 .search-examples-title {
-    font-size: var(--vscode-editor-font-size) !important;
+    font-size: var(--vscode-font-size) !important;
     @media (--sm-breakpoint-down) {
         margin-bottom: 0.5rem;
     }
 }
 
+.search-example-label {
+    font-size: var(--vscode-font-size) !important;
+    font-weight: 400;
+}
+
 .search-examples-subtitle {
     font-weight: 500;
     color: var(--vscode-descriptionForeground) !important;
-    font-size: var(--vscode-editor-font-size) !important;
+    font-size: var(--vscode-font-size) !important;
 
     @media (--sm-breakpoint-down) {
         margin-bottom: 0.5rem;
@@ -269,4 +274,8 @@
     img {
         width: 9rem !important;
     }
+}
+
+.feedback-button {
+    font-size: var(--vscode-font-size) !important;
 }

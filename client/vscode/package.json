@@ -2,7 +2,7 @@
   "private": true,
   "name": "sourcegraph-preview",
   "displayName": "Sourcegraph - preview",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "description": "Sourcegraph for VS Code",
   "publisher": "kandalatj",
   "sideEffects": false,
@@ -84,13 +84,13 @@
           "id": "sourcegraph.searchSidebar",
           "name": "Search",
           "visibility": "visible",
-          "when": "!sourcegraph.showFileTree"
+          "when": "!sourcegraph.showFileTree && !sourcegraph.canFocusActiveDocument && !sourcegraph.onRepoResultPage"
         },
         {
           "id": "sourcegraph.files",
           "name": "Sourcegraph Remote Files",
           "visibility": "visible",
-          "when": "sourcegraph.canFocusActiveDocument"
+          "when": "sourcegraph.showFileTree || sourcegraph.canFocusActiveDocument || sourcegraph.onRepoResultPage"
         },
         {
           "type": "webview",

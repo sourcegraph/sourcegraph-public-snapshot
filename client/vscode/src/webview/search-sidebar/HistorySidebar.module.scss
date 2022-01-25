@@ -35,7 +35,7 @@
 
 .sidebar-section {
     isolation: isolate; // Prevent the z-index below from leaking out of this container
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 
     &__tabs-header {
         margin-top: 1.25rem;

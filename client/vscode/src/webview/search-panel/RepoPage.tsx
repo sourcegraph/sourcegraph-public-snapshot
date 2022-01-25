@@ -37,8 +37,7 @@ export const RepoPage: React.FunctionComponent<RepoPageProps> = ({
 
     const onSelect = (isDirectory: boolean, path: string, url: string): void => {
         ;(async () => {
-            const host = await instanceHostname
-
+            const host = instanceHostname
             switch (isDirectory) {
                 case true: {
                     searchActions.setQuery({ query: `repo:^${selectedRepoName}$ file:^${path}` })

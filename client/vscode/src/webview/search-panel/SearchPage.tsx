@@ -80,32 +80,25 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
 
     // Submit search query
     const onSubmit = useCallback(
-        (event?: React.FormEvent): void => {
+        async (event?: React.FormEvent): Promise<void> => {
             event?.preventDefault()
+            await sourcegraphVSCodeExtensionAPI.onRepoResultPage(false)
+
             // close file tree when a new search has been performed
-            sourcegraphVSCodeExtensionAPI
-                .displayFileTree(false)
-                .then(() => {
-                    setOpenRepoFileTree(false)
-                })
-                // TODO error handling
-                .catch(() => {})
+            await sourcegraphVSCodeExtensionAPI.displayFileTree(false)
+            setOpenRepoFileTree(false)
             searchActions.submitQuery()
         },
         [searchActions, sourcegraphVSCodeExtensionAPI]
     )
 
     const backToSearchResults = useCallback(
-        (event?: React.FormEvent): void => {
+        async (event?: React.FormEvent): Promise<void> => {
             event?.preventDefault()
             // close file tree when a new search has been performed
-            sourcegraphVSCodeExtensionAPI
-                .displayFileTree(false)
-                .then(() => {
-                    setOpenRepoFileTree(false)
-                })
-                // TODO error handling
-                .catch(() => {})
+            await sourcegraphVSCodeExtensionAPI.displayFileTree(false)
+            setOpenRepoFileTree(false)
+            await sourcegraphVSCodeExtensionAPI.onRepoResultPage(false)
         },
         [sourcegraphVSCodeExtensionAPI]
     )
@@ -332,11 +325,14 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     return (
         <div>
             {!queryToRun.query ? (
-                <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
+                <div className={classNames('d-flex flex-column align-items-center px-4', styles.searchPage)}>
                     <div className={classNames('d-flex justify-content-end w-100 p-3')}>
                         <button
                             type="button"
-                            className="btn btn-primary text border-0 text-decoration-none px-3"
+                            className={classNames(
+                                'btn btn-primary text border-0 text-decoration-none px-3',
+                                styles.feedbackButton
+                            )}
                             onClick={() =>
                                 sourcegraphVSCodeExtensionAPI.openLink(
                                     'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback'

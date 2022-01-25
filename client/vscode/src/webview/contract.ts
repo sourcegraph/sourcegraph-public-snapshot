@@ -40,10 +40,6 @@ export interface SourcegraphVSCodeExtensionAPI
     getLocalSearchHistory: () => LocalSearchHistoryProps
     /** TODO explain, we deliberately do not react to URL changes in webviews. */
     getInstanceHostname: () => string
-    // Get Access Token
-    hasAccessToken: () => boolean
-    // If Access Token is valid
-    hasValidAccessToken: () => boolean
     // Update Access Token - return true when updated successfully
     updateAccessToken: (token: string) => Promise<boolean>
     /** TODO document. sourcegraph://${host}/${uri} */
@@ -54,16 +50,8 @@ export interface SourcegraphVSCodeExtensionAPI
     copyLink: (uri: string) => void
     // For search sidebar
     openSearchPanel: () => void
-    // Check if on VS Code Desktop or VS Code Web
-    onDesktop: () => boolean
-    // Get Cors from Setting
-    getCorsSetting: () => string
     // Update Cors Setting - return true when updated successfully
     updateCorsUri: (uri: string) => Promise<boolean>
-    // Get item in VSCE local storage
-    getLocalStorageItem: (key: string) => string
-    // Set item in VSCE local storage
-    setLocalStorageItem: (key: string, value: string) => Promise<boolean>
     // Get Last Selected Search Context from Local Storage
     getLastSelectedSearchContext: () => string
     // Update Last Selected Search Context in Local Storage
@@ -74,6 +62,9 @@ export interface SourcegraphVSCodeExtensionAPI
     setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => Promise<boolean>
     // Display File Tree when repo is clicked
     displayFileTree: (setting: boolean) => void
+    // Let editor knows user is currently on repo result page
+    onRepoResultPage: (setting: boolean) => void
+    // Check if there is an active search panel open
     hasActivePanel: () => void
     // For extension host sidebar
     // mainThreadAPI methods

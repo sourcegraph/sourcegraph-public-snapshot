@@ -31,7 +31,7 @@ import {
 } from './webview/initialize'
 import { createSearchSidebarMediator } from './webview/search-sidebar/mediator'
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // Initialize the global application manager
     const storageManager = new LocalStorageService(context.workspaceState)
     // TODO: Close all editors (search panel and remote files) and restart Sourcegraph extension host
@@ -91,10 +91,7 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         })
     )
-    files.didFocus(vscode.window.activeTextEditor?.document.uri).then(
-        async () => {},
-        () => {}
-    )
+    await files.didFocus(vscode.window.activeTextEditor?.document.uri)
 
     const sourcegraphSettings = initializeSourcegraphSettings(context.subscriptions)
 
@@ -143,10 +140,7 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     )
 
-    vscode.commands.executeCommand('sourcegraph.searchSidebar.focus').then(
-        () => {},
-        () => {}
-    )
+    await vscode.commands.executeCommand('sourcegraph.searchSidebar.focus')
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
@@ -259,8 +253,6 @@ export function activate(context: vscode.ExtensionContext): void {
         submitActiveWebviewSearch: searchSidebarMediator.submitActiveWebviewSearch,
         getUserSettings: () => userSettings,
         getLocalSearchHistory: () => allLocalSearchHistory,
-        hasAccessToken: () => !!userSettings.token,
-        hasValidAccessToken: () => userSettings.validated,
         updateAccessToken: (token: string) => updateAccessTokenSetting(token),
         getInstanceHostname: () => userSettings.host,
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
@@ -271,10 +263,7 @@ export function activate(context: vscode.ExtensionContext): void {
         copyLink: (uri: string) =>
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
         openSearchPanel: () => vscode.commands.executeCommand('sourcegraph.search'),
-        // Check if on VS Code Desktop or VS Code Web
-        onDesktop: () => vscode.env.appHost === 'desktop',
         // Get Cors from Setting
-        getCorsSetting: () => userSettings.corsUrl,
         updateCorsUri: (uri: string) => updateCorsSetting(uri),
         // Get last selected search context from Setting
         getLastSelectedSearchContext: () => storageManager.getValue('sg-last-selected-context'),
@@ -282,12 +271,11 @@ export function activate(context: vscode.ExtensionContext): void {
         // Get last selected search context from Setting
         getLocalRecentSearch: () => allLocalSearchHistory.searches,
         setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => storageManager.setLocalRecentSearch(searches),
-        // Get last selected search context from Setting
-        getLocalStorageItem: (key: string) => storageManager.getValue(key),
-        setLocalStorageItem: (key: string, value: string) => storageManager.setValue(key, value),
         // Show File Tree
         displayFileTree: (setting: boolean) =>
             vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', setting),
+        onRepoResultPage: (setting: boolean) =>
+            vscode.commands.executeCommand('setContext', 'sourcegraph.onRepoResultPage', setting),
         hasActivePanel: () => vscode.commands.executeCommand('setContext', 'sourcegraph.activeSearchPanel', true),
     }
 
