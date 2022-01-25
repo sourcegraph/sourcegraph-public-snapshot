@@ -48,7 +48,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                         (updateCheck.updateVersionAvailable ? (
                             <Alert className={styles.alert} variant="success">
                                 <CloudDownloadIcon className="icon-inline" /> Update available:{' '}
-                                <a href="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</a>
+                                <Link to="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</Link>
                             </Alert>
                         ) : (
                             <Alert className={styles.alert} variant="success">
@@ -93,9 +93,9 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                 </small>
             </p>
             <p>
-                <a href="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
+                <Link to="https://about.sourcegraph.com/changelog" target="_blank" rel="noopener">
                     Sourcegraph changelog
-                </a>
+                </Link>
             </p>
         </div>
     )

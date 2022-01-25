@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage } from '@sourcegraph/wildcard'
+import { useLocalStorage, Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
@@ -67,9 +67,9 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
 
                 <p className="text-muted">
                     Search-based code insights analyze your code based on any search query.{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                    <Link to="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
                         Learn more.
-                    </a>
+                    </Link>
                 </p>
             </header>
 

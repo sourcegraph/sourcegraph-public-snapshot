@@ -5,6 +5,8 @@ import React, { useCallback, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Collapse } from 'reactstrap'
 
+import { Link } from '@sourcegraph/wildcard'
+
 import styles from './Sidebar.module.scss'
 
 export const SIDEBAR_BUTTON_CLASS = classNames('btn text-left w-100', styles.linkInactive)
@@ -22,9 +24,9 @@ export const SidebarNavItem: React.FunctionComponent<{
 
     if (source === 'server') {
         return (
-            <a href={to} className={classNames(buttonClassNames, className)}>
+            <Link to={to} className={classNames(buttonClassNames, className)}>
                 {children}
-            </a>
+            </Link>
         )
     }
 

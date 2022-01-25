@@ -15,7 +15,7 @@ module.exports = {
             name: 'react-router-dom',
             importNames: ['Link'],
             message:
-              "Use the shared/src/shared/components/Link component instead of react-router-dom's Link. Reason: Shared branded code runs on platforms that don't use react-router (such as in the browser extension).",
+              "Use the Link component from @sourcegraph/wildcard package instead of react-router-dom's Link. Reason: Shared branded code runs on platforms that don't use react-router (such as in the browser extension).",
           },
         ],
       },

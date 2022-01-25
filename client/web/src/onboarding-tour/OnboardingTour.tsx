@@ -7,10 +7,10 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import ReactDOM from 'react-dom'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 
@@ -124,9 +124,9 @@ const OnboardingTourStepsList: React.FunctionComponent<OnboardingTourStepsListPr
                             return (
                                 <div key={step.id} className={styles.step}>
                                     {step.to.startsWith('http') ? (
-                                        <a href={step.to} {...linkProps} target="_blank" rel="noopener noreferrer">
+                                        <Link to={step.to} {...linkProps} target="_blank" rel="noopener noreferrer">
                                             {step.title}
-                                        </a>
+                                        </Link>
                                     ) : (
                                         <Link to={buildUriMarkers(step.to, step.id)} {...linkProps}>
                                             {step.title}

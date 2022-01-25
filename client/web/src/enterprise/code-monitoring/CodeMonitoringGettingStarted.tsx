@@ -125,9 +125,9 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                                 Craft searches that will monitor your code and trigger actions such as email
                                 notifications.
                             </p>
-                            <a href="https://docs.sourcegraph.com/code_monitoring" className="link">
+                            <Link to="https://docs.sourcegraph.com/code_monitoring" className="link">
                                 Code monitoring documentation
-                            </a>
+                            </Link>
                         </div>
                     </div>
                     <div className="col-4">
@@ -137,12 +137,12 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                                 Find specific examples of useful code monitors to keep on top of security and
                                 consistency concerns.
                             </p>
-                            <a
-                                href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                            <Link
+                                to="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
                                 className="link"
                             >
                                 Explore starting points
-                            </a>
+                            </Link>
                         </div>
                     </div>
                     {isSignedIn ? (
@@ -152,9 +152,9 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                                 <p className="text-muted">
                                     Have a question or idea about code monitoring? We want to hear your feedback!
                                 </p>
-                                <a href="mailto:feedback@sourcegraph.com" className="link">
+                                <Link to="mailto:feedback@sourcegraph.com" className="link">
                                     Share your thoughts
-                                </a>
+                                </Link>
                             </div>
                         </div>
                     ) : (

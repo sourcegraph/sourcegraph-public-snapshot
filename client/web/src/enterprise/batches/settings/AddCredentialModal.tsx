@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal, Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 
@@ -32,26 +32,26 @@ const HELP_TEXT_LINK_URL = 'https://docs.sourcegraph.com/batch_changes/quickstar
 const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (
         <>
-            <a href={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
+            <Link to={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
                 Create a new access token
-            </a>{' '}
+            </Link>{' '}
             with the <code>repo</code>, <code>read:org</code>, <code>user:email</code>, <code>read:discussion</code>,
             and <code>workflow</code> scopes.
         </>
     ),
     [ExternalServiceKind.GITLAB]: (
         <>
-            <a href={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
+            <Link to={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
                 Create a new access token
-            </a>{' '}
+            </Link>{' '}
             with <code>api</code>, <code>read_repository</code>, and <code>write_repository</code> scopes.
         </>
     ),
     [ExternalServiceKind.BITBUCKETSERVER]: (
         <>
-            <a href={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
+            <Link to={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
                 Create a new access token
-            </a>{' '}
+            </Link>{' '}
             with <code>write</code> permissions on the project and repository level.
         </>
     ),

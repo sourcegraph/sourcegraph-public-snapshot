@@ -1,7 +1,7 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
-import { Button, AlertLink, Alert } from '@sourcegraph/wildcard'
+import { Button, AlertLink, Alert, Link } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -149,14 +149,14 @@ export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ 
             </p>
             <p className="mt-1 mb-0">
                 If you already have the local version,{' '}
-                <a
-                    href="https://docs.sourcegraph.com/integration/migrating_firefox_extension"
+                <Link
+                    to="https://docs.sourcegraph.com/integration/migrating_firefox_extension"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={onInstallLinkClick}
                 >
                     make sure to upgrade
-                </a>
+                </Link>
                 . The extension adds code intelligence to code views on {displayName} or any other connected code host.
             </p>
         </div>

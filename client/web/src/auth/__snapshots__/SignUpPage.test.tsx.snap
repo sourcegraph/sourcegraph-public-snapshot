@@ -93,6 +93,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         >
           By registering, you agree to our 
           <a
+            class=""
             href="https://about.sourcegraph.com/terms"
             rel="noopener"
             target="_blank"
@@ -101,6 +102,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           </a>
            and 
           <a
+            class=""
             href="https://about.sourcegraph.com/privacy"
             rel="noopener"
             target="_blank"
@@ -274,6 +276,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             >
               By signing up, you agree to our 
               <a
+                class=""
                 href="https://about.sourcegraph.com/terms"
                 rel="noopener"
                 target="_blank"
@@ -282,6 +285,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
               </a>
                and 
               <a
+                class=""
                 href="https://about.sourcegraph.com/privacy"
                 rel="noopener"
                 target="_blank"

@@ -145,26 +145,26 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                             </Link>
                         )}
                         {extension.manifest && !isErrorLike(extension.manifest) && extension.manifest.url && (
-                            <a
-                                href={extension.manifest.url}
+                            <Link
+                                to={extension.manifest.url}
                                 target="_blank"
                                 rel="nofollow noopener noreferrer"
                                 className="d-block mb-1"
                             >
                                 Source code (JavaScript)
-                            </a>
+                            </Link>
                         )}
                         {repositoryURL && (
                             <div className="d-flex">
                                 {repositoryURL.hostname === 'github.com' && <GithubIcon className="icon-inline mr-1" />}
-                                <a
-                                    href={repositoryURL.href}
+                                <Link
+                                    to={repositoryURL.href}
                                     rel="nofollow noreferrer noopener"
                                     target="_blank"
                                     className="d-block"
                                 >
                                     Repository
-                                </a>
+                                </Link>
                             </div>
                         )}
                     </small>

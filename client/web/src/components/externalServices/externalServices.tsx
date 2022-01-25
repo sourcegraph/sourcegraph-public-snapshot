@@ -10,6 +10,7 @@ import NpmIcon from 'mdi-react/NpmIcon'
 import React from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+import { Link } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
@@ -127,13 +128,13 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
             )}
             <li>
                 Create a GitHub access token (
-                <a
-                    href="https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line"
+                <Link
+                    to="https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     instructions
-                </a>
+                </Link>
                 ) with <b>repo</b> scope.
                 <li>
                     Set the value of the <Field>token</Field> field as your access token, in the configuration below.
@@ -163,13 +164,13 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
         </ol>
         <p>
             See{' '}
-            <a
+            <Link
                 rel="noopener noreferrer"
                 target="_blank"
-                href="https://docs.sourcegraph.com/admin/external_service/github#configuration"
+                to="https://docs.sourcegraph.com/admin/external_service/github#configuration"
             >
                 the docs for more options
-            </a>
+            </Link>
             , or try one of the buttons below.
         </p>
     </div>
@@ -185,13 +186,13 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
             )}
             <li>
                 Create a GitLab access token (
-                <a
-                    href="https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token"
+                <Link
+                    to="https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     instructions
-                </a>
+                </Link>
                 ) with{' '}
                 <b>
                     <Field>repo</Field>
@@ -203,13 +204,13 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
                 <ul>
                     <li>
                         <Field>projectQuery</Field> is a list of calls to{' '}
-                        <a
+                        <Link
                             target="_blank"
                             rel="noopener noreferrer"
-                            href="https://docs.gitlab.com/ee/api/projects.html"
+                            to="https://docs.gitlab.com/ee/api/projects.html"
                         >
                             GitLab's REST API
-                        </a>{' '}
+                        </Link>{' '}
                         that return a list of projects.
                         <br />
                         <Value>"groups/&lt;mygroup&gt;/projects"</Value> selects all projects in a group.
@@ -231,13 +232,13 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
         </ol>
         <p>
             See{' '}
-            <a
+            <Link
                 rel="noopener noreferrer"
                 target="_blank"
-                href="https://docs.sourcegraph.com/admin/external_service/gitlab#configuration"
+                to="https://docs.sourcegraph.com/admin/external_service/gitlab#configuration"
             >
                 the docs for more options
-            </a>
+            </Link>
             , or try one of the buttons below.
         </p>
     </div>
@@ -574,13 +575,13 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                 </li>
                 <li>
                     Create Git credentials for AWS CodeCommit (
-                    <a
-                        href="https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html#setting-up-gc-iam"
+                    <Link
+                        to="https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html#setting-up-gc-iam"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
                         instructions
-                    </a>
+                    </Link>
                     ) and set these in the <Field>gitCredentials</Field> field.
                 </li>
                 <li>
@@ -589,13 +590,13 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
             </ol>
             <p>
                 See{' '}
-                <a
+                <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    href="https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration"
+                    to="https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration"
                 >
                     the docs for more options
-                </a>
+                </Link>
                 , or try one of the buttons below.
             </p>
         </div>
@@ -697,13 +698,13 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             <ol>
                 <li>
                     Create a Bitbucket app password (
-                    <a
-                        href="https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html"
+                    <Link
+                        to="https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
                         instructions
-                    </a>
+                    </Link>
                     ) with <b>read</b> scope over your repositories and teams. Set it to be the value of the{' '}
                     <Field>appPassword</Field> field in the configuration below.
                 </li>
@@ -718,13 +719,13 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             </ol>
             <p>
                 See{' '}
-                <a
+                <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    href="https://docs.sourcegraph.com/admin/external_service/bitbucket_cloud#configuration"
+                    to="https://docs.sourcegraph.com/admin/external_service/bitbucket_cloud#configuration"
                 >
                     the docs for more options
-                </a>
+                </Link>
                 , or try one of the buttons below.
             </p>
         </div>
@@ -752,13 +753,13 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                 </li>
                 <li>
                     Create a personal access token (
-                    <a
-                        href="https://confluence.atlassian.com/bitbucketserver/personal-access-tokens-939515499.html"
+                    <Link
+                        to="https://confluence.atlassian.com/bitbucketserver/personal-access-tokens-939515499.html"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
                         instructions
-                    </a>
+                    </Link>
                     ) with <Field>read</Field> scope.
                 </li>
                 <li>
@@ -777,13 +778,13 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                                     A query string like{' '}
                                     <Value>"{'?name=<repo name>&projectname=<project>&visibility=private'}"</Value> that
                                     specifies search query parameters. See{' '}
-                                    <a
-                                        href="https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355"
+                                    <Link
+                                        to="https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >
                                         the full list of parameters
-                                    </a>
+                                    </Link>
                                     .
                                 </li>
                                 <li>
@@ -807,13 +808,13 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             </ol>
             <p>
                 See{' '}
-                <a
+                <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    href="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration"
+                    to="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration"
                 >
                     the docs for more options
-                </a>
+                </Link>
                 , or try one of the buttons below.
             </p>
         </div>
@@ -943,9 +944,9 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
             </p>
             <p>
                 Install the{' '}
-                <a rel="noopener noreferrer" target="_blank" href="https://github.com/sourcegraph/src-cli">
+                <Link rel="noopener noreferrer" target="_blank" to="https://github.com/sourcegraph/src-cli">
                     Sourcegraph CLI (src)
-                </a>
+                </Link>
                 . src serve-git allows you to serve any git repositories that you have on disk.
             </p>
         </div>
@@ -986,13 +987,13 @@ const GITOLITE: AddExternalServiceOptions = {
             </ol>
             <p>
                 See{' '}
-                <a
+                <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    href="https://docs.sourcegraph.com/admin/external_service/gitolite#configuration"
+                    to="https://docs.sourcegraph.com/admin/external_service/gitolite#configuration"
                 >
                     the docs for more advanced options
-                </a>
+                </Link>
                 , or try one of the buttons below.
             </p>
         </div>
@@ -1091,13 +1092,13 @@ const GENERIC_GIT: AddExternalServiceOptions = {
             </ol>
             <p>
                 See{' '}
-                <a
+                <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    href="https://docs.sourcegraph.com/admin/external_service/other#configuration"
+                    to="https://docs.sourcegraph.com/admin/external_service/other#configuration"
                 >
                     the docs for more options
-                </a>
+                </Link>
                 , or try one of the buttons below.
             </p>
         </div>
@@ -1150,13 +1151,13 @@ const PERFORCE: AddExternalServiceOptions = {
             </ol>
             <p>
                 See{' '}
-                <a
+                <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    href="https://docs.sourcegraph.com/admin/repo/perforce#configuration"
+                    to="https://docs.sourcegraph.com/admin/repo/perforce#configuration"
                 >
                     the docs for more advanced options
-                </a>
+                </Link>
                 , or try one of the buttons below.
             </p>
         </div>

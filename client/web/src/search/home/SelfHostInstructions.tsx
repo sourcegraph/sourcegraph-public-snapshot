@@ -7,7 +7,7 @@ import React, { useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import styles from './SelfHostInstructions.module.scss'
 
@@ -49,14 +49,14 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     <li>Your code never leaves your server</li>
                     <li>Free 30 day trial of enterprise-only features</li>
                 </ul>
-                <a
-                    href="https://docs.sourcegraph.com/cloud/cloud_ent_on-prem_comparison"
+                <Link
+                    to="https://docs.sourcegraph.com/cloud/cloud_ent_on-prem_comparison"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     Learn more about self-hosted vs. cloud features{' '}
                     <OpenInNewIcon aria-label="Open in new window" className="icon-inline" />
-                </a>
+                </Link>
             </div>
 
             <div className={styles.column}>
@@ -77,22 +77,22 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     <code className={styles.codeBlock}>{dockerCommand}</code>
                 </MarketingBlock>
                 <div className="d-flex justify-content-between">
-                    <a
-                        href="https://docs.sourcegraph.com/admin/install"
+                    <Link
+                        to="https://docs.sourcegraph.com/admin/install"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mr-2"
                     >
                         Learn how to deploy a server or cluster{' '}
                         <OpenInNewIcon aria-label="Open in new window" className="icon-inline" />
-                    </a>
-                    <a
-                        href="https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct?utm_campaign=inproduct-self-hosted-install&utm_medium=direct_traffic&utm_source=inproduct-self-hosted-install&utm_term=null&utm_content=self-hosted-install"
+                    </Link>
+                    <Link
+                        to="https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct?utm_campaign=inproduct-self-hosted-install&utm_medium=direct_traffic&utm_source=inproduct-self-hosted-install&utm_term=null&utm_content=self-hosted-install"
                         onClick={onTalkToEngineerClicked}
                         className="text-right flex-shrink-0"
                     >
                         Talk to an engineer
-                    </a>
+                    </Link>
                 </div>
             </div>
         </div>

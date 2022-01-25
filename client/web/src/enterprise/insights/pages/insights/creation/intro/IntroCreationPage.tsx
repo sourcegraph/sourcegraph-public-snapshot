@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
@@ -64,9 +64,9 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                 description={
                     <>
                         Insights analyze your code based on any search query.{' '}
-                        <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                        <Link to="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
                             Learn more
-                        </a>
+                        </Link>
                     </>
                 }
                 className={styles.header}
@@ -89,13 +89,13 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
 
                 <div className={styles.info}>
                     Not sure which insight type to choose? Learn more about the{' '}
-                    <a
-                        href="https://docs.sourcegraph.com/code_insights/references/common_use_cases"
+                    <Link
+                        to="https://docs.sourcegraph.com/code_insights/references/common_use_cases"
                         target="_blank"
                         rel="noopener"
                     >
                         use cases.
-                    </a>
+                    </Link>
                 </div>
 
                 <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />

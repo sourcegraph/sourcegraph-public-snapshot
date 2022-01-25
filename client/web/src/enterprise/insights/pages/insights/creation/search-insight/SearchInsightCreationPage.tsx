@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
@@ -126,9 +126,9 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
                             <p className="text-muted">
                                 Search-based code insights analyze your code based on any search query.{' '}
-                                <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                                <Link to="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
                                     Learn more.
-                                </a>
+                                </Link>
                             </p>
                         </header>
 

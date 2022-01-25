@@ -156,14 +156,13 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                         <BookOpenBlankVariantIcon className="icon-inline text-muted mr-1" /> Generated
                                         API docs
                                         <span className={classNames('mx-2', styles.pillDivider)} />
-                                        <a
-                                            // eslint-disable-next-line react/jsx-no-target-blank
+                                        <Link
                                             target="_blank"
                                             rel="noopener"
-                                            href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                            to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                                         >
                                             Learn more
-                                        </a>
+                                        </Link>
                                     </span>
                                     {/*
                             TODO(apidocs): add support for indicating time the API docs were updated

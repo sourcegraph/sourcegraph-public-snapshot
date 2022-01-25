@@ -13,7 +13,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -80,17 +80,17 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                 <h3>Setting up executors</h3>
                 <p className="mb-0">
                     Executors enable{' '}
-                    <a href="https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing" rel="noopener">
+                    <Link to="https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing" rel="noopener">
                         auto-indexing for Code Intelligence
-                    </a>{' '}
+                    </Link>{' '}
                     and{' '}
-                    <a href="https://docs.sourcegraph.com/batch_changes/explanations/server_side" rel="noopener">
+                    <Link to="https://docs.sourcegraph.com/batch_changes/explanations/server_side" rel="noopener">
                         server-side Batch Changes
-                    </a>
+                    </Link>
                     . In order to use those features,{' '}
-                    <a href="https://docs.sourcegraph.com/admin/deploy_executors" rel="noopener">
+                    <Link to="https://docs.sourcegraph.com/admin/deploy_executors" rel="noopener">
                         set them up
-                    </a>
+                    </Link>
                     .
                 </p>
             </Container>
