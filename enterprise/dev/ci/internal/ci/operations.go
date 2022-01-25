@@ -94,10 +94,10 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 	if runAll || changedFiles.AffectsDocs() {
 		ops.Append(addDocs)
 	}
-	
+
 	if runAll || changedFiles.AffectsTerraformFiles() {
 		ops.Append(addTerraformLint)
-	}	
+	}
 
 	return &ops
 }
