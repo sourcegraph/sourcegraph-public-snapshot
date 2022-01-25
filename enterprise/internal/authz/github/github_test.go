@@ -761,7 +761,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			p.groupsCache = memCache
 
 			t.Run("feature flag disabled", func(t *testing.T) {
-
 				accountIDs, err := p.FetchRepoPerms(
 					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
 				)
