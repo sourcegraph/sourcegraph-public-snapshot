@@ -122,8 +122,8 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                 </Card>
             )}
             {!expanded && (
-                <CollapsedWrapperElement
-                    as={Card}
+                <Card
+                    as={CollapsedWrapperElement}
                     data-testid="form-action-toggle-email-notification"
                     className={classNames('test-action-button', styles.cardButton, disabled && 'disabled')}
                     disabled={disabled}
@@ -164,7 +164,7 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                             </div>
                         )}
                     </div>
-                </CollapsedWrapperElement>
+                </Card>
             )}
         </>
     )

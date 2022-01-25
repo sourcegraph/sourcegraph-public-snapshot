@@ -2,6 +2,8 @@
 
 You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
+> NOTE: Only the frontend (_pgsql_) and code intelligence (_codeintel-db_) databases are supported to run externally at this time.
+
 ## General recommendations
 
 If you choose to set up your own PostgreSQL server, please note **we strongly recommend each database to be set up in different servers and/or hosts**. We suggest either:
