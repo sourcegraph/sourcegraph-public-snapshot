@@ -11,10 +11,20 @@ import (
 
 type MatchOnly struct {
 	MatchPattern MatchPattern
+
+	// ComputePattern is the valid, semantically-equivalent representation
+	// of MatchPattern that mirrors implicit Sourcegraph search behavior
+	// (e.g., default case insensitivity), but which may differ
+	// syntactically (e.g., by wrapping a pattern in (?i:<MatchPattern>).
+	ComputePattern MatchPattern
 }
 
 func (c *MatchOnly) String() string {
-	return fmt.Sprintf("Match only: %s", c.MatchPattern.String())
+	return fmt.Sprintf(
+		"Match only search pattern: %s, compute pattern: %s",
+		c.MatchPattern.String(),
+		c.ComputePattern.String(),
+	)
 }
 
 func fromRegexpMatches(submatches []int, namedGroups []string, lineValue string, lineNumber int) Match {
@@ -66,7 +76,7 @@ func matchOnly(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
 func (c *MatchOnly) Run(_ context.Context, r result.Match) (Result, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		return matchOnly(m, c.MatchPattern.(*Regexp).Value), nil
+		return matchOnly(m, c.ComputePattern.(*Regexp).Value), nil
 	}
 	return nil, nil
 }
