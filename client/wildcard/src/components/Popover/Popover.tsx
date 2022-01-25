@@ -161,7 +161,9 @@ export const PopoverContent = forwardRef((props, reference) => {
     // Enable focus lock (therefore autofocus first scrollable element within the popover content)
     useEffect(() => {
         if (tooltipElement && autoFocus && focusLocked) {
-            setFocusLock(true)
+            requestAnimationFrame(() => {
+                setFocusLock(true)
+            })
         }
 
         return () => {
