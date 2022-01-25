@@ -288,16 +288,21 @@ export const ReferencesList: React.FunctionComponent<{
     return (
         <>
             <ul>
-                {references?.map((reference, index) => (
-                    <li key={index}>
-                        <RepoFileLink
-                            repoURL={`/${reference.resource.repository.name}`}
-                            repoName={reference.resource.repository.name}
-                            filePath={`${reference.resource.path} [Line ${reference.range?.start.line || 'undefined'}]`}
-                            fileURL={buildFileURL(reference)}
-                        />
-                    </li>
-                ))}
+                {references?.map(reference => {
+                    const fileURL = buildFileURL(reference)
+                    return (
+                        <li key={fileURL}>
+                            <RepoFileLink
+                                repoURL={`/${reference.resource.repository.name}`}
+                                repoName={reference.resource.repository.name}
+                                filePath={`${reference.resource.path} [Line ${
+                                    reference.range?.start.line || 'undefined'
+                                }]`}
+                                fileURL={fileURL}
+                            />
+                        </li>
+                    )
+                })}
             </ul>
         </>
     )
