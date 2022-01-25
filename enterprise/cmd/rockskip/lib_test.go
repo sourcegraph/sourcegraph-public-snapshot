@@ -51,6 +51,8 @@ func (ctags Ctags) Close() {
 	ctags.parser.Close()
 }
 
+const HOME = "/Users/chrismwendt/"
+
 func TestIndex(t *testing.T) {
 	repo := "github.com/gorilla/mux"
 	// repo := "github.com/hashicorp/raft"
@@ -64,6 +66,7 @@ func TestIndex(t *testing.T) {
 	defer git.Close()
 
 	db := dbtest.NewDB(t)
+	fmt.Println()
 	defer db.Close()
 
 	parser, err := NewCtags()
@@ -73,12 +76,24 @@ func TestIndex(t *testing.T) {
 	defer parser.Close()
 
 	revParse := exec.Command("git", "rev-parse", "HEAD")
-	revParse.Dir = "/Users/chrismwendt/" + repo
+	revParse.Dir = HOME + repo
 	output, err := revParse.Output()
 	if err != nil {
 		t.Fatalf("🚨 rev-parse: %s", err)
 	}
 	head := strings.TrimSpace(string(output))
+
+	// du -sh
+	du := exec.Command("du", "-sh", HOME+repo)
+	du.Dir = HOME + repo
+	output, err = du.Output()
+	if err != nil {
+		t.Fatalf("🚨 du: %s", err)
+	}
+	size := strings.Split(string(output), "\t")[0]
+
+	fmt.Println("🔵 Indexing", repo, "at", head, "with git size", size)
+	fmt.Println()
 
 	TASKLOG.Reset()
 	err = Index(git, db, parser.Parse, head)
@@ -86,6 +101,23 @@ func TestIndex(t *testing.T) {
 		t.Fatalf("🚨 Index: %s", err)
 	}
 	TASKLOG.Print()
+	fmt.Println()
+
+	// print all columns in "SELECT * FROM symbols"
+	rows, err := db.Query("SELECT pg_size_pretty(pg_total_relation_size('rockskip_ancestry')) AS rockskip_ancestry, pg_size_pretty(pg_total_relation_size('rockskip_blobs')) AS rockskip_blobs;")
+	if err != nil {
+		t.Fatalf("🚨 db.Query: %s", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var rockskip_ancestry, rockskip_blobs string
+		if err := rows.Scan(&rockskip_ancestry, &rockskip_blobs); err != nil {
+			t.Fatalf("🚨 rows.Scan: %s", err)
+		}
+		fmt.Printf("rockskip_ancestry: %s\n", rockskip_ancestry)
+		fmt.Printf("rockskip_blobs   : %s\n", rockskip_blobs)
+	}
+	fmt.Println()
 
 	blobs, err := Search(db, head, nil)
 	if err != nil {
@@ -97,7 +129,7 @@ func TestIndex(t *testing.T) {
 	}
 
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("git ls-tree -r %s | grep -v \"^160000\" | cut -f2", head))
-	cmd.Dir = "/Users/chrismwendt/" + repo
+	cmd.Dir = HOME + repo
 	out, err := cmd.Output()
 	if err != nil {
 		t.Fatal(err)
