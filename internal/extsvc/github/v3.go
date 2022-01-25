@@ -330,18 +330,6 @@ type OrgDetailsAndMembership struct {
 	*OrgMembership
 }
 
-// IsAdmin will return true if the membership details for the given OrgDetailsAndMembership has an
-// "active" state and the role is set to "admin". Otherwise it will return false.
-func (o *OrgDetailsAndMembership) IsAdmin() bool {
-	if o.OrgMembership != nil &&
-		o.OrgMembership.State == "active" &&
-		o.OrgMembership.Role == "admin" {
-		return true
-	}
-
-	return false
-}
-
 // GetAuthenticatedUserOrgsDetailsAndMembership returns the organizations associated with the currently
 // authenticated user as well as additional information about each org by making API
 // requests for each org (see `OrgDetails` and `OrgMembership` docs for more details).

@@ -557,13 +557,12 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 		}
 	}
 
-	odm := github.OrgDetailsAndMembership{OrgDetails: org}
-	allOrgMembersCanRead := canViewOrgRepos(&odm)
+	allOrgMembersCanRead := canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
 	if allOrgMembersCanRead {
 		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
 		// be sync'd.
 		syncGroup(owner, "", false)
-	} else if odm.IsAdmin() {
+	} else {
 		// 🚨 SECURITY: Sync *only admins* of this org
 		syncGroup(owner, "", true)
 
