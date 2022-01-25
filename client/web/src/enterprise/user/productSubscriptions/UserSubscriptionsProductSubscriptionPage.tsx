@@ -9,7 +9,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, CardHeader, CardBody, Card, CardFooter } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
@@ -41,7 +41,6 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
         params: { subscriptionUUID },
     },
     _queryProductSubscription = queryProductSubscription,
-    history,
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
 
@@ -103,12 +102,12 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                             licenseKey={productSubscription.activeLicense?.licenseKey ?? null}
                         />
                     )}
-                    <div className="card mt-3">
-                        <div className="card-header">Billing</div>
+                    <Card className="mt-3">
+                        <CardHeader>Billing</CardHeader>
                         {productSubscription.invoiceItem ? (
                             <>
                                 <ProductSubscriptionBilling productSubscription={productSubscription} />
-                                <div className="card-footer">
+                                <CardFooter>
                                     <a
                                         href={mailtoSales({
                                             subject: `Change payment method for subscription ${productSubscription.name}`,
@@ -117,10 +116,10 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                                         Contact sales
                                     </a>{' '}
                                     to change your payment method.
-                                </div>
+                                </CardFooter>
                             </>
                         ) : (
-                            <div className="card-body">
+                            <CardBody>
                                 <span className="text-muted ">
                                     No billing information is associated with this subscription.{' '}
                                     <a
@@ -132,13 +131,13 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                                     </a>{' '}
                                     for help.
                                 </span>
-                            </div>
+                            </CardBody>
                         )}
-                    </div>
-                    <div className="card mt-3">
-                        <div className="card-header">History</div>
+                    </Card>
+                    <Card className="mt-3">
+                        <CardHeader>History</CardHeader>
                         <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </div>
+                    </Card>
                 </>
             )}
         </div>
