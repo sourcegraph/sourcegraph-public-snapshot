@@ -252,8 +252,11 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) erro
 				}
 
 				TASKLOG.Start("UpdateBlobHops")
-				UpdateBlobHops(tx, id, DeletedAD, entry.Commit)
+				err = UpdateBlobHops(tx, id, DeletedAD, entry.Commit)
 				TASKLOG.Start("idle")
+				if err != nil {
+					return errors.Wrap(err, "UpdateBlobHops")
+				}
 			}
 
 			if pathStatus.Status == AddedAMD || pathStatus.Status == ModifiedAMD {
@@ -297,7 +300,11 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) erro
 		tipHeight += 1
 
 		TASKLOG.Start("InsertCommit")
-		InsertCommit(tx, tipCommit, tipHeight, hops[r])
+		err = InsertCommit(tx, tipCommit, tipHeight, hops[r])
+		TASKLOG.Start("idle")
+		if err != nil {
+			return errors.Wrap(err, "InsertCommit")
+		}
 		TASKLOG.Start("CommitTx")
 		err = tx.Commit()
 		if err != nil {
