@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -23,7 +23,6 @@ import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
-import { TosConsentModal } from './auth/TosConsentModal'
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
@@ -180,25 +179,27 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     useScrollToLocationHash(props.location)
 
-    const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
-    useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
-        props.authenticatedUser,
-    ])
-    const afterTosAccepted = useCallback(() => {
-        setTosAccepted(true)
-    }, [])
+    // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
+    // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
+    // useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
+    //     props.authenticatedUser,
+    // ])
+    // const afterTosAccepted = useCallback(() => {
+    //     setTosAccepted(true)
+    // }, [])
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
     }
 
+    // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // If a user has not accepted the Terms of Service yet, show the modal to force them to accept
     // before continuing to use Sourcegraph. This is only done on self-hosted Sourcegraph Server;
     // cloud users are all considered to have accepted regarless of the value of `tosAccepted`.
-    if (!props.isSourcegraphDotCom && !tosAccepted) {
-        return <TosConsentModal afterTosAccepted={afterTosAccepted} />
-    }
+    // if (!props.isSourcegraphDotCom && !tosAccepted) {
+    //     return <TosConsentModal afterTosAccepted={afterTosAccepted} />
+    // }
 
     const context: LayoutRouteComponentProps<any> = {
         ...props,
