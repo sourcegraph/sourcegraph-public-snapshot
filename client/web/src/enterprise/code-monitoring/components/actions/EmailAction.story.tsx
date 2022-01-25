@@ -12,8 +12,6 @@ const { add } = storiesOf('web/enterprise/code-monitoring/actions/EmailAction', 
 const defaultProps: EmailActionProps = {
     action: undefined,
     setAction: sinon.fake(),
-    actionCompleted: false,
-    setActionCompleted: sinon.fake(),
     disabled: false,
     authenticatedUser: mockAuthenticatedUser,
     monitorName: 'Example code monitor',
@@ -33,31 +31,18 @@ add('closed, not populated', () => <WebStory>{() => <EmailAction {...defaultProp
 
 add('open, not populated', () => <WebStory>{() => <EmailAction {...defaultProps} _testStartOpen={true} />}</WebStory>)
 
-add('closed, populated, enabled', () => (
-    <WebStory>{() => <EmailAction {...defaultProps} action={action} actionCompleted={true} />}</WebStory>
-))
+add('closed, populated, enabled', () => <WebStory>{() => <EmailAction {...defaultProps} action={action} />}</WebStory>)
 
 add('open, populated, enabled', () => (
-    <WebStory>
-        {() => <EmailAction {...defaultProps} _testStartOpen={true} action={action} actionCompleted={true} />}
-    </WebStory>
+    <WebStory>{() => <EmailAction {...defaultProps} _testStartOpen={true} action={action} />}</WebStory>
 ))
 
 add('closed, populated, disabled', () => (
-    <WebStory>
-        {() => <EmailAction {...defaultProps} action={{ ...action, enabled: false }} actionCompleted={true} />}
-    </WebStory>
+    <WebStory>{() => <EmailAction {...defaultProps} action={{ ...action, enabled: false }} />}</WebStory>
 ))
 
 add('open, populated, disabled', () => (
     <WebStory>
-        {() => (
-            <EmailAction
-                {...defaultProps}
-                _testStartOpen={true}
-                action={{ ...action, enabled: false }}
-                actionCompleted={true}
-            />
-        )}
+        {() => <EmailAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />}
     </WebStory>
 ))

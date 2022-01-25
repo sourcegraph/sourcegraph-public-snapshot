@@ -12,8 +12,6 @@ const { add } = storiesOf('web/enterprise/code-monitoring/actions/SlackWebhookAc
 const defaultProps: ActionProps = {
     action: undefined,
     setAction: sinon.fake(),
-    actionCompleted: false,
-    setActionCompleted: sinon.fake(),
     disabled: false,
     monitorName: 'Example code monitor',
 }
