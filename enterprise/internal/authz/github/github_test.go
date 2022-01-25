@@ -803,7 +803,8 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					"57463526",
 					"67471",
 					"187831",
-					// dedpulicated MockListOrganizationMembers users as well since the feature is enabled
+					// expect dedpulicated MockListOrganizationMembers users as well since we want to grant access
+					// to org members as well if the target repo has visibility "internal"
 					"1234",
 					"5678",
 				}
