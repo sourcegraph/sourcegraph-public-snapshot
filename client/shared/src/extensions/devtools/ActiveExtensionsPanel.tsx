@@ -3,7 +3,7 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Link, CardHeader, CardBody } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Link, CardHeader, CardBody, Alert } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 
@@ -39,7 +39,9 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
             <CardHeader>Active extensions (DEBUG)</CardHeader>
             {extensionsOrError ? (
                 isErrorLike(extensionsOrError) ? (
-                    <div className="alert alert-danger mb-0 rounded-0">{extensionsOrError.message}</div>
+                    <Alert className="mb-0 rounded-0" variant="danger">
+                        {extensionsOrError.message}
+                    </Alert>
                 ) : extensionsOrError.length > 0 ? (
                     <div className="list-group list-group-flush">
                         {extensionsOrError.map(({ id }, index) => (

@@ -20,7 +20,7 @@ import { AuthenticatedUser } from '../../../../auth'
 import { Collapsible } from '../../../../components/Collapsible'
 import { PageTitle } from '../../../../components/PageTitle'
 import { LsifUploadFields, LsifUploadConnectionFields } from '../../../../graphql-operations'
-import { CodeIntelStateBanner } from '../../shared/components/CodeIntelStateBanner'
+import { CodeIntelStateBanner, CodeIntelStateBannerProps } from '../../shared/components/CodeIntelStateBanner'
 import { CodeIntelAssociatedIndex } from '../components/CodeIntelAssociatedIndex'
 import { CodeIntelDeleteUpload } from '../components/CodeIntelDeleteUpload'
 import { CodeIntelUploadMeta } from '../components/CodeIntelUploadMeta'
@@ -41,9 +41,9 @@ export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: stri
     now?: () => Date
 }
 
-const classNamesByState = new Map([
-    [LSIFUploadState.COMPLETED, 'alert-success'],
-    [LSIFUploadState.ERRORED, 'alert-danger'],
+const variantByState = new Map<LSIFUploadState, CodeIntelStateBannerProps['variant']>([
+    [LSIFUploadState.COMPLETED, 'success'],
+    [LSIFUploadState.ERRORED, 'danger'],
 ])
 
 enum DependencyGraphState {
@@ -182,7 +182,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             failure={uploadOrError.failure}
                             typeName="upload"
                             pluralTypeName="uploads"
-                            className={classNamesByState.get(uploadOrError.state)}
+                            variant={variantByState.get(uploadOrError.state)}
                         />
                         {uploadOrError.isLatestForRepo && (
                             <div>

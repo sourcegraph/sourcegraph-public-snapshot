@@ -7,7 +7,16 @@ import { Subscription } from 'rxjs'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ProductStatusBadge, Container, PageSelector, RadioButton, TextArea, Link, Button } from '@sourcegraph/wildcard'
+import {
+    ProductStatusBadge,
+    Container,
+    PageSelector,
+    RadioButton,
+    TextArea,
+    Button,
+    Alert,
+    Link,
+} from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -108,21 +117,21 @@ type initialFetchingReposState = undefined | 'loading'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-warning my-3" role="alert" key={warning}>
+    <Alert className="my-3" role="alert" key={warning} variant="warning">
         <h4 className="align-middle mb-1">{capitalize(warning)}</h4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>
-    </div>
+    </Alert>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-danger my-3" role="alert" key={error.message}>
+    <Alert className="my-3" role="alert" key={error.message} variant="danger">
         <h4 className="align-middle mb-1">{capitalize(error.message)}</h4>
         <p className="align-middle mb-0">
             {hint} {hint ? 'for more details.' : null}
         </p>
-    </div>
+    </Alert>
 )
 
 const displayAffiliateRepoProblems = (
@@ -799,7 +808,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             </p>
 
                             {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
-                                <div className="alert alert-primary">
+                                <Alert variant="primary">
                                     Coming soon: search private repositories with Sourcegraph Cloud.{' '}
                                     <Link
                                         to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
@@ -808,16 +817,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                     >
                                         Get updated when this feature launches
                                     </Link>
-                                </div>
+                                </Alert>
                             )}
                             {codeHosts.loaded && codeHosts.hosts.length === 0 && (
-                                <div className="alert alert-warning mb-2">
+                                <Alert className="mb-2" variant="warning">
                                     <Link className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
                                         Connect with a code host
                                     </Link>{' '}
                                     to add
                                     {owner.name ? ` ${owner.name}'s` : ' your own'} repositories to Sourcegraph.
-                                </div>
+                                </Alert>
                             )}
                             {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
 

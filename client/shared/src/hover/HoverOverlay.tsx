@@ -12,7 +12,7 @@ import { ThemeProps } from '../theme'
 import { sanitizeClass } from '../util/strings'
 
 import hoverOverlayStyle from './HoverOverlay.module.scss'
-import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName } from './HoverOverlay.types'
+import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName, GetAlertVariant } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
 import style from './HoverOverlayContents.module.scss'
@@ -35,7 +35,15 @@ export interface HoverOverlayClassProps {
 
     contentClassName?: string
 
+    /**
+     * Allows providing any custom className to style the notifications as desired.
+     */
     getAlertClassName?: GetAlertClassName
+
+    /**
+     * Allows providing a specific variant style for use in branded Sourcegraph applications.
+     */
+    getAlertVariant?: GetAlertVariant
 }
 
 export interface HoverOverlayProps
@@ -85,6 +93,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         contentClassName,
 
         getAlertClassName,
+        getAlertVariant,
         onAlertDismissed,
 
         useBrandedLogo,
@@ -117,6 +126,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                     iconClassName={iconClassName}
                     badgeClassName={badgeClassName}
                     errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
+                    errorAlertVariant={getAlertVariant?.(NotificationType.Error)}
                     contentClassName={contentClassName}
                 />
             </div>
@@ -129,6 +139,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                         hoverAlerts={hoverOrError.alerts}
                         iconClassName={iconClassName}
                         getAlertClassName={getAlertClassName}
+                        getAlertVariant={getAlertVariant}
                         onAlertDismissed={onAlertDismissed}
                     />
                 )}
