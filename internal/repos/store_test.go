@@ -275,6 +275,17 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 			t.Fatal(err)
 		}
 		assertCount(t, 2)
+
+		// Test that cloud default external services don't get jobs enqueued also when there are no job rows.
+		if err = store.Exec(ctx, sqlf.Sprintf("DELETE FROM external_service_sync_jobs")); err != nil {
+			t.Fatal(err)
+		}
+
+		err = store.EnqueueSingleSyncJob(ctx, service.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertCount(t, 0)
 	}
 }
 

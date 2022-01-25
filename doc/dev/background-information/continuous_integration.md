@@ -17,22 +17,49 @@ To see what checks will get run against your current branch, use [`sg`](../setup
 sg ci preview
 ```
 
-### Vulnerability scanning
+### Soft failures
+
+<span class="badge badge-note">SOC2/GN-106</span>
+
+Many steps in Sourcegraph's Buildkite pipelines allow for [soft failures](https://buildkite.com/changelog/56-command-steps-can-now-be-made-to-soft-fail), which means that even if they fail they do not cause the entire build to be failed.
+
+In the Buildkite UI, soft failures currently look like the following, with a _triangular_ warning sign (not to be mistaken for a hard failure!):
+
+![soft fail in Buildkite UI](https://user-images.githubusercontent.com/23356519/150558751-d8e0da19-0b6f-4645-aa12-7547d375330f.png)
+
+We use soft failures for the following reasons only:
+
+- Steps that determine whether a subsequent step should run, where soft failures are the only technical way to communicate that a later step should be skipped in this manner using Buildkite.
+  - Examples: [hash comparison steps that determine if a build should run](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/operations%5C.go+compare-hash.sh&patternType=literal)
+- Regular analysis tasks, where soft failures serve as an monitoring indicator to warn the team responsible for fixing issues.
+  - Examples: [image vulnerability scanning](#image-vulnerability-scanning), linting tasks for catching deprecation warnings
+- Temporary exceptions to accommodate experimental or in-progress work.
+
+You can find all usages of soft failures [with the following queries](https://sourcegraph.com/notebooks/Tm90ZWJvb2s6NTc=):
+
+- [Soft failures in the Sourcegraph pipeline generator](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%7B...bk.SoftFail...%7D+OR+%28...bk.SoftFail...%29+count:all&patternType=structural)
+- [Soft failures in Buildkite YAML pipelines](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/.*+soft_fail+lang:yaml+count:all&patternType=literal)
+
+All other failures are hard failures.
+
+### Image vulnerability scanning
 
 Our CI pipeline scans uses [Trivy](https://aquasecurity.github.io/trivy/) to scan our Docker images for security vulnerabilities.
 
 Trivy will perform scans upon commits to the following branches:
 
-1. `main` 
+1. `main`
 2. branches prefixed by `main-dry-run/`
 3. branches prefixed by `docker-images-patch/$IMAGE` (where only a single image is built)
 
 If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a known fix:
 
 1. The CI pipeline will create an annotation that contains links to reports that describe the vulnerabilities
-2. The Trivy scanning step will [soft fail](https://buildkite.com/docs/pipelines/command-step#soft-fail-attributes). Note that soft failures **do not fail builds or block deployments**. They simply highlight the failing step for further analysis.
+2. The Trivy scanning step will [soft fail](#soft-failures). Note that soft failures **do not fail builds or block deployments**. They simply highlight the failing step for further analysis.
 
 > NOTE: Our vulnerability management process (including this workflow) is under active development and in its early stages. All of the above is subject to change. See [https://github.com/sourcegraph/sourcegraph/pull/25756](https://github.com/sourcegraph/sourcegraph/pull/25756) for more context.
+
+We also run [separate vulnerability scans for our infrastructure](https://handbook.sourcegraph.com/departments/product-engineering/engineering/cloud/security/checkov).
 
 ### Pipeline health
 
