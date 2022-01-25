@@ -71,9 +71,7 @@ export interface IdleState {
 
 export interface ContextInvalidatedState {
     status: 'context-invalidated'
-    context: CommonContext & {
-        reason: 'url-change' | 'access-token-change'
-    }
+    context: CommonContext
 }
 
 interface CommonContext {
@@ -96,11 +94,9 @@ type TabsEvent =
     | { type: 'remote_file_focused' }
     | { type: 'remote_file_unfocused' }
 
-type SettingsEvent =
-    | {
-          type: 'sourcegraph_url_change'
-      }
-    | { type: 'access_token_change' }
+interface SettingsEvent {
+    type: 'sourcegraph_url_change'
+}
 
 export function createVSCEStateMachine(): VSCEStateMachine {
     const states = new BehaviorSubject<VSCEState>(INITIAL_STATE)
@@ -112,12 +108,11 @@ export function createVSCEStateMachine(): VSCEStateMachine {
         }
 
         // Events with the same behavior regardless of current state
-        if (event.type === 'sourcegraph_url_change' || event.type === 'access_token_change') {
+        if (event.type === 'sourcegraph_url_change') {
             return {
                 status: 'context-invalidated',
                 context: {
                     ...INITIAL_STATE.context,
-                    reason: event.type === 'sourcegraph_url_change' ? 'url-change' : 'access-token-change',
                 },
             }
         }

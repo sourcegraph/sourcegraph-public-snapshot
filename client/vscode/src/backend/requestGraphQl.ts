@@ -58,7 +58,9 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         // eslint-disable-next-line @typescript-eslint/return-await
         return response.json() as Promise<GraphQLResult<any>>
     } catch (error) {
-        if (isHTTPAuthError(error)) {
+        // If `overrideAccessToken` is set, we're validating the token
+        // and errors will be displayed in the UI.
+        if (isHTTPAuthError(error) && !overrideAccessToken) {
             handleAccessTokenError(accessToken).then(
                 () => {},
                 () => {}

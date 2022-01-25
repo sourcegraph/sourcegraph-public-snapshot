@@ -57,7 +57,7 @@ const Main: React.FC = () => {
     }
 
     if (state.status === 'context-invalidated') {
-        return <ContextInvalidatedSidebarView {...webviewPageProps} reason={state.context.reason} />
+        return <ContextInvalidatedSidebarView {...webviewPageProps} />
     }
 
     // TODO: should we hide the access token form permanently if an unauthenticated user

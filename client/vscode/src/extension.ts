@@ -1,10 +1,10 @@
 import 'cross-fetch/polyfill'
-import { from, of, ReplaySubject } from 'rxjs'
+import { of, ReplaySubject } from 'rxjs'
 import * as vscode from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 
-import { getAuthenticatedUser } from './backend/authenticatedUser'
+import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
 import { ExtensionCoreAPI } from './contract'
@@ -49,7 +49,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     invalidateContextOnSettingsChange({ context, stateMachine })
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
-    const authenticatedUser = getAuthenticatedUser()
+    const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
 
     // Add state to VS Code context to be used in context keys.
@@ -76,7 +76,7 @@ export function activate(context: vscode.ExtensionContext): void {
         observeSourcegraphSettings: () => proxySubscribable(sourcegraphSettings.settings),
         // Debt: converting Promises into Observables for ease of use with
         // `useObservable` hook. Add `usePromise`s hook to fix.
-        getAuthenticatedUser: () => proxySubscribable(from(authenticatedUser)),
+        getAuthenticatedUser: () => proxySubscribable(authenticatedUser),
         getInstanceURL: () => proxySubscribable(of(initialInstanceURL)),
         openLink: async uri => {
             await vscode.env.openExternal(vscode.Uri.parse(uri))
