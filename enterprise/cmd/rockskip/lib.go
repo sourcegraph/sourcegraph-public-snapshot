@@ -219,6 +219,7 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 			fmt.Printf("Index: height %d (%d/s)\n", tipHeight+1, entryIndex/int(time.Since(start).Seconds()))
 			last = time.Now()
 		}
+
 		hops, err := getHops(tx, repo, tipCommit)
 		if err != nil {
 			return errors.Wrap(err, "getHops")
@@ -227,6 +228,13 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 		r := ruler(tipHeight + 1)
 		if r >= len(hops) {
 			return fmt.Errorf("ruler(%d) = %d is out of range of len(hops) = %d", tipHeight+1, r, len(hops))
+		}
+
+		TASKLOG.Start("InsertCommit")
+		err = InsertCommit(tx, repo, entry.Commit, tipHeight+1, hops[r])
+		TASKLOG.Start("idle")
+		if err != nil {
+			return errors.Wrap(err, "InsertCommit")
 		}
 
 		TASKLOG.Start("AppendHop (added)")
@@ -310,21 +318,15 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 			return errors.Wrap(err, "DeleteRedundant")
 		}
 
-		tipCommit = entry.Commit
-		tipHeight += 1
-
-		TASKLOG.Start("InsertCommit")
-		err = InsertCommit(tx, repo, tipCommit, tipHeight, hops[r])
-		TASKLOG.Start("idle")
-		if err != nil {
-			return errors.Wrap(err, "InsertCommit")
-		}
 		TASKLOG.Start("CommitTx")
 		err = tx.Commit()
 		if err != nil {
 			return errors.Wrap(err, "commit transaction")
 		}
 		TASKLOG.Start("idle")
+
+		tipCommit = entry.Commit
+		tipHeight += 1
 	}
 
 	return nil
