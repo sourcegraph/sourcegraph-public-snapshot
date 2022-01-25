@@ -143,7 +143,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                     // Use a div instead. The edit button will still allow keyboard users to activate the form.
                     as={completed ? 'div' : Button}
                     data-testid={`form-action-toggle-${idName}`}
-                    className={classNames('test-action-button', styles.cardButton, disabled && 'disabled')}
+                    className={classNames(`test-action-button-${idName}`, styles.cardButton, disabled && 'disabled')}
                     disabled={disabled}
                     aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
