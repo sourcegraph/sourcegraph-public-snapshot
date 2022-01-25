@@ -402,9 +402,6 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRe
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
 	id := api.CommitID(bytes.TrimSpace(out))
-	if actor.FromContext(ctx).IsInternal() {
-		return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, nil)
-	}
 	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
 }
 
@@ -433,7 +430,7 @@ func Head(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissio
 		return checkError(err)
 	}
 	commitID := string(out)
-	if checker != nil && checker.Enabled() {
+	if authz.SubRepoEnabled(checker) {
 		if _, err := GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); err != nil {
 			return checkError(err)
 		}
