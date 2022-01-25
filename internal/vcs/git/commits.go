@@ -486,7 +486,8 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 			Committer: &gitdomain.Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
 			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[8]), "\n")),
 			Parents:   parents,
-		}, files: fileNames}
+		}, files: fileNames,
+	}
 
 	if len(parts) == partsPerCommit+1 {
 		rest = parts[partsPerCommit]
@@ -554,21 +555,39 @@ func parseBranchesContaining(lines []string) []string {
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func RefDescriptions(ctx context.Context, repo api.RepoName) (_ map[string][]gitdomain.RefDescription, err error) {
-	args := []string{"for-each-ref", "--format=%(objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)"}
+func RefDescriptions(ctx context.Context, repo api.RepoName) (map[string][]gitdomain.RefDescription, error) {
+	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
+		args := append(make([]string, 0, 3), "for-each-ref")
+		if refPrefix == "refs/tags/" {
+			args = append(args, "--format=%(*objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)")
+		} else {
+			args = append(args, "--format=%(objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)")
+		}
+		args = append(args, refPrefix)
+
+		cmd := gitserver.DefaultClient.Command("git", args...)
+		cmd.Repo = repo
+
+		out, err := cmd.CombinedOutput(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return parseRefDescriptions(strings.Split(string(out), "\n"))
+	}
+
+	aggregate := make(map[string][]gitdomain.RefDescription)
 	for prefix := range refPrefixes {
-		args = append(args, prefix)
+		descriptions, err := f(prefix)
+		if err != nil {
+			return nil, err
+		}
+		for commit, descs := range descriptions {
+			aggregate[commit] = append(aggregate[commit], descs...)
+		}
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = repo
-
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return parseRefDescriptions(strings.Split(string(out), "\n"))
+	return aggregate, nil
 }
 
 var refPrefixes = map[string]gitdomain.RefType{

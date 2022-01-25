@@ -1,12 +1,17 @@
-import { Observable, ReplaySubject, Subject } from 'rxjs'
-import { map, switchMap, throttleTime } from 'rxjs/operators'
+import { Observable, of, ReplaySubject, Subject } from 'rxjs'
+import { catchError, map, switchMap, throttleTime } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { ISettingsCascade } from '@sourcegraph/shared/src/schema'
-import { gqlToCascade, Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import {
+    EMPTY_SETTINGS_CASCADE,
+    gqlToCascade,
+    Settings,
+    SettingsCascadeOrError,
+} from '@sourcegraph/shared/src/settings/settings'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 
@@ -37,7 +42,8 @@ export function initializeSourcegraphSettings({
                 }
 
                 return gqlToCascade(data?.viewerSettings as ISettingsCascade)
-            })
+            }),
+            catchError(() => of(EMPTY_SETTINGS_CASCADE))
         )
         .subscribe(settingsCascade => {
             settings.next(settingsCascade)
