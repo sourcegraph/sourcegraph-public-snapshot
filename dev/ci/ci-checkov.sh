@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
+# Set this to fail on the install 
 set -euxo pipefail
-
-# In case it reports already installed
-asdf shell python 3.10.0
 
 # Install and run the plugin for checkov
 # Use the full path to run pip3.10
@@ -17,6 +15,8 @@ echo "--- Starting Checkov..."
 echo "Note: If there is no output below here then no terraform code was found to scan.  All good!"
 echo "==========================================================================================="
 
+# Set not to fail on non-zero exit code
+set +e
 # Run checkov
 python3 -m checkov.main --quiet --framework terraform --compact -d .
 
