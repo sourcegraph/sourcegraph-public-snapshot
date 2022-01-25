@@ -17,7 +17,7 @@ function TestExitCodeNOK {
   (
     # Mock the buildevents command to test just the script
     # Locally adjust the path for the purpose of this test.
-    # shellcheck disable=SC2030
+    # shellcheck disable=SC2030,SC2031
     PATH="$(pwd)/dev/ci/scripts/tests/testdata/:$PATH"
 
     dev/ci/scripts/trace-command.sh exit 10
@@ -41,7 +41,7 @@ function TestExitCodeOK {
   (
     # Mock the buildevents command to test just the script
     # Locally adjust the path for the purpose of this test.
-    # shellcheck disable=SC2030
+    # shellcheck disable=SC2030,SC2031
     PATH="$(pwd)/dev/ci/scripts/tests/testdata/:$PATH"
 
     dev/ci/scripts/trace-command.sh exit 0
