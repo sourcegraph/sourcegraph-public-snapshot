@@ -1,4 +1,4 @@
-import {useTabsContext as useReachTabsContext } from '@reach/tabs'
+import { useTabsContext as useReachTabsContext } from '@reach/tabs'
 import { useEffect, useRef, useState } from 'react'
 
 import { useTablePanelIndex, useTabsSettings } from './context'

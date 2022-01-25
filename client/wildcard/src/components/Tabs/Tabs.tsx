@@ -8,7 +8,7 @@ import {
     TabPanelsProps as ReachTabPanelsProps,
     TabProps as ReachTabProps,
     Tabs as ReachTabs,
-    TabsProps as ReachTabsProps
+    TabsProps as ReachTabsProps,
 } from '@reach/tabs'
 import classNames from 'classnames'
 import React from 'react'
@@ -97,18 +97,12 @@ export const Tab: React.FunctionComponent<TabProps> = props => {
 export const TabPanels: React.FunctionComponent<TabPanelsProps> = ({ children }) => (
     <ReachTabPanels data-testid="wildcard-tab-panel-list">
         {React.Children.map(children, (child, index) => (
-            <TabPanelIndexContext.Provider value={index}>
-                {child}
-            </TabPanelIndexContext.Provider>
+            <TabPanelIndexContext.Provider value={index}>{child}</TabPanelIndexContext.Provider>
         ))}
     </ReachTabPanels>
 )
 
 export const TabPanel: React.FunctionComponent = ({ children }) => {
     const shouldRender = useShouldPanelRender(children)
-    return (
-        <ReachTabPanel data-testid="wildcard-tab-panel">
-            {shouldRender ? children : null}
-        </ReachTabPanel>
-    )
+    return <ReachTabPanel data-testid="wildcard-tab-panel">{shouldRender ? children : null}</ReachTabPanel>
 }
