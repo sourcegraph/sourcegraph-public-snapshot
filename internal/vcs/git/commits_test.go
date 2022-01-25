@@ -134,78 +134,129 @@ func TestRepository_GetCommit(t *testing.T) {
 
 func TestRepository_HasCommitAfter(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
 
 	testCases := []struct {
-		commitDates []string
-		after       string
-		revspec     string
-		want        bool
+		label                 string
+		commitDates           []string
+		after                 string
+		revspec               string
+		want, wantSubRepoTest bool
 	}{
 		{
+			label: "after specific date",
 			commitDates: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2008-01-02T15:04:05Z",
 			},
-			after:   "2006-01-02T15:04:05Z",
-			revspec: "master",
-			want:    true,
+			after:           "2006-01-02T15:04:05Z",
+			revspec:         "master",
+			want:            true,
+			wantSubRepoTest: true,
 		},
 		{
+			label: "after 1 year ago",
 			commitDates: []string{
 				"2016-01-02T15:04:05Z",
 				"2017-01-02T15:04:05Z",
 				"2017-01-02T15:04:06Z",
 			},
-			after:   "1 year ago",
-			revspec: "master",
-			want:    false,
+			after:           "1 year ago",
+			revspec:         "master",
+			want:            false,
+			wantSubRepoTest: false,
 		},
 		{
+			label: "after too recent date",
 			commitDates: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2008-01-02T15:04:05Z",
 			},
-			after:   "2010-01-02T15:04:05Z",
-			revspec: "HEAD",
-			want:    false,
+			after:           "2010-01-02T15:04:05Z",
+			revspec:         "HEAD",
+			want:            false,
+			wantSubRepoTest: false,
 		},
 		{
+			label: "commit 1 second after",
 			commitDates: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2007-01-02T15:04:06Z",
 			},
-			after:   "2007-01-02T15:04:05Z",
-			revspec: "HEAD",
-			want:    true,
+			after:           "2007-01-02T15:04:05Z",
+			revspec:         "HEAD",
+			want:            true,
+			wantSubRepoTest: false,
 		},
 		{
+			label: "after 10 years ago",
 			commitDates: []string{
 				"2016-01-02T15:04:05Z",
 				"2017-01-02T15:04:05Z",
 				"2017-01-02T15:04:06Z",
 			},
-			after:   "10 years ago",
-			revspec: "HEAD",
-			want:    true,
+			after:           "10 years ago",
+			revspec:         "HEAD",
+			want:            true,
+			wantSubRepoTest: true,
 		},
 	}
 
-	for _, tc := range testCases {
-		gitCommands := make([]string, len(tc.commitDates))
-		for i, date := range tc.commitDates {
-			gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
-		}
+	t.Run("basic", func(t *testing.T) {
+		for _, tc := range testCases {
+			t.Run(tc.label, func(t *testing.T) {
+				gitCommands := make([]string, len(tc.commitDates))
+				for i, date := range tc.commitDates {
+					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+				}
 
-		repo := MakeGitRepository(t, gitCommands...)
-		got, err := HasCommitAfter(ctx, repo, tc.after, tc.revspec)
-		if err != nil || got != tc.want {
-			t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				repo := MakeGitRepository(t, gitCommands...)
+				got, err := HasCommitAfter(ctx, repo, tc.after, tc.revspec, nil)
+				if err != nil || got != tc.want {
+					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				}
+			})
 		}
-	}
+	})
+
+	t.Run("with sub-repo permissions", func(t *testing.T) {
+		for _, tc := range testCases {
+			t.Run(tc.label, func(t *testing.T) {
+				gitCommands := make([]string, len(tc.commitDates))
+				for i, date := range tc.commitDates {
+					fileName := fmt.Sprintf("file%d", i)
+					gitCommands = append(gitCommands, fmt.Sprintf("touch %s", fileName), fmt.Sprintf("git add %s", fileName))
+					gitCommands = append(gitCommands, fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit -m commit%d --author='a <a@a.com>'", date, i))
+				}
+				// Case where user can't view commit 2, but can view commits 0 and 1. In each test case the result should match the case where no sub-repo perms enabled
+				checker := getTestSubRepoPermsChecker("file2")
+				repo := MakeGitRepository(t, gitCommands...)
+				got, err := HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				if err != nil {
+					t.Errorf("got error: %s", err)
+				}
+				if got != tc.want {
+					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				}
+
+				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
+				checker = getTestSubRepoPermsChecker("file1", "file2")
+				repo = MakeGitRepository(t, gitCommands...)
+				got, err = HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				if err != nil {
+					t.Errorf("got error: %s", err)
+				}
+				if got != tc.wantSubRepoTest {
+					t.Errorf("got %t hascommitafter, want %t", got, tc.wantSubRepoTest)
+				}
+			})
+		}
+	})
 }
 
 func TestRepository_FirstEverCommit(t *testing.T) {
@@ -703,15 +754,6 @@ func TestMessage(t *testing.T) {
 }
 
 func TestParseCommitsUniqueToBranch(t *testing.T) {
-	mustParseDate := func(s string) time.Time {
-		date, err := time.Parse(time.RFC3339, s)
-		if err != nil {
-			t.Fatalf("unexpected error parsing date string: %s", err)
-		}
-
-		return date
-	}
-
 	commits, err := parseCommitsUniqueToBranch([]string{
 		"c165bfff52e9d4f87891bba497e3b70fea144d89:2020-08-04T08:23:30-05:00",
 		"f73ee8ed601efea74f3b734eeb073307e1615606:2020-04-16T16:06:21-04:00",
@@ -726,13 +768,13 @@ func TestParseCommitsUniqueToBranch(t *testing.T) {
 	}
 
 	expectedCommits := map[string]time.Time{
-		"c165bfff52e9d4f87891bba497e3b70fea144d89": mustParseDate("2020-08-04T08:23:30-05:00"),
-		"f73ee8ed601efea74f3b734eeb073307e1615606": mustParseDate("2020-04-16T16:06:21-04:00"),
-		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": mustParseDate("2020-04-16T16:20:26-04:00"),
-		"7886287b8758d1baf19cf7b8253856128369a2a7": mustParseDate("2020-04-16T16:55:58-04:00"),
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": mustParseDate("2020-04-20T12:10:49-04:00"),
-		"172b7fcf8b8c49b37b231693433586c2bfd1619e": mustParseDate("2020-04-20T12:37:36-04:00"),
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": mustParseDate("2020-05-05T12:53:18-05:00"),
+		"c165bfff52e9d4f87891bba497e3b70fea144d89": mustParseDate("2020-08-04T08:23:30-05:00", t),
+		"f73ee8ed601efea74f3b734eeb073307e1615606": mustParseDate("2020-04-16T16:06:21-04:00", t),
+		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": mustParseDate("2020-04-16T16:20:26-04:00", t),
+		"7886287b8758d1baf19cf7b8253856128369a2a7": mustParseDate("2020-04-16T16:55:58-04:00", t),
+		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": mustParseDate("2020-04-20T12:10:49-04:00", t),
+		"172b7fcf8b8c49b37b231693433586c2bfd1619e": mustParseDate("2020-04-20T12:37:36-04:00", t),
+		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": mustParseDate("2020-05-05T12:53:18-05:00", t),
 	}
 	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
 		t.Errorf("unexpected commits (-want +got):\n%s", diff)
@@ -846,21 +888,12 @@ func TestParseRefDescriptions(t *testing.T) {
 		t.Fatalf("unexpected error parsing ref descriptions: %s", err)
 	}
 
-	mustParseDate := func(s string) time.Time {
-		date, err := time.Parse(time.RFC3339, s)
-		if err != nil {
-			t.Fatalf("unexpected error parsing date string: %s", err)
-		}
-
-		return date
-	}
-
 	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate)}
+		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
 	}
 
 	makeTag := func(name, createdDate string) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate)}
+		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate, t)}
 	}
 
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
@@ -900,6 +933,156 @@ func TestParseRefDescriptions(t *testing.T) {
 	}
 }
 
+func TestFilterRefDescriptions(t *testing.T) {
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), getGitCommandsWithFiles("file3", "file4")...)
+	repo := MakeGitRepository(t, gitCommands...)
+
+	refDescriptions := map[string][]gitdomain.RefDescription{
+		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
+		"2775e60f523d3151a2a34ffdc659f500d0e73022": {},
+		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
+		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
+	}
+
+	checker := getTestSubRepoPermsChecker("file3")
+	filtered := filterRefDescriptions(ctx, repo, refDescriptions, checker)
+	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
+		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
+		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
+		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
+	}
+	if diff := cmp.Diff(expectedRefDescriptions, filtered); diff != "" {
+		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+	}
+}
+
+func TestRefDescriptions(t *testing.T) {
+	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), "git checkout -b my-other-branch")
+	gitCommands = append(gitCommands, getGitCommandsWithFiles("file1-b2", "file2-b2")...)
+	gitCommands = append(gitCommands, "git checkout -b my-branch-no-access")
+	gitCommands = append(gitCommands, getGitCommandsWithFiles("file", "file-with-no-access")...)
+	repo := MakeGitRepository(t, gitCommands...)
+
+	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
+		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
+	}
+
+	t.Run("basic", func(t *testing.T) {
+		refDescriptions, err := RefDescriptions(ctx, repo, nil)
+		if err != nil {
+			t.Errorf("err calling RefDescriptions: %s", err)
+		}
+		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
+			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
+			"7cf006d0599531db799c08d3b00d7fd06da33015": {makeBranch("my-branch-no-access", "2006-01-02T15:04:05Z", true)},
+		}
+		if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
+			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("with sub-repo enabled", func(t *testing.T) {
+		checker := getTestSubRepoPermsChecker("file-with-no-access")
+		refDescriptions, err := RefDescriptions(ctx, repo, checker)
+		if err != nil {
+			t.Errorf("err calling RefDescriptions: %s", err)
+		}
+		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
+			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
+		}
+		if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
+			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestCommitsUniqueToBranch(t *testing.T) {
+	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := append([]string{"git checkout -b my-branch"}, getGitCommandsWithFiles("file1", "file2")...)
+	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
+	repo := MakeGitRepository(t, gitCommands...)
+
+	t.Run("basic", func(t *testing.T) {
+		commits, err := CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, nil)
+		if err != nil {
+			t.Errorf("err calling RefDescriptions: %s", err)
+		}
+		expectedCommits := map[string]time.Time{
+			"2775e60f523d3151a2a34ffdc659f500d0e73022": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"791ce7cd8ca2d855e12f47f8692a62bc42477edc": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": mustParseDate("2006-01-02T15:04:05-00:00", t),
+		}
+		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
+			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("with sub-repo enabled", func(t *testing.T) {
+		checker := getTestSubRepoPermsChecker("file-with-no-access")
+		commits, err := CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, checker)
+		if err != nil {
+			t.Errorf("err calling RefDescriptions: %s", err)
+		}
+		expectedCommits := map[string]time.Time{
+			"2775e60f523d3151a2a34ffdc659f500d0e73022": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": mustParseDate("2006-01-02T15:04:05-00:00", t),
+			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": mustParseDate("2006-01-02T15:04:05-00:00", t),
+		}
+		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
+			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestCommitDate(t *testing.T) {
+	t.Parallel()
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := getGitCommandsWithFiles("file1", "file2")
+	repo := MakeGitRepository(t, gitCommands...)
+
+	t.Run("basic", func(t *testing.T) {
+		_, date, commitExists, err := CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", nil)
+		if err != nil {
+			t.Errorf("error fetching CommitDate: %s", err)
+		}
+		if !commitExists {
+			t.Errorf("commit should exist")
+		}
+		if !date.Equal(time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC)) {
+			t.Errorf("unexpected date: %s", date)
+		}
+	})
+
+	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
+		checker := getTestSubRepoPermsChecker("file1")
+		_, date, commitExists, err := CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", checker)
+		if err != nil {
+			t.Errorf("error fetching CommitDate: %s", err)
+		}
+		if commitExists {
+			t.Errorf("expect commit to not exist since the user doesn't have access")
+		}
+		if !date.IsZero() {
+			t.Errorf("expected date to be empty, got: %s", date)
+		}
+	})
+}
+
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
 	commits, err := Commits(ctx, repo, opt, checker)
@@ -908,9 +1091,9 @@ func testCommits(ctx context.Context, label string, repo api.RepoName, opt Commi
 		return
 	}
 
-	total, err := CommitCount(ctx, repo, opt)
+	total, err := commitCount(ctx, repo, opt)
 	if err != nil {
-		t.Errorf("%s: CommitCount(): %s", label, err)
+		t.Errorf("%s: commitCount(): %s", label, err)
 		return
 	}
 	if total != wantTotal {
@@ -964,4 +1147,13 @@ func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
 		fmt.Sprintf("git add %s", fileName2),
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
+}
+
+func mustParseDate(s string, t *testing.T) time.Time {
+	t.Helper()
+	date, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		t.Fatalf("unexpected error parsing date string: %s", err)
+	}
+	return date
 }

@@ -76,7 +76,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 		return "", time.Time{}, false, nil
 	}
 
-	rev, tm, ok, err := git.CommitDate(ctx, repo, api.CommitID(commit))
+	rev, tm, ok, err := git.CommitDate(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return rev, tm, ok, nil
 	}
@@ -161,7 +161,7 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[s
 		return nil, err
 	}
 
-	return git.RefDescriptions(ctx, repo)
+	return git.RefDescriptions(ctx, repo, authz.DefaultSubRepoPermsChecker)
 }
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
@@ -181,7 +181,7 @@ func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, br
 		return nil, err
 	}
 
-	return git.CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge)
+	return git.CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge, authz.DefaultSubRepoPermsChecker)
 }
 
 // BranchesContaining returns a map from branch names to branch tip hashes for each branch
@@ -191,7 +191,7 @@ func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commi
 	if err != nil {
 		return nil, err
 	}
-	return git.BranchesContaining(ctx, repo, api.CommitID(commit))
+	return git.BranchesContaining(ctx, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 }
 
 // DefaultBranchContains tells if the default branch contains the given commit ID.
