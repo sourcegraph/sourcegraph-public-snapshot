@@ -770,7 +770,8 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 
 				// These account IDs will have access to the internal repo.
 				wantAccountIDs := []extsvc.AccountID{
-					// mockListCollaborators members only because the feature is disabled.
+					// expect mockListCollaborators members only - we do not want to include org members
+					// if internal repository support is not enabled.
 					"57463526",
 					"67471",
 					"187831",
