@@ -111,7 +111,8 @@ func addDocs(pipeline *bk.Pipeline) {
 // Adds the terraform scanner step.  This executes very quickly ~6s
 func addTerraformLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lock: security - checkov",
-		bk.Cmd("dev/ci/ci-checkov.sh"))
+		bk.Cmd("dev/ci/ci-checkov.sh"),
+		bk.SoftFail(222))
 }
 
 // Adds the static check test step.
