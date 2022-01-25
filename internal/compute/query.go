@@ -211,16 +211,20 @@ func parseMatchOnly(q *query.Basic) (Command, bool, error) {
 		return nil, false, err
 	}
 
-	if !q.IsCaseSensitive() {
-		pattern.Value = "(?i:" + pattern.Value + ")"
-	}
-
-	rp, err := toRegexpPattern(pattern.Value)
+	sp, err := toRegexpPattern(pattern.Value)
 	if err != nil {
 		return nil, false, err
 	}
 
-	return &MatchOnly{MatchPattern: rp}, true, nil
+	cp := sp
+	if !q.IsCaseSensitive() {
+		cp, err = toRegexpPattern("(?i:" + pattern.Value + ")")
+		if err != nil {
+			return nil, false, err
+		}
+	}
+
+	return &MatchOnly{MatchPattern: sp, ComputePattern: cp}, true, nil
 }
 
 type commandParser func(pattern *query.Basic) (Command, bool, error)
