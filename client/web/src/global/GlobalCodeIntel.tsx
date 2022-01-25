@@ -6,10 +6,18 @@ import { UncontrolledPopover } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import {
+    RepoSpec,
+    RevisionSpec,
+    FileSpec,
+    ResolvedRevisionSpec,
+    toPositionOrRangeQueryParameter,
+    appendLineRangeQueryParameter,
+} from '@sourcegraph/shared/src/util/url'
 import { Button, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables } from '../graphql-operations'
+import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables, Maybe } from '../graphql-operations'
 
 import styles from './GlobalCodeIntel.module.scss'
 
@@ -183,10 +191,39 @@ export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabPro
     </>
 )
 
+interface Reference {
+    __typename?: 'Location' | undefined
+    resource: {
+        __typename?: 'GitBlob' | undefined
+        path: string
+        repository: {
+            __typename?: 'Repository' | undefined
+            name: string
+        }
+        commit: {
+            __typename?: 'GitCommit' | undefined
+            oid: string
+        }
+    }
+    range: Maybe<{
+        __typename?: 'Range' | undefined
+        start: {
+            __typename?: 'Position' | undefined
+            line: number
+            character: number
+        }
+        end: {
+            __typename?: 'Position' | undefined
+            line: number
+            character: number
+        }
+    }>
+}
+
 export const ReferencesList: React.FunctionComponent<{
     hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 }> = props => {
-    const { data, error, loading, refetch } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
+    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
         FETCH_REFERENCES_QUERY,
         {
             variables: {
@@ -222,20 +259,44 @@ export const ReferencesList: React.FunctionComponent<{
     if (error && !data) {
         throw new Error(error.message)
     }
+
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.repository) {
+    if (!data || !data.repository?.commit?.blob?.lsif?.references) {
         return <>Nothing found</>
     }
 
+    // TODO: can't we get the "displaying X out of Y references" data?
     const references = data.repository.commit?.blob?.lsif?.references.nodes
 
-    console.log(references)
+    const buildFileURL = (reference: Reference): string => {
+        const path = `/${reference.resource.repository.name}/-/blob/${reference.resource.path}`
+
+        if (reference.range !== null) {
+            return appendLineRangeQueryParameter(
+                path,
+                toPositionOrRangeQueryParameter({
+                    range: {
+                        start: { line: reference.range.start.line + 1, character: reference.range.start.character + 1 },
+                        end: { line: reference.range.end.line + 1, character: reference.range.end.character + 1 },
+                    },
+                })
+            )
+        }
+        return path
+    }
 
     return (
         <>
             <ul>
                 {references?.map((reference, index) => (
-                    <li key={index}>{reference.resource.path}</li>
+                    <li key={index}>
+                        <RepoFileLink
+                            repoURL={`/${reference.resource.repository.name}`}
+                            repoName={reference.resource.repository.name}
+                            filePath={`${reference.resource.path} [Line ${reference.range?.start.line || 'undefined'}]`}
+                            fileURL={buildFileURL(reference)}
+                        />
+                    </li>
                 ))}
             </ul>
         </>
