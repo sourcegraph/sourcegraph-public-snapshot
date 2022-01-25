@@ -25,7 +25,7 @@ function TestExitCodeNOK {
 
     dev/ci/scripts/trace-command.sh exit 10
     got="$?"
-    want="100"
+    want="10"
 
     if [ "$got" != "$want" ]; then
       printRed "    FAIL: got exit code $got but want $want instead."
