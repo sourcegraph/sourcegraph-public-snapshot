@@ -22,8 +22,6 @@ export interface ActionAreaProps {
 export interface ActionProps {
     action?: MonitorAction
     setAction: (action?: MonitorAction) => void
-    actionCompleted: boolean
-    setActionCompleted: (actionCompleted: boolean) => void
     disabled: boolean
     monitorName: string
 
@@ -49,25 +47,15 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
     const [emailAction, setEmailAction] = useState<MonitorAction | undefined>(
         actions.nodes.find(action => action.__typename === 'MonitorEmail')
     )
-    const [emailActionCompleted, setEmailActionCompleted] = useState(!!emailAction && actionsCompleted)
 
     const [slackWebhookAction, setSlackWebhookAction] = useState<MonitorAction | undefined>(
         actions.nodes.find(action => action.__typename === 'MonitorSlackWebhook')
     )
-    const [slackWebhookActionCompleted, setSlackWebhookActionCompleted] = useState(
-        !!slackWebhookAction && actionsCompleted
-    )
 
-    // Form is completed only if all set actions are completed and all incomplete actions are unset,
-    // and there is at least one completed action.
+    // Form is completed if there is at least one action
     useEffect(() => {
-        const allExistingActionsCompleted =
-            (!emailAction || emailActionCompleted) && (!slackWebhookAction || slackWebhookActionCompleted)
-
-        const atLeastOneActionCompleted = emailActionCompleted || slackWebhookActionCompleted
-
-        setActionsCompleted(allExistingActionsCompleted && atLeastOneActionCompleted)
-    }, [emailAction, emailActionCompleted, setActionsCompleted, slackWebhookAction, slackWebhookActionCompleted])
+        setActionsCompleted(!!emailAction || !!slackWebhookAction)
+    }, [emailAction, setActionsCompleted, slackWebhookAction])
 
     useEffect(() => {
         const actions: CodeMonitorFields['actions'] = { nodes: [] }
@@ -90,8 +78,6 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 disabled={disabled}
                 action={emailAction}
                 setAction={setEmailAction}
-                actionCompleted={emailActionCompleted}
-                setActionCompleted={setEmailActionCompleted}
                 authenticatedUser={authenticatedUser}
                 monitorName={monitorName}
                 triggerTestEmailAction={triggerTestEmailAction}
@@ -102,8 +88,6 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     disabled={disabled}
                     action={slackWebhookAction}
                     setAction={setSlackWebhookAction}
-                    actionCompleted={slackWebhookActionCompleted}
-                    setActionCompleted={setSlackWebhookActionCompleted}
                     monitorName={monitorName}
                 />
             )}

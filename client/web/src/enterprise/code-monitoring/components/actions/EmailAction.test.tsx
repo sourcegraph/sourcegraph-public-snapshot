@@ -12,8 +12,6 @@ describe('EmailAction', () => {
     const props: EmailActionProps = {
         action: undefined,
         setAction: sinon.stub(),
-        actionCompleted: false,
-        setActionCompleted: sinon.stub(),
         disabled: false,
         authenticatedUser: mockAuthenticatedUser,
         monitorName: 'Test',
@@ -22,10 +20,7 @@ describe('EmailAction', () => {
 
     test('open and submit', () => {
         const setActionSpy = sinon.spy()
-        const setActionCompletedSpy = sinon.spy()
-        const { getByTestId } = render(
-            <EmailAction {...props} setAction={setActionSpy} setActionCompleted={setActionCompletedSpy} />
-        )
+        const { getByTestId } = render(<EmailAction {...props} setAction={setActionSpy} />)
 
         userEvent.click(getByTestId('form-action-toggle-email'))
         userEvent.click(getByTestId('submit-action-email'))
@@ -36,12 +31,10 @@ describe('EmailAction', () => {
             id: '',
             recipients: { nodes: [{ id: 'userID' }] },
         })
-        sinon.assert.calledOnceWithExactly(setActionCompletedSpy, true)
     })
 
     test('open and delete', () => {
         const setActionSpy = sinon.spy()
-        const setActionCompletedSpy = sinon.spy()
         const { getByTestId } = render(
             <EmailAction
                 {...props}
@@ -51,9 +44,7 @@ describe('EmailAction', () => {
                     id: '',
                     recipients: { nodes: [{ id: 'userID' }] },
                 }}
-                actionCompleted={true}
                 setAction={setActionSpy}
-                setActionCompleted={setActionCompletedSpy}
             />
         )
 
@@ -61,7 +52,6 @@ describe('EmailAction', () => {
         userEvent.click(getByTestId('delete-action-email'))
 
         sinon.assert.calledOnceWithExactly(setActionSpy, undefined)
-        sinon.assert.calledOnceWithExactly(setActionCompletedSpy, false)
     })
 
     test('enable and disable', () => {
@@ -76,7 +66,6 @@ describe('EmailAction', () => {
                     recipients: { nodes: [{ id: 'userID' }] },
                 }}
                 setAction={setActionSpy}
-                actionCompleted={true}
             />
         )
 

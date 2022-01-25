@@ -9,8 +9,6 @@ import { ActionEditor } from './ActionEditor'
 export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
     action,
     setAction,
-    actionCompleted,
-    setActionCompleted,
     disabled,
     _testStartOpen,
 }) => {
@@ -32,7 +30,6 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setActionCompleted(true)
             setAction({
                 __typename: 'MonitorSlackWebhook',
                 id: action ? action.id : '',
@@ -40,13 +37,12 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                 enabled: webhookEnabled,
             })
         },
-        [action, setAction, setActionCompleted, url, webhookEnabled]
+        [action, setAction, url, webhookEnabled]
     )
 
     const onDelete: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
-        setActionCompleted(false)
-    }, [setAction, setActionCompleted])
+    }, [setAction])
 
     return (
         <ActionEditor
@@ -59,7 +55,7 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
             subtitle="Post to a specified Slack channel. Requires webhook configuration."
             idName="slack-webhook"
             disabled={disabled}
-            completed={actionCompleted}
+            completed={!!action}
             completedSubtitle="Notification will be sent to the specified Slack webhook URL."
             actionEnabled={webhookEnabled}
             toggleActionEnabled={toggleWebhookEnabled}

@@ -111,11 +111,9 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                     <div className="d-flex justify-content-between">
                         <div>
                             <Button
-                                type="submit"
                                 data-testid={`submit-action-${idName}`}
                                 className={`mr-1 test-submit-action-${idName}`}
                                 onClick={submitHandler}
-                                onSubmit={submitHandler}
                                 disabled={!canSubmit}
                                 variant="secondary"
                             >

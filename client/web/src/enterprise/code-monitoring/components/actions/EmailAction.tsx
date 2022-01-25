@@ -24,8 +24,6 @@ export interface EmailActionProps extends ActionProps {
 export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
     action,
     setAction,
-    actionCompleted,
-    setActionCompleted,
     disabled,
     authenticatedUser,
     monitorName,
@@ -50,7 +48,6 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setActionCompleted(true)
             if (!action) {
                 // We are creating a new monitor if there are no actions yet.
                 // The ID can be empty here, since we'll generate a new ID when we send the creation request.
@@ -62,13 +59,12 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                 })
             }
         },
-        [action, authenticatedUser.id, setAction, setActionCompleted]
+        [action, authenticatedUser.id, setAction]
     )
 
     const onDelete: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
-        setActionCompleted(false)
-    }, [setAction, setActionCompleted])
+    }, [setAction])
 
     const [isTestEmailSent, setIsTestEmailSent] = useState(false)
     const [triggerTestEmailActionRequest, triggerTestEmailResult] = useEventObservable(
@@ -122,7 +118,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
             subtitle="Deliver email notifications to specified recipients."
             idName="email"
             disabled={disabled}
-            completed={actionCompleted}
+            completed={!!action}
             completedSubtitle={authenticatedUser.email}
             actionEnabled={emailNotificationEnabled}
             toggleActionEnabled={toggleEmailNotificationEnabled}

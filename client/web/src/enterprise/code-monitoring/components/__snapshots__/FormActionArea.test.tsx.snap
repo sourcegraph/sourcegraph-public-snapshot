@@ -100,7 +100,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         <button
           class="btn btn-secondary mr-1 test-submit-action-email"
           data-testid="submit-action-email"
-          type="submit"
+          type="button"
         >
           Continue
         </button>

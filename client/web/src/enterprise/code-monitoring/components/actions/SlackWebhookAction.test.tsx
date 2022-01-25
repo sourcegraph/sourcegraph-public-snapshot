@@ -11,18 +11,13 @@ describe('SlackWebhookAction', () => {
     const props: ActionProps = {
         action: undefined,
         setAction: sinon.stub(),
-        actionCompleted: false,
-        setActionCompleted: sinon.stub(),
         disabled: false,
         monitorName: 'Test',
     }
 
     test('open and submit', () => {
         const setActionSpy = sinon.spy()
-        const setActionCompletedSpy = sinon.spy()
-        const { getByTestId } = render(
-            <SlackWebhookAction {...props} setAction={setActionSpy} setActionCompleted={setActionCompletedSpy} />
-        )
+        const { getByTestId } = render(<SlackWebhookAction {...props} setAction={setActionSpy} />)
 
         userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
 
@@ -39,19 +34,15 @@ describe('SlackWebhookAction', () => {
             id: '',
             url: 'https://example.com',
         })
-        sinon.assert.calledOnceWithExactly(setActionCompletedSpy, true)
     })
 
     test('open and edit', () => {
         const setActionSpy = sinon.spy()
-        const setActionCompletedSpy = sinon.spy()
         const { getByTestId } = render(
             <SlackWebhookAction
                 {...props}
                 setAction={setActionSpy}
-                setActionCompleted={setActionCompletedSpy}
                 action={{ __typename: 'MonitorSlackWebhook', enabled: true, id: '1', url: 'https://example.com' }}
-                actionCompleted={true}
             />
         )
 
@@ -72,19 +63,15 @@ describe('SlackWebhookAction', () => {
             id: '1',
             url: 'https://example2.com',
         })
-        sinon.assert.calledOnceWithExactly(setActionCompletedSpy, true)
     })
 
     test('open and delete', () => {
         const setActionSpy = sinon.spy()
-        const setActionCompletedSpy = sinon.spy()
         const { getByTestId } = render(
             <SlackWebhookAction
                 {...props}
                 action={{ __typename: 'MonitorSlackWebhook', enabled: true, id: '2', url: 'https://example.com' }}
-                actionCompleted={true}
                 setAction={setActionSpy}
-                setActionCompleted={setActionCompletedSpy}
             />
         )
 
@@ -92,7 +79,6 @@ describe('SlackWebhookAction', () => {
         userEvent.click(getByTestId('delete-action-slack-webhook'))
 
         sinon.assert.calledOnceWithExactly(setActionSpy, undefined)
-        sinon.assert.calledOnceWithExactly(setActionCompletedSpy, false)
     })
 
     test('enable and disable', () => {
@@ -102,7 +88,6 @@ describe('SlackWebhookAction', () => {
                 {...props}
                 action={{ __typename: 'MonitorSlackWebhook', enabled: false, id: '5', url: 'https://example.com' }}
                 setAction={setActionSpy}
-                actionCompleted={true}
             />
         )
 
