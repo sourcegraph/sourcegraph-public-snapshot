@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+# buildevents cmd [command-name] [label..]
+# Imitate what buildevents does
+bash -c "$2"
