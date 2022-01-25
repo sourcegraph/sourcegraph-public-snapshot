@@ -24,20 +24,10 @@ func (q Query) String() string {
 }
 
 func (q Query) ToSearchQuery() (string, error) {
-	var searchPattern string
-	switch c := q.Command.(type) {
-	case *MatchOnly:
-		searchPattern = c.MatchPattern.String()
-	case *Replace:
-		searchPattern = c.MatchPattern.String()
-	case *Output:
-		searchPattern = c.MatchPattern.String()
-	default:
-		return "", errors.Errorf("unsupported query conversion for compute command %T", c)
-	}
+	pattern := q.Command.ToSearchPattern()
 	basic := query.Basic{
 		Parameters: q.Parameters,
-		Pattern:    query.Pattern{Value: searchPattern},
+		Pattern:    query.Pattern{Value: pattern},
 	}
 	return basic.StringHuman(), nil
 }
@@ -167,7 +157,7 @@ func parseReplace(q *query.Basic) (Command, bool, error) {
 		return nil, false, nil
 	}
 
-	return &Replace{MatchPattern: matchPattern, ReplacePattern: right}, true, nil
+	return &Replace{SearchPattern: matchPattern, ReplacePattern: right}, true, nil
 }
 
 func parseOutput(q *query.Basic) (Command, bool, error) {
@@ -202,7 +192,7 @@ func parseOutput(q *query.Basic) (Command, bool, error) {
 	}
 
 	// The default separator is newline and cannot be changed currently.
-	return &Output{MatchPattern: matchPattern, OutputPattern: right, Separator: "\n"}, true, nil
+	return &Output{SearchPattern: matchPattern, OutputPattern: right, Separator: "\n"}, true, nil
 }
 
 func parseMatchOnly(q *query.Basic) (Command, bool, error) {
@@ -224,7 +214,7 @@ func parseMatchOnly(q *query.Basic) (Command, bool, error) {
 		}
 	}
 
-	return &MatchOnly{MatchPattern: sp, ComputePattern: cp}, true, nil
+	return &MatchOnly{SearchPattern: sp, ComputePattern: cp}, true, nil
 }
 
 type commandParser func(pattern *query.Basic) (Command, bool, error)

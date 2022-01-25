@@ -10,7 +10,7 @@ import (
 )
 
 type MatchOnly struct {
-	MatchPattern MatchPattern
+	SearchPattern MatchPattern
 
 	// ComputePattern is the valid, semantically-equivalent representation
 	// of MatchPattern that mirrors implicit Sourcegraph search behavior
@@ -19,10 +19,14 @@ type MatchOnly struct {
 	ComputePattern MatchPattern
 }
 
+func (c *MatchOnly) ToSearchPattern() string {
+	return c.SearchPattern.String()
+}
+
 func (c *MatchOnly) String() string {
 	return fmt.Sprintf(
 		"Match only search pattern: %s, compute pattern: %s",
-		c.MatchPattern.String(),
+		c.SearchPattern.String(),
 		c.ComputePattern.String(),
 	)
 }
