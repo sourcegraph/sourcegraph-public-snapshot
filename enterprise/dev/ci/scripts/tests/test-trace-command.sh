@@ -2,22 +2,22 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." || exit 1 # cd to enterprise/
 
-function printRed { 
+function printRed {
   echo -e "\033[0;31m$1\033[0m"
 }
 
-function printGreen { 
+function printGreen {
   echo -e "\033[0;32m$1\033[0m"
 }
 
 function TestExitCodeNOK {
   local got
   local want
-  
+
   (
     # Mock the buildevents command to test just the script
     # Locally adjust the path for the purpose of this test.
-    # shellsheck disable=SC2030
+    # shellcheck disable=SC2030
     PATH="$(pwd)/dev/ci/scripts/tests/testdata/:$PATH"
 
     dev/ci/scripts/trace-command.sh exit 10
@@ -37,10 +37,12 @@ function TestExitCodeNOK {
 function TestExitCodeOK {
   local got
   local want
-  
+
   (
     # Mock the buildevents command to test just the script
-    PATH="`pwd`/dev/ci/scripts/tests/testdata/:$PATH"
+    # Locally adjust the path for the purpose of this test.
+    # shellcheck disable=SC2030
+    PATH="$(pwd)/dev/ci/scripts/tests/testdata/:$PATH"
 
     dev/ci/scripts/trace-command.sh exit 0
     got="$?"
@@ -69,6 +71,6 @@ if ! TestExitCodeOK; then
   failed=1
 fi
 
-if [ "$failed" != "0" ]; then 
+if [ "$failed" != "0" ]; then
   exit 1
 fi
