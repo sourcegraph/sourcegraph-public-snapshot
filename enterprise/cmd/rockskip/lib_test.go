@@ -64,8 +64,8 @@ func TestIndex(t *testing.T) {
 	defer git.Close()
 
 	db := dbtest.NewDB(t)
-
 	defer db.Close()
+
 	parser, err := NewCtags()
 	if err != nil {
 		t.Fatalf("🚨 NewCtags: %s", err)
