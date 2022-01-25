@@ -45,3 +45,12 @@ func extensionPattern(pattern *regexp.Regexp) *regexp.Regexp {
 func pathPattern(pattern *regexp.Regexp) *regexp.Regexp {
 	return suffixPattern(regexp.MustCompile("(^|/)" + pattern.String()))
 }
+
+// OrPattern [r1, r2, r3, ...] is equivalent to r1|r2|r3|... .
+func OrPattern(patterns []*regexp.Regexp) *regexp.Regexp {
+	var patternStrings []string
+	for _, pattern := range patterns {
+		patternStrings = append(patternStrings, pattern.String())
+	}
+	return regexp.MustCompile(strings.Join(patternStrings, "|"))
+}
