@@ -105,7 +105,7 @@ const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
     )
 
 const observingIsActivated = observeStorageKey('sync', 'disableExtension').pipe(map(isDisabled => !isDisabled))
-const observingPreviouslyUsedUrls = observeStorageKey('sync', 'previouslyUsedURLs').pipe(distinctUntilChanged())
+const observingPreviouslyUsedUrls = observeStorageKey('sync', 'previouslyUsedURLs')
 const observingSourcegraphUrl = observeSourcegraphURL(true).pipe(distinctUntilChanged())
 const observingOptionFlagsWithValues = observeOptionFlagsWithValues(IS_EXTENSION)
 const observingSendTelemetry = observeSendTelemetry(IS_EXTENSION)
