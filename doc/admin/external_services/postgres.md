@@ -205,7 +205,7 @@ The first migration fails since it attempts to add `COMMENT`s to installed exten
 failed to run migration for schema "frontend": failed upgrade migration 1528395834: ERROR: current transaction is aborted, commands ignored until end of transaction block (SQLSTATE 25P02)
 ```
 
-In this case, locate the UP [migration 1528395834](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/frontend/1528395834_squashed_migrations.up.sql) and apply all SQL after the final `COMMENT ON EXTENSION` command following the [dirty database procedure](https://docs.sourcegraph.com/admin/how-to/dirty_database)
+In this case, locate the UP [migration 1528395834](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/frontend/1528395834_squashed_migrations.up.sql) and apply all SQL after the final `COMMENT ON EXTENSION` command following the [dirty database procedure](https://docs.sourcegraph.com/admin/how-to/dirty_database).
 
 **Dropping the `sg_service` role**
 
