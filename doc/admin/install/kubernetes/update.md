@@ -97,26 +97,14 @@ To execute the database migrations independently, run the following commands in 
     # This will output the current migration version for the frontend db
     kubectl exec $(kubectl get pod -l app=pgsql -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM schema_migrations;"
 
-    version   | dirty
-    ------------+-------
-    1528395964 | f
-    (1 row)
 
     # This will output the current migration version for the codeintel db
     kubectl exec $(kubectl get pod -l app=codeintel-db -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
 
-    version   | dirty
-    ------------+-------
-    1000000030 | f
-    (1 row)
 
     # This will output the current migration version for the codeinsights db
     kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath="{.items[0].metadata.name}") -- psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
 
-    version   | dirty
-    ------------+-------
-    1000000024 | f
-    (1 row)
     ```
 
 1. Start the migrations:
@@ -126,7 +114,12 @@ To execute the database migrations independently, run the following commands in 
     ```bash
     # Update the "image" value of the migrator container in the manifest
     export SOURCEGRAPH_VERSION="the version you're upgrading to"
-    yq eval -i '.spec.template.spec.containers[0].image = strenv(SOURCEGRAPH_VERSION)' configure/migrator/migrator.Job.yaml
+    yq eval -i \
+        '.spec.template.spec.containers[0].image = "index.docker.io/sourcegraph/migrator:" + strenv(SOURCEGRAPH_VERSION)' \
+        configure/migrator/migrator.Job.yaml
+
+    # If you do not have yq, you can update the image tag manually to:
+    #   "index.docker.io/sourcegraph/migrator:$SOURCEGRAPH_VERSION"
 
     # Apply and wait for migrations to complete before continuing
     kubectl delete -f configure/migrator/migrator.Job.yaml --ignore-not-found=true
@@ -158,7 +151,7 @@ To execute the database migrations independently, run the following commands in 
 
 1. Repeat the three `psql` commands from the first step to verify the migration versions and that none of the databases are flagged as `dirty`. The versions reported should match the last output version from the migrator container.
 
-If you see an error message or any of the databases have been flagged as dirty, contact support at support@sourcegraph.com for further assistance and provide the output of the three `psql` commands. Your database may not have been migrated correctly. Otherwise, you are now safe to upgrade Sourcegraph.
+If you see an error message or any of the databases have been flagged as dirty, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Your database may not have been migrated correctly. Otherwise, you are now safe to upgrade Sourcegraph.
 
 ### Migrating Without Code Insights
 If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the migration process will fail. To work around this, the `configure/migrator/migrator.Job.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph`'s `migrator.Job.yaml` file.
