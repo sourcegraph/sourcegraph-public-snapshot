@@ -17,7 +17,7 @@ echo "Note: If there is no output below here then no terraform code was found to
 echo "==========================================================================================="
 
 # Run checkov
-checkov --quiet --framework terraform --compact -d .
+python3 -m checkov.main --quiet --framework terraform --compact -d .
 
 # Options
 # --quiet: Only show failing tests
