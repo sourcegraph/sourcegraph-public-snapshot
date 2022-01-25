@@ -45,7 +45,7 @@ type addExternalServiceInput struct {
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
 	start := time.Now()
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
-	namespaceUserID, namespaceOrgID := int32(0), int32(0)
+	var namespaceUserID, namespaceOrgID int32
 	var err error
 	defer reportExternalServiceDuration(start, Add, &err, &namespaceUserID, &namespaceOrgID)
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
