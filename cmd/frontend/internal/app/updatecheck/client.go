@@ -141,6 +141,16 @@ func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db database.DB) (_ j
 	return json.Marshal(growthStatistics)
 }
 
+func getAndMarshalCTAMetricsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCTAMetricsJSON")(&err)
+
+	ctaMetrics, err := usagestats.GetCTAMetrics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(ctaMetrics)
+}
+
 func getAndMarshalSavedSearchesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
 
@@ -392,6 +402,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalGrowthStatisticsJSON failed", "error", err)
+		}
+
+		r.CTAMetrics, err = getAndMarshalCTAMetricsJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCTAMetricsJSON failed", "error", err)
 		}
 
 		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
