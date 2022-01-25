@@ -18,7 +18,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
@@ -43,8 +43,7 @@ export interface StreamingSearchResultsListProps
         SettingsCascadeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        PlatformContextProps<'requestGraphQL'>,
-        ExtensionsControllerProps<'extHostAPI'> {
+        PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
     location: H.Location
@@ -56,7 +55,8 @@ export interface StreamingSearchResultsListProps
     assetsRoot?: string
     /** Render prop for `<SearchUserNeedsCodeHost>`  */
     renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
-    showCodeIntel?: boolean // TODO This may not be neccesary, just make ext controller + hoverifier optional
+
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
@@ -76,7 +76,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     renderSearchUserNeedsCodeHost,
     platformContext,
     extensionsController,
-    showCodeIntel,
     hoverifier,
 }) => {
     const resultsNumber = results?.results.length || 0
@@ -111,7 +110,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
                             settingsCascade={settingsCascade}
-                            showCodeIntel={showCodeIntel}
                             extensionsController={extensionsController}
                             hoverifier={hoverifier}
                         />
@@ -147,7 +145,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             settingsCascade,
             platformContext,
             extensionsController,
-            showCodeIntel,
             hoverifier,
         ]
     )

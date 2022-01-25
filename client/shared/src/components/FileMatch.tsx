@@ -67,7 +67,6 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
      */
     containerClassName?: string
 
-    showCodeIntel?: boolean
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
