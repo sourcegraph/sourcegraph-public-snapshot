@@ -80,10 +80,6 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
         [onDelete]
     )
 
-    // When the action is completed, the wrapper cannot be a button because we show nested buttons inside it.
-    // Use a div instead. The edit button will still allow keyboard users to activate the form.
-    const CollapsedWrapperElement = completed ? 'div' : Button
-
     return (
         <>
             {expanded && (
@@ -142,17 +138,15 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                 </Card>
             )}
             {!expanded && (
-                <CollapsedWrapperElement
+                <Card
+                    // When the action is completed, the wrapper cannot be a button because we show nested buttons inside it.
+                    // Use a div instead. The edit button will still allow keyboard users to activate the form.
+                    as={completed ? 'div' : Button}
                     data-testid={`form-action-toggle-${idName}`}
-                    className={classNames(
-                        'card',
-                        styles.cardButton,
-                        disabled && 'disabled',
-                        `test-action-button-${idName}`
-                    )}
+                    className={classNames('test-action-button', styles.cardButton, disabled && 'disabled')}
+                    disabled={disabled}
                     aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
-                    disabled={disabled}
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
@@ -192,7 +186,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                             </div>
                         )}
                     </div>
-                </CollapsedWrapperElement>
+                </Card>
             )}
         </>
     )

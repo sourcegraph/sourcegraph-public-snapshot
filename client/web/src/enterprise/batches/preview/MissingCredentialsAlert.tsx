@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Link } from '@sourcegraph/wildcard'
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { ViewerBatchChangesCodeHostsFields } from '../../../graphql-operations'
@@ -20,7 +20,7 @@ export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentials
         return <></>
     }
     return (
-        <div className="alert alert-warning">
+        <Alert variant="warning">
             <p>
                 <strong>
                     You don't have credentials configured for{' '}
@@ -39,6 +39,6 @@ export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentials
                 </Link>{' '}
                 to apply this spec.
             </p>
-        </div>
+        </Alert>
     )
 }

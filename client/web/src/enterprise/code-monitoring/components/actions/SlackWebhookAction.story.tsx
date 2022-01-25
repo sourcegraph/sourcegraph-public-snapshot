@@ -34,30 +34,19 @@ add('open, not populated', () => (
 ))
 
 add('closed, populated, enabled', () => (
-    <WebStory>{() => <SlackWebhookAction {...defaultProps} action={action} actionCompleted={true} />}</WebStory>
+    <WebStory>{() => <SlackWebhookAction {...defaultProps} action={action} />}</WebStory>
 ))
 
 add('open, populated, enabled', () => (
-    <WebStory>
-        {() => <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={action} actionCompleted={true} />}
-    </WebStory>
+    <WebStory>{() => <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={action} />}</WebStory>
 ))
 
 add('closed, populated, disabled', () => (
-    <WebStory>
-        {() => <SlackWebhookAction {...defaultProps} action={{ ...action, enabled: false }} actionCompleted={true} />}
-    </WebStory>
+    <WebStory>{() => <SlackWebhookAction {...defaultProps} action={{ ...action, enabled: false }} />}</WebStory>
 ))
 
 add('open, populated, disabled', () => (
     <WebStory>
-        {() => (
-            <SlackWebhookAction
-                {...defaultProps}
-                _testStartOpen={true}
-                action={{ ...action, enabled: false }}
-                actionCompleted={true}
-            />
-        )}
+        {() => <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />}
     </WebStory>
 ))

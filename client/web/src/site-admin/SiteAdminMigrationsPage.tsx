@@ -12,7 +12,7 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -201,7 +201,7 @@ interface MigrationInvalidBannerProps {
 }
 
 const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
-    <div className="alert alert-danger">
+    <Alert variant="danger">
         <p>
             <AlertCircleIcon className="icon-inline mr-2" />
             <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
@@ -215,7 +215,7 @@ const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProp
                 <li key={migration.id}>{migration.description}</li>
             ))}
         </ul>
-    </div>
+    </Alert>
 )
 
 interface MigrationUpgradeWarningBannerProps {
@@ -223,7 +223,7 @@ interface MigrationUpgradeWarningBannerProps {
 }
 
 const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({ migrations }) => (
-    <div className="alert alert-warning">
+    <Alert variant="warning">
         <p>
             The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
             must complete the following migrations to ensure your data remains readable.{' '}
@@ -235,7 +235,7 @@ const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWar
             ))}
         </ul>
         <span>Contact support if these migrations are not making progress or if there are associated errors.</span>
-    </div>
+    </Alert>
 )
 
 interface MigrationDowngradeWarningBannerProps {
@@ -245,7 +245,7 @@ interface MigrationDowngradeWarningBannerProps {
 const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngradeWarningBannerProps> = ({
     migrations,
 }) => (
-    <div className="alert alert-warning">
+    <Alert variant="warning">
         <p>
             <WarningIcon className="icon-inline mr-2" />
             <span>
@@ -263,7 +263,7 @@ const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngrad
         </ul>
 
         <span>Contact support for assistance with downgrading your instance.</span>
-    </div>
+    </Alert>
 )
 
 interface MigrationNodeProps {

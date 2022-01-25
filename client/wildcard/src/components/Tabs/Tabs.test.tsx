@@ -46,7 +46,7 @@ describe('Tabs', () => {
         it('will render tabs children correctly', () => {
             expect(queries.getByTestId('wildcard-tabs')).toBeInTheDocument()
             expect(queries.getByTestId('wildcard-tab-list')).toBeInTheDocument()
-            expect(queries.getByTestId('wildcard-tab-panels')).toBeInTheDocument()
+            expect(queries.getByTestId('wildcard-tab-panel-list')).toBeInTheDocument()
         })
 
         it('will render the right amount of <Tab/> components', () => {

@@ -3,7 +3,7 @@ import { Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useEventObservable, Modal } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Modal, Alert } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 
@@ -71,7 +71,7 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
                         Yes, delete code monitor
                     </Button>
                     {isErrorLike(deleteCompletedOrError) && (
-                        <div className="alert-danger">Error deleting monitor: {deleteCompletedOrError.message}</div>
+                        <Alert variant="danger">Error deleting monitor: {deleteCompletedOrError.message}</Alert>
                     )}
                 </div>
             )}

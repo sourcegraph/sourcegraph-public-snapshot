@@ -10,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -166,7 +166,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                 </Form>
             </div>
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
-                <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
+                <DismissibleAlert variant="info" partialStorageKey="org-invite-email-config">
                     <p className=" mb-0">
                         Set <code>email.smtp</code> in <Link to="/site-admin/configuration">site configuration</Link> to
                         send email notifications about invitations.
@@ -177,7 +177,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                 <InvitedNotification
                     key={invited.username}
                     {...invited}
-                    className={classNames('alert alert-success', styles.alert)}
+                    className={styles.alert}
                     onDismiss={dismissNotification}
                 />
             )}
@@ -262,7 +262,7 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
     invitationURL,
     onDismiss,
 }) => (
-    <div className={classNames(styles.invitedNotification, className)}>
+    <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
         <div className={styles.message}>
             {sentInvitationEmail ? (
                 <>
@@ -276,5 +276,5 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
             <CloseIcon className="icon-inline" />
         </Button>
-    </div>
+    </Alert>
 )

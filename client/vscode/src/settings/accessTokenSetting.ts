@@ -3,8 +3,6 @@ import * as vscode from 'vscode'
 import { endpointHostnameSetting } from './endpointSetting'
 import { readConfiguration } from './readConfiguration'
 
-const invalidAccessTokens = new Set<string>()
-
 export function accessTokenSetting(): string | undefined {
     return readConfiguration().get<string>('accessToken')
 }
@@ -12,17 +10,17 @@ export function accessTokenSetting(): string | undefined {
 // Ensure that only one access token error message is shown at a time.
 let showingAccessTokenErrorMessage = false
 
-export async function handleAccessTokenError(badToken: string): Promise<void> {
-    invalidAccessTokens.add(badToken)
-
+export async function handleAccessTokenError(badToken?: string): Promise<void> {
     const currentValue = readConfiguration().get<string>('accessToken')
 
     if (currentValue === badToken && !showingAccessTokenErrorMessage) {
         showingAccessTokenErrorMessage = true
-        await vscode.window.showErrorMessage('Invalid Sourcegraph Access Token', {
-            modal: true,
-            detail: `The server at ${endpointHostnameSetting()} is unable to use the access token ${badToken}.`,
-        })
+
+        const message = !badToken
+            ? `Sourcegraph extension requires an access token to make requests to ${endpointHostnameSetting()}`
+            : `Sourcegraph extension is is unable to use the access token ${badToken} for ${endpointHostnameSetting()}.`
+
+        await vscode.window.showErrorMessage(message)
         showingAccessTokenErrorMessage = false
     }
 }

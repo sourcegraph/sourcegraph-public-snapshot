@@ -21,7 +21,7 @@ import {
     createController as createExtensionsController,
     ExtensionsControllerProps,
 } from '@sourcegraph/shared/src/extensions/controller'
-import { NotificationClassNameProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
+import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -55,15 +55,19 @@ interface InjectProps
     render: typeof render
 }
 
+interface RenderCommandPaletteProps
+    extends TelemetryProps,
+        InjectProps,
+        Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> {
+    notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
+}
+
 export const renderCommandPalette = ({
     extensionsController,
     history,
     render,
     ...props
-}: TelemetryProps &
-    InjectProps &
-    Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> &
-    NotificationClassNameProps) => (mount: HTMLElement): void => {
+}: RenderCommandPaletteProps) => (mount: HTMLElement): void => {
     render(
         <ShortcutProvider>
             <CommandListPopoverButton
@@ -76,7 +80,9 @@ export const renderCommandPalette = ({
             />
             <Notifications
                 extensionsController={extensionsController}
-                notificationClassNames={props.notificationClassNames}
+                notificationItemStyleProps={{
+                    notificationItemClassNames: props.notificationClassNames,
+                }}
             />
         </ShortcutProvider>,
         mount

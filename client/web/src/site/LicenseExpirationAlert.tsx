@@ -18,7 +18,8 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
 }> = ({ expiresAt, daysLeft, className }) => (
     <DismissibleAlert
         partialStorageKey={`licenseExpiring.${daysLeft}`}
-        className={classNames('alert-warning align-items-center', className)}
+        variant="warning"
+        className={classNames('align-items-center', className)}
     >
         Your Sourcegraph license{' '}
         {
