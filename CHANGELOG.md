@@ -29,7 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
-## 3.36.2
+## 3.36.2 (not yet released)
 
 ### Removed
 
