@@ -118,7 +118,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 		}
 	}
 
-	pipeline.AddStep(":bash: CI Scripts",
+	pipeline.AddStep(":bash: Test CI Scripts",
 		stepOpts...,
 	)
 }
