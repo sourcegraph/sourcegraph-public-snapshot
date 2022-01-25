@@ -262,7 +262,7 @@ To execute the database migrations independently, run the following commands:
 
 1. Repeat the three `psql` commands from the first step to verify the migration versions and that none of the databases are flagged as dirty. The versions reported should match the last output version from the `migrator` container.
 
-Once migrations are complete, you are now safe. to upgrade Sourcegraph.
+Once migrations are complete, you are now safe to upgrade Sourcegraph.
 
 #### Migrating Without Code Insights
 If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the standard migration process will fail. Follow these steps to execute migrations to the `frontend` and `codeintel` databases:
