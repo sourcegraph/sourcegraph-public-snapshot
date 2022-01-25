@@ -1,8 +1,7 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { ProductSubscriptionLabel } from '../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 

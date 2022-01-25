@@ -5,10 +5,9 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnectionFilter } from '../../../components/FilteredConnection'

@@ -3,6 +3,7 @@
 
 # JetBrains/IntelliJ
 .idea
+.graphqlconfig
 
 # Emacs
 *~
@@ -104,7 +105,7 @@ package-lock.json
 coverage/
 out/
 client/shared/src/schema.ts
-client/web/src/schema/*
+client/shared/src/schema/*
 puppeteer/
 package-lock.json
 /dist

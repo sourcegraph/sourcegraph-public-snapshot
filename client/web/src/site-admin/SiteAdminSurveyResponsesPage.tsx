@@ -2,10 +2,9 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
-import { Badge, Button, useLocalStorage } from '@sourcegraph/wildcard'
+import { Badge, Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
 import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
 
 import { FilteredConnection } from '../components/FilteredConnection'

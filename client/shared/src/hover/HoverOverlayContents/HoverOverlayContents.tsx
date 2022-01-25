@@ -3,7 +3,7 @@ import { upperFirst } from 'lodash'
 import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import hoverOverlayStyle from '../HoverOverlay.module.scss'
 import { HoverOverlayBaseProps } from '../HoverOverlay.types'
@@ -12,9 +12,9 @@ import { HoverOverlayContent } from './HoverOverlayContent'
 
 interface HoverOverlayContentsProps extends Pick<HoverOverlayBaseProps, 'hoverOrError'> {
     iconClassName?: string
-    useBrandedBadge?: boolean
     badgeClassName?: string
     errorAlertClassName?: string
+    errorAlertVariant?: AlertProps['variant']
     contentClassName?: string
 }
 
@@ -23,8 +23,8 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
         hoverOrError,
         iconClassName,
         errorAlertClassName,
+        errorAlertVariant,
         badgeClassName,
-        useBrandedBadge,
         contentClassName,
     } = props
 
@@ -38,9 +38,12 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
 
     if (isErrorLike(hoverOrError)) {
         return (
-            <div className={classNames(errorAlertClassName, hoverOverlayStyle.hoverError)}>
+            <Alert
+                className={classNames(errorAlertClassName, hoverOverlayStyle.hoverError)}
+                variant={errorAlertVariant}
+            >
                 {upperFirst(hoverOrError.message)}
-            </div>
+            </Alert>
         )
     }
 
@@ -64,7 +67,7 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
                     content={content}
                     aggregatedBadges={hoverOrError.aggregatedBadges}
                     errorAlertClassName={errorAlertClassName}
-                    useBrandedBadge={useBrandedBadge}
+                    errorAlertVariant={errorAlertVariant}
                     badgeClassName={badgeClassName}
                     contentClassName={contentClassName}
                 />

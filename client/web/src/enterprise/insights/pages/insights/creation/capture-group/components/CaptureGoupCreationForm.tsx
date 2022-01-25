@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Card } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
@@ -120,7 +120,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     </>
                 }
             >
-                <div className="card card-body p-3">
+                <Card className="p-3">
                     <FormInput
                         title="Search query"
                         required={true}
@@ -159,7 +159,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                             automatically generated data series
                         </a>
                     </small>
-                </div>
+                </Card>
             </FormGroup>
 
             <hr className="my-4 w-100" />
@@ -183,7 +183,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
-                    numberOfPoints={7}
+                    numberOfPoints={allReposMode.input.value ? 12 : 7}
                 />
             </FormGroup>
 

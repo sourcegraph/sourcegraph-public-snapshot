@@ -8,6 +8,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { isDefined } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -28,9 +29,9 @@ import {
     ResolvedRevisionSpec,
     RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
+import { Alert } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
-import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
@@ -188,7 +189,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             >
                 <RepositoryCompareHeader className="my-3" {...commonProps} />
                 {spec === null ? (
-                    <div className="alert alert-danger">Invalid comparison specifier</div>
+                    <Alert variant="danger">Invalid comparison specifier</Alert>
                 ) : (
                     <Switch>
                         <Route

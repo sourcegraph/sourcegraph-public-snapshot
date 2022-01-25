@@ -43,16 +43,16 @@ func TestCheckBuilds(t *testing.T) {
 	}
 	// Triggers a fail
 	failSet := []buildkite.Build{{
-		Number: buildkite.Int(1),
+		Number: buildkite.Int(2),
 		Commit: buildkite.String("a"),
 		State:  buildkite.String("failed"),
 	}, {
-		Number: buildkite.Int(2),
+		Number: buildkite.Int(3),
 		Commit: buildkite.String("b"),
 		State:  buildkite.String("failed"),
 	}}
 	runningBuild := buildkite.Build{
-		Number:    buildkite.Int(1),
+		Number:    buildkite.Int(4),
 		Commit:    buildkite.String("a"),
 		State:     buildkite.String("running"),
 		StartedAt: buildkite.NewTimestamp(time.Now()),
@@ -88,165 +88,39 @@ func TestCheckBuilds(t *testing.T) {
 			var lock = &mockBranchLocker{}
 			res, err := CheckBuilds(ctx, lock, slackUser, tt.builds, testOptions)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.wantLocked, res.LockBranch)
+			assert.Equal(t, tt.wantLocked, res.LockBranch, "should lock")
 			// Mock always returns an action, check it's always assigned correctly
-			assert.NotNil(t, res.Action)
+			assert.NotNil(t, res.Action, "Action")
 			// Lock/Unlock should not be called repeatedly
 			assert.LessOrEqual(t, lock.calledUnlock, 1, "calledUnlock")
 			assert.LessOrEqual(t, lock.calledLock, 1, "calledLock")
+			// Don't return >N failed commits
+			assert.LessOrEqual(t, len(res.FailedCommits), testOptions.FailuresThreshold, "FailedCommits count")
 		})
 	}
-}
 
-func TestCheckConsecutiveFailures(t *testing.T) {
-	type args struct {
-		builds    []buildkite.Build
-		threshold int
-		timeout   time.Duration
-	}
-	tests := []struct {
-		name                  string
-		args                  args
-		wantCommits           []string
-		wantThresholdExceeded bool
-	}{{
-		name: "not exceeded: passed",
-		args: args{
-			builds: []buildkite.Build{{
-				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("passed"),
-			}},
-			threshold: 3, timeout: time.Hour,
-		},
-		wantCommits:           []string{},
-		wantThresholdExceeded: false,
-	}, {
-		name: "not exceeded: failed",
-		args: args{
-			builds: []buildkite.Build{{
-				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
-			}},
-			threshold: 3, timeout: time.Hour,
-		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: false,
-	}, {
-		name: "not exceeded: failed, passed",
-		args: args{
-			builds: []buildkite.Build{{
-				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
-			}, {
-				Number: buildkite.Int(2),
+	t.Run("only return oldest N failed commits", func(t *testing.T) {
+		var lock = &mockBranchLocker{}
+		res, err := CheckBuilds(ctx, lock, slackUser, append(failSet,
+			// 2 builds == FailuresThreshold
+			buildkite.Build{
+				Number: buildkite.Int(10),
 				Commit: buildkite.String("b"),
-				State:  buildkite.String("passed"),
-			}},
-			threshold: 3, timeout: time.Hour,
-		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: false,
-	}, {
-		name: "not exceeded: failed, passed, failed",
-		args: args{
-			builds: []buildkite.Build{{
-				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
 				State:  buildkite.String("failed"),
-			}, {
-				Number: buildkite.Int(2),
+			}, buildkite.Build{
+				Number: buildkite.Int(20),
 				Commit: buildkite.String("b"),
-				State:  buildkite.String("passed"),
-			}, {
-				Number: buildkite.Int(3),
-				Commit: buildkite.String("c"),
 				State:  buildkite.String("failed"),
-			}},
-			threshold: 2, timeout: time.Hour,
-		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: false,
-	}, {
-		name: "exceeded: failed == threshold",
-		args: args{
-			builds: []buildkite.Build{{
-				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
-			}},
-			threshold: 1, timeout: time.Hour,
-		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: true,
-	}, {
-		name: "exceeded: failed == threshold",
-		args: args{
-			builds: []buildkite.Build{{
-				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
-			}},
-			threshold: 1, timeout: time.Hour,
-		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: true,
-	}, {
-		name: "exceeded: failed, timeout, failed",
-		args: args{
-			builds: []buildkite.Build{{
-				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
-			}, {
-				Number:    buildkite.Int(2),
-				Commit:    buildkite.String("b"),
-				State:     buildkite.String("running"),
-				CreatedAt: buildkite.NewTimestamp(time.Now().Add(-2 * time.Hour)),
-			}, {
-				Number: buildkite.Int(3),
-				Commit: buildkite.String("c"),
-				State:  buildkite.String("failed"),
-			}},
-			threshold: 3, timeout: time.Hour,
-		},
-		wantCommits:           []string{"a", "b", "c"},
-		wantThresholdExceeded: true,
-	}, {
-		name: "exceeded: failed, running, failed",
-		args: args{
-			builds: []buildkite.Build{{
-				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
-			}, {
-				Number:    buildkite.Int(2),
-				Commit:    buildkite.String("b"),
-				State:     buildkite.String("running"),
-				CreatedAt: buildkite.NewTimestamp(time.Now()),
-			}, {
-				Number: buildkite.Int(3),
-				Commit: buildkite.String("c"),
-				State:  buildkite.String("failed"),
-			}},
-			threshold: 2, timeout: time.Hour,
-		},
-		wantCommits:           []string{"a", "c"},
-		wantThresholdExceeded: true,
-	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotCommits, gotThresholdExceeded, _ := checkConsecutiveFailures(tt.args.builds, tt.args.threshold, tt.args.timeout, false)
-			assert.Equal(t, tt.wantThresholdExceeded, gotThresholdExceeded, "thresholdExceeded")
+			}),
+			testOptions)
+		assert.NoError(t, err)
+		assert.True(t, res.LockBranch, "should lock")
 
-			got := []string{}
-			for _, c := range gotCommits {
-				assert.NotZero(t, c.BuildNumber)
-				got = append(got, c.Commit)
-			}
-			assert.Equal(t, tt.wantCommits, got, "commits")
-		})
-	}
+		assert.Len(t, res.FailedCommits, testOptions.FailuresThreshold, "FailedCommits count")
+		gotBuildNumbers := []int{}
+		for _, c := range res.FailedCommits {
+			gotBuildNumbers = append(gotBuildNumbers, c.BuildNumber)
+		}
+		assert.Equal(t, []int{10, 20}, gotBuildNumbers, "FailedCommits build numbers")
+	})
 }

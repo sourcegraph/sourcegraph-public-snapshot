@@ -111,17 +111,14 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
     const step = useField({
         name: 'step',
         formApi: form.formAPI,
-        disabled: isAllReposMode,
     })
 
     const stepValue = useField({
         name: 'stepValue',
         formApi: form.formAPI,
         validators: {
-            // Turn off any validations if we are in all repos mode
-            sync: !isAllReposMode ? requiredStepValueField : undefined,
+            sync: requiredStepValueField,
         },
-        disabled: isAllReposMode,
     })
 
     const handleFormReset = (): void => {

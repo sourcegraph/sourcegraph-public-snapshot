@@ -17,12 +17,14 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { property } from '@sourcegraph/shared/src/util/types'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import styles from './FileLocations.module.scss'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="alert alert-danger m-2">Error getting locations: {upperFirst(error.message)}</div>
+    <Alert className="m-2" variant="danger">
+        Error getting locations: {upperFirst(error.message)}
+    </Alert>
 )
 
 export const FileLocationsNotFound: React.FunctionComponent = () => (
@@ -152,7 +154,11 @@ export class FileLocations extends React.PureComponent<Props, State> {
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
                     items={orderedURIs}
-                    renderItem={this.renderFileMatch}
+                    renderItem={(
+                        item: OrderedURI,
+                        index: number,
+                        additionalProps: { locationsByURI: Map<string, Location[]> }
+                    ) => this.renderFileMatch(item, additionalProps)}
                     itemProps={{ locationsByURI }}
                     itemKey={this.itemKey}
                 />

@@ -175,7 +175,7 @@
           }
         },
         "fuzzyFinder": {
-          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
+          "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
           "!go": {
             "pointer": true
@@ -210,6 +210,14 @@
           "type": "string",
           "default": "by-line-number",
           "examples": ["by-line-number", "by-zoekt-ranking"],
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeMonitoringWebHooks": {
+          "description": "Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.",
+          "type": "boolean",
+          "default": false,
           "!go": {
             "pointer": true
           }

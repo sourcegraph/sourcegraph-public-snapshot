@@ -46,7 +46,7 @@ function sortHunkMatches(hunk: Hunk): void {
 }
 
 function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): boolean {
-    return item.line + context >= group.startLine - context && item.line - context <= group.endLine + context
+    return item.line + context + 1 >= group.startLine - context && item.line - context - 1 <= group.endLine + context
 }
 
 function results(matches: MatchItem[], maxResults: number, context: number): RankingResult {

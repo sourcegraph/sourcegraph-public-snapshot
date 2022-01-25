@@ -40,6 +40,7 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/Run", testSyncRun},
 		{"Syncer/MultipleServices", testSyncerMultipleServices},
 		{"Syncer/OrphanedRepos", testOrphanedRepo},
+		{"Syncer/CloudDefaultExternalServicesDontSync", testCloudDefaultExternalServicesDontSync},
 		{"Syncer/DeleteExternalService", testDeleteExternalService},
 		{"Syncer/AbortSyncWhenThereIsRepoLimitError", testAbortSyncWhenThereIsRepoLimitError},
 		{"Syncer/UserAndOrgReposAreCountedCorrectly", testUserAndOrgReposAreCountedCorrectly},

@@ -144,14 +144,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		filters.Update(event)
 
 		// Truncate the event to the match limit before fetching repo metadata
-		for i, match := range event.Results {
-			if display <= 0 {
-				event.Results = event.Results[:i]
-				break
-			}
-
-			display = match.Limit(display)
-		}
+		display = event.Results.Limit(display)
 
 		repoMetadata, err := getEventRepoMetadata(ctx, h.db, event)
 		if err != nil {
@@ -553,7 +546,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 }
 
 func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventCommitMatch {
-	hls := commit.Body.ToHighlightedString()
+	hls := commit.Body().ToHighlightedString()
 	ranges := make([][3]int32, len(hls.Highlights))
 	for i, h := range hls.Highlights {
 		ranges[i] = [3]int32{h.Line, h.Character, h.Length}

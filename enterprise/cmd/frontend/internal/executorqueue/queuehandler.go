@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
@@ -40,38 +41,55 @@ func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handle
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
 
-		return basicAuthMiddleware(accessToken, base)
+		return authMiddleware(accessToken, base)
 	}
 
 	return factory, nil
 }
 
-// basicAuthMiddleware rejects requests that do not have a basic auth username and password matching
-// the expected username and password. This should only be used for internal _services_, not users,
-// in which a shared key exchange can be done so safely.
-func basicAuthMiddleware(accessToken func() string, next http.Handler) http.Handler {
+// authMiddleware rejects requests that do not have a Authorization header set
+// with the correct "token-executor <token>" value. This should only be used
+// for internal _services_, not users, in which a shared key exchange can be
+// done so safely.
+func authMiddleware(accessToken func() string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// We don't care about the username. Only the password matters here.
-		_, password, ok := r.BasicAuth()
-		if !ok {
-			// This header is required to be present with 401 responses in order to prompt the client
-			// to retry the request with basic auth credentials. If we do not send this header, the
-			// git fetch/clone flow will break against the internal gitservice with a permanent 401.
-			w.Header().Add("WWW-Authenticate", `Basic realm="Sourcegraph"`)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+		if validateExecutorToken(w, r, accessToken()) {
+			next.ServeHTTP(w, r)
 		}
-		ac := accessToken()
-		if ac == "" {
-			w.WriteHeader(http.StatusInternalServerError)
-			log15.Error("executors.accessToken not configured in site config")
-			return
+	})
+}
+
+const SchemeExecutorToken = "token-executor"
+
+func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAccessToken string) bool {
+	if expectedAccessToken == "" {
+		log15.Error("executors.accessToken not configured in site config")
+		http.Error(w, "Executors are not configured on this instance", http.StatusInternalServerError)
+		return false
+	}
+
+	var token string
+	if headerValue := r.Header.Get("Authorization"); headerValue != "" {
+		parts := strings.Split(headerValue, " ")
+		if len(parts) != 2 {
+			http.Error(w, fmt.Sprintf(`HTTP Authorization request header value must be of the following form: '%s "TOKEN"'`, SchemeExecutorToken), http.StatusUnauthorized)
+			return false
 		}
-		if password != ac {
-			w.WriteHeader(http.StatusForbidden)
-			return
+		if parts[0] != SchemeExecutorToken {
+			http.Error(w, fmt.Sprintf("unrecognized HTTP Authorization request header scheme (supported values: %q)", SchemeExecutorToken), http.StatusUnauthorized)
+			return false
 		}
 
-		next.ServeHTTP(w, r)
-	})
+		token = parts[1]
+	}
+	if token == "" {
+		http.Error(w, "no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)", http.StatusUnauthorized)
+	}
+
+	if token != expectedAccessToken {
+		w.WriteHeader(http.StatusForbidden)
+		return false
+	}
+
+	return true
 }

@@ -4,7 +4,7 @@
 
 <ol>
   <li>
-    Using Batch Changes requires a <a href="../../../admin/external_service">code host connection</a> to a supported code host (currently GitHub, Bitbucket Server, and GitLab).
+    Using Batch Changes requires a <a href="../../../admin/external_service">code host connection</a> to a supported code host (currently GitHub, Bitbucket Server / Bitbucket Data Center, and GitLab).
   </li>
   <li>
     (Optional) <a href="../../../admin/repo/permissions">Configure repository permissions</a>, which Batch Changes will respect.
@@ -19,7 +19,7 @@
         <a href="../../admin/external_service/github#webhooks">GitHub</a>
       </li>
       <li>
-        <a href="../../admin/external_service/bitbucket_server#webhooks">Bitbucket Server</a>
+        <a href="../../admin/external_service/bitbucket_server#webhooks">Bitbucket Server / Bitbucket Data Center</a>
       </li>
       <li>
         <a href="../../admin/external_service/gitlab#webhooks">GitLab</a>

@@ -21,7 +21,7 @@
     border-radius: var(--card-border-radius);
 }
 
-.card-interactive {
+button.card {
     cursor: pointer;
     &:hover {
         --card-border-color: var(--primary);

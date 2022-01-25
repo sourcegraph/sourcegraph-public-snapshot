@@ -475,11 +475,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  "error count:1000",
 				query: "error count:1000",
 			},
-			{
-				name:          "something with more than 1000 results and use count:1000",
-				query:         ". count:1000",
-				minMatchCount: 1000,
-			},
+			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// {
+			// 	name:          "something with more than 1000 results and use count:1000",
+			// 	query:         ". count:1000",
+			// 	minMatchCount: 1000,
+			// },
 			{
 				name:          "default limit streaming",
 				query:         ".",
@@ -967,8 +968,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("And/Or search expression queries", func(t *testing.T) {
-		t.Skip("Flakey test https://github.com/sourcegraph/sourcegraph/issues/29828")
-
 		tests := []struct {
 			name            string
 			query           string
@@ -1013,16 +1012,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
 			},
 			{
-				name:            `Or distributive property on commits deduplicates and merges`,
-				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
-				exactMatchCount: 30,
-				skip:            skipStream,
+				name:  `Or distributive property on commits deduplicates and merges`,
+				query: `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
+				skip:  skipStream,
 			},
 			{
-				name:            `Exact default count is respected in OR queries`,
-				query:           `foo OR bar OR (type:repo diff)`,
-				exactMatchCount: 30,
+				name:  `Exact default count is respected in OR queries`,
+				query: `foo OR bar OR (type:repo diff)`,
 			},
+			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// {
+			//	name:            `Or distributive property on commits deduplicates and merges`,
+			//	query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
+			//	exactMatchCount: 30,
+			//	skip:            skipStream,
+			// },
+			// {
+			//	name:            `Exact default count is respected in OR queries`,
+			//	query:           `foo OR bar OR (type:repo diff)`,
+			//	exactMatchCount: 30,
+			// },
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {

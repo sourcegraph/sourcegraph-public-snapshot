@@ -1,12 +1,12 @@
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -128,53 +128,36 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className={styles.page}>
-            <header>
-                <div className="position-relative">
-                    <div className={styles.headerBackground1} />
-                    <div className={styles.headerBackground2} />
-                    <div className={styles.headerBackground3} />
-
-                    <div className={styles.limitWidth}>
-                        <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
-                    </div>
-                </div>
-
-                {!invitedBy && (
-                    <div className={styles.limitWidth}>
-                        <h2 className={classNames('d-flex', 'align-items-center', styles.pageHeading)}>{title}</h2>
-                    </div>
-                )}
+            <header className="position-relative">
+                <div className={styles.headerBackground1} />
+                <div className={styles.headerBackground2} />
             </header>
+            <div className={classNames('d-flex', 'justify-content-center', 'mb-5', styles.leftOrRightContainer)}>
+                <div className={styles.leftOrRight}>
+                    <BrandLogo isLightTheme={isLightTheme} variant="logo" className={styles.logo} />
+                    <h2
+                        className={classNames(
+                            'd-flex',
+                            'align-items-center',
+                            'mb-4',
+                            'mt-1',
+                            invitedBy ? styles.pageHeadingInvitedBy : styles.pageHeading
+                        )}
+                    >
+                        {invitedByUser ? (
+                            <>
+                                <UserAvatar
+                                    className={classNames('icon-inline', 'mr-3', styles.avatar)}
+                                    user={invitedByUser}
+                                />
+                                <strong className="mr-1">{invitedBy}</strong> has invited you to join Sourcegraph
+                            </>
+                        ) : (
+                            title
+                        )}
+                    </h2>
 
-            <div className={classNames(styles.contents, styles.limitWidth)}>
-                <div className={styles.contentsLeft}>
-                    {invitedByUser ? (
-                        <>
-                            <h2
-                                className={classNames(
-                                    'd-flex',
-                                    'align-items-center',
-                                    invitedByUser ? styles.pageHeadingInvitedBy : styles.pageHeading
-                                )}
-                            >
-                                {invitedByUser ? (
-                                    <>
-                                        <UserAvatar
-                                            className={classNames('icon-inline', 'mr-3', styles.avatar)}
-                                            user={invitedByUser}
-                                        />
-                                        <strong className="mr-1">{invitedBy}</strong> has invited you to join
-                                        Sourcegraph
-                                    </>
-                                ) : (
-                                    title
-                                )}
-                            </h2>
-                            With a Sourcegraph account, you can:
-                        </>
-                    ) : (
-                        'With a Sourcegraph account, you can also:'
-                    )}
+                    {invitedBy ? 'With a Sourcegraph account, you can:' : 'With a Sourcegraph account, you can also:'}
                     <ul className={styles.featureList}>
                         <li>
                             <div className="d-flex align-items-center">
@@ -192,10 +175,11 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     <img
                         src={`${assetsRoot}/img/customer-logos-${isLightTheme ? 'light' : 'dark'}.svg`}
                         alt="Cloudflare, Uber, SoFi, Dropbox, Plaid, Toast"
+                        className={styles.customerLogos}
                     />
                 </div>
 
-                <div className={invitedBy ? styles.signUpWrapperInvitedBy : styles.signUpWrapper}>
+                <div className={classNames(styles.leftOrRight, styles.signUpWrapper)}>
                     <h2>Create a free account</h2>
                     {renderAuthMethod()}
 

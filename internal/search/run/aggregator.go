@@ -9,16 +9,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func NewAggregator(db dbutil.DB, stream streaming.Sender) *Aggregator {
+func NewAggregator(stream streaming.Sender) *Aggregator {
 	return &Aggregator{
-		db:           db,
 		parentStream: stream,
 		errors:       &multierror.Error{},
 	}
@@ -26,7 +24,6 @@ func NewAggregator(db dbutil.DB, stream streaming.Sender) *Aggregator {
 
 type Aggregator struct {
 	parentStream streaming.Sender
-	db           dbutil.DB
 
 	mu         sync.Mutex
 	results    []result.Match
@@ -85,7 +82,7 @@ func (a *Aggregator) Error(err error) {
 	}
 }
 
-func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pager) (err error) {
+func (a *Aggregator) DoSearch(ctx context.Context, db database.DB, job Job) (err error) {
 	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
 	defer func() {
 		a.Error(err)
@@ -93,6 +90,6 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pa
 		tr.Finish()
 	}()
 
-	err = job.Run(ctx, a, repos)
+	err = job.Run(ctx, db, a)
 	return errors.Wrap(err, job.Name()+" search failed")
 }

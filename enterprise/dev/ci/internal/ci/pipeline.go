@@ -95,7 +95,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.35.0"
+	const minimumUpgradeableVersion = "3.36.0"
 
 	// Set up operations that add steps to a pipeline.
 	var ops operations.Set
@@ -236,13 +236,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
 				ops.Append(publishExecutorDockerMirror(c.Version))
 			}
-		}
-
-		// Propagate changes elsewhere
-		if c.RunType.Is(MainBranch) {
-			ops.Append(
-				wait, // wait for all steps to pass
-				triggerUpdaterPipeline)
 		}
 	}
 

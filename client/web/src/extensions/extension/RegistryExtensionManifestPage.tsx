@@ -3,12 +3,11 @@ import EyeIcon from 'mdi-react/EyeIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -20,7 +19,7 @@ import styles from './RegistryExtensionManifestPage.module.scss'
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
 }> = ({ extension }) => (
-    <div className="alert alert-info">
+    <Alert variant="info">
         This extension is not yet published.
         {extension.registryExtension?.viewerCanAdminister && (
             <>
@@ -35,7 +34,7 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
                 </Button>
             </>
         )}
-    </div>
+    </Alert>
 )
 
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {}

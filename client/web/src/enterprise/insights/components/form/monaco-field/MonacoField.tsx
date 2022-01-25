@@ -3,12 +3,12 @@ import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { createContext, forwardRef, InputHTMLAttributes, useContext, useImperativeHandle, useMemo } from 'react'
 
+import { QueryChangeSource } from '@sourcegraph/search'
+import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
+import { DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui/src/input/MonacoQueryInput'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import { QueryChangeSource } from '../../../../../search/helpers'
-import { LazyMonacoQueryInput } from '../../../../../search/input/LazyMonacoQueryInput'
-import { DEFAULT_MONACO_OPTIONS } from '../../../../../search/input/MonacoQueryInput'
 import { ThemePreference } from '../../../../../stores/themeState'
 import { useTheme } from '../../../../../theme'
 
