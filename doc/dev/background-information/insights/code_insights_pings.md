@@ -2,18 +2,24 @@
 
 Code Insights pings allow us to quantitatively measure the usage and success of Code Insights. This page is a source of truth for detailed explanations, statuses, and implementations of our pings. 
 
-We keep this docs page up to date because pings are a vital component of our product knowledge and prioritization process, and a broken or incorrect ping impacts 3-5 months of data (because that's how long a fix takes to propagate). 
+We keep this docs page up to date because pings are a vital component of our product knowledge and prioritization process, and a broken or incorrect ping impacts 3-5 months of data (because that's how long a fix takes to propagate).
+
+## Terminology
+
+- **FE event** - log events that we send by calling standard telemetry service on the frontend. These pings live only in logs, and we do not store them in the database.
+- **BE ping** - pings that our BE sends to ping store by checking/selecting data from database tables. Our backend sends these pings when something has been updated in the database tables that the ping depends on. 
 
 ## Metrics
 
 ### Additions count, edits count, and removals count 
 
+**Type:** FE event
+
 **Intended purpose:** To track how many times customers have created, edited, and removed insights, by week. 
 
-**Functional implementation:** We track insight creating/editing/deleting events in the creation UI form and insight context menu component with standard telemetry service calls. 
-And also query information about newly created insights from database to count and aggregate it properly. 
+**Functional implementation:** We track insight creating/editing/deleting events in the creation UI form and insight context menu component with standard telemetry service calls.  
 
-**Other considerations:** N/A 
+**Other considerations:** N/A
 
 - Aggregation: By week 
 - Event Code: [InsightAddition](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightAddition%27&patternType=literal), [InsightEdit](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightEdit%27&patternType=literal), [InsightRemoval](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightRemoval%27&patternType=literal)
@@ -23,6 +29,8 @@ And also query information about newly created insights from database to count a
 
 
 ### Hovers count
+
+**Type:** FE event
 
 **Intended purpose:** To track how many times users hover over a datapoint to see the tooltip on the graph, or "dig in" to the information. 
 
@@ -38,6 +46,8 @@ And also query information about newly created insights from database to count a
 
 ### UI customizations count
 
+**Type:** FE event
+
 **Intended purpose:** To track how many times users resize the insight graphs. 
 
 **Functional implementation:** This ping works by firing an event on the client when a user resizes a Code Insights graph on the page. 
@@ -51,6 +61,8 @@ And also query information about newly created insights from database to count a
 <!-- - **Known versions broken:** N/A -->
 
 ### Data point clicks count
+
+**Type:** FE event
 
 **Intended purpose:** To track how many times users click a datapoint to get to a diff search. 
 
@@ -67,6 +79,8 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ### Page views count
 
+**Type:** FE event
+
 **Intended purpose:** To track how many times users view insights pages. 
 
 **Functional implementation:** This ping works by firing an event on the client when a user views _any_ /insights page, whether it's creating or viewing insights.  
@@ -80,6 +94,8 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - **Version(s) broken:** 3.25-3.26 (not weekly)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/20070/files)), 3.30 (broken when switching to dashboard pages, didn't track dashboard views)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/24129/files))
 
 ### Unique page views count
+
+**Type:** FE event
 
 **Intended purpose:** To track how many unique users are viewing insights pages each week. 
 
@@ -95,6 +111,8 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ### Org-visible insights count (Total) 
 
+**Type:** BE ping
+
 **Intended purpose:** To track how many insights are visible by more than just the creator of the insight. 
 
 **Functional implementation:** we gather this on the backend by joining the `insight_view` and `insight_view_grants` tables and counting the insights with org level grants. 
@@ -109,6 +127,8 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ### First time insight creators count
 
+**Type:** BE ping
+
 **Intended purpose:** To track the week and count of the first time a user(s) creates a code insight, of any type, on an instance. The sum of first time insight creators count over all time is equal to the total number of unique creators who have made an insight.
 
 **Functional implementation:** This metric queries the insight table for new addition events, then filters by unique IDs that appeared for the first time that week. 
@@ -122,6 +142,8 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ### Total count of insights grouped by step size (days)
 
+**Type:** BE ping
+
 **Intended purpose:** To track the x-axis (time window) set by users on frontend insights, to help prioritize features related to setting time windows. 
 
 **Functional implementation:** this metric runs on the backend over all the insights. 
@@ -134,6 +156,8 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - **Version(s) broken:** 3.31-3.35.0 [fix PR](https://github.com/sourcegraph/sourcegraph/pull/28425)
 
 ### Code Insights View/Click Creation Funnels
+
+**Type:** FE event
 
 **Intended purpose:** These pings allow us to both understand how the view/click/view/click conversion funnel works for the creation flows of all existing types of insights, as well as smell-check other pings. The reason we use both "view" and "button clicks" in this funnel is that it's possible to view a page without "funneling through" via the prior page's CTA (for example: you can reach the creation/edit screen by the "edit" button, which does not involve logging a click on the "create search insight" button).
 
