@@ -195,7 +195,7 @@ The `frontend` container in the `docker-compose.yaml` file will automatically ru
 
 > NOTE: These values will work for a standard docker-compose deployment of Sourcegraph. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables accordingly.
 
-To execute the database migrations independently, run the following command (substituting in the version you'd like to migrate to):
+To execute the database migrations independently, run the following commands:
 
 1. Check the current migration versions of all three databases:
     ```bash
@@ -241,14 +241,23 @@ To execute the database migrations independently, run the following command (sub
         up
     ```
 
-  You should see output similar to:
+1. Observe the output:
 
-  ```bash
-  sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Checked current version" schema=frontend version=1528395959 dirty=false
-  sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Upgrading schema" schema=frontend
-  sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395960
-  sourcegraph-migrator exited with code 0
-  ```
+    Run:
+    ```bash
+    docker logs migrator_$SOURCEGRAPH_VERSION
+    ```
+
+    You should see output similar to:
+
+    ```text
+    sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Checked current version" schema=frontend version=1528395959 dirty=false
+    sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Upgrading schema" schema=frontend
+    sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395960
+    sourcegraph-migrator exited with code 0
+    ```
+
+    Please note the last migration version that is applied.
 
 
 1. Repeat the three `psql` commands from the first step to verify the migration versions and that none of the databases are flagged as dirty. The versions reported should match the last output version from the `migrator` container.
