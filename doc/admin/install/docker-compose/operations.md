@@ -209,7 +209,7 @@ To execute the database migrations independently, run the following commands:
     docker exec -it codeinsights-db psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
     ```
 
-    Verify all databases return `f` for `dirty` and note the current verison.
+    Verify all databases return `f` for `dirty` and note the current version.
 
 1. Start the migrations:
 
