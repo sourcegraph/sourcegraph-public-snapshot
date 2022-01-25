@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfig) (types.SearchFunc, error) {
+func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfig, maxRepos int) (types.SearchFunc, error) {
 	var repoToMutexMutex = sync.Mutex{}
 	var repoToMutex = map[string]*sync.Mutex{}
 
@@ -76,7 +76,7 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 			return symbols, nil
 		}
 
-		err = rockskip.Index(NewGitserver(string(args.Repo)), db, parse, string(args.CommitID))
+		err = rockskip.Index(NewGitserver(string(args.Repo)), db, parse, string(args.Repo), string(args.CommitID), maxRepos)
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Index")
 		}
@@ -85,7 +85,7 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 		if args.Query != "" {
 			query = &args.Query
 		}
-		blobs, err := rockskip.Search(db, string(args.CommitID), query)
+		blobs, err := rockskip.Search(db, string(args.Repo), string(args.CommitID), query)
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Search")
 		}

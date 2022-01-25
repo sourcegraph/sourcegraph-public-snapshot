@@ -13,8 +13,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	pg "github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 )
 
 type Git interface {
@@ -161,14 +165,24 @@ func (t TaskLog) Print() {
 
 var TASKLOG = NewTaskLog()
 
-func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) error {
+func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int) (err error) {
+	unlock, err := onVisit(db, repo, maxRepos)
+	defer func() {
+		if unlock != nil {
+			err = unlock(err)
+		}
+	}()
+	if err != nil {
+		return errors.Wrap(err, "onVisit")
+	}
+
 	tipCommit := NULL
 	tipHeight := 0
 
 	missingCount := 0
 	TASKLOG.Start("RevList + GetCommit")
-	err := git.RevListEach(givenCommit, func(commit string) (shouldContinue bool, err error) {
-		_, height, present, err := GetCommit(db, commit)
+	err = git.RevListEach(givenCommit, func(commit string) (shouldContinue bool, err error) {
+		_, height, present, err := GetCommit(db, repo, commit)
 		if err != nil {
 			return false, errors.Wrap(err, "GetCommit")
 		} else if present {
@@ -205,7 +219,7 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) erro
 			fmt.Printf("Index: height %d (%d/s)\n", tipHeight+1, entryIndex/int(time.Since(start).Seconds()))
 			last = time.Now()
 		}
-		hops, err := getHops(tx, tipCommit)
+		hops, err := getHops(tx, repo, tipCommit)
 		if err != nil {
 			return errors.Wrap(err, "getHops")
 		}
@@ -280,7 +294,7 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) erro
 					Symbols: symbols,
 				}
 				TASKLOG.Start("InsertBlob")
-				id, err := InsertBlob(tx, blob)
+				id, err := InsertBlob(tx, blob, repo)
 				TASKLOG.Start("idle")
 				if err != nil {
 					return errors.Wrap(err, "InsertBlob")
@@ -300,7 +314,7 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) erro
 		tipHeight += 1
 
 		TASKLOG.Start("InsertCommit")
-		err = InsertCommit(tx, tipCommit, tipHeight, hops[r])
+		err = InsertCommit(tx, repo, tipCommit, tipHeight, hops[r])
 		TASKLOG.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "InsertCommit")
@@ -316,13 +330,13 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) erro
 	return nil
 }
 
-func getHops(tx Queryable, commit string) ([]string, error) {
+func getHops(tx Queryable, repo, commit string) ([]string, error) {
 	current := commit
 	spine := []string{current}
 
 	for {
 		TASKLOG.Start("GetCommit")
-		ancestor, _, present, err := GetCommit(tx, current)
+		ancestor, _, present, err := GetCommit(tx, repo, current)
 		TASKLOG.Start("idle")
 		if err != nil {
 			return nil, errors.Wrap(err, "GetCommit")
@@ -338,6 +352,93 @@ func getHops(tx Queryable, commit string) ([]string, error) {
 	}
 
 	return spine, nil
+}
+
+var LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols"))
+var DELETION_LOCK_ID = 0
+var REPO_LOCKS_NAMESPACE = int32(fnv1.HashString32("symbols-repos"))
+
+func onVisit(db *sql.DB, repo string, maxRepos int) (locker.UnlockFunc, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "begin transaction")
+	}
+
+	_, err = tx.Exec(`SELECT pg_advisory_xact_lock($1, $2)`, LOCKS_NAMESPACE, DELETION_LOCK_ID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.Exec(`
+		INSERT INTO rockskip_repos (repo, last_accessed_at)
+		VALUES ($1, now())
+		ON CONFLICT (repo)
+		DO UPDATE SET last_accessed_at = now()
+	`, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	// Have to store the repos to delete in a variable, otherwise "driver: bad connection" on tx.Exec(`SELECT pg_advisory_xact_lock(...)`)
+	reposToDelete := []string{}
+	rowsToDelete, err := tx.Query(`SELECT repo FROM rockskip_repos ORDER BY last_accessed_at DESC OFFSET $1`, maxRepos)
+	if err != nil {
+		return nil, err
+	}
+	defer rowsToDelete.Close()
+	for rowsToDelete.Next() {
+		var rowRepo string
+		err = rowsToDelete.Scan(&rowRepo)
+		if err != nil {
+			return nil, err
+		}
+
+		if rowRepo == repo {
+			// Don't lock and delete the repo we're going to index.
+			continue
+		}
+
+		reposToDelete = append(reposToDelete, rowRepo)
+	}
+
+	for _, repoToDelete := range reposToDelete {
+		_, err = tx.Exec(`SELECT pg_advisory_xact_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repoToDelete)))
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = tx.Exec(`DELETE FROM rockskip_ancestry WHERE repo = $1`, repoToDelete)
+		if err != nil {
+			return nil, err
+		}
+		_, err = tx.Exec(`DELETE FROM rockskip_blobs WHERE repo = $1`, repoToDelete)
+		if err != nil {
+			return nil, err
+		}
+		_, err = tx.Exec(`DELETE FROM rockskip_repos WHERE repo = $1`, repoToDelete)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	_, err = db.Exec(`SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+	if err != nil {
+		return nil, err
+	}
+	repoUnlock := func(err error) error {
+		_, err2 := db.Exec(`SELECT pg_advisory_unlock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
+		if err != nil || err2 != nil {
+			return multierror.Append(err, err2)
+		}
+		return nil
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return repoUnlock, errors.Wrap(err, "commit transaction")
+	}
+
+	return repoUnlock, nil
 }
 
 // Ruler sequence
@@ -478,12 +579,12 @@ func (git SubprocessGit) CatFile(commit string, path string) ([]byte, error) {
 	return fileContents, nil
 }
 
-func GetCommit(db Queryable, givenCommit string) (ancestor string, height int, present bool, err error) {
+func GetCommit(db Queryable, repo, givenCommit string) (ancestor string, height int, present bool, err error) {
 	err = db.QueryRow(`
 		SELECT ancestor_id, height
 		FROM rockskip_ancestry
-		WHERE commit_id = $1
-	`, givenCommit).Scan(&ancestor, &height)
+		WHERE repo = $1 AND commit_id = $2
+	`, repo, givenCommit).Scan(&ancestor, &height)
 	if err == sql.ErrNoRows {
 		return "", 0, false, nil
 	} else if err != nil {
@@ -492,11 +593,11 @@ func GetCommit(db Queryable, givenCommit string) (ancestor string, height int, p
 	return ancestor, height, true, nil
 }
 
-func InsertCommit(db Queryable, commit string, height int, ancestor string) error {
+func InsertCommit(db Queryable, repo, commit string, height int, ancestor string) error {
 	_, err := db.Exec(`
-		INSERT INTO rockskip_ancestry (commit_id, height, ancestor_id)
-		VALUES ($1, $2, $3)
-	`, commit, height, ancestor)
+		INSERT INTO rockskip_ancestry (commit_id, repo, height, ancestor_id)
+		VALUES ($1, $2, $3, $4)
+	`, commit, repo, height, ancestor)
 	return errors.Wrap(err, "InsertCommit")
 }
 
@@ -525,7 +626,7 @@ func UpdateBlobHops(db Queryable, id int, status StatusAD, hop string) error {
 	return errors.Wrap(err, "UpdateBlobHops")
 }
 
-func InsertBlob(db Queryable, blob Blob) (id int, err error) {
+func InsertBlob(db Queryable, blob Blob, repo string) (id int, err error) {
 	symbolNames := []string{}
 	for _, symbol := range blob.Symbols {
 		symbolNames = append(symbolNames, symbol.Name)
@@ -533,10 +634,10 @@ func InsertBlob(db Queryable, blob Blob) (id int, err error) {
 
 	lastInsertId := 0
 	err = db.QueryRow(`
-		INSERT INTO rockskip_blobs (commit_id, path, added, deleted, symbol_names, symbol_data)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO rockskip_blobs (repo, commit_id, path, added, deleted, symbol_names, symbol_data)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
-	`, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
+	`, repo, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
@@ -550,10 +651,10 @@ func AppendHop(db Queryable, hops []string, givenStatus StatusAD, newHop string)
 	return errors.Wrap(err, "AppendHop")
 }
 
-func Search(db Queryable, commit string, query *string) ([]Blob, error) {
+func Search(db Queryable, repo, commit string, query *string) ([]Blob, error) {
 	var err error
 
-	hops, err := getHops(db, commit)
+	hops, err := getHops(db, repo, commit)
 	if err != nil {
 		return nil, err
 	}

@@ -22,6 +22,8 @@ type Config struct {
 	requestBufferSize int
 	processingTimeout time.Duration
 	useRockskip       bool
+	// Only for Rockskip
+	maxRepos int
 
 	// The maximum sum of lengths of all paths in a single call to git archive. Without this limit, we
 	// could hit the error "argument list too long" by exceeding the limit on the number of arguments to
@@ -55,5 +57,6 @@ func (c *Config) Load() {
 	c.requestBufferSize = c.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel")
 	c.processingTimeout = c.GetInterval("PROCESSING_TIMEOUT", "2h", "maximum time to spend processing a repository")
 	c.useRockskip = c.GetBool("USE_ROCKSKIP", "false", "use Rockskip and Postgres instead of SQLite")
+	c.maxRepos = c.GetInt("MAX_REPOS", "1000", "maximum number of repositories for Rockskip to store in Postgres, with LRU eviction")
 	c.maxTotalPathsLength = c.GetInt("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 }
