@@ -195,7 +195,7 @@ CREATE extension intarray;
 
 After the database is configured, Sourcegraph will attempt to run migrations. There are a few a migrations that may fail as they attempt to run actions that require `SUPERUSER` permissions. 
 
-These failures must be intepreted by the database administrator and resolved using guidance from [How to Troubleshoot a Dirty Database](https://docs.sourcegraph.com/admin/how-to/dirty_database). Generally-speaking this will involve looking up the migration source code and manually applying the necessary SQL code.
+These failures must be interpreted by the database administrator and resolved using guidance from [How to Troubleshoot a Dirty Database](https://docs.sourcegraph.com/admin/how-to/dirty_database). Generally-speaking this will involve looking up the migration source code and manually applying the necessary SQL code.
 
 **Initial Schema Creation**
 
