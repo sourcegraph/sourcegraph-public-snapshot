@@ -237,7 +237,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
             <div className={styles.content}>
                 <div className={styles.header}>
                     <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
-                        Find file
+                        Find file{' '}
                     </h3>
                     <Button className="btn-icon" onClick={() => props.onClose()} aria-label="Close">
                         <CloseIcon className={classNames('icon-inline', styles.closeIcon)} />
@@ -272,14 +272,15 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                         totalFileCount={totalFileCount}
                     />
                 </div>
-                {fuzzyResultElement}
+                {fuzzyResultElement}{' '}
                 {!isComplete && (
                     <Button
                         className={styles.showMore}
                         onClick={() => setMaxResults(maxResults + props.initialMaxResults)}
                         variant="secondary"
                     >
-                        Show more
+                        {' '}
+                        Show more{' '}
                     </Button>
                 )}
             </div>
@@ -290,6 +291,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 function plural(what: string, count: number, isComplete: boolean): string {
     return `${count.toLocaleString()}${isComplete ? '' : '+'} ${pluralize(what, count)}`
 }
+
 interface FuzzyResultsSummaryProps {
     fsm: FuzzyFSM
     resultsCount: number
@@ -320,7 +322,7 @@ function indexingProgressBar(indexing: Indexing): JSX.Element {
     const percentage = Math.round((indexedFiles / totalFiles) * 100)
     return (
         <progress value={indexedFiles} max={totalFiles}>
-            {percentage}%
+            {percentage}%{' '}
         </progress>
     )
 }
