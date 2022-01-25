@@ -40,12 +40,12 @@ export const CoolCodeIntelPopover = React.memo<{
     hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 }>(props => (
     <>
-        <Button id="extension-status-popover" className="text-decoration-none px-2" variant="link">
+        <Button id="cool-code-intel-popover" className="text-decoration-none px-2" variant="link">
             <span className="text-muted">Cool Code Intel</span> <MenuUpIcon className="icon-inline" />
         </Button>
         <UncontrolledPopover
-            placement="bottom"
-            target="extension-status-popover"
+            placement="bottom-start"
+            target="cool-code-intel-popover"
             hideArrow={true}
             popperClassName="border-0 rounded-0"
         >
@@ -63,7 +63,7 @@ const CoolCodeIntel: React.FunctionComponent<{
     return (
         <Tabs
             defaultIndex={tabIndex}
-            className={classNames('card border-0 rounded-0', styles.coolCodeIntelStatus)}
+            className={classNames('card border-0 rounded-0', styles.coolCodeIntelTabs)}
             onChange={handleTabsChange}
         >
             <div className="tablist-wrapper w-100 align-items-center">
@@ -93,7 +93,7 @@ export interface CoolCodeIntelPopoverTabProps {
 
 const LAST_TAB_STORAGE_KEY = 'CoolCodeIntel.lastTab'
 
-type CoolCodeIntelTabID = 'references'
+type CoolCodeIntelTabID = 'references' | 'token'
 
 interface CoolCodeIntelToolsTab {
     id: CoolCodeIntelTabID
@@ -101,7 +101,7 @@ interface CoolCodeIntelToolsTab {
     component: React.ComponentType<CoolCodeIntelPopoverTabProps>
 }
 
-export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
+export const TokenPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
     <>
         <div className="card-header">Token under cursor</div>
         <div className="card-body border-bottom">
@@ -124,14 +124,18 @@ export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabPro
                 </p>
             )}
         </div>
+    </>
+)
 
-        <div className="card-header">
+export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
+    <>
+        {/* <div className="card-header">
             References{' '}
             <small>
                 Check out this <i>intelligence</i>
             </small>
-        </div>
-        <div className="card-body border-top">
+        </div> */}
+        <div className={styles.coolCodeIntelReferences}>
             {props.hoveredToken && <ReferencesList hoveredToken={props.hoveredToken} />}
         </div>
     </>
@@ -254,4 +258,7 @@ export const ReferencesList: React.FunctionComponent<{
     )
 }
 
-const TABS: CoolCodeIntelToolsTab[] = [{ id: 'references', label: 'References', component: ReferencesPanel }]
+const TABS: CoolCodeIntelToolsTab[] = [
+    { id: 'token', label: 'Token', component: TokenPanel },
+    { id: 'references', label: 'References', component: ReferencesPanel },
+]
