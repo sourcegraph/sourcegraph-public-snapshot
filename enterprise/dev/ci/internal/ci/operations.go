@@ -405,14 +405,6 @@ func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 	}
 }
 
-func triggerUpdaterPipeline(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":github: :date: :k8s: Trigger k8s updates if current commit is tip of 'main'",
-		bk.Cmd(".buildkite/updater/trigger-if-tip-of-main.sh"),
-		bk.Concurrency(1),
-		bk.ConcurrencyGroup("sourcegraph/sourcegraph-k8s-update-trigger"),
-	)
-}
-
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",

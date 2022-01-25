@@ -237,13 +237,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				ops.Append(publishExecutorDockerMirror(c.Version))
 			}
 		}
-
-		// Propagate changes elsewhere
-		if c.RunType.Is(MainBranch) {
-			ops.Append(
-				wait, // wait for all steps to pass
-				triggerUpdaterPipeline)
-		}
 	}
 
 	ops.Append(
