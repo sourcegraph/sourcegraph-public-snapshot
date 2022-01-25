@@ -30,6 +30,8 @@ CHECKOV_EXIT_CODE="$?"
 
 # We check the exit code and display a warning if anything was found
 if [[ "$CHECKOV_EXIT_CODE" != 0 ]]; then
-  echo "+++ Possible Terraform security issues found. "
+  echo "^^^ +++"
+  echo "Possible Terraform security issues found. "
   echo "Please refer to the Sourcegraph handbook for guidance: https://handbook.sourcegraph.com/product-engineering/engineering/cloud/security/checkov"
+  exit 222
 fi
