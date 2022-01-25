@@ -120,9 +120,10 @@ To execute the database migrations independently, run the following commands in 
     ```
 
 1. Start the migrations:
+
     > NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
     
-    ```
+    ```bash
     # Update the "image" value of the migrator container in the manifest
     export SOURCEGRAPH_VERSION="the version you're upgrading to"
     yq eval -i '.spec.template.spec.containers[0].image = strenv(SOURCEGRAPH_VERSION)' configure/migrator/migrator.Job.yaml
@@ -136,29 +137,37 @@ To execute the database migrations independently, run the following commands in 
 
     You should see something like the following printed to the terminal:
 
-    > job.batch "migrator" deleted
-    > job.batch/migrator created
-    > job.batch/migrator condition met
+    ```text
+    job.batch "migrator" deleted
+    job.batch/migrator created
+    job.batch/migrator condition met
+    ```
 
     The log output of the `migrator` container should look similar to:
-    > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
-    > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
-    > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-    > t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-    > t=2022-01-14T23:47:47+0000 lvl=info msg="Upgrading schema" schema=codeinsights
-
+    ```
+    t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
+    
+    t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
+    
+    t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+    
+    t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+    
+    t=2022-01-14T23:47:47+0000 lvl=info msg="Upgrading schema" schema=codeinsights
+    ```
 
 1. Repeat the three `psql` commands from the first step to verify the migration versions and that none of the databases are flagged as `dirty`. The versions reported should match the last output version from the migrator container.
 
 If you see an error message or any of the databases have been flagged as dirty, contact support at support@sourcegraph.com for further assistance and provide the output of the three `psql` commands. Your database may not have been migrated correctly. Otherwise, you are now safe to upgrade Sourcegraph.
 
 ### Migrating Without Code Insights
-If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the default migration process will fail. To work around this, the `migrator.Job.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph`'s `migrator.Job.yaml` file. If you use `kustomize` to generate your cluster, it will be in the generated cluster location. Otherwise, it can be found in `base/migrator/migrator.Job.yaml`:
+If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the migration process will fail. To work around this, the `configure/migrator/migrator.Job.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph`'s `migrator.Job.yaml` file.
 
-1. Comment out the existing job `migrator`
-1. Uncomment out the two jobs `migrator-frontend` and `migrator-codeintel`.
+1. Duplicate the `migrator` job manifest and rename one to `migrator-codeintel` and one to `migrator-frontend`.
+1. Modify the `migrator-codeintel` manifest to update the `spec.template.spec.containers[0].args` field to `["up", "-db", "codeintel"]`
+1. Modify the `migrator-frontend` manifest to update the `spec.template.spec.containers[0].args` field to `["up", "-db", "frontend"]`
 
-You should now be able to apply the file and continue the migration and upgrade process as normal.
+You should now be able to apply both jobs and continue the migration and upgrade process as normal.
 
 ### Troubleshooting
 

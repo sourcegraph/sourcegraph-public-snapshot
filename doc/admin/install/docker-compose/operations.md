@@ -198,29 +198,23 @@ The `frontend` container in the `docker-compose.yaml` file will automatically ru
 To execute the database migrations independently, run the following command (substituting in the version you'd like to migrate to):
 
 1. Check the current migration versions of all three databases:
-    ```
+    ```bash
+    # This will output the current migration version for the frontend db
     docker exec -it pgsql psql -U sg -c "SELECT * FROM schema_migrations;" 
-    version   | dirty 
-    ------------+-------
-    1528395959 | f
-    (1 row)
 
     # This will output the current migration version for the codeintel db
     docker exec -it codeintel-db psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
-    version   | dirty 
-    ------------+-------
-    1000000030 | f
-    (1 row)
 
     # This will output the current migration version for the codeinsights db
     docker exec -it codeinsights-db psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
-    version   | dirty 
-    ------------+-------
-    1000000024 | f
-    (1 row)
     ```
 
+    Verify all databases return `f` for `dirty` and note the current verison.
+
 1. Start the migrations:
+
+    > NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
+
     ```bash
     export SOURCEGRAPH_VERSION="The version you are upgrading to"
     docker run --rm --name migrator_$SOURCEGRAPH_VERSION \
@@ -256,69 +250,80 @@ To execute the database migrations independently, run the following command (sub
   sourcegraph-migrator exited with code 0
   ```
 
-> NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
 
-Once the `migrator` has run, you should see output similar to:
-> sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Checked current version" schema=frontend version=1528395959 dirty=false
-> sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Upgrading schema" schema=frontend
-> sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395960
-> sourcegraph-migrator exited with code 0
+1. Repeat the three `psql` commands from the first step to verify the migration versions and that none of the databases are flagged as dirty. The versions reported should match the last output version from the `migrator` container.
 
-1. Repeat the three psql commands from the first step to verify the migration versions and that none of the databases are flagged as dirty. The versions reported should match the last output version from the migrator container.
+Once migrations are complete, you are now safe. to upgrade Sourcegraph.
 
-Once migrations are complete, you are now safe to upgrade Sourcegraph.
+#### Migrating Without Code Insights
+If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the standard migration process will fail. Follow these steps to execute migrations to the `frontend` and `codeintel` databases:
 
-### Migrating Without Code Insights
-If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the default migration process will fail. To work around this, the `docker-compose.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph-docker/docker-compose/docker-compose.yaml`:
+1. Run the following `psql` commands in the containers to log the current migration state of the database:
 
-1. Remove the `migrator` service and replace it with the following two services:
+    ```bash
+    # This will output the current migration version for the frontend db
+    docker exec -it pgsql psql -U sg -c "SELECT * FROM schema_migrations;" 
 
-```yaml
+    # This will output the current migration version for the codeintel db
+    docker exec -it codeintel-db psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
+    ```
 
-  migrator-frontend:
-    container_name: migrator-frontend
-    image: 'index.docker.io/sourcegraph/migrator:YOUR-VERSION-HERE'
-    cpus: 4
-    mem_limit: '8g'
-    command:
-      ["up", "-db", "frontend"]
-    environment:
-      - PGHOST=pgsql
-      - PGPORT=5432
-      - PGUSER=sg
-      - PGPASSWORD=sg
-      - PGDATABASE=sg
-      - PGSSLMODE=disable
+    The output should look something like (version numbers likely will not match):
+    ```text
 
-    restart: "on-failure"
-    networks: 
-      - sourcegraph
-    depends_on:
-      pgsql:
-        condition: service_healthy
+    version   | dirty
+    ------------+-------
+    1000000024 | f
+    (1 row)
+    ```
 
-  migrator-codeintel:
-    container_name: migrator-codeintel
-    image: 'index.docker.io/sourcegraph/migrator:YOUR-VERSION-HERE'
-    cpus: 4
-    mem_limit: '8g'
-    command:
-      ["up", "-db", "codeintel"]
-    environment:
-      - CODEINTEL_PGHOST=codeintel-db
-      - CODEINTEL_PGPORT=5432
-      - CODEINTEL_PGUSER=sg
-      - CODEINTEL_PGPASSWORD=sg
-      - CODEINTEL_PGDATABASE=sg
-      - CODEINTEL_PGSSLMODE=disable
+    Verify all databases return `f` for `dirty` and note the current verison.
 
-    restart: "on-failure"
-    networks: 
-      - sourcegraph
-    depends_on:
-      codeintel-db:
-        condition: service_healthy
-```
+1. Run the `migrator` container to migrate the `frontend` database:
+
+    ```bash
+    export SOURCEGRAPH_VERSION="The version you are upgrading to"
+    docker run --rm --name migrator_$SOURCEGRAPH_VERSION_frontend \
+        -e PGHOST='pgsql' \
+        -e PGPORT='5432' \
+        -e PGUSER='sg' \
+        -e PGPASSWORD='sg' \
+        -e PGDATABASE='sg' \
+        -e PGSSLMODE='disable' \
+        -e CODEINTEL_PGHOST='codeintel-db' \
+        -e CODEINTEL_PGPORT='5432' \
+        -e CODEINTEL_PGUSER='sg' \
+        -e CODEINTEL_PGPASSWORD='sg' \
+        -e CODEINTEL_PGDATABASE='sg' \
+        -e CODEINTEL_PGSSLMODE='disable' \
+        --network=docker-compose_sourcegraph \
+        sourcegraph/migrator:$SOURCEGRAPH_VERSION \
+        up -db frontend
+    ```
+
+    Run the `migrator` container to migrate the `codeintel` database:
+    ```bash
+    export SOURCEGRAPH_VERSION="The version you are upgrading to"
+    docker run --rm --name migrator_$SOURCEGRAPH_VERSION_codeintel \
+        -e PGHOST='pgsql' \
+        -e PGPORT='5432' \
+        -e PGUSER='sg' \
+        -e PGPASSWORD='sg' \
+        -e PGDATABASE='sg' \
+        -e PGSSLMODE='disable' \
+        -e CODEINTEL_PGHOST='codeintel-db' \
+        -e CODEINTEL_PGPORT='5432' \
+        -e CODEINTEL_PGUSER='sg' \
+        -e CODEINTEL_PGPASSWORD='sg' \
+        -e CODEINTEL_PGDATABASE='sg' \
+        -e CODEINTEL_PGSSLMODE='disable' \
+        --network=docker-compose_sourcegraph \
+        sourcegraph/migrator:$SOURCEGRAPH_VERSION \
+        up -db codeintel
+    ```
+
+1. Re-run the two `psql` commands from the first step and note the results. All databases should return `f` for dirty and the `version` should match the `version` output in the logs by the `migrator` containers. If this is not the case, email <mailto:support@sourcegraph.com> for assistance.
+
 
 ## Monitoring
 
