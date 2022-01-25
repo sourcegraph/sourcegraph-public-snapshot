@@ -45,7 +45,6 @@ function TestExitCodeOK {
   (
     # Mock the buildevents command to test just the script
     # Locally adjust the path for the purpose of this test.
-    # shellcheck disable=SC2030,SC2031
     PATH="$(pwd)/dev/ci/scripts/tests/testdata/:$PATH"
     BUILDKITE_BUILD_ID=${BUILDKITE_BUILD_ID:-fake_build_id}
     BUILDKITE_STEP_ID=${BUILDKITE_STEP_ID:-fake_step_id}
