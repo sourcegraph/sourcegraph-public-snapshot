@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euxo pipefail
 
 # In case it reports already installed
 asdf shell python 3.10.0
