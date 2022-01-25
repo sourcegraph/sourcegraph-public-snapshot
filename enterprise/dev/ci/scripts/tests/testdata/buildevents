@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
-# buildevents cmd [command-name] [label..]
-# Imitate what buildevents does
-bash -c "$2"
+args="$*"
+# buildevents cmd [command-name] [label..] -- -> CMD <- what we want to run
+cmd=$(echo $args | sed 's/.*-- //') # only keep what's after the "--"
+bash -c "$cmd"

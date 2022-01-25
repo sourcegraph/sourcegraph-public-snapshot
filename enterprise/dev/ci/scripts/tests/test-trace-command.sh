@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." || exit 1 # cd to enterprise/
 
 function printRed {
@@ -19,6 +18,10 @@ function TestExitCodeNOK {
     # Locally adjust the path for the purpose of this test.
     # shellcheck disable=SC2030,SC2031
     PATH="$(pwd)/dev/ci/scripts/tests/testdata/:$PATH"
+    BUILDKITE_BUILD_ID=${BUILDKITE_BUILD_ID:-fake_build_id}
+    BUILDKITE_STEP_ID=${BUILDKITE_STEP_ID:-fake_step_id}
+    export BUILDKITE_BUILD_ID
+    export BUILDKITE_STEP_ID
 
     dev/ci/scripts/trace-command.sh exit 10
     got="$?"
@@ -43,6 +46,10 @@ function TestExitCodeOK {
     # Locally adjust the path for the purpose of this test.
     # shellcheck disable=SC2030,SC2031
     PATH="$(pwd)/dev/ci/scripts/tests/testdata/:$PATH"
+    BUILDKITE_BUILD_ID=${BUILDKITE_BUILD_ID:-fake_build_id}
+    BUILDKITE_STEP_ID=${BUILDKITE_STEP_ID:-fake_step_id}
+    export BUILDKITE_BUILD_ID
+    export BUILDKITE_STEP_ID
 
     dev/ci/scripts/trace-command.sh exit 0
     got="$?"
