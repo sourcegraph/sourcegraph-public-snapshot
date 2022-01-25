@@ -74,6 +74,25 @@ export function isVisible(element: HTMLElement | null): boolean {
     return true
 }
 
+/**
+ * Returns offset of the element that is parent of the target element and at the same time
+ * creates another stacking context.
+ *
+ * ```
+ *   ┌────▲────────────────────────┐
+ *   │    │y                       │
+ *   ◀────╋━━stacking context━━━┓  │
+ *   │ x  ┃  ┌── ─── ─── ──┐    ┃  │
+ *   │    ┃   ┌ ─ ─ ─ ─ ─ ┐     ┃  │
+ *   │    ┃  │  ┌──────┐   │    ┃  │
+ *   │    ┃  ││ │Target│  ││    ┃  │
+ *   │    ┃  │  └──────┘   │    ┃  │
+ *   │    ┃   └ ─ ─ ─ ─ ─ ┘     ┃  │
+ *   │    ┃  └── ─── ─── ──┘    ┃  │
+ *   │    ┗━━━━━━━━━━━━━━━━━━━━━┛  │
+ *   └─────────────────────────────┘
+ * ```
+ */
 export function getAbsoluteAnchorOffset(element: HTMLElement): Point {
     let current = element.parentElement
 

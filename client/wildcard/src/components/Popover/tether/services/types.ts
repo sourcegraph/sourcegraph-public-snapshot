@@ -46,12 +46,6 @@ export interface Tether {
 
     /**
      * Setups position strategy (Fixed or Absolute) to render the popover element.
-     *
-     * Fixed strategy renders element outside of DOM hierarchy in the designated
-     * container in the body element
-     *
-     * Absolute strategy renders element right next to the target element and
-     * calculate position based on the nearest container with position relative.
      */
     strategy?: Strategy
 
