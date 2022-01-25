@@ -13513,9 +13513,9 @@ Query: `sum by (instance, state) (increase(index_repo_seconds_count{instance=~`$
 
 ### Zoekt: Indexing queue statistics
 
-#### zoekt: indexed_queue_size_aggregate
+#### zoekt: indexed_num_scheduled_jobs_aggregate
 
-<p class="subtitle"># of outstanding index jobs (aggregate)</p>
+<p class="subtitle"># scheduled index jobs (aggregate)</p>
 
 A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning
 
@@ -13534,9 +13534,9 @@ Query: `sum(index_queue_len)`
 
 <br />
 
-#### zoekt: indexed_queue_size_per_instance
+#### zoekt: indexed_num_scheduled_jobs_per_instance
 
-<p class="subtitle"># of outstanding index jobs (per instance)</p>
+<p class="subtitle"># scheduled index jobs (per instance)</p>
 
 A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning
 
