@@ -147,7 +147,7 @@ func (s *codeMonitorStore) ListQueryTriggerJobs(ctx context.Context, opts ListTr
 const totalCountEventsForQueryIDInt64FmtStr = `
 SELECT COUNT(*)
 FROM cm_trigger_jobs
-WHERE ((state = 'completed' AND jsonb_array_len(search_results) > 0) OR (state != 'completed'))
+WHERE ((state = 'completed' AND jsonb_array_length(search_results) > 0) OR (state != 'completed'))
 AND query = %s
 `
 
