@@ -5,7 +5,7 @@ import React, { useCallback } from 'react'
 import { UncontrolledPopover } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import {
     RepoSpec,
@@ -20,6 +20,7 @@ import { Button, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables, Maybe } from '../graphql-operations'
 
 import styles from './GlobalCodeIntel.module.scss'
+import { FETCH_REFERENCES_QUERY } from './GlobalCodeIntelQueries'
 
 const SHOW_COOL_CODEINTEL = localStorage.getItem('coolCodeIntel') !== null
 
@@ -100,84 +101,29 @@ interface CoolCodeIntelToolsTab {
     component: React.ComponentType<CoolCodeIntelPopoverTabProps>
 }
 
-const FETCH_REFERENCES_QUERY = gql`
-    query CoolCodeIntelReferences(
-        $repository: String!
-        $commit: String!
-        $path: String!
-        $line: Int!
-        $character: Int!
-        $after: String
-    ) {
-        repository(name: $repository) {
-            commit(rev: $commit) {
-                blob(path: $path) {
-                    lsif {
-                        references(line: $line, character: $character, after: $after) {
-                            nodes {
-                                resource {
-                                    path
-                                    repository {
-                                        name
-                                    }
-                                    commit {
-                                        oid
-                                    }
-                                }
-                                range {
-                                    start {
-                                        line
-                                        character
-                                    }
-                                    end {
-                                        line
-                                        character
-                                    }
-                                }
-                            }
-                            pageInfo {
-                                endCursor
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-`
 export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
     <>
-        {props.hoveredToken && (
-            <>
-                <div className="card-header">Token under cursor</div>
-                <div className="card-body border-bottom">
-                    <table className="table text-sm">
-                        <tbody>
-                            <tr>
-                                <td>Line</td>
-                                <td>{props.hoveredToken.line}</td>
-                            </tr>
-                            <tr>
-                                <td>Character</td>
-                                <td>{props.hoveredToken.character}</td>
-                            </tr>
-                            <tr>
-                                <td>Repo</td>
-                                <td>{props.hoveredToken.repoName}</td>
-                            </tr>
-                            <tr>
-                                <td>Commit</td>
-                                <td>{props.hoveredToken.commitID}</td>
-                            </tr>
-                            <tr>
-                                <td>Path</td>
-                                <td>{props.hoveredToken.filePath}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </>
-        )}
+        <div className="card-header">Token under cursor</div>
+        <div className="card-body border-bottom">
+            {props.hoveredToken ? (
+                <code>
+                    Line: {props.hoveredToken.line}
+                    {'\n'}
+                    Character: {props.hoveredToken.character}
+                    {'\n'}
+                    Repo: {props.hoveredToken.repoName}
+                    {'\n'}
+                    Commit: {props.hoveredToken.commitID}
+                    {'\n'}
+                    Path: {props.hoveredToken.filePath}
+                    {'\n'}
+                </code>
+            ) : (
+                <p>
+                    <i>No token</i>
+                </p>
+            )}
+        </div>
 
         <div className="card-header">
             References{' '}
@@ -287,7 +233,7 @@ export const ReferencesList: React.FunctionComponent<{
 
     return (
         <>
-            <ul>
+            <ul className="list-unstyled">
                 {references?.map(reference => {
                     const fileURL = buildFileURL(reference)
                     return (
