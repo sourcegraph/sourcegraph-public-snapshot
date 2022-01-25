@@ -80,6 +80,9 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
         [onDelete]
     )
 
+    const divOrButton = completed ? 'div' : Button
+    type DivOrButton = typeof divOrButton
+
     return (
         <>
             {expanded && (
@@ -140,12 +143,12 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                 </Card>
             )}
             {!expanded && (
-                <Card
+                <Card<DivOrButton, React.ComponentProps<DivOrButton>>
                     data-testid={`form-action-toggle-${idName}`}
                     className={classNames(styles.cardButton, disabled && 'disabled', `test-action-button-${idName}`)}
                     aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
-                    as={completed ? 'div' : Button}
+                    as={divOrButton}
                     disabled={disabled}
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
