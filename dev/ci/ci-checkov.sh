@@ -30,5 +30,6 @@ CHECKOV_EXIT_CODE="$?"
 
 # We check the exit code and display a warning if anything was found
 if [[ "$CHECKOV_EXIT_CODE" != 0 ]]; then
-  buildkite-agent annotate 'Possible Terraform security issues found.  Please refer to the Sourcegraph handbook for guidance <a target="_blank" href="https://handbook.sourcegraph.com/product-engineering/engineering/cloud/security/checkov">here</a>.' --style 'warning' --context 'ctx-warn'
+  echo "+++ Possible Terraform security issues found. "
+  echo "Please refer to the Sourcegraph handbook for guidance: https://handbook.sourcegraph.com/product-engineering/engineering/cloud/security/checkov"
 fi
