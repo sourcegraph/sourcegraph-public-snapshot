@@ -6,6 +6,7 @@ import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { IMonitorEmail, IMonitorSlackWebhook } from '@sourcegraph/shared/src/schema'
 import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -81,36 +82,39 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                     },
                 },
                 { id: codeMonitor.trigger.id, update: { query: codeMonitor.trigger.query } },
-                codeMonitor.actions.nodes.map(action => {
-                    // Convert empty IDs to null so action is created
-                    switch (action.__typename) {
-                        case 'MonitorEmail':
-                            return {
-                                email: {
-                                    id: action.id || null,
-                                    update: {
-                                        enabled: action.enabled,
-                                        priority: MonitorEmailPriority.NORMAL,
-                                        recipients: [authenticatedUser.id],
-                                        header: '',
+                codeMonitor.actions.nodes
+                    // We currently only support email and Slack webhook actions, remove any others.
+                    .filter(
+                        (action): action is IMonitorEmail | IMonitorSlackWebhook =>
+                            action.__typename === 'MonitorEmail' || action.__typename === 'MonitorSlackWebhook'
+                    )
+                    .map(action => {
+                        // Convert empty IDs to null so action is created
+                        switch (action.__typename) {
+                            case 'MonitorEmail':
+                                return {
+                                    email: {
+                                        id: action.id || null,
+                                        update: {
+                                            enabled: action.enabled,
+                                            priority: MonitorEmailPriority.NORMAL,
+                                            recipients: [authenticatedUser.id],
+                                            header: '',
+                                        },
                                     },
-                                },
-                            }
-                        case 'MonitorSlackWebhook':
-                            return {
-                                slackWebhook: {
-                                    id: action.id || null,
-                                    update: {
-                                        enabled: action.enabled,
-                                        url: action.url,
+                                }
+                            case 'MonitorSlackWebhook':
+                                return {
+                                    slackWebhook: {
+                                        id: action.id || null,
+                                        update: {
+                                            enabled: action.enabled,
+                                            url: action.url,
+                                        },
                                     },
-                                },
-                            }
-                        default:
-                            console.warn('Unknown monitor action type', action.__typename)
-                            return {}
-                    }
-                })
+                                }
+                        }
+                    })
             ),
         [authenticatedUser.id, match.params.id, updateCodeMonitor]
     )

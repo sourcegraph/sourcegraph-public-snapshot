@@ -96,20 +96,19 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 monitorName={monitorName}
                 triggerTestEmailAction={triggerTestEmailAction}
             />
-            {showWebhooks && (
-                <>
-                    <SlackWebhookAction
-                        disabled={disabled}
-                        action={slackWebhookAction}
-                        setAction={setSlackWebhookAction}
-                        actionCompleted={slackWebhookActionCompleted}
-                        setActionCompleted={setSlackWebhookActionCompleted}
-                        monitorName={monitorName}
-                    />
 
-                    <WebhookAction />
-                </>
+            {(showWebhooks || slackWebhookAction) && (
+                <SlackWebhookAction
+                    disabled={disabled}
+                    action={slackWebhookAction}
+                    setAction={setSlackWebhookAction}
+                    actionCompleted={slackWebhookActionCompleted}
+                    setActionCompleted={setSlackWebhookActionCompleted}
+                    monitorName={monitorName}
+                />
             )}
+
+            {showWebhooks && <WebhookAction />}
 
             <small className="text-muted">
                 What other actions would you like to take?{' '}

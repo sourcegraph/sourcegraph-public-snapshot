@@ -83,7 +83,6 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     <div className="font-weight-bold">
                         <Link to={`${location.pathname}/${node.id}`}>{node.description}</Link>
                     </div>
-                    {/** TODO: Generate this text based on the type of action when new actions are added. */}
                     {node.actions.nodes.length > 0 && (
                         <div className="d-flex text-muted align-items-center">New search result → {actions}</div>
                     )}
