@@ -5,7 +5,7 @@ asdf shell python 3.10.0
 
 # Install and run the plugin for checkov
 # Use the full path to run pip3.10
-/root/.asdf/installs/python/3.10.0/bin/pip3.10 install checkov
+pip3 install checkov
 
 # List of checks we do not want to run here
 # This is a living list and will see additions and mostly removals over time.
@@ -17,7 +17,7 @@ echo "Note: If there is no output below here then no terraform code was found to
 echo "==========================================================================================="
 
 # Run checkov
-/root/.asdf/installs/python/3.10.0/bin/checkov --quiet --framework terraform --compact -d .
+checkov --quiet --framework terraform --compact -d .
 
 # Options
 # --quiet: Only show failing tests
