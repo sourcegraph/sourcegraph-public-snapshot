@@ -34,7 +34,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.Pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&f.Branch, "branch", "main", "name of the branch to inspect")
 	flag.IntVar(&f.FailuresThreshold, "failures.threshold", 3, "failures required to trigger an incident")
-	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 40, "duration of a run required to be considered a failure (minutes)")
+	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 60, "duration of a run required to be considered a failure (minutes)")
 	flag.Parse()
 }
 
