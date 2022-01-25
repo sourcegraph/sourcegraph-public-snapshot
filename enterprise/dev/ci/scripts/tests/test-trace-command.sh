@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." # cd to enterprise/
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." || exit 1 # cd to enterprise/
 
 function printRed { 
   echo -e "\033[0;31m$1\033[0m"
@@ -16,7 +16,9 @@ function TestExitCodeNOK {
   
   (
     # Mock the buildevents command to test just the script
-    PATH="`pwd`/dev/ci/scripts/tests/testdata/:$PATH"
+    # Locally adjust the path for the purpose of this test.
+    # shellsheck disable=SC2030
+    PATH="$(pwd)/dev/ci/scripts/tests/testdata/:$PATH"
 
     dev/ci/scripts/trace-command.sh exit 10
     got="$?"
@@ -54,18 +56,19 @@ function TestExitCodeOK {
   )
 }
 
-local failed=0
+# Account for intermediary failures
+failed=0
 
 echo "--- Test: trace-command.sh"
 echo -e "  - Exit code should not be zero if the command fails"
 if ! TestExitCodeNOK; then
-  failed = 1
+  failed=1
 fi
 echo -e "  - Exit code should be zero if the command succeeds"
 if ! TestExitCodeOK; then
-  failed = 1
+  failed=1
 fi
 
-if [ failed != 0 ]; then 
+if [ "$failed" != "0" ]; then 
   exit 1
 fi
