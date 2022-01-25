@@ -3,3 +3,12 @@ cmd/repo-updater/repos/testdata/** linguist-generated=true
 **/bindata.go linguist-generated=true
 **/*.pb.go linguist-generated=true
 CHANGELOG.md merge=union
+
+# GitHub doesn't seem to support directory specific .gitattributes
+# files, unlike Git itself, so we add these paths here.
+doc/admin/observability/dashboards.md linguist-generated=true
+doc/admin/observability/alert_solutions.md linguist-generated=true
+
+doc/code_intelligence/references/lsif.md linguist-generated=true
+doc/code_intelligence/references/lsif.sprig linguist-generated=true
+lib/codeintel/lsif_typed/lsif.ts linguist-generated=true
