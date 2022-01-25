@@ -2,6 +2,8 @@ package ci
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -44,6 +46,7 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		// these on all PRs
 		addPrettier,
 		addCheck,
+		addCIScriptsTests,
 	})
 
 	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
@@ -100,6 +103,25 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 	}
 
 	return &ops
+}
+
+// Run enterprise/dev/ci/scripts tests
+func addCIScriptsTests(pipeline *bk.Pipeline) {
+	files, err := ioutil.ReadDir("./enterprise/dev/ci/scripts/tests")
+	if err != nil {
+		log.Fatalf("Failed to list CI scripts tests scripts: %s", err)
+	}
+
+	var stepOpts []bk.StepOpt
+	for _, f := range files {
+		if filepath.Ext(f.Name()) == ".sh" {
+			stepOpts = append(stepOpts, bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/tests/%s", f.Name())))
+		}
+	}
+
+	pipeline.AddStep(":bash: CI Scripts",
+		stepOpts...,
+	)
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
