@@ -374,7 +374,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn release:chrome"))
+		bk.Cmd("yarn --cwd client/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
