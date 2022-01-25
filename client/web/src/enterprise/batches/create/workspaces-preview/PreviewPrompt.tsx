@@ -2,7 +2,8 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button } from '@sourcegraph/wildcard'
+
+import { ButtonTooltip } from '../../../../components/ButtonTooltip'
 
 import styles from './PreviewPrompt.module.scss'
 import { PreviewPromptIcon } from './PreviewPromptIcon'
@@ -23,8 +24,17 @@ const ON_STATEMENT = `on:
 export type PreviewPromptForm = 'Initial' | 'Error' | 'Update'
 
 interface PreviewPromptProps {
+    /**
+     * Function to submit the current input batch spec YAML to trigger a workspaces
+     * preview request.
+     */
     preview: () => void
-    disabled: boolean
+    /**
+     * Whether or not the preview button should be disabled due to their being a problem
+     * with the input batch spec YAML, or a preview request is already happening. An
+     * optional tooltip string to display may be provided in place of `true`.
+     */
+    disabled: boolean | string
     form: PreviewPromptForm
 }
 
@@ -34,10 +44,16 @@ interface PreviewPromptProps {
  */
 export const PreviewPrompt: React.FunctionComponent<PreviewPromptProps> = ({ preview, disabled, form }) => {
     const previewButton = (
-        <Button variant="success" disabled={disabled} onClick={preview}>
+        <ButtonTooltip
+            type="button"
+            className="btn btn-success mb-2"
+            disabled={!!disabled}
+            tooltip={typeof disabled === 'string' ? disabled : undefined}
+            onClick={preview}
+        >
             <SearchIcon className="icon-inline mr-1" />
             Preview workspaces
-        </Button>
+        </ButtonTooltip>
     )
 
     switch (form) {

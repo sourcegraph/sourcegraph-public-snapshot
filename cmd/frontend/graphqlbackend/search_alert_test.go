@@ -178,7 +178,7 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		alert, _ := (&searchResolver{}).errorToAlert(context.Background(), test.multiErr)
+		alert, _ := (&alertObserver{}).errorToAlert(context.Background(), test.multiErr)
 		haveAlertDescription := alert.description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
@@ -212,7 +212,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveAlert, _ := (&searchResolver{}).errorToAlert(context.Background(), multiErr)
+		haveAlert, _ := (&alertObserver{}).errorToAlert(context.Background(), multiErr)
 
 		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
@@ -259,8 +259,8 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sr := searchResolver{
-		db: database.NewDB(db),
+	sr := alertObserver{
+		Db: database.NewDB(db),
 		SearchInputs: &run.SearchInputs{
 			OriginalQuery: searchQuery,
 			Query:         q,

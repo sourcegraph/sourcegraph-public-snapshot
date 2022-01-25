@@ -12,6 +12,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -21,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -40,24 +43,24 @@ type addExternalServiceInput struct {
 }
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
+	start := time.Now()
+	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
+	var namespaceUserID, namespaceOrgID int32
+	var err error
+	defer reportExternalServiceDuration(start, Add, &err, &namespaceUserID, &namespaceOrgID)
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
-	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
-	namespaceUserID := int32(0)
-	namespaceOrgID := int32(0)
-
 	if args.Input.Namespace != nil {
-		var err error
-
 		err = UnmarshalNamespaceID(*args.Input.Namespace, &namespaceUserID, &namespaceOrgID)
 		if err != nil {
 			return nil, err
 		}
 
 		if namespaceUserID > 0 {
-			allowUserExternalServices, err := r.db.Users().CurrentUserAllowedExternalServices(ctx)
+			var allowUserExternalServices conf.ExternalServiceMode
+			allowUserExternalServices, err = r.db.Users().CurrentUserAllowedExternalServices(ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -72,13 +75,15 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			if err = backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
 				return nil, err
 			}
-			if backend.CheckOrgAccess(ctx, r.db, namespaceOrgID) != nil {
-				return nil, errors.New("the authenticated user does not belong to the organization requested")
+			if err = backend.CheckOrgAccess(ctx, r.db, namespaceOrgID); err != nil {
+				err = errors.New("the authenticated user does not belong to the organization requested")
+				return nil, err
 			}
 		}
 
 	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, backend.ErrMustBeSiteAdmin
+		err = backend.ErrMustBeSiteAdmin
+		return nil, err
 	}
 
 	externalService := &types.ExternalService{
@@ -93,12 +98,12 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		externalService.NamespaceOrgID = namespaceOrgID
 	}
 
-	if err := r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
+	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
 	res := &externalServiceResolver{db: r.db, externalService: externalService}
-	if err := syncExternalService(ctx, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
+	if err = syncExternalService(ctx, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -116,6 +121,10 @@ type updateExternalServiceInput struct {
 }
 
 func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
+	start := time.Now()
+	var err error
+	var namespaceUserID, namespaceOrgID int32
+	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
@@ -129,14 +138,16 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	if err != nil {
 		return nil, err
 	}
+	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
 
 	// 🚨 SECURITY: check access to external service
-	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
 		return nil, err
 	}
 
 	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
-		return nil, errors.New("blank external service configuration is invalid (must be valid JSONC)")
+		err = errors.New("blank external service configuration is invalid (must be valid JSONC)")
+		return nil, err
 	}
 
 	ps := conf.Get().AuthProviders
@@ -144,7 +155,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err := r.db.ExternalServices().Update(ctx, ps, id, update); err != nil {
+	if err = r.db.ExternalServices().Update(ctx, ps, id, update); err != nil {
 		return nil, err
 	}
 
@@ -209,6 +220,10 @@ type deleteExternalServiceArgs struct {
 }
 
 func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
+	start := time.Now()
+	var err error
+	var namespaceUserID, namespaceOrgID int32
+	defer reportExternalServiceDuration(start, Delete, &err, &namespaceUserID, &namespaceOrgID)
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
@@ -222,13 +237,14 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	if err != nil {
 		return nil, err
 	}
+	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
 
 	// 🚨 SECURITY: check external service access
-	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
 		return nil, err
 	}
 
-	if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
+	if err = r.db.ExternalServices().Delete(ctx, id); err != nil {
 		return nil, err
 	}
 	now := time.Now()
@@ -386,4 +402,40 @@ func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Conte
 
 func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
+}
+
+type ExternalServiceMutationType int
+
+const (
+	Add ExternalServiceMutationType = iota
+	Update
+	Delete
+	SetRepos
+)
+
+func (d ExternalServiceMutationType) String() string {
+	return []string{"add", "update", "delete", "set-repos"}[d]
+}
+
+var mutationDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_extsvc_mutation_duration_seconds",
+	Help:    "ExternalService mutation latencies in seconds.",
+	Buckets: trace.UserLatencyBuckets,
+}, []string{"success", "mutation", "namespace"})
+
+func reportExternalServiceDuration(startTime time.Time, mutation ExternalServiceMutationType, err *error, userId, orgId *int32) {
+	duration := time.Since(startTime)
+	ns := "global"
+	if userId != nil && *userId != 0 {
+		ns = "user"
+	} else if orgId != nil && *orgId != 0 {
+		ns = "org"
+	}
+	labels := prometheus.Labels{
+		"mutation":  mutation.String(),
+		"success":   strconv.FormatBool(*err == nil),
+		"namespace": ns,
+	}
+	mutationDuration.With(labels).Observe(duration.Seconds())
+
 }

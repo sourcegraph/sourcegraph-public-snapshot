@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
@@ -16,7 +17,6 @@ import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
-import { lazyComponent } from './util/lazyComponent'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
@@ -80,12 +80,15 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.SearchConsole,
-        render: props =>
-            getExperimentalFeatures().showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} />
+        render: props => {
+            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
+
+            return showMultilineSearchConsole ? (
+                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
-            ),
+            )
+        },
         exact: true,
     },
     {
@@ -105,12 +108,15 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Notebook,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <SearchNotebookPage {...props} />
+        render: props => {
+            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
+
+            return showSearchNotebook ? (
+                <SearchNotebookPage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
-            ),
+            )
+        },
         exact: true,
     },
     {
@@ -137,7 +143,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.Welcome,
         render: props =>
             /**
-             * Welcome flow is allowed when:
+             * Welcome flow is allowed when auth'd and ?debug=1 is in the URL, OR:
              * 1. user is authenticated
              * 2. it's a DotComMode instance
              * AND
@@ -147,8 +153,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
              */
 
             !!props.authenticatedUser &&
-            window.context.sourcegraphDotComMode &&
-            (window.context.experimentalFeatures.enablePostSignupFlow ||
+            (!!new URLSearchParams(props.location.search).get('debug') ||
+                (window.context.sourcegraphDotComMode && window.context.experimentalFeatures.enablePostSignupFlow) ||
                 props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
                 <PostSignUpPage
                     authenticatedUser={props.authenticatedUser}

@@ -4,13 +4,13 @@ import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
-import { ErrorAlert } from '../components/alerts'
 import { CopyableText } from '../components/CopyableText'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -104,7 +104,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                     <Link to="/help/admin/auth">User authentication</Link> in the Sourcegraph documentation.
                 </p>
                 {this.state.createUserResult ? (
-                    <div className="alert alert-success">
+                    <Alert variant="success">
                         <p>
                             Account created for <strong>{this.state.username}</strong>.
                         </p>
@@ -119,7 +119,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                         <Button className="mt-2" onClick={this.dismissAlert} autoFocus={true} variant="primary">
                             Create another user
                         </Button>
-                    </div>
+                    </Alert>
                 ) : (
                     <Form onSubmit={this.onSubmit} className="site-admin-create-user-page__form">
                         <div className={classNames('form-group', styles.formGroup)}>

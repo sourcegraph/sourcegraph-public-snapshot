@@ -4,6 +4,7 @@ import format from 'date-fns/format'
 import React from 'react'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { Alert } from '@sourcegraph/wildcard'
 
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../productSubscription/helpers'
 
@@ -16,16 +17,25 @@ export const ProductLicenseValidity: React.FunctionComponent<{
     className?: string
 }> = ({ licenseInfo: { expiresAt }, primary, className = '' }) => {
     const isExpired = isProductLicenseExpired(expiresAt)
+    const tooltip = format(parseISO(expiresAt), 'PPpp')
     const validityClass = isExpired ? 'danger' : 'success'
+
+    if (primary) {
+        return (
+            <Alert
+                className={classNames(className, 'py-1 px-2')}
+                variant={isExpired ? 'danger' : 'success'}
+                data-tooltip={tooltip}
+            >
+                <strong>{isExpired ? 'Expired' : 'Valid'}</strong> ({formatRelativeExpirationDate(expiresAt)})
+            </Alert>
+        )
+    }
+
     return (
-        <div
-            className={classNames(className, primary && `alert alert-${validityClass} py-1 px-2`)}
-            data-tooltip={format(parseISO(expiresAt), 'PPpp')}
-        >
-            <strong className={classNames(!primary && `text-${validityClass}`)}>
-                {isExpired ? 'Expired' : 'Valid'}
-            </strong>{' '}
-            ({formatRelativeExpirationDate(expiresAt)})
+        <div className={className} data-tooltip={tooltip}>
+            <strong className={`text-${validityClass}`}>{isExpired ? 'Expired' : 'Valid'}</strong> (
+            {formatRelativeExpirationDate(expiresAt)})
         </div>
     )
 }

@@ -45,7 +45,7 @@ func findConsecutiveFailures(
 		}
 		if build.Number != nil {
 			commit.BuildNumber = *build.Number
-			commit.BuildURL = maybeString(build.URL)
+			commit.BuildURL = maybeString(build.WebURL)
 		}
 		if build.CreatedAt != nil {
 			commit.BuildCreated = build.CreatedAt.Time

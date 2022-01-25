@@ -60,10 +60,10 @@ var (
 		Help: "Incremented each time we try and fail to remove a repository clone.",
 	})
 
-	schedError = promauto.NewCounter(prometheus.CounterOpts{
+	schedError = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_sched_error",
 		Help: "Incremented each time we encounter an error updating a repository.",
-	})
+	}, []string{"type"})
 
 	schedLoops = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_repoupdater_sched_loops",

@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import styles from '../CodeMonitorForm.module.scss'
 
@@ -77,7 +77,7 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
     return (
         <>
             {expanded && (
-                <div className={classNames(styles.card, 'card p-3')}>
+                <Card className={classNames(styles.card, 'p-3')}>
                     <div className="font-weight-bold">{title}</div>
                     <span className="text-muted">{subtitle}</span>
 
@@ -119,12 +119,13 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                             </Button>
                         )}
                     </div>
-                </div>
+                </Card>
             )}
             {!expanded && (
-                <CollapsedWrapperElement
+                <Card
+                    as={CollapsedWrapperElement}
                     data-testid="form-action-toggle-email-notification"
-                    className={classNames('card test-action-button', styles.cardButton, disabled && 'disabled')}
+                    className={classNames('test-action-button', styles.cardButton, disabled && 'disabled')}
                     disabled={disabled}
                     aria-label="Edit action: Send email notifications"
                     onClick={toggleExpanded}
@@ -163,7 +164,7 @@ export const ActionEditor: React.FunctionComponent<Props> = ({
                             </div>
                         )}
                     </div>
-                </CollapsedWrapperElement>
+                </Card>
             )}
         </>
     )

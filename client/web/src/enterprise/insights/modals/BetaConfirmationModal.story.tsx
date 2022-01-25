@@ -4,12 +4,13 @@ import { Meta } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
-import { WebStory } from '../../../components/WebStory'
-import { TemporarySettingsContext } from '../../../settings/temporary/TemporarySettingsProvider'
+import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
-} from '../../../settings/temporary/TemporarySettingsStorage'
+} from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+
+import { WebStory } from '../../../components/WebStory'
 
 import { BetaConfirmationModal, BetaConfirmationModalContent } from './BetaConfirmationModal'
 
