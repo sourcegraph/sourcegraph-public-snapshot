@@ -8,14 +8,11 @@ import (
 // Patterns is a regular expression that matches any input that would also match
 // any registered recognizer pattern.
 var Patterns = func() *regexp.Regexp {
-	var patterns []string
+	var patterns []*regexp.Regexp
 	for _, recognizer := range Recognizers {
-		for _, pattern := range recognizer.Patterns() {
-			patterns = append(patterns, pattern.String())
-		}
+		patterns = append(patterns, recognizer.Patterns()...)
 	}
-
-	return regexp.MustCompile(strings.Join(patterns, "|"))
+	return OrPattern(patterns)
 }()
 
 // rawPattern creates a regular expression matching the given string literal.
