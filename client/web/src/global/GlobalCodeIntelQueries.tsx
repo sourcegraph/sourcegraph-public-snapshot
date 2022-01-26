@@ -16,6 +16,7 @@ export const FETCH_REFERENCES_QUERY = gql`
                             nodes {
                                 resource {
                                     path
+                                    content
                                     repository {
                                         name
                                     }
