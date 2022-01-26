@@ -1,8 +1,9 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useState } from 'react'
-import { UncontrolledPopover } from 'reactstrap'
+import { Collapse, UncontrolledPopover } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { useQuery } from '@sourcegraph/http-client'
@@ -173,6 +174,7 @@ interface Reference {
 }
 
 interface ReferenceGroup {
+    repoName: string
     path: string
     references: Reference[]
 }
@@ -255,7 +257,11 @@ export const ReferencesList: React.FunctionComponent<{
     }
 
     const referenceGroups: ReferenceGroup[] = []
-    Object.keys(byFile).map(path => referenceGroups.push({ path, references: byFile[path] }))
+    Object.keys(byFile).map(path => {
+        const references = byFile[path]
+        const repoName = references[0].resource.repository.name
+        referenceGroups.push({ path, references, repoName })
+    })
 
     const getLineContent = (reference: Reference): string => {
         const lines = reference.resource.content.split(/\r?\n/)
@@ -268,44 +274,81 @@ export const ReferencesList: React.FunctionComponent<{
 
     return (
         <>
-            {referenceGroups.map(group => {
-                const [fileBase, fileName] = splitPath(group.path)
+            {referenceGroups.map(group => (
+                <ReferenceGroup
+                    key={group.path + group.repoName}
+                    group={group}
+                    activeReference={activeReference}
+                    setActiveReference={setActiveReference}
+                    getLineContent={getLineContent}
+                    buildFileURL={buildFileURL}
+                />
+            ))}
+        </>
+    )
+}
 
-                return (
-                    <div key={group.path}>
-                        <p className="mb-0 card-header">
-                            <Link to={`/${group.references[0].resource.repository.name}`}>
-                                {displayRepoName(group.references[0].resource.repository.name)}
-                            </Link>{' '}
-                            ›{' '}
-                            <Link to={`/${group.references[0].resource.repository.name}/-/blob/${group.path}`}>
-                                {fileBase ? `${fileBase}/` : null}
-                                <strong>{fileName}</strong>
-                            </Link>{' '}
-                            ({group.references.length} references)
-                        </p>
-                        <ul className="list-unstyled card-body ml-2">
-                            {group.references.map(reference => {
-                                const fileURL = buildFileURL(reference)
-                                const className = activeReference === fileURL ? styles.coolCodeIntelReferenceActive : ''
+const ReferenceGroup: React.FunctionComponent<{
+    group: ReferenceGroup
+    activeReference: string
+    setActiveReference: (refeference: string) => void
+    getLineContent: (reference: Reference) => string
+    buildFileURL: (reference: Reference) => string
+}> = ({ group, setActiveReference, getLineContent, buildFileURL, activeReference }) => {
+    const [fileBase, fileName] = splitPath(group.path)
 
-                                return (
-                                    <li key={fileURL} className={classNames('border-0 rounded-0', className)}>
-                                        <div>
-                                            <Link onClick={_event => setActiveReference(fileURL)} to={fileURL}>
-                                                {' L'}
-                                                {reference.range?.start?.line}
-                                                {': '}
-                                            </Link>
-                                            <code>{getLineContent(reference)}</code>
-                                        </div>
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                    </div>
-                )
-            })}
+    const [isOpen, setOpen] = useState<boolean>(true)
+    const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
+
+    return (
+        <>
+            <p className="mb-0">
+                <button
+                    aria-expanded={isOpen}
+                    type="button"
+                    onClick={handleOpen}
+                    className="border-0 d-flex justify-content-between w-100"
+                >
+                    <span>
+                        <Link to={`/${group.references[0].resource.repository.name}`}>
+                            {displayRepoName(group.references[0].resource.repository.name)}
+                        </Link>{' '}
+                        ›{' '}
+                        <Link to={`/${group.references[0].resource.repository.name}/-/blob/${group.path}`}>
+                            {fileBase ? `${fileBase}/` : null}
+                            <strong>{fileName}</strong>
+                        </Link>{' '}
+                        ({group.references.length} references)
+                    </span>
+                    {isOpen ? (
+                        <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
+                    ) : (
+                        <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
+                    )}
+                </button>
+            </p>
+
+            <Collapse id={group.repoName + group.path} isOpen={isOpen} className="border-top">
+                <ul className="list-unstyled card-body ml-2">
+                    {group.references.map(reference => {
+                        const fileURL = buildFileURL(reference)
+                        const className = activeReference === fileURL ? styles.coolCodeIntelReferenceActive : ''
+
+                        return (
+                            <li key={fileURL} className={classNames('border-0 rounded-0', className)}>
+                                <div>
+                                    <Link onClick={_event => setActiveReference(fileURL)} to={fileURL}>
+                                        {' L'}
+                                        {reference.range?.start?.line}
+                                        {': '}
+                                    </Link>
+                                    <code>{getLineContent(reference)}</code>
+                                </div>
+                            </li>
+                        )
+                    })}
+                </ul>
+            </Collapse>
         </>
     )
 }
