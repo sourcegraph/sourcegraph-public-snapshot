@@ -55,6 +55,7 @@ func TestSearch(t *testing.T) {
 			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
 			"git commit -m commit1 ",
 		"echo consectetur adipiscing elit > file2",
+		"echo consectetur adipiscing elit again > file3",
 		"git add -A",
 		"GIT_COMMITTER_NAME=camden2 " +
 			"GIT_COMMITTER_EMAIL=camden2@ccheek.com " +
@@ -207,7 +208,7 @@ func TestSearch(t *testing.T) {
 		require.Len(t, matches, 2)
 		require.Equal(t, matches[0].Author.Name, "camden2")
 		require.Equal(t, matches[1].Author.Name, "camden1")
-		require.Equal(t, []string{"file2"}, matches[0].ModifiedFiles)
+		require.Equal(t, []string{"file2", "file3"}, matches[0].ModifiedFiles)
 		require.Equal(t, []string{"file1"}, matches[1].ModifiedFiles)
 	})
 }
