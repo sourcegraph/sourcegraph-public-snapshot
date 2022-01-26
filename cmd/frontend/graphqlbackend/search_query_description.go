@@ -1,35 +1,19 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/internal/search/query"
+import "github.com/sourcegraph/sourcegraph/internal/search"
 
 // searchQueryDescription is a type for the SearchQueryDescription resolver used
-// by SearchAlert.
+// by SearchAlert. This name is a bit of a misnomer but cannot be changed: It
+// must be this way to work with the GQL definition and compatibility. We use
+// our internal, resolver-agnostic alert type to do real work.
 type searchQueryDescription struct {
-	description string
-	query       string
-	patternType query.SearchType
+	query *search.ProposedQuery
 }
 
 func (q searchQueryDescription) Query() string {
-	if q.description != "Remove quotes" {
-		switch q.patternType {
-		case query.SearchTypeRegex:
-			return q.query + " patternType:regexp"
-		case query.SearchTypeLiteral:
-			return q.query + " patternType:literal"
-		case query.SearchTypeStructural:
-			return q.query + " patternType:structural"
-		default:
-			panic("unreachable")
-		}
-	}
-	return q.query
+	return q.query.QueryString()
 }
 
 func (q searchQueryDescription) Description() *string {
-	if q.description == "" {
-		return nil
-	}
-
-	return &q.description
+	return q.query.Description()
 }
