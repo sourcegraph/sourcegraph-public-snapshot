@@ -33,6 +33,7 @@ export async function initializeSearchPanelWebview({
     const scriptSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.js'))
     const cssModuleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchPanel.css'))
     const styleSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
+    const codiconFontSource = panel.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'codicon.ttf'))
 
     const { proxy, expose, panelId } = createEndpointsForWebview(panel)
 
@@ -57,14 +58,23 @@ export async function initializeSearchPanelWebview({
 
     // Apply Content-Security-Policy
     // panel.webview.cspSource comes from the webview object
+    // debt: load codicon ourselves.
     panel.webview.html = `<!DOCTYPE html>
     <html lang="en" data-panel-id="${panelId}">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style nonce="${nonce}">
+            @font-face {
+                font-family: 'codicon';
+                src: url(${codiconFontSource.toString()})
+            }
+        </style>
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-resource: vscode-webview: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
         panel.webview.cspSource
-    } vscode-resource: vscode-webview: 'unsafe-inline' http: https: data:; connect-src 'self' vscode-webview: http: https:; frame-src https:; font-src: https: vscode-resource: vscode-webview:;">
+    } vscode-resource: vscode-webview: 'unsafe-inline' http: https: data:; connect-src 'self' vscode-webview: http: https:; frame-src https:; font-src ${
+        panel.webview.cspSource
+    };">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
@@ -102,6 +112,7 @@ export function initializeSearchSidebarWebview({
     const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.js'))
     const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'searchSidebar.css'))
     const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
+    const codiconFontSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'codicon.ttf'))
 
     const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
 
@@ -116,14 +127,21 @@ export function initializeSearchSidebarWebview({
 
     // Apply Content-Security-Policy
     // panel.webview.cspSource comes from the webview object
+    // debt: load codicon ourselves.
     webviewView.webview.html = `<!DOCTYPE html>
     <html lang="en" data-panel-id="${panelId}">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style nonce="${nonce}">
+            @font-face {
+                font-family: 'codicon';
+                src: url(${codiconFontSource.toString()})
+            }
+        </style>
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-webview: vscode-resource: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
         webviewView.webview.cspSource
-    } vscode-resource: http: https: data:; connect-src 'self' http: https:; font-src: https: vscode-resource: vscode-webview:;">
+    } vscode-resource: http: https: data:; connect-src 'self' http: https:; font-src ${webviewView.webview.cspSource};">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
