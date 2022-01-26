@@ -12,8 +12,11 @@
     width: 2.25rem;
     margin-bottom: 0;
     border-radius: 50%;
+    transition: box-shadow 50ms ease-in;
 
     &:focus-within {
+        transition-delay: 0;
+
         > .emoji {
             box-shadow: var(--focus-box-shadow);
             border: 1px solid transparent;
@@ -32,6 +35,7 @@
     margin: 0;
     border-radius: 50%;
     transform-origin: center center;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
     border: 1px solid var(--border-color-2);
 
     &:hover {

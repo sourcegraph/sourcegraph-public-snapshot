@@ -4,6 +4,8 @@
     }
 
     &__add-button {
+        transition: background-color 0.2s ease, color 0.2s ease;
+
         &:hover {
             background-color: var(--color-bg-2);
         }

@@ -8,6 +8,7 @@
     border-radius: 0.25rem;
     border: 2px solid transparent;
     box-sizing: border-box;
+    transition: none;
 
     @media (--xs-breakpoint-down) {
         border: 1px solid var(--input-border-color);

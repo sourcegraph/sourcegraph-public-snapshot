@@ -1,5 +1,6 @@
 .sourcegraph-notification-item {
     display: block;
+    transition: all 300ms ease-in;
 }
 
 .progress {
@@ -10,6 +11,7 @@
 
 .progressbar {
     height: 0.25rem;
+    transition: width 0.6s ease;
 }
 
 .body-container {

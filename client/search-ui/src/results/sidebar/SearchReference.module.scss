@@ -35,6 +35,7 @@
     &:hover {
         .collapse-button {
             @extend .collapse-button, :focus;
+            transition: width 0.2s ease-in-out, opacity 0.2s ease-in-out;
         }
     }
 

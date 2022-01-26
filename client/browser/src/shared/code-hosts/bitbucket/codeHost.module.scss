@@ -50,6 +50,7 @@
 .action-item-new-diff {
     background-color: rgba(9, 30, 66, 0.04);
     color: rgba(66, 82, 110);
+    transition: background 0.1s ease-out 0s, box-shadow 0.15s cubic-bezier(0.47, 0.03, 0.49, 1.38) 0s;
     display: inline-flex;
     align-items: center;
     justify-content: center;
