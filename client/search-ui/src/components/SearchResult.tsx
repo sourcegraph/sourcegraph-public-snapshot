@@ -22,9 +22,17 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     repoName: string
     icon: React.ComponentType<{ className?: string }>
     onSelect: () => void
+    containerClassName?: string
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName, platformContext, onSelect }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({
+    result,
+    icon,
+    repoName,
+    platformContext,
+    onSelect,
+    containerClassName,
+}) => {
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
@@ -130,6 +138,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
             resultType={result.type}
             onResultClicked={onSelect}
             expandedChildren={renderBody()}
+            className={containerClassName}
         />
     )
 }

@@ -21,6 +21,7 @@ export interface ExtensionCoreAPI {
     emit: VSCEStateMachine['emit']
 
     openLink: (uri: string) => void
+    copyLink: (uri: string) => void
     reloadWindow: () => void
 
     /**

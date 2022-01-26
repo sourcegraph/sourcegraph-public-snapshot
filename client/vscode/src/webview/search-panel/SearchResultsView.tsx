@@ -7,21 +7,21 @@ import {
     getUserSearchContextNamespaces,
     fetchSearchContexts,
 } from '@sourcegraph/search'
-import { SearchBox, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { appendContextFilter, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
-// TODO:
-// SearchBox (ensure "manage contexts" button works)
-// Search results infobar (maybe in forked_components folder?)
-// Sign up CTA (for unauthenticated users)
-// DidYouMean (for suggestions. move to search-ui)
-// StreamingSearchResultsList
+import { SearchBetaIcon } from './components/icons'
+import { SavedSearchCreateForm } from './components/SavedSearchForm'
+import { SearchPageCta } from './components/SearchCta'
+import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
 
 export interface SearchResultsViewProps extends WebviewPageProps {
     context: SearchResultsState['context']
@@ -34,10 +34,17 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     settingsCascade,
     theme,
     context,
+    instanceURL,
 }) => {
-    // Toggling case sensitivity or pattern type should trigger a new search for results view.
-
     const [userQueryState, setUserQueryState] = useState(context.submittedSearchQueryState.queryState)
+
+    const [allExpanded, setAllExpanded] = useState(false)
+    const onExpandAllResultsToggle = useCallback(() => {
+        setAllExpanded(oldValue => !oldValue)
+        platformContext.telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+    }, [allExpanded, platformContext])
+
+    const [showSavedSearchForm, setShowSavedSearchForm] = useState(false)
 
     // Update local query state on e.g. sidebar events.
     useEffect(() => {
@@ -45,11 +52,11 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     }, [context.submittedSearchQueryState.queryState])
 
     const onSubmit = useCallback(
-        (options?: { caseSensitive?: boolean; patternType?: SearchPatternType }) => {
+        (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; newQuery?: string }) => {
             const previousSearchQueryState = context.submittedSearchQueryState
 
             extensionCoreAPI
-                .streamSearch(userQueryState.query, {
+                .streamSearch(options?.newQuery ?? userQueryState.query, {
                     caseSensitive: options?.caseSensitive ?? previousSearchQueryState.searchCaseSensitivity,
                     patternType: options?.patternType ?? previousSearchQueryState.searchPatternType,
                     version: LATEST_VERSION,
@@ -99,6 +106,53 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         [extensionCoreAPI, onSubmit]
     )
 
+    const onSearchAgain = useCallback(
+        (additionalFilters: string[]) => {
+            platformContext.telemetryService.log('SearchSkippedResultsAgainClicked')
+            onSubmit({
+                newQuery: applyAdditionalFilters(context.submittedSearchQueryState.queryState.query, additionalFilters),
+            })
+        },
+        [context.submittedSearchQueryState.queryState, platformContext, onSubmit]
+    )
+
+    const onShareResultsClick = useCallback((): void => {
+        const queryState = context.submittedSearchQueryState
+
+        const path = `/search?${buildSearchURLQuery(
+            queryState.queryState.query,
+            queryState.searchPatternType,
+            queryState.searchCaseSensitivity,
+            context.selectedSearchContextSpec
+        )}&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=save-search`
+        extensionCoreAPI.copyLink(new URL(path, instanceURL).href).catch(error => {
+            console.error('Error copying search link to clipboard:', error)
+        })
+    }, [context, instanceURL, extensionCoreAPI])
+
+    const fullQuery = useMemo(
+        () =>
+            appendContextFilter(context.submittedSearchQueryState.queryState.query, context.selectedSearchContextSpec),
+        [context]
+    )
+
+    const isSourcegraphDotCom = useMemo(() => {
+        const hostname = new URL(instanceURL).hostname
+        return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
+    }, [instanceURL])
+
+    const onSignUpClick = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            platformContext.telemetryService.log(
+                'VSCESearchPageClicked',
+                { campaign: 'Sign up link' },
+                { campaign: 'Sign up link' }
+            )
+        },
+        [platformContext.telemetryService]
+    )
+
     return (
         <div>
             <div className="d-flex my-2">
@@ -107,7 +161,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     setCaseSensitivity={setCaseSensitivity}
                     patternType={SearchPatternType.literal}
                     setPatternType={setPatternType}
-                    isSourcegraphDotCom={true}
+                    isSourcegraphDotCom={isSourcegraphDotCom}
                     hasUserAddedExternalServices={false}
                     hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                     structuralSearchDisabled={false}
@@ -117,10 +171,10 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     authenticatedUser={authenticatedUser}
                     searchContextsEnabled={true}
                     showSearchContext={true}
-                    showSearchContextManagement={false} // Enable this after refactoring
+                    showSearchContextManagement={false}
                     defaultSearchContextSpec="global"
-                    setSelectedSearchContextSpec={setSelectedSearchContextSpec} // TODO state machine emit
-                    selectedSearchContextSpec={context.selectedSearchContextSpec} // TODO: get from state machine
+                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                    selectedSearchContextSpec={context.selectedSearchContextSpec}
                     fetchSearchContexts={fetchSearchContexts}
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
@@ -133,15 +187,53 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     className={classNames('flex-grow-1 flex-shrink-past-contents')}
                 />
             </div>
-            {/* <SearchResultsInfobar /> */}
-            {/* <SignUpCta /> */}
-            {/* <DidYouMean /> */}
+
+            {!authenticatedUser && context.searchResults && (
+                <SearchPageCta
+                    icon={<SearchBetaIcon />}
+                    ctaTitle="Sign up to add your public and private repositories and access other features"
+                    ctaDescription="Do all the things editors can’t: search multiple repos & commit history, monitor, save searches and more."
+                    buttonText="Create a free account"
+                    onClickAction={onSignUpClick}
+                />
+            )}
+
+            <SearchResultsInfoBar
+                onShareResultsClick={onShareResultsClick}
+                showSavedSearchForm={showSavedSearchForm}
+                setShowSavedSearchForm={setShowSavedSearchForm}
+                extensionCoreAPI={extensionCoreAPI}
+                patternType={context.submittedSearchQueryState.searchPatternType}
+                authenticatedUser={authenticatedUser}
+                platformContext={platformContext}
+                stats={
+                    <StreamingProgress
+                        progress={context.searchResults?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
+                        state={context.searchResults?.state || 'loading'}
+                        onSearchAgain={onSearchAgain}
+                        showTrace={false}
+                    />
+                }
+                allExpanded={allExpanded}
+                onExpandAllResultsToggle={onExpandAllResultsToggle}
+            />
+            {authenticatedUser && showSavedSearchForm && (
+                <SavedSearchCreateForm
+                    authenticatedUser={authenticatedUser}
+                    submitLabel="Add saved search"
+                    title="Add saved search"
+                    fullQuery={fullQuery}
+                    onComplete={() => setShowSavedSearchForm(false)}
+                    platformContext={platformContext}
+                />
+            )}
+
             <StreamingSearchResultsList
                 isLightTheme={theme === 'theme-light'}
                 settingsCascade={settingsCascade}
                 telemetryService={platformContext.telemetryService}
-                allExpanded={false}
-                isSourcegraphDotCom={false} // TODO
+                allExpanded={allExpanded}
+                isSourcegraphDotCom={isSourcegraphDotCom} // TODO
                 searchContextsEnabled={true}
                 showSearchContext={true}
                 platformContext={platformContext}
@@ -149,7 +241,17 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                 authenticatedUser={authenticatedUser}
                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                 executedQuery={context.submittedSearchQueryState.queryState.query}
+                resultClassName="mr-0"
             />
         </div>
     )
+}
+
+const applyAdditionalFilters = (query: string, additionalFilters: string[]): string => {
+    let newQuery = query
+    for (const filter of additionalFilters) {
+        const fieldValue = filter.split(':', 2)
+        newQuery = updateFilters(newQuery, fieldValue[0], fieldValue[1])
+    }
+    return newQuery
 }

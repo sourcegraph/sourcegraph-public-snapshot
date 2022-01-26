@@ -1,0 +1,23 @@
+.container {
+    padding: 1rem;
+    flex: 1;
+}
+
+.title {
+    font-size: var(--vscode-font-size) !important;
+}
+
+.description {
+    font-size: var(--vscode-font-size) !important;
+}
+
+.btn {
+    margin-right: 1rem;
+    font-size: var(--vscode-font-size) !important;
+    background-color: var(--vscode-button-background) !important;
+    color: var(--vscode-button-foreground) !important;
+}
+
+.text {
+    color: var(--white);
+}

@@ -55,6 +55,10 @@ export interface StreamingSearchResultsListProps
      * For example, `location.search` on web.
      * */
     executedQuery: string
+    /**
+     * Classname to be applied to the container of a search result.
+     */
+    resultClassName?: string
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -73,6 +77,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     renderSearchUserNeedsCodeHost,
     platformContext,
     executedQuery,
+    resultClassName,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -106,6 +111,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
                             settingsCascade={settingsCascade}
+                            containerClassName={resultClassName}
                         />
                     )
                 case 'commit':
@@ -116,6 +122,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
+                            containerClassName={resultClassName}
                         />
                     )
                 case 'repo':
@@ -126,6 +133,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
+                            containerClassName={resultClassName}
                         />
                     )
             }
@@ -138,6 +146,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             fetchHighlightedFileLineRanges,
             settingsCascade,
             platformContext,
+            resultClassName,
         ]
     )
 

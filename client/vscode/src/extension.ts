@@ -1,6 +1,6 @@
 import 'cross-fetch/polyfill'
 import { of, ReplaySubject } from 'rxjs'
-import * as vscode from 'vscode'
+import vscode, { env } from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 
@@ -100,7 +100,9 @@ export function activate(context: vscode.ExtensionContext): void {
         // `useObservable` hook. Add `usePromise`s hook to fix.
         getAuthenticatedUser: () => proxySubscribable(authenticatedUser),
         getInstanceURL: () => proxySubscribable(of(initialInstanceURL)),
-        openLink: uri => vscode.env.openExternal(vscode.Uri.parse(uri)),
+        openLink: (uri: string) => vscode.env.openExternal(vscode.Uri.parse(uri)),
+        copyLink: (uri: string) =>
+            env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         streamSearch,

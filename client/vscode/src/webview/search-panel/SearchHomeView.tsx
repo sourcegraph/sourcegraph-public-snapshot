@@ -30,6 +30,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
     settingsCascade,
     theme,
     context,
+    instanceURL,
 }) => {
     // Toggling case sensitivity or pattern type does NOT trigger a new search on home view.
     const [caseSensitive, setCaseSensitivity] = useState(false)
@@ -65,6 +66,11 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
         [extensionCoreAPI]
     )
 
+    const isSourcegraphDotCom = useMemo(() => {
+        const hostname = new URL(instanceURL).hostname
+        return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
+    }, [instanceURL])
+
     return (
         <div>
             {/* <BrandHeader /> */}
@@ -74,7 +80,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
                     setCaseSensitivity={setCaseSensitivity}
                     patternType={patternType}
                     setPatternType={setPatternType}
-                    isSourcegraphDotCom={false} // TODO
+                    isSourcegraphDotCom={isSourcegraphDotCom}
                     hasUserAddedExternalServices={false}
                     hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                     structuralSearchDisabled={false}
@@ -84,7 +90,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
                     authenticatedUser={authenticatedUser}
                     searchContextsEnabled={true}
                     showSearchContext={true}
-                    showSearchContextManagement={true} // Enable this after refactoring
+                    showSearchContextManagement={true}
                     defaultSearchContextSpec="global"
                     setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                     selectedSearchContextSpec={context.selectedSearchContextSpec}
