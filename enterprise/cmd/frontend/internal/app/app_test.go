@@ -65,9 +65,9 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 		h.ServeHTTP(resp, req)
 
 		assert.Equal(t, http.StatusForbidden, resp.Code)
-		assert.Equal(t, "Sourcegraph Cloud GitHub App setup is not enabled for the authenticated user", resp.Body.String())
+		assert.Equal(t, "Sourcegraph Cloud GitHub App setup is not enabled for the organization", resp.Body.String())
 	})
-	featureFlags.GetUserFlagsFunc.SetDefaultReturn(map[string]bool{"github-app-cloud": true}, nil)
+	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
 
 	t.Run("not an organization member", func(t *testing.T) {
 		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)

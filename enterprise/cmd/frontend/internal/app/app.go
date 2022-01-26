@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -77,12 +76,12 @@ func Init(
 	return nil
 }
 
-func checkIfUserCanInstallGitHubApp(ctx context.Context, db database.DB, userID int32) error {
-	enabled, err := db.FeatureFlags().GetUserFlags(ctx, userID)
+func checkIfOrgCanInstallGitHubApp(ctx context.Context, db database.DB, orgID int32) error {
+	enabled, err := db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, "github-app-cloud")
 	if err != nil {
 		return err
-	} else if !enabled["github-app-cloud"] {
-		return errors.New("Sourcegraph Cloud GitHub App setup is not enabled for the authenticated user")
+	} else if !enabled {
+		return errors.New("Sourcegraph Cloud GitHub App setup is not enabled for the organization")
 	}
 	return nil
 }
@@ -99,19 +98,18 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
-		actor := actor.FromContext(r.Context())
-		err := checkIfUserCanInstallGitHubApp(r.Context(), db, actor.UID)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-
 		state := r.URL.Query().Get("state")
 		orgID, err := graphqlbackend.UnmarshalOrgID(graphql.ID(state))
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`The "state" is not a valid graphql.ID of an organization`))
+			return
+		}
+
+		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 
