@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -92,9 +91,6 @@ func SessionIssuer(db database.DB, s SessionIssuerHelper, sessionKey string) htt
 		}
 
 		anonymousId, _ := cookie.AnonymousUID(r)
-		fmt.Println("!!!!!!!!!!!!!!!!!! anon id", anonymousId)
-		fmt.Println("!!!!!!!!!!!!!!!!!! sourceurl", getCookie("sourcegraphSourceUrl"))
-		fmt.Println("!!!!!!!!!!!!!!!!!! sourceurl", getCookie("sourcegraphRecentSourceUrl"))
 		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
 		if err != nil {
 			log15.Error("OAuth failed: error looking up or creating user from OAuth token.", "error", err, "userErr", safeErrMsg)
