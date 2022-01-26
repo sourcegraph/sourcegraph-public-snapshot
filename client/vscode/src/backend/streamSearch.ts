@@ -2,6 +2,7 @@ import { of, Subscription } from 'rxjs'
 import { throttleTime } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
+import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
 import { ExtensionCoreAPI } from '../contract'
@@ -37,10 +38,13 @@ export function createStreamSearch({
             },
         })
 
-        previousSearchSubscription = aggregateStreamingSearch(of(query), {
-            ...options,
-            sourcegraphURL,
-        })
+        previousSearchSubscription = aggregateStreamingSearch(
+            of(appendContextFilter(query, stateMachine.state.context.selectedSearchContextSpec)),
+            {
+                ...options,
+                sourcegraphURL,
+            }
+        )
             .pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
             .subscribe(searchResults => {
                 stateMachine.emit({ type: 'received_search_results', searchResults })

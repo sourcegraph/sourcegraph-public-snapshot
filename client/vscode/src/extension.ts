@@ -6,6 +6,7 @@ import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/com
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
+import { initializeSearchContexts } from './backend/searchContexts'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
 import { createStreamSearch } from './backend/streamSearch'
 import { ExtensionCoreAPI } from './contract'
@@ -13,6 +14,7 @@ import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
 import { endpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
+import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { createVSCEStateMachine } from './state'
 import { registerWebviews } from './webview/commands'
 
@@ -47,17 +49,28 @@ import { registerWebviews } from './webview/commands'
 //    VS Code extension (that's why it exists, after all).
 
 export function activate(context: vscode.ExtensionContext): void {
-    const stateMachine = createVSCEStateMachine()
+    const localStorageService = new LocalStorageService(context.workspaceState)
+    const stateMachine = createVSCEStateMachine({ localStorageService })
 
     invalidateContextOnSettingsChange({ context, stateMachine })
+    initializeSearchContexts({ localStorageService, stateMachine, context })
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
-    const initialAccessToken = accessTokenSetting()
 
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
+    const initialAccessToken = accessTokenSetting()
     polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}` } : {})
+    // Update `EventSource` Authorization header on access token change.
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(config => {
+            if (config.affectsConfiguration('sourcegraph.accessToken')) {
+                const newAccessToken = accessTokenSetting()
+                polyfillEventSource(newAccessToken ? { Authorization: `token ${newAccessToken}` } : {})
+            }
+        })
+    )
 
     // Add state to VS Code context to be used in context keys.
     // Used e.g. by file tree view to only be visible in `remote-browsing` state.
@@ -91,6 +104,10 @@ export function activate(context: vscode.ExtensionContext): void {
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         streamSearch,
+        setSelectedSearchContextSpec: spec => {
+            stateMachine.emit({ type: 'set_selected_search_context_spec', spec })
+            return localStorageService.setValue(SELECTED_SEARCH_CONTEXT_SPEC_KEY, spec)
+        },
     }
 
     registerWebviews({ context, extensionCoreAPI, initializedPanelIDs, sourcegraphSettings })

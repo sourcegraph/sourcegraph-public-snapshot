@@ -61,7 +61,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         [userQueryState.query, context.submittedSearchQueryState, extensionCoreAPI]
     )
 
-    // Submit new search
+    // Submit new search on change
     const setCaseSensitivity = useCallback(
         (caseSensitive: boolean) => {
             onSubmit({ caseSensitive })
@@ -69,6 +69,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         [onSubmit]
     )
 
+    // Submit new search on change
     const setPatternType = useCallback(
         (patternType: SearchPatternType) => {
             onSubmit({ patternType })
@@ -82,6 +83,21 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     )
 
     const globbing = useMemo(() => globbingEnabledFromSettings(settingsCascade), [settingsCascade])
+
+    const setSelectedSearchContextSpec = useCallback(
+        (spec: string) => {
+            extensionCoreAPI
+                .setSelectedSearchContextSpec(spec)
+                .catch(error => {
+                    console.error('Error persisting search context spec.', error)
+                })
+                .finally(() => {
+                    // Execute search with new context state
+                    onSubmit()
+                })
+        },
+        [extensionCoreAPI, onSubmit]
+    )
 
     return (
         <div>
@@ -103,8 +119,8 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     showSearchContext={true}
                     showSearchContextManagement={false} // Enable this after refactoring
                     defaultSearchContextSpec="global"
-                    setSelectedSearchContextSpec={() => {}} // TODO state machine emit
-                    selectedSearchContextSpec="global"
+                    setSelectedSearchContextSpec={setSelectedSearchContextSpec} // TODO state machine emit
+                    selectedSearchContextSpec={context.selectedSearchContextSpec} // TODO: get from state machine
                     fetchSearchContexts={fetchSearchContexts}
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}

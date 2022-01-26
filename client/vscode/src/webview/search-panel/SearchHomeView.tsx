@@ -29,6 +29,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
     platformContext,
     settingsCascade,
     theme,
+    context,
 }) => {
     // Toggling case sensitivity or pattern type does NOT trigger a new search on home view.
     const [caseSensitive, setCaseSensitivity] = useState(false)
@@ -55,6 +56,15 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
 
     const globbing = useMemo(() => globbingEnabledFromSettings(settingsCascade), [settingsCascade])
 
+    const setSelectedSearchContextSpec = useCallback(
+        (spec: string) => {
+            extensionCoreAPI.setSelectedSearchContextSpec(spec).catch(error => {
+                console.error('Error persisting search context spec.', error)
+            })
+        },
+        [extensionCoreAPI]
+    )
+
     return (
         <div>
             {/* <BrandHeader /> */}
@@ -74,10 +84,10 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
                     authenticatedUser={authenticatedUser}
                     searchContextsEnabled={true}
                     showSearchContext={true}
-                    showSearchContextManagement={false} // Enable this after refactoring
+                    showSearchContextManagement={true} // Enable this after refactoring
                     defaultSearchContextSpec="global"
-                    setSelectedSearchContextSpec={() => {}} // TODO state machine emit
-                    selectedSearchContextSpec="global"
+                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                    selectedSearchContextSpec={context.selectedSearchContextSpec}
                     fetchSearchContexts={fetchSearchContexts}
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}

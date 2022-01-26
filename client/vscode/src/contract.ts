@@ -27,6 +27,7 @@ export interface ExtensionCoreAPI {
      * Cancels previous search when called.
      */
     streamSearch: (query: string, options: StreamSearchOptions) => void
+    setSelectedSearchContextSpec: (spec: string) => void
 }
 
 export interface SearchPanelAPI {
