@@ -7,7 +7,7 @@ We keep this docs page up to date because pings are a vital component of our pro
 ## Terminology
 
 - **FE event** - log events that we send by calling standard telemetry service on the frontend. These pings live only in the `event_logs` table. These typically represent user actions, such as hovers.
-- **BE ping** - pings that our BE sends to the ping store by checking/selecting data from database tables. Our backend periodically sends these pings to the `event_logs` table. These typically represent absolute counts across the entire instance. 
+- **BE capture** - pings that our BE sends to the ping store by checking/selecting data from database tables. Our backend periodically sends these pings to the `event_logs` table. These typically represent absolute counts across the entire instance. 
 
 ## Metrics
 
@@ -111,7 +111,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ### Org-visible insights count (Total) 
 
-**Type:** BE ping
+**Type:** BE capture
 
 **Intended purpose:** To track how many insights are visible by more than just the creator of the insight. 
 
@@ -142,7 +142,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ### Total count of insights grouped by step size (days)
 
-**Type:** BE ping
+**Type:** BE capture
 
 **Intended purpose:** To track the x-axis (time window) set by users on frontend insights, to help prioritize features related to setting time windows. 
 
