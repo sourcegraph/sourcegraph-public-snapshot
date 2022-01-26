@@ -4,8 +4,6 @@
     --badge-padding-y: 0.125rem;
     --badge-padding-x: 0.375rem;
     --badge-border-radius: 3px;
-    --badge-transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
-        box-shadow 0.15s ease-in-out;
 }
 
 .badge {
@@ -57,10 +55,6 @@ a.badge:focus {
     --badge-padding-y: 0;
     --badge-padding-x: 0.25rem;
     --badge-border-radius: 2px;
-}
-
-a.badge {
-    transition: var(--badge-transition);
 }
 
 // Base Variants

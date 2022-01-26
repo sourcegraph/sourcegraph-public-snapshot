@@ -62,9 +62,6 @@
     opacity: var(--toggle-bar-opacity);
     background-color: var(--toggle-bar-bg);
 
-    transition: all 0.3s;
-    transition-property: opacity;
-
     &--on {
         background-color: var(--toggle-bar-bg-on);
     }

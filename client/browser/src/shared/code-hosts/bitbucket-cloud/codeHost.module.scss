@@ -1,7 +1,6 @@
 .secondary-button-base {
     background-color: var(--secondary);
     color: var(--body-color);
-    transition: background-color 150ms;
 
     &:hover,
     &:focus {
@@ -13,7 +12,6 @@
 
 .action-item-active-base {
     background: rgba(9, 30, 66, 0.08);
-    transition: background 100ms;
 }
 
 .icon {
