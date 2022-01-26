@@ -79,6 +79,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
 
     public getInsightById = (id: string): Observable<Insight | null> => of(findInsightById(this.settingCascade, id))
 
+    public hasInsights = (): Observable<boolean> =>
+        this.getInsights({ dashboardId: ALL_INSIGHTS_DASHBOARD_ID }).pipe(map(insights => insights.length > 0))
+
     public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> => {
         const { name } = input
 
