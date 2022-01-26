@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react'
-
+import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import * as Comlink from 'comlink'
+import React, { useMemo } from 'react'
 import { render } from 'react-dom'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -105,8 +105,10 @@ const Main: React.FC = () => {
 
 render(
     // TODO zustand context (search query state)
-    <WildcardThemeContext.Provider value={{ isBranded: true }}>
-        <Main />
-    </WildcardThemeContext.Provider>,
+    <ShortcutProvider>
+        <WildcardThemeContext.Provider value={{ isBranded: true }}>
+            <Main />
+        </WildcardThemeContext.Provider>
+    </ShortcutProvider>,
     document.querySelector('#root')
 )
