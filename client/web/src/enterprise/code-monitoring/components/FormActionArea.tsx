@@ -52,10 +52,14 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         actions.nodes.find(action => action.__typename === 'MonitorSlackWebhook')
     )
 
+    const [webhookAction, setWebhookAction] = useState<MonitorAction | undefined>(
+        actions.nodes.find(action => action.__typename === 'MonitorWebhook')
+    )
+
     // Form is completed if there is at least one action
     useEffect(() => {
-        setActionsCompleted(!!emailAction || !!slackWebhookAction)
-    }, [emailAction, setActionsCompleted, slackWebhookAction])
+        setActionsCompleted(!!emailAction || !!slackWebhookAction || !!webhookAction)
+    }, [emailAction, setActionsCompleted, slackWebhookAction, webhookAction])
 
     useEffect(() => {
         const actions: CodeMonitorFields['actions'] = { nodes: [] }
@@ -65,8 +69,11 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         if (slackWebhookAction) {
             actions.nodes.push(slackWebhookAction)
         }
+        if (webhookAction) {
+            actions.nodes.push(webhookAction)
+        }
         onActionsChange(actions)
-    }, [emailAction, onActionsChange, slackWebhookAction])
+    }, [emailAction, onActionsChange, slackWebhookAction, webhookAction])
 
     const showWebhooks = useExperimentalFeatures(features => features.codeMonitoringWebHooks)
 
@@ -74,6 +81,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         <>
             <h3 className="mb-1">Actions</h3>
             <span className="text-muted">Run any number of actions in response to an event</span>
+
             <EmailAction
                 disabled={disabled}
                 action={emailAction}
@@ -92,7 +100,14 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 />
             )}
 
-            {showWebhooks && <WebhookAction />}
+            {(showWebhooks || webhookAction) && (
+                <WebhookAction
+                    disabled={disabled}
+                    action={webhookAction}
+                    setAction={setWebhookAction}
+                    monitorName={monitorName}
+                />
+            )}
 
             <small className="text-muted">
                 What other actions would you like to take?{' '}
