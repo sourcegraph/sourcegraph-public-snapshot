@@ -298,7 +298,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
-            <GlobalCodeIntel {...props} hoveredToken={hoveredToken} />
+            <GlobalCodeIntel {...props} hoveredToken={hoveredToken} showPanel={true} />
         </div>
     )
 }
