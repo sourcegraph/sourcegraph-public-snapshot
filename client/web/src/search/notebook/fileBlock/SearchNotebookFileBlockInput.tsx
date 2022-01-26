@@ -27,8 +27,8 @@ interface SearchNotebookFileBlockInputProps {
     suggestionsIcon?: JSX.Element
     isValid?: boolean
     isMacPlatform: boolean
+    focusInput?: boolean
     dataTestId?: string
-    testTriggerSuggestions?: boolean
 }
 
 export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNotebookFileBlockInputProps> = ({
@@ -44,8 +44,8 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
     suggestionsIcon,
     isValid,
     isMacPlatform,
+    focusInput,
     dataTestId,
-    testTriggerSuggestions,
 }) => {
     const [inputValue, setInputValue] = useState(value)
     const debouncedOnChange = useMemo(() => debounce(onChange, 300), [onChange])
@@ -59,10 +59,12 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
 
     const inputReference = useRef<HTMLInputElement>(null)
     useEffect(() => {
-        if (testTriggerSuggestions) {
+        if (focusInput) {
             inputReference.current?.focus()
         }
-    }, [inputReference, testTriggerSuggestions])
+        // Only focus input on the initial render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [inputReference])
 
     const popoverReference = useRef<HTMLDivElement>(null)
     const onKeyDown = (event: React.KeyboardEvent): void => {
