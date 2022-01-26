@@ -214,15 +214,85 @@ enum SymbolRole {
 
 enum SyntaxKind {
   UnspecifiedSyntaxKind = 0;
-  StringLiteral = 1;
-  NumericLiteral = 2;
-  Identifier = 3;
-  MethodIdentifier = 4;
-  TypeIdentifier = 5;
-  TermIdentifier = 6;
-  LocalIdentifier = 7;
-  ShadedIdentifier = 8;
-  PackageIdentifier = 9;
+
+  // `+`, `*`, etc.
+  Operator = 1;
+
+  // Comment, including comment markers and text
+  Comment = 2;
+
+  // `;` `.` `,`
+  PunctuationDelimiter = 3;
+  // (), {}, [] when used syntactically
+  PunctuationBracket = 4;
+  // `{}` within a string.
+  PunctuationSpecial = 5;
+
+  // `if`, `else`, `return`, `class`, etc.
+  Keyword = 6;
+
+  // non-specific variables, function calls, etc.
+  // In general, prefer more specific identifier kinds if possible.
+  Identifier = 7;
+  // Identifiers builtin to the language: `min`, `print` in Python.
+  BuiltinIdentifier = 8;
+  // Identifiers builtin to the language: `None` in Python, `nil` in Go.
+  NullIdentifier = 9;
+  // `xyz` in `const xyz = "hello"`
+  ConstantIdentifier = 10;
+  // `var X = "hello"` in Go
+  MutableGlobalIdentifier = 11;
+  // both parameter definition and references
+  ParameterIdentifier = 12;
+  // identifiers for variable definitions and references within a local scope
+  LocalIdentifier = 13;
+  // Used when identifier shadowes some other identifier within the scope
+  ShadowedIdentifier = 14;
+  // `package main`
+  ModuleIdentifier = 15;
+  // Macro references only, not definitions
+  MacroIdentifier = 16;
+
+  // Literal strings: "Hello, world!"
+  StringLiteral = 17;
+  // ".*" in a string regex
+  StringLiteralRegex = 18;
+  // "\t", "\n"
+  StringLiteralEscape = 19;
+  // datetimes within strings, special words within a string
+  StringLiteralSpecial = 20;
+  // "key" in { "key": "value" }
+  StringLiteralKey = 21;
+  // 'c' or similar, in languages that differentiate strings and characters
+  CharacterLiteral = 22;
+  // Literal numbers, both floats and integers
+  NumericLiteral = 23;
+  // `true`, `false`
+  BooleanLiteral = 24;
+
+  // Function definition only.
+  //    Included because many editors highlight a function definition differently
+  //    from function calls.
+  FunctionDefinition = 25;
+  // Macro definition only.
+  //    Included because many editors highlight a macro definition differently
+  //    from macro usages.
+  MacroDefinition = 26;
+
+  // non-builtin types, including namespaces
+  TypeIdentifier = 27;
+  // builtin types only, such as `str` for Python or `int` in Go
+  BuiltinTypeIdentifier = 28;
+
+  // Python decorators, c-like __attribute__
+  AttributeIdentifier = 29;
+
+  // Used for XML-like tags
+  Tag = 30;
+  // Attribute name in XML-like tags
+  TagAttribute = 31;
+  // Delimiters for XML-like tags
+  TagDelimiter = 32;
 }
 
 // Occurrence associates a source position with a symbol and/or highlighting
