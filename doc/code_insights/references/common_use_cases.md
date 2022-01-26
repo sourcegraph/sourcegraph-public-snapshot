@@ -46,14 +46,14 @@ select:repo file:yarn.lock archived:no fork:no
 **Which databases we are calling or writing to most often**
 ```sgquery
 // redis
-redis\.set\(.*\) patternType=regexp archived:no fork:no 
+redis\.set\(.*\) patternType:regexp archived:no fork:no 
 // graphQL
-graphql\(.*\) patternType=regexp archived:no fork:no
+graphql\(.*\) patternType:regexp archived:no fork:no
 ```
 
 **Understand if a growing number of repos import a large/expensive package**
 ```sgquery
-select:repo import\slargePkg\s patternType=regexp archived:no fork:no
+select:repo import\slargePkg\s patternType:regexp archived:no fork:no
 ```
 
 ## Deprecation tracking
