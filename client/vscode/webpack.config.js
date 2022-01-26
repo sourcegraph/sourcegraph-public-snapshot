@@ -5,6 +5,16 @@ const path = require('path')
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
+const {
+  getMonacoWebpackPlugin,
+  getCSSModulesLoader,
+  getBasicCSSLoader,
+  getMonacoCSSRule,
+  getCSSLoaders,
+} = require('@sourcegraph/build-config')
+
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
+
 /**
  * The VS Code extension core needs to be built for two targets:
  * - Node.js for VS Code desktop
@@ -14,9 +24,11 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
  */
 function getExtensionCoreConfiguration(targetType) {
   return {
+    context: __dirname, // needed when running `gulp` from the root dir
+    mode,
     name: `extension:${targetType}`,
     target: targetType,
-    entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+    entry: path.resolve(__dirname, 'src', 'extension.ts'), // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     output: {
       // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
       path: path.resolve(__dirname, 'dist', `${targetType}`),
@@ -68,30 +80,18 @@ const vscodeWorkspacePath = path.resolve(rootPath, 'client', 'vscode')
 const vscodeSourcePath = path.resolve(vscodeWorkspacePath, 'src')
 const webviewSourcePath = path.resolve(vscodeSourcePath, 'webview')
 
-const getCSSLoaders = (...loaders) => [
-  MiniCssExtractPlugin.loader,
-  ...loaders,
-  {
-    loader: 'postcss-loader',
-  },
-  {
-    loader: 'sass-loader',
-    options: {
-      sassOptions: {
-        includePaths: [path.resolve(rootPath, 'node_modules'), path.resolve(rootPath, 'client')],
-      },
-    },
-  },
-]
-
 const searchPanelWebviewPath = path.resolve(webviewSourcePath, 'search-panel')
 const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'search-sidebar')
 
 const extensionHostWorker = /main\.worker\.ts$/
 
+const MONACO_EDITOR_PATH = path.resolve(rootPath, 'node_modules', 'monaco-editor')
+
 /** @type {import('webpack').Configuration}*/
 
 const webviewConfig = {
+  context: __dirname, // needed when running `gulp` from the root dir
+  mode,
   name: 'webviews',
   target: 'web',
   entry: {
@@ -104,7 +104,7 @@ const webviewConfig = {
     path: path.resolve(__dirname, 'dist/webview'),
     filename: '[name].js',
   },
-  plugins: [new MiniCssExtractPlugin()],
+  plugins: [new MiniCssExtractPlugin(), getMonacoWebpackPlugin()],
   externals: {
     // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     vscode: 'commonjs vscode',
@@ -129,28 +129,6 @@ const webviewConfig = {
           },
         ],
       },
-      // SCSS rule for our own styles and Bootstrap
-      {
-        test: /\.(css|sass|scss)$/,
-        exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders({ loader: 'css-loader', options: { url: false } }),
-      },
-      // For CSS modules
-      {
-        test: /\.(css|sass|scss)$/,
-        include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders({
-          loader: 'css-loader',
-          options: {
-            sourceMap: false,
-            modules: {
-              exportLocalsConvention: 'camelCase',
-              localIdentName: '[name]__[local]_[hash:base64:5]',
-            },
-            url: false,
-          },
-        }),
-      },
       {
         test: extensionHostWorker,
         use: [
@@ -161,10 +139,37 @@ const webviewConfig = {
           'ts-loader',
         ],
       },
+      {
+        test: /\.(sass|scss)$/,
+        // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
+        include: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders(MiniCssExtractPlugin.loader, getCSSModulesLoader({})),
+      },
+      {
+        test: /\.(sass|scss)$/,
+        exclude: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders(MiniCssExtractPlugin.loader, getBasicCSSLoader()),
+      },
+      getMonacoCSSRule(),
+      // Don't use shared getMonacoTFFRule(); we want to retain its name
+      // to reference path in the extension when we load the font ourselves.
+      {
+        test: /\.ttf$/,
+        include: [MONACO_EDITOR_PATH],
+        type: 'asset/resource',
+        generator: {
+          filename: '[name][ext]',
+        },
+      },
     ],
   },
 }
 
-module.exports = function () {
+module.exports = function (targetType) {
+  if (targetType) {
+    return Promise.all([getExtensionCoreConfiguration(targetType), webviewConfig])
+  }
+
+  // If target type isn't specified, build both.
   return Promise.all([getExtensionCoreConfiguration('node'), getExtensionCoreConfiguration('webworker'), webviewConfig])
 }
