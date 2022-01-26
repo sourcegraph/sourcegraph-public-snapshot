@@ -100,10 +100,12 @@
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "test": "echo \"No tests exist yet\" && exit 1",
     "package": "echo \"package script not implemented yet\" && exit 1",
-    "build": "webpack --mode=development --config-name extension:node --config-name extension:webworker --config-name webviews",
-    "build:node": "webpack --mode=development --config-name extension:node --config-name webviews",
-    "build:web": "webpack --mode=development --config-name extension:webworker --config-name webviews",
-    "watch:node": "webpack --mode=development --watch --config-name extension:node --config-name webviews",
-    "watch:web": "webpack --mode=development --watch --config-name extension:node --config-name webviews"
+    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+    "build": "yarn task:gulp webpack",
+    "build:node": "TARGET_TYPE=node yarn task:gulp webpack",
+    "build:web": "TARGET_TYPE=webworker yarn task:gulp webpack",
+    "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
+    "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
   }
+
 }
