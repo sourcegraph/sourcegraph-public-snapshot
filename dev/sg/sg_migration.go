@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
@@ -95,7 +94,7 @@ func migrationAddExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	upFile, downFile, err := migration.RunAdd(database, migrationName)
+	upFile, downFile, err := migration.Add(database, migrationName)
 	if err != nil {
 		return err
 	}
@@ -145,5 +144,5 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1)
 	stdout.Out.Writef("Squashing migration files defined up through %s", commit)
 
-	return squash.Run(database, commit)
+	return migration.Squash(database, commit)
 }
