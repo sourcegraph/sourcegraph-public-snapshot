@@ -79,8 +79,12 @@ func validateSchema(db *sql.DB, schema *schemas.Schema, validateOnly bool, obser
 		}
 
 		options := runner.Options{
-			Up:          true,
-			SchemaNames: []string{schema.Name},
+			Operations: []runner.MigrationOperation{
+				{
+					SchemaName: schema.Name,
+					Type:       runner.MigrationOperationTypeUpgrade,
+				},
+			},
 		}
 		return migrationRunner.Run(ctx, options)
 	}

@@ -9,131 +9,184 @@ import (
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 )
 
-func TestRunnerRun(t *testing.T) {
+func TestRun(t *testing.T) {
 	overrideSchemas(t)
 	ctx := context.Background()
 
-	t.Run("upgrade", func(t *testing.T) {
-		store := testStoreWithVersion(10000, false)
+	t.Run("upgrade (empty)", func(t *testing.T) {
+		store := testStoreWithVersion(0, false)
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Up:              true,
-			TargetMigration: 10000 + 2,
-			SchemaNames:     []string{"well-formed"},
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "well-formed",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
 		}); err != nil {
-			t.Fatalf("unexpected error running upgrade: %s", err)
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		mockassert.CalledN(t, store.UpFunc, 4)
+		mockassert.NotCalled(t, store.DownFunc)
+	})
+
+	t.Run("upgrade (partially applied)", func(t *testing.T) {
+		store := testStoreWithVersion(10002, false)
+
+		if err := makeTestRunner(t, store).Run(ctx, Options{
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "well-formed",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
+		}); err != nil {
+			t.Fatalf("unexpected error: %s", err)
 		}
 
 		mockassert.CalledN(t, store.UpFunc, 2)
 		mockassert.NotCalled(t, store.DownFunc)
 	})
 
-	t.Run("downgrade", func(t *testing.T) {
-		store := testStoreWithVersion(10003, false)
+	t.Run("upgrade (fully applied)", func(t *testing.T) {
+		store := testStoreWithVersion(10004, false)
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Up:              false,
-			TargetMigration: 10003 - 2,
-			SchemaNames:     []string{"well-formed"},
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "well-formed",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
 		}); err != nil {
-			t.Fatalf("unexpected error running downgrade: %s", err)
+			t.Fatalf("unexpected error: %s", err)
 		}
 
 		mockassert.NotCalled(t, store.UpFunc)
-		mockassert.CalledN(t, store.DownFunc, 2)
-	})
-
-	t.Run("upgrade error", func(t *testing.T) {
-		store := testStoreWithVersion(10000, false)
-		store.UpFunc.PushReturn(fmt.Errorf("uh-oh"))
-
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Up:              true,
-			TargetMigration: 10000 + 1,
-			SchemaNames:     []string{"query-error"},
-		}); err == nil || !strings.Contains(err.Error(), "uh-oh") {
-			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "uh-oh", err)
-		}
-
-		mockassert.CalledN(t, store.UpFunc, 1)
 		mockassert.NotCalled(t, store.DownFunc)
 	})
 
-	t.Run("downgrade error", func(t *testing.T) {
-		store := testStoreWithVersion(10001, false)
-		store.DownFunc.PushReturn(fmt.Errorf("uh-oh"))
+	t.Run("upgrade (future schema applied)", func(t *testing.T) {
+		store := testStoreWithVersion(10008, false)
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Up:              false,
-			TargetMigration: 10001 - 1,
-			SchemaNames:     []string{"query-error"},
-		}); err == nil || !strings.Contains(err.Error(), "uh-oh") {
-			t.Fatalf("unexpected error running downgrade. want=%q have=%q", "uh-oh", err)
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "well-formed",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
+		}); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		mockassert.NotCalled(t, store.UpFunc)
+		mockassert.NotCalled(t, store.DownFunc)
+	})
+
+	t.Run("revert", func(t *testing.T) {
+		store := testStoreWithVersion(10003, false)
+
+		if err := makeTestRunner(t, store).Run(ctx, Options{
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "well-formed",
+					Type:       MigrationOperationTypeRevert,
+				},
+			},
+		}); err != nil {
+			t.Fatalf("unexpected error: %s", err)
 		}
 
 		mockassert.NotCalled(t, store.UpFunc)
 		mockassert.CalledN(t, store.DownFunc, 1)
 	})
 
-	t.Run("unknown schema", func(t *testing.T) {
-		if err := makeTestRunner(t, testStoreWithVersion(10000, false)).Run(ctx, Options{
-			Up:              true,
-			TargetMigration: 10000 + 1,
-			SchemaNames:     []string{"unknown"},
-		}); err == nil || !strings.Contains(err.Error(), "unknown schema") {
-			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "unknown schema", err)
-		}
-	})
-
-	t.Run("dirty database (pre-lock)", func(t *testing.T) {
-		store := testStoreWithVersion(10000, true)
+	t.Run("revert (ambiguous)", func(t *testing.T) {
+		store := testStoreWithVersion(10004, false)
+		expectedErrorMessage := "ambiguous revert"
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Up:              true,
-			TargetMigration: 10000 + 1,
-			SchemaNames:     []string{"well-formed"},
-		}); err == nil || !strings.Contains(err.Error(), "dirty database") {
-			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "dirty database", err)
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "well-formed",
+					Type:       MigrationOperationTypeRevert,
+				},
+			},
+		}); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
+			t.Fatalf("unexpected error: expected=%q have=%s", expectedErrorMessage, err)
 		}
 	})
 
-	t.Run("dirty database (post-lock)", func(t *testing.T) {
-		store := testStoreWithVersion(10002, true)
-		store.VersionFunc.SetDefaultReturn(10001, true, true, nil)
+	t.Run("upgrade (dirty database)", func(t *testing.T) {
+		store := testStoreWithVersion(10003, true)
+		expectedErrorMessage := "dirty database"
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Up:              true,
-			TargetMigration: 10002 + 0,
-			SchemaNames:     []string{"well-formed"},
-		}); err == nil || !strings.Contains(err.Error(), "dirty database") {
-			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "dirty database", err)
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "well-formed",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
+		}); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
+			t.Fatalf("unexpected error: expected=%q have=%s", expectedErrorMessage, err)
 		}
 	})
 
-	t.Run("migration contention (concurrent lock)", func(t *testing.T) {
+	t.Run("upgrade (dirty database/dead migrations)", func(t *testing.T) {
+		store := testStoreWithVersion(10003, true)
+		store.VersionsFunc.SetDefaultReturn(nil, []int{10003}, nil, nil)
+		expectedErrorMessage := "dirty database"
+
+		if err := makeTestRunner(t, store).Run(ctx, Options{
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "well-formed",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
+		}); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
+			t.Fatalf("unexpected error: expected=%q have=%s", expectedErrorMessage, err)
+		}
+	})
+
+	t.Run("upgrade (query error)", func(t *testing.T) {
 		store := testStoreWithVersion(10000, false)
-		store.VersionFunc.SetDefaultReturn(10002, true, true, nil)
-		store.TryLockFunc.SetDefaultReturn(false, func(err error) error { return err }, nil)
+		expectedErrorMessage := "database connection error"
+		store.UpFunc.PushReturn(fmt.Errorf(expectedErrorMessage))
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Up:              true,
-			TargetMigration: 10000 + 1,
-			SchemaNames:     []string{"well-formed"},
-		}); err == nil || !strings.Contains(err.Error(), "contention") {
-			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "contention", err)
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "query-error",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
+		}); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
+			t.Fatalf("unexpected error running upgrade. want=%q have=%q", expectedErrorMessage, err)
 		}
+
+		mockassert.CalledN(t, store.UpFunc, 1)
+		mockassert.NotCalled(t, store.DownFunc)
 	})
 
-	t.Run("migration contention (version changed)", func(t *testing.T) {
-		store := testStoreWithVersion(10002, false)
-		store.VersionFunc.PushReturn(10001, false, true, nil)
+	t.Run("upgrade (create index concurrently)", func(t *testing.T) {
+		store := testStoreWithVersion(0, false)
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Up:              true,
-			TargetMigration: 10002 + 1,
-			SchemaNames:     []string{"well-formed"},
-		}); err == nil || !strings.Contains(err.Error(), "contention") {
-			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "contention", err)
+			Operations: []MigrationOperation{
+				{
+					SchemaName: "concurrent-index",
+					Type:       MigrationOperationTypeUpgrade,
+				},
+			},
+		}); err != nil {
+			t.Fatalf("unexpected error: %s", err)
 		}
+
+		mockassert.CalledN(t, store.UpFunc, 2)
+		mockassert.NotCalled(t, store.DownFunc)
 	})
 }

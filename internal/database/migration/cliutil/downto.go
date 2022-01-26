@@ -1,0 +1,69 @@
+package cliutil
+
+import (
+	"context"
+	"flag"
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/peterbourgon/ff/v3/ffcli"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/lib/output"
+)
+
+func DownTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
+	var (
+		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s downto", commandName), flag.ExitOnError)
+		schemaNameFlag = flagSet.String("db", "", `The target schema to migrate.`)
+		targetsFlag    = flagSet.String("target", "", "Revert all children of the given target. Comma-separated values are accepted. ")
+	)
+
+	exec := func(ctx context.Context, args []string) error {
+		if len(args) != 0 {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+			return flag.ErrHelp
+		}
+
+		if *schemaNameFlag == "" {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
+			return flag.ErrHelp
+		}
+
+		targets := strings.Split(*targetsFlag, ",")
+		if len(targets) == 0 {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a migration target via -target"))
+			return flag.ErrHelp
+		}
+
+		versions := make([]int, 0, len(targets))
+		for _, target := range targets {
+			version, err := strconv.Atoi(target)
+			if err != nil {
+				return err
+			}
+
+			versions = append(versions, version)
+		}
+
+		return run(ctx, runner.Options{
+			Operations: []runner.MigrationOperation{
+				{
+					SchemaName:     *schemaNameFlag,
+					Type:           runner.MigrationOperationTypeTargetedDown,
+					TargetVersions: versions,
+				},
+			},
+		})
+	}
+
+	return &ffcli.Command{
+		Name:       "downto",
+		ShortUsage: fmt.Sprintf("%s downto -db=<schema> -target=<target>,<target>,...", commandName),
+		ShortHelp:  `Revert any applied migrations that are children of the given targets - this effectively "resets" the database to the target migration`,
+		FlagSet:    flagSet,
+		Exec:       exec,
+		LongHelp:   ConstructLongHelp(),
+	}
+}

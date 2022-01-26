@@ -23,64 +23,64 @@ func TestReadDefinitions(t *testing.T) {
 			t.Fatalf("unexpected error: %s", err)
 		}
 
-		type comparableDefinition struct {
-			ID           int
-			UpFilename   string
-			UpQuery      string
-			DownFilename string
-			DownQuery    string
+		expectedDefinitions := []Definition{
+			{ID: 10001, UpQuery: sqlf.Sprintf("10001 UP"), DownQuery: sqlf.Sprintf("10001 DOWN"), Parents: nil},                 // first
+			{ID: 10002, UpQuery: sqlf.Sprintf("10002 UP"), DownQuery: sqlf.Sprintf("10002 DOWN"), Parents: []int{10001}},        // second
+			{ID: 10003, UpQuery: sqlf.Sprintf("10003 UP"), DownQuery: sqlf.Sprintf("10003 DOWN"), Parents: []int{10002}},        // third or fourth (1)
+			{ID: 10004, UpQuery: sqlf.Sprintf("10004 UP"), DownQuery: sqlf.Sprintf("10004 DOWN"), Parents: []int{10002}},        // third or fourth (2)
+			{ID: 10005, UpQuery: sqlf.Sprintf("10005 UP"), DownQuery: sqlf.Sprintf("10005 DOWN"), Parents: []int{10003, 10004}}, // fifth
 		}
-
-		comparableDefinitions := make([]comparableDefinition, 0, len(definitions.definitions))
-		for _, definition := range definitions.definitions {
-			comparableDefinitions = append(comparableDefinitions, comparableDefinition{
-				ID:           definition.ID,
-				UpFilename:   definition.UpFilename,
-				UpQuery:      strings.TrimSpace(definition.UpQuery.Query(sqlf.PostgresBindVar)),
-				DownFilename: definition.DownFilename,
-				DownQuery:    strings.TrimSpace(definition.DownQuery.Query(sqlf.PostgresBindVar)),
-			})
-		}
-
-		expectedDefinitions := []comparableDefinition{
-			{ID: 10001, UpFilename: "10001_first.up.sql", DownFilename: "10001_first.down.sql", UpQuery: "10001 UP", DownQuery: "10001 DOWN"},
-			{ID: 10002, UpFilename: "10002_second.up.sql", DownFilename: "10002_second.down.sql", UpQuery: "10002 UP", DownQuery: "10002 DOWN"},
-			{ID: 10003, UpFilename: "10003_third.up.sql", DownFilename: "10003_third.down.sql", UpQuery: "10003 UP", DownQuery: "10003 DOWN"},
-			{ID: 10004, UpFilename: "10004_fourth.up.sql", DownFilename: "10004_fourth.down.sql", UpQuery: "10004 UP", DownQuery: "10004 DOWN"},
-			{ID: 10005, UpFilename: "10005_fifth.up.sql", DownFilename: "10005_fifth.down.sql", UpQuery: "10005 UP", DownQuery: "10005 DOWN"},
-		}
-		if diff := cmp.Diff(expectedDefinitions, comparableDefinitions); diff != "" {
+		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
 			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("missing upgrade query", func(t *testing.T) {
-		testReadDefinitionsError(t, "missing-upgrade-query", "not found")
+	t.Run("concurrent", func(t *testing.T) {
+		fs, err := fs.Sub(testdata.Content, "concurrent")
+		if err != nil {
+			t.Fatalf("unexpected error fetching schema %q: %s", "concurrent", err)
+		}
+
+		definitions, err := ReadDefinitions(fs)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		expectedDefinitions := []Definition{
+			{ID: 10001, UpQuery: sqlf.Sprintf("10001 UP"), DownQuery: sqlf.Sprintf("10001 DOWN"), Parents: nil}, // first
+			{
+				ID:                        10002,
+				UpQuery:                   sqlf.Sprintf("-- Some docs here\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx ON tbl(col1, col2, col3);"),
+				DownQuery:                 sqlf.Sprintf("DROP INDEX IF EXISTS idx;"),
+				IsCreateIndexConcurrently: true,
+				IndexMetadata: &IndexMetadata{
+					TableName: "tbl",
+					IndexName: "idx",
+				},
+				Parents: []int{10001},
+			}, // second
+		}
+		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
+			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)
+		}
 	})
 
-	t.Run("missing downgrade query", func(t *testing.T) {
-		testReadDefinitionsError(t, "missing-downgrade-query", "not found")
-	})
+	t.Run("missing upgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-upgrade-query", "malformed") })
+	t.Run("missing downgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-downgrade-query", "malformed") })
+	t.Run("missing metadata", func(t *testing.T) { testReadDefinitionsError(t, "missing-metadata", "malformed") })
+	t.Run("no roots", func(t *testing.T) { testReadDefinitionsError(t, "no-roots", "no roots") })
+	t.Run("multiple roots", func(t *testing.T) { testReadDefinitionsError(t, "multiple-roots", "multiple roots") })
+	t.Run("cycle (connected to root)", func(t *testing.T) { testReadDefinitionsError(t, "cycle-traversal", "cycle") })
+	t.Run("cycle (disconnected from root)", func(t *testing.T) { testReadDefinitionsError(t, "cycle-size", "cycle") })
+	t.Run("unknown parent", func(t *testing.T) { testReadDefinitionsError(t, "unknown-parent", "unknown migration") })
 
-	t.Run("duplicate upgrade query", func(t *testing.T) {
-		testReadDefinitionsError(t, "duplicate-upgrade-query", "duplicate upgrade query")
-	})
+	errConcurrentUnexpected := "did not expect up migration to contain concurrent creation of an index"
+	errConcurrentExpected := "expected up migration to contain concurrent creation of an index"
+	errConcurrentDown := "did not expect down migration to contain concurrent creation of an index"
 
-	t.Run("duplicate downgrade query", func(t *testing.T) {
-		testReadDefinitionsError(t, "duplicate-downgrade-query", "duplicate downgrade query")
-	})
-
-	t.Run("gap in sequence", func(t *testing.T) {
-		testReadDefinitionsError(t, "gap-in-sequence", "migration identifiers jump")
-	})
-
-	t.Run("root-with-parent", func(t *testing.T) {
-		testReadDefinitionsError(t, "root-with-parent", "no roots")
-	})
-
-	t.Run("unexpected-parent", func(t *testing.T) {
-		testReadDefinitionsError(t, "unexpected-parent", "cycle")
-	})
+	t.Run("unexpected concurrent index creation", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-unexpected", errConcurrentUnexpected) })
+	t.Run("missing concurrent index creation", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-expected", errConcurrentExpected) })
+	t.Run("concurrent index creation down", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-down", errConcurrentDown) })
 }
 
 func testReadDefinitionsError(t *testing.T, name, expectedError string) {

@@ -2,82 +2,106 @@ package runner
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/go-cmp/cmp"
 )
 
-func TestRunnerValidate(t *testing.T) {
+func TestValidate(t *testing.T) {
 	overrideSchemas(t)
 	ctx := context.Background()
 
-	t.Run("very old schema", func(t *testing.T) {
-		store := testStoreWithVersion(250, false)
+	t.Run("empty", func(t *testing.T) {
+		store := testStoreWithVersion(0, false)
 
-		outOfDateError := new(SchemaOutOfDateError)
-		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); !errors.As(err, &outOfDateError) || outOfDateError.expectedVersion != 10003 || outOfDateError.currentVersion != 250 {
-			t.Fatalf("unexpected error running validation. want=(unexpected version; expected 10003, currently 250) have=%s", err)
+		e := new(SchemaOutOfDateError)
+		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err == nil {
+			t.Fatalf("expected an error")
+		} else if !errors.As(err, &e) {
+			t.Fatalf("expected error. want schema out of date error, have=%s", err)
+		}
+
+		expectedMissingVersions := []int{
+			10001,
+			10002,
+			10003,
+			10004,
+		}
+		if diff := cmp.Diff(expectedMissingVersions, e.missingVersions); diff != "" {
+			t.Errorf("unexpected missing versions (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("old schema", func(t *testing.T) {
-		store := testStoreWithVersion(10001, false)
+	t.Run("partially applied", func(t *testing.T) {
+		store := testStoreWithVersion(10002, false)
 
-		outOfDateError := new(SchemaOutOfDateError)
-		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); !errors.As(err, &outOfDateError) || outOfDateError.expectedVersion != 10003 || outOfDateError.currentVersion != 10001 {
-			t.Fatalf("unexpected error running validation. want=(unexpected version; expected 10003, currently 10001) have=%s", err)
+		e := new(SchemaOutOfDateError)
+		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err == nil {
+			t.Fatalf("expected an error")
+		} else if !errors.As(err, &e) {
+			t.Fatalf("expected error. want schema out of date error, have=%s", err)
+		}
+
+		expectedMissingVersions := []int{
+			10003,
+			10004,
+		}
+		if diff := cmp.Diff(expectedMissingVersions, e.missingVersions); diff != "" {
+			t.Errorf("unexpected missing versions (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("correct version", func(t *testing.T) {
-		store := testStoreWithVersion(10003, false)
-
-		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err != nil {
-			t.Fatalf("unexpected error running validation: %s", err)
-		}
-	})
-
-	t.Run("future schema", func(t *testing.T) {
+	t.Run("up to date", func(t *testing.T) {
 		store := testStoreWithVersion(10004, false)
 
 		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err != nil {
-			t.Fatalf("unexpected error running validation: %s", err)
+			t.Fatalf("unexpected error: %s", err)
 		}
 	})
 
-	t.Run("distant future schema", func(t *testing.T) {
-		store := testStoreWithVersion(50010, false)
+	t.Run("future upgrade", func(t *testing.T) {
+		store := testStoreWithVersion(10008, false)
 
 		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err != nil {
-			t.Fatalf("unexpected error running validation: %s", err)
+			t.Fatalf("unexpected error: %s", err)
 		}
 	})
 
 	t.Run("dirty database", func(t *testing.T) {
 		store := testStoreWithVersion(10003, true)
 
-		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err == nil || !strings.Contains(err.Error(), "dirty database") {
-			t.Fatalf("unexpected error running validation. want=%q have=%q", "dirty database", err)
+		e := new(dirtySchemaError)
+		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err == nil {
+			t.Fatalf("expected an error")
+		} else if !errors.As(err, &e) {
+			t.Fatalf("expected error. want schema out of date error, have=%s", err)
+		}
+
+		expectedFailedVersions := []int{
+			10003,
+		}
+		if diff := cmp.Diff(expectedFailedVersions, extractIDs(e.dirtyVersions)); diff != "" {
+			t.Errorf("unexpected failed versions (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("dirty future database", func(t *testing.T) {
-		store := testStoreWithVersion(50003, true)
+	t.Run("dirty database (dead migrations)", func(t *testing.T) {
+		store := testStoreWithVersion(10003, false)
+		store.VersionsFunc.SetDefaultReturn(nil, []int{10003}, nil, nil)
 
-		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err != nil {
-			t.Fatalf("unexpected error running validation: %s", err)
+		e := new(dirtySchemaError)
+		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err == nil {
+			t.Fatalf("expected an error")
+		} else if !errors.As(err, &e) {
+			t.Fatalf("expected error. want schema out of date error, have=%s", err)
 		}
-	})
 
-	t.Run("migration contention", func(t *testing.T) {
-		store := testStoreWithVersion(50010, false)
-		store.VersionFunc.PushReturn(50007, true, true, nil)
-		store.VersionFunc.PushReturn(50008, true, true, nil)
-		store.VersionFunc.PushReturn(50009, true, true, nil)
-
-		if err := makeTestRunner(t, store).Validate(ctx, "well-formed"); err != nil {
-			t.Fatalf("unexpected error running validation: %s", err)
+		expectedFailedVersions := []int{
+			10003,
+		}
+		if diff := cmp.Diff(expectedFailedVersions, extractIDs(e.dirtyVersions)); diff != "" {
+			t.Errorf("unexpected failed versions (-want +got):\n%s", diff)
 		}
 	})
 }

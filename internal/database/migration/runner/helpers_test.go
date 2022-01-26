@@ -15,6 +15,7 @@ func makeTestSchemas(t *testing.T) []*schemas.Schema {
 	return []*schemas.Schema{
 		makeTestSchema(t, "well-formed"),
 		makeTestSchema(t, "query-error"),
+		makeTestSchema(t, "concurrent-index"),
 	}
 }
 
@@ -50,12 +51,27 @@ func testStoreWithVersion(version int, dirty bool) *MockStore {
 	}
 
 	store := NewMockStore()
-	store.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
+	store.TransactFunc.SetDefaultReturn(store, nil)
+	store.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	store.TryLockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
 	store.UpFunc.SetDefaultHook(migrationHook)
 	store.DownFunc.SetDefaultHook(migrationHook)
-	store.VersionFunc.SetDefaultHook(func(ctx context.Context) (int, bool, bool, error) {
-		return version, dirty, true, nil
+	store.WithMigrationLogFunc.SetDefaultHook(func(_ context.Context, _ definition.Definition, _ bool, f func() error) error { return f() })
+	store.VersionsFunc.SetDefaultHook(func(ctx context.Context) ([]int, []int, []int, error) {
+		if dirty {
+			return nil, nil, []int{version}, nil
+		}
+		if version == 0 {
+			return nil, nil, nil, nil
+		}
+
+		base := 10001
+		ids := make([]int, 0, 4)
+		for v := base; v <= version; v++ {
+			ids = append(ids, v)
+		}
+
+		return ids, nil, nil, nil
 	})
 
 	return store
