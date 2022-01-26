@@ -6,7 +6,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Popover } from 'reactstrap'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, RevisionSpec } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
@@ -21,7 +21,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'

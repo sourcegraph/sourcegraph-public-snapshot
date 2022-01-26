@@ -2,13 +2,12 @@ import { Remote, ProxyMarked } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { ErrorLike } from '@sourcegraph/common'
+import { DeepReplace, ErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
 
 import { ConfiguredExtension } from '../extensions/extension'
 import { SettingsCascade } from '../settings/settings'
-import { DeepReplace } from '../util/types'
 
 import { SettingsEdit } from './client/services/settings'
 import { HoverMerged } from './client/types/hover'

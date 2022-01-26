@@ -5,12 +5,12 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import React, { useCallback, useState } from 'react'
 
+import { AbsoluteRepoFile } from '@sourcegraph/common'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { Button, useLocalStorage, useMatchMedia } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'

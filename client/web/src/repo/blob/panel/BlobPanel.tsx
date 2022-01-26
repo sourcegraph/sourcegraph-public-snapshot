@@ -5,7 +5,7 @@ import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 
 import { BuiltinPanelView, useBuiltinPanelViews } from '@sourcegraph/branded/src/components/panel/Panel'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { isErrorLike } from '@sourcegraph/common'
+import { AbsoluteRepoFile, isErrorLike, ModeSpec, UIPositionSpec } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/shared/src/api/protocol'
@@ -13,7 +13,7 @@ import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'

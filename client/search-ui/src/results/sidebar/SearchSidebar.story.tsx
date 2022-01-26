@@ -5,6 +5,7 @@ import React from 'react'
 import create from 'zustand'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { buildSearchURLQuery } from '@sourcegraph/common'
 import {
     BuildSearchQueryURLParameters,
     SearchPatternType,
@@ -15,7 +16,6 @@ import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 

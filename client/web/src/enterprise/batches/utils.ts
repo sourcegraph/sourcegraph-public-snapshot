@@ -1,13 +1,6 @@
 import { HoveredToken } from '@sourcegraph/codeintellify'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec, UIPositionSpec, ModeSpec } from '@sourcegraph/common'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
-import {
-    RepoSpec,
-    RevisionSpec,
-    FileSpec,
-    ResolvedRevisionSpec,
-    UIPositionSpec,
-    ModeSpec,
-} from '@sourcegraph/shared/src/util/url'
 
 import {
     ChangesetCheckState,

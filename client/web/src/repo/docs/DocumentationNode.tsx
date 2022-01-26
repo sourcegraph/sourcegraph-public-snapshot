@@ -6,11 +6,10 @@ import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
 import React, { RefObject, useEffect, useMemo, useRef } from 'react'
 import { Observable } from 'rxjs'
 
+import { renderMarkdown, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { AnchorLink, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'

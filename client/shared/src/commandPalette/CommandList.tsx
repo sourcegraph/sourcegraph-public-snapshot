@@ -16,6 +16,7 @@ import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
+import { memoizeObservable } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
@@ -30,7 +31,6 @@ import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { memoizeObservable } from '../util/memoizeObservable'
 
 import styles from './CommandList.module.scss'
 import { EmptyCommandList } from './EmptyCommandList'

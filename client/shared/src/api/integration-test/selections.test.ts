@@ -1,9 +1,7 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 
-import { isDefined } from '@sourcegraph/common'
-
-import { isTaggedUnionMember } from '../../util/types'
+import { isDefined, isTaggedUnionMember } from '@sourcegraph/common'
 
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 

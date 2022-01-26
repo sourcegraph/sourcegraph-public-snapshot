@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import { toRepoURL, RepoRevision, toPrettyBlobURL } from '@sourcegraph/common'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { toRepoURL, RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { toTreeURL } from '../util/url'
 

@@ -5,11 +5,10 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { Link, LoadingSpinner, CardHeader, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'

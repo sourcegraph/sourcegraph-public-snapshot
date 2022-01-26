@@ -10,7 +10,16 @@ import { filter, map, withLatestFrom } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import { isDefined } from '@sourcegraph/common'
+import {
+    isDefined,
+    property,
+    FileSpec,
+    ModeSpec,
+    UIPositionSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+} from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -20,15 +29,6 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property } from '@sourcegraph/shared/src/util/types'
-import {
-    FileSpec,
-    ModeSpec,
-    UIPositionSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
-} from '@sourcegraph/shared/src/util/url'
 import { Alert } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'

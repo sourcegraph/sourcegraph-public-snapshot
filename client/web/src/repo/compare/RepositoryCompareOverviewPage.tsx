@@ -5,7 +5,16 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import {
+    asError,
+    createAggregateError,
+    ErrorLike,
+    FileSpec,
+    isErrorLike,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+} from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
@@ -13,7 +22,6 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'

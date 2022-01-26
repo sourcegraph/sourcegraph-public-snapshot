@@ -7,11 +7,10 @@ import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import {
     Container,
     ProductStatusBadge,

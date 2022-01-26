@@ -1,9 +1,8 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { makeRepoURI, memoizeObservable, ParsedRepoURI } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { ParsedRepoURI, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { BlobFileFields, BlobResult, BlobVariables } from '../../graphql-operations'

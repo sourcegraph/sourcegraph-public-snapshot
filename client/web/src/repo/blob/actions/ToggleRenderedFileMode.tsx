@@ -2,7 +2,7 @@ import EyeIcon from 'mdi-react/EyeIcon'
 import React, { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
-import { RenderMode } from '@sourcegraph/shared/src/util/url'
+import { RenderMode } from '@sourcegraph/common'
 import { TooltipController } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'

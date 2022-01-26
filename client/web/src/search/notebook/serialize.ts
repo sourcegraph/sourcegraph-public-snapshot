@@ -1,5 +1,5 @@
+import { toAbsoluteBlobURL } from '@sourcegraph/common'
 import { IHighlightLineRange, NotebookBlock } from '@sourcegraph/shared/src/schema'
-import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { CreateNotebookBlockInput, NotebookBlockType } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'

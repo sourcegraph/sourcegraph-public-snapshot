@@ -6,16 +6,10 @@ import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec, toAbsoluteBlobURL } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
-import {
-    FileSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
-    toAbsoluteBlobURL,
-} from '@sourcegraph/shared/src/util/url'
 
 import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
 import { background } from '../../../browser-extension/web-extension-api/runtime'

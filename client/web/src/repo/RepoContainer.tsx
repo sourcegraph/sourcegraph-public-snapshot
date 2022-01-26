@@ -12,7 +12,15 @@ import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import {
+    asError,
+    ErrorLike,
+    isErrorLike,
+    isFirefox,
+    encodeURIPathComponent,
+    makeRepoURI,
+    repeatUntil,
+} from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
@@ -29,9 +37,6 @@ import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { Button, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'

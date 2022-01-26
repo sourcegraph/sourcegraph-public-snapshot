@@ -4,8 +4,8 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback, useMemo } from 'react'
 
+import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/common'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
-import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
 import { Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
 

@@ -1,7 +1,7 @@
 import * as Comlink from 'comlink'
 import { isObject } from 'lodash'
 
-import { hasProperty } from '@sourcegraph/shared/src/util/types'
+import { hasProperty } from '@sourcegraph/common'
 
 // Sourcegraph VS Code extension Comlink "communication layer" documentation
 // -----

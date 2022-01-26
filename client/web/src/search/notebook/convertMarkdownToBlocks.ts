@@ -1,4 +1,4 @@
-import { markdownLexer } from '@sourcegraph/shared/src/util/markdown'
+import { markdownLexer } from '@sourcegraph/common'
 
 import { parseBrowserRepoURL } from '../../util/url'
 

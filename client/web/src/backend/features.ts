@@ -4,20 +4,20 @@ import { switchMap } from 'rxjs/operators'
 import { DocumentHighlight } from 'sourcegraph'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {
+    memoizeObservable,
     FileSpec,
     UIPositionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
     toURIWithPath,
     toRootURI,
-} from '@sourcegraph/shared/src/util/url'
+} from '@sourcegraph/common'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 
 /**
  * Fetches hover information for the given location.

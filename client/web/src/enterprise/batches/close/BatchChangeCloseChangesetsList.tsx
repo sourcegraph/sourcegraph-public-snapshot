@@ -4,7 +4,15 @@ import { Subject } from 'rxjs'
 import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
 
 import { createHoverifier } from '@sourcegraph/codeintellify'
-import { ErrorLike, isDefined } from '@sourcegraph/common'
+import {
+    ErrorLike,
+    FileSpec,
+    isDefined,
+    property,
+    RepoSpec,
+    RevisionSpec,
+    ResolvedRevisionSpec,
+} from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -13,8 +21,6 @@ import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property } from '@sourcegraph/shared/src/util/types'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Container, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../../backend/features'

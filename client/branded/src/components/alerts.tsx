@@ -1,9 +1,8 @@
 import { upperFirst } from 'lodash'
 import React, { HTMLAttributes } from 'react'
 
-import { asError } from '@sourcegraph/common'
+import { asError, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 export const renderError = (error: unknown): string =>

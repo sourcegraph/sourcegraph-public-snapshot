@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 import React, { useMemo } from 'react'
 
+import { buildSearchURLQuery } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import styles from './MonacoPreviewLink.module.scss'

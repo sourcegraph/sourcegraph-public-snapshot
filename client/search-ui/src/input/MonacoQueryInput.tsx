@@ -3,6 +3,7 @@ import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
+import { observeResize, hasProperty } from '@sourcegraph/common'
 import {
     QueryChangeSource,
     QueryState,
@@ -19,8 +20,6 @@ import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { observeResize } from '@sourcegraph/shared/src/util/dom'
-import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import styles from './MonacoQueryInput.module.scss'
 

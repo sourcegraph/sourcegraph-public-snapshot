@@ -6,7 +6,6 @@ import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
 import { SettingsCascade } from '../../settings/settings'
-import { ReferenceCounter } from '../../util/ReferenceCounter'
 import { MainThreadAPI } from '../contract'
 import { Contributions } from '../protocol'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
@@ -23,6 +22,7 @@ import {
     PlainNotification,
     ProgressNotification,
 } from './extensionHostApi'
+import { ReferenceCounter } from './utils/ReferenceCounter'
 
 export function createExtensionHostState(
     initData: Pick<InitData, 'initialSettings' | 'clientApplication'>,

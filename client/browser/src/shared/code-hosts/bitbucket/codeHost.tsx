@@ -3,8 +3,8 @@ import { of } from 'rxjs'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'

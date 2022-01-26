@@ -1,4 +1,4 @@
-import { registerHighlightContributions } from '../highlight/contributions'
+import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 
 import { renderMarkdown } from './markdown'
 

@@ -6,11 +6,11 @@ import React, { useState, useCallback } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Hoverifier } from '@sourcegraph/codeintellify'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'

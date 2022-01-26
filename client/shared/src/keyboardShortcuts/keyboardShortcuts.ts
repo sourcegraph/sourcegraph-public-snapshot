@@ -1,5 +1,5 @@
+import { isMacPlatform } from '@sourcegraph/common'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 
 export const KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE: KeyboardShortcut = {
     id: 'commandPalette',

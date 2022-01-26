@@ -1,5 +1,5 @@
+import { fetchCache } from '@sourcegraph/common'
 import { GraphQLResult } from '@sourcegraph/http-client'
-import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 
 import { OptionFlagValues } from '../../shared/util/optionFlags'
 

@@ -9,7 +9,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ExtensionCard } from './ExtensionCard'
@@ -17,6 +16,7 @@ import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from 
 import { applyEnablementFilter, applyWIPFilter } from './extensions'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import styles from './ExtensionsList.module.scss'
+import { createRecord } from './utils/createRecord'
 
 interface Props
     extends SettingsCascadeProps,

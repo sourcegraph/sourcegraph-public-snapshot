@@ -1,8 +1,8 @@
 import FileDownloadOutlineIcon from 'mdi-react/FileDownloadOutlineIcon'
 import * as React from 'react'
 
+import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
 
 import { RepoHeaderActionAnchor } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'

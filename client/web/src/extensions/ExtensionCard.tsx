@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useState, useCallback, useMemo, memo } from 'react'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, isEncodedImage } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
@@ -13,7 +13,6 @@ import {
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
 import { useTimeoutManager, Link, CardBody, Card, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'

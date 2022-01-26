@@ -6,7 +6,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
 import React, { useEffect, useState } from 'react'
 
-import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/common'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'

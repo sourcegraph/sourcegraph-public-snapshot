@@ -9,8 +9,8 @@ import classNames from 'classnames'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
+import { highlightCodeSafe } from '@sourcegraph/common'
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
-import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 import { TextArea, Button } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'

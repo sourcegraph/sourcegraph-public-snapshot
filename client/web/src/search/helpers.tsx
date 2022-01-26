@@ -1,9 +1,9 @@
+import { buildSearchURLQuery } from '@sourcegraph/common'
 import { SubmitSearchParameters } from '@sourcegraph/search'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchType } from '@sourcegraph/shared/src/search/stream'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../tracking/eventLogger'
 

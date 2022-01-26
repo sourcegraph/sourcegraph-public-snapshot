@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
+import { isFirefox } from '@sourcegraph/common'
 
 import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 

@@ -3,10 +3,9 @@ import React, { useEffect, useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'

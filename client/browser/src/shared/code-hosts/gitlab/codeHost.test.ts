@@ -1,7 +1,7 @@
 import fetch from 'jest-fetch-mock'
 import { readFile } from 'mz/fs'
 
-import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
+import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/common'
 
 import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 

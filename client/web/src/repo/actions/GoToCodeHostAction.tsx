@@ -7,10 +7,9 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, FileSpec, isErrorLike, RevisionSpec } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
-import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'

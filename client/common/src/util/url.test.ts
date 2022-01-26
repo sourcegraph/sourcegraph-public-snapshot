@@ -1,0 +1,497 @@
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+
+import {
+    buildSearchURLQuery,
+    lprToSelectionsZeroIndexed,
+    makeRepoURI,
+    parseRepoURI,
+    toPrettyBlobURL,
+    toAbsoluteBlobURL,
+    appendSubtreeQueryParameter,
+    RepoFile,
+    encodeURIPathComponent,
+    appendLineRangeQueryParameter,
+    toRepoURL,
+} from './url'
+
+/**
+ * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
+ * prototype (because that causes 2 object literals to fail the test) and (2) treats undefined properties as
+ * missing.
+ */
+function assertDeepStrictEqual(actual: any, expected: any): void {
+    actual = JSON.parse(JSON.stringify(actual))
+    expected = JSON.parse(JSON.stringify(expected))
+    expect(actual).toEqual(expected)
+}
+
+describe('parseRepoURI', () => {
+    test('should parse repo', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+        })
+    })
+    test('should parse repo with spaces', () => {
+        const parsed = parseRepoURI('git://sourcegraph.visualstudio.com/Test%20Repo')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'sourcegraph.visualstudio.com/Test Repo',
+        })
+    })
+
+    test('should parse repo with plus sign', () => {
+        const parsed = parseRepoURI('git://git.launchpad.net/ubuntu/+source/qemu')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'git.launchpad.net/ubuntu/+source/qemu',
+        })
+    })
+
+    test('should parse repo with revision', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+        })
+    })
+
+    test('should parse repo with revision with special characters', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?my%2Fbranch')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'my/branch',
+        })
+    })
+
+    test('should parse repo with commitID', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
+            commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
+        })
+    })
+
+    test('should parse repo with revision and file', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#mux.go')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'mux.go',
+        })
+    })
+
+    test('should parse repo with revision and file with spaces', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#my%20file.go')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'my file.go',
+        })
+    })
+
+    test('should parse repo with revision and file and line', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#mux.go:3')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'mux.go',
+            position: {
+                line: 3,
+                character: 0,
+            },
+        })
+    })
+
+    test('should parse repo with revision and file and position', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#mux.go:3,5')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'mux.go',
+            position: {
+                line: 3,
+                character: 5,
+            },
+        })
+    })
+
+    test('should parse repo with revision and file and range', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#mux.go:3,5-6,9')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'mux.go',
+            range: {
+                start: {
+                    line: 3,
+                    character: 5,
+                },
+                end: {
+                    line: 6,
+                    character: 9,
+                },
+            },
+        })
+    })
+
+    test('should parse a file with spaces', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#space%20here.go')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'space here.go',
+        })
+    })
+})
+
+describe('encodeURIPathComponent', () => {
+    it('encodes all special characters except slashes and the plus sign', () => {
+        expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@')).toBe(
+            'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40'
+        )
+    })
+})
+
+describe('makeRepoURI', () => {
+    test('should make repo', () => {
+        const uri = makeRepoURI({
+            repoName: 'github.com/gorilla/mux',
+        })
+        assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux')
+    })
+
+    test('should make repo with revision', () => {
+        const uri = makeRepoURI({
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+        })
+        assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?branch')
+    })
+
+    test('should make repo with commitID', () => {
+        const uri = makeRepoURI({
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
+        })
+        assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?24fca303ac6da784b9e8269f724ddeb0b2eea5e7')
+    })
+
+    test('should make repo with revision and file', () => {
+        const uri = makeRepoURI({
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'mux.go',
+        })
+        assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?branch#mux.go')
+    })
+
+    test('should make repo with revision and file and line', () => {
+        const uri = makeRepoURI({
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'mux.go',
+            position: {
+                line: 3,
+                character: 0,
+            },
+        })
+        assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?branch#mux.go:3')
+    })
+
+    test('should make repo with revision and file and position', () => {
+        const uri = makeRepoURI({
+            repoName: 'github.com/gorilla/mux',
+            revision: 'branch',
+            filePath: 'mux.go',
+            position: {
+                line: 3,
+                character: 5,
+            },
+        })
+        assertDeepStrictEqual(uri, 'git://github.com/gorilla/mux?branch#mux.go:3,5')
+    })
+})
+
+describe('util/url', () => {
+    const lineCharPosition = { line: 1, character: 1 }
+    const context: RepoFile = {
+        repoName: 'github.com/gorilla/mux',
+        revision: '',
+        commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
+        filePath: 'mux.go',
+    }
+
+    describe('toPrettyBlobURL', () => {
+        test('formats url for empty revision', () => {
+            expect(toPrettyBlobURL(context)).toBe('/github.com/gorilla/mux/-/blob/mux.go')
+        })
+
+        test('formats url for specified revision', () => {
+            expect(toPrettyBlobURL({ ...context, revision: 'branch' })).toBe(
+                '/github.com/gorilla/mux@branch/-/blob/mux.go'
+            )
+        })
+
+        test('formats url with position', () => {
+            expect(toPrettyBlobURL({ ...context, position: lineCharPosition })).toBe(
+                '/github.com/gorilla/mux/-/blob/mux.go?L1:1'
+            )
+        })
+
+        test('formats url with view state', () => {
+            expect(toPrettyBlobURL({ ...context, position: lineCharPosition, viewState: 'references' })).toBe(
+                '/github.com/gorilla/mux/-/blob/mux.go?L1:1#tab=references'
+            )
+        })
+    })
+
+    describe('toAbsoluteBlobURL', () => {
+        const target: RepoFile = {
+            repoName: 'github.com/gorilla/mux',
+            revision: '',
+            commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
+            filePath: 'mux.go',
+        }
+        const sourcegraphUrl = 'https://sourcegraph.com'
+
+        test('default sourcegraph URL, default context', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, target)).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go'
+            )
+        })
+
+        test('default sourcegraph URL, specified revision', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, { ...target, revision: 'branch' })).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux@branch/-/blob/mux.go'
+            )
+        })
+
+        test('default sourcegraph URL, with position', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, { ...target, position: { line: 1, character: 1 } })).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go?L1:1'
+            )
+        })
+    })
+})
+
+describe('buildSearchURLQuery', () => {
+    it('builds the URL query for a regular expression search', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false, undefined)).toBe('q=foo&patternType=regexp'))
+    it('builds the URL query for a literal search', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, false, undefined)).toBe(
+            'q=foo&patternType=literal'
+        ))
+    it('handles an empty query', () =>
+        expect(buildSearchURLQuery('', SearchPatternType.regexp, false, undefined)).toBe('q=&patternType=regexp'))
+    it('handles characters that need encoding', () =>
+        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false, undefined)).toBe(
+            'q=foo+bar%25baz&patternType=regexp'
+        ))
+    it('preserves / and : for readability', () =>
+        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false, undefined)).toBe(
+            'q=repo:foo/bar&patternType=regexp'
+        ))
+    describe('removal of patternType parameter', () => {
+        it('overrides the patternType parameter at the end', () => {
+            expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false, undefined)).toBe(
+                'q=foo&patternType=literal'
+            )
+        })
+        it('overrides the patternType parameter at the beginning', () => {
+            expect(
+                buildSearchURLQuery('patternType:literal foo type:diff', SearchPatternType.regexp, false, undefined)
+            ).toBe('q=foo+type:diff&patternType=literal')
+        })
+        it('overrides the patternType parameter at the end with another operator', () => {
+            expect(
+                buildSearchURLQuery('type:diff foo patternType:literal', SearchPatternType.regexp, false, undefined)
+            ).toBe('q=type:diff+foo&patternType=literal')
+        })
+        it('overrides the patternType parameter in the middle', () => {
+            expect(
+                buildSearchURLQuery('type:diff patternType:literal foo', SearchPatternType.regexp, false, undefined)
+            ).toBe('q=type:diff+foo&patternType=literal')
+        })
+        it('overrides the patternType parameter if using a quoted value', () => {
+            expect(buildSearchURLQuery('patternType:"literal" foo', SearchPatternType.regexp, false, undefined)).toBe(
+                'q=foo&patternType=literal'
+            )
+        })
+    })
+    it('builds the URL query with a case parameter if caseSensitive is true', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, true, undefined)).toBe(
+            'q=foo&patternType=literal&case=yes'
+        ))
+    it('appends the case parameter if `case:yes` exists in the query', () =>
+        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false, undefined)).toBe(
+            'q=foo+&patternType=literal&case=yes'
+        ))
+    it('removes the case parameter if using a quoted value', () =>
+        expect(buildSearchURLQuery('foo case:"yes"', SearchPatternType.literal, true, undefined)).toBe(
+            'q=foo+&patternType=literal&case=yes'
+        ))
+    it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, undefined)).toBe(
+            'q=foo+&patternType=literal'
+        ))
+})
+
+describe('lprToSelectionsZeroIndexed', () => {
+    test('converts an LPR with only a start line', () => {
+        assertDeepStrictEqual(
+            lprToSelectionsZeroIndexed({
+                line: 5,
+            }),
+            [
+                {
+                    start: {
+                        line: 4,
+                        character: 0,
+                    },
+                    end: {
+                        line: 4,
+                        character: 0,
+                    },
+                    anchor: {
+                        line: 4,
+                        character: 0,
+                    },
+                    active: {
+                        line: 4,
+                        character: 0,
+                    },
+                    isReversed: false,
+                },
+            ]
+        )
+    })
+
+    test('converts an LPR with a line and a character', () => {
+        assertDeepStrictEqual(
+            lprToSelectionsZeroIndexed({
+                line: 5,
+                character: 45,
+            }),
+            [
+                {
+                    start: {
+                        line: 4,
+                        character: 44,
+                    },
+                    end: {
+                        line: 4,
+                        character: 44,
+                    },
+                    anchor: {
+                        line: 4,
+                        character: 44,
+                    },
+                    active: {
+                        line: 4,
+                        character: 44,
+                    },
+                    isReversed: false,
+                },
+            ]
+        )
+    })
+
+    test('converts an LPR with a start and end line', () => {
+        assertDeepStrictEqual(
+            lprToSelectionsZeroIndexed({
+                line: 12,
+                endLine: 15,
+            }),
+            [
+                {
+                    start: {
+                        line: 11,
+                        character: 0,
+                    },
+                    end: {
+                        line: 14,
+                        character: 0,
+                    },
+                    anchor: {
+                        line: 11,
+                        character: 0,
+                    },
+                    active: {
+                        line: 14,
+                        character: 0,
+                    },
+                    isReversed: false,
+                },
+            ]
+        )
+    })
+
+    test('converts an LPR with a start and end line and characters', () => {
+        assertDeepStrictEqual(
+            lprToSelectionsZeroIndexed({
+                line: 12,
+                character: 30,
+                endLine: 15,
+                endCharacter: 60,
+            }),
+            [
+                {
+                    start: {
+                        line: 11,
+                        character: 29,
+                    },
+                    end: {
+                        line: 14,
+                        character: 59,
+                    },
+                    anchor: {
+                        line: 11,
+                        character: 29,
+                    },
+                    active: {
+                        line: 14,
+                        character: 59,
+                    },
+                    isReversed: false,
+                },
+            ]
+        )
+    })
+})
+
+describe('appendSubtreeQueryParam', () => {
+    it('appends subtree=true to urls', () => {
+        expect(appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L2:24')).toBe(
+            '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L2:24&subtree=true'
+        )
+    })
+    it('appends subtree=true to urls with other query params', () => {
+        expect(
+            appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24')
+        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24&subtree=true')
+    })
+})
+
+describe('appendLineRangeQueryParameter', () => {
+    it('appends line range to the start of query with existing parameters', () => {
+        expect(
+            appendLineRangeQueryParameter(
+                '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test',
+                'L24:24'
+            )
+        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L24:24&test=test')
+    })
+})
+
+describe('toRepoURL', () => {
+    it('generates absolute repo URL without a rev', () => {
+        expect(toRepoURL({ repoName: 'sourcegraph/sourcegraph' })).toBe('/sourcegraph/sourcegraph')
+    })
+
+    it('generates absolute repo URL with a rev', () => {
+        expect(toRepoURL({ repoName: 'sourcegraph/sourcegraph', revision: 'main' })).toBe(
+            '/sourcegraph/sourcegraph@main'
+        )
+    })
+})

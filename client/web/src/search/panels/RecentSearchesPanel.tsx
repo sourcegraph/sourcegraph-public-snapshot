@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
+import { buildSearchURLQuery } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

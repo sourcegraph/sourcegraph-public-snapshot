@@ -1,4 +1,4 @@
-import { RepoFile } from '@sourcegraph/shared/src/util/url'
+import { RepoFile } from '@sourcegraph/common'
 
 import { parseBrowserRepoURL, toTreeURL } from './url'
 

@@ -45,7 +45,22 @@ import {
     MaybeLoadingResult,
     DiffPart,
 } from '@sourcegraph/codeintellify'
-import { asError, isDefined } from '@sourcegraph/common'
+import {
+    asError,
+    asObservable,
+    FileSpec,
+    isDefined,
+    isInstanceOf,
+    property,
+    RawRepoSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+    toRootURI,
+    toURIWithPath,
+    UIPositionSpec,
+    ViewStateSpec,
+} from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -68,19 +83,6 @@ import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/not
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
-import { isInstanceOf, property } from '@sourcegraph/shared/src/util/types'
-import {
-    FileSpec,
-    UIPositionSpec,
-    RawRepoSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
-    toRootURI,
-    toURIWithPath,
-    ViewStateSpec,
-} from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'

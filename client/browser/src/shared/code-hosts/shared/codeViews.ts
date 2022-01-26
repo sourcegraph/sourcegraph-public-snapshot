@@ -3,9 +3,9 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/common'
 import { Selection } from '@sourcegraph/extension-api-types'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { ButtonProps } from '../../components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../repo/backend'

@@ -3,8 +3,8 @@ import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 
+import { pluralize } from '@sourcegraph/common'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import styles from './StreamingProgressCount.module.scss'
