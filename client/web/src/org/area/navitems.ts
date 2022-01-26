@@ -1,5 +1,6 @@
 import CogOutlineIcon from 'mdi-react/CogOutlineIcon'
 import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
+import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 
@@ -10,6 +11,12 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
         to: '/settings',
         label: 'Settings',
         icon: CogOutlineIcon,
+        condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
+    },
+    {
+        to: '/members',
+        label: 'Members',
+        icon: AccountMultipleIcon,
         condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
     },
     {
