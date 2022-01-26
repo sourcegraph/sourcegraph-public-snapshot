@@ -11,8 +11,6 @@ import {
     CaseSensitivityProps,
     SearchPatternTypeProps,
     SearchContextProps,
-    useQueryIntelligence,
-    useQueryDiagnostics,
 } from '@sourcegraph/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -25,6 +23,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { IEditor } from './LazyMonacoQueryInput'
 
 import styles from './MonacoQueryInput.module.scss'
+import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
 
 export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     readOnly: false,

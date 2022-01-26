@@ -1,13 +1,18 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
-import { useQueryIntelligence, useQueryDiagnostics } from '@sourcegraph/search'
-import { StreamingSearchResultsList, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import {
+    StreamingSearchResultsList,
+    StreamingSearchResultsListProps,
+    useQueryIntelligence,
+    useQueryDiagnostics,
+} from '@sourcegraph/search-ui'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -20,9 +25,9 @@ import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
 import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
-import styles from './SearchConsolePage.module.scss'
-
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
+
+import styles from './SearchConsolePage.module.scss'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
