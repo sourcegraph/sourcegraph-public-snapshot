@@ -1691,8 +1691,8 @@ func TestGetReferenceCount(t *testing.T) {
 
 	_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
 									VALUES  (1, 1),
-											(1, 2),
-											(1, 3),
+											(2, 1),
+											(3, 1),
 											(2, 2);`)
 	if err != nil {
 		t.Fatal(err)
