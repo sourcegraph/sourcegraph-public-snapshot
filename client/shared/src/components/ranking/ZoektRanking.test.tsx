@@ -89,7 +89,7 @@ describe('ZoektRanking', () => {
                 "startLine": 19,
               },
               Object {
-                "endLine": 26,
+                "endLine": 37,
                 "matches": Array [
                   Object {
                     "character": 8,
@@ -102,6 +102,72 @@ describe('ZoektRanking', () => {
                     "highlightLength": 5,
                     "isInContext": false,
                     "line": 24,
+                  },
+                  Object {
+                    "character": 53,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 27,
+                  },
+                  Object {
+                    "character": 3,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 28,
+                  },
+                  Object {
+                    "character": 13,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 29,
+                  },
+                  Object {
+                    "character": 2,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 30,
+                  },
+                  Object {
+                    "character": 8,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 31,
+                  },
+                  Object {
+                    "character": 31,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 31,
+                  },
+                  Object {
+                    "character": 11,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 32,
+                  },
+                  Object {
+                    "character": 23,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 33,
+                  },
+                  Object {
+                    "character": 30,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 33,
+                  },
+                  Object {
+                    "character": 16,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 34,
+                  },
+                  Object {
+                    "character": 2,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 35,
                   },
                 ],
                 "position": Object {
@@ -127,28 +193,6 @@ describe('ZoektRanking', () => {
                     "character": 16,
                     "highlightLength": 5,
                     "isInContext": false,
-                    "line": 175,
-                  },
-                  Object {
-                    "character": 32,
-                    "highlightLength": 5,
-                    "isInContext": false,
-                    "line": 175,
-                  },
-                ],
-                "position": Object {
-                  "character": 17,
-                  "line": 176,
-                },
-                "startLine": 174,
-              },
-              Object {
-                "endLine": 174,
-                "matches": Array [
-                  Object {
-                    "character": 16,
-                    "highlightLength": 5,
-                    "isInContext": false,
                     "line": 171,
                   },
                   Object {
@@ -168,6 +212,18 @@ describe('ZoektRanking', () => {
                     "highlightLength": 5,
                     "isInContext": false,
                     "line": 172,
+                  },
+                  Object {
+                    "character": 16,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 175,
+                  },
+                  Object {
+                    "character": 32,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 175,
                   },
                 ],
                 "position": Object {

@@ -2,12 +2,10 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SearchContextFields } from '@sourcegraph/search'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge } from '@sourcegraph/wildcard'
-
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
-import { SearchContextFields } from '../../graphql-operations'
+import { Badge, Link } from '@sourcegraph/wildcard'
 
 import styles from './SearchContextNode.module.scss'
 

@@ -387,7 +387,7 @@ func latestResultTime(previousLastResult *time.Time, v *gqlSearchResponse, searc
 		// Error already logged by extractTime.
 		return time.Now()
 	}
-	return *t
+	return t
 }
 
 func zeroOrVal(i *int) int {

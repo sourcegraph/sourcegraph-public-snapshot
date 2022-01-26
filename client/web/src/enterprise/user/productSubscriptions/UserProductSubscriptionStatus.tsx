@@ -2,7 +2,7 @@ import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 import React, { useState, useCallback } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, CardFooter } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -44,15 +44,15 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
             }
             footer={
                 <>
-                    <div className="card-footer d-flex align-items-center justify-content-between flex-wrap">
+                    <CardFooter className="d-flex align-items-center justify-content-between flex-wrap">
                         <Button className="mr-4 my-1" onClick={toggleShowLicenseKey} variant="primary">
                             <KeyIcon className="icon-inline" /> {showLicenseKey ? 'Hide' : 'Reveal'} license key
                         </Button>
                         <div className="flex-fill" />
                         <div className="my-1" />
-                    </div>
+                    </CardFooter>
                     {showLicenseKey && (
-                        <div className="card-footer">
+                        <CardFooter>
                             <h3>License key</h3>
                             {licenseKey ? (
                                 <>
@@ -82,7 +82,7 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
                                     for help.
                                 </div>
                             )}
-                        </div>
+                        </CardFooter>
                     )}
                 </>
             }

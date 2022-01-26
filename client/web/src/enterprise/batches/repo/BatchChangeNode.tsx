@@ -2,9 +2,8 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useEffect } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button } from '@sourcegraph/wildcard'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { RepoBatchChange } from '../../../graphql-operations'

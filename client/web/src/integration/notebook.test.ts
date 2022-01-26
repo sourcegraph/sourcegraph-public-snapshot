@@ -15,7 +15,7 @@ import { siteGQLID, siteID } from './jscontext'
 import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
-const viewerSettings: Partial<WebGraphQlOperations> = {
+const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ViewerSettings: () => ({
         viewerSettings: {
             __typename: 'SettingsCascade',
@@ -71,6 +71,10 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             updatedAt: subDays(now, 5).toISOString(),
             public: true,
             viewerCanManage: true,
+            viewerHasStarred: true,
+            stars: {
+                totalCount: 123,
+            },
             creator: { __typename: 'User', username: 'user1' },
             blocks: [
                 { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
@@ -87,6 +91,10 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             updatedAt: subDays(now, 5).toISOString(),
             public: notebook.public,
             viewerCanManage: true,
+            viewerHasStarred: true,
+            stars: {
+                totalCount: 123,
+            },
             creator: { __typename: 'User', username: 'user1' },
             blocks: notebook.blocks.map(block => {
                 switch (block.type) {

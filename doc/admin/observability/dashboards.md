@@ -2333,7 +2333,7 @@ Query: ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign
 
 <p class="subtitle">Rate of API requests to list organisation members</p>
 
-Rate (QPS) of requests to list organisation members
+Rate (QPS) of API requests to list organisation members
 
 This panel has no related alerts.
 
@@ -2354,7 +2354,7 @@ Query: `sum(irate(src_graphql_request_duration_seconds_count{route="Organization
 
 <p class="subtitle">99 percentile latency of API requests to list organisation members</p>
 
-99 percentile of org-members latency
+99 percentile latency ofAPI requests to list organisation members
 
 This panel has no related alerts.
 
@@ -2375,7 +2375,7 @@ Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_b
 
 <p class="subtitle">Percentage of API requests to list organisation members that return an error</p>
 
-Percentage of org-members API requests that return an error
+Percentage of API requests to list organisation members that return an error
 
 This panel has no related alerts.
 
@@ -2387,6 +2387,321 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101702`
 <summary>Technical details</summary>
 
 Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: create_org_rate
+
+<p class="subtitle">Rate of API requests to create an organisation</p>
+
+Rate (QPS) of API requests to create an organisation
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101710` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="CreateOrganization"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: create_org_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to create an organisation</p>
+
+99 percentile latency ofAPI requests to create an organisation
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101711` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="CreateOrganization"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: create_org_error_rate
+
+<p class="subtitle">Percentage of API requests to create an organisation that return an error</p>
+
+Percentage of API requests to create an organisation that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101712` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="CreateOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="CreateOrganization"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: remove_org_member_rate
+
+<p class="subtitle">Rate of API requests to remove organisation member</p>
+
+Rate (QPS) of API requests to remove organisation member
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101720` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: remove_org_member_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to remove organisation member</p>
+
+99 percentile latency ofAPI requests to remove organisation member
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101721` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="RemoveUserFromOrganization"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: remove_org_member_error_rate
+
+<p class="subtitle">Percentage of API requests to remove organisation member that return an error</p>
+
+Percentage of API requests to remove organisation member that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101722` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="RemoveUserFromOrganization"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: invite_org_member_rate
+
+<p class="subtitle">Rate of API requests to invite a new organisation member</p>
+
+Rate (QPS) of API requests to invite a new organisation member
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101730` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: invite_org_member_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to invite a new organisation member</p>
+
+99 percentile latency ofAPI requests to invite a new organisation member
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101731` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="InviteUserToOrganization"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: invite_org_member_error_rate
+
+<p class="subtitle">Percentage of API requests to invite a new organisation member that return an error</p>
+
+Percentage of API requests to invite a new organisation member that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101732` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="InviteUserToOrganization"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: org_invite_respond_rate
+
+<p class="subtitle">Rate of API requests to respond to an org invitation</p>
+
+Rate (QPS) of API requests to respond to an org invitation
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101740` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: org_invite_respond_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to respond to an org invitation</p>
+
+99 percentile latency ofAPI requests to respond to an org invitation
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101741` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="RespondToOrganizationInvitation"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: org_invite_respond_error_rate
+
+<p class="subtitle">Percentage of API requests to respond to an org invitation that return an error</p>
+
+Percentage of API requests to respond to an org invitation that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101742` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="RespondToOrganizationInvitation"}[5m]))*100`
+
+</details>
+
+<br />
+
+#### frontend: org_repositories_rate
+
+<p class="subtitle">Rate of API requests to list repositories owned by an org</p>
+
+Rate (QPS) of API requests to list repositories owned by an org
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101750` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(irate(src_graphql_request_duration_seconds_count{route="OrgRepositories"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: org_repositories_latency_p99
+
+<p class="subtitle">99 percentile latency of API requests to list repositories owned by an org</p>
+
+99 percentile latency ofAPI requests to list repositories owned by an org
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101751` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrgRepositories"}[5m])) by (le))`
+
+</details>
+
+<br />
+
+#### frontend: org_repositories_error_rate
+
+<p class="subtitle">Percentage of API requests to list repositories owned by an org that return an error</p>
+
+Percentage of API requests to list repositories owned by an org that return an error
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101752` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (irate(src_graphql_request_duration_seconds_count{route="OrgRepositories",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrgRepositories"}[5m]))*100`
 
 </details>
 
@@ -2843,13 +3158,13 @@ Query: `sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by (a
 
 ### Frontend: Sentinel queries (only on sourcegraph.com)
 
-#### frontend: mean_successful_sentinel_duration_1h30m
+#### frontend: mean_successful_sentinel_duration_over_1h30m
 
 <p class="subtitle">Mean successful sentinel search duration over 1h30m</p>
 
 Mean search duration for all successful sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-1h30m) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-over-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400` on your Sourcegraph instance.
 
@@ -2858,19 +3173,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[1h30m])) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[1h30m]))`
+Query: `sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[1h30m])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[1h30m]))`
 
 </details>
 
 <br />
 
-#### frontend: mean_sentinel_stream_latency_1h30m
+#### frontend: mean_sentinel_stream_latency_over_1h30m
 
 <p class="subtitle">Mean successful sentinel stream latency over 1h30m</p>
 
 Mean time to first result for all successful streaming sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-1h30m) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-over-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102401` on your Sourcegraph instance.
 
@@ -2885,13 +3200,13 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 <br />
 
-#### frontend: 90th_percentile_successful_sentinel_duration_1h30m
+#### frontend: 90th_percentile_successful_sentinel_duration_over_1h30m
 
 <p class="subtitle">90th percentile successful sentinel search duration over 1h30m</p>
 
 90th percentile search duration for all successful sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-1h30m) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-over-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102410` on your Sourcegraph instance.
 
@@ -2906,13 +3221,13 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_respo
 
 <br />
 
-#### frontend: 90th_percentile_sentinel_stream_latency_1h30m
+#### frontend: 90th_percentile_sentinel_stream_latency_over_1h30m
 
 <p class="subtitle">90th percentile successful sentinel stream latency over 1h30m</p>
 
 90th percentile time to first result for all successful streaming sentinel queries
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-1h30m) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-over-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102411` on your Sourcegraph instance.
 
@@ -2927,9 +3242,9 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_strea
 
 <br />
 
-#### frontend: mean_successful_sentinel_duration_by_query_1h30m
+#### frontend: mean_successful_sentinel_duration_by_query
 
-<p class="subtitle">Mean successful sentinel search duration by query over 1h30m</p>
+<p class="subtitle">Mean successful sentinel search duration by query</p>
 
 Mean search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
@@ -2942,15 +3257,15 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102420`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[1h30m])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[1h30m])) by (source)`
+Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (source)`
 
 </details>
 
 <br />
 
-#### frontend: mean_sentinel_stream_latency_by_query_1h30m
+#### frontend: mean_sentinel_stream_latency_by_query
 
-<p class="subtitle">Mean successful sentinel stream latency by query over 1h30m</p>
+<p class="subtitle">Mean successful sentinel stream latency by query</p>
 
 Mean time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
@@ -2963,15 +3278,15 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102421`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[1h30m])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[1h30m])) by (source)`
+Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (source)`
 
 </details>
 
 <br />
 
-#### frontend: 90th_percentile_successful_sentinel_duration_by_query_1h30m
+#### frontend: 90th_percentile_successful_sentinel_duration_by_query
 
-<p class="subtitle">90th percentile successful sentinel search duration by query over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel search duration by query</p>
 
 90th percentile search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
@@ -2984,15 +3299,15 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102430`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m])) by (le, source))`
+Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (le, source))`
 
 </details>
 
 <br />
 
-#### frontend: 90th_percentile_successful_stream_latency_by_query_1h30m
+#### frontend: 90th_percentile_successful_stream_latency_by_query
 
-<p class="subtitle">90th percentile successful sentinel stream latency by query over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel stream latency by query</p>
 
 90th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
@@ -3005,15 +3320,15 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102431`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m])) by (le, source))`
+Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (le, source))`
 
 </details>
 
 <br />
 
-#### frontend: 90th_percentile_unsuccessful_duration_by_query_1h30m
+#### frontend: 90th_percentile_unsuccessful_duration_by_query
 
-<p class="subtitle">90th percentile unsuccessful sentinel search duration by query over 1h30m</p>
+<p class="subtitle">90th percentile unsuccessful sentinel search duration by query</p>
 
 90th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
 
@@ -3026,15 +3341,15 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102440`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[1h30m])) by (le, source))`
+Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[$sentinel_sampling_duration])) by (le, source))`
 
 </details>
 
 <br />
 
-#### frontend: 75th_percentile_successful_sentinel_duration_by_query_1h30m
+#### frontend: 75th_percentile_successful_sentinel_duration_by_query
 
-<p class="subtitle">75th percentile successful sentinel search duration by query over 1h30m</p>
+<p class="subtitle">75th percentile successful sentinel search duration by query</p>
 
 75th percentile search duration of successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
@@ -3047,15 +3362,15 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102450`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m])) by (le, source))`
+Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (le, source))`
 
 </details>
 
 <br />
 
-#### frontend: 75th_percentile_successful_stream_latency_by_query_1h30m
+#### frontend: 75th_percentile_successful_stream_latency_by_query
 
-<p class="subtitle">75th percentile successful sentinel stream latency by query over 1h30m</p>
+<p class="subtitle">75th percentile successful sentinel stream latency by query</p>
 
 75th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
@@ -3068,15 +3383,15 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102451`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m])) by (le, source))`
+Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (le, source))`
 
 </details>
 
 <br />
 
-#### frontend: 75th_percentile_unsuccessful_duration_by_query_1h30m
+#### frontend: 75th_percentile_unsuccessful_duration_by_query
 
-<p class="subtitle">75th percentile unsuccessful sentinel search duration by query over 1h30m</p>
+<p class="subtitle">75th percentile unsuccessful sentinel search duration by query</p>
 
 75th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
 
@@ -3089,15 +3404,15 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102460`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[1h30m])) by (le, source))`
+Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[$sentinel_sampling_duration])) by (le, source))`
 
 </details>
 
 <br />
 
-#### frontend: unsuccessful_status_rate_1h30m
+#### frontend: unsuccessful_status_rate
 
-<p class="subtitle">Unsuccessful status rate per 1h30m</p>
+<p class="subtitle">Unsuccessful status rate</p>
 
 The rate of unsuccessful sentinel queries, broken down by failure type.
 
@@ -3110,7 +3425,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102470`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[1h30m])) by (status)`
+Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[$sentinel_sampling_duration])) by (status)`
 
 </details>
 
@@ -13198,9 +13513,9 @@ Query: `sum by (instance, state) (increase(index_repo_seconds_count{instance=~`$
 
 ### Zoekt: Indexing queue statistics
 
-#### zoekt: indexed_queue_size_aggregate
+#### zoekt: indexed_num_scheduled_jobs_aggregate
 
-<p class="subtitle"># of outstanding index jobs (aggregate)</p>
+<p class="subtitle"># scheduled index jobs (aggregate)</p>
 
 A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning
 
@@ -13219,9 +13534,9 @@ Query: `sum(index_queue_len)`
 
 <br />
 
-#### zoekt: indexed_queue_size_per_instance
+#### zoekt: indexed_num_scheduled_jobs_per_instance
 
-<p class="subtitle"># of outstanding index jobs (per instance)</p>
+<p class="subtitle"># scheduled index jobs (per instance)</p>
 
 A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning
 

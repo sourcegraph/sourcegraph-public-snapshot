@@ -8,11 +8,11 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../components/HeroPage'
-import { lazyComponent } from '../../../util/lazyComponent'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
@@ -68,12 +68,11 @@ interface Props
 /**
  * The global batch changes area.
  */
-export const GlobalBatchChangesArea: React.FunctionComponent<Props> = props => {
-    if (props.isSourcegraphDotCom) {
-        return <DotcomGettingStartedPage />
-    }
-    return <AuthenticatedBatchChangesArea {...props} />
-}
+export const GlobalBatchChangesArea: React.FunctionComponent<Props> = props => (
+    <div className="w-100">
+        {props.isSourcegraphDotCom ? <DotcomGettingStartedPage /> : <AuthenticatedBatchChangesArea {...props} />}
+    </div>
+)
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -82,34 +81,30 @@ interface AuthenticatedProps extends Props {
 }
 
 export const AuthenticatedBatchChangesArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
-    <div className="w-100">
-        <Switch>
-            <Route
-                render={props => (
-                    <BatchChangeListPage headingElement="h1" canCreate={true} {...outerProps} {...props} />
-                )}
-                path={match.url}
-                exact={true}
-            />
-            <Route
-                path={`${match.url}/create`}
-                render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
-                exact={true}
-            />
-            <Route
-                path={`${match.url}/executions/:batchSpecID`}
-                render={({ match, ...props }: RouteComponentProps<{ batchSpecID: string }>) => (
-                    <BatchSpecExecutionDetailsPage
-                        {...outerProps}
-                        {...props}
-                        match={match}
-                        batchSpecID={match.params.batchSpecID}
-                    />
-                )}
-            />
-            <Route component={NotFoundPage} key="hardcoded-key" />
-        </Switch>
-    </div>
+    <Switch>
+        <Route
+            render={props => <BatchChangeListPage headingElement="h1" canCreate={true} {...outerProps} {...props} />}
+            path={match.url}
+            exact={true}
+        />
+        <Route
+            path={`${match.url}/create`}
+            render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
+            exact={true}
+        />
+        <Route
+            path={`${match.url}/executions/:batchSpecID`}
+            render={({ match, ...props }: RouteComponentProps<{ batchSpecID: string }>) => (
+                <BatchSpecExecutionDetailsPage
+                    {...outerProps}
+                    {...props}
+                    match={match}
+                    batchSpecID={match.params.batchSpecID}
+                />
+            )}
+        />
+        <Route component={NotFoundPage} key="hardcoded-key" />
+    </Switch>
 ))
 
 export interface NamespaceBatchChangesAreaProps extends Props {

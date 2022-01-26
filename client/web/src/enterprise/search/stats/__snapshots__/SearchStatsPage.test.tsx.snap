@@ -24,7 +24,7 @@ exports[`SearchStatsPage limitHit 1`] = `
         </svg>
          Code statistics 
         <small
-          class="badge secondary text-uppercase ml-2"
+          class="text-uppercase ml-2"
         >
           Experimental
         </small>
@@ -53,7 +53,7 @@ exports[`SearchStatsPage limitHit 1`] = `
       class="my-3"
     />
     <div
-      class="alert alert-warning"
+      class=""
     >
       Limit hit. Add 
       <code>
@@ -89,7 +89,7 @@ exports[`SearchStatsPage renders 1`] = `
         </svg>
          Code statistics 
         <small
-          class="badge secondary text-uppercase ml-2"
+          class="text-uppercase ml-2"
         >
           Experimental
         </small>
@@ -118,10 +118,10 @@ exports[`SearchStatsPage renders 1`] = `
       class="my-3"
     />
     <div
-      class="card mb-3"
+      class="mb-3"
     >
       <h4
-        class="card-header"
+        class="cardHeader"
       >
         Languages
       </h4>
@@ -167,6 +167,7 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
+                    class=""
                     href="/search?q=abc+lang:a&patternType=literal"
                   >
                     A
@@ -182,6 +183,7 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
+                    class=""
                     href="/search?q=abc+lang:b&patternType=literal"
                   >
                     B
@@ -197,6 +199,7 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
+                    class=""
                     href="/search?q=abc+lang:c&patternType=literal"
                   >
                     C
@@ -212,6 +215,7 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
+                    class=""
                     href="/search?q=abc+lang:d&patternType=literal"
                   >
                     D

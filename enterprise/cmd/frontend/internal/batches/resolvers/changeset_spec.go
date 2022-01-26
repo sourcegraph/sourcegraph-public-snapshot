@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -96,6 +95,10 @@ func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
 }
 
+func (r *changesetSpecResolver) ForkTarget() graphqlbackend.ForkTargetInterface {
+	return &forkTargetResolver{changesetSpec: r.changesetSpec}
+}
+
 func (r *changesetSpecResolver) repoAccessible() bool {
 	// If the repository is not nil, it's accessible
 	return r.repo != nil
@@ -157,14 +160,8 @@ func (r *changesetDescriptionResolver) HeadRepository() *graphqlbackend.Reposito
 	return r.repoResolver
 }
 func (r *changesetDescriptionResolver) HeadRef() string { return git.AbbreviateRef(r.desc.HeadRef) }
-func (r *changesetDescriptionResolver) Fork() bool {
-	if r.desc.IsBranch() {
-		return conf.Get().BatchChangesEnforceForks
-	}
-	return false
-}
-func (r *changesetDescriptionResolver) Title() string { return r.desc.Title }
-func (r *changesetDescriptionResolver) Body() string  { return r.desc.Body }
+func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
+func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
 func (r *changesetDescriptionResolver) Published() *batcheslib.PublishedValue {
 	if published := r.desc.Published; !published.Nil() {
 		return &published
@@ -229,3 +226,17 @@ func (r *gitCommitDescriptionResolver) Body() *string {
 	return &body
 }
 func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }
+
+type forkTargetResolver struct {
+	changesetSpec *btypes.ChangesetSpec
+}
+
+var _ graphqlbackend.ForkTargetInterface = &forkTargetResolver{}
+
+func (r *forkTargetResolver) PushUser() bool {
+	return r.changesetSpec.IsFork()
+}
+
+func (r *forkTargetResolver) Namespace() *string {
+	return r.changesetSpec.GetForkNamespace()
+}

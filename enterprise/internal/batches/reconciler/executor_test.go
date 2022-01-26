@@ -18,7 +18,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -30,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExecutor_ExecutePlan(t *testing.T) {
@@ -1050,32 +1048,29 @@ func TestLoadRemoteRepo(t *testing.T) {
 	targetRepo := &types.Repo{}
 
 	t.Run("forks disabled", func(t *testing.T) {
-		ct.MockConfig(t, &conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				BatchChangesEnforceForks: false,
-			},
-		})
-
 		t.Run("unforked changeset", func(t *testing.T) {
 			// Set up a changeset source that will panic if any methods are invoked.
 			css := NewStrictMockChangesetSource()
 
 			// This should succeed, since loadRemoteRepo() should early return with
 			// forks disabled.
-			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{})
+			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+				ForkNamespace: nil,
+			})
 			assert.Nil(t, err)
 			assert.Same(t, targetRepo, remoteRepo)
 		})
 
 		t.Run("forked changeset", func(t *testing.T) {
+			forkNamespace := "fork"
 			want := &types.Repo{}
 			css := NewMockForkableChangesetSource()
 			css.GetNamespaceForkFunc.SetDefaultReturn(want, nil)
 
 			// This should succeed, since loadRemoteRepo() should early return with
 			// forks disabled.
-			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{
-				ExternalForkNamespace: "fork",
+			remoteRepo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+				ForkNamespace: &forkNamespace,
 			})
 			assert.Nil(t, err)
 			assert.Same(t, want, remoteRepo)
@@ -1084,16 +1079,14 @@ func TestLoadRemoteRepo(t *testing.T) {
 	})
 
 	t.Run("forks enabled", func(t *testing.T) {
-		ct.MockConfig(t, &conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				BatchChangesEnforceForks: true,
-			},
-		})
+		forkNamespace := "<user>"
 
 		t.Run("unforkable changeset source", func(t *testing.T) {
 			css := NewMockChangesetSource()
 
-			repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{})
+			repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+				ForkNamespace: &forkNamespace,
+			})
 			assert.Nil(t, repo)
 			assert.ErrorIs(t, err, errChangesetSourceCannotFork)
 		})
@@ -1104,7 +1097,9 @@ func TestLoadRemoteRepo(t *testing.T) {
 				css := NewMockForkableChangesetSource()
 				css.GetUserForkFunc.SetDefaultReturn(want, nil)
 
-				have, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{})
+				have, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+					ForkNamespace: &forkNamespace,
+				})
 				assert.Nil(t, err)
 				assert.Same(t, want, have)
 				mockassert.CalledOnce(t, css.GetUserForkFunc)
@@ -1115,7 +1110,9 @@ func TestLoadRemoteRepo(t *testing.T) {
 				css := NewMockForkableChangesetSource()
 				css.GetUserForkFunc.SetDefaultReturn(nil, want)
 
-				repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{})
+				repo, err := loadRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
+					ForkNamespace: &forkNamespace,
+				})
 				assert.Nil(t, repo)
 				assert.Same(t, want, err)
 				mockassert.CalledOnce(t, css.GetUserForkFunc)

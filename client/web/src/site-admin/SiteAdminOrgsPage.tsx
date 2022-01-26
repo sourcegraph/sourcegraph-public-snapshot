@@ -5,15 +5,14 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { OrganizationFields } from '../graphql-operations'
@@ -134,9 +133,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
             </p>
             {window.context.sourcegraphDotComMode ? (
                 <>
-                    <div className="alert alert-info">
-                        Only organization members can view & modify organization settings.
-                    </div>
+                    <Alert variant="info">Only organization members can view & modify organization settings.</Alert>
                     <h3>Enable early access</h3>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <p>Enable early access for organization code host connections and repositories on Cloud.</p>

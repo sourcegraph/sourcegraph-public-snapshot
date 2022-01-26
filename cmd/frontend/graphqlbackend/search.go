@@ -5,7 +5,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,12 +27,10 @@ type SearchArgs struct {
 	// Stream if non-nil will stream all SearchEvents.
 	//
 	// This is how our streaming and our batch interface co-exist. When this
-	// is set, it exposes a way to stream out results as we collect them.
-	//
-	// TODO(keegan) This is not our final design. For example this doesn't
-	// allow us to stream out things like dynamic filters or take into account
-	// AND/OR. However, streaming is behind a feature flag for now, so this is
-	// to make it visible in the browser.
+	// is set, it exposes a way to stream out results as we collect them. By
+	// default we stream all results, including results that are processed
+	// over batch-based evaluation (like and/or expressions), where results
+	// are first collected, merged, and then sent on the stream.
 	Stream streaming.Sender
 
 	// For tests
@@ -75,21 +72,26 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
+	// Experimental: create a step to replace each context in the query with its repository query if any.
+	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, false)
+	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
+		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, context)
+		if err != nil {
+			return "", err
+		}
+		tr.LazyPrintf("substitute query %s for context %s", sc.Query, context)
+		return sc.Query, nil
+	})
+
 	var plan query.Plan
-	plan, err = query.Pipeline(query.Init(args.Query, searchType))
+	plan, err = query.Pipeline(
+		query.Init(args.Query, searchType),
+		query.With(searchContextsQueryEnabled, substituteContextsStep),
+	)
 	if err != nil {
 		return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
 	}
 	tr.LazyPrintf("parsing done")
-
-	if settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, false) {
-		// Replace each context in the query with its repository query if any.
-		plan, err = substituteSearchContexts(ctx, db, plan)
-		if err != nil {
-			return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
-		}
-		tr.LazyPrintf("context substitution done")
-	}
 
 	defaultLimit := defaultMaxSearchResults
 	if args.Stream != nil {
@@ -175,45 +177,6 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 		}
 	})
 	return searchType
-}
-
-func substituteSearchContexts(ctx context.Context, db database.DB, plan query.Plan) (query.Plan, error) {
-	errs := new(multierror.Error)
-	dnf := query.Dnf(query.MapParameter(plan.ToParseTree(), func(field, value string, negated bool, a query.Annotation) query.Node {
-		p := query.Parameter{
-			Value:   value,
-			Field:   field,
-			Negated: negated,
-		}
-
-		if field != query.FieldContext {
-			return p
-		}
-
-		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, value)
-		if err != nil {
-			errs = multierror.Append(errs, err)
-			return p
-		}
-
-		if sc.Query == "" {
-			return p
-		}
-
-		contextQuery, err := query.Pipeline(query.Init(sc.Query, query.SearchTypeRegex))
-		if err != nil {
-			errs = multierror.Append(errs, err)
-			return p
-		}
-
-		return contextQuery.ToParseTree()[0]
-	}))
-
-	if err := errs.ErrorOrNil(); err != nil {
-		return nil, err
-	}
-
-	return query.ToPlan(dnf)
 }
 
 func getBoolPtr(b *bool, def bool) bool {

@@ -9,30 +9,26 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func NewAggregator(db dbutil.DB, stream streaming.Sender, filterFunc EventTransformer) *Aggregator {
+func NewAggregator(stream streaming.Sender) *Aggregator {
 	return &Aggregator{
-		db:               db,
-		eventTransformer: filterFunc,
-		parentStream:     stream,
-		errors:           &multierror.Error{},
+		parentStream: stream,
+		errors:       &multierror.Error{},
 	}
 }
 
 type Aggregator struct {
 	parentStream streaming.Sender
-	db           dbutil.DB
 
 	// eventTransformer can be applied to transform each SearchEvent before it gets
 	// propagated.
 	//
-	// It is currently used to provide sub-repo perms filtering.
+	// It is currently used to provide sub-repo permissions filtering.
 	//
 	// SearchEvent is still propagated even in an error case - eventTransformer
 	// should make sure the appropriate transformations are made before returning an
@@ -48,6 +44,13 @@ type Aggregator struct {
 
 // EventTransformer is a function that is expected to transform search events
 type EventTransformer func(event streaming.SearchEvent) (streaming.SearchEvent, error)
+
+// SetEventTransformer sets the event transformer for the aggregator. It is not
+// safe for concurrent use and is expected to be called once before the
+// aggregator is used.
+func (a *Aggregator) SetEventTransformer(et EventTransformer) {
+	a.eventTransformer = et
+}
 
 // Get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
@@ -107,7 +110,7 @@ func (a *Aggregator) Error(err error) {
 	}
 }
 
-func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pager) (err error) {
+func (a *Aggregator) DoSearch(ctx context.Context, db database.DB, job Job) (err error) {
 	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
 	defer func() {
 		a.Error(err)
@@ -115,6 +118,6 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pa
 		tr.Finish()
 	}()
 
-	err = job.Run(ctx, a, repos)
+	err = job.Run(ctx, db, a)
 	return errors.Wrap(err, job.Name()+" search failed")
 }

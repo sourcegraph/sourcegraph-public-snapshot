@@ -3,16 +3,16 @@ import React, { FunctionComponent, useState, useEffect, useCallback, useRef } fr
 import { useLocation, useHistory } from 'react-router'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
-import { useTemporarySetting } from '../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
@@ -67,14 +67,18 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     const location = useLocation()
     const history = useHistory()
 
+    const debug = new URLSearchParams(location.search).get('debug')
+
     const goToSearch = (): void => history.push(getReturnTo(location))
 
     useEffect(() => {
         eventLogger.logViewEvent(getPostSignUpEvent())
     }, [])
 
-    // if the welcome flow was already finished - navigate to search
-    if (didUserFinishWelcomeFlow) {
+    if (debug && !didUserFinishWelcomeFlow) {
+        setUserFinishedWelcomeFlow(false)
+    } else if (didUserFinishWelcomeFlow) {
+        // if the welcome flow was already finished - navigate to search
         goToSearch()
     }
 
@@ -133,10 +137,10 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                         <div className="pb-1 d-flex flex-column align-items-center w-100">
                             <div className={styles.container}>
                                 {hasErrors && (
-                                    <div className="alert alert-danger mb-4" role="alert">
+                                    <Alert className="mb-4" role="alert" variant="danger">
                                         Sorry, something went wrong. Try refreshing the page or{' '}
                                         <Link to={PageRoutes.Search}>skip to code search</Link>.
-                                    </div>
+                                    </Alert>
                                 )}
                                 <h2>Get started with Sourcegraph</h2>
                                 <p className="text-muted pb-3">
@@ -144,7 +148,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                 </p>
                             </div>
                             <div className="mt-4 pb-3 d-flex flex-column align-items-center">
-                                <Steps initialStep={1}>
+                                <Steps initialStep={debug ? parseInt(debug, 10) : 1}>
                                     <StepList numeric={true} className={styles.container}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>

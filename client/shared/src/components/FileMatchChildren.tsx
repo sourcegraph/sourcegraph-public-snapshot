@@ -5,6 +5,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { Link } from '@sourcegraph/wildcard'
 
 import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
@@ -20,7 +21,6 @@ import {
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import styles from './FileMatchChildren.module.scss'
 import { LastSyncedIcon } from './LastSyncedIcon'
-import { Link } from './Link'
 import { MatchGroup } from './ranking/PerFileResultRanking'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
@@ -30,10 +30,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    /**
-     * Called when the file's search result is selected.
-     */
-    onSelect: () => void
 }
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
@@ -135,7 +131,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     styles.item,
                                     styles.itemClickable
                                 )}
-                                onClick={props.onSelect}
                                 data-testid="file-match-children-item"
                             >
                                 <CodeExcerpt

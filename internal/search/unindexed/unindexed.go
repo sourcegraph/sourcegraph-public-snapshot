@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -310,19 +309,16 @@ func callSearcherOverRepos(
 type RepoSubsetTextSearch struct {
 	ZoektArgs         *search.ZoektParameters
 	SearcherArgs      *search.SearcherParameters
-	FileMatchLimit    int32
 	NotSearcherOnly   bool
 	UseIndex          query.YesNoOnly
 	ContainsRefGlobs  bool
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
 
-	IsRequired bool
+	RepoOpts search.RepoOptions
 }
 
-func (t *RepoSubsetTextSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
-	defer cleanup()
-
+func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
+	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, t.OnMissingRepoRevs)
 		if err != nil {
@@ -344,26 +340,15 @@ func (*RepoSubsetTextSearch) Name() string {
 	return "RepoSubsetText"
 }
 
-func (t *RepoSubsetTextSearch) Required() bool {
-	return t.IsRequired
-}
-
 type RepoUniverseTextSearch struct {
 	GlobalZoektQuery *zoektutil.GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
-	FileMatchLimit   int32
 
 	RepoOptions search.RepoOptions
-	Db          database.DB
 	UserID      int32
-
-	IsRequired bool
 }
 
-func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sender, _ searchrepos.Pager) error {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
-	defer cleanup()
-
+func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
 	userID := int32(0)
 
 	if envvar.SourcegraphDotComMode() {
@@ -372,7 +357,7 @@ func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sende
 		}
 	}
 
-	userPrivateRepos := repos.PrivateReposForUser(ctx, t.Db, userID, t.RepoOptions)
+	userPrivateRepos := searchrepos.PrivateReposForUser(ctx, db, userID, t.RepoOptions)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
@@ -385,8 +370,4 @@ func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sende
 
 func (*RepoUniverseTextSearch) Name() string {
 	return "RepoUniverseText"
-}
-
-func (t *RepoUniverseTextSearch) Required() bool {
-	return t.IsRequired
 }

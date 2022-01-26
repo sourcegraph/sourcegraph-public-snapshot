@@ -3,7 +3,8 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
-import { Link } from 'react-router-dom'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import { Insight, InsightDashboard, isSearchBasedInsight } from '../../../../core/types'
 

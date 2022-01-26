@@ -36,6 +36,22 @@ extend type Mutation {
         """
         options: FetchPermissionsOptions
     ): EmptyResponse!
+    """
+    Set the sub-repo permissions of a repository (i.e., which paths are allowed or disallowed for
+    a particular user). This operation overwrites the previous sub-repo permissions for the
+    repository.
+    """
+    setSubRepositoryPermissionsForUsers(
+        """
+        The repository whose permissions to set.
+        """
+        repository: ID!
+        """
+        A list of user identifiers and their sub-repository permissions, which defines the set of
+        paths within the repository they can access.
+        """
+        userPermissions: [UserSubRepoPermission!]!
+    ): EmptyResponse!
 }
 
 extend type Query {
@@ -125,6 +141,26 @@ input UserPermission {
     The highest level of repository permission.
     """
     permission: RepositoryPermission = READ
+}
+
+"""
+A user (identified either by username or email address) with its sub-repository permissions.
+"""
+input UserSubRepoPermission {
+    """
+    Depending on the bindID option in the permissions.userMapping site configuration property,
+    the elements of the list are either all usernames (bindID of "username") or all email
+    addresses (bindID of "email").
+    """
+    bindID: String!
+    """
+    An array of paths that the user is allowed to access, in glob format.
+    """
+    pathIncludes: [String!]!
+    """
+    An array of paths that the user is not allowed to access, in glob format.
+    """
+    pathExcludes: [String!]!
 }
 
 """

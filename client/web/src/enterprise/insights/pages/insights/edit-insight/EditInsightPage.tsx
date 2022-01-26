@@ -1,8 +1,7 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
-import { Link } from 'react-router-dom'
 
-import { Badge, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'

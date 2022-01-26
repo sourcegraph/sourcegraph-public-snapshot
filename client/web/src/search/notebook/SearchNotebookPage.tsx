@@ -7,24 +7,33 @@ import { Observable } from 'rxjs'
 import { catchError, debounceTime, delay, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { FeedbackBadge, LoadingSpinner, PageHeader, useEventObservable, useObservable } from '@sourcegraph/wildcard'
+import {
+    FeedbackBadge,
+    LoadingSpinner,
+    PageHeader,
+    useEventObservable,
+    useObservable,
+    Alert,
+} from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
 import { resolveRevision as _resolveRevision, fetchRepository as _fetchRepository } from '../../repo/backend'
-import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
 import {
     fetchNotebook as _fetchNotebook,
     updateNotebook as _updateNotebook,
     deleteNotebook as _deleteNotebook,
+    createNotebookStar as _createNotebookStar,
+    deleteNotebookStar as _deleteNotebookStar,
 } from './backend'
 import { NotebookContent } from './NotebookContent'
 import { NotebookTitle } from './NotebookTitle'
@@ -49,6 +58,8 @@ interface SearchNotebookPageProps
     fetchNotebook?: typeof _fetchNotebook
     updateNotebook?: typeof _updateNotebook
     deleteNotebook?: typeof _deleteNotebook
+    createNotebookStar?: typeof _createNotebookStar
+    deleteNotebookStar?: typeof _deleteNotebookStar
 }
 
 const LOADING = 'loading' as const
@@ -63,6 +74,8 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     fetchNotebook = _fetchNotebook,
     updateNotebook = _updateNotebook,
     deleteNotebook = _deleteNotebook,
+    createNotebookStar = _createNotebookStar,
+    deleteNotebookStar = _deleteNotebookStar,
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('SearchNotebookPage'), [props.telemetryService])
@@ -145,14 +158,14 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
             <PageTitle title={notebookTitle || 'Notebook'} />
             <Page>
                 {isErrorLike(notebookOrError) && (
-                    <div className="alert alert-danger">
+                    <Alert variant="danger">
                         Error while loading the notebook: <strong>{notebookOrError.message}</strong>
-                    </div>
+                    </Alert>
                 )}
                 {isErrorLike(updatedNotebookOrError) && (
-                    <div className="alert alert-danger">
+                    <Alert variant="danger">
                         Error while updating the notebook: <strong>{updatedNotebookOrError.message}</strong>
-                    </div>
+                    </Alert>
                 )}
                 {notebookOrError === LOADING && (
                     <div className="d-flex justify-content-center">
@@ -180,11 +193,16 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                             ]}
                             actions={
                                 <SearchNotebookPageHeaderActions
+                                    authenticatedUser={props.authenticatedUser}
                                     notebookId={notebookId}
                                     viewerCanManage={notebookOrError.viewerCanManage}
                                     isPublic={notebookOrError.public}
                                     onUpdateVisibility={onUpdateVisibility}
                                     deleteNotebook={deleteNotebook}
+                                    starsCount={notebookOrError.stars.totalCount}
+                                    viewerHasStarred={notebookOrError.viewerHasStarred}
+                                    createNotebookStar={createNotebookStar}
+                                    deleteNotebookStar={deleteNotebookStar}
                                 />
                             }
                         />

@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import React from 'react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { RecentFilesPanel } from './RecentFilesPanel'
 
@@ -39,7 +40,7 @@ describe('RecentFilesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        render(<RecentFilesPanel {...props} />)
+        renderWithRouter(<RecentFilesPanel {...props} />)
         const listItems = screen.getAllByTestId('recent-files-item')
         expect(listItems).toHaveLength(2)
         expect(listItems[0]).toHaveTextContent('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
@@ -78,7 +79,7 @@ describe('RecentFilesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        render(<RecentFilesPanel {...props} />)
+        renderWithRouter(<RecentFilesPanel {...props} />)
         const listItems = screen.getAllByTestId('recent-files-item')
         expect(listItems).toHaveLength(2)
         expect(listItems[0]).toHaveTextContent('github.com/sourcegraph/sourcegraph › .eslintrc.js')
@@ -112,7 +113,7 @@ describe('RecentFilesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        render(<RecentFilesPanel {...props} />)
+        renderWithRouter(<RecentFilesPanel {...props} />)
         expect(screen.getByTestId('recent-files-panel-show-more')).toBeInTheDocument()
     })
 
@@ -143,7 +144,7 @@ describe('RecentFilesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        render(<RecentFilesPanel {...props} />)
+        renderWithRouter(<RecentFilesPanel {...props} />)
         expect(screen.queryByTestId('recent-files-panel-show-more')).not.toBeInTheDocument()
     })
 })

@@ -63,9 +63,9 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	siteConfig := conf.Get().SiteConfiguration
-	maxQueueDepth := 0
-	if siteConfig.ExperimentalFeatures != nil && siteConfig.ExperimentalFeatures.Ranking != nil {
-		maxQueueDepth = siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
+	maxQueueDepth := 24
+	if siteConfig.ExperimentalFeatures != nil && siteConfig.ExperimentalFeatures.Ranking != nil && siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
+		maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
 	}
 
 	endpoints := make([]string, 0, len(clients))

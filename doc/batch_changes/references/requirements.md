@@ -13,7 +13,7 @@ Batch Changes is compatible with the following code hosts:
 * Github.com
 * Github Enterprise 2.20 and later
 * GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
-* Bitbucket Server 5.7 and later
+* Bitbucket Server 5.7 and later, Bitbucket Data Center 7.6 and later
 
 In order for Sourcegraph to interface with these, admins and users must first [configure credentials](../how-tos/configuring_credentials.md) for each relevant code host.
 
@@ -24,7 +24,7 @@ For each changeset, Sourcegraph periodically makes API requests to its code host
 We **highly recommend** enabling webhooks on code hosts where batch change changesets are created. Doing so removes the lag time in updating the status of a changeset and reduces the API requests associated with large batch changes. We have instructions for each supported code host:
 
 * [GitHub](../../admin/external_service/github.md#webhooks)
-* [Bitbucket Server](../../admin/external_service/bitbucket_server.md#webhooks)
+* [Bitbucket / Bitbucket Data Center](../../admin/external_service/bitbucket_server.md#webhooks)
 * [GitLab](../../admin/external_service/gitlab.md#webhooks)
 
 If you are unable to enable webhooks, you can disable the warning Sourcegraph displays when viewing batch changes by setting the `batchChanges.disableWebhooksWarning` [site configuration setting](../../admin/config/site_config.md) to `true`.

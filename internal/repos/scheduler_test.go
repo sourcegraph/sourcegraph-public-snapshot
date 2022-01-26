@@ -864,6 +864,12 @@ func TestScheduleInsertNew(t *testing.T) {
 	assertFront(repo2.Name)
 }
 
+type mockRandomGenerator struct{}
+
+func (m *mockRandomGenerator) Int63n(n int64) int64 {
+	return n / 2
+}
+
 func TestSchedule_updateInterval(t *testing.T) {
 	a := configuredRepo{ID: 1, Name: "a"}
 	b := configuredRepo{ID: 2, Name: "b"}
@@ -1030,6 +1036,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 
 			s := NewUpdateScheduler()
 			setupInitialSchedule(s, test.initialSchedule)
+			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			for _, call := range test.updateCalls {
 				mockTime(call.time)
@@ -1420,6 +1427,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			defer func() { requestRepoUpdate = nil }()
 
 			s := NewUpdateScheduler()
+			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			// unbuffer the channel
 			s.updateQueue.notifyEnqueue = make(chan struct{})

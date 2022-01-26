@@ -67,6 +67,7 @@ const batchChangeDefaults: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
+        id: 'specID1',
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
         codeHostsWithoutWebhooks: {
@@ -172,6 +173,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
             {
@@ -210,6 +212,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
         ],

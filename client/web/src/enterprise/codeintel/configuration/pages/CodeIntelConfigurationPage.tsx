@@ -5,7 +5,6 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -15,7 +14,7 @@ import {
     FilteredConnectionQueryArguments,
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
