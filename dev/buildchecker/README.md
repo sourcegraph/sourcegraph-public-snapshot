@@ -33,6 +33,19 @@ go run ./dev/buildchecker -buildkite.token=$BUILDKITE_TOKEN -failures.timeout=99
 
 To load builds from a file instead of fetching from Buildkite, use `-load-from="$FILE"`.
 
+## Tokens
+
+### Buildkite API token
+
+Required for all `buildchecker` commands, except for `buildchecker history -load-from`.
+
+1. Go over [your personal settings](https://buildkite.com/user/api-access-tokens)
+2. Create a new token with the following permissions:
+
+- check `sourcegraph` organization
+- `read_builds`
+- `read_pipelines`
+
 ## Development
 
 - `branch_test.go` contains integration tests against the GitHub API. Normally runs against recordings in `testdata` - to update `testdata`, run the tests with the `-update` flag.

@@ -167,14 +167,9 @@ type cmdHistoryFlags struct {
 }
 
 func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
-	// Buildkite client
-	config, err := buildkite.NewTokenConfig(flags.BuildkiteToken, false)
-	if err != nil {
-		log.Fatal("buildkite.NewTokenConfig: ", err)
-	}
-	bkc := buildkite.NewClient(config.Client())
 
 	// Time range
+	var err error
 	createdFrom := time.Now().Add(-24 * time.Hour)
 	if historyFlags.createdFromDate != "" {
 		createdFrom, err = time.Parse("2006-01-02", historyFlags.createdFromDate)
@@ -195,6 +190,15 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	var builds []buildkite.Build
 	if historyFlags.loadFrom == "" {
 		log.Println("fetching builds from Buildkite")
+
+		// Buildkite client
+		config, err := buildkite.NewTokenConfig(flags.BuildkiteToken, false)
+		if err != nil {
+			log.Fatal("buildkite.NewTokenConfig: ", err)
+		}
+		bkc := buildkite.NewClient(config.Client())
+
+		// Paginate results
 		var nextPage = 1
 		var pages int
 		for nextPage > 0 {
