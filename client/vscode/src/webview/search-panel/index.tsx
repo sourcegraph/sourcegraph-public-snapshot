@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react'
-
+import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import * as Comlink from 'comlink'
+import React, { useMemo } from 'react'
 import { render } from 'react-dom'
 import { of } from 'rxjs'
 
@@ -116,8 +116,10 @@ const Main: React.FC = () => {
 }
 
 render(
-    <WildcardThemeContext.Provider value={{ isBranded: true }}>
-        <Main />
-    </WildcardThemeContext.Provider>,
+    <ShortcutProvider>
+        <WildcardThemeContext.Provider value={{ isBranded: true }}>
+            <Main />
+        </WildcardThemeContext.Provider>
+    </ShortcutProvider>,
     document.querySelector('#root')
 )
