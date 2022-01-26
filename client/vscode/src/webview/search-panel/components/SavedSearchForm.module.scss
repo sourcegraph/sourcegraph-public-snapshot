@@ -1,0 +1,19 @@
+.checkbox {
+    margin-right: 0.25rem;
+}
+
+.label {
+    font-weight: bold;
+}
+
+.submit-button {
+    margin-bottom: 1rem;
+}
+
+// Hide icon in alert
+.code-monitoring-alert {
+    &::before,
+    &::after {
+        display: none;
+    }
+}
