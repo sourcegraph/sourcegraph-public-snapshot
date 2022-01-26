@@ -1,12 +1,18 @@
 package conf
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var executorsAccessToken = "executors-access-token"
+var openIDSecret = "open-id-secret"
+var gitlabClientSecret = "gitlab-client-secret"
+var githubClientSecret = "github-client-secret"
 
 func TestValidate(t *testing.T) {
 	t.Run("valid", func(t *testing.T) {
@@ -122,4 +128,120 @@ func TestProblems(t *testing.T) {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	}
+}
+
+func TestRedact(t *testing.T) {
+	t.Run("redact secrets", func(t *testing.T) {
+		input := getTestSiteWithSecrets(executorsAccessToken, openIDSecret, gitlabClientSecret, githubClientSecret)
+		redacted, err := RedactSecrets(conftypes.RawUnified{
+			Site: input,
+		})
+		if err != nil {
+			t.Errorf("unexpected error redacting secrets: %s", err)
+		}
+		expected := getTestSiteWithRedactedSecrets()
+		if !redacted.Equal(conftypes.RawUnified{Site: expected}) {
+			t.Errorf("unexpected output of RedactSecrets")
+		}
+	})
+}
+
+func TestUnredact(t *testing.T) {
+	t.Run("replaces REDACTED with corresponding secret", func(t *testing.T) {
+		input := getTestSiteWithRedactedSecrets()
+		previousSite := getTestSiteWithSecrets(executorsAccessToken, openIDSecret, githubClientSecret, gitlabClientSecret)
+		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
+		if err != nil {
+			t.Errorf("unexpected error unredacting secrets: %s", err)
+		}
+		if strings.Contains(unredactedSite, RedactedSecret) {
+			t.Errorf("expected unredacted to contain secrets")
+		}
+		expectedUnredacted := conftypes.RawUnified{Site: previousSite}
+		unredacted := conftypes.RawUnified{Site: unredactedSite}
+		if !unredacted.Equal(expectedUnredacted) {
+			t.Errorf("unexpected output of UnredactSecrets")
+		}
+	})
+	t.Run("unredacts secrets AND respects specified edits to secret", func(t *testing.T) {
+		input := getTestSiteWithSecrets("new-access-token", RedactedSecret, "new-github-client-secret", RedactedSecret)
+		previousSite := getTestSiteWithSecrets(executorsAccessToken, openIDSecret, githubClientSecret, gitlabClientSecret)
+		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
+		if err != nil {
+			t.Errorf("unexpected error unredacting secrets: %s", err)
+		}
+		// Expect to have newly-specified secrets and to fill in "REDACTED" secrets w/ secrets from previous site
+		expectedUnredacted := conftypes.RawUnified{Site: getTestSiteWithSecrets("new-access-token", openIDSecret, "new-github-client-secret", gitlabClientSecret)}
+		unredacted := conftypes.RawUnified{Site: unredactedSite}
+		if !unredacted.Equal(expectedUnredacted) {
+			t.Errorf("unexpected output of UnredactSecrets")
+		}
+	})
+	t.Run("unredacts secrets and respects edits to config", func(t *testing.T) {
+		newEmail := "new_email@example.com"
+		input := getTestSiteWithSecrets("new-access-token", RedactedSecret, "new-github-client-secret", RedactedSecret, newEmail)
+		previousSite := getTestSiteWithSecrets(executorsAccessToken, openIDSecret, githubClientSecret, gitlabClientSecret)
+		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
+		if err != nil {
+			t.Errorf("unexpected error unredacting secrets: %s", err)
+		}
+		// Expect new secrets and new email to show up in the unredacted version
+		expectedUnredacted := conftypes.RawUnified{Site: getTestSiteWithSecrets("new-access-token", openIDSecret, "new-github-client-secret", gitlabClientSecret, newEmail)}
+		unredacted := conftypes.RawUnified{Site: unredactedSite}
+		if !unredacted.Equal(expectedUnredacted) {
+			t.Errorf("unexpected output of UnredactSecrets")
+		}
+	})
+}
+
+func getTestSiteWithRedactedSecrets() string {
+	return getTestSiteWithSecrets(RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret)
+}
+
+func getTestSiteWithSecrets(execAccessToken, openIDSecret, githubSecret, gitlabSecret string, optionalEdit ...string) string {
+	email := "noreply+dev@sourcegraph.com"
+	if len(optionalEdit) > 0 {
+		email = optionalEdit[0]
+	}
+	return fmt.Sprintf(`
+{
+  "disablePublicRepoRedirects": true,
+  "repoListUpdateInterval": 1,
+  "email.address": "%s",
+  "executors.accessToken": "%s",
+  "externalURL": "https://sourcegraph.test:3443",
+  "update.channel": "release",
+  "auth.providers": [
+    {
+      "allowSignup": true,
+      "type": "builtin"
+    },
+    {
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "%s",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "type": "openidconnect"
+    },
+    {
+      "clientID": "sourcegraph-client-github",
+      "clientSecret": "%s",
+      "displayName": "GitHub.com (dev)",
+      "type": "github"
+    },
+    {
+      "clientID": "sourcegraph-client-gitlab",
+      "clientSecret": "%s",
+      "displayName": "GitLab.com",
+      "type": "gitlab",
+      "url": "https://gitlab.com"
+    }
+  ],
+  "observability.tracing": {
+    "sampling":"selective"
+  },
+  "externalService.userMode": "all"
+}
+`, email, execAccessToken, openIDSecret, githubSecret, gitlabSecret)
+
 }

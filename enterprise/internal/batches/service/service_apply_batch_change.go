@@ -63,7 +63,7 @@ func (s *Service) ApplyBatchChange(
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchSpec.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchSpec.UserID); err != nil {
 		return nil, err
 	}
 
@@ -191,8 +191,8 @@ func (s *Service) ReconcileBatchChange(
 	batchChange.NamespaceUserID = batchSpec.NamespaceUserID
 	batchChange.Name = batchSpec.Spec.Name
 	a := actor.FromContext(ctx)
-	if batchChange.InitialApplierID == 0 {
-		batchChange.InitialApplierID = a.UID
+	if batchChange.CreatorID == 0 {
+		batchChange.CreatorID = a.UID
 	}
 	batchChange.LastApplierID = a.UID
 	batchChange.LastAppliedAt = s.clock()

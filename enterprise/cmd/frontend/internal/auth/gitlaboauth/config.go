@@ -5,15 +5,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const PkgName = "gitlaboauth"
 
-func Init(db dbutil.DB) {
-	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
-		_, problems := parseConfig(&cfg, db)
+func Init(db database.DB) {
+	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
+		_, problems := parseConfig(cfg, db)
 		return problems
 	})
 	go func() {
@@ -32,18 +33,18 @@ func Init(db dbutil.DB) {
 	}()
 }
 
-func parseConfig(cfg *conf.Unified, db dbutil.DB) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
+func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
 	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
-	for _, pr := range cfg.AuthProviders {
+	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gitlab == nil {
 			continue
 		}
 
-		if cfg.ExternalURL == "" {
+		if cfg.SiteConfig().ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` was empty and it is needed to determine the OAuth callback URL."))
 			continue
 		}
-		externalURL, err := url.Parse(cfg.ExternalURL)
+		externalURL, err := url.Parse(cfg.SiteConfig().ExternalURL)
 		if err != nil {
 			problems = append(problems, conf.NewSiteProblem("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
 			continue

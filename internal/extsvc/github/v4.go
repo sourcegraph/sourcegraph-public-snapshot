@@ -19,6 +19,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -323,29 +324,36 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 	return version
 }
 
-func (c *V4Client) fetchGitHubVersion(ctx context.Context) *semver.Version {
+// fetchGitHubVersion will attempt to identify the GitHub Enterprise Server's version.  If the
+// method is called by a client configured to use github.com, it will return allMatchingSemver.
+//
+// Additionally if it fails to parse the version. or the API request fails with an error, it
+// defaults to returning allMatchingSemver as well.
+func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Version) {
+	version = allMatchingSemver
+
 	if c.githubDotCom {
-		return allMatchingSemver
+		return
 	}
 
-	var resp struct {
-		InstalledVersion string `json:"installed_version"`
-	}
-	req, err := http.NewRequest("GET", "/meta", nil)
+	// Initiate a v3Client since this requires a V3 API request.
+	v3Client := NewV3Client(c.apiURL, c.auth, c.httpClient)
+	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version", "build request", "apiURL", c.apiURL, "err", err)
-		return allMatchingSemver
+		log15.Warn("Failed to fetch GitHub enterprise version",
+			"method", "fetchGitHubVersion",
+			"apiURL", c.apiURL,
+			"err", err,
+		)
+		return
 	}
-	if _, err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version: doRequest", "apiURL", c.apiURL, "err", err)
-		return allMatchingSemver
+
+	version, err = semver.NewVersion(v)
+	if err != nil {
+		return
 	}
-	version, err := semver.NewVersion(resp.InstalledVersion)
-	if err == nil {
-		return version
-	}
-	log15.Warn("Failed to fetch GitHub enterprise version", "parse version", "apiURL", c.apiURL, "resp.InstalledVersion", resp.InstalledVersion, "err", err)
-	return allMatchingSemver
+
+	return version
 }
 
 func (c *V4Client) GetAuthenticatedUser(ctx context.Context) (*Actor, error) {
@@ -540,11 +548,17 @@ fragment RepositoryFields on Repository {
 }
 	`
 	}
-	ghe300Fields := []string{}
+	conditionalGHEFields := []string{}
 	version := c.determineGitHubVersion(ctx)
+
 	if ghe300PlusOrDotComSemver.Check(version) {
-		ghe300Fields = append(ghe300Fields, "stargazerCount")
+		conditionalGHEFields = append(conditionalGHEFields, "stargazerCount")
 	}
+
+	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility && ghe330PlusOrDotComSemver.Check(version) {
+		conditionalGHEFields = append(conditionalGHEFields, "visibility")
+	}
+
 	// Some fields are not yet available on GitHub Enterprise yet
 	// or are available but too new to expect our customers to have updated:
 	// - viewerPermission
@@ -563,5 +577,14 @@ fragment RepositoryFields on Repository {
 	forkCount
 	%s
 }
-	`, strings.Join(ghe300Fields, "\n	"))
+	`, strings.Join(conditionalGHEFields, "\n	"))
+}
+
+// Fork forks the given repository. If org is given, then the repository will
+// be forked into that organisation, otherwise the repository is forked into
+// the authenticated user's account.
+func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
+	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
+	// December 2021, so we have to fall back to the REST API.
+	return NewV3Client(c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
 }

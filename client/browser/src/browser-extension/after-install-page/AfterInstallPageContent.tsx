@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -12,6 +13,8 @@ import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { getPlatformName } from '../../shared/util/context'
+
+import styles from './AfterInstallPageContent.module.scss'
 
 const Video: React.FunctionComponent<
     { name: string } & Pick<VideoHTMLAttributes<HTMLVideoElement>, 'width' | 'height'> & ThemeProps
@@ -51,7 +54,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
         <div className="after-install-page-content">
             <div className="d-flex w-100 p-3 justify-content-between align-items-center">
                 <a href="https://sourcegraph.com/search" target="_blank" rel="noopener">
-                    <SourcegraphLogo className="after-install-page-content__sourcegraph-logo" />
+                    <SourcegraphLogo className={styles.sourcegraphLogo} />
                 </a>
                 <a href="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
                     Browser extension docs <ExternalLinkIcon className="icon-inline" />
@@ -96,9 +99,8 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                         <div className="col-md-6 d-flex flex-column">
                             <h2 className="mb-4">Make it work on your codehost</h2>
                             <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
-                                <h3 className="mb-3 after-install-page-content__code-host-titles">
-                                    <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
-                                    github.com
+                                <h3 className={classNames('mb-3', styles.codeHostTitles)}>
+                                    <GithubIcon className={classNames('icon-inline', styles.codeHostLogo)} /> github.com
                                 </h3>
                                 <p className="m-0">
                                     <CheckIcon className="icon-inline" /> No action required.Your extension works here
@@ -106,21 +108,20 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 </p>
                             </div>
                             <div className="bg-2 rounded p-3 d-flex flex-column justify-content-center">
-                                <h3 className="d-flex flex-wrap after-install-page-content__code-host-titles">
+                                <h3 className={classNames('d-flex flex-wrap', styles.codeHostTitles)}>
                                     <div className="mr-5 mb-3">
-                                        <GithubIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
-                                        GitHub Enterprise
+                                        <GithubIcon className={classNames('icon-inline', styles.codeHostLogo)} /> GitHub
+                                        Enterprise
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <GitlabIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
-                                        GitLab
+                                        <GitlabIcon className={classNames('icon-inline', styles.codeHostLogo)} /> GitLab
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <BitbucketIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
+                                        <BitbucketIcon className={classNames('icon-inline', styles.codeHostLogo)} />{' '}
                                         Bitbucket Server
                                     </div>
                                     <div className="mr-5 mb-3">
-                                        <PhabricatorIcon className="icon-inline after-install-page-content__code-host-logo" />{' '}
+                                        <PhabricatorIcon className={classNames('icon-inline', styles.codeHostLogo)} />{' '}
                                         Phabricator
                                     </div>
                                 </h3>

@@ -1,8 +1,10 @@
+import { ProxyMarked, proxyMarker } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 
 import { DirectoryViewerData, ViewerId } from '../../viewerTypes'
 
-export class ExtensionDirectoryViewer implements sourcegraph.DirectoryViewer {
+export class ExtensionDirectoryViewer implements sourcegraph.DirectoryViewer, ProxyMarked {
+    public readonly [proxyMarker] = true
     public readonly viewerId: string
     public readonly type = 'DirectoryViewer'
     public isActive: boolean

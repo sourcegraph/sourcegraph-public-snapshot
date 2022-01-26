@@ -2,22 +2,29 @@ import { Duration } from 'date-fns'
 import { LineChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { InsightsPermissionGrantsInput } from '@sourcegraph/shared/src/graphql-operations'
 
-import { ExtensionInsight, Insight, InsightDashboard, SettingsBasedInsightDashboard } from '../types'
+import { ExtensionInsight, Insight, InsightDashboard, CustomInsightDashboard } from '../types'
 import { SearchBasedInsightSeries } from '../types/insight/search-insight'
 
 export interface DashboardCreateInput {
     name: string
     visibility: string
     insightIds?: string[]
-    grants?: InsightsPermissionGrantsInput
+    type?: string
+}
+
+export interface DashboardCreateResult {
+    id: string
 }
 
 export interface DashboardUpdateInput {
-    previousDashboard: SettingsBasedInsightDashboard
+    previousDashboard: CustomInsightDashboard
     nextDashboardInput: DashboardCreateInput
     id?: string
+}
+
+export interface DashboardUpdateResult {
+    id: string
 }
 
 export interface DashboardDeleteInput {
@@ -51,6 +58,12 @@ export interface LangStatsInsightsSettings {
     otherThreshold: number
 }
 
+export interface CaptureInsightSettings {
+    repositories: string[]
+    query: string
+    step: Duration
+}
+
 export type ReachableInsight = Insight & {
     owner: {
         id: string
@@ -62,7 +75,7 @@ export interface BackendInsightData {
     id: string
     view: {
         title: string
-        subtitle: string
+        subtitle?: string
         content: LineChartContent<any, string>[]
         isFetchingHistoricalData: boolean
     }

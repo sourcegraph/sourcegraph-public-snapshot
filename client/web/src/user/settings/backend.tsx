@@ -1,9 +1,9 @@
 import { EMPTY, Observable, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
+import { createAggregateError } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -164,6 +164,7 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
         userCookieID: eventLogger.getAnonymousUserID(),
         cohortID: eventLogger.getCohortID() || null,
         firstSourceURL: eventLogger.getFirstSourceURL(),
+        lastSourceURL: eventLogger.getLastSourceURL(),
         referrer: eventLogger.getReferrer(),
         url: window.location.href,
         source: EventSource.WEB,

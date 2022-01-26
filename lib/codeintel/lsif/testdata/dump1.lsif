@@ -13,6 +13,7 @@
 {"id": "13", "type": "vertex", "label": "definitionResult"}
 {"id": "14", "type": "vertex", "label": "referenceResult"}
 {"id": "15", "type": "vertex", "label": "referenceResult"}
+{"id": "100", "type": "vertex", "label": "implementationResult"}
 {"id": "16", "type": "vertex", "label": "hoverResult", "result": {"contents": [{"language": "go", "value": "text A"}]}}
 {"id": "17", "type": "vertex", "label": "hoverResult", "result": {"contents": [{"language": "go", "value": "text B"}]}}
 {"id": "18", "type": "vertex", "label": "moniker", "kind": "import", "scheme": "scheme A", "identifier": "ident A"}
@@ -29,6 +30,7 @@
 {"id": "29", "type": "edge", "label": "textDocument/references", "outV": "10", "inV": "14"}
 {"id": "30", "type": "edge", "label": "textDocument/references", "outV": "05", "inV": "15"}
 {"id": "31", "type": "edge", "label": "textDocument/references", "outV": "07", "inV": "15"}
+{"id": "101", "type": "edge", "label": "textDocument/implementation", "outV": "07", "inV": "100"}
 {"id": "32", "type": "edge", "label": "textDocument/hover", "outV": "11", "inV": "16"}
 {"id": "33", "type": "edge", "label": "textDocument/hover", "outV": "06", "inV": "17"}
 {"id": "34", "type": "edge", "label": "textDocument/hover", "outV": "08", "inV": "17"}
@@ -37,6 +39,7 @@
 {"id": "37", "type": "edge", "label": "item", "outV": "14", "inVs": ["04"], "document": "02"}
 {"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "02"}
 {"id": "39", "type": "edge", "label": "item", "outV": "14", "inVs": ["15"], "shard": "02"}
+{"id": "38", "type": "edge", "label": "item", "outV": "100", "inVs": ["05"], "document": "02"}
 {"id": "40", "type": "edge", "label": "moniker", "outV": "07", "inV": "18"}
 {"id": "41", "type": "edge", "label": "moniker", "outV": "09", "inV": "19"}
 {"id": "42", "type": "edge", "label": "moniker", "outV": "10", "inV": "20"}

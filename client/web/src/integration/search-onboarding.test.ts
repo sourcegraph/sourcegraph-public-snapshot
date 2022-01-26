@@ -111,8 +111,8 @@ describe('Search onboarding', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-language-button')
-            await driver.page.click('.tour-language-button')
+            await driver.page.waitForSelector('[data-testid="tour-language-button"]')
+            await driver.page.click('[data-testid="tour-language-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -135,8 +135,8 @@ describe('Search onboarding', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-repo-button')
-            await driver.page.click('.tour-repo-button')
+            await driver.page.waitForSelector('[data-testid="tour-repo-button"]')
+            await driver.page.click('[data-testid="tour-repo-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -155,8 +155,8 @@ describe('Search onboarding', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-language-button')
-            await driver.page.click('.tour-language-button')
+            await driver.page.waitForSelector('[data-testid="tour-language-button"]')
+            await driver.page.click('[data-testid="tour-language-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -180,8 +180,8 @@ describe('Search onboarding', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-repo-button')
-            await driver.page.click('.tour-repo-button')
+            await driver.page.waitForSelector('[data-testid="tour-repo-button"]')
+            await driver.page.click('[data-testid="tour-repo-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -205,8 +205,8 @@ describe('Search onboarding', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.tour-repo-button')
-            await driver.page.click('.tour-repo-button')
+            await driver.page.waitForSelector('[data-testid="tour-repo-button"]')
+            await driver.page.click('[data-testid="tour-repo-button"]')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent

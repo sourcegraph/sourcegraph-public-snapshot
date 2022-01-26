@@ -1,13 +1,12 @@
 import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Container, PageHeader, Button, Link } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -81,9 +80,9 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 headingElement="h2"
                 path={[{ text: 'Subscriptions' }]}
                 actions={
-                    <Link to={`${props.match.path}/new`} className="btn btn-primary text-nowrap">
+                    <Button to={`${props.match.path}/new`} className="text-nowrap" variant="primary" as={Link}>
                         New subscription
-                    </Link>
+                    </Button>
                 }
                 description={
                     <>

@@ -23,7 +23,7 @@ export const RepoIcon: React.FunctionComponent<{ repoName: string; className?: s
 
     if (Icon) {
         return (
-            <span aria-label={hostName} title={hostName}>
+            <span role="img" aria-label={hostName} title={hostName}>
                 <Icon className={className} />
             </span>
         )

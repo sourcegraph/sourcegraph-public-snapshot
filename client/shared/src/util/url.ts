@@ -1,12 +1,12 @@
+import { tryCatch } from '@sourcegraph/common'
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { SearchPatternType } from '../graphql-operations'
 import { discreteValueAliases } from '../search/query/filters'
+import { findFilter, FilterKind } from '../search/query/query'
 import { appendContextFilter } from '../search/query/transformer'
-import { findFilter, FilterKind } from '../search/query/validate'
 
-import { tryCatch } from './errors'
 import { replaceRange } from './strings'
 
 export interface RepoSpec {
@@ -102,7 +102,8 @@ export interface ModeSpec {
     mode: string
 }
 
-type BlobViewState = 'def' | 'references' | 'impl'
+// `panelID` is intended for substitution (e.g. `sub(panel.url, 'panelID', 'implementations')`)
+type BlobViewState = 'def' | 'references' | 'panelID'
 
 export interface ViewStateSpec {
     /**
@@ -535,7 +536,12 @@ export function toPrettyBlobURL(
  */
 export function toAbsoluteBlobURL(
     sourcegraphURL: string,
-    context: RepoSpec & RevisionSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+    context: RepoSpec &
+        RevisionSpec &
+        FileSpec &
+        Partial<UIPositionSpec> &
+        Partial<ViewStateSpec> &
+        Partial<UIRangeSpec>
 ): string {
     // toPrettyBlobURL() always returns an URL starting with a forward slash,
     // no need to add one here
@@ -543,9 +549,7 @@ export function toAbsoluteBlobURL(
 }
 
 /**
- * Returns the URL path for the given repository name.
- *
- * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
+ * Returns the URL path for the given repository name and revision.
  */
 export function toRepoURL(target: RepoSpec & Partial<RevisionSpec>): string {
     return '/' + encodeRepoRevision(target)

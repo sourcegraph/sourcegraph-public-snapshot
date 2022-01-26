@@ -1,18 +1,13 @@
 import { camelCase } from 'lodash'
 
-import { InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
+import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories'
+import { InsightExecutionType, InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
 import { SearchBasedInsightSeries } from '../../../../../core/types/insight/search-insight'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
 
-export function getSanitizedRepositories(rawRepositories: string): string[] {
-    return rawRepositories
-        .trim()
-        .split(/\s*,\s*/)
-        .filter(repo => repo)
-}
-
 export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSeries {
     return {
+        id: line.id,
         name: line.name.trim(),
         stroke: line.stroke,
         // Query field is a reg exp field for code insight query setting
@@ -35,20 +30,23 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
     // Backend type of insight.
     if (rawInsight.allRepos) {
         return {
-            type: InsightType.Backend,
             id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
+            type: InsightExecutionType.Backend,
+            viewType: InsightType.SearchBased,
             title: rawInsight.title,
             series: getSanitizedSeries(rawInsight.series),
             visibility: rawInsight.visibility,
+            step: { [rawInsight.step]: +rawInsight.stepValue },
+            filters: { includeRepoRegexp: '', excludeRepoRegexp: '' },
         }
     }
 
     return {
-        type: InsightType.Extension,
-
+        id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
         // ID generated according to our naming insight convention
         // <Type of insight>.insight.<name of insight>
-        id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
+        type: InsightExecutionType.Runtime,
+        viewType: InsightType.SearchBased,
         visibility: rawInsight.visibility,
         title: rawInsight.title,
         repositories: getSanitizedRepositories(rawInsight.repositories),

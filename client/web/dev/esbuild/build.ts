@@ -3,8 +3,9 @@ import path from 'path'
 import * as esbuild from 'esbuild'
 import signale from 'signale'
 
+import { MONACO_LANGUAGES_AND_FEATURES } from '@sourcegraph/build-config'
+
 import { environmentConfig, ROOT_PATH, STATIC_ASSETS_PATH } from '../utils'
-import { MONACO_LANGUAGES_AND_FEATURES } from '../webpack/monacoWebpack'
 
 import { manifestPlugin } from './manifestPlugin'
 import { monacoPlugin } from './monacoPlugin'
@@ -85,7 +86,8 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     // otherwise fixed), we can return to using tree shaking. Right now, esbuild's tree shaking has
     // a bug where the NavBar CSS is not loaded because the @sourcegraph/wildcard uses `export *
     // from` and has `"sideEffects": false` in its package.json.
-    treeShaking: 'ignore-annotations',
+    ignoreAnnotations: true,
+    treeShaking: false,
 }
 
 // TODO(sqs): These Monaco Web Workers could be built as part of the main build if we switch to

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -92,6 +93,24 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		if have, want := count, len(batchSpecs); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
+
+		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
+			for _, spec := range batchSpecs {
+				spec.CreatedFromRaw = true
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				count, err = s.CountBatchSpecs(ctx, CountBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, 1; have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -167,6 +186,26 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				cursor = next
 			}
 		})
+
+		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
+			for _, spec := range batchSpecs {
+				spec.CreatedFromRaw = true
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				opts := ListBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID}
+				have, _, err := s.ListBatchSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := []*btypes.BatchSpec{spec}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
@@ -221,6 +260,39 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 			if have != want {
 				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
+
+		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
+			for _, spec := range batchSpecs {
+				opts := GetBatchSpecOpts{ID: spec.ID, ExcludeCreatedFromRawNotOwnedByUser: spec.UserID}
+				have, err := s.GetBatchSpec(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(have, spec); diff != "" {
+					t.Fatal(diff)
+				}
+
+				spec.CreatedFromRaw = true
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				// Confirm that it won't be returned if another user looks at it
+				opts.ExcludeCreatedFromRawNotOwnedByUser += 9999
+				if _, err = s.GetBatchSpec(ctx, opts); err != ErrNoResults {
+					t.Fatalf("have err %v, want %v", err, ErrNoResults)
+				}
+
+				spec.CreatedFromRaw = false
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				if _, err = s.GetBatchSpec(ctx, opts); err == ErrNoResults {
+					t.Fatalf("unexpected ErrNoResults")
+				}
 			}
 		})
 	})
@@ -330,12 +402,12 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 			if tc.hasBatchChange {
 				batchChange := &btypes.BatchChange{
-					Name:             "not-blank",
-					InitialApplierID: 1,
-					NamespaceUserID:  1,
-					BatchSpecID:      batchSpec.ID,
-					LastApplierID:    1,
-					LastAppliedAt:    time.Now(),
+					Name:            "not-blank",
+					CreatorID:       1,
+					NamespaceUserID: 1,
+					BatchSpecID:     batchSpec.ID,
+					LastApplierID:   1,
+					LastAppliedAt:   time.Now(),
 				}
 				if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 					t.Fatal(err)
@@ -377,7 +449,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 	c := &ct.TestClock{Time: timeutil.Now()}
 	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -386,8 +458,9 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 	var specIDs []int64
 	for _, setup := range []struct {
-		jobs                []*btypes.BatchSpecWorkspaceExecutionJob
-		additionalWorkspace int
+		jobs                       []*btypes.BatchSpecWorkspaceExecutionJob
+		additionalWorkspace        int
+		additionalSkippedWorkspace int
 	}{
 		{
 			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
@@ -398,7 +471,8 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
 			},
-			additionalWorkspace: 1,
+			additionalWorkspace:        1,
+			additionalSkippedWorkspace: 2,
 		},
 		{
 			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
@@ -411,7 +485,8 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
 			},
-			additionalWorkspace: 3,
+			additionalWorkspace:        3,
+			additionalSkippedWorkspace: 2,
 		},
 		{
 			jobs:                []*btypes.BatchSpecWorkspaceExecutionJob{},
@@ -447,6 +522,20 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			}
 		}
 
+		// Workspaces without execution job and skipped
+		if setup.additionalSkippedWorkspace > 0 {
+			for i := 0; i < setup.additionalSkippedWorkspace; i++ {
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: spec.ID,
+					RepoID:      repo.ID,
+					Skipped:     true,
+				}
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+
 		// Workspaces with execution jobs
 		for _, job := range setup.jobs {
 			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
@@ -474,28 +563,30 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 	want := map[int64]btypes.BatchSpecStats{
 		specIDs[0]: {
-			StartedAt:  minAgo(99),
-			FinishedAt: minAgo(1),
-			Workspaces: 7,
-			Executions: 6,
-			Queued:     1,
-			Processing: 1,
-			Completed:  1,
-			Canceling:  1,
-			Canceled:   1,
-			Failed:     1,
+			StartedAt:         minAgo(99),
+			FinishedAt:        minAgo(1),
+			Workspaces:        9,
+			SkippedWorkspaces: 2,
+			Executions:        6,
+			Queued:            1,
+			Processing:        1,
+			Completed:         1,
+			Canceling:         1,
+			Canceled:          1,
+			Failed:            1,
 		},
 		specIDs[1]: {
-			StartedAt:  minAgo(55),
-			FinishedAt: minAgo(1),
-			Workspaces: 11,
-			Executions: 8,
-			Queued:     1,
-			Processing: 2,
-			Completed:  1,
-			Canceling:  2,
-			Canceled:   1,
-			Failed:     1,
+			StartedAt:         minAgo(55),
+			FinishedAt:        minAgo(1),
+			Workspaces:        13,
+			SkippedWorkspaces: 2,
+			Executions:        8,
+			Queued:            1,
+			Processing:        2,
+			Completed:         1,
+			Canceling:         2,
+			Canceled:          1,
+			Failed:            1,
 		},
 		specIDs[2]: {
 			StartedAt:  time.Time{},

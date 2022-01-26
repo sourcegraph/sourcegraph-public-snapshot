@@ -1,0 +1,39 @@
+.repo-header {
+    flex: none;
+    padding: 0;
+    align-items: center;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+
+    &--alert {
+        border-width: 1px 0;
+    }
+
+    :global(.navbar-nav) {
+        white-space: nowrap;
+
+        :global(.nav-item) {
+            display: flex;
+            align-items: stretch;
+
+            :global(.nav-link) {
+                user-select: none;
+            }
+        }
+    }
+}
+
+.action-list-item {
+    /* Have a small gap between buttons so they are visually distinct when pressed */
+    /* stylelint-disable-next-line declaration-property-unit-whitelist */
+    margin-left: 1px;
+}
+
+.icon-chevron {
+    opacity: 0.6;
+    margin: auto;
+}
+
+.spacer {
+    flex: 1 1 0;
+}

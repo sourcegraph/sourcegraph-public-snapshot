@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type PreviewRepositoryComparisonResolver interface {
@@ -17,7 +17,7 @@ type PreviewRepositoryComparisonResolver interface {
 }
 
 // NewPreviewRepositoryComparisonResolver is a convenience function to get a preview diff from a repo, given a base rev and the git patch.
-func NewPreviewRepositoryComparisonResolver(ctx context.Context, db dbutil.DB, repo *RepositoryResolver, baseRev, patch string) (*previewRepositoryComparisonResolver, error) {
+func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB, repo *RepositoryResolver, baseRev, patch string) (*previewRepositoryComparisonResolver, error) {
 	args := &RepositoryCommitArgs{Rev: baseRev}
 	commit, err := repo.Commit(ctx, args)
 	if err != nil {
@@ -32,7 +32,7 @@ func NewPreviewRepositoryComparisonResolver(ctx context.Context, db dbutil.DB, r
 }
 
 type previewRepositoryComparisonResolver struct {
-	db     dbutil.DB
+	db     database.DB
 	repo   *RepositoryResolver
 	commit *GitCommitResolver
 	patch  string
@@ -113,7 +113,7 @@ func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *Fil
 	}
 }
 
-func previewNewFile(db dbutil.DB, r *FileDiffResolver) FileResolver {
+func previewNewFile(db database.DB, r *FileDiffResolver) FileResolver {
 	fileStat := CreateFileInfo(r.FileDiff.NewName, false)
 	return NewVirtualFileResolver(fileStat, fileDiffVirtualFileContent(r))
 }

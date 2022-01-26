@@ -63,6 +63,7 @@ And the more explanatory body. And the more explanatory body. And the more expla
             title: 'Add prettier to repository',
             published,
         },
+        forkTarget: null,
         ...overrides,
     }
 }
@@ -93,6 +94,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
                     baseRepository: { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' },
                     externalID: '123',
                 },
+                forkTarget: null,
             },
         },
     },
@@ -647,6 +649,56 @@ export const visibleChangesetApplyPreviewNodeStories = (
                     },
                 },
             },
+        },
+    },
+    'Forked repo': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: false,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsAttach',
+            changesetSpec: baseChangesetSpec(12, publicationStateSet ? true : null, {
+                forkTarget: { pushUser: true, namespace: null },
+                description: {
+                    __typename: 'GitBranchChangesetDescription',
+                    baseRepository: testRepo,
+                    baseRef: 'master',
+                    headRef: 'cool-branch',
+                    body: 'Body text',
+                    commits: [
+                        {
+                            subject: 'This is the first line of the commit message',
+                            body: `And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.
+And the more explanatory body. And the more explanatory body. And the more explanatory body.`,
+                            author: {
+                                avatarURL: null,
+                                displayName: 'john',
+                                email: 'john@test.not',
+                                user: { displayName: 'lejohn', url: '/users/lejohn', username: 'john' },
+                            },
+                        },
+                    ],
+                    diffStat: {
+                        __typename: 'DiffStat',
+                        added: 10,
+                        changed: 8,
+                        deleted: 2,
+                    },
+                    title: 'Add prettier to forked repository',
+                    published: publicationStateSet,
+                },
+            }),
         },
     },
 })

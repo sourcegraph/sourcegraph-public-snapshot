@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
-
-import { ErrorAlert } from '../../../components/alerts'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError } from '@sourcegraph/common'
+import { Button } from '@sourcegraph/wildcard'
 
 import styles from './ActionContainer.module.scss'
 
@@ -75,15 +75,14 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 className={this.props.className}
                 action={
                     <>
-                        <button
-                            type="button"
-                            className={classNames('btn', styles.btn, this.props.buttonClassName || 'btn-primary')}
+                        <Button
+                            className={classNames(styles.btn, this.props.buttonClassName || 'btn-primary')}
                             onClick={this.onClick}
                             data-tooltip={this.props.buttonSubtitle}
                             disabled={this.props.buttonDisabled || this.state.loading}
                         >
                             {this.props.buttonLabel}
-                        </button>
+                        </Button>
                         {this.props.buttonSubtitle && (
                             <div className={styles.btnSubtitle}>
                                 <small>{this.props.buttonSubtitle}</small>

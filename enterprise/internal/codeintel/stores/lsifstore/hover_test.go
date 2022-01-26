@@ -8,9 +8,6 @@ import (
 )
 
 func TestDatabaseHover(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	// `\tcontents, err := findContents(pkgs, p, f, obj)`

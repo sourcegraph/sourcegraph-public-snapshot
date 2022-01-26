@@ -1,7 +1,17 @@
 package httpapi
 
-import "github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+import (
+	"flag"
+	"os"
+	"testing"
 
-func init() {
-	dbtesting.DBNameSuffix = "httpapidb"
+	"github.com/inconshreveable/log15"
+)
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
+	}
+	os.Exit(m.Run())
 }

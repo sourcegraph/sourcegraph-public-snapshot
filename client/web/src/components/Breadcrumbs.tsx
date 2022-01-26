@@ -5,8 +5,8 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Unsubscribable } from 'sourcegraph'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { isDefined } from '@sourcegraph/common'
+import { Link } from '@sourcegraph/wildcard'
 
 import styles from './Breadcrumbs.module.scss'
 
@@ -76,7 +76,7 @@ export interface BreadcrumbSetters {
      * pass an arbitrary element or a link config object for simpler breadcrumbs.
      * @returns Another breadcrumb setters object to pass down to child components to register child breadcrumbs,
      * with a method to remove the breadcrumb again. The object should be added to a [subscription
-     * bag](https://about.sourcegraph.com/handbook/engineering/languages/typescript#subscription-bag).
+     * bag](https://docs.sourcegraph.com/dev/background-information/languages/typescript#subscription-bag).
      */
     setBreadcrumb: (breadcrumb: NullableBreadcrumb) => BreadcrumbSetters & Unsubscribable
 }

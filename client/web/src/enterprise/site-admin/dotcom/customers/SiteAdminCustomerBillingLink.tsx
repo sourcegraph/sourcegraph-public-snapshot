@@ -4,10 +4,10 @@ import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import { Scalars, SetCustomerBillingResult, SetCustomerBillingVariables } from '../../../../graphql-operations'
@@ -71,14 +71,13 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<Props> = ({ c
                 {isErrorLike(update) && (
                     <AlertCircleIcon className="icon-inline text-danger mr-2" data-tooltip={update.message} />
                 )}
-                <button
-                    type="button"
-                    className="btn btn-secondary"
+                <Button
                     onClick={customerHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}
                     disabled={update === LOADING}
+                    variant="secondary"
                 >
                     {customerHasLinkedBilling ? 'Unlink' : 'Link billing customer'}
-                </button>
+                </Button>
             </div>
         </div>
     )

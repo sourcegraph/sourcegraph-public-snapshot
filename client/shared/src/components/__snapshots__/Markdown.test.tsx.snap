@@ -1,13 +1,11 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Markdown renders 1`] = `
-<div
-  className="markdown"
-  dangerouslySetInnerHTML={
-    Object {
-      "__html": "hello",
-    }
-  }
-  onClick={[Function]}
-/>
+<DocumentFragment>
+  <div
+    class="markdown"
+  >
+    hello
+  </div>
+</DocumentFragment>
 `;

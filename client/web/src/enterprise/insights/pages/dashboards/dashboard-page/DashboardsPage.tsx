@@ -1,22 +1,17 @@
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
 
-import { Badge } from '../../../../../components/Badge'
 import { Page } from '../../../../../components/Page'
-import { FeedbackPromptContent } from '../../../../../nav/Feedback/FeedbackPrompt'
 import { CodeInsightsIcon } from '../../../components'
-import { flipRightPosition } from '../../../components/context-menu/utils'
-import { Popover } from '../../../components/popover/Popover'
-import { InsightsDashboardType } from '../../../core/types'
+import { BetaFeedbackPanel } from '../../../components/beta-feedback-panel/BetaFeedbackPanel'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../core/types/dashboard/virtual-dashboard'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
-import styles from './DashboardPage.module.scss'
 
 export interface DashboardsPageProps extends TelemetryProps {
     /**
@@ -46,27 +41,34 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fallback on
         // built-in "All insights" dashboard
-        return <Redirect to={`${url}/${InsightsDashboardType.All}`} />
+        return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
     }
 
     return (
         <div className="w-100">
             <Page>
                 <PageHeader
-                    annotation={<PageAnnotation />}
-                    path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
+                    annotation={<BetaFeedbackPanel />}
+                    path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
                     actions={
                         <>
-                            <Link to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
+                            <Button
+                                to="/insights/add-dashboard"
+                                className="mr-2"
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                            >
                                 <PlusIcon className="icon-inline" /> Create new dashboard
-                            </Link>
-                            <Link
+                            </Button>
+                            <Button
                                 to={`/insights/create?dashboardId=${dashboardID}`}
-                                className="btn btn-secondary"
                                 onClick={handleAddMoreInsightClick}
+                                variant="secondary"
+                                as={Link}
                             >
                                 <PlusIcon className="icon-inline" /> Create new insight
-                            </Link>
+                            </Button>
                         </>
                     }
                     className="mb-3"
@@ -74,37 +76,6 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
 
                 <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
             </Page>
-        </div>
-    )
-}
-
-const PageAnnotation: React.FunctionComponent = () => {
-    const buttonReference = useRef<HTMLButtonElement>(null)
-    const [isVisible, setVisibility] = useState(false)
-
-    return (
-        <div className="d-flex align-items-center">
-            <a href="https://docs.sourcegraph.com/code_insights#code-insights-beta" target="_blank" rel="noopener">
-                <Badge status="beta" className="text-uppercase" />
-            </a>
-
-            <Button ref={buttonReference} variant="link" size="sm">
-                Share feedback
-            </Button>
-
-            <Popover
-                isOpen={isVisible}
-                target={buttonReference}
-                position={flipRightPosition}
-                onVisibilityChange={setVisibility}
-                className={styles.feedbackPrompt}
-            >
-                <FeedbackPromptContent
-                    closePrompt={() => setVisibility(false)}
-                    textPrefix="Code Insights: "
-                    routeMatch="/insights/dashboards"
-                />
-            </Popover>
         </div>
     )
 }

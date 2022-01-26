@@ -74,7 +74,7 @@ describe('Code insight edit insight page', () => {
 
     it('should update user/org settings if insight has been updated', async () => {
         const userSettings = {
-            'searchInsights.insight.teamSize': {},
+            'searchInsights.insight.teamSize': { series: [] },
             'searchInsights.insight.graphQLTypesMigration': {
                 title: 'Migration to new GraphQL TS types',
                 repositories: ['github.com/sourcegraph/sourcegraph'],
@@ -97,7 +97,9 @@ describe('Code insight edit insight page', () => {
         }
 
         const orgSettings = {
-            'searchInsights.insight.orgTeamSize': {},
+            'searchInsights.insight.orgTeamSize': {
+                series: [],
+            },
         }
 
         // Mock `Date.now` to stabilize timestamps
@@ -201,11 +203,15 @@ describe('Code insight edit insight page', () => {
             '[data-testid="series-form"]:nth-child(1) input[name="seriesName"]',
             'test edited series title'
         )
-        await clearAndType(
-            driver,
-            '[data-testid="series-form"]:nth-child(1) input[name="seriesQuery"]',
-            'test edited series query'
-        )
+
+        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(1) #monaco-query-input')
+        await driver.replaceText({
+            selector: '[data-testid="series-form"]:nth-child(1) #monaco-query-input',
+            newText: 'test edited series query',
+            enterTextMethod: 'type',
+            selectMethod: 'keyboard',
+        })
+
         await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
 
         // Remove second insight series
@@ -220,11 +226,14 @@ describe('Code insight edit insight page', () => {
             '[data-testid="series-form"]:nth-child(2) input[name="seriesName"]',
             'new test series title'
         )
-        await clearAndType(
-            driver,
-            '[data-testid="series-form"]:nth-child(2) input[name="seriesQuery"]',
-            'new test series query'
-        )
+
+        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(2) #monaco-query-input')
+        await driver.replaceText({
+            selector: '[data-testid="series-form"]:nth-child(2) #monaco-query-input',
+            newText: 'new test series query',
+            enterTextMethod: 'type',
+            selectMethod: 'keyboard',
+        })
 
         // Change visibility to test org by org ID mock - 'Org_test_id'
         await driver.page.click('input[name="visibility"][value="Org_test_id"]')
@@ -241,12 +250,12 @@ describe('Code insight edit insight page', () => {
 
         // Check that old user settings config doesn't have edited insight
         assert.deepStrictEqual(JSON.parse(deleteFromUserConfigRequest.contents), {
-            'searchInsights.insight.teamSize': {},
+            'searchInsights.insight.teamSize': { series: [] },
         })
 
         // Check that new org settings config has edited insight
         assert.deepStrictEqual(JSON.parse(addToOrgConfigRequest.contents), {
-            'searchInsights.insight.orgTeamSize': {},
+            'searchInsights.insight.orgTeamSize': { series: [] },
             'searchInsights.insight.testInsightTitle': {
                 title: 'Test insight title',
                 repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/about'],
@@ -294,8 +303,10 @@ describe('Code insight edit insight page', () => {
 
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
+            const mockDate = new Date('June 1, 2021 00:00:00 UTC')
+            const offset = mockDate.getTimezoneOffset() * 60 * 1000
             // Number of ms between Unix epoch and June 31, 2021
-            const mockMs = new Date('June 1, 2021 00:00:00 UTC').getTime()
+            const mockMs = mockDate.getTime() + offset
             Date.now = () => mockMs
         })
 
@@ -342,7 +353,9 @@ describe('Code insight edit insight page', () => {
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-testid="search-insight-edit-page-content"]')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector(
+            '[data-testid="line-chart__content"] [data-line-name="Imports of new graphql-operations types"] circle'
+        )
 
         await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
 

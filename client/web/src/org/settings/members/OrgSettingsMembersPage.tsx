@@ -2,18 +2,17 @@ import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Container, PageHeader, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { queryGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { OrgAreaOrganizationFields } from '../../../graphql-operations'
@@ -36,7 +35,7 @@ interface UserNodeProps {
     authenticatedUser: AuthenticatedUser | null
 
     /** Called when the user is updated by an action in this list item. */
-    onDidUpdate?: () => void
+    onDidUpdate?: (didRemoveSelf: boolean) => void
     onRemoveOnlyMember?: () => void
     history: H.History
 }
@@ -85,7 +84,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             map(removalOrError => ({ removalOrError: removalOrError || null })),
                             tap(() => {
                                 if (this.props.onDidUpdate) {
-                                    this.props.onDidUpdate()
+                                    this.props.onDidUpdate(this.isSelf)
                                 }
                             }),
                             startWith<Pick<UserNodeState, 'removalOrError'>>({ removalOrError: undefined })
@@ -126,14 +125,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     </div>
                     <div className="site-admin-detail-list__actions">
                         {this.props.authenticatedUser && this.props.org.viewerCanAdminister && (
-                            <button
-                                type="button"
-                                className="btn btn-secondary btn-sm site-admin-detail-list__action test-remove-org-member"
+                            <Button
+                                className="site-admin-detail-list__action test-remove-org-member"
                                 onClick={this.remove}
                                 disabled={loading}
+                                variant="secondary"
+                                size="sm"
                             >
                                 {this.isSelf ? 'Leave organization' : 'Remove from organization'}
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -225,7 +225,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                 <PageHeader path={[{ text: 'Organization members' }]} headingElement="h2" className="mb-3" />
                 <Container>
                     {this.state.onlyMemberRemovalAttempted && (
-                        <div className="alert alert-warning">You can’t remove the only member of an organization</div>
+                        <Alert variant="warning">You can’t remove the only member of an organization</Alert>
                     )}
                     {this.state.viewerCanAdminister && (
                         <InviteForm
@@ -253,7 +253,13 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidUpdateUser = (): void => this.userUpdates.next()
+    private onDidUpdateUser = (didRemoveSelf: boolean): void => {
+        if (didRemoveSelf) {
+            this.props.history.push('/user/settings')
+            return
+        }
+        this.userUpdates.next()
+    }
 
     private onDidUpdateOrganizationMembers = (): void => this.userUpdates.next()
 

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
@@ -62,7 +63,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	defer gitserver.ResetClientMocks()
 
 	mkResult := func(path string, lineNumbers ...int32) *result.FileMatch {
-		rn := types.RepoName{
+		rn := types.MinimalRepo{
 			Name: "r",
 		}
 		fm := mkFileMatch(rn, path, lineNumbers...)
@@ -115,7 +116,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 				return test.getFiles, nil
 			}
 
-			langs, err := searchResultsStatsLanguages(context.Background(), test.results)
+			langs, err := searchResultsStatsLanguages(context.Background(), database.NewMockDB(), test.results)
 			if err != nil {
 				t.Fatal(err)
 			}

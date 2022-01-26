@@ -1,11 +1,11 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
 import * as React from 'react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
@@ -24,39 +24,29 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
-function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
-    const current = parseBrowserRepoURL(H.createPath(currentLocation))
-    const symbol = parseBrowserRepoURL(symbolLocation)
-    return (
-        current.repoName === symbol.repoName &&
-        current.revision === symbol.revision &&
-        current.filePath === symbol.filePath &&
-        isEqual(current.position, symbol.position)
-    )
-}
-
-const symbolIsActiveTrue = (): boolean => true
-const symbolIsActiveFalse = (): boolean => false
+import styles from './RepoRevisionSidebarSymbols.module.scss'
 
 interface SymbolNodeProps {
     node: SymbolNodeFields
-    location: H.Location
+    onHandleClick: () => void
+    isActive: boolean
 }
 
-const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }) => {
-    const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
+const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, onHandleClick, isActive }) => {
+    const isActiveFunc = (): boolean => isActive
     return (
-        <li className="repo-revision-sidebar-symbols-node" data-tooltip={node.location.resource.path}>
+        <li className={styles.repoRevisionSidebarSymbolsNode}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
-                className="repo-revision-sidebar-symbols-node__link test-symbol-link"
-                activeClassName="repo-revision-sidebar-symbols-node__link--active"
+                className={classNames('test-symbol-link', styles.link)}
+                activeClassName={styles.linkActive}
+                onClick={onHandleClick}
             >
                 <SymbolIcon kind={node.kind} className="icon-inline mr-1 test-symbol-icon" />
-                <span className="repo-revision-sidebar-symbols-node__name test-symbol-name">{node.name}</span>
+                <span className={classNames('test-symbol-name', styles.name)}>{node.name}</span>
                 {node.containerName && (
-                    <span className="repo-revision-sidebar-symbols-node__container-name">
+                    <span className={styles.containerName}>
                         <small>{node.containerName}</small>
                     </span>
                 )}
@@ -120,12 +110,14 @@ export interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
     repoID: Scalars['ID']
     /** The path of the file or directory currently shown in the content area */
     activePath: string
+    onHandleSymbolClick: () => void
 }
 
 export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSidebarSymbolsProps> = ({
     repoID,
     revision = '',
     activePath,
+    onHandleSymbolClick,
 }) => {
     const location = useLocation()
     const [searchValue, setSearchValue] = useState('')
@@ -177,30 +169,45 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
         />
     )
 
+    const currentLocation = parseBrowserRepoURL(H.createPath(location))
+    const isSymbolActive = (symbolUrl: string): boolean => {
+        const symbolLocation = parseBrowserRepoURL(symbolUrl)
+        return (
+            currentLocation.repoName === symbolLocation.repoName &&
+            currentLocation.revision === symbolLocation.revision &&
+            currentLocation.filePath === symbolLocation.filePath &&
+            isEqual(currentLocation.position, symbolLocation.position)
+        )
+    }
+
     return (
-        <ConnectionContainer className="repo-revision-sidebar-symbols h-100" compact={true}>
+        <ConnectionContainer className={classNames('h-100', styles.repoRevisionSidebarSymbols)} compact={true}>
             <ConnectionForm
                 inputValue={searchValue}
                 onInputChange={event => setSearchValue(event.target.value)}
                 inputPlaceholder="Search symbols..."
                 compact={true}
-                formClassName="repo-revision-sidebar-symbols__form"
+                formClassName={styles.form}
             />
-            <SummaryContainer compact={true} className="repo-revision-sidebar-symbols__summary-container">
+            <SummaryContainer compact={true} className={styles.summaryContainer}>
                 {query && summary}
             </SummaryContainer>
             {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
                 <ConnectionList compact={true}>
-                    <Tooltip />
                     {connection.nodes.map((node, index) => (
-                        <SymbolNode key={index} node={node} location={location} />
+                        <SymbolNode
+                            key={index}
+                            node={node}
+                            onHandleClick={onHandleSymbolClick}
+                            isActive={isSymbolActive(node.url)}
+                        />
                     ))}
                 </ConnectionList>
             )}
             {loading && <ConnectionLoading compact={true} />}
             {!loading && connection && (
-                <SummaryContainer compact={true} className="repo-revision-sidebar-symbols__summary-container">
+                <SummaryContainer compact={true} className={styles.summaryContainer}>
                     {!query && summary}
                     {hasNextPage && <ShowMoreButton compact={true} onClick={fetchMore} />}
                 </SummaryContainer>

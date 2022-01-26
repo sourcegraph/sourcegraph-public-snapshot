@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -24,7 +25,7 @@ const (
 	squasherContainerPostgresName = "postgres"
 )
 
-var out *output.Output = stdout.Out
+var out = stdout.Out
 
 // runMigrationsGoto runs the `migrate` utility to migrate up or down to the given
 // migration index.

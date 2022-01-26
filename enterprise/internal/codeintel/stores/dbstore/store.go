@@ -18,7 +18,7 @@ type Store struct {
 
 func NewWithDB(db dbutil.DB, observationContext *observation.Context) *Store {
 	// Use same prometheus metric created by the OSS layer
-	operationsMetrics := dbstore.NewOperationsMetrics(observationContext)
+	operationsMetrics := dbstore.NewREDMetrics(observationContext)
 
 	return &Store{
 		Store:      dbstore.NewWithDB(db, observationContext, operationsMetrics),

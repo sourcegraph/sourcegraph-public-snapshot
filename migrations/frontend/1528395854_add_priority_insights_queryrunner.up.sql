@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1528395853
+-- +++
+
 BEGIN;
 ALTER TABLE insights_query_runner_jobs
     ADD COLUMN priority INT NOT NULL DEFAULT 1;

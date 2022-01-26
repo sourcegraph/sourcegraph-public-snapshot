@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -343,7 +342,19 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, searchContexts SearchContextsResolver) (*graphql.Schema, error) {
+func NewSchema(
+	db database.DB,
+	batchChanges BatchChangesResolver,
+	codeIntel CodeIntelResolver,
+	insights InsightsResolver,
+	authz AuthzResolver,
+	codeMonitors CodeMonitorsResolver,
+	license LicenseResolver,
+	dotcom DotcomRootResolver,
+	searchContexts SearchContextsResolver,
+	orgRepositoryResolver OrgRepositoryResolver,
+	notebooks NotebooksResolver,
+) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
 
@@ -416,6 +427,22 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 		}
 	}
 
+	if orgRepositoryResolver != nil {
+		EnterpriseResolvers.orgRepositoryResolver = orgRepositoryResolver
+		resolver.OrgRepositoryResolver = orgRepositoryResolver
+		schemas = append(schemas, orgSchema)
+	}
+
+	if notebooks != nil {
+		EnterpriseResolvers.notebooksResolver = notebooks
+		resolver.NotebooksResolver = notebooks
+		schemas = append(schemas, notebooksSchema)
+		// Register NodeByID handlers.
+		for kind, res := range notebooks.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
 	schemas = append(schemas, computeSchema)
 
 	return graphql.ParseSchema(
@@ -439,15 +466,16 @@ type schemaResolver struct {
 	LicenseResolver
 	DotcomRootResolver
 	SearchContextsResolver
+	OrgRepositoryResolver
+	NotebooksResolver
 
-	db                dbutil.DB
+	db                database.DB
 	repoupdaterClient *repoupdater.Client
 	nodeByIDFns       map[string]NodeByIDFunc
 }
 
 // newSchemaResolver will return a new schemaResolver using repoupdater.DefaultClient.
-func newSchemaResolver(db dbutil.DB) *schemaResolver {
-
+func newSchemaResolver(db database.DB) *schemaResolver {
 	r := &schemaResolver{
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
@@ -493,6 +521,12 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		"OutOfBandMigration": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.OutOfBandMigrationByID(ctx, id)
 		},
+		"WebhookLog": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return webhookLogByID(ctx, db, id)
+		},
+		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return executorByID(ctx, db, id, r)
+		},
 	}
 	return r
 }
@@ -509,6 +543,8 @@ var EnterpriseResolvers = struct {
 	licenseResolver        LicenseResolver
 	dotcomResolver         DotcomRootResolver
 	searchContextsResolver SearchContextsResolver
+	orgRepositoryResolver  OrgRepositoryResolver
+	notebooksResolver      NotebooksResolver
 }{}
 
 // DEPRECATED
@@ -526,10 +562,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	if args.URI != nil && args.Name == nil {
 		args.Name = args.URI
 	}
-	resolver, err := r.RepositoryRedirect(ctx, &struct {
-		Name     *string
-		CloneURL *string
-	}{args.Name, args.CloneURL})
+	resolver, err := r.RepositoryRedirect(ctx, &repositoryRedirectArgs{args.Name, args.CloneURL, nil})
 	if err != nil {
 		return nil, err
 	}
@@ -544,11 +577,11 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
-	repo, err := database.Repos(r.db).Get(ctx, repoID)
+	repo, err := r.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
-	return NewRepositoryResolver(database.NewDB(r.db), repo), nil
+	return NewRepositoryResolver(r.db, repo), nil
 }
 
 type RedirectResolver struct {
@@ -564,6 +597,12 @@ type repositoryRedirect struct {
 	redirect *RedirectResolver
 }
 
+type repositoryRedirectArgs struct {
+	Name       *string
+	CloneURL   *string
+	HashedName *string
+}
+
 func (r *repositoryRedirect) ToRepository() (*RepositoryResolver, bool) {
 	return r.repo, r.repo != nil
 }
@@ -572,10 +611,15 @@ func (r *repositoryRedirect) ToRedirect() (*RedirectResolver, bool) {
 	return r.redirect, r.redirect != nil
 }
 
-func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
-	Name     *string
-	CloneURL *string
-}) (*repositoryRedirect, error) {
+func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositoryRedirectArgs) (*repositoryRedirect, error) {
+	if args.HashedName != nil {
+		// Query by repository hashed name
+		repo, err := r.db.Repos().GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
+		if err != nil {
+			return nil, err
+		}
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
+	}
 	var name api.RepoName
 	if args.Name != nil {
 		// Query by name
@@ -595,7 +639,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.Repos.GetByName(ctx, name)
+	repo, err := backend.NewRepos(r.db.Repos()).GetByName(ctx, name)
 	if err != nil {
 		var e backend.ErrRepoSeeOther
 		if errors.As(err, &e) {
@@ -606,7 +650,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: NewRepositoryResolver(database.NewDB(r.db), repo)}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
@@ -653,7 +697,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	}
 	var codeHost int64
 	if args.CodeHost != nil {
-		codeHost, err = unmarshalExternalServiceID(*args.CodeHost)
+		codeHost, err = UnmarshalExternalServiceID(*args.CodeHost)
 		if err != nil {
 			return nil, err
 		}
@@ -683,7 +727,7 @@ func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 	}
 	ids := make([]int64, len(args.IDs))
 	for i, gqlID := range args.IDs {
-		id, err := unmarshalExternalServiceID(gqlID)
+		id, err := UnmarshalExternalServiceID(gqlID)
 		if err != nil {
 			return false, errors.New("unable to unmarshal id")
 		}

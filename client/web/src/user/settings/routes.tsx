@@ -1,9 +1,10 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { Scalars } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { lazyComponent } from '../../util/lazyComponent'
 
 import { showPasswordsPage, showAccountSecurityPage, userExternalServicesEnabled } from './cloud-ga'
 import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
@@ -42,7 +43,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => {
             if (props.isSourcegraphDotCom && props.authenticatedUser && props.user.id !== props.authenticatedUser.id) {
                 return (
-                    <SiteAdminAlert className="sidebar__alert alert-danger">
+                    <SiteAdminAlert className="sidebar__alert" variant="danger">
                         Only the user may access their individual settings.
                     </SiteAdminAlert>
                 )

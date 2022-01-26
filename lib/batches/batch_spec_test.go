@@ -3,6 +3,8 @@ package batches
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseBatchSpec(t *testing.T) {
@@ -164,23 +166,22 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			fmt.Printf("len(batchSpec.Steps)=%d", len(batchSpec.Steps))
 			if batchSpec.Steps[0].IfCondition() != tt.want {
 				t.Fatalf("wrong IfCondition. want=%q, got=%q", tt.want, batchSpec.Steps[0].IfCondition())
 			}
 		}
 	})
-	t.Run("uses unsupported files attribute", func(t *testing.T) {
+	t.Run("uses conflicting branch attributes", func(t *testing.T) {
 		const spec = `
 name: hello-world
 description: Add Hello World to READMEs
 on:
-  - repositoriesMatchingQuery: file:README.md
+  - repository: github.com/foo/bar
+    branch: foo
+    branches: [bar]
 steps:
   - run: echo Hello World | tee -a $(find -name README.md)
     container: alpine:3
-    files:
-      /tmp/horse.txt: yipeeee
 
 changesetTemplate:
   title: Hello World
@@ -191,18 +192,65 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{AllowFiles: false})
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
 		if err == nil {
 			t.Fatal("no error returned")
 		}
 
-		wantErr := `1 error occurred:
-	* step 1 in batch spec uses the 'files' attribute to create files in the step container, which is not supported in this Batch Changes version
+		wantErr := `3 errors occurred:
+	* on.0: Must validate one and only one schema (oneOf)
+	* on.0: Must validate at least one schema (anyOf)
+	* on.0: Must validate one and only one schema (oneOf)
 
 `
 		haveErr := err.Error()
 		if haveErr != wantErr {
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
 		}
+	})
+}
+
+func TestOnQueryOrRepository_Branches(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			input *OnQueryOrRepository
+			want  []string
+		}{
+			"no branches": {
+				input: &OnQueryOrRepository{},
+				want:  nil,
+			},
+			"single branch": {
+				input: &OnQueryOrRepository{Branch: "foo"},
+				want:  []string{"foo"},
+			},
+			"single branch, non-nil but empty branches": {
+				input: &OnQueryOrRepository{
+					Branch:   "foo",
+					Branches: []string{},
+				},
+				want: []string{"foo"},
+			},
+			"multiple branches": {
+				input: &OnQueryOrRepository{
+					Branches: []string{"foo", "bar"},
+				},
+				want: []string{"foo", "bar"},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				have, err := tc.input.GetBranches()
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want, have)
+			})
+		}
+	})
+
+	t.Run("error", func(t *testing.T) {
+		_, err := (&OnQueryOrRepository{
+			Branch:   "foo",
+			Branches: []string{"bar"},
+		}).GetBranches()
+		assert.Equal(t, ErrConflictingBranches, err)
 	})
 }

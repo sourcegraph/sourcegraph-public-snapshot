@@ -1,13 +1,12 @@
 import classNames from 'classnames'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useState, useCallback, useMemo } from 'react'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavLink, RouteComponentProps } from 'react-router-dom'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, AlertLink, useTimeoutManager, Alert } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
@@ -103,22 +102,18 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                             actions={
                                 <div className={classNames('position-relative', styles.actions)}>
                                     {change && (
-                                        <div
-                                            className={classNames(classNames('alert px-2 py-1 mb-0', styles.alert), {
-                                                'alert-secondary': change === 'disabled',
-                                                'alert-success': change === 'enabled',
-                                            })}
+                                        <Alert
+                                            variant={change === 'enabled' ? 'success' : 'secondary'}
+                                            className={classNames('px-2 py-1 mb-0', styles.alert)}
                                         >
                                             <span className="font-weight-medium">{name}</span> is {change}
-                                        </div>
+                                        </Alert>
                                     )}
                                     {showCta && (
-                                        <div className={classNames('alert alert-info mb-0 py-1', styles.alert)}>
+                                        <Alert className={classNames('mb-0 py-1', styles.alert)} variant="info">
                                             An account is required to create and configure extensions.{' '}
-                                            <Link to="/sign-up" className="alert-link">
-                                                Register now!
-                                            </Link>
-                                        </div>
+                                            <AlertLink to="/sign-up">Register now!</AlertLink>
+                                        </Alert>
                                     )}
                                     {/* If site admin, render user toggle and site toggle (both small) */}
                                     {props.authenticatedUser?.siteAdmin && siteSubject?.subject ? (

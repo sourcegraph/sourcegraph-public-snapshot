@@ -11,15 +11,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestPreviewRepositoryComparisonResolver(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	const testDiffFiles = 3
 	const testOldFile = `First
@@ -99,7 +98,7 @@ index 9bd8209..d2acfa9 100644
 
 	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", CreatedAt: time.Now()}
 
-	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, NewRepositoryResolver(database.NewDB(db), repo), string(wantHeadRevision), testDiff)
+	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, NewRepositoryResolver(db, repo), string(wantHeadRevision), testDiff)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -391,11 +390,11 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitapi.Commit, error) {
+	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
 		if _, ok := byRev[id]; !ok {
 			t.Fatalf("GetCommit received unexpected ID: %s", id)
 		}
-		return &gitapi.Commit{ID: id}, nil
+		return &gitdomain.Commit{ID: id}, nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }

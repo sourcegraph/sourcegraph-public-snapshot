@@ -1,14 +1,17 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { IHighlightLineRange } from '../graphql/schema'
+import { isErrorLike } from '@sourcegraph/common'
+import { Link } from '@sourcegraph/wildcard'
+
+import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { isErrorLike } from '../util/errors'
 import {
     appendLineRangeQueryParameter,
     toPositionOrRangeQueryParameter,
@@ -16,9 +19,9 @@ import {
 } from '../util/url'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
-import { MatchGroup } from './FileMatchContext'
+import styles from './FileMatchChildren.module.scss'
 import { LastSyncedIcon } from './LastSyncedIcon'
-import { Link } from './Link'
+import { MatchGroup } from './ranking/PerFileResultRanking'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
@@ -27,10 +30,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    /**
-     * Called when the file's search result is selected.
-     */
-    onSelect: () => void
 }
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
@@ -90,11 +89,11 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     }
 
     return (
-        <div className="file-match-children">
+        <div className={styles.fileMatchChildren} data-testid="file-match-children">
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
             {result.type === 'path' && (
-                <div className="file-match-children__item">
+                <div className={styles.item} data-testid="file-match-children-item">
                     <small>Path match</small>
                 </div>
             )}
@@ -103,8 +102,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
                 <Link
                     to={symbol.url}
-                    className="file-match-children__item test-file-match-children-item"
+                    className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
+                    data-testid="file-match-children-item"
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>
@@ -122,12 +122,16 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
                                 group.position.character
                             }`}
-                            className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                            className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
                         >
                             <Link
                                 to={createCodeExcerptLink(group)}
-                                className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                                onClick={props.onSelect}
+                                className={classNames(
+                                    'test-file-match-children-item',
+                                    styles.item,
+                                    styles.itemClickable
+                                )}
+                                data-testid="file-match-children-item"
                             >
                                 <CodeExcerpt
                                     repoName={result.repository}
@@ -136,7 +140,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     startLine={group.startLine}
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
-                                    className="file-match-children__item-code-excerpt"
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                                     isFirst={index === 0}
                                     blobLines={group.blobLines}

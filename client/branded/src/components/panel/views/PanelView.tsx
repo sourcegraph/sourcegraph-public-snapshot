@@ -38,12 +38,16 @@ export const PanelView = React.memo<Props>(props => (
             <HierarchicalLocationsView
                 location={props.location}
                 locations={props.panelView.locationProvider}
+                maxLocationResults={props.panelView.maxLocationResults}
                 defaultGroup={props.repoName}
                 isLightTheme={props.isLightTheme}
                 fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                 extensionsController={props.extensionsController}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
+                onSelectLocation={(): void =>
+                    props.telemetryService.log('ReferencePanelResultsClicked', { action: 'click' })
+                }
             />
         )}
         {!props.panelView.content && !props.panelView.reactElement && !props.panelView.locationProvider && (

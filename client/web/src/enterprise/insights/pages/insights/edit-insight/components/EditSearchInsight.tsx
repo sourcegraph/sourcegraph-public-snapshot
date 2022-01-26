@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { InsightType, SearchBasedInsight } from '../../../../core/types'
+import { InsightExecutionType, SearchBasedInsight } from '../../../../core/types'
 import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
@@ -20,14 +20,14 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     const { insight, subjects, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
-        if (insight.type === InsightType.Backend) {
+        if (insight.type === InsightExecutionType.Backend) {
             return {
                 title: insight.title,
                 visibility: insight.visibility,
                 repositories: '',
                 series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
-                stepValue: '2',
-                step: 'weeks',
+                stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
+                step: Object.keys(insight.step)[0] as InsightStep,
                 allRepos: true,
             }
         }
@@ -47,8 +47,8 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedSearchInsight(values)
 
-        // Preserve backend insight filters since these filters don't represent in form fields
-        // in case if editing hasn't change type of search insight.
+        // Preserve backend insight filters since these filters aren't represented
+        // in the editing form
         if (isSearchBackendBasedInsight(sanitizedInsight) && isSearchBackendBasedInsight(insight)) {
             return onSubmit({
                 ...sanitizedInsight,

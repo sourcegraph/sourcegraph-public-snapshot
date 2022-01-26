@@ -38,7 +38,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
@@ -63,8 +62,10 @@ const tempDirName = ".tmp"
 // logs to stderr
 var traceLogs bool
 
-var lastCheckAt = make(map[api.RepoName]time.Time)
-var lastCheckMutex sync.Mutex
+var (
+	lastCheckAt    = make(map[api.RepoName]time.Time)
+	lastCheckMutex sync.Mutex
+)
 
 // debounce() provides some filtering to prevent spammy requests for the same
 // repository. If the last fetch of the repository was within the given
@@ -210,7 +211,7 @@ type Server struct {
 	Hostname string
 
 	// shared db handle
-	DB dbutil.DB
+	DB database.DB
 
 	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
 	// requests asynchronously.
@@ -398,7 +399,7 @@ func (s *Server) Janitor(interval time.Duration) {
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
 	for {
-		addrs := conf.Get().ServiceConnections.GitServers
+		addrs := conf.Get().ServiceConnections().GitServers
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
 		currentAddrs := strings.Join(addrs, ",")
@@ -501,10 +502,6 @@ var (
 		Name: "src_repo_sync_state_counter",
 		Help: "Incremented each time we check the state of repo",
 	}, []string{"type"})
-	repoSyncStatePercentComplete = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_repo_sync_state_percent_complete",
-		Help: "Percent complete for the current sync run, from 0 to 100",
-	})
 	repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repo_sync_state_upsert_counter",
 		Help: "Incremented each time we upsert repo state in the database",
@@ -573,20 +570,11 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int, fullSyn
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
-	totalRepos, err := database.Repos(s.DB).Count(ctx, database.ReposListOptions{})
-	if err != nil {
-		return errors.Wrap(err, "counting repos")
-	}
-
-	var count int
 	options := database.IterateRepoGitserverStatusOptions{}
 	if !fullSync {
 		options.OnlyWithoutShard = true
 	}
-	err = store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
-		count++
-		repoSyncStatePercentComplete.Set((float64(count) / float64(totalRepos)) * 100)
-
+	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
 		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
@@ -922,70 +910,121 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	tr, ctx := trace.New(r.Context(), "search", "")
+	defer tr.Finish()
+
+	// Decode the request
 	protocol.RegisterGob()
-	var req protocol.SearchRequest
-	if err := gob.NewDecoder(r.Body).Decode(&req); err != nil {
+	var args protocol.SearchRequest
+	if err := gob.NewDecoder(r.Body).Decode(&args); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	s.search(w, r, &req)
-}
-
-func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
-	tr, ctx := trace.New(r.Context(), "search", "")
 	tr.LogFields(
+		otlog.String("repo", string(args.Repo)),
+		otlog.Bool("include_diff", args.IncludeDiff),
 		otlog.String("query", args.Query.String()),
 		otlog.Int("limit", args.Limit),
 	)
-	defer tr.Finish()
 
-	args.Repo = protocol.NormalizeRepo(args.Repo)
-	if args.Limit == 0 {
-		args.Limit = math.MaxInt32
-	}
+	searchStart := time.Now()
+	searchRunning.Inc()
+	defer searchRunning.Dec()
 
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
+		tr.SetError(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	var latencyOnce sync.Once
+	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
+		tr.LogFields(otlog.Int("flushing", len(data)))
+		latencyOnce.Do(func() {
+			searchLatency.Observe(time.Since(searchStart).Seconds())
+		})
+		return eventWriter.EventBytes("matches", data)
+	})
+
+	// Run the search
+	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
+	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
+		log15.Error("failed to send done event", "error", writeErr)
+	}
+	tr.LogFields(otlog.Bool("limit_hit", limitHit))
+	tr.SetError(searchErr)
+	searchDuration.
+		WithLabelValues(strconv.FormatBool(searchErr != nil)).
+		Observe(time.Since(searchStart).Seconds())
+
+	if honey.Enabled() || traceLogs {
+		act := actor.FromContext(ctx)
+		ev := honey.NewEvent("gitserver-search")
+		ev.SetSampleRate(honeySampleRate("", act.IsInternal()))
+		ev.AddField("repo", args.Repo)
+		ev.AddField("revisions", args.Revisions)
+		ev.AddField("include_diff", args.IncludeDiff)
+		ev.AddField("actor", act.UIDString())
+		ev.AddField("query", args.Query.String())
+		ev.AddField("limit", args.Limit)
+		ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
+		if searchErr != nil {
+			ev.AddField("error", searchErr.Error())
+		}
+		if traceID := trace.ID(ctx); traceID != "" {
+			ev.AddField("traceID", traceID)
+			ev.AddField("trace", trace.URL(traceID, conf.ExternalURL()))
+		}
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+		if traceLogs {
+			log15.Debug("TRACE gitserver search", mapToLog15Ctx(ev.Fields())...)
+		}
+	}
+}
+
+// search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
+// concern itself with event types, and all instrumentation is handled in the calling function.
+func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, matchesBuf *streamhttp.JSONArrayBuf) (limitHit bool, err error) {
+	args.Repo = protocol.NormalizeRepo(args.Repo)
+	if args.Limit == 0 {
+		args.Limit = math.MaxInt32
 	}
 
 	dir := s.dir(args.Repo)
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
 			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+			return false, &gitdomain.RepoNotExistError{
 				Repo: args.Repo,
-			}))
-			return
+			}
 		}
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+			return false, &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: true,
 				CloneProgress:   cloneProgress,
-			}))
-			return
+			}
 		}
 
 		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
 		if err != nil {
 			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+			return false, &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: false,
-			}))
-			return
+			}
 		}
 
-		eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+		return false, &gitdomain.RepoNotExistError{
 			Repo:            args.Repo,
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
-		}))
-		return
+		}
 	}
 
 	if !conf.Get().DisableAutoGitUpdates {
@@ -998,11 +1037,6 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 			}
 		}
 	}
-
-	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
-		tr.LogFields(otlog.Int("flushing", len(data)))
-		return eventWriter.EventBytes("matches", data)
-	})
 
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
@@ -1035,7 +1069,6 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	})
 
 	// Write matching commits to the stream, flushing occasionally
-	limitHit := false
 	g.Go(func() error {
 		defer cancel()
 		defer matchesBuf.Flush()
@@ -1071,11 +1104,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		}
 	})
 
-	err = g.Wait()
-	doneEvent := protocol.NewSearchEventDone(limitHit, err)
-	if err := eventWriter.Event("done", doneEvent); err != nil {
-		log15.Warn("failed to send done event", "error", err)
-	}
+	return limitHit, g.Wait()
 }
 
 // matchCount returns either:
@@ -1163,13 +1192,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			isSlow := cmdDuration > shortGitCommandSlow(req.Args)
 			isSlowFetch := fetchDuration > 10*time.Second
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
-				actor := r.Header.Get("X-Sourcegraph-Actor")
-				ev := honey.Event("gitserver-exec")
-				ev.SampleRate = honeySampleRate(cmd, actor == "internal")
+				act := actor.FromContext(ctx)
+				ev := honey.NewEvent("gitserver-exec")
+				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", actor)
+				ev.AddField("actor", act.UIDString())
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
@@ -1188,7 +1217,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 				if traceID := trace.ID(ctx); traceID != "" {
 					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID))
+					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL()))
 				}
 
 				if honey.Enabled() {
@@ -1400,13 +1429,13 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 			isSlow := cmdDuration > 30*time.Second
 			if honey.Enabled() || traceLogs || isSlow {
-				actor := r.Header.Get("X-Sourcegraph-Actor")
-				ev := honey.Event("gitserver-p4exec")
-				ev.SampleRate = honeySampleRate(cmd, actor == "internal")
+				act := actor.FromContext(ctx)
+				ev := honey.NewEvent("gitserver-p4exec")
+				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
 				ev.AddField("p4port", req.P4Port)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", actor)
+				ev.AddField("actor", act.UIDString())
 				ev.AddField("client", r.UserAgent())
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
@@ -1422,12 +1451,10 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 				if traceID := trace.ID(ctx); traceID != "" {
 					ev.AddField("traceID", traceID)
-					ev.AddField("trace", trace.URL(traceID))
+					ev.AddField("trace", trace.URL(traceID, conf.ExternalURL()))
 				}
 
-				if honey.Enabled() {
-					_ = ev.Send()
-				}
+				_ = ev.Send()
 				if traceLogs {
 					log15.Debug("TRACE gitserver p4exec", mapToLog15Ctx(ev.Fields())...)
 				}
@@ -1902,6 +1929,22 @@ var (
 		Help:    "gitserver.Command latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
+
+	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_search_running",
+		Help: "number of gitserver.Search running concurrently.",
+	})
+	searchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_duration_seconds",
+		Help:    "gitserver.Search duration in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"error"})
+	searchLatency = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_latency_seconds",
+		Help:    "gitserver.Search latency (time until first result is sent) in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	})
+
 	pendingClones = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
@@ -1959,6 +2002,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 	span.SetTag("repo", repo)
 	defer span.Finish()
 
+	if msg, ok := isPaused(filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))); ok {
+		log15.Warn("doRepoUpdate paused", "repo", repo, "reason", msg)
+		return nil
+	}
+
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
 	if !ok {
@@ -2015,6 +2063,10 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	// background context.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
+
+	// ensure the background update doesn't hang forever
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel2()
 
 	// This background process should use our internal actor
 	ctx = actor.WithInternalActor(ctx)
@@ -2324,7 +2376,10 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		return false
 	}
 	// Revision not found, update before returning.
-	_ = s.doRepoUpdate(ctx, repo)
+	err := s.doRepoUpdate(ctx, repo)
+	if err != nil {
+		log15.Warn("failed to perform background repo update", "error", err, "repo", repo, "rev", rev)
+	}
 	return true
 }
 

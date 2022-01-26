@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -41,14 +40,14 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// Collect username, verified email addresses, and external accounts to be used
 	// for revoking user permissions later, otherwise they will be removed from database
 	// if it's a hard delete.
-	user, err := database.Users(r.db).GetByID(ctx, userID)
+	user, err := r.db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "get user by ID")
 	}
 
 	var accounts []*extsvc.Accounts
 
-	extAccounts, err := database.ExternalAccounts(r.db).List(ctx, database.ExternalAccountsListOptions{UserID: userID})
+	extAccounts, err := r.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: userID})
 	if err != nil {
 		return nil, errors.Wrap(err, "list external accounts")
 	}
@@ -60,7 +59,7 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		})
 	}
 
-	verifiedEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+	verifiedEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID:       user.ID,
 		OnlyVerified: true,
 	})
@@ -78,11 +77,11 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	})
 
 	if args.Hard != nil && *args.Hard {
-		if err := database.Users(r.db).HardDelete(ctx, user.ID); err != nil {
+		if err := r.db.Users().HardDelete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := database.Users(r.db).Delete(ctx, user.ID); err != nil {
+		if err := r.db.Users().Delete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -90,7 +89,7 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
 	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
 	// This call is purely for the purpose of cleanup.
-	if err := database.Authz(r.db).RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
+	if err := r.db.Authz().RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
 		UserID:   user.ID,
 		Accounts: accounts,
 	}); err != nil {
@@ -209,7 +208,7 @@ func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struc
 	return &EmptyResponse{}, nil
 }
 
-func logRoleChangeAttempt(ctx context.Context, db dbutil.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {
+func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {
 	// To avoid a panic, it's important to check for a nil parentErr before we dereference it.
 	if parentErr != nil && *parentErr != nil {
 		eventArgs.Reason = (*parentErr).Error()

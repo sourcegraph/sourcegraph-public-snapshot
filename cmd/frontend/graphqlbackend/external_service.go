@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -21,7 +20,7 @@ import (
 )
 
 type externalServiceResolver struct {
-	db              dbutil.DB
+	db              database.DB
 	externalService *types.ExternalService
 	warning         string
 
@@ -32,13 +31,14 @@ type externalServiceResolver struct {
 
 const externalServiceIDKind = "ExternalService"
 
-func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
-	id, err := unmarshalExternalServiceID(gqlID)
+func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
+	id, err := UnmarshalExternalServiceID(gqlID)
+
 	if err != nil {
 		return nil, err
 	}
 
-	es, err := database.ExternalServices(db).GetByID(ctx, id)
+	es, err := db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func marshalExternalServiceID(id int64) graphql.ID {
 	return relay.MarshalID(externalServiceIDKind, id)
 }
 
-func unmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err error) {
+func UnmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err error) {
 	if kind := relay.UnmarshalKind(id); kind != externalServiceIDKind {
 		err = errors.Errorf("expected graphql ID to have kind %q; got %q", externalServiceIDKind, kind)
 		return
@@ -142,7 +142,7 @@ func (r *externalServiceResolver) Warning() *string {
 }
 
 func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
-	latestError, err := database.ExternalServices(r.db).GetLastSyncError(ctx, r.externalService.ID)
+	latestError, err := r.db.ExternalServices().GetLastSyncError(ctx, r.externalService.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, e
 }
 
 func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
-	return database.ExternalServices(r.db).RepoCount(ctx, r.externalService.ID)
+	return r.db.ExternalServices().RepoCount(ctx, r.externalService.ID)
 }
 
 func (r *externalServiceResolver) LastSyncAt() *DateTime {
@@ -184,4 +184,8 @@ func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string,
 		return nil, nil
 	}
 	return &scopes, nil
+}
+
+func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
+	return newWebhookLogConnectionResolver(ctx, r.db, args, webhookLogsExternalServiceID(r.externalService.ID))
 }

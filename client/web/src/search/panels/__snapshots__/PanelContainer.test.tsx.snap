@@ -1,169 +1,44 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PanelContainer content state 1`] = `
-<PanelContainer
-  emptyContent={
-    <div>
-      Empty
-    </div>
-  }
-  loadingContent={
-    <div>
-      Loading
-    </div>
-  }
-  populatedContent={
-    <div>
-      Content
-    </div>
-  }
-  state="populated"
-  title="Test Panel"
->
-  <div
-    className="panelContainer d-flex flex-column"
-  >
-    <div
-      className="d-flex border-bottom header"
-    >
-      <h4
-        className="headerText"
-      >
-        Test Panel
-      </h4>
-    </div>
-    <div
-      className="h-100 content"
-    >
-      <div>
-        Content
-      </div>
-    </div>
-  </div>
-</PanelContainer>
-`;
+exports[`PanelContainer content state 1`] = `[Function]`;
 
-exports[`PanelContainer empty state 1`] = `
-<PanelContainer
-  emptyContent={
-    <div>
-      Empty
-    </div>
-  }
-  loadingContent={
-    <div>
-      Loading
-    </div>
-  }
-  populatedContent={
-    <div>
-      Content
-    </div>
-  }
-  state="empty"
-  title="Test Panel"
->
-  <div
-    className="panelContainer d-flex flex-column"
-  >
-    <div
-      className="d-flex border-bottom header"
-    >
-      <h4
-        className="headerText"
-      >
-        Test Panel
-      </h4>
-    </div>
-    <div
-      className="h-100 content"
-    >
-      <div>
-        Empty
-      </div>
-    </div>
-  </div>
-</PanelContainer>
-`;
+exports[`PanelContainer empty state 1`] = `[Function]`;
 
 exports[`PanelContainer loading state 1`] = `
-<PanelContainer
-  emptyContent={
-    <div>
-      Empty
-    </div>
-  }
-  loadingContent={
-    <div>
-      Loading
-    </div>
-  }
-  populatedContent={
-    <div>
-      Content
-    </div>
-  }
-  state="loading"
-  title="Test Panel"
->
+<DocumentFragment>
   <div
-    className="panelContainer d-flex flex-column"
+    class="panelContainer d-flex flex-column"
   >
     <div
-      className="d-flex border-bottom header"
+      class="d-flex border-bottom header"
     >
       <h4
-        className="headerText"
+        class="headerText"
       >
         Test Panel
       </h4>
     </div>
     <div
-      className="h-100 content"
+      class="h-100 content"
     >
       <div>
         Loading
       </div>
     </div>
   </div>
-</PanelContainer>
+</DocumentFragment>
 `;
 
 exports[`PanelContainer with action buttons 1`] = `
-<PanelContainer
-  actionButtons={
-    <button
-      type="button"
-    >
-      Button
-    </button>
-  }
-  emptyContent={
-    <div>
-      Empty
-    </div>
-  }
-  loadingContent={
-    <div>
-      Loading
-    </div>
-  }
-  populatedContent={
-    <div>
-      Content
-    </div>
-  }
-  state="populated"
-  title="Test Panel"
->
+<DocumentFragment>
   <div
-    className="panelContainer d-flex flex-column"
+    class="panelContainer d-flex flex-column"
   >
     <div
-      className="d-flex border-bottom header"
+      class="d-flex border-bottom header"
     >
       <h4
-        className="headerText"
+        class="headerText"
       >
         Test Panel
       </h4>
@@ -174,12 +49,12 @@ exports[`PanelContainer with action buttons 1`] = `
       </button>
     </div>
     <div
-      className="h-100 content"
+      class="h-100 content"
     >
       <div>
         Content
       </div>
     </div>
   </div>
-</PanelContainer>
+</DocumentFragment>
 `;

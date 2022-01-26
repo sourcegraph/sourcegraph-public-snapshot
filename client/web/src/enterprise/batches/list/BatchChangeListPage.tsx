@@ -4,10 +4,14 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, ReplaySubject } from 'rxjs'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Page } from '@sourcegraph/web/src/components/Page'
+import { Container, PageHeader, useObservable, CardBody, Card } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
+import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import {
@@ -30,7 +34,11 @@ import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
 
-export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'location'> {
+export interface BatchChangeListPageProps
+    extends TelemetryProps,
+        Pick<RouteComponentProps, 'location'>,
+        SettingsCascadeProps<Settings> {
+    canCreate: boolean
     headingElement: 'h1' | 'h2'
     displayNamespace?: boolean
     /** For testing only. */
@@ -41,31 +49,40 @@ export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComp
     openTab?: SelectedTab
 }
 
-const FILTERS: FilteredConnectionFilter[] = [
+const OPEN_FILTER = {
+    label: 'Open',
+    value: 'open',
+    tooltip: 'Show only batch changes that are open',
+    args: { state: BatchChangeState.OPEN },
+} as const
+
+const DRAFT_FILTER = {
+    label: 'Draft',
+    value: 'draft',
+    tooltip: 'Show only batch changes that have not been applied yet',
+    args: { state: BatchChangeState.DRAFT },
+} as const
+
+const CLOSED_FILTER = {
+    label: 'Closed',
+    value: 'closed',
+    tooltip: 'Show only batch changes that are closed',
+    args: { state: BatchChangeState.CLOSED },
+}
+
+const ALL_FILTER = {
+    label: 'All',
+    value: 'all',
+    tooltip: 'Show all batch changes',
+    args: {},
+} as const
+
+const getFilters = (withDrafts = false): FilteredConnectionFilter[] => [
     {
         id: 'status',
         label: 'Status',
         type: 'radio',
-        values: [
-            {
-                label: 'Open',
-                value: 'open',
-                tooltip: 'Show only batch changes that are open',
-                args: { state: BatchChangeState.OPEN },
-            },
-            {
-                label: 'Closed',
-                value: 'closed',
-                tooltip: 'Show only batch changes that are closed',
-                args: { state: BatchChangeState.CLOSED },
-            },
-            {
-                label: 'All',
-                value: 'all',
-                tooltip: 'Show all batch changes',
-                args: {},
-            },
-        ],
+        values: [OPEN_FILTER, ...(withDrafts ? [DRAFT_FILTER] : []), CLOSED_FILTER, ALL_FILTER],
     },
 ]
 
@@ -77,13 +94,17 @@ type SelectedTab = 'batchChanges' | 'gettingStarted'
 export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPageProps> = ({
     queryBatchChanges = _queryBatchChanges,
     areBatchChangesLicensed = _areBatchChangesLicensed,
+    canCreate,
     displayNamespace = true,
     headingElement,
     location,
     openTab,
+    settingsCascade,
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('BatchChangesListPage'), [props.telemetryService])
+
+    const showDrafts = isBatchChangesExecutionEnabled(settingsCascade)
 
     /*
      * Tracks whether this is the first fetch since this page has been rendered the first time.
@@ -122,11 +143,11 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     )
 
     return (
-        <>
+        <Page>
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
-                actions={<NewBatchChangeButton to={`${location.pathname}/create`} />}
+                actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             />
@@ -143,7 +164,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         queryConnection={query}
                         hideSearch={true}
                         defaultFirst={15}
-                        filters={FILTERS}
+                        filters={getFilters(showDrafts)}
                         noun="batch change"
                         pluralNoun="batch changes"
                         listComponent="div"
@@ -151,15 +172,16 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         withCenteredSummary={true}
                         cursorPaging={true}
                         noSummaryIfAllNodesVisible={true}
-                        emptyElement={<BatchChangeListEmptyElement location={location} />}
+                        emptyElement={<BatchChangeListEmptyElement canCreate={canCreate} location={location} />}
                     />
                 </Container>
             )}
-        </>
+        </Page>
     )
 }
 
-export interface NamespaceBatchChangeListPageProps extends BatchChangeListPageProps {
+export interface NamespaceBatchChangeListPageProps extends Omit<BatchChangeListPageProps, 'canCreate'> {
+    authenticatedUser: AuthenticatedUser
     namespaceID: Scalars['ID']
 }
 
@@ -167,9 +189,19 @@ export interface NamespaceBatchChangeListPageProps extends BatchChangeListPagePr
  * A list of all batch changes in a namespace.
  */
 export const NamespaceBatchChangeListPage: React.FunctionComponent<NamespaceBatchChangeListPageProps> = ({
+    authenticatedUser,
     namespaceID,
     ...props
 }) => {
+    // A user should only see the button to create a batch change in a namespace if it is
+    // their namespace (user namespace), or they belong to it (organization namespace)
+    const canCreateInThisNamespace = useMemo(
+        () =>
+            authenticatedUser.id === namespaceID ||
+            authenticatedUser.organizations.nodes.map(org => org.id).includes(namespaceID),
+        [authenticatedUser, namespaceID]
+    )
+
     const queryConnection = useCallback(
         (args: Partial<BatchChangesByNamespaceVariables>) =>
             queryBatchChangesByNamespace({
@@ -182,17 +214,27 @@ export const NamespaceBatchChangeListPage: React.FunctionComponent<NamespaceBatc
             }),
         [namespaceID]
     )
-    return <BatchChangeListPage {...props} displayNamespace={false} queryBatchChanges={queryConnection} />
+    return (
+        <BatchChangeListPage
+            {...props}
+            canCreate={canCreateInThisNamespace}
+            displayNamespace={false}
+            queryBatchChanges={queryConnection}
+        />
+    )
 }
 
-interface BatchChangeListEmptyElementProps extends Pick<RouteComponentProps, 'location'> {}
+interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'location' | 'canCreate'> {}
 
-const BatchChangeListEmptyElement: React.FunctionComponent<BatchChangeListEmptyElementProps> = ({ location }) => (
+const BatchChangeListEmptyElement: React.FunctionComponent<BatchChangeListEmptyElementProps> = ({
+    canCreate,
+    location,
+}) => (
     <div className="w-100 py-5 text-center">
         <p>
-            <strong>No batch changes have been created</strong>
+            <strong>No batch changes have been created.</strong>
         </p>
-        <NewBatchChangeButton to={`${location.pathname}/create`} />
+        {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
     </div>
 )
 
@@ -237,6 +279,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
                         onClick={onSelectGettingStarted}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
                         role="button"
+                        data-testid="test-getting-started-btn"
                     >
                         <span className="text-content" data-tab-content="Getting started">
                             Getting started
@@ -249,18 +292,18 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
 }
 
 const GettingStartedFooter: React.FunctionComponent<{}> = () => (
-    <div className="row pb-4">
+    <div className="row">
         <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
-            <div className="card">
-                <div className="card-body text-center">
+            <Card>
+                <CardBody className="text-center">
                     <p>Create your first batch change</p>
                     <h2 className="mb-0">
                         <a href="https://docs.sourcegraph.com/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
                         </a>
                     </h2>
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         </div>
     </div>
 )

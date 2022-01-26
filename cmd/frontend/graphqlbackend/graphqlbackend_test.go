@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -49,11 +48,13 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 }
 
 func TestRepository(t *testing.T) {
-	resetMocks()
-	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+	db.ReposFunc.SetDefaultReturn(repos)
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
@@ -73,7 +74,7 @@ func TestRepository(t *testing.T) {
 }
 
 func TestResolverTo(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewMockDB()
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
@@ -83,12 +84,9 @@ func TestResolverTo(t *testing.T) {
 		&GitTreeEntryResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{db: database.NewDB(db)},
+		&RepositoryResolver{db: db},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
-		&repositorySuggestionResolver{},
-		&symbolSuggestionResolver{},
-		&languageSuggestionResolver{},
 		&settingsSubject{},
 		&statusMessageResolver{db: db},
 	}
@@ -105,7 +103,7 @@ func TestResolverTo(t *testing.T) {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+		log15.Root().SetHandler(log15.DiscardHandler())
 		log.SetOutput(io.Discard)
 	}
 	os.Exit(m.Run())
@@ -114,11 +112,16 @@ func TestMain(m *testing.M) {
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
 	rcache.SetupForTest(t)
-	database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
-		return map[string]bool{}, nil
-	}
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{
+	users := database.NewMockUserStore()
+	users.TagsFunc.SetDefaultReturn(map[string]bool{}, nil)
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, userID int32) (*types.User, error) {
+		return &types.User{ID: userID, SiteAdmin: userID == 2}, nil
+	})
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(
+		[]*types.ExternalService{
 			{
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
@@ -133,9 +136,10 @@ func TestAffiliatedRepositories(t *testing.T) {
 				ID:   3,
 				Kind: extsvc.KindBitbucketCloud, // unsupported, should be ignored
 			},
-		}, nil
-	}
-	database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+		},
+		nil,
+	)
+	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 		switch id {
 		case 1:
 			return &types.ExternalService{
@@ -151,16 +155,11 @@ func TestAffiliatedRepositories(t *testing.T) {
 			}, nil
 		}
 		return nil, nil
-	}
-	database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
-		return &types.User{
-			ID:        userID,
-			SiteAdmin: userID == 2,
-		}, nil
-	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: true}, nil
-	}
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	// Map from path rou
 	httpResponder := map[string]roundTripFunc{
@@ -232,7 +231,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -281,7 +280,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -301,8 +300,8 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Path:          []interface{}{"affiliatedRepositories"},
-					Message:       "Must be authenticated as user with id 1",
-					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", 1)},
+					Message:       "must be authenticated as user with id 1",
+					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", 1)},
 				},
 			},
 		},
@@ -334,7 +333,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -390,7 +389,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(

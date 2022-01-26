@@ -1,0 +1,15 @@
+.app-router-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+
+    // We set height explicitly to be able to have position sticky elements
+    // within the app-router-container element. Without height property on root
+    // with overflow value different from 'visible' value sticky elements
+    // do not work properly.
+    // See https://github.com/w3c/csswg-drafts/issues/865#issuecomment-629076458
+    height: 100%;
+}

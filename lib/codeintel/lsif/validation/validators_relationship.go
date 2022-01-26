@@ -199,7 +199,29 @@ func ensureUnambiguousResultSets(ctx *ValidationContext) bool {
 		}
 
 		valid = false
-		ctx.AddError("vertex %d has multiple result sets", outV).AddContext(lineContexts...)
+
+		if len(lineContexts) == 0 {
+			ctx.AddError("each outV must have some associated edges: %d", outV)
+		} else {
+			// If every edge is the same, then we actually have a duplicate problem,
+			// not a multiple result sets problem.
+			allEqual := true
+
+			firstEdge := lineContexts[0].Element.Payload.(protocolReader.Edge)
+			for _, lineContext := range lineContexts {
+				currentEdge := lineContext.Element.Payload.(protocolReader.Edge)
+				if firstEdge.OutV != currentEdge.OutV || firstEdge.InV != currentEdge.InV {
+					allEqual = false
+					break
+				}
+			}
+
+			if allEqual {
+				ctx.AddError("duplicate edges detected from %d -> %d", firstEdge.OutV, firstEdge.InV).AddContext(lineContexts...)
+			} else {
+				ctx.AddError("vertex %d has multiple result sets", outV).AddContext(lineContexts...)
+			}
+		}
 	}
 
 	return valid

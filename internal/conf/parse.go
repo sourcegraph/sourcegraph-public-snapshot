@@ -33,7 +33,7 @@ func parseConfigData(data string, cfg interface{}) error {
 // ParseConfig parses the raw configuration.
 func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 	cfg := &Unified{
-		ServiceConnections: data.ServiceConnections,
+		ServiceConnectionConfig: data.ServiceConnections,
 	}
 	if err := parseConfigData(data.Site, &cfg.SiteConfiguration); err != nil {
 		return nil, err

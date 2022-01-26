@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1000000012
+-- +++
+
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS insight_view_grants

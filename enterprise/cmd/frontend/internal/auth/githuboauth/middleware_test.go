@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -29,7 +29,7 @@ func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	const mockUserID = 123
 
@@ -277,7 +277,7 @@ type MockProvider struct {
 	lastCallbackRequestURL *url.URL
 }
 
-func newMockProvider(t *testing.T, db dbutil.DB, clientID, clientSecret, baseURL string) *MockProvider {
+func newMockProvider(t *testing.T, db database.DB, clientID, clientSecret, baseURL string) *MockProvider {
 	var (
 		mp       MockProvider
 		problems []string

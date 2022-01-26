@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/browser'
+import classNames from 'classnames'
 import { trimStart } from 'lodash'
 import { defer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -16,6 +18,7 @@ import {
 } from '@sourcegraph/shared/src/util/url'
 
 import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
@@ -25,6 +28,7 @@ import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
 
+import styles from './codeHost.module.scss'
 import { markdownBodyViewResolver } from './contentViews'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
@@ -302,7 +306,7 @@ const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
     resolveView: element => ({ element }),
 }
 
-const iconClassName = 'icon--github v-align-text-bottom'
+const iconClassName = classNames(styles.icon, 'v-align-text-bottom')
 
 const notificationClassNames = {
     [NotificationType.Log]: 'flash',
@@ -367,6 +371,42 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
     },
 }
 
+/**
+ * Checks whether repository is private or not using Github API + fallback to DOM element check
+ *
+ * @description See https://docs.github.com/en/rest/reference/repos#get-a-repository
+ * @description see rate limit https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
+ */
+export const isPrivateRepository = (
+    repoName: string,
+    fetchCache = background.fetchCache,
+    fallbackSelector = '#repository-container-header h1 span.Label'
+): Promise<boolean> => {
+    if (window.location.hostname !== 'github.com') {
+        return Promise.resolve(true)
+    }
+    return fetchCache<{ private?: boolean }>({
+        url: `https://api.github.com/repos/${repoName}`,
+        credentials: 'omit',
+        cacheMaxAge: 60 * 60 * 1000, // 1 hour
+    })
+        .then(response => {
+            const rateLimit = response.headers['x-ratelimit-remaining']
+            if (Number(rateLimit) <= 0) {
+                const rateLimitError = new Error('Github rate limit exceeded.')
+                Sentry.captureException(rateLimitError)
+                throw rateLimitError
+            }
+            return response
+        })
+        .then(({ data }) => typeof data.private !== 'boolean' || data.private)
+        .catch(error => {
+            // If network error or rate-limit exceeded fallback to DOM check
+            console.warn('Failed to fetch if the repository is private.', error)
+            return document.querySelector(fallbackSelector)?.textContent?.toLowerCase().trim() !== 'public'
+        })
+}
+
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
@@ -374,24 +414,13 @@ export const githubCodeHost: CodeHost = {
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
-    getContext: () => {
-        const repoHeaderHasPrivateMarker =
-            !!document.querySelector('.repohead .private') ||
-            !!document.querySelector('h1 .octicon-lock ~ [itemprop="author"] ~ [itemprop="name"]') ||
-            !!(
-                document
-                    .querySelector('h1 [itemprop="author"] ~ [itemprop="name"] ~ .Label')
-                    ?.textContent?.trim()
-                    .toLowerCase() === 'private'
-            )
-        const parsedURL = parseURL()
+    getContext: async () => {
+        const { repoName, rawRepoName, pageType } = parseURL()
+
         return {
-            ...parsedURL,
-            revision:
-                parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree'
-                    ? resolveFileInfo().blob.revision
-                    : undefined,
-            privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
+            rawRepoName,
+            revision: pageType === 'blob' || pageType === 'tree' ? resolveFileInfo().blob.revision : undefined,
+            privateRepository: await isPrivateRepository(repoName),
         }
     },
     isLightTheme: defer(() => {
@@ -418,24 +447,25 @@ export const githubCodeHost: CodeHost = {
         selectedListItemClassName: 'navigation-focus',
         listItemClassName:
             'd-flex flex-justify-start flex-items-center p-0 f5 navigation-item js-navigation-item js-jump-to-scoped-search',
-        actionItemClassName:
-            'command-palette-action-item--github no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
+        actionItemClassName: classNames(
+            styles.commandPaletteActionItem,
+            'no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2'
+        ),
         noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
         iconClassName,
     },
     codeViewToolbarClassProps: {
-        className: 'code-view-toolbar--github',
-        listItemClass: 'code-view-toolbar__item--github BtnGroup',
-        actionItemClass: 'btn btn-sm tooltipped tooltipped-s BtnGroup-item action-item--github',
+        className: styles.codeViewToolbar,
+        listItemClass: classNames(styles.codeViewToolbarItem, 'BtnGroup'),
+        actionItemClass: classNames('btn btn-sm tooltipped tooltipped-s BtnGroup-item', styles.actionItem),
         actionItemPressedClass: 'selected',
-        actionItemIconClass: 'icon--github v-align-text-bottom',
+        actionItemIconClass: classNames(styles.icon, 'v-align-text-bottom'),
     },
     hoverOverlayClassProps: {
         className: 'Box',
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
-        closeButtonClassName: 'btn-octicon p-0 hover-overlay__close-button--github',
-        badgeClassName: 'label hover-overlay__badge--github',
+        badgeClassName: classNames('label', styles.hoverOverlayBadge),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
     },

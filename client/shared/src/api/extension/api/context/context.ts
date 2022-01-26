@@ -1,20 +1,9 @@
 import { basename, dirname, extname } from 'path'
 
+import { Context } from '@sourcegraph/template-parser'
+
 import { SettingsCascadeOrError, isSettingsValid } from '../../../../settings/settings'
 import { ViewerWithPartialModel } from '../../../viewerTypes'
-
-/**
- * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
- *
- * @template T If you have a value with a property of type T that is not one of the primitive types listed below
- * (or Context), you can use Context<T> to hold that value. T must be a value that can be represented by a JSON
- * object.
- */
-export interface Context<T = never>
-    extends Record<
-        string,
-        string | number | boolean | null | Context<T> | T | (string | number | boolean | null | Context<T> | T)[]
-    > {}
 
 export type ContributionScope =
     | ViewerWithPartialModel
@@ -71,6 +60,10 @@ export function computeContext<T>(
         data['resource.extname'] = extname(component.resource)
         data['resource.language'] = component.model.languageId
         data['resource.type'] = 'textDocument'
+        const resourceURL = new URL(component.resource)
+        data['resource.repo'] = `${resourceURL.hostname}${resourceURL.pathname}`
+        data['resource.commit'] = resourceURL.search.slice(1)
+        data['resource.path'] = resourceURL.hash.slice(1)
 
         data['component.type'] = 'CodeEditor'
         // See above for why we disable eslint rules related to `any`.

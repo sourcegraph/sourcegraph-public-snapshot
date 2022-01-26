@@ -1,13 +1,12 @@
-import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { LoadingSpinner, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'
-import styles from './ExecutionLogEntry.module.scss'
+import { LogOutput } from './LogOutput'
 import { Timestamp } from './time/Timestamp'
 
 interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
@@ -23,8 +22,8 @@ interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
 }
 
 export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> = ({ logEntry, children, now }) => (
-    <div className="card mb-3">
-        <div className="card-body">
+    <Card className="mb-3">
+        <CardBody>
             {logEntry.command.length > 0 ? (
                 <LogOutput text={logEntry.command.join(' ')} className="mb-3" />
             ) : (
@@ -34,7 +33,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
             )}
 
             <div>
-                {logEntry.exitCode === null && <LoadingSpinner className="icon-inline mr-1" />}
+                {logEntry.exitCode === null && <LoadingSpinner className="mr-1" />}
                 {logEntry.exitCode !== null && (
                     <>
                         {logEntry.exitCode === 0 ? (
@@ -54,7 +53,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                 )}
             </div>
             {children}
-        </div>
+        </CardBody>
 
         <div className="p-2">
             {logEntry.out ? (
@@ -67,29 +66,8 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                 </div>
             )}
         </div>
-    </div>
+    </Card>
 )
-
-interface LogOutputProps {
-    text: string
-    className?: string
-}
-
-const LogOutput: React.FunctionComponent<LogOutputProps> = React.memo(({ text, className }) => (
-    <pre className={classNames(styles.logs, 'rounded p-3 mb-0', className)}>
-        {
-            // Use index as key because log lines may not be unique. This is OK
-            // here because this list will not be updated during this component's
-            // lifetime (note: it's also memoized).
-            /* eslint-disable react/no-array-index-key */
-            text.split('\n').map((line, index) => (
-                <code key={index} className={classNames('d-block', line.startsWith('stderr:') ? 'text-danger' : '')}>
-                    {line.replace(/^std(out|err): /, '')}
-                </code>
-            ))
-        }
-    </pre>
-))
 
 const timeOrders: [number, string][] = [
     [1000 * 60 * 60 * 24, 'day'],

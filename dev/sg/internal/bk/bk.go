@@ -3,12 +3,14 @@ package bk
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -23,6 +25,11 @@ type buildkiteSecrets struct {
 
 // retrieveToken obtains a token either from the cached configuration or by asking the user for it.
 func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
+	if tok := os.Getenv("BUILDKITE_API_TOKEN"); tok != "" {
+		// If the token is provided by the environment, use that one.
+		return tok, nil
+	}
+
 	sec := secrets.FromContext(ctx)
 	bkSecrets := buildkiteSecrets{}
 	err := sec.Get("buildkite", &bkSecrets)
@@ -62,6 +69,9 @@ type Client struct {
 	bk *buildkite.Client
 }
 
+// NewClient returns an authenticated client that can perform various operation on
+// the organization assigned to buildkiteOrg.
+// If there is no token assigned yet, it will be asked to the user.
 func NewClient(ctx context.Context, out *output.Output) (*Client, error) {
 	token, err := retrieveToken(ctx, out)
 	if err != nil {
@@ -74,6 +84,8 @@ func NewClient(ctx context.Context, out *output.Output) (*Client, error) {
 	return &Client{bk: buildkite.NewClient(config.Client())}, nil
 }
 
+// GetMostRecentBuild returns a list of most recent builds for the given pipeline and branch.
+// If no builds are found, an error will be returned.
 func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string) (*buildkite.Build, error) {
 	builds, _, err := c.bk.Builds.ListByPipeline(buildkiteOrg, pipeline, &buildkite.BuildsListOptions{
 		Branch: branch,
@@ -87,10 +99,28 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 	if len(builds) == 0 {
 		return nil, errors.New("no builds found")
 	}
+
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	return &builds[0], nil
 }
 
+// GetBuildByNumber returns a single build from a given pipeline and a given build number.
+// If no build is found, an error will be returned.
+func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number string) (*buildkite.Build, error) {
+	b, _, err := c.bk.Builds.Get(buildkiteOrg, pipeline, number, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no build found")
+		}
+		return nil, err
+	}
+	return b, nil
+}
+
+// TriggerBuild request a build on Buildkite API and returns that build.
 func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string) (*buildkite.Build, error) {
 	build, _, err := c.bk.Builds.Create(buildkiteOrg, pipeline, &buildkite.CreateBuild{
 		Commit: commit,
@@ -171,8 +201,8 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 	if opts.JobQuery != "" {
 		var job *buildkite.Job
 		for _, j := range buildDetails.Jobs {
-			idMatch := (j.ID != nil && *j.ID == opts.JobQuery)
-			nameMatch := (j.Name != nil && strings.Contains(strings.ToLower(*j.Name), strings.ToLower(opts.JobQuery)))
+			idMatch := j.ID != nil && *j.ID == opts.JobQuery
+			nameMatch := j.Name != nil && strings.Contains(strings.ToLower(*j.Name), strings.ToLower(opts.JobQuery))
 			if idMatch || nameMatch {
 				job = j
 				break
@@ -198,6 +228,12 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 	logs := []*JobLogs{}
 	for _, job := range buildDetails.Jobs {
 		if !hasState(job, opts.State) {
+			continue
+		}
+
+		if opts.State == "failed" && job.SoftFailed {
+			// Soft fails are not a state, but an attribute of failed jobs.
+			// Ignore them, so we don't count them as failures.
 			continue
 		}
 

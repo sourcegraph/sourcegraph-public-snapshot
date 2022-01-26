@@ -45,7 +45,7 @@ const batchChangeDefaults: BatchChangeFields = {
         unpublished: 4,
     },
     createdAt: subDays(now, 5).toISOString(),
-    initialApplier: {
+    creator: {
         url: '/users/alice',
         username: 'alice',
     },
@@ -67,8 +67,14 @@ const batchChangeDefaults: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
+        id: 'specID1',
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
+        codeHostsWithoutWebhooks: {
+            nodes: [],
+            pageInfo: { hasNextPage: false },
+            totalCount: 0,
+        },
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',
@@ -136,6 +142,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 externalURL: {
                     url: 'http://test.test/123',
                 },
+                forkNamespace: null,
                 labels: [
                     {
                         __typename: 'ChangesetLabel',
@@ -163,8 +170,10 @@ const queryChangesets: typeof _queryChangesets = () =>
                     type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
             {
@@ -179,6 +188,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 },
                 externalID: null,
                 externalURL: null,
+                forkNamespace: null,
                 labels: [],
                 repository: {
                     id: 'repoid',
@@ -199,8 +209,10 @@ const queryChangesets: typeof _queryChangesets = () =>
                     type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
         ],

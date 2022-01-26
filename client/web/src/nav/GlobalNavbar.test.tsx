@@ -3,16 +3,16 @@ import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
-import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { setLinkComponent } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../graphql-operations'
-import { ThemePreference } from '../theme'
+import { useExperimentalFeatures } from '../stores'
+import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
@@ -30,28 +30,19 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
-    caseSensitive: false,
-    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
     batchChangesExecutionEnabled: false,
-    enableCodeMonitoring: false,
+    batchChangesWebhookLogsEnabled: false,
     telemetryService: {} as any,
-    hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
     isExtensionAlertAnimating: false,
     showSearchBox: true,
-    showSearchContext: false,
-    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
     variant: 'default',
     globbing: false,
-    showOnboardingTour: false,
     branding: undefined,
     routes: [],
     searchContextsEnabled: true,
@@ -66,6 +57,9 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 describe('GlobalNavbar', () => {
     setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
+    beforeEach(() => {
+        useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
+    })
 
     test('default', () => {
         const { asFragment } = render(

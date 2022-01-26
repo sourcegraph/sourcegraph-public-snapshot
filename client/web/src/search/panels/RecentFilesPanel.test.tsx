@@ -1,8 +1,9 @@
-import { mount } from 'enzyme'
+import { screen } from '@testing-library/react'
 import React from 'react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { RecentFilesPanel } from './RecentFilesPanel'
 
@@ -39,11 +40,11 @@ describe('RecentFilesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RecentFilesPanel {...props} />)
-        const listItems = component.find('.test-recent-files-item')
-        expect(listItems.length).toStrictEqual(2)
-        expect(listItems.at(0).text()).toStrictEqual('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
-        expect(listItems.at(1).text()).toStrictEqual('github.com/sourcegraph/sourcegraph › .eslintrc.js')
+        renderWithRouter(<RecentFilesPanel {...props} />)
+        const listItems = screen.getAllByTestId('recent-files-item')
+        expect(listItems).toHaveLength(2)
+        expect(listItems[0]).toHaveTextContent('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
+        expect(listItems[1]).toHaveTextContent('github.com/sourcegraph/sourcegraph › .eslintrc.js')
     })
 
     test('files with missing data can extract it from the URL if available', () => {
@@ -78,11 +79,11 @@ describe('RecentFilesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RecentFilesPanel {...props} />)
-        const listItems = component.find('.test-recent-files-item')
-        expect(listItems.length).toStrictEqual(2)
-        expect(listItems.at(0).text()).toStrictEqual('github.com/sourcegraph/sourcegraph › .eslintrc.js')
-        expect(listItems.at(1).text()).toStrictEqual('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
+        renderWithRouter(<RecentFilesPanel {...props} />)
+        const listItems = screen.getAllByTestId('recent-files-item')
+        expect(listItems).toHaveLength(2)
+        expect(listItems[0]).toHaveTextContent('github.com/sourcegraph/sourcegraph › .eslintrc.js')
+        expect(listItems[1]).toHaveTextContent('ghe.sgdev.org/sourcegraph/gorilla-mux › go.mod')
     })
 
     test('Show More button shown when more items can be loaded', () => {
@@ -112,9 +113,8 @@ describe('RecentFilesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RecentFilesPanel {...props} />)
-        const showMoreButton = component.getDOMNode().querySelectorAll('.test-recent-files-panel-show-more')
-        expect(showMoreButton.length).toStrictEqual(1)
+        renderWithRouter(<RecentFilesPanel {...props} />)
+        expect(screen.getByTestId('recent-files-panel-show-more')).toBeInTheDocument()
     })
 
     test('Show More button not shown when more items cannot be loaded', () => {
@@ -144,8 +144,7 @@ describe('RecentFilesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RecentFilesPanel {...props} />)
-        const showMoreButton = component.find('.test-recent-files-panel-show-more')
-        expect(showMoreButton.length).toStrictEqual(0)
+        renderWithRouter(<RecentFilesPanel {...props} />)
+        expect(screen.queryByTestId('recent-files-panel-show-more')).not.toBeInTheDocument()
     })
 })

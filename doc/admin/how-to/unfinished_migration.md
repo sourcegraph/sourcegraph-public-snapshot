@@ -28,7 +28,7 @@ ERROR: Unfinished migrations. Please revert Sourcegraph to the previous version 
 
 Each migration notes the engineering team that is able to resolve associated errors.
 
-As an escape hatch, the environment variable `SRC_DISABLE_OOBMIGRATION_VALIDATION` can be set to `true` to disable the startup check.
+As an escape hatch, the environment variable `SRC_DISABLE_OOBMIGRATION_VALIDATION` can be set to `true` on the `frontend` and `worker` services to disable the startup check.
 
 ## Further resources
 

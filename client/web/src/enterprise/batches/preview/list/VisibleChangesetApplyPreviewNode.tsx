@@ -8,21 +8,15 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
-import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
-import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import {
-    ChangesetState,
-    VisibleChangesetApplyPreviewFields,
-    VisibleChangesetSpecFields,
-} from '../../../../graphql-operations'
+import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
+import { Branch, BranchMerge } from '../../Branch'
 import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
@@ -30,6 +24,7 @@ import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { checkPublishability } from '../utils'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
+import { ChangesetSpecFileDiffConnection } from './ChangesetSpecFileDiffConnection'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
@@ -72,9 +67,8 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
 
     return (
         <>
-            <button
-                type="button"
-                className="btn btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
+            <Button
+                className="btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -83,7 +77,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 ) : (
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
-            </button>
+            </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
             ) : (
@@ -167,14 +161,15 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 <ApplyDiffStat spec={node} />
             </div>
             {/* The button for expanding the information used on xs devices. */}
-            <button
-                type="button"
+            <Button
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
                 className={classNames(
                     styles.visibleChangesetApplyPreviewNodeShowDetails,
-                    'btn btn-outline-secondary d-block d-sm-none test-batches-expand-preview'
+                    'd-block d-sm-none test-batches-expand-preview'
                 )}
+                outline={true}
+                variant="secondary"
             >
                 {isExpanded ? (
                     <ChevronDownIcon className="icon-inline" aria-label="Close section" />
@@ -182,7 +177,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
-            </button>
+            </Button>
             {isExpanded && (
                 <>
                     <div
@@ -280,18 +275,18 @@ const ExpandedSection: React.FunctionComponent<
     }, [])
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return (
-            <div className="alert alert-info mb-0">
+            <Alert className="mb-0" variant="info">
                 When run, the changeset <strong>{node.targets.changeset.title}</strong> in repo{' '}
                 <strong>{node.targets.changeset.repository.name}</strong> will be removed from this batch change.
-            </div>
+            </Alert>
         )
     }
     if (node.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
         return (
-            <div className="alert alert-info mb-0">
+            <Alert className="mb-0" variant="info">
                 When run, the changeset with ID <strong>{node.targets.changesetSpec.description.externalID}</strong>{' '}
                 will be imported from <strong>{node.targets.changesetSpec.description.baseRepository.name}</strong>.
-            </div>
+            </Alert>
         )
     }
     return (
@@ -386,16 +381,16 @@ const ExpandedSection: React.FunctionComponent<
             {selectedTab === 'diff' && (
                 <>
                     {node.delta.diffChanged && (
-                        <div className="alert alert-warning">
+                        <Alert variant="warning">
                             The files in this changeset have been altered from the previous version. These changes will
                             be pushed to the target branch.
-                        </div>
+                        </Alert>
                     )}
                     <ChangesetSpecFileDiffConnection
                         history={history}
                         isLightTheme={isLightTheme}
                         location={location}
-                        spec={node.targets.changesetSpec}
+                        spec={node.targets.changesetSpec.id}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                     />
                 </>
@@ -438,51 +433,6 @@ const ExpandedSection: React.FunctionComponent<
             )}
             {selectedTab === 'commits' && <GitBranchChangesetDescriptionInfo node={node} />}
         </>
-    )
-}
-
-const ChangesetSpecFileDiffConnection: React.FunctionComponent<
-    {
-        spec: VisibleChangesetSpecFields
-        history: H.History
-        location: H.Location
-
-        /** Used for testing. **/
-        queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-    } & ThemeProps
-> = ({ spec, history, location, isLightTheme, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
-    /** Fetches the file diffs for the changeset */
-    const queryFileDiffs = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
-            queryChangesetSpecFileDiffs({
-                after: args.after ?? null,
-                first: args.first ?? null,
-                changesetSpec: spec.id,
-            }),
-        [spec.id, queryChangesetSpecFileDiffs]
-    )
-    return (
-        <FileDiffConnection
-            listClassName="list-group list-group-flush"
-            noun="changed file"
-            pluralNoun="changed files"
-            queryConnection={queryFileDiffs}
-            nodeComponent={FileDiffNode}
-            nodeComponentProps={{
-                history,
-                location,
-                isLightTheme,
-                persistLines: true,
-                lineNumbers: true,
-            }}
-            defaultFirst={15}
-            hideSearch={true}
-            noSummaryIfAllNodesVisible={true}
-            history={history}
-            location={location}
-            useURLQuery={false}
-            cursorPaging={true}
-        />
     )
 }
 
@@ -566,12 +516,17 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
             {spec.delta.baseRefChanged &&
                 spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
                 spec.targets.changeset.currentSpec?.description.__typename === 'GitBranchChangesetDescription' && (
-                    <del className="badge badge-danger mr-2">
-                        {spec.targets.changeset.currentSpec?.description.baseRef}
-                    </del>
+                    <Branch
+                        className="mr-2"
+                        deleted={true}
+                        name={spec.targets.changeset.currentSpec?.description.baseRef}
+                    />
                 )}
-            <span className="badge badge-primary">{spec.targets.changesetSpec.description.baseRef}</span> &larr;{' '}
-            <span className="badge badge-primary">{spec.targets.changesetSpec.description.headRef}</span>
+            <BranchMerge
+                baseRef={spec.targets.changesetSpec.description.baseRef}
+                forkTarget={spec.targets.changesetSpec.forkTarget}
+                headRef={spec.targets.changesetSpec.description.headRef}
+            />
         </div>
     )
 }

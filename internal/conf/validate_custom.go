@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-type Validator func(Unified) Problems
+type Validator func(conftypes.SiteConfigQuerier) Problems
 
 // ContributeValidator adds the site configuration validator function to the validation process. It
 // is called to validate site configuration. Any strings it returns are shown as validation
@@ -82,7 +82,7 @@ func validateCustom(cfg Unified) (problems Problems) {
 func TestValidator(t interface {
 	Errorf(format string, args ...interface{})
 	Helper()
-}, c Unified, f Validator, wantProblems Problems) {
+}, c conftypes.UnifiedQuerier, f Validator, wantProblems Problems) {
 	t.Helper()
 	problems := f(c)
 	wantSet := make(map[string]problemKind, len(wantProblems))

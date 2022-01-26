@@ -6,6 +6,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 // Node must be implemented by any resolver that implements the Node interface in
@@ -64,6 +66,16 @@ func (r *NodeResolver) ToMonitorQuery() (MonitorQueryResolver, bool) {
 
 func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
 	n, ok := r.Node.(MonitorEmailResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorWebhook() (MonitorWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorWebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorSlackWebhookResolver)
 	return n, ok
 }
 
@@ -196,6 +208,11 @@ func (r *NodeResolver) ToSearchContext() (SearchContextResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToNotebook() (NotebookResolver, bool) {
+	n, ok := r.Node.(NotebookResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.Node.(*siteResolver)
 	return n, ok
@@ -238,5 +255,15 @@ func (r *NodeResolver) ToInsightsDashboard() (InsightsDashboardResolver, bool) {
 
 func (r *NodeResolver) ToInsightView() (InsightViewResolver, bool) {
 	n, ok := r.Node.(InsightViewResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
+	n, ok := r.Node.(*webhookLogResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
+	n, ok := r.Node.(*executor.ExecutorResolver)
 	return n, ok
 }

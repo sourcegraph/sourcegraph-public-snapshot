@@ -17,27 +17,28 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	FrontendURL          string
-	FrontendPassword     string
-	QueueName            string
-	QueuePollInterval    time.Duration
-	MaximumNumJobs       int
-	FirecrackerImage     string
-	VMStartupScriptPath  string
-	VMPrefix             string
-	UseFirecracker       bool
-	FirecrackerNumCPUs   int
-	FirecrackerMemory    string
-	FirecrackerDiskSpace string
-	MaximumRuntimePerJob time.Duration
-	CleanupTaskInterval  time.Duration
-	NumTotalJobs         int
-	MaxActiveTime        time.Duration
+	FrontendURL                string
+	FrontendAuthorizationToken string
+	QueueName                  string
+	QueuePollInterval          time.Duration
+	MaximumNumJobs             int
+	FirecrackerImage           string
+	VMStartupScriptPath        string
+	VMPrefix                   string
+	UseFirecracker             bool
+	FirecrackerNumCPUs         int
+	FirecrackerMemory          string
+	FirecrackerDiskSpace       string
+	MaximumRuntimePerJob       time.Duration
+	CleanupTaskInterval        time.Duration
+	NumTotalJobs               int
+	MaxActiveTime              time.Duration
+	WorkerHostname             string
 }
 
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
-	c.FrontendPassword = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The password supplied to the frontend.")
+	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The authorization token supplied to the frontend.")
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
@@ -52,6 +53,10 @@ func (c *Config) Load() {
 	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
 	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
+
+	hn := hostname.Get()
+	// Be unique but also descriptive.
+	c.WorkerHostname = hn + "-" + uuid.New().String()
 }
 
 func (c *Config) Validate() error {
@@ -63,7 +68,7 @@ func (c *Config) Validate() error {
 	return c.BaseConfig.Validate()
 }
 
-func (c *Config) APIWorkerOptions() apiworker.Options {
+func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:             c.VMPrefix,
 		QueueName:            c.QueueName,
@@ -72,11 +77,11 @@ func (c *Config) APIWorkerOptions() apiworker.Options {
 		ResourceOptions:      c.ResourceOptions(),
 		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
 		GitServicePath:       "/.executors/git",
-		ClientOptions:        c.ClientOptions(),
+		ClientOptions:        c.ClientOptions(telemetryOptions),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
-			c.FrontendPassword: "PASSWORD_REMOVED",
+			c.FrontendAuthorizationToken: "SECRET_REMOVED",
 		},
 	}
 }
@@ -90,6 +95,7 @@ func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 		Metrics:           makeWorkerMetrics(c.QueueName),
 		NumTotalJobs:      c.NumTotalJobs,
 		MaxActiveTime:     c.MaxActiveTime,
+		WorkerHostname:    c.WorkerHostname,
 	}
 }
 
@@ -109,16 +115,13 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 	}
 }
 
-func (c *Config) ClientOptions() apiclient.Options {
-	hn := hostname.Get()
-
+func (c *Config) ClientOptions(telemetryOptions apiclient.TelemetryOptions) apiclient.Options {
 	return apiclient.Options{
-		// Be unique but also descriptive.
-		ExecutorName:      hn + "-" + uuid.New().String(),
-		ExecutorHostname:  hn,
+		ExecutorName:      c.WorkerHostname,
 		PathPrefix:        "/.executors/queue",
 		EndpointOptions:   c.EndpointOptions(),
 		BaseClientOptions: c.BaseClientOptions(),
+		TelemetryOptions:  telemetryOptions,
 	}
 }
 
@@ -128,7 +131,7 @@ func (c *Config) BaseClientOptions() apiclient.BaseClientOptions {
 
 func (c *Config) EndpointOptions() apiclient.EndpointOptions {
 	return apiclient.EndpointOptions{
-		URL:      c.FrontendURL,
-		Password: c.FrontendPassword,
+		URL:   c.FrontendURL,
+		Token: c.FrontendAuthorizationToken,
 	}
 }

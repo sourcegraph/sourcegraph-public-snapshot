@@ -64,6 +64,38 @@ func NewMockStore() *MockStore {
 	}
 }
 
+// NewStrictMockStore creates a new mock of the Store interface. All methods
+// panic on invocation, unless overwritten.
+func NewStrictMockStore() *MockStore {
+	return &MockStore{
+		ComposeFunc: &StoreComposeFunc{
+			defaultHook: func(context.Context, string, ...string) (int64, error) {
+				panic("unexpected invocation of MockStore.Compose")
+			},
+		},
+		DeleteFunc: &StoreDeleteFunc{
+			defaultHook: func(context.Context, string) error {
+				panic("unexpected invocation of MockStore.Delete")
+			},
+		},
+		GetFunc: &StoreGetFunc{
+			defaultHook: func(context.Context, string) (io.ReadCloser, error) {
+				panic("unexpected invocation of MockStore.Get")
+			},
+		},
+		InitFunc: &StoreInitFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockStore.Init")
+			},
+		},
+		UploadFunc: &StoreUploadFunc{
+			defaultHook: func(context.Context, string, io.Reader) (int64, error) {
+				panic("unexpected invocation of MockStore.Upload")
+			},
+		},
+	}
+}
+
 // NewMockStoreFrom creates a new mock of the MockStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i uploadstore.Store) *MockStore {

@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/google/zoekt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -41,128 +43,19 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 	return val
 }
 
-// serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
-// not depend on frontend and therefore does not have access to `conf.Watch`.
-// Additionally, it only cares about certain search specific settings so this
-// search specific endpoint is used rather than serving the entire site settings
-// from /.internal/configuration.
-//
-// This endpoint also supports batch requests to avoid managing concurrency in
-// zoekt. On vertically scaled instances we have observed zoekt requesting
-// this endpoint concurrently leading to socket starvation.
-//
-// A repo can be specified via name ("repo") or id ("repoID").
-func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		ctx := r.Context()
-		siteConfig := conf.Get().SiteConfiguration
-
-		if err := r.ParseForm(); err != nil {
-			return err
-		}
-		repoNames := r.Form["repo"]
-
-		indexedIDs := make([]api.RepoID, 0, len(r.Form["repoID"]))
-		for _, idStr := range r.Form["repoID"] {
-			id, err := strconv.Atoi(idStr)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("invalid repo id %s: %s", idStr, err), http.StatusBadRequest)
-				return nil
-			}
-			indexedIDs = append(indexedIDs, api.RepoID(id))
-		}
-
-		if len(repoNames) > 0 && len(indexedIDs) > 0 {
-			http.Error(w, "only allowed to specify one of repoID or repo", http.StatusBadRequest)
-			return nil
-		}
-
-		// Preload repos to support fast lookups by repo name.
-		// This does NOT support fetching by URI (unlike Repos.GetByName). Zoekt
-		// will always ask us actual repo names and not URIs, though. This way,
-		// we can also save the additional round trip to the database when the
-		// repo is not found.
-		repos, loadReposErr := database.Repos(db).List(ctx, database.ReposListOptions{
-			Names: repoNames,
-			IDs:   indexedIDs,
-		})
-		reposMap := make(map[api.RepoName]*types.Repo, len(repos))
-		for _, repo := range repos {
-			reposMap[repo.Name] = repo
-		}
-
-		if len(indexedIDs) > 0 {
-			reposIDsMap := make(map[api.RepoID]*types.Repo, len(repos))
-			for _, repo := range repos {
-				reposIDsMap[repo.ID] = repo
-			}
-			for _, id := range indexedIDs {
-				if repo, ok := reposIDsMap[id]; ok {
-					repoNames = append(repoNames, string(repo.Name))
-				} else {
-					repoNames = append(repoNames, fmt.Sprintf("!DOES-NOT-EXIST-REPO-ID-%d", id))
-				}
-			}
-		}
-
-		getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
-			if loadReposErr != nil {
-				return nil, loadReposErr
-			}
-			// Replicate what database.Repos.GetByName would do here:
-			repo, ok := reposMap[api.RepoName(repoName)]
-			if !ok {
-				return nil, &database.RepoNotFoundErr{Name: api.RepoName(repoName)}
-			}
-
-			getVersion := func(branch string) (string, error) {
-				// Do not to trigger a repo-updater lookup since this is a batch job.
-				commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
-				if err != nil && errcode.HTTP(err) == http.StatusNotFound {
-					// GetIndexOptions wants an empty rev for a missing rev or empty
-					// repo.
-					return "", nil
-				}
-				return string(commitID), err
-			}
-
-			priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
-
-			return &searchbackend.RepoIndexOptions{
-				Name:       string(repo.Name),
-				RepoID:     int32(repo.ID),
-				Public:     !repo.Private,
-				Priority:   priority,
-				Fork:       repo.Fork,
-				Archived:   repo.Archived,
-				GetVersion: getVersion,
-			}, nil
-		}
-
-		// Build list of repo IDs to fetch revisions for.
-		repoIDs := make([]api.RepoID, len(repos))
-		for i, repo := range repos {
-			repoIDs[i] = repo.ID
-		}
-		revisionsForRepo, revisionsForRepoErr := database.SearchContexts(db).GetAllRevisionsForRepos(ctx, repoIDs)
-		getSearchContextRevisions := func(repoID int32) ([]string, error) {
-			if revisionsForRepoErr != nil {
-				return nil, revisionsForRepoErr
-			}
-			return revisionsForRepo[api.RepoID(repoID)], nil
-		}
-
-		b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoNames...)
-		_, _ = w.Write(b)
-		return nil
-	}
-}
-
-type reposListServer struct {
+// searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
+// interacts with (search-indexer).
+type searchIndexerServer struct {
 	// ListIndexable returns the repositories to index.
-	ListIndexable func(context.Context) ([]types.RepoName, error)
+	ListIndexable func(context.Context) ([]types.MinimalRepo, error)
 
-	StreamRepoNames func(context.Context, database.ReposListOptions, func(*types.RepoName)) error
+	// RepoStore is a subset of database.RepoStore used by searchIndexerServer.
+	RepoStore interface {
+		List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
+		StreamMinimalRepos(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
+	}
+
+	SearchContextsRepoRevs func(context.Context, []api.RepoID) (map[api.RepoID][]string, error)
 
 	// Indexers is the subset of searchbackend.Indexers methods we
 	// use. reposListServer is used by indexed-search to get the list of
@@ -172,20 +65,152 @@ type reposListServer struct {
 	Indexers interface {
 		// ReposSubset returns the subset of repoNames that hostname should
 		// index.
-		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.RepoName) ([]types.RepoName, error)
+		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
+
+	// MinLastChangedDisabled is a feature flag for disabling more efficient
+	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
+	MinLastChangedDisabled bool
 }
 
-// serveIndex is used by zoekt to get the list of repositories for it to
-// index.
-func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) error {
+// serveConfiguration is _only_ used by the zoekt index server. Zoekt does
+// not depend on frontend and therefore does not have access to `conf.Watch`.
+// Additionally, it only cares about certain search specific settings so this
+// search specific endpoint is used rather than serving the entire site settings
+// from /.internal/configuration.
+//
+// This endpoint also supports batch requests to avoid managing concurrency in
+// zoekt. On vertically scaled instances we have observed zoekt requesting
+// this endpoint concurrently leading to socket starvation.
+func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+	siteConfig := conf.Get().SiteConfiguration
+
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
+
+	indexedIDs := make([]api.RepoID, 0, len(r.Form["repoID"]))
+	for _, idStr := range r.Form["repoID"] {
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("invalid repo id %s: %s", idStr, err), http.StatusBadRequest)
+			return nil
+		}
+		indexedIDs = append(indexedIDs, api.RepoID(id))
+	}
+
+	if len(indexedIDs) == 0 {
+		http.Error(w, "atleast one repoID required", http.StatusBadRequest)
+		return nil
+	}
+
+	var minLastChanged time.Time
+	if !h.MinLastChangedDisabled {
+		var err error
+		minLastChanged, err = searchbackend.ParseAndSetConfigFingerprint(w, r, &siteConfig)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Preload repos to support fast lookups by repo ID.
+	repos, loadReposErr := h.RepoStore.List(ctx, database.ReposListOptions{
+		IDs: indexedIDs,
+		// When minLastChanged is non-zero we will only return the
+		// repositories that have changed since minLastChanged. This takes
+		// into account repo metadata, repo content and search context
+		// changes.
+		MinLastChanged: minLastChanged,
+		// Not needed here and expensive to compute for so many repos.
+		ExcludeSources: true,
+	})
+	reposMap := make(map[api.RepoID]*types.Repo, len(repos))
+	for _, repo := range repos {
+		reposMap[repo.ID] = repo
+	}
+
+	// If we used MinLastChanged, we should only return information for the
+	// repositories that we found from List.
+	if !minLastChanged.IsZero() {
+		filtered := indexedIDs[:0]
+		for _, id := range indexedIDs {
+			if _, ok := reposMap[id]; ok {
+				filtered = append(filtered, id)
+			}
+		}
+		indexedIDs = filtered
+	}
+
+	getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
+		if loadReposErr != nil {
+			return nil, loadReposErr
+		}
+		// Replicate what database.Repos.GetByName would do here:
+		repo, ok := reposMap[api.RepoID(repoID)]
+		if !ok {
+			return nil, &database.RepoNotFoundErr{ID: api.RepoID(repoID)}
+		}
+
+		getVersion := func(branch string) (string, error) {
+			metricGetVersion.Inc()
+			// Do not to trigger a repo-updater lookup since this is a batch job.
+			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{
+				NoEnsureRevision: true,
+			})
+			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
+				// GetIndexOptions wants an empty rev for a missing rev or empty
+				// repo.
+				return "", nil
+			}
+			return string(commitID), err
+		}
+
+		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
+
+		return &searchbackend.RepoIndexOptions{
+			Name:       string(repo.Name),
+			RepoID:     int32(repo.ID),
+			Public:     !repo.Private,
+			Priority:   priority,
+			Fork:       repo.Fork,
+			Archived:   repo.Archived,
+			GetVersion: getVersion,
+		}, nil
+	}
+
+	revisionsForRepo, revisionsForRepoErr := h.SearchContextsRepoRevs(ctx, indexedIDs)
+	getSearchContextRevisions := func(repoID int32) ([]string, error) {
+		if revisionsForRepoErr != nil {
+			return nil, revisionsForRepoErr
+		}
+		return revisionsForRepo[api.RepoID(repoID)], nil
+	}
+
+	// searchbackend uses int32 instead of api.RepoID currently, so build
+	// up a slice of that.
+	repoIDs := make([]int32, len(indexedIDs))
+	for i := range indexedIDs {
+		repoIDs[i] = int32(indexedIDs[i])
+	}
+
+	b := searchbackend.GetIndexOptions(
+		&siteConfig,
+		getRepoIndexOptions,
+		getSearchContextRevisions,
+		repoIDs...,
+	)
+	_, _ = w.Write(b)
+	return nil
+}
+
+// serveList is used by zoekt to get the list of repositories for it to index.
+func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) error {
 	var opt struct {
 		// Hostname is used to determine the subset of repos to return
 		Hostname string
-		// DEPRECATED: Indexed is the repository names of indexed repos by Hostname.
-		Indexed []string
 		// IndexedIDs are the repository IDs of indexed repos by Hostname.
 		IndexedIDs []api.RepoID
 	}
@@ -195,22 +220,16 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	if len(opt.Indexed) > 0 && len(opt.IndexedIDs) > 0 {
-		http.Error(w, "only allowed to specify one of Indexed or IndexedIDs", http.StatusBadRequest)
-		return nil
-	}
-
 	indexable, err := h.ListIndexable(r.Context())
 	if err != nil {
 		return err
 	}
 
 	if h.Indexers.Enabled() {
-		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, max(len(opt.Indexed), len(opt.IndexedIDs)))
-		err = h.StreamRepoNames(r.Context(), database.ReposListOptions{
-			IDs:   opt.IndexedIDs,
-			Names: opt.Indexed,
-		}, func(r *types.RepoName) { indexed[uint32(r.ID)] = nil })
+		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
+		err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
+			IDs: opt.IndexedIDs,
+		}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
 
 		if err != nil {
 			return err
@@ -226,28 +245,22 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 	// 1. Changing the schema from object of arrays to array of objects.
 	// 2. Stream out each object marshalled rather than marshall the full list in memory.
 
-	names := make([]string, 0, len(indexable))
 	ids := make([]api.RepoID, 0, len(indexable))
 
 	for _, r := range indexable {
-		names = append(names, string(r.Name))
 		ids = append(ids, r.ID)
 	}
 
 	data := struct {
-		RepoNames []string
-		RepoIDs   []api.RepoID
+		RepoIDs []api.RepoID
 	}{
-		RepoNames: names,
-		RepoIDs:   ids,
+		RepoIDs: ids,
 	}
 
 	return json.NewEncoder(w).Encode(&data)
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
+var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_search_get_version_total",
+	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
+})

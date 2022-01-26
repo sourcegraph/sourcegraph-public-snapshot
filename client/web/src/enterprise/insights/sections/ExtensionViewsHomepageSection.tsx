@@ -4,15 +4,16 @@ import { switchMap } from 'rxjs/operators'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { ExtensionViewsSectionCommonProps } from '../../../insights/sections/types'
 import { isCodeInsightsEnabled } from '../../../insights/utils/is-code-insights-enabled'
 import { StaticView, ViewGrid } from '../../../views'
 import { SmartInsight } from '../components/insights-view-grid/components/smart-insight/SmartInsight'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../core/backend/code-insights-setting-cascade-backend'
+import { CodeInsightsSettingsCascadeBackend } from '../core/backend/setting-based-api/code-insights-setting-cascade-backend'
 import { Insight } from '../core/types'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
 
 export interface ExtensionViewsHomepageSectionProps extends ExtensionViewsSectionCommonProps {
     where: 'homepage'
@@ -30,11 +31,10 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
 
     const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { homepage: true })
 
-    const api = useMemo(() => {
-        console.log('recreate api context')
-
-        return new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [platformContext, settingsCascade])
+    const api = useMemo(() => new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext), [
+        platformContext,
+        settingsCascade,
+    ])
 
     if (!showCodeInsights) {
         return null
@@ -53,12 +53,16 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
     )
 }
 
+const DEFAULT_CONTEXT = {}
+
 const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionViewsSectionCommonProps> = props => {
     const { extensionsController, telemetryService, className } = props
     const { getInsights } = useContext(CodeInsightsBackendContext)
 
     // Read insights from the setting cascade
-    const insights = useObservable(useMemo(() => getInsights(), [getInsights])) ?? EMPTY_INSIGHT_LIST
+    const insights =
+        useObservable(useMemo(() => getInsights({ dashboardId: ALL_INSIGHTS_DASHBOARD_ID }), [getInsights])) ??
+        EMPTY_INSIGHT_LIST
 
     // Pull extension views by Extension API.
     const extensionViews =
@@ -75,10 +79,10 @@ const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionVie
     const allViewIds = useMemo(() => [...extensionViews, ...insights].map(view => view.id), [extensionViews, insights])
 
     return (
-        <ViewGrid viewIds={allViewIds} telemetryService={telemetryService} className={className}>
+        <ViewGrid viewIds={allViewIds} className={className}>
             {/* Render extension views for the search page */}
             {extensionViews.map(view => (
-                <StaticView key={view.id} view={view} telemetryService={telemetryService} />
+                <StaticView key={view.id} content={view} telemetryService={telemetryService} />
             ))}
             {/* Render all code insights with proper home (search) page context */}
             {insights.map(insight => (
@@ -87,7 +91,7 @@ const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionVie
                     insight={insight}
                     telemetryService={telemetryService}
                     where="homepage"
-                    context={{}}
+                    context={DEFAULT_CONTEXT}
                 />
             ))}
         </ViewGrid>

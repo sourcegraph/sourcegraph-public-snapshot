@@ -29,6 +29,18 @@ func NewMockWithPreDequeue() *MockWithPreDequeue {
 	}
 }
 
+// NewStrictMockWithPreDequeue creates a new mock of the WithPreDequeue
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockWithPreDequeue() *MockWithPreDequeue {
+	return &MockWithPreDequeue{
+		PreDequeueFunc: &WithPreDequeuePreDequeueFunc{
+			defaultHook: func(context.Context) (bool, interface{}, error) {
+				panic("unexpected invocation of MockWithPreDequeue.PreDequeue")
+			},
+		},
+	}
+}
+
 // NewMockWithPreDequeueFrom creates a new mock of the MockWithPreDequeue
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

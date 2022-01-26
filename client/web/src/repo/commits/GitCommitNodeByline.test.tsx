@@ -1,5 +1,5 @@
+import { render } from '@testing-library/react'
 import React from 'react'
-import renderer from 'react-test-renderer'
 
 import { SignatureFields } from '../../graphql-operations'
 
@@ -35,58 +35,50 @@ const FIXTURE_SIGNATURE_2: SignatureFields = {
 describe('GitCommitNodeByline', () => {
     test('author', () =>
         expect(
-            renderer.create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />).toJSON()
+            render(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />).asFragment()
         ).toMatchSnapshot())
 
     test('different author and committer', () =>
         expect(
-            renderer
-                .create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />)
-                .toJSON()
+            render(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />).asFragment()
         ).toMatchSnapshot())
 
     test('author (compact)', () =>
         expect(
-            renderer.create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />).toJSON()
+            render(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={null} />).asFragment()
         ).toMatchSnapshot())
 
     test('different author and committer (compact)', () =>
         expect(
-            renderer
-                .create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />)
-                .toJSON()
+            render(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_2} />).asFragment()
         ).toMatchSnapshot())
 
     test('same author and committer', () =>
         expect(
-            renderer
-                .create(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_1} />)
-                .toJSON()
+            render(<GitCommitNodeByline author={FIXTURE_SIGNATURE_1} committer={FIXTURE_SIGNATURE_1} />).asFragment()
         ).toMatchSnapshot())
 
     test('omit GitHub committer', () =>
         expect(
-            renderer
-                .create(
-                    <GitCommitNodeByline
-                        author={FIXTURE_SIGNATURE_1}
-                        committer={{
-                            date: '1992-01-01',
-                            person: {
-                                name: 'GitHub',
-                                email: 'noreply@github.com',
-                                displayName: 'GitHub',
-                                avatarURL: 'http://example.com/github.png',
-                                user: {
-                                    username: 'gitUserName',
-                                    id: 'user123',
-                                    displayName: 'Alice',
-                                    url: 'https://example.com',
-                                },
+            render(
+                <GitCommitNodeByline
+                    author={FIXTURE_SIGNATURE_1}
+                    committer={{
+                        date: '1992-01-01',
+                        person: {
+                            name: 'GitHub',
+                            email: 'noreply@github.com',
+                            displayName: 'GitHub',
+                            avatarURL: 'http://example.com/github.png',
+                            user: {
+                                username: 'gitUserName',
+                                id: 'user123',
+                                displayName: 'Alice',
+                                url: 'https://example.com',
                             },
-                        }}
-                    />
-                )
-                .toJSON()
+                        },
+                    }}
+                />
+            ).asFragment()
         ).toMatchSnapshot())
 })

@@ -1,5 +1,5 @@
 import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitorFields } from '../../../graphql-operations'
+import { CodeMonitorFields, ListCodeMonitors } from '../../../graphql-operations'
 
 export const mockUser: AuthenticatedUser = {
     __typename: 'User',
@@ -19,6 +19,7 @@ export const mockUser: AuthenticatedUser = {
         nodes: [],
     },
     session: { __typename: 'Session', canSignOut: true },
+    tosAccepted: true,
 }
 
 export const mockCodeMonitorFields: CodeMonitorFields = {
@@ -28,7 +29,14 @@ export const mockCodeMonitorFields: CodeMonitorFields = {
     enabled: true,
     trigger: { id: 'test-0', query: 'test' },
     actions: {
-        nodes: [{ id: 'test-action-0', enabled: true, recipients: { nodes: [{ id: 'baz-0' }] } }],
+        nodes: [
+            {
+                __typename: 'MonitorEmail',
+                id: 'test-action-0',
+                enabled: true,
+                recipients: { nodes: [{ id: 'baz-0' }] },
+            },
+        ],
     },
 }
 
@@ -40,25 +48,39 @@ export const mockCodeMonitor = {
         enabled: true,
         owner: { id: 'test-id', namespaceName: 'test-user' },
         actions: {
-            id: 'test-0',
-            enabled: true,
             nodes: [
-                { id: 'test-action-0', enabled: true, recipients: { nodes: [{ id: 'baz-0', url: '/user/test' }] } },
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-0',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-0', url: '/user/test' }] },
+                },
+                {
+                    __typename: 'MonitorSlackWebhook',
+                    id: 'test-action-1',
+                    enabled: true,
+                    url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
+                },
             ],
         },
         trigger: { id: 'test-0', query: 'test' },
     },
 }
 
-export const mockCodeMonitorNodes = [
+export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
     {
         id: 'foo0',
         description: 'Test code monitor',
         enabled: true,
         actions: {
-            id: 'test-0',
-            enabled: true,
-            nodes: [{ id: 'test-action-0 ', enabled: true, recipients: { nodes: [{ id: 'baz-0' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-0 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-0' }] },
+                },
+            ],
         },
         trigger: { id: 'test-0', query: 'test' },
     },
@@ -67,9 +89,14 @@ export const mockCodeMonitorNodes = [
         description: 'Second test code monitor',
         enabled: true,
         actions: {
-            id: 'test-1',
-            enabled: true,
-            nodes: [{ id: 'test-action-1 ', enabled: true, recipients: { nodes: [{ id: 'baz-1' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorSlackWebhook',
+                    id: 'test-action-1 ',
+                    enabled: true,
+                    url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
+                },
+            ],
         },
         trigger: { id: 'test-1', query: 'test' },
     },
@@ -78,9 +105,20 @@ export const mockCodeMonitorNodes = [
         description: 'Third test code monitor',
         enabled: true,
         actions: {
-            id: 'test-2',
-            enabled: true,
-            nodes: [{ id: 'test-action-2 ', enabled: true, recipients: { nodes: [{ id: 'baz-2' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-2 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-2' }] },
+                },
+                {
+                    __typename: 'MonitorSlackWebhook',
+                    id: 'test-action-1 ',
+                    enabled: true,
+                    url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
+                },
+            ],
         },
         trigger: { id: 'test-2', query: 'test' },
     },
@@ -89,9 +127,14 @@ export const mockCodeMonitorNodes = [
         description: 'Fourth test code monitor',
         enabled: true,
         actions: {
-            id: 'test-3',
-            enabled: true,
-            nodes: [{ id: 'test-action-3 ', enabled: true, recipients: { nodes: [{ id: 'baz-3' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-3 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-3' }] },
+                },
+            ],
         },
         trigger: { id: 'test-3', query: 'test' },
     },
@@ -100,9 +143,14 @@ export const mockCodeMonitorNodes = [
         description: 'Fifth test code monitor',
         enabled: true,
         actions: {
-            id: 'test-4',
-            enabled: true,
-            nodes: [{ id: 'test-action-4 ', enabled: true, recipients: { nodes: [{ id: 'baz-4' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-4 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-4' }] },
+                },
+            ],
         },
         trigger: { id: 'test-4', query: 'test' },
     },
@@ -111,9 +159,14 @@ export const mockCodeMonitorNodes = [
         description: 'Sixth test code monitor',
         enabled: true,
         actions: {
-            id: 'test-5',
-            enabled: true,
-            nodes: [{ id: 'test-action-5 ', enabled: true, recipients: { nodes: [{ id: 'baz-5' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-5 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-5' }] },
+                },
+            ],
         },
         trigger: { id: 'test-5', query: 'test' },
     },
@@ -122,9 +175,14 @@ export const mockCodeMonitorNodes = [
         description: 'Seventh test code monitor',
         enabled: true,
         actions: {
-            id: 'test-6',
-            enabled: true,
-            nodes: [{ id: 'test-action-6 ', enabled: true, recipients: { nodes: [{ id: 'baz-6' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-6 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-6' }] },
+                },
+            ],
         },
         trigger: { id: 'test-6', query: 'test' },
     },
@@ -133,9 +191,14 @@ export const mockCodeMonitorNodes = [
         description: 'Eighth test code monitor',
         enabled: true,
         actions: {
-            id: 'test-7',
-            enabled: true,
-            nodes: [{ id: 'test-action-7 ', enabled: true, recipients: { nodes: [{ id: 'baz-7' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-7 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-7' }] },
+                },
+            ],
         },
         trigger: { id: 'test-7', query: 'test' },
     },
@@ -144,9 +207,14 @@ export const mockCodeMonitorNodes = [
         description: 'Ninth test code monitor',
         enabled: true,
         actions: {
-            id: 'test-9',
-            enabled: true,
-            nodes: [{ id: 'test-action-9 ', enabled: true, recipients: { nodes: [{ id: 'baz-9' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-9 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-9' }] },
+                },
+            ],
         },
         trigger: { id: 'test-9', query: 'test' },
     },
@@ -155,9 +223,14 @@ export const mockCodeMonitorNodes = [
         description: 'Tenth test code monitor',
         enabled: true,
         actions: {
-            id: 'test-0',
-            enabled: true,
-            nodes: [{ id: 'test-action-0 ', enabled: true, recipients: { nodes: [{ id: 'baz-0' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-0 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-0' }] },
+                },
+            ],
         },
         trigger: { id: 'test-0', query: 'test' },
     },
@@ -166,9 +239,14 @@ export const mockCodeMonitorNodes = [
         description: 'Eleventh test code monitor',
         enabled: true,
         actions: {
-            id: 'test-1',
-            enabled: true,
-            nodes: [{ id: 'test-action-1 ', enabled: true, recipients: { nodes: [{ id: 'baz-1' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-1 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-1' }] },
+                },
+            ],
         },
         trigger: { id: 'test-1', query: 'test' },
     },
@@ -177,10 +255,24 @@ export const mockCodeMonitorNodes = [
         description: 'Twelfth test code monitor',
         enabled: true,
         actions: {
-            id: 'test-2',
-            enabled: true,
-            nodes: [{ id: 'test-action-2 ', enabled: true, recipients: { nodes: [{ id: 'baz-2' }] } }],
+            nodes: [
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-2 ',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-2' }] },
+                },
+            ],
         },
         trigger: { id: 'test-2', query: 'test' },
     },
 ]
+
+// Only minimal authenticated user data is needed for the code monitor tests
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+export const mockAuthenticatedUser: AuthenticatedUser = {
+    id: 'userID',
+    username: 'username',
+    email: 'user@me.com',
+    siteAdmin: true,
+} as AuthenticatedUser

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, act } from '@testing-library/react'
 import React from 'react'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
@@ -25,7 +26,7 @@ describe('RevisionsPopover', () => {
     beforeEach(async () => {
         renderResult = renderWithRouter(
             <MockedTestProvider mocks={MOCK_REQUESTS}>
-                <RepositoriesPopover currentRepo={repo.id} />
+                <RepositoriesPopover currentRepo={repo.id} telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>,
             { route: repo.name }
         )

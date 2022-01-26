@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { ForwardReferenceComponent } from '../../types'
+
 import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 import { getButtonSize, getButtonStyle } from './utils'
 
@@ -19,13 +21,6 @@ export interface ButtonProps
      * Modifies the button style to have a transparent/light background and a more pronounced outline.
      */
     outline?: boolean
-    /**
-     * Used to change the element that is rendered.
-     * Useful if needing to style a link as a button, or in certain cases where a different element is required.
-     * Always be mindful of potentially accessibiliy pitfalls when using this!
-     * Note: This component assumes `HTMLButtonElement` types, providing a different component here will change the potential types that can be passed to this component.
-     */
-    as?: React.ElementType
 }
 
 /**
@@ -44,7 +39,7 @@ export interface ButtonProps
  * Tips:
  * - Avoid using button styling for links where possible. Buttons should typically trigger an action, links should navigate to places.
  */
-export const Button: React.FunctionComponent<ButtonProps> = React.forwardRef(
+export const Button = React.forwardRef(
     (
         { children, as: Component = 'button', type = 'button', variant, size, outline, className, ...attributes },
         reference
@@ -63,4 +58,4 @@ export const Button: React.FunctionComponent<ButtonProps> = React.forwardRef(
             {children}
         </Component>
     )
-)
+) as ForwardReferenceComponent<'button', ButtonProps>

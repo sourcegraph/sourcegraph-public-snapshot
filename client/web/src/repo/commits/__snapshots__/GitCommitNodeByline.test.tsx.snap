@@ -1,247 +1,257 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`GitCommitNodeByline author (compact) 1`] = `
-<div
-  className=""
-  data-testid="git-commit-node-byline"
->
-  <div>
-    <img
-      alt=""
-      className="userAvatar icon-inline mr-1 mr-2"
-      data-tooltip="Alice Zhao"
-      role="presentation"
-      src="http://example.com/alice.png"
-    />
-  </div>
+<DocumentFragment>
   <div
-    className="overflow-hidden"
+    class=""
+    data-testid="git-commit-node-byline"
   >
-    committed by 
-    <span
-      className="font-weight-bold"
-      data-tooltip="alice@example.com"
+    <div>
+      <img
+        alt=""
+        class="userAvatar icon-inline mr-1 mr-2"
+        data-tooltip="Alice Zhao"
+        role="presentation"
+        src="http://example.com/alice.png"
+      />
+    </div>
+    <div
+      class="overflow-hidden"
     >
-      Alice Zhao
-    </span>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1990-01-01"
-    >
-      about 16 years ago
-    </span>
+      committed by 
+      <span
+        class="font-weight-bold"
+        data-tooltip="alice@example.com"
+      >
+        Alice Zhao
+      </span>
+       
+      <span
+        class="timestamp"
+        data-tooltip="1990-01-01"
+      >
+        about 16 years ago
+      </span>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`GitCommitNodeByline author 1`] = `
-<div
-  className=""
-  data-testid="git-commit-node-byline"
->
-  <div>
-    <img
-      alt=""
-      className="userAvatar icon-inline mr-1 mr-2"
-      data-tooltip="Alice Zhao"
-      role="presentation"
-      src="http://example.com/alice.png"
-    />
-  </div>
+<DocumentFragment>
   <div
-    className="overflow-hidden"
+    class=""
+    data-testid="git-commit-node-byline"
   >
-    committed by 
-    <span
-      className="font-weight-bold"
-      data-tooltip="alice@example.com"
+    <div>
+      <img
+        alt=""
+        class="userAvatar icon-inline mr-1 mr-2"
+        data-tooltip="Alice Zhao"
+        role="presentation"
+        src="http://example.com/alice.png"
+      />
+    </div>
+    <div
+      class="overflow-hidden"
     >
-      Alice Zhao
-    </span>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1990-01-01"
-    >
-      about 16 years ago
-    </span>
+      committed by 
+      <span
+        class="font-weight-bold"
+        data-tooltip="alice@example.com"
+      >
+        Alice Zhao
+      </span>
+       
+      <span
+        class="timestamp"
+        data-tooltip="1990-01-01"
+      >
+        about 16 years ago
+      </span>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
-<div
-  className=""
-  data-testid="git-commit-node-byline"
->
+<DocumentFragment>
   <div
-    className="flex-shrink-0"
+    class=""
+    data-testid="git-commit-node-byline"
   >
-    <img
-      alt=""
-      className="userAvatar icon-inline"
-      data-tooltip="Alice Zhao (author)"
-      role="presentation"
-      src="http://example.com/alice.png"
-    />
-     
-    <img
-      alt=""
-      className="userAvatar icon-inline mr-2"
-      data-tooltip="bYang (committer)"
-      role="presentation"
-      src="http://example.com/bob.png"
-    />
+    <div
+      class="flex-shrink-0"
+    >
+      <img
+        alt=""
+        class="userAvatar icon-inline"
+        data-tooltip="Alice Zhao (author)"
+        role="presentation"
+        src="http://example.com/alice.png"
+      />
+       
+      <img
+        alt=""
+        class="userAvatar icon-inline mr-2"
+        data-tooltip="bYang (committer)"
+        role="presentation"
+        src="http://example.com/bob.png"
+      />
+    </div>
+    <div
+      class="overflow-hidden"
+    >
+      <span
+        class="font-weight-bold"
+        data-tooltip="alice@example.com"
+      >
+        Alice Zhao
+      </span>
+       authored and commited by 
+      <a
+        class="font-weight-bold"
+        data-tooltip="Bob Yang <bob@example.com>"
+        href="https://example.com/bobyang"
+      >
+        bYang
+      </a>
+       
+      <span
+        class="timestamp"
+        data-tooltip="1991-01-01"
+      >
+        about 15 years ago
+      </span>
+    </div>
   </div>
-  <div
-    className="overflow-hidden"
-  >
-    <span
-      className="font-weight-bold"
-      data-tooltip="alice@example.com"
-    >
-      Alice Zhao
-    </span>
-     authored and commited by
-     
-    <a
-      className="font-weight-bold"
-      data-tooltip="Bob Yang <bob@example.com>"
-      href="https://example.com/bobyang"
-    >
-      bYang
-    </a>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1991-01-01"
-    >
-      about 15 years ago
-    </span>
-  </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`GitCommitNodeByline different author and committer 1`] = `
-<div
-  className=""
-  data-testid="git-commit-node-byline"
->
+<DocumentFragment>
   <div
-    className="flex-shrink-0"
+    class=""
+    data-testid="git-commit-node-byline"
   >
-    <img
-      alt=""
-      className="userAvatar icon-inline"
-      data-tooltip="Alice Zhao (author)"
-      role="presentation"
-      src="http://example.com/alice.png"
-    />
-     
-    <img
-      alt=""
-      className="userAvatar icon-inline mr-2"
-      data-tooltip="bYang (committer)"
-      role="presentation"
-      src="http://example.com/bob.png"
-    />
+    <div
+      class="flex-shrink-0"
+    >
+      <img
+        alt=""
+        class="userAvatar icon-inline"
+        data-tooltip="Alice Zhao (author)"
+        role="presentation"
+        src="http://example.com/alice.png"
+      />
+       
+      <img
+        alt=""
+        class="userAvatar icon-inline mr-2"
+        data-tooltip="bYang (committer)"
+        role="presentation"
+        src="http://example.com/bob.png"
+      />
+    </div>
+    <div
+      class="overflow-hidden"
+    >
+      <span
+        class="font-weight-bold"
+        data-tooltip="alice@example.com"
+      >
+        Alice Zhao
+      </span>
+       authored and commited by 
+      <a
+        class="font-weight-bold"
+        data-tooltip="Bob Yang <bob@example.com>"
+        href="https://example.com/bobyang"
+      >
+        bYang
+      </a>
+       
+      <span
+        class="timestamp"
+        data-tooltip="1991-01-01"
+      >
+        about 15 years ago
+      </span>
+    </div>
   </div>
-  <div
-    className="overflow-hidden"
-  >
-    <span
-      className="font-weight-bold"
-      data-tooltip="alice@example.com"
-    >
-      Alice Zhao
-    </span>
-     authored and commited by
-     
-    <a
-      className="font-weight-bold"
-      data-tooltip="Bob Yang <bob@example.com>"
-      href="https://example.com/bobyang"
-    >
-      bYang
-    </a>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1991-01-01"
-    >
-      about 15 years ago
-    </span>
-  </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`GitCommitNodeByline omit GitHub committer 1`] = `
-<div
-  className=""
-  data-testid="git-commit-node-byline"
->
-  <div>
-    <img
-      alt=""
-      className="userAvatar icon-inline mr-1 mr-2"
-      data-tooltip="Alice Zhao"
-      role="presentation"
-      src="http://example.com/alice.png"
-    />
-  </div>
+<DocumentFragment>
   <div
-    className="overflow-hidden"
+    class=""
+    data-testid="git-commit-node-byline"
   >
-    committed by 
-    <span
-      className="font-weight-bold"
-      data-tooltip="alice@example.com"
+    <div>
+      <img
+        alt=""
+        class="userAvatar icon-inline mr-1 mr-2"
+        data-tooltip="Alice Zhao"
+        role="presentation"
+        src="http://example.com/alice.png"
+      />
+    </div>
+    <div
+      class="overflow-hidden"
     >
-      Alice Zhao
-    </span>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1990-01-01"
-    >
-      about 16 years ago
-    </span>
+      committed by 
+      <span
+        class="font-weight-bold"
+        data-tooltip="alice@example.com"
+      >
+        Alice Zhao
+      </span>
+       
+      <span
+        class="timestamp"
+        data-tooltip="1990-01-01"
+      >
+        about 16 years ago
+      </span>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`GitCommitNodeByline same author and committer 1`] = `
-<div
-  className=""
-  data-testid="git-commit-node-byline"
->
-  <div>
-    <img
-      alt=""
-      className="userAvatar icon-inline mr-1 mr-2"
-      data-tooltip="Alice Zhao"
-      role="presentation"
-      src="http://example.com/alice.png"
-    />
-  </div>
+<DocumentFragment>
   <div
-    className="overflow-hidden"
+    class=""
+    data-testid="git-commit-node-byline"
   >
-    committed by 
-    <span
-      className="font-weight-bold"
-      data-tooltip="alice@example.com"
+    <div>
+      <img
+        alt=""
+        class="userAvatar icon-inline mr-1 mr-2"
+        data-tooltip="Alice Zhao"
+        role="presentation"
+        src="http://example.com/alice.png"
+      />
+    </div>
+    <div
+      class="overflow-hidden"
     >
-      Alice Zhao
-    </span>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1990-01-01"
-    >
-      about 16 years ago
-    </span>
+      committed by 
+      <span
+        class="font-weight-bold"
+        data-tooltip="alice@example.com"
+      >
+        Alice Zhao
+      </span>
+       
+      <span
+        class="timestamp"
+        data-tooltip="1990-01-01"
+      >
+        about 16 years ago
+      </span>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;

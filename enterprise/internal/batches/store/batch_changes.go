@@ -22,7 +22,7 @@ var batchChangeColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_changes.id"),
 	sqlf.Sprintf("batch_changes.name"),
 	sqlf.Sprintf("batch_changes.description"),
-	sqlf.Sprintf("batch_changes.initial_applier_id"),
+	sqlf.Sprintf("batch_changes.creator_id"),
 	sqlf.Sprintf("batch_changes.last_applier_id"),
 	sqlf.Sprintf("batch_changes.last_applied_at"),
 	sqlf.Sprintf("batch_changes.namespace_user_id"),
@@ -39,7 +39,7 @@ var batchChangeColumns = []*sqlf.Query{
 var batchChangeInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("description"),
-	sqlf.Sprintf("initial_applier_id"),
+	sqlf.Sprintf("creator_id"),
 	sqlf.Sprintf("last_applier_id"),
 	sqlf.Sprintf("last_applied_at"),
 	sqlf.Sprintf("namespace_user_id"),
@@ -83,9 +83,9 @@ func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.InitialApplierID),
+		nullInt32Column(c.CreatorID),
 		nullInt32Column(c.LastApplierID),
-		c.LastAppliedAt,
+		nullTimeColumn(c.LastAppliedAt),
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
@@ -124,9 +124,9 @@ func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.InitialApplierID),
+		nullInt32Column(c.CreatorID),
 		nullInt32Column(c.LastApplierID),
-		c.LastAppliedAt,
+		nullTimeColumn(c.LastAppliedAt),
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
@@ -160,10 +160,12 @@ type CountBatchChangesOpts struct {
 	State       btypes.BatchChangeState
 	RepoID      api.RepoID
 
-	InitialApplierID int32
+	CreatorID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
+
+	ExcludeDraftsNotOwnedByUserID int32
 }
 
 // CountBatchChanges returns the number of batch changes in the database.
@@ -171,7 +173,7 @@ func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpt
 	ctx, endObservation := s.operations.countBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return 0, errors.Wrap(err, "CountBatchChanges generating authz query conds")
 	}
@@ -204,17 +206,34 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 
 	switch opts.State {
 	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
 	case btypes.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+	case btypes.BatchChangeStateDraft:
+		preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
 	}
 
-	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.initial_applier_id = %d", opts.InitialApplierID))
+	if opts.CreatorID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
 	}
 
 	if opts.NamespaceUserID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
+
+		// If it's not my namespace and I can't see other users' drafts, filter out
+		// unapplied (draft) batch changes from this list.
+		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
+		}
+		// For batch changes filtered by org namespace, or not filtered by namespace at
+		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
+		// changes except those that I authored the batch spec of from this list.
+	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, opts.ExcludeDraftsNotOwnedByUserID)
+		preds = append(preds, cond)
 	}
 
 	if opts.NamespaceOrgID != 0 {
@@ -331,7 +350,7 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetBatchChangeDiffStat generating authz query conds")
 	}
@@ -374,7 +393,7 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, errors.Wrap(err, "GetRepoDiffStat generating authz query conds")
 	}
@@ -418,12 +437,14 @@ type ListBatchChangesOpts struct {
 	Cursor      int64
 	State       btypes.BatchChangeState
 
-	InitialApplierID int32
+	CreatorID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 
 	RepoID api.RepoID
+
+	ExcludeDraftsNotOwnedByUserID int32
 }
 
 // ListBatchChanges lists batch changes with the given filters.
@@ -431,7 +452,7 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 	ctx, endObservation := s.operations.listBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Handle().DB()))
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListBatchChanges generating authz query conds")
 	}
@@ -484,17 +505,33 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 
 	switch opts.State {
 	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
 	case btypes.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+	case btypes.BatchChangeStateDraft:
+		preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
 	}
 
-	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.initial_applier_id = %d", opts.InitialApplierID))
+	if opts.CreatorID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
 	}
 
 	if opts.NamespaceUserID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
+		// If it's not my namespace and I can't see other users' drafts, filter out
+		// unapplied (draft) batch changes from this list.
+		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
+		}
+		// For batch changes filtered by org namespace, or not filtered by namespace at
+		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
+		// changes except those that I authored the batch spec of from this list.
+	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, opts.ExcludeDraftsNotOwnedByUserID)
+		preds = append(preds, cond)
 	}
 
 	if opts.NamespaceOrgID != 0 {
@@ -531,9 +568,9 @@ func scanBatchChange(c *btypes.BatchChange, s dbutil.Scanner) error {
 		&c.ID,
 		&c.Name,
 		&dbutil.NullString{S: &c.Description},
-		&dbutil.NullInt32{N: &c.InitialApplierID},
+		&dbutil.NullInt32{N: &c.CreatorID},
 		&dbutil.NullInt32{N: &c.LastApplierID},
-		&c.LastAppliedAt,
+		&dbutil.NullTime{Time: &c.LastAppliedAt},
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&c.CreatedAt,

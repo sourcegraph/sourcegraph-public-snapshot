@@ -3,22 +3,30 @@ import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-r
 import { Observable } from 'rxjs'
 
 import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { SearchContextProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import {
+    KeyboardShortcutsProps,
+    KEYBOARD_SHORTCUT_SHOW_HELP,
+} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsHelp } from '@sourcegraph/shared/src/keyboardShortcuts/KeyboardShortcutsHelp'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
-import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
+import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -30,9 +38,8 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { CodeInsightsProps } from './insights/types'
-import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
-import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
+import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
+import styles from './Layout.module.scss'
 import { SurveyToast } from './marketing/SurveyToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
@@ -46,28 +53,16 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
 import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
-import { Settings } from './schema/settings.schema'
-import {
-    parseSearchURLQuery,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
-    HomePanelsProps,
-    SearchStreamingProps,
-    ParsedSearchQueryProps,
-    parseSearchURL,
-    SearchContextProps,
-    getGlobalSearchContextFilter,
-} from './search'
-import { useTemporarySetting } from './settings/temporary/useTemporarySetting'
+import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps, parseSearchURL } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { useTheme } from './theme'
+import { setQueryStateFromURL } from './stores'
+import { useThemeProps } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
@@ -78,19 +73,14 @@ export interface LayoutProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ActivationProps,
-        ParsedSearchQueryProps,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
-        CodeMonitoringProps,
-        SearchContextProps,
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
+        CodeInsightsContextProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -124,8 +114,6 @@ export interface LayoutProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     globbing: boolean
-    showMultilineSearchConsole: boolean
-    showSearchNotebook: boolean
     isSourcegraphDotCom: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
@@ -137,68 +125,26 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
+    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
-    // Update parsedSearchQuery, patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
-    const {
-        history,
-        parsedSearchQuery: currentQuery,
-        patternType: currentPatternType,
-        caseSensitive: currentCaseSensitive,
-        selectedSearchContextSpec,
-        location,
-        setParsedSearchQuery,
-        setPatternType,
-        setCaseSensitivity,
-        setSelectedSearchContextSpec,
-    } = props
+    // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
+    const { history, selectedSearchContextSpec, location, setSelectedSearchContextSpec } = props
 
-    const { query = '', patternType, caseSensitive } = useMemo(() => parseSearchURL(location.search), [location.search])
+    useEffect(() => setQueryStateFromURL(location.search), [location.search])
+
+    const { query = '' } = useMemo(() => parseSearchURL(location.search), [location.search])
 
     const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
     useEffect(() => {
-        if (query !== currentQuery) {
-            setParsedSearchQuery(query)
-        }
-
         // Only override filters from URL if there is a search query
         if (query) {
-            if (patternType && patternType !== currentPatternType) {
-                setPatternType(patternType)
-            }
-
-            if (caseSensitive !== currentCaseSensitive) {
-                setCaseSensitivity(caseSensitive)
-            }
-
             if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
                 setSelectedSearchContextSpec(searchContextSpec)
             }
         }
-    }, [
-        history,
-        caseSensitive,
-        currentCaseSensitive,
-        currentPatternType,
-        currentQuery,
-        selectedSearchContextSpec,
-        patternType,
-        query,
-        setCaseSensitivity,
-        setParsedSearchQuery,
-        setPatternType,
-        setSelectedSearchContextSpec,
-        searchContextSpec,
-    ])
-
-    const [hasUsedNonGlobalContext, setHasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
-    useEffect(() => {
-        if (selectedSearchContextSpec && selectedSearchContextSpec !== 'global' && !hasUsedNonGlobalContext) {
-            setHasUsedNonGlobalContext(true)
-        }
-    }, [selectedSearchContextSpec, setHasUsedNonGlobalContext, hasUsedNonGlobalContext])
+    }, [history, selectedSearchContextSpec, query, setSelectedSearchContextSpec, searchContextSpec])
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
@@ -220,7 +166,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const authRequired = useObservable(authRequiredObservable)
 
-    const themeProps = useTheme()
+    const themeProps = useThemeProps()
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -232,10 +178,28 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }, [startExtensionAlertAnimation])
 
     useScrollToLocationHash(props.location)
+
+    // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
+    // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
+    // useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
+    //     props.authenticatedUser,
+    // ])
+    // const afterTosAccepted = useCallback(() => {
+    //     setTosAccepted(true)
+    // }, [])
+
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
     }
+
+    // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
+    // If a user has not accepted the Terms of Service yet, show the modal to force them to accept
+    // before continuing to use Sourcegraph. This is only done on self-hosted Sourcegraph Server;
+    // cloud users are all considered to have accepted regarless of the value of `tosAccepted`.
+    // if (!props.isSourcegraphDotCom && !tosAccepted) {
+    //     return <TosConsentModal afterTosAccepted={afterTosAccepted} />
+    // }
 
     const context: LayoutRouteComponentProps<any> = {
         ...props,
@@ -246,7 +210,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }
 
     return (
-        <div className="layout">
+        <div className={styles.layout}>
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
@@ -263,7 +227,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                         !isSearchHomepage &&
                         !isCommunitySearchContextPage &&
                         !isSearchConsolePage &&
-                        !isSearchNotebookPage
+                        !isSearchNotebooksPage
                     }
                     variant={
                         isSearchHomepage
@@ -272,7 +236,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                             ? 'low-profile-with-logo'
                             : 'default'
                     }
-                    hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}
@@ -284,7 +247,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <Suspense
                     fallback={
                         <div className="flex flex-1">
-                            <LoadingSpinner className="icon-inline m-2" />
+                            <LoadingSpinner className="m-2" />
                         </div>
                     }
                 >
@@ -297,9 +260,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
-                                            <div className="layout__app-router-container">
+                                            <AppRouterContainer>
                                                 {render({ ...context, ...routeComponentProps })}
-                                            </div>
+                                            </AppRouterContainer>
                                         )}
                                     />
                                 )

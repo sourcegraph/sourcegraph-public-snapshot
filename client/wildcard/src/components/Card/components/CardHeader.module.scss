@@ -1,0 +1,10 @@
+.card-header {
+    padding: var(--card-spacer-y) var(--card-spacer-x);
+    background-color: var(--color-bg-2);
+    border-bottom: 1px solid var(--card-border-color);
+
+    // This calc(var(--border-radius) - 1px) calculation will remove small white spaces in top left and top right corners
+    &:first-child {
+        border-radius: calc(var(--border-radius) - 1px) calc(var(--border-radius) - 1px) 0 0;
+    }
+}

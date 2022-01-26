@@ -17,6 +17,7 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 	expectedEnv := []string{
 		"GIT_ASKPASS=true",
 		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
+		"GIT_HTTP_USER_AGENT=git/Sourcegraph-Bot",
 	}
 	tests := []struct {
 		input        *exec.Cmd
@@ -59,6 +60,15 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 			expectedEnv:  append(expectedEnv, "GIT_SSL_CAINFO=/tmp/foo.certs"),
 			expectedArgs: []string{"git", "-c", "credential.helper=", "ls-remote"},
 		},
+		// Allow absolute git commands
+		{
+			input: exec.Command("/foo/bar/git", "ls-remote"),
+			tlsConfig: &tlsConfig{
+				SSLCAInfo: "/tmp/foo.certs",
+			},
+			expectedEnv:  append(expectedEnv, "GIT_SSL_CAINFO=/tmp/foo.certs"),
+			expectedArgs: []string{"/foo/bar/git", "-c", "credential.helper=", "ls-remote"},
+		},
 	}
 
 	for _, test := range tests {
@@ -82,6 +92,7 @@ func TestConfigureRemoteGitCommand_tls(t *testing.T) {
 	baseEnv := []string{
 		"GIT_ASKPASS=true",
 		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
+		"GIT_HTTP_USER_AGENT=git/Sourcegraph-Bot",
 	}
 
 	cases := []struct {

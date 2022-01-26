@@ -1,9 +1,11 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/database"
+)
 
 type repositoryContributorResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	name  string
 	email string
 	count int32

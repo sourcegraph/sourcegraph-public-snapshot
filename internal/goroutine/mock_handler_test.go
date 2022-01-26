@@ -28,6 +28,18 @@ func NewMockHandler() *MockHandler {
 	}
 }
 
+// NewStrictMockHandler creates a new mock of the Handler interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockHandler() *MockHandler {
+	return &MockHandler{
+		HandleFunc: &HandlerHandleFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockHandler.Handle")
+			},
+		},
+	}
+}
+
 // NewMockHandlerFrom creates a new mock of the MockHandler interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockHandlerFrom(i Handler) *MockHandler {

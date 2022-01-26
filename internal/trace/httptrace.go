@@ -2,16 +2,15 @@ package trace
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 
-	"github.com/cockroachdb/errors"
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -102,10 +101,6 @@ const (
 	// SourceBrowser indicates the request likely came from a web browser.
 	SourceBrowser SourceType = "browser"
 
-	// SourceQueryRunner indicates the request likely came from the
-	// query-runner service (saved searches).
-	SourceQueryRunner SourceType = "query-runner"
-
 	// SourceOther indicates the request likely came from a non-browser HTTP client.
 	SourceOther SourceType = "other"
 )
@@ -136,11 +131,11 @@ var (
 	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
 )
 
-// HTTPTraceMiddleware captures and exports metrics to Prometheus, etc.
+// HTTPMiddleware captures and exports metrics to Prometheus, etc.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func HTTPTraceMiddleware(next http.Handler) http.Handler {
+func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
 	return sentry.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -159,7 +154,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 		defer span.Finish()
 
 		traceID := IDFromSpan(span)
-		traceURL := URL(traceID)
+		traceURL := URL(traceID, siteConfig.SiteConfig().ExternalURL)
 
 		rw.Header().Set("X-Trace", traceURL)
 		ctx = opentracing.ContextWithSpan(ctx, span)
@@ -255,7 +250,11 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
 		if m.Code >= 500 {
 			if requestErrorCause == nil {
-				requestErrorCause = errors.WithStack(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path})
+				// Always wrapping error without a true cause creates loads of events on which we
+				// do not have the stack trace and that are barely usable. Once we find a better
+				// way to handle such cases, we should bring back the deleted lines from
+				// https://github.com/sourcegraph/sourcegraph/pull/29312.
+				return
 			}
 
 			sentry.CaptureError(requestErrorCause, map[string]string{
@@ -307,14 +306,4 @@ func SetRouteName(r *http.Request, routeName string) {
 	if p, ok := r.Context().Value(routeNameKey).(*string); ok {
 		*p = routeName
 	}
-}
-
-type httpErr struct {
-	status int
-	method string
-	path   string
-}
-
-func (e *httpErr) Error() string {
-	return fmt.Sprintf("HTTP status %d, %s %s", e.status, e.method, e.path)
 }

@@ -2,13 +2,12 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState } from 'react'
 import { useLocation } from 'react-router'
-import { Link } from 'react-router-dom'
 
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { useDebounce } from '@sourcegraph/wildcard'
+import { Badge, useDebounce } from '@sourcegraph/wildcard'
 
 import {
     GitCommitAncestorFields,
@@ -16,6 +15,8 @@ import {
     RepositoryGitCommitVariables,
 } from '../../graphql-operations'
 
+import { ConnectionPopoverNode, ConnectionPopoverNodeLink } from './components'
+import styles from './RevisionsPopoverCommits.module.scss'
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
 
 export const REPOSITORY_GIT_COMMIT = gql`
@@ -80,22 +81,19 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 }) => {
     const isCurrent = currentCommitID === node.oid
     return (
-        <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">
-            <Link
+        <ConnectionPopoverNode key={node.oid} className={classNames(styles.link, styles.message)}>
+            <ConnectionPopoverNodeLink
                 to={getPathFromRevision(location.pathname + location.search + location.hash, node.oid)}
-                className={classNames(
-                    'connection-popover__node-link',
-                    isCurrent && 'connection-popover__node-link--active',
-                    'revisions-popover-git-commit-node__link'
-                )}
+                active={isCurrent}
+                className={styles.link}
                 onClick={onClick}
             >
-                <code className="badge" title={node.oid}>
+                <Badge title={node.oid} as="code">
                     {node.abbreviatedOID}
-                </code>
-                <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
-            </Link>
-        </li>
+                </Badge>
+                <small className={styles.message}>{node.subject.slice(0, 200)}</small>
+            </ConnectionPopoverNodeLink>
+        </ConnectionPopoverNode>
     )
 }
 

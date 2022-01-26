@@ -1,0 +1,82 @@
+package fetcher
+
+import (
+	"context"
+	"strings"
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+)
+
+func TestRepositoryFetcher(t *testing.T) {
+	validParseRequests := map[string]string{
+		"a.txt": strings.Repeat("payload a", 1<<8),
+		"b.txt": strings.Repeat("payload b", 1<<9),
+		"c.txt": strings.Repeat("payload c", 1<<10),
+		"d.txt": strings.Repeat("payload d", 1<<11),
+		"e.txt": strings.Repeat("payload e", 1<<12),
+		"f.txt": strings.Repeat("payload f", 1<<13),
+		"g.txt": strings.Repeat("payload g", 1<<14),
+	}
+
+	tarContents := map[string]string{}
+	for name, content := range validParseRequests {
+		tarContents[name] = content
+	}
+
+	// JSON is ignored
+	tarContents["ignored.json"] = "{}"
+
+	// Large files are ignored
+	tarContents["payloads.txt"] = strings.Repeat("oversized load", maxFileSize)
+
+	gitserverClient := NewMockGitserverClient()
+	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(tarContents))
+
+	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext)
+	args := types.SearchArgs{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
+
+	t.Run("all paths", func(t *testing.T) {
+		paths := []string(nil)
+		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args, paths)
+		parseRequests := consumeParseRequests(t, ch)
+
+		expectedParseRequests := validParseRequests
+		if diff := cmp.Diff(expectedParseRequests, parseRequests); diff != "" {
+			t.Errorf("unexpected parse requests (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("selected paths", func(t *testing.T) {
+		paths := []string{"a.txt", "b.txt", "c.txt"}
+		ch := repositoryFetcher.FetchRepositoryArchive(context.Background(), args, paths)
+		parseRequests := consumeParseRequests(t, ch)
+
+		expectedParseRequests := map[string]string{
+			"a.txt": validParseRequests["a.txt"],
+			"b.txt": validParseRequests["b.txt"],
+			"c.txt": validParseRequests["c.txt"],
+		}
+		if diff := cmp.Diff(expectedParseRequests, parseRequests); diff != "" {
+			t.Errorf("unexpected parse requests (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func consumeParseRequests(t *testing.T, ch <-chan parseRequestOrError) map[string]string {
+	parseRequests := map[string]string{}
+	for v := range ch {
+		if v.Err != nil {
+			t.Fatalf("unexpected fetch error: %s", v.Err)
+		}
+
+		parseRequests[v.ParseRequest.Path] = string(v.ParseRequest.Data)
+	}
+
+	return parseRequests
+}

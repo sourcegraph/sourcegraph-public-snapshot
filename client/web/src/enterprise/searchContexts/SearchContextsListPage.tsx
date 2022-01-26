@@ -4,20 +4,21 @@ import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SearchContextProps } from '@sourcegraph/search'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SearchContextProps } from '../../search'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
 
 export interface SearchContextsListPageProps
     extends Pick<
-        SearchContextProps,
-        'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
-    > {
+            SearchContextProps,
+            'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
+        >,
+        PlatformContextProps<'requestGraphQL'> {
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
@@ -63,8 +64,8 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
     )
 
     return (
-        <div className="w-100">
-            <Page className="search-contexts-list-page">
+        <div data-testid="search-contexts-list-page" className="w-100">
+            <Page>
                 <PageHeader
                     path={[
                         {
@@ -76,10 +77,10 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         },
                     ]}
                     actions={
-                        <Link to="/contexts/new" className="btn btn-primary">
+                        <Button to="/contexts/new" variant="primary" as={Link}>
                             <PlusIcon className="icon-inline" />
                             Create search context
-                        </Link>
+                        </Button>
                     }
                     description={
                         <span className="text-muted">

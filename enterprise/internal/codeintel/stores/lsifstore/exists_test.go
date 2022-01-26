@@ -6,9 +6,6 @@ import (
 )
 
 func TestDatabaseExists(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	testCases := []struct {

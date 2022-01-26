@@ -96,6 +96,8 @@ func (r *RepoLookupResult) String() string {
 
 // RepoInfo is information about a repository that lives on an external service (such as GitHub or GitLab).
 type RepoInfo struct {
+	ID api.RepoID // ID is the unique numeric ID for this repository.
+
 	// Name the canonical name of the repository. Its case (uppercase/lowercase) may differ from the name arg used
 	// in the lookup. If the repository was renamed on the external service, this name is the new name.
 	Name api.RepoName
@@ -116,6 +118,7 @@ type RepoInfo struct {
 
 func NewRepoInfo(r *types.Repo) *RepoInfo {
 	info := RepoInfo{
+		ID:           r.ID,
 		Name:         r.Name,
 		Description:  r.Description,
 		Fork:         r.Fork,

@@ -1,7 +1,7 @@
 # How to add monitoring
 
 This guide documents how to add monitoring to Sourcegraph's source code.
-Sourcegraph employees should also refer to the [handbook's monitoring section](https://about.sourcegraph.com/handbook/engineering/observability/monitoring) for Sourcegraph-specific documentation.
+Sourcegraph employees should also refer to the [handbook's monitoring section](https://handbook.sourcegraph.com/engineering/observability/monitoring) for Sourcegraph-specific documentation.
 The [developing observability page](../background-information/observability/index.md) contains relevant documentation as well.
 
 > NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
@@ -33,7 +33,7 @@ The monitoring generator provides [a lot of features and integrations with the S
 This section documents how to use develop monitoring definitions for a Sourcegraph service.
 To get started, you should read:
 
-- the [Sourcegraph monitoring pillars](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars) for some of the principles we try to uphold when developing monitoring
+- the [Sourcegraph monitoring pillars](https://handbook.sourcegraph.com/engineering/observability/monitoring_pillars) for some of the principles we try to uphold when developing monitoring
 - relevant [reference documentation for the monitoring generator](../background-information/observability/monitoring-generator.md)
 
 ### Set up an observable
@@ -48,7 +48,7 @@ If you are just editing an existing observable,
 Existing dashboards can be viewed by either:
 
 - Visiting Grafana on an existing Sourcegraph instance that you have site admin permissions for, e.g. `example.sourcegraph.com/-/debug/grafana` - see the [metrics for site administrators documentation](../../admin/observability/metrics.md) for more details.
-- [Running the monitoring stack locally](./monitoring_local_dev.md)
+- [Running the monitoring stack locally](../how-to/monitoring_local_dev.md)
 
 Once you have found a home for your observable, open that service's monitoring definition (e.g. `monitoring/frontend.go`, `monitoring/git_server.go`) in your editor.
 Declare your [`Observable`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40master+file:%5Emonitoring/+type+Observable&patternType=literal) by:
@@ -166,6 +166,6 @@ go generate ./monitoring/...
 ```
 
 This will validate your Observable configuration and let you know of any changes you need to make if required.
-If the generator runs successfully, you should now [run the monitoring stack locally](./monitoring_local_dev.md) to validate the output and results of your observable by hand.
+If the generator runs successfully, you should now [run the monitoring stack locally](../how-to/monitoring_local_dev.md) to validate the output and results of your observable by hand.
 
 Once everything looks good, open a pull request with your observable to the main Sourcegraph codebase!

@@ -2,10 +2,12 @@ import { noop } from 'lodash'
 import { EMPTY, NEVER, of } from 'rxjs'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
+import { ExtensionDocument } from '@sourcegraph/shared/src/api/extension/api/textDocument'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 export const panels: PanelViewData[] = [
     {
@@ -14,6 +16,7 @@ export const panels: PanelViewData[] = [
         content: 'Panel 1',
         priority: 3,
         component: null,
+        selector: null,
     },
     {
         id: 'panel_2',
@@ -21,6 +24,7 @@ export const panels: PanelViewData[] = [
         content: 'Panel 2',
         priority: 2,
         component: null,
+        selector: null,
     },
     {
         id: 'panel_3',
@@ -28,6 +32,7 @@ export const panels: PanelViewData[] = [
         content: 'Panel 3',
         priority: 1,
         component: null,
+        selector: null,
     },
 ]
 
@@ -78,8 +83,24 @@ export const panelProps = {
                 registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
                 haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
                 getPanelViews: () => pretendProxySubscribable(of(panels)),
+                getActiveViewComponentChanges: () => pretendProxySubscribable(of(CODE_EDITOR_FIXTURE)),
                 getActiveCodeEditorPosition: () => pretendProxySubscribable(NEVER),
             })
         ),
     },
 }
+
+export const CODE_EDITOR_FIXTURE = new ExtensionCodeEditor(
+    {
+        type: 'CodeEditor',
+        viewerId: 'viewer#0',
+        resource: 'git://foo?1#/bar.go',
+        selections: [],
+        isActive: true,
+    },
+    new ExtensionDocument({
+        uri: 'git://foo?1#/bar.go',
+        languageId: 'go',
+        text: 'type My[Kingdom For] Generics',
+    })
+)

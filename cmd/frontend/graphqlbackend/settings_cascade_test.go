@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -75,7 +75,7 @@ func TestMergeSettings(t *testing.T) {
 			CodeIntelligenceAutoIndexPopularRepoLimit: 1, // This is the zero value, so will not override a previous non-zero value
 		},
 	}, {
-		name: "shallow override struct pointer",
+		name: "deep merge struct pointer",
 		left: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
 				ShowSearchNotebook: boolPtr(true),
@@ -88,6 +88,7 @@ func TestMergeSettings(t *testing.T) {
 		},
 		expected: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+				ShowSearchNotebook:          boolPtr(true),
 				ShowSearchContextManagement: boolPtr(false),
 			},
 		},
@@ -180,9 +181,8 @@ func TestMergeSettings(t *testing.T) {
 }
 
 func TestSubjects(t *testing.T) {
-	db := new(dbtesting.MockDB)
 	t.Run("Default settings are included", func(t *testing.T) {
-		cascade := &settingsCascade{db: db, unauthenticatedActor: true}
+		cascade := &settingsCascade{db: database.NewMockDB(), unauthenticatedActor: true}
 		subjects, err := cascade.Subjects(context.Background())
 		if err != nil {
 			t.Fatal(err)

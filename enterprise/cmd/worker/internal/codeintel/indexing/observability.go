@@ -24,7 +24,7 @@ var (
 
 func newOperations(observationContext *observation.Context) *schedulerOperations {
 	once.Do(func() {
-		m := metrics.NewOperationMetrics(
+		m := metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"codeintel_index_scheduler",
 			metrics.WithLabels("op"),
@@ -43,7 +43,7 @@ func newOperations(observationContext *observation.Context) *schedulerOperations
 			HandleIndexScheduler: op("indexing", "HandleIndexSchedule"),
 		}
 
-		m = metrics.NewOperationMetrics(
+		m = metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"codeintel_dependency_repos",
 			metrics.WithLabels("op", "scheme", "new"),

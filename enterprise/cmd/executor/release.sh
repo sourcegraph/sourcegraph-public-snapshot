@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script publishes the executor image built by build.sh
+# This script publishes the executor image and binary built by build.sh
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 set -eu
@@ -19,3 +19,8 @@ gcloud compute images add-iam-policy-binding --project=sourcegraph-ci "${GOOGLE_
 
 # Make executor AMI usable outside of Sourcegraph
 aws ec2 modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
+
+# Copy uploaded binary to 'latest'
+gsutil rm -rf gs://sourcegraph-artifacts/executor/latest || true
+gsutil cp -r "gs://sourcegraph-artifacts/executor/$(git rev-parse HEAD)" gs://sourcegraph-artifacts/executor/latest
+gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts

@@ -30,7 +30,8 @@ func (h *TransactableHandle) DB() dbutil.DB {
 
 // InTransaction returns true if the underlying database handle is in a transaction.
 func (h *TransactableHandle) InTransaction() bool {
-	_, ok := h.db.(dbutil.Tx)
+	db := tryUnwrap(h.db)
+	_, ok := db.(dbutil.Tx)
 	return ok
 }
 
@@ -43,8 +44,10 @@ func (h *TransactableHandle) InTransaction() bool {
 // goroutines on the same handle will not be deterministic: either transaction could nest the other one,
 // and calling Done in one goroutine may not finalize the expected unit of work.
 func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle, error) {
+	db := tryUnwrap(h.db)
+
 	if h.InTransaction() {
-		savepoint, err := newSavepoint(ctx, h.db)
+		savepoint, err := newSavepoint(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +56,7 @@ func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle,
 		return h, nil
 	}
 
-	tb, ok := h.db.(dbutil.TxBeginner)
+	tb, ok := db.(dbutil.TxBeginner)
 	if !ok {
 		return nil, ErrNotTransactable
 	}
@@ -72,6 +75,8 @@ func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle,
 // transaction/savepoint. If the store does not wrap a transaction the original error value
 // is returned unchanged.
 func (h *TransactableHandle) Done(err error) error {
+	db := tryUnwrap(h.db)
+
 	if n := len(h.savepoints); n > 0 {
 		var savepoint *savepoint
 		savepoint, h.savepoints = h.savepoints[n-1], h.savepoints[:n-1]
@@ -82,7 +87,7 @@ func (h *TransactableHandle) Done(err error) error {
 		return combineErrors(err, savepoint.Rollback())
 	}
 
-	tx, ok := h.db.(dbutil.Tx)
+	tx, ok := db.(dbutil.Tx)
 	if !ok {
 		return err
 	}
@@ -91,6 +96,19 @@ func (h *TransactableHandle) Done(err error) error {
 		return tx.Commit()
 	}
 	return combineErrors(err, tx.Rollback())
+}
+
+// tryUnwrap attempts to unwrap a dbutil.DB into a child dbutil.DB.
+// This is necessary because for transactions, we do interface assertions
+// on the concrete type, but these interface assertions will fail if dbutil.DB
+// is not of the concrete type *sql.DB or *sql.Tx. With types like database.db,
+// which implement dbutil.DB by embedding the interface, this is problematic.
+// Eventually, this should go away once dbutil.DB is subsumed by database.DB.
+func tryUnwrap(db dbutil.DB) dbutil.DB {
+	if unwrapper, ok := db.(dbutil.Unwrapper); ok {
+		return unwrapper.Unwrap()
+	}
+	return db
 }
 
 // combineErrors returns a multierror containing all fo the non-nil error parameter values.

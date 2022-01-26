@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1000000028
+-- +++
+
 BEGIN;
 
 -- Drop the btree indexes that we intended to be GIN indexes.

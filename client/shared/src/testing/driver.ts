@@ -10,14 +10,15 @@ import getFreePort from 'get-port'
 import { escapeRegExp } from 'lodash'
 import { readFile, appendFile, mkdir } from 'mz/fs'
 import puppeteer, {
-    PageEventObj,
+    PageEventObject,
     Page,
     Serializable,
     LaunchOptions,
-    PageFnOptions,
     ConsoleMessage,
     Target,
-    RevisionInfo,
+    PuppeteerNode,
+    BrowserLaunchArgumentOptions,
+    BrowserConnectOptions,
 } from 'puppeteer'
 import puppeteerFirefox from 'puppeteer-firefox'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
@@ -25,21 +26,21 @@ import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/oper
 import { Key } from 'ts-key-enum'
 import webExt from 'web-ext'
 
+import { isDefined } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
+
 import { ExternalServiceKind } from '../graphql-operations'
-import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, IRepository } from '../graphql/schema'
+import { IMutation, IQuery, IRepository } from '../schema'
 import { Settings } from '../settings/settings'
-import { isDefined } from '../util/types'
 
 import { getConfig } from './config'
 import { formatPuppeteerConsoleMessage } from './console'
-import { PUPPETEER_BROWSER_REVISION } from './puppeteer-browser-revision'
 import { readEnvironmentBoolean, retry } from './utils'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
  */
-export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
+export const oncePageEvent = <E extends keyof PageEventObject>(page: Page, eventName: E): Promise<PageEventObject[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
 export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
@@ -63,6 +64,10 @@ type SelectTextMethod = 'selectall' | 'keyboard'
  * where typing would be too slow or we explicitly want to test paste behavior.
  */
 type EnterTextMethod = 'type' | 'paste'
+
+interface PageFnOptions {
+    timeout?: number
+}
 
 interface FindElementOptions {
     /**
@@ -475,7 +480,7 @@ export class Driver {
             "//*[contains(@class, 'panel')]//*[contains(@tabindex, '0')]//*[contains(text(), 'References')]"
         )
         // verify there are some references
-        await this.page.waitForSelector('[data-testid="panel-tabs-content"] .file-match-children__item', {
+        await this.page.waitForSelector('[data-testid="panel-tabs-content"] [data-testid="file-match-children-item"]', {
             visible: true,
         })
     }
@@ -697,7 +702,7 @@ export class Driver {
     }
 
     public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
-        await this.page.waitForFunction(url => document.location.href === url, options, url)
+        await this.page.waitForFunction((url: string) => document.location.href === url, options, url)
     }
 }
 
@@ -719,7 +724,7 @@ export function modifyJSONC(
 
 // Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
 async function getFirefoxCfgPath(): Promise<string> {
-    const firefoxFolder = path.dirname(puppeteerFirefox.executablePath())
+    const firefoxFolder = path.dirname(((puppeteerFirefox as unknown) as PuppeteerNode).executablePath())
     let configPath: string
     if (process.platform === 'darwin') {
         configPath = path.join(firefoxFolder, '..', 'Resources')
@@ -734,7 +739,7 @@ async function getFirefoxCfgPath(): Promise<string> {
     return path.join(configPath, 'puppeteer.cfg')
 }
 
-interface DriverOptions extends LaunchOptions {
+interface DriverOptions extends LaunchOptions, BrowserConnectOptions {
     browser?: 'chrome' | 'firefox'
 
     /** If true, load the Sourcegraph browser extension. */
@@ -759,8 +764,8 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     }
 
     const { loadExtension } = resolvedOptions
-    const args: string[] = []
-    const launchOptions: puppeteer.LaunchOptions = {
+    const args: string[] = ['--no-sandbox'] // https://stackoverflow.com/a/61278676
+    const launchOptions: LaunchOptions & BrowserLaunchArgumentOptions & BrowserConnectOptions = {
         ignoreHTTPSErrors: true,
         ...resolvedOptions,
         args,
@@ -768,8 +773,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         timeout: 300000,
     }
     let browser: puppeteer.Browser
-    const browserName = resolvedOptions.browser || 'chrome'
-    if (browserName === 'firefox') {
+    if (resolvedOptions.browser === 'firefox') {
         // Make sure CSP is disabled in FF preferences,
         // because Puppeteer uses new Function() to evaluate code
         // which is not allowed by the github.com CSP.
@@ -790,7 +794,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
             await webExt.cmd.run(
                 {
                     sourceDir: firefoxExtensionPath,
-                    firefox: puppeteerFirefox.executablePath(),
+                    firefox: ((puppeteer as unknown) as puppeteer.PuppeteerNode).executablePath(),
                     args,
                 },
                 { shouldExitProgram: false }
@@ -821,30 +825,10 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
             args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
         }
 
-        const revision = PUPPETEER_BROWSER_REVISION[browserName]
-        const revisionInfo = getPuppeteerBrowser(browserName, revision)
-
-        console.log(`Using ${browserName} (revision ${revision}) executable path:`, revisionInfo.executablePath)
-        browser = await puppeteer.launch({ ...launchOptions, executablePath: revisionInfo.executablePath })
+        browser = await puppeteer.launch({ ...launchOptions })
     }
 
     const page = await browser.newPage()
 
     return new Driver(browser, page, resolvedOptions)
-}
-
-/**
- * Get the RevisionInfo (which contains the executable path) for the given
- * browser and revision string.
- */
-export function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
-    const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
-    const revisionInfo = browserFetcher.revisionInfo(revision)
-    if (!revisionInfo.local) {
-        throw new Error(
-            `No local executable found for Puppeteer browser: expected ${browserName} revision "${revision}". Run "yarn run download-puppeteer-browser".`
-        )
-    }
-
-    return revisionInfo
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -39,7 +40,7 @@ var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.updated_at",
 }
 
-var BatchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
+var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
@@ -92,6 +93,8 @@ const executableWorkspaceJobsConditionFmtstr = `
 	(batch_specs.allow_unsupported OR NOT batch_spec_workspaces.unsupported)
 	AND
 	jsonb_array_length(batch_spec_workspaces.steps) > 0
+	AND
+	batch_spec_workspaces.cached_result_found IS FALSE
 )`
 
 // CreateBatchSpecWorkspaceExecutionJobs creates the given batch spec workspace jobs.
@@ -104,6 +107,52 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batch
 	cond := sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr)
 	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID, cond)
 	return s.Exec(ctx, q)
+}
+
+const createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobsForWorkspaces
+INSERT INTO
+	batch_spec_workspace_execution_jobs (batch_spec_workspace_id)
+SELECT
+	batch_spec_workspaces.id
+FROM
+	batch_spec_workspaces
+WHERE
+	batch_spec_workspaces.id = ANY (%s)
+`
+
+// CreateBatchSpecWorkspaceExecutionJobsForWorkspaces creates the batch spec workspace jobs for the given workspaces.
+func (s *Store) CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx context.Context, workspaceIDs []int64) (err error) {
+	ctx, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobsForWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr, pq.Array(workspaceIDs))
+	return s.Exec(ctx, q)
+}
+
+const deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:DeleteBatchSpecWorkspaceExecutionJobs
+DELETE FROM
+	batch_spec_workspace_execution_jobs
+WHERE
+	id = ANY (%s)
+RETURNING id
+`
+
+// DeleteBatchSpecWorkspaceExecutionJobs
+func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, ids []int64) (err error) {
+	ctx, endObservation := s.operations.deleteBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr, pq.Array(ids))
+	deleted, err := basestore.ScanInts(s.Query(ctx, q))
+	if err != nil {
+		return err
+	}
+	if len(deleted) != len(ids) {
+		return errors.Newf("wrong number of jobs deleted: %d instead of %d", len(deleted), len(ids))
+	}
+	return nil
 }
 
 // GetBatchSpecWorkspaceExecutionJobOpts captures the query options needed for getting a BatchSpecWorkspaceExecutionJob
@@ -417,7 +466,7 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	return nil
 }
 
-func ScanFirstBatchSpecWorkspaceExecutionJob(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspaceExecutionJob, bool, error) {
+func scanFirstBatchSpecWorkspaceExecutionJob(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspaceExecutionJob, bool, error) {
 	jobs, err := scanBatchSpecWorkspaceExecutionJobs(rows, err)
 	if err != nil || len(jobs) == 0 {
 		return nil, false, err

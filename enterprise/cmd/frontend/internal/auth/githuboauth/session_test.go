@@ -13,13 +13,14 @@ import (
 	githublogin "github.com/dghubble/gologin/github"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/github"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -230,7 +231,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					allowOrgs:   ci.allowOrgs,
 				}
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "")
+				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)
 				}
@@ -296,7 +297,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		allowOrgs:   nil,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err := s.GetOrCreateUser(ctx, tok, "", "")
+	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -313,17 +314,13 @@ func TestSessionIssuerHelper_CreateCodeHostConnectionHandlesExistingService(t *t
 func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	t.Helper()
 
-	db := dbtest.NewDB(t)
-
 	ctx := context.Background()
+	db := database.NewMockDB()
 	s := &sessionIssuerHelper{db: db}
 	t.Run("Unauthenticated request", func(t *testing.T) {
 		_, err := s.CreateCodeHostConnection(ctx, nil, "")
-		if err == nil {
-			t.Fatal("Want error but got nil")
-		}
+		assert.Error(t, err)
 	})
-	now := time.Now()
 
 	mockGitHubCom := newMockProvider(t, db, "githubcomclient", "githubcomsecret", "https://github.com/")
 	providers.MockProviders = []providers.Provider{mockGitHubCom.Provider}
@@ -340,18 +337,15 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 
 	ctx = actor.WithActor(ctx, act)
 	ctx = githublogin.WithUser(ctx, ghUser)
+	now := time.Now()
 
-	var got *types.ExternalService
-	database.Mocks.ExternalServices.Transact = func(ctx context.Context) (*database.ExternalServiceStore, error) {
-		return database.ExternalServices(db), nil
-	}
-	database.Mocks.ExternalServices.Done = func(err error) error {
-		return nil
-	}
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.TransactFunc.SetDefaultReturn(externalServices, nil)
+	externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if !serviceExists {
 			return nil, nil
 		}
+
 		return []*types.ExternalService{
 			{
 				Kind:        extsvc.KindGitHub,
@@ -368,25 +362,21 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 				UpdatedAt:       now,
 			},
 		}, nil
-	}
-	database.Mocks.ExternalServices.Upsert = func(ctx context.Context, services ...*types.ExternalService) error {
-		if len(services) != 1 {
-			t.Fatalf("Expected 1 service in Upsert, got %d", len(services))
-		}
-		// Tweak timestamps
-		services[0].CreatedAt = now
-		services[0].UpdatedAt = now
-		got = services[0]
-		return nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.ExternalServices = database.MockExternalServices{}
 	})
+	var got *types.ExternalService
+	externalServices.UpsertFunc.SetDefaultHook(func(ctx context.Context, svcs ...*types.ExternalService) error {
+		require.Len(t, svcs, 1)
+
+		// Tweak timestamps
+		svcs[0].CreatedAt = now
+		svcs[0].UpdatedAt = now
+		got = svcs[0]
+		return nil
+	})
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	_, err := s.CreateCodeHostConnection(ctx, tok, mockGitHubCom.ConfigID().ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	want := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
@@ -402,9 +392,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 		CreatedAt:       now,
 		UpdatedAt:       now,
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
-	}
+	assert.Equal(t, want, got)
 }
 
 func u(username, email string, emailIsVerified bool) database.NewUser {

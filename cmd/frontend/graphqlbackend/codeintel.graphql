@@ -9,6 +9,12 @@ extend type Mutation {
         """
         repository: ID
 
+        """
+        If supplied, the name patterns matching repositories to which this configuration policy
+        applies. This option is mutually exclusive with an explicit repository.
+        """
+        repositoryPatterns: [String!]
+
         name: String!
         type: GitObjectType!
         pattern: String!
@@ -25,6 +31,7 @@ extend type Mutation {
     """
     updateCodeIntelligenceConfigurationPolicy(
         id: ID!
+        repositoryPatterns: [String!]
         name: String!
         type: GitObjectType!
         pattern: String!
@@ -72,11 +79,49 @@ extend type Mutation {
 
 extend type Query {
     """
-    Get the complete list of configuration policies. If repository is supplied, then the
-    configuration policies attached to that repository are returned. If repository is not
-    supplied, then all global configuration policies are returned.
+    Returns precise code intelligence configuration policies that control data retention
+    and (if enabled) auto-indexing behavior.
     """
-    codeIntelligenceConfigurationPolicies(repository: ID): [CodeIntelligenceConfigurationPolicy!]!
+    codeIntelligenceConfigurationPolicies(
+        """
+        If repository is supplied, then only the configuration policies that apply to
+        repository are returned. If repository is not supplied, then all policies are
+        returned.
+        """
+        repository: ID
+
+        """
+        An (optional) search query that searches over the name property.
+        """
+        query: String
+
+        """
+        If set to true, then only configuration policies with data retention enabled are returned.
+        """
+        forDataRetention: Boolean
+
+        """
+        If set to true, then only configuration policies with indexing enabled are returned.
+        """
+        forIndexing: Boolean
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'CodeIntelligenceConfigurationPolicyConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): CodeIntelligenceConfigurationPolicyConnection!
 
     """
     The repository's LSIF uploads.
@@ -111,7 +156,7 @@ extend type Query {
         """
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page. It must be in the range of 0-5000.
+        how many results to return per page.
         """
         first: Int
 
@@ -143,7 +188,7 @@ extend type Query {
         """
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page. It must be in the range of 0-5000.
+        how many results to return per page.
         """
         first: Int
 
@@ -155,6 +200,98 @@ extend type Query {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    The set of repositories that match the given glob pattern. This resolver is used by the UI to
+    preview what repositories match a code intelligence policy in a given repository.
+    """
+    previewRepositoryFilter(
+        """
+        A set of patterns matching the name of the matching repository.
+        """
+        patterns: [String!]!
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'RepositoryFilterPreview.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): RepositoryFilterPreview!
+
+    """
+    Search over documentation
+    """
+    documentationSearch(
+        """
+        The search query.
+        """
+        query: String!
+
+        """
+        A list of names of repositories to limit the search to (all by default)
+        """
+        repos: [String!]
+    ): DocumentationSearchResults!
+}
+
+"""
+A decorated connection of repositories resulting from 'previewRepositoryFilter'.
+"""
+type RepositoryFilterPreview {
+    """
+    A list of repositories composing the current page.
+    """
+    nodes: [Repository!]!
+
+    """
+    The total number of repositories in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The maximum number of repository matches a single policy can make.
+    """
+    limit: Int
+
+    """
+    The number of repositories matching the given filter. This value exceeds the
+    value of totalCount of the result when totalMatches > limit.
+    """
+    totalMatches: Int!
+}
+
+"""
+A list of code intelligence configuration policies.
+"""
+type CodeIntelligenceConfigurationPolicyConnection {
+    """
+    A list of code intelligence configuration policies.
+    """
+    nodes: [CodeIntelligenceConfigurationPolicy!]!
+
+    """
+    The total number of policies in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -172,6 +309,16 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     A description of the configuration policy.
     """
     name: String!
+
+    """
+    The repository to which this configuration policy applies.
+    """
+    repository: Repository
+
+    """
+    The set of name patterns matching repositories to which this configuration policy applies.
+    """
+    repositoryPatterns: [String!]
 
     """
     The type of Git object described by the configuration policy.
@@ -262,7 +409,7 @@ extend type Repository {
         """
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page. It must be in the range of 0-5000.
+        how many results to return per page.
         """
         first: Int
 
@@ -293,7 +440,7 @@ extend type Repository {
         """
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page. It must be in the range of 0-5000.
+        how many results to return per page.
         """
         first: Int
 
@@ -623,6 +770,36 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ): LocationConnection!
 
     """
+    A list of implementations of the symbol under the given document position.
+    """
+    implementations(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): LocationConnection!
+
+    """
     The hover result of the symbol under the given document position.
     """
     hover(
@@ -749,6 +926,58 @@ type DocumentationPage {
     https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal&case=yes
     """
     tree: JSONValue!
+}
+
+"""
+Search results over documentation.
+"""
+type DocumentationSearchResults {
+    """
+    The results.
+    """
+    results: [DocumentationSearchResult!]!
+}
+
+"""
+A documentation search result.
+"""
+type DocumentationSearchResult {
+    """
+    The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
+    """
+    language: String!
+
+    """
+    RepoName is the name of the repository containing this search key.
+    """
+    repoName: String!
+
+    """
+    The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific,
+    and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
+    """
+    searchKey: String!
+
+    """
+    The fully qualified documentation page path ID, e.g. including "#section". See the documentationPage
+    type for what this is.
+    """
+    pathID: String!
+
+    """
+    Markdown label string, e.g. a one-line function signature. See protocol/documentation.go:Documentation
+    """
+    label: String!
+
+    """
+    Markdown detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
+    """
+    detail: String!
+
+    """
+    Tags for the documentation node. See protocol/documentation.go:Documentation
+    """
+    tags: [String!]!
 }
 
 """

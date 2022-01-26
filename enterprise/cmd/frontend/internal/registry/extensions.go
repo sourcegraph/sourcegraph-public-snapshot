@@ -5,14 +5,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func init() {
 	conf.DefaultRemoteRegistry = "https://sourcegraph.com/.api/registry"
-	registry.GetLocalExtensionByExtensionID = func(ctx context.Context, db dbutil.DB, extensionIDWithoutPrefix string) (graphqlbackend.RegistryExtension, error) {
-		x, err := dbExtensions{}.GetByExtensionID(ctx, extensionIDWithoutPrefix)
+	registry.GetLocalExtensionByExtensionID = func(ctx context.Context, db database.DB, extensionIDWithoutPrefix string) (graphqlbackend.RegistryExtension, error) {
+		x, err := stores.Extensions(db).GetByExtensionID(ctx, extensionIDWithoutPrefix)
 		if err != nil {
 			return nil, err
 		}
@@ -22,8 +23,8 @@ func init() {
 		return &extensionDBResolver{db: db, v: x}, nil
 	}
 
-	registry.GetLocalFeaturedExtensions = func(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error) {
-		dbExtensions, err := dbExtensions{}.GetFeaturedExtensions(ctx)
+	registry.GetLocalFeaturedExtensions = func(ctx context.Context, db database.DB) ([]graphqlbackend.RegistryExtension, error) {
+		dbExtensions, err := stores.Extensions(db).GetFeaturedExtensions(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -37,7 +38,7 @@ func init() {
 
 // prefixLocalExtensionID adds the local registry's extension ID prefix (from
 // GetLocalRegistryExtensionIDPrefix) to all extensions' extension IDs in the list.
-func prefixLocalExtensionID(xs ...*dbExtension) error {
+func prefixLocalExtensionID(xs ...*stores.Extension) error {
 	prefix := registry.GetLocalRegistryExtensionIDPrefix()
 	if prefix == nil {
 		return nil

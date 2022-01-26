@@ -3,9 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"path"
-	"regexp"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -19,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -108,21 +105,15 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 // returns 0 repos or fails, it returns false. It is a helper function for
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
-func (r *searchResolver) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	options.UserSettings = r.UserSettings
-	repositoryResolver := &searchrepos.Resolver{
-		DB:                  r.db,
-		SearchableReposFunc: backend.Repos.ListSearchable,
-	}
+func (o *alertObserver) reposExist(ctx context.Context, options search.RepoOptions) bool {
+	options.UserSettings = o.UserSettings
+	repositoryResolver := &searchrepos.Resolver{DB: o.Db}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
 
-func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q) *searchAlert {
-	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
-
+func (o *alertObserver) alertForNoResolvedRepos(ctx context.Context, q query.Q) *searchAlert {
 	repoFilters, minusRepoFilters := q.Repositories()
-	repoGroupFilters, _ := q.StringValues(query.FieldRepoGroup)
 	contextFilters, _ := q.StringValues(query.FieldContext)
 	onlyForks, noForks, forksNotSet := false, false, true
 	if fork := q.Fork(); fork != nil {
@@ -133,34 +124,19 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 	archived := q.Archived()
 	archivedNotSet := archived == nil
 
-	// Handle repogroup-only scenarios.
-	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 && len(minusRepoFilters) == 0 {
+	if len(repoFilters) == 0 && len(minusRepoFilters) == 0 {
 		return &searchAlert{
 			prometheusType: "no_resolved_repos__no_repositories",
 			title:          "Add repositories or connect repository hosts",
 			description:    "There are no repositories to search. Add an external service connection to your code host.",
 		}
 	}
-	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__repogroup_empty",
-			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
-			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
-		}
-	}
-	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__repogroup_none_in_common",
-			title:          "Repository groups have no repositories in common",
-			description:    "No repository exists in all of the specified repository groups.",
-		}
-	}
-	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && (len(repoFilters) > 0 || len(repoGroupFilters) > 0) {
+	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
 		withoutContextFilter := query.OmitField(q, query.FieldContext)
 		proposedQueries := []*searchQueryDescription{{
 			description: "search in the global context",
 			query:       fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
-			patternType: r.PatternType,
+			patternType: o.PatternType,
 		}}
 
 		return &searchAlert{
@@ -170,9 +146,9 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 		}
 	}
 
-	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
+	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
 	if !envvar.SourcegraphDotComMode() {
-		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
+		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, o.Db); err == nil && needsRepoConfig {
 			if isSiteAdmin {
 				return &searchAlert{
 					title:       "No repositories or code hosts configured",
@@ -187,14 +163,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 		}
 	}
 
-	if globbing {
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__generic",
-			title:          "No repositories found",
-			description:    "Try using a different `repo:<regexp>` filter to see results",
-		}
-	}
-
 	proposedQueries := []*searchQueryDescription{}
 	if forksNotSet {
 		tryIncludeForks := search.RepoOptions{
@@ -202,11 +170,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 			MinusRepoFilters: minusRepoFilters,
 			NoForks:          false,
 		}
-		if r.reposExist(ctx, tryIncludeForks) {
+		if o.reposExist(ctx, tryIncludeForks) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include forked repositories in your query.",
-				query:       r.OriginalQuery + " fork:yes",
-				patternType: r.PatternType,
+				query:       o.OriginalQuery + " fork:yes",
+				patternType: o.PatternType,
 			})
 		}
 	}
@@ -219,11 +187,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 			NoForks:          noForks,
 			OnlyArchived:     true,
 		}
-		if r.reposExist(ctx, tryIncludeArchived) {
+		if o.reposExist(ctx, tryIncludeArchived) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "include archived repositories in your query.",
-				query:       r.OriginalQuery + " archived:yes",
-				patternType: r.PatternType,
+				query:       o.OriginalQuery + " archived:yes",
+				patternType: o.PatternType,
 			})
 		}
 	}
@@ -253,130 +221,6 @@ func (e *errOverRepoLimit) Error() string {
 	return "Too many matching repositories"
 }
 
-func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepoLimit {
-	// Try to suggest the most helpful repo: filters to narrow the query.
-	//
-	// For example, suppose the query contains "repo:kubern" and it matches > 30
-	// repositories, and each one of the (clipped result set of) 30 repos has
-	// "kubernetes" in their path. Then it's likely that the user would want to
-	// search for "repo:kubernetes". If that still matches > 30 repositories,
-	// then try to narrow it further using "/kubernetes/", etc.
-	//
-	// (In the above sample paragraph, we assume MAX_REPOS_TO_SEARCH is 30.)
-	//
-	// TODO(sqs): this logic can be significantly improved, but it's better than
-	// nothing for now.
-
-	var proposedQueries []*searchQueryDescription
-	description := "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results."
-	if envvar.SourcegraphDotComMode() {
-		description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
-	}
-	if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
-		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
-	}
-
-	buildErr := func(proposedQueries []*searchQueryDescription, description string) *errOverRepoLimit {
-		return &errOverRepoLimit{
-			ProposedQueries: proposedQueries,
-			Description:     description,
-		}
-	}
-
-	// If globbing is active we return a simple alert for now. The alert is still
-	// helpful but it doesn't contain any proposed queries.
-	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
-		return buildErr(proposedQueries, description)
-	}
-
-	q, err := query.ParseLiteral(r.rawQuery()) // Invariant: query is already validated; guard against error anyway.
-	if err != nil || !query.IsBasic(q) {
-		// If the query is not basic, the assumptions that other logic
-		// makes to propose queries do not hold. Return a default alert
-		// without proposed queries.
-		return buildErr(proposedQueries, description)
-	}
-
-	repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
-	resolved, _ := r.resolveRepositories(ctx, repoOptions)
-	if len(resolved.RepoRevs) > 0 {
-		paths := make([]string, len(resolved.RepoRevs))
-		for i, repo := range resolved.RepoRevs {
-			paths[i] = string(repo.Repo.Name)
-		}
-
-		// See if we can narrow it down by using filters like
-		// repo:github.com/myorg/.
-		const maxParentsToPropose = 4
-		ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
-		defer cancel()
-	outer:
-		for i, repoParent := range pathParentsByFrequency(paths) {
-			if i >= maxParentsToPropose || ctx.Err() != nil {
-				break
-			}
-			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-			repoFieldValues, _ := q.Repositories()
-
-			for _, v := range repoFieldValues {
-				if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
-					continue outer // this repo: filter is already applied
-				}
-			}
-
-			repoFieldValues = append(repoFieldValues, repoParentPattern)
-			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
-			defer cancel()
-			repoOptions := r.toRepoOptions(r.Query,
-				resolveRepositoriesOpts{
-					effectiveRepoFieldValues: repoFieldValues,
-				})
-			resolved, err := r.resolveRepositories(ctx, repoOptions)
-			if ctx.Err() != nil {
-				continue
-			} else if err != nil {
-				return buildErr([]*searchQueryDescription{}, description)
-			}
-
-			var more string
-			if resolved.OverLimit {
-				more = "(further filtering required)"
-			}
-			// We found a more specific repo: filter that may be narrow enough. Now
-			// add it to the user's query, but be smart. For example, if the user's
-			// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
-			// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-			newExpr := query.AddRegexpField(q, query.FieldRepo, repoParentPattern)
-			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("in repositories under %s %s", repoParent, more),
-				query:       newExpr,
-				patternType: r.PatternType,
-			})
-		}
-		if len(proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
-			// Propose specific repos' paths if we aren't able to propose
-			// anything else.
-			const maxReposToPropose = 4
-			shortest := append([]string{}, paths...) // prefer shorter repo names
-			sort.Slice(shortest, func(i, j int) bool {
-				return len(shortest[i]) < len(shortest[j]) || (len(shortest[i]) == len(shortest[j]) && shortest[i] < shortest[j])
-			})
-			for i, pathToPropose := range shortest {
-				if i >= maxReposToPropose {
-					break
-				}
-				newExpr := query.AddRegexpField(q, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
-				proposedQueries = append(proposedQueries, &searchQueryDescription{
-					description: fmt.Sprintf("in the repository %s", strings.TrimPrefix(pathToPropose, "github.com/")),
-					query:       newExpr,
-					patternType: r.PatternType,
-				})
-			}
-		}
-	}
-	return buildErr(proposedQueries, description)
-}
-
 func alertForStructuralSearchNotSet(queryString string) *searchAlert {
 	return &searchAlert{
 		prometheusType: "structural_search_not_set",
@@ -388,14 +232,6 @@ func alertForStructuralSearchNotSet(queryString string) *searchAlert {
 			patternType: query.SearchTypeStructural,
 		}},
 	}
-}
-
-type missingRepoRevsError struct {
-	Missing []*search.RepositoryRevisions
-}
-
-func (*missingRepoRevsError) Error() string {
-	return "missing repo revs"
 }
 
 func alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
@@ -432,33 +268,11 @@ func alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *sea
 	}
 }
 
-// pathParentsByFrequency returns the most common path parents of the given paths.
-// For example, given paths [a/b a/c x/y], it would return [a x] because "a"
-// is a parent to 2 paths and "x" is a parent to 1 path.
-func pathParentsByFrequency(paths []string) []string {
-	var parents []string
-	parentFreq := map[string]int{}
-	for _, p := range paths {
-		parent := path.Dir(p)
-		if _, seen := parentFreq[parent]; !seen {
-			parents = append(parents, parent)
-		}
-		parentFreq[parent]++
-	}
-
-	sort.Slice(parents, func(i, j int) bool {
-		pi, pj := parents[i], parents[j]
-		fi, fj := parentFreq[pi], parentFreq[pj]
-		return fi > fj || (fi == fj && pi < pj) // freq desc, alpha asc
-	})
-	return parents
-}
-
 func (a searchAlert) wrapResults() *SearchResults {
 	return &SearchResults{Alert: &a}
 }
 
-func (a searchAlert) wrapSearchImplementer(db dbutil.DB) *alertSearchImplementer {
+func (a searchAlert) wrapSearchImplementer(db database.DB) *alertSearchImplementer {
 	return &alertSearchImplementer{
 		db:    db,
 		alert: a,
@@ -468,7 +282,7 @@ func (a searchAlert) wrapSearchImplementer(db dbutil.DB) *alertSearchImplementer
 // alertSearchImplementer is a light wrapper type around an alert that implements
 // SearchImplementer. This helps avoid needing to have a db on the searchAlert type
 type alertSearchImplementer struct {
-	db    dbutil.DB
+	db    database.DB
 	alert searchAlert
 }
 
@@ -476,9 +290,6 @@ func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver
 	return &SearchResultsResolver{db: a.db, SearchResults: a.alert.wrapResults()}, nil
 }
 
-func (alertSearchImplementer) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
-	return nil, nil
-}
 func (alertSearchImplementer) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
 func (alertSearchImplementer) Inputs() run.SearchInputs {
 	return run.SearchInputs{}
@@ -497,63 +308,22 @@ func capFirst(s string) string {
 	}, s)
 }
 
-func alertForError(err error) *searchAlert {
-	var (
-		alert *searchAlert
-		rErr  *commit.RepoLimitError
-		tErr  *commit.TimeLimitError
-		mErr  *missingRepoRevsError
-	)
-
-	if errors.As(err, &mErr) {
-		alert = alertForMissingRepoRevs(mErr.Missing)
-		alert.priority = 6
-	} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
-		alert = &searchAlert{
-			prometheusType: "structural_search_needs_more_memory",
-			title:          "Structural search needs more memory",
-			description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
-			priority:       5,
-		}
-	} else if strings.Contains(err.Error(), "Out of memory") {
-		alert = &searchAlert{
-			prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
-			title:          "Structural search needs more memory",
-			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
-			priority:       4,
-		}
-	} else if errors.As(err, &rErr) {
-		alert = &searchAlert{
-			prometheusType: "exceeded_diff_commit_search_limit",
-			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
-			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
-			priority:       2,
-		}
-	} else if errors.As(err, &tErr) {
-		alert = &searchAlert{
-			prometheusType: "exceeded_diff_commit_with_time_search_limit",
-			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
-			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
-			priority:       1,
-		}
-	}
-	return alert
-}
-
-// errorToAlert is intended to be a catch-all function for converting all errors into alerts.
-// The intent here is to create alerts as close to the API boundary as possible, so this should be called
-// immediately before creating the SearchResultsResolver.
-func errorToAlert(err error) (*searchAlert, error) {
+func (o *alertObserver) errorToAlert(ctx context.Context, err error) (*searchAlert, error) {
 	if err == nil {
 		return nil, nil
 	}
 
-	{
-		var e *multierror.Error
-		if errors.As(err, &e) {
-			return multierrorToAlert(e)
-		}
+	var e *multierror.Error
+	if errors.As(err, &e) {
+		return o.multierrorToAlert(ctx, e)
 	}
+
+	var (
+		rErr *commit.RepoLimitError
+		tErr *commit.TimeLimitError
+		mErr *searchrepos.MissingRepoRevsError
+		oErr *errOverRepoLimit
+	)
 
 	if errors.HasType(err, authz.ErrStalePermissions{}) {
 		return alertForStalePermissions(), nil
@@ -566,16 +336,59 @@ func errorToAlert(err error) (*searchAlert, error) {
 		}
 	}
 
-	{
-		var e *errOverRepoLimit
-		if errors.As(err, &e) {
-			return &searchAlert{
-				prometheusType:  "over_repo_limit",
-				title:           "Too many matching repositories",
-				proposedQueries: e.ProposedQueries,
-				description:     e.Description,
-			}, nil
-		}
+	if err == searchrepos.ErrNoResolvedRepos {
+		return o.alertForNoResolvedRepos(ctx, o.Query), nil
+	}
+
+	if errors.As(err, &oErr) {
+		return &searchAlert{
+			prometheusType:  "over_repo_limit",
+			title:           "Too many matching repositories",
+			proposedQueries: oErr.ProposedQueries,
+			description:     oErr.Description,
+		}, nil
+	}
+
+	if errors.As(err, &mErr) {
+		alert := alertForMissingRepoRevs(mErr.Missing)
+		alert.priority = 6
+		return alert, nil
+	}
+
+	if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
+		return &searchAlert{
+			prometheusType: "structural_search_needs_more_memory",
+			title:          "Structural search needs more memory",
+			description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+			priority:       5,
+		}, nil
+	}
+
+	if strings.Contains(err.Error(), "Out of memory") {
+		return &searchAlert{
+			prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
+			title:          "Structural search needs more memory",
+			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
+			priority:       4,
+		}, nil
+	}
+
+	if errors.As(err, &rErr) {
+		return &searchAlert{
+			prometheusType: "exceeded_diff_commit_search_limit",
+			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
+			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
+			priority:       2,
+		}, nil
+	}
+
+	if errors.As(err, &tErr) {
+		return &searchAlert{
+			prometheusType: "exceeded_diff_commit_with_time_search_limit",
+			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
+			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
+			priority:       1,
+		}, nil
 	}
 
 	return nil, err
@@ -599,9 +412,9 @@ func maxAlertByPriority(a, b *searchAlert) *searchAlert {
 // multierrorToAlert converts a multierror.Error into the highest priority alert
 // for the errors contained in it, and a new error with all the errors that could
 // not be converted to alerts.
-func multierrorToAlert(me *multierror.Error) (resAlert *searchAlert, resErr error) {
+func (o *alertObserver) multierrorToAlert(ctx context.Context, me *multierror.Error) (resAlert *searchAlert, resErr error) {
 	for _, err := range me.Errors {
-		alert, err := errorToAlert(err)
+		alert, err := o.errorToAlert(ctx, err)
 		resAlert = maxAlertByPriority(resAlert, alert)
 		resErr = multierror.Append(resErr, err)
 	}
@@ -625,16 +438,11 @@ func alertForInvalidRevision(revision string) *searchAlert {
 	}
 }
 
-func alertForRepoGroupsDeprecation() *searchAlert {
-	return &searchAlert{
-		title:       "Repogroups are deprecated",
-		description: "Repogroups are deprecated in the current (3.33) release and will be removed in the following (3.34) release. Learn more about the deprecation and how to migrate repogroups to search contexts in our blog post: https://about.sourcegraph.com/blog/introducing-search-contexts.",
-	}
-}
-
 type alertObserver struct {
+	Db database.DB
+
 	// Inputs are used to generate alert messages based on the query.
-	Inputs *run.SearchInputs
+	*run.SearchInputs
 
 	// Update state.
 	hasResults bool
@@ -652,7 +460,7 @@ func (o *alertObserver) Error(ctx context.Context, err error) {
 	}
 
 	// We can compute the alert outside of the critical section.
-	alert := alertForError(err)
+	alert, _ := o.errorToAlert(ctx, err)
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -677,12 +485,8 @@ func (o *alertObserver) update(alert *searchAlert) {
 //  Done returns the highest priority alert and a multierror.Error containing
 //  all errors that could not be converted to alerts.
 func (o *alertObserver) Done(stats *streaming.Stats) (*searchAlert, error) {
-	if repoGroupFilters, _ := o.Inputs.Query.StringValues(query.FieldRepoGroup); len(repoGroupFilters) > 0 {
-		o.update(alertForRepoGroupsDeprecation())
-	}
-
-	if !o.hasResults && o.Inputs.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.Inputs.OriginalQuery) {
-		o.update(alertForStructuralSearchNotSet(o.Inputs.OriginalQuery))
+	if !o.hasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
+		o.update(alertForStructuralSearchNotSet(o.OriginalQuery))
 	}
 
 	if o.hasResults && o.err != nil {

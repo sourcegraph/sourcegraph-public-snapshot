@@ -22,25 +22,6 @@ func Enabled() bool {
 	return apiKey != "" && disable == ""
 }
 
-// Event creates an event for logging to dataset. Event.Send will only work if
-// Enabled() returns true.
-func Event(dataset string) *libhoney.Event {
-	ev := libhoney.NewEvent()
-	ev.Dataset = dataset + suffix
-	return ev
-}
-
-// EventWithFields creates an event for logging to the given dataset. The given
-// fields are assigned to the event.
-func EventWithFields(dataset string, fields map[string]interface{}) *libhoney.Event {
-	ev := Event(dataset)
-	for key, value := range fields {
-		ev.AddField(key, value)
-	}
-
-	return ev
-}
-
 func init() {
 	if apiKey == "" {
 		return

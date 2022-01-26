@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
 // NewFakeSourcer returns a Sourcer which always returns the given error and source,
@@ -42,7 +43,7 @@ func (s FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	}
 
 	for _, r := range s.repos {
-		results <- SourceResult{Source: s, Repo: r.With(types.Opt.RepoSources(s.svc.URN()))}
+		results <- SourceResult{Source: s, Repo: r.With(typestest.Opt.RepoSources(s.svc.URN()))}
 	}
 }
 

@@ -5,26 +5,25 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
-import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { PatternTypeProps } from '../../search'
 import { RouteDescriptor } from '../../util/contributions'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
@@ -77,7 +76,10 @@ const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
-export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {}
+export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {
+    /** When true, the header is not rendered and the component is not wrapped in a container. */
+    fullPage?: boolean
+}
 
 interface Props
     extends RouteComponentProps<{ name: string }>,
@@ -88,15 +90,14 @@ interface Props
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionsControllerProps,
-        BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
 
@@ -119,8 +120,7 @@ export interface OrgAreaPageProps
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        BatchChangesProps {
     /** The org that is the subject of the page. */
     org: OrgAreaOrganizationFields
 
@@ -128,7 +128,7 @@ export interface OrgAreaPageProps
     onOrganizationUpdate: () => void
 
     /** The currently authenticated user. */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
 }
@@ -229,11 +229,11 @@ export class OrgArea extends React.Component<Props> {
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
-            patternType: this.props.patternType,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
+            batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
@@ -245,35 +245,50 @@ export class OrgArea extends React.Component<Props> {
         }
 
         return (
-            <Page className="org-area">
-                <OrgHeader {...this.props} {...context} navItems={this.props.orgAreaHeaderNavItems} />
-                <div className="container mt-3">
-                    <ErrorBoundary location={this.props.location}>
-                        <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                            <Switch>
-                                {this.props.orgAreaRoutes.map(
-                                    ({ path, exact, render, condition = () => true }) =>
-                                        condition(context) && (
-                                            <Route
-                                                path={this.props.match.url + path}
-                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                exact={exact}
-                                                render={routeComponentProps =>
-                                                    render({ ...context, ...routeComponentProps })
-                                                }
-                                            />
-                                        )
-                                )}
-                                <Route key="hardcoded-key" component={NotFoundPage} />
-                            </Switch>
-                        </React.Suspense>
-                    </ErrorBoundary>
-                </div>
-            </Page>
+            <ErrorBoundary location={this.props.location}>
+                <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+                    <Switch>
+                        {this.props.orgAreaRoutes.map(
+                            ({ path, exact, render, condition = () => true, fullPage }) =>
+                                condition(context) && (
+                                    <Route
+                                        path={this.props.match.url + path}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={exact}
+                                        render={routeComponentProps =>
+                                            fullPage ? (
+                                                render({ ...context, ...routeComponentProps })
+                                            ) : (
+                                                <Page className="org-area">
+                                                    <OrgHeader
+                                                        {...this.props}
+                                                        {...context}
+                                                        navItems={this.props.orgAreaHeaderNavItems}
+                                                        className="mb-3"
+                                                    />
+                                                    <div className="container">
+                                                        {render({ ...context, ...routeComponentProps })}
+                                                    </div>
+                                                </Page>
+                                            )
+                                        }
+                                    />
+                                )
+                        )}
+                        <Route key="hardcoded-key" component={NotFoundPage} />
+                    </Switch>
+                </React.Suspense>
+            </ErrorBoundary>
         )
     }
 
-    private onDidRespondToInvitation = (): void => this.refreshRequests.next()
+    private onDidRespondToInvitation = (accepted: boolean): void => {
+        if (!accepted) {
+            this.props.history.push('/user/settings')
+            return
+        }
+        this.refreshRequests.next()
+    }
 
     private onDidUpdateOrganization = (): void => this.refreshRequests.next()
 }

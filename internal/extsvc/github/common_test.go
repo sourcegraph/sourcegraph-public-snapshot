@@ -77,14 +77,15 @@ func TestClient_GetRepository(t *testing.T) {
 	mock := mockHTTPResponseBody{
 		responseBody: `
 {
-	"node_id": "i",
-	"full_name": "o/r",
-	"description": "d",
-	"html_url": "https://github.example.com/o/r",
-	"fork": true,
-	"stargazers_count": 30,
-	"watchers_count": 20,
-	"forks_count": 5
+  "node_id": "i",
+  "full_name": "o/r",
+  "description": "d",
+  "html_url": "https://github.example.com/o/r",
+  "fork": true,
+  "stargazers_count": 30,
+  "watchers_count": 20,
+  "forks_count": 5,
+  "visibility": ""
 }
 `,
 	}
@@ -98,6 +99,10 @@ func TestClient_GetRepository(t *testing.T) {
 		IsFork:         true,
 		StargazerCount: 30,
 		ForkCount:      5,
+		// This is guarded behind a feature flag so will be empty for now. When the feature flag is
+		// enabled, it will return a repo of type "internal". We will need to fix the test
+		// then. This is blocked on our GHE instance being upgraded to 3.3.0.
+		Visibility: "",
 	}
 
 	repo, err := c.GetRepository(context.Background(), "owner", "repo")
@@ -363,6 +368,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsArchived:       true,
 		IsLocked:         true,
 		ViewerPermission: "ADMIN",
+		Visibility:       "internal",
 	}
 
 	clojureGrapherRepo := &Repository{
@@ -376,6 +382,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsArchived:       true,
 		IsDisabled:       true,
 		ViewerPermission: "ADMIN",
+		Visibility:       "private",
 	}
 
 	testCases := []struct {
@@ -400,7 +407,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isFork": false,
       "isArchived": true,
       "isLocked": true,
-      "viewerPermission": "ADMIN"
+      "viewerPermission": "ADMIN",
+      "visibility": "internal"
     },
     "repo_sourcegraph_clojure_grapher": {
       "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
@@ -412,7 +420,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isFork": false,
       "isArchived": true,
       "isDisabled": true,
-      "viewerPermission": "ADMIN"
+      "viewerPermission": "ADMIN",
+      "visibility": "private"
     }
   }
 }
@@ -434,7 +443,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isFork": false,
       "isArchived": true,
       "isLocked": true,
-      "viewerPermission": "ADMIN"
+      "viewerPermission": "ADMIN",
+      "visibility": "internal"
     },
     "repo_sourcegraph_clojure_grapher": null
   },

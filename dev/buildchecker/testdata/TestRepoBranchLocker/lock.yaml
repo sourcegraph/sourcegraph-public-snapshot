@@ -1,0 +1,1893 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.luke-cage-preview+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
+    method: GET
+  response:
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":0},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:20 GMT
+      Etag:
+      - W/"5c7dc02324604e7a9d932ec2f2d408d3fb139a25a075d6379e2472fafd3c4e6b"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=luke-cage-preview; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126D15:3DFEEF5:61BB7824
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4999"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "1"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/repos/sourcegraph/sourcegraph/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb
+    method: GET
+  response:
+    body: '{"sha":"be7f0f51b73b1966254db4aac65b656daa36e2fb","node_id":"C_kwDOAnYEBNoAKGJlN2YwZjUxYjczYjE5NjYyNTRkYjRhYWM2NWI2NTZkYWEzNmUyZmI","commit":{"author":{"name":"davejrt","email":"2067825+davejrt@users.noreply.github.com","date":"2021-12-09T20:11:15Z"},"committer":{"name":"GitHub","email":"noreply@github.com","date":"2021-12-09T20:11:15Z"},"message":"use
+      force when cleaning up images (#28814)\n\n* force image removal","tree":{"sha":"f83fb4d1d08cab1a2ebc6b892c3e80507902f277","url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees/f83fb4d1d08cab1a2ebc6b892c3e80507902f277"},"url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb","comment_count":0,"verification":{"verified":true,"reason":"valid","signature":"-----BEGIN
+      PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJhsmLjCRBK7hj4Ov3rIwAAnP0IAAcVuv0pIKNhNk3HNr+cxw8s\nVpe2RUE+Y7U90BstbonLRkHnO/06Cu9jSnIQSmoAMDyinuNEtkksvGYtQygUFDeQ\nOwyvngg68fUC0OEbX72wGq9dZx7sBziAjNrHsnFL/U0ceVCEq2C+fmfkjIDKq6GO\naYBszXdJ2odRlXlWr/+ATxzw8MtU3dIyc7fSFvn8Mk30fBYIbYh6GTd3UMt4w0WS\nA6SeKWIfssg7exCiVekAr0+9sy+6MxRM10pS5jPtZNXtmlNGRisVVANrpWjgOsGr\ncUnZtncCf4HLaZ+mmIiOut0bzJAenwp7UbzVfZgQ7WAKeFzucHM4dd44l7hk7WA=\n=Z69R\n-----END
+      PGP SIGNATURE-----\n","payload":"tree f83fb4d1d08cab1a2ebc6b892c3e80507902f277\nparent
+      0ab0edb43fdf7fef7edbe93e5aa99340467bd50f\nauthor davejrt <2067825+davejrt@users.noreply.github.com>
+      1639080675 -0500\ncommitter GitHub <noreply@github.com> 1639080675 -0500\n\nuse
+      force when cleaning up images (#28814)\n\n* force image removal"}},"url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb","html_url":"https://github.com/sourcegraph/sourcegraph/commit/be7f0f51b73b1966254db4aac65b656daa36e2fb","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb/comments","author":{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},"committer":{"login":"web-flow","id":19864447,"node_id":"MDQ6VXNlcjE5ODY0NDQ3","avatar_url":"https://avatars.githubusercontent.com/u/19864447?v=4","gravatar_id":"","url":"https://api.github.com/users/web-flow","html_url":"https://github.com/web-flow","followers_url":"https://api.github.com/users/web-flow/followers","following_url":"https://api.github.com/users/web-flow/following{/other_user}","gists_url":"https://api.github.com/users/web-flow/gists{/gist_id}","starred_url":"https://api.github.com/users/web-flow/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/web-flow/subscriptions","organizations_url":"https://api.github.com/users/web-flow/orgs","repos_url":"https://api.github.com/users/web-flow/repos","events_url":"https://api.github.com/users/web-flow/events{/privacy}","received_events_url":"https://api.github.com/users/web-flow/received_events","type":"User","site_admin":false},"parents":[{"sha":"0ab0edb43fdf7fef7edbe93e5aa99340467bd50f","url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/0ab0edb43fdf7fef7edbe93e5aa99340467bd50f","html_url":"https://github.com/sourcegraph/sourcegraph/commit/0ab0edb43fdf7fef7edbe93e5aa99340467bd50f"}],"stats":{"total":6,"additions":3,"deletions":3},"files":[{"sha":"52b9fb3f813b8b73eef9028c0a55ccf53e5e74d8","filename":"dev/ci/test/e2e/test.sh","status":"modified","additions":1,"deletions":1,"changes":2,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/e2e/test.sh","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/e2e/test.sh","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/dev/ci/test/e2e/test.sh?ref=be7f0f51b73b1966254db4aac65b656daa36e2fb","patch":"@@
+      -17,7 +17,7 @@ cleanup() {\n   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then\n     docker
+      rm -f \"$(docker ps -aq)\"\n   fi\n-  docker rmi \"$(docker images -q)\"\n+  docker
+      rmi -f \"$(docker images -q)\"\n }\n trap cleanup EXIT\n "},{"sha":"061010cf6a1ac0629e816ed24591916d81c31683","filename":"dev/ci/test/qa/test.sh","status":"modified","additions":1,"deletions":1,"changes":2,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/qa/test.sh","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/qa/test.sh","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/dev/ci/test/qa/test.sh?ref=be7f0f51b73b1966254db4aac65b656daa36e2fb","patch":"@@
+      -22,7 +22,7 @@ cleanup() {\n   docker_logs\n   cd \"$root_dir\"\n   docker rm
+      -f \"$CONTAINER\"\n-  docker rmi \"$(docker images -q)\"\n+  docker rmi -f \"$(docker
+      images -q)\"\n \n }\n "},{"sha":"91acb06378d5509da4a2cddf6ac68984bf6f767c","filename":"dev/ci/test/upgrade/test.sh","status":"modified","additions":1,"deletions":1,"changes":2,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/upgrade/test.sh","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/be7f0f51b73b1966254db4aac65b656daa36e2fb/dev/ci/test/upgrade/test.sh","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/dev/ci/test/upgrade/test.sh?ref=be7f0f51b73b1966254db4aac65b656daa36e2fb","patch":"@@
+      -25,7 +25,7 @@ cleanup() {\n   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then\n     docker
+      rm -f \"$(docker ps -aq)\"\n   fi\n-  docker rmi \"$(docker images -q)\"\n+  docker
+      rmi -f \"$(docker images -q)\"\n }\n \n # Run and initialize an old Sourcegraph
+      release"}]}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:20 GMT
+      Etag:
+      - W/"db5b16e414a79604e046694d0f6fd9bab144d48bd416720caf4e74309bcc9612"
+      Last-Modified:
+      - Thu, 09 Dec 2021 20:11:15 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126D37:3DFEF2E:61BB7824
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4998"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "2"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/repos/sourcegraph/sourcegraph/commits/fac6d4973acad43fcd2f7579a3b496cd92619172
+    method: GET
+  response:
+    body: "{\"sha\":\"fac6d4973acad43fcd2f7579a3b496cd92619172\",\"node_id\":\"C_kwDOAnYEBNoAKGZhYzZkNDk3M2FjYWQ0M2ZjZDJmNzU3OWEzYjQ5NmNkOTI2MTkxNzI\",\"commit\":{\"author\":{\"name\":\"Robert
+      Lin\",\"email\":\"robert@bobheadxi.dev\",\"date\":\"2021-12-09T20:19:54Z\"},\"committer\":{\"name\":\"GitHub\",\"email\":\"noreply@github.com\",\"date\":\"2021-12-09T20:19:54Z\"},\"message\":\"tracking-issue:
+      add support for OPTIONAL LABEL (#28665)\\n\\nThis adds a new marker, `<!-- OPTIONAL
+      LABEL: my-label -->` that allows you to add labels on a tracking issue that
+      _do not_ need to be present on child issues for them to be considered part of
+      this tracking issue. This is useful for making tracking issues easier to find
+      without adding labels to every single issue within the tracking issue.\",\"tree\":{\"sha\":\"5309cc0ecdc14bf9d8f290efa476be5e82c7f546\",\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees/5309cc0ecdc14bf9d8f290efa476be5e82c7f546\"},\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits/fac6d4973acad43fcd2f7579a3b496cd92619172\",\"comment_count\":0,\"verification\":{\"verified\":true,\"reason\":\"valid\",\"signature\":\"-----BEGIN
+      PGP SIGNATURE-----\\n\\nwsBcBAABCAAQBQJhsmTqCRBK7hj4Ov3rIwAAW+EIAAGizIb0njr8AV7kcofPG0/J\\nZEKorbs/ttwV3XcjOa98ggJtlV6J3PjYjS6ZQ3J62xuVpeQFLWjmNJyoMezL7ocm\\nkHLBCOdhI62x7pTa0P1o++SgD3dGD/rLBYnibGMyZIyhgjkXhM9yiFNhNgK6ucfx\\nnCNNTXRTwwMeZxUmdYK4IZ/rBY1+Ruiobz2BlSDOJpdKWD6Bq4HfyvT9nsWfgnaf\\n1rJ4cpaLCplw81YsH9LTEi0yC/lmQ5rz/twxJwgFurmi6HUyTg3Ceqatfp2H1J2N\\nNl3P5+VOCWs2vzAU3pMyslNZso9vP+sqIBfF5IW0WEiSMu34j4wGDF7H/UpXETA=\\n=gYvt\\n-----END
+      PGP SIGNATURE-----\\n\",\"payload\":\"tree 5309cc0ecdc14bf9d8f290efa476be5e82c7f546\\nparent
+      be7f0f51b73b1966254db4aac65b656daa36e2fb\\nauthor Robert Lin <robert@bobheadxi.dev>
+      1639081194 -0800\\ncommitter GitHub <noreply@github.com> 1639081194 -0800\\n\\ntracking-issue:
+      add support for OPTIONAL LABEL (#28665)\\n\\nThis adds a new marker, `<!-- OPTIONAL
+      LABEL: my-label -->` that allows you to add labels on a tracking issue that
+      _do not_ need to be present on child issues for them to be considered part of
+      this tracking issue. This is useful for making tracking issues easier to find
+      without adding labels to every single issue within the tracking issue.\"}},\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/fac6d4973acad43fcd2f7579a3b496cd92619172\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/fac6d4973acad43fcd2f7579a3b496cd92619172\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/fac6d4973acad43fcd2f7579a3b496cd92619172/comments\",\"author\":{\"login\":\"bobheadxi\",\"id\":23356519,\"node_id\":\"MDQ6VXNlcjIzMzU2NTE5\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/23356519?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/bobheadxi\",\"html_url\":\"https://github.com/bobheadxi\",\"followers_url\":\"https://api.github.com/users/bobheadxi/followers\",\"following_url\":\"https://api.github.com/users/bobheadxi/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/bobheadxi/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/bobheadxi/subscriptions\",\"organizations_url\":\"https://api.github.com/users/bobheadxi/orgs\",\"repos_url\":\"https://api.github.com/users/bobheadxi/repos\",\"events_url\":\"https://api.github.com/users/bobheadxi/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/bobheadxi/received_events\",\"type\":\"User\",\"site_admin\":false},\"committer\":{\"login\":\"web-flow\",\"id\":19864447,\"node_id\":\"MDQ6VXNlcjE5ODY0NDQ3\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/19864447?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/web-flow\",\"html_url\":\"https://github.com/web-flow\",\"followers_url\":\"https://api.github.com/users/web-flow/followers\",\"following_url\":\"https://api.github.com/users/web-flow/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/web-flow/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/web-flow/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/web-flow/subscriptions\",\"organizations_url\":\"https://api.github.com/users/web-flow/orgs\",\"repos_url\":\"https://api.github.com/users/web-flow/repos\",\"events_url\":\"https://api.github.com/users/web-flow/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/web-flow/received_events\",\"type\":\"User\",\"site_admin\":false},\"parents\":[{\"sha\":\"be7f0f51b73b1966254db4aac65b656daa36e2fb\",\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/be7f0f51b73b1966254db4aac65b656daa36e2fb\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/be7f0f51b73b1966254db4aac65b656daa36e2fb\"}],\"stats\":{\"total\":10551,\"additions\":5897,\"deletions\":4654},\"files\":[{\"sha\":\"a841a98899df57f8c08e615e6ca2b7017c85d8ba\",\"filename\":\"internal/cmd/tracking-issue/api.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/api.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/api.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/api.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -58,7 +58,7 @@ func makeQueries(org string, trackingIssues []*Issue) (queries
+      []string) {\\n \\tvar rawTerms [][]string\\n \\tfor _, trackingIssue := range
+      trackingIssues {\\n \\t\\tvar labelTerms []string\\n-\\t\\tfor _, label := range
+      nonTrackingLabels(trackingIssue.Labels) {\\n+\\t\\tfor _, label := range trackingIssue.IdentifyingLabels()
+      {\\n \\t\\t\\tlabelTerms = append(labelTerms, fmt.Sprintf(\\\"label:%q\\\",
+      label))\\n \\t\\t}\\n \"},{\"sha\":\"1f42ca389f954c1c5573f7cf5ad9ca33ae8b40e6\",\"filename\":\"internal/cmd/tracking-issue/context.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/context.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/context.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/context.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -77,7 +77,7 @@ func matchingTrackingIssues(trackingIssue *Issue, issues []*Issue,
+      pullRequests\\n \\t\\tvar top *Issue\\n \\t\\ttop, stack = stack[0], stack[1:]\\n
+      \\n-\\t\\tif len(top.Labels) != 2 || !strings.HasPrefix(nonTrackingLabels(top.Labels)[0],
+      \\\"team/\\\") {\\n+\\t\\tif len(top.Labels) != 2 || !strings.HasPrefix(top.IdentifyingLabels()[0],
+      \\\"team/\\\") {\\n \\t\\t\\tmatchingTrackingIssues = append(matchingTrackingIssues,
+      top)\\n \\t\\t}\\n \"},{\"sha\":\"c0731a8de1b05b4bf613e1692e936d707c6c0216\",\"filename\":\"internal/cmd/tracking-issue/issue.go\",\"status\":\"modified\",\"additions\":33,\"deletions\":0,\"changes\":33,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/issue.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/issue.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/issue.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -1,7 +1,9 @@\\n package main\\n \\n import (\\n+\\t\\\"regexp\\\"\\n \\t\\\"strings\\\"\\n+\\t\\\"sync\\\"\\n
+      \\t\\\"time\\\"\\n )\\n \\n@@ -27,12 +29,43 @@ type Issue struct {\\n \\tTrackedIssues
+      \      []*Issue       `json:\\\"-\\\"`\\n \\tTrackedPullRequests []*PullRequest
+      `json:\\\"-\\\"`\\n \\tLinkedPullRequests  []*PullRequest `json:\\\"-\\\"`\\n+\\n+\\t//
+      Populate and get with .IdentifyingLabels()\\n+\\tidentifyingLabels     []string\\n+\\tidentifyingLabelsOnce
+      sync.Once\\n }\\n \\n func (issue *Issue) Closed() bool {\\n \\treturn strings.EqualFold(issue.State,
+      \\\"closed\\\")\\n }\\n \\n+var optionalLabelMatcher = regexp.MustCompile(optionalLabelMarkerRegexp)\\n+\\n+func
+      (issue *Issue) IdentifyingLabels() []string {\\n+\\tissue.identifyingLabelsOnce.Do(func()
+      {\\n+\\t\\tissue.identifyingLabels = nil\\n+\\n+\\t\\t// Parse out optional
+      labels\\n+\\t\\toptionalLabels := map[string]struct{}{}\\n+\\t\\tlines := strings.Split(issue.Body,
+      \\\"\\\\n\\\")\\n+\\t\\tfor _, line := range lines {\\n+\\t\\t\\tmatches :=
+      optionalLabelMatcher.FindStringSubmatch(line)\\n+\\t\\t\\tif matches != nil
+      {\\n+\\t\\t\\t\\toptionalLabels[matches[1]] = struct{}{}\\n+\\t\\t\\t}\\n+\\t\\t}\\n+\\n+\\t\\t//
+      Get non-optional and non-tracking labels\\n+\\t\\tfor _, label := range issue.Labels
+      {\\n+\\t\\t\\tif _, optional := optionalLabels[label]; !optional && label !=
+      \\\"tracking\\\" {\\n+\\t\\t\\t\\tissue.identifyingLabels = append(issue.identifyingLabels,
+      label)\\n+\\t\\t\\t}\\n+\\t\\t}\\n+\\t})\\n+\\n+\\treturn issue.identifyingLabels\\n+}\\n+\\n
+      func (issue *Issue) SafeTitle() string {\\n \\tif issue.Private {\\n \\t\\treturn
+      issue.Repository\"},{\"sha\":\"ee6c86124518a14f3aec3ee8ebe9cee62a88290b\",\"filename\":\"internal/cmd/tracking-issue/labels.go\",\"status\":\"modified\",\"additions\":0,\"deletions\":10,\"changes\":10,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/labels.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/labels.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/labels.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -12,16 +12,6 @@ func contains(haystack []string, needle string) bool {\\n \\treturn
+      false\\n }\\n \\n-func nonTrackingLabels(labels []string) (filtered []string)
+      {\\n-\\tfor _, label := range labels {\\n-\\t\\tif label != \\\"tracking\\\"
+      {\\n-\\t\\t\\tfiltered = append(filtered, label)\\n-\\t\\t}\\n-\\t}\\n-\\n-\\treturn
+      filtered\\n-}\\n-\\n func redactLabels(labels []string) (redacted []string)
+      {\\n \\tfor _, label := range labels {\\n \\t\\tif strings.HasPrefix(label,
+      \\\"estimate/\\\") || strings.HasPrefix(label, \\\"planned/\\\") {\"},{\"sha\":\"01c786ae4d33e637bab48f1c10048c4dce7ab763\",\"filename\":\"internal/cmd/tracking-issue/main.go\",\"status\":\"modified\",\"additions\":5,\"deletions\":4,\"changes\":9,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/main.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/main.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/main.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -15,10 +15,11 @@ import (\\n )\\n \\n const (\\n-\\tbeginWorkMarker        =
+      \\\"<!-- BEGIN WORK -->\\\"\\n-\\tendWorkMarker          = \\\"<!-- END WORK
+      -->\\\"\\n-\\tbeginAssigneeMarkerFmt = \\\"<!-- BEGIN ASSIGNEE: %s -->\\\"\\n-\\tendAssigneeMarker
+      \     = \\\"<!-- END ASSIGNEE -->\\\"\\n+\\tbeginWorkMarker           = \\\"<!--
+      BEGIN WORK -->\\\"\\n+\\tendWorkMarker             = \\\"<!-- END WORK -->\\\"\\n+\\tbeginAssigneeMarkerFmt
+      \   = \\\"<!-- BEGIN ASSIGNEE: %s -->\\\"\\n+\\tendAssigneeMarker         =
+      \\\"<!-- END ASSIGNEE -->\\\"\\n+\\toptionalLabelMarkerRegexp = \\\"<!-- OPTIONAL
+      LABEL: (.*) -->\\\"\\n )\\n \\n func main() {\"},{\"sha\":\"4541ff49d21a31719285a37820b51d5bafed3578\",\"filename\":\"internal/cmd/tracking-issue/main_test.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":0,\"changes\":1,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/main_test.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/main_test.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/main_test.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -25,6 +25,7 @@ var (\\n \\t\\t13987, // Code Intelligence 3.21 Tracking issue\\n
+      \\t\\t13988, // Cloud 2020-09-23 Tracking issue\\n \\t\\t14166, // RFC-214:
+      Tracking issue\\n+\\t\\t25768, // RFC 496: Continuous integration observability\\n
+      \\t}\\n )\\n \"},{\"sha\":\"271ab32f1fe7494d35cfc8c6468e3a1b41d4cde9\",\"filename\":\"internal/cmd/tracking-issue/render.go\",\"status\":\"modified\",\"additions\":2,\"deletions\":2,\"changes\":4,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/render.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/render.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/render.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -11,7 +11,7 @@ import (\\n // RenderTrackingIssue renders the work section of
+      the given tracking issue.\\n func RenderTrackingIssue(context IssueContext)
+      string {\\n \\tassignees := findAssignees(context.Match(NewMatcher(\\n-\\t\\tnonTrackingLabels(context.trackingIssue.Labels),\\n+\\t\\tcontext.trackingIssue.IdentifyingLabels(),\\n
+      \\t\\tcontext.trackingIssue.Milestone,\\n \\t\\t\\\"\\\",\\n \\t\\tfalse,\\n@@
+      -21,7 +21,7 @@ func RenderTrackingIssue(context IssueContext) string {\\n \\n
+      \\tfor _, assignee := range assignees {\\n \\t\\tassigneeContext := context.Match(NewMatcher(\\n-\\t\\t\\tnonTrackingLabels(context.trackingIssue.Labels),\\n+\\t\\t\\tcontext.trackingIssue.IdentifyingLabels(),\\n
+      \\t\\t\\tcontext.trackingIssue.Milestone,\\n \\t\\t\\tassignee,\\n \\t\\t\\tassignee
+      == \\\"\\\",\"},{\"sha\":\"2f8c3f7df1d7519fadfad0741eb39fd9875ee832\",\"filename\":\"internal/cmd/tracking-issue/resolve.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/resolve.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/resolve.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/resolve.go?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -44,7 +44,7 @@ func linkPullRequestsAndIssues(trackingIssues, issues []*Issue,
+      pullRequests []*\\n func linkTrackingIssues(trackingIssues, issues []*Issue,
+      pullRequests []*PullRequest) {\\n \\tfor _, trackingIssue := range trackingIssues
+      {\\n \\t\\tmatcher := NewMatcher(\\n-\\t\\t\\tnonTrackingLabels(trackingIssue.Labels),\\n+\\t\\t\\ttrackingIssue.IdentifyingLabels(),\\n
+      \\t\\t\\ttrackingIssue.Milestone,\\n \\t\\t\\t\\\"\\\",\\n \\t\\t\\tfalse,\"},{\"sha\":\"25b56f3b646ce1bec2b037521507543e4823b683\",\"filename\":\"internal/cmd/tracking-issue/testdata/fixtures.json\",\"status\":\"modified\",\"additions\":5721,\"deletions\":4511,\"changes\":10232,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/fixtures.json\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/fixtures.json\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/fixtures.json?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\"},{\"sha\":\"9f0022de17d8a6719791a2a59271d618c892da93\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-13675.md\",\"status\":\"modified\",\"additions\":48,\"deletions\":48,\"changes\":96,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13675.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13675.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-13675.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -45,103 +45,103 @@ Period is from **September 20th** to **October 19th (21 working
+      days)**. Please\\n \\n \\n Completed: __5.00d__\\n-- [x] (\U0001F3C1 605 days
+      ago) https://github.com/sourcegraph/sourcegraph/issues/9253  __5.00d__\\n--
+      [x] (\U0001F3C1 605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __5.00d__\\n-- [x] (\U0001F3C1 406 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __5.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 300 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __5.00d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \ __5.00d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __5.00d__\\n+- [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __5.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 304 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __5.00d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: bobheadxi -->\\n
+      @bobheadxi: __8.50d__\\n \\n \\n Completed: __8.50d__\\n-- [x] (\U0001F3C1 605
+      days ago) https://github.com/sourcegraph/sourcegraph/issues/9253  __8.50d__\\n--
+      [x] (\U0001F3C1 605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __8.50d__\\n-- [x] (\U0001F3C1 437 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+      \ __1.00d__   \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n--
+      [x] (\U0001F3C1 406 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __8.50d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 300 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __8.50d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \ __8.50d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __8.50d__\\n+- [x] (\U0001F3C1 441 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+      \ __1.00d__   \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n+-
+      [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __8.50d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 304 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __8.50d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: davejrt -->\\n
+      @davejrt\\n \\n \\n Completed\\n-- [x] (\U0001F3C1 605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \\n-- [x] (\U0001F3C1 605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \\n-- [x] (\U0001F3C1 465 days ago) https://github.com/sourcegraph/sourcegraph/issues/11954
+         \U0001F3F3️ [3.19](https://github.com/sourcegraph/sourcegraph/milestone/44)\\n--
+      [x] (\U0001F3C1 437 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+         \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n--
+      [x] (\U0001F3C1 406 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 394 days ago) https://github.com/sourcegraph/sourcegraph/issues/14408
+         \U0001F3F3️ [Dist: 2020.10.20](https://github.com/sourcegraph/sourcegraph/milestone/56)\\n--
+      [x] (\U0001F3C1 300 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \\n+- [x] (\U0001F3C1 468 days ago) https://github.com/sourcegraph/sourcegraph/issues/11954
+         \U0001F3F3️ [3.19](https://github.com/sourcegraph/sourcegraph/milestone/44)\\n+-
+      [x] (\U0001F3C1 441 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+         \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n+-
+      [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 398 days ago) https://github.com/sourcegraph/sourcegraph/issues/14408
+         \U0001F3F3️ [Dist: 2020.10.20](https://github.com/sourcegraph/sourcegraph/milestone/56)\\n+-
+      [x] (\U0001F3C1 304 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: daxmc99 -->\\n @daxmc99:
+      __1.00d__\\n \\n \\n Completed: __1.00d__\\n-- [x] (\U0001F3C1 605 days ago)
+      https://github.com/sourcegraph/sourcegraph/issues/9253  __1.00d__\\n-- [x] (\U0001F3C1
+      605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250  __1.00d__\\n--
+      [x] (\U0001F3C1 406 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __1.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 394 days ago) https://github.com/sourcegraph/sourcegraph/issues/14408
+      \ __1.00d__   \U0001F3F3️ [Dist: 2020.10.20](https://github.com/sourcegraph/sourcegraph/milestone/56)\\n--
+      [x] (\U0001F3C1 367 days ago) https://github.com/sourcegraph/sourcegraph/issues/15710
+      \ __1.00d__   \U0001F3F3️ [Dist: 2020.11.16](https://github.com/sourcegraph/sourcegraph/milestone/61)\\n--
+      [x] (\U0001F3C1 300 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __1.00d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \ __1.00d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __1.00d__\\n+- [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __1.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 398 days ago) https://github.com/sourcegraph/sourcegraph/issues/14408
+      \ __1.00d__   \U0001F3F3️ [Dist: 2020.10.20](https://github.com/sourcegraph/sourcegraph/milestone/56)\\n+-
+      [x] (\U0001F3C1 371 days ago) https://github.com/sourcegraph/sourcegraph/issues/15710
+      \ __1.00d__   \U0001F3F3️ [Dist: 2020.11.16](https://github.com/sourcegraph/sourcegraph/milestone/61)\\n+-
+      [x] (\U0001F3C1 304 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __1.00d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: ggilmore -->\\n
+      @ggilmore\\n \\n \\n Completed\\n-- [x] (\U0001F3C1 605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \\n-- [x] (\U0001F3C1 605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \\n-- [x] (\U0001F3C1 437 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+         \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n--
+      [x] (\U0001F3C1 406 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 394 days ago) https://github.com/sourcegraph/sourcegraph/issues/14408
+         \U0001F3F3️ [Dist: 2020.10.20](https://github.com/sourcegraph/sourcegraph/milestone/56)\\n--
+      [x] (\U0001F3C1 367 days ago) https://github.com/sourcegraph/sourcegraph/issues/15710
+         \U0001F3F3️ [Dist: 2020.11.16](https://github.com/sourcegraph/sourcegraph/milestone/61)\\n--
+      [x] (\U0001F3C1 300 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \\n+- [x] (\U0001F3C1 441 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+         \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n+-
+      [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 398 days ago) https://github.com/sourcegraph/sourcegraph/issues/14408
+         \U0001F3F3️ [Dist: 2020.10.20](https://github.com/sourcegraph/sourcegraph/milestone/56)\\n+-
+      [x] (\U0001F3C1 371 days ago) https://github.com/sourcegraph/sourcegraph/issues/15710
+         \U0001F3F3️ [Dist: 2020.11.16](https://github.com/sourcegraph/sourcegraph/milestone/61)\\n+-
+      [x] (\U0001F3C1 304 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: pecigonzalo -->\\n @pecigonzalo:
+      __15.00d__\\n \\n \\n Completed: __15.00d__\\n-- [x] (\U0001F3C1 605 days ago)
+      https://github.com/sourcegraph/sourcegraph/issues/9253  __15.00d__\\n-- [x]
+      (\U0001F3C1 605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __15.00d__\\n-- [x] (\U0001F3C1 437 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+      \ __1.00d__   \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n--
+      [x] (\U0001F3C1 406 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __15.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 394 days ago) https://github.com/sourcegraph/sourcegraph/issues/14408
+         \U0001F3F3️ [Dist: 2020.10.20](https://github.com/sourcegraph/sourcegraph/milestone/56)\\n--
+      [x] (\U0001F3C1 300 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __15.00d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \ __15.00d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __15.00d__\\n+- [x] (\U0001F3C1 441 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+      \ __1.00d__   \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n+-
+      [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __15.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 398 days ago) https://github.com/sourcegraph/sourcegraph/issues/14408
+         \U0001F3F3️ [Dist: 2020.10.20](https://github.com/sourcegraph/sourcegraph/milestone/56)\\n+-
+      [x] (\U0001F3C1 304 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __15.00d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: slimsag -->\\n
+      @slimsag: __14.50d__\\n \\n \\n Completed: __14.50d__\\n-- [x] (\U0001F3C1 605
+      days ago) https://github.com/sourcegraph/sourcegraph/issues/9253  __14.50d__\\n--
+      [x] (\U0001F3C1 605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __14.50d__\\n-- [x] (\U0001F3C1 465 days ago) https://github.com/sourcegraph/sourcegraph/issues/11954
+         \U0001F3F3️ [3.19](https://github.com/sourcegraph/sourcegraph/milestone/44)\\n--
+      [x] (\U0001F3C1 437 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+      \ __1.00d__   \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n--
+      [x] (\U0001F3C1 406 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __14.50d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 300 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __14.50d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \ __14.50d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __14.50d__\\n+- [x] (\U0001F3C1 468 days ago) https://github.com/sourcegraph/sourcegraph/issues/11954
+         \U0001F3F3️ [3.19](https://github.com/sourcegraph/sourcegraph/milestone/44)\\n+-
+      [x] (\U0001F3C1 441 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+      \ __1.00d__   \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n+-
+      [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __14.50d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 304 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __14.50d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: uwedeportivo
+      -->\\n @uwedeportivo: __7.00d__\\n \\n \\n Completed: __7.00d__\\n-- [x] (\U0001F3C1
+      605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253  __7.00d__\\n--
+      [x] (\U0001F3C1 605 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __7.00d__\\n-- [x] (\U0001F3C1 437 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+      \ __1.00d__   \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n--
+      [x] (\U0001F3C1 406 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __7.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 381 days ago) https://github.com/sourcegraph/sourcegraph/issues/14630
+      \ __4.00d__   \U0001F3F3️ [Dist: 2020.11.03](https://github.com/sourcegraph/sourcegraph/milestone/55)\\n--
+      [x] (\U0001F3C1 354 days ago) https://github.com/sourcegraph/sourcegraph/issues/16087
+      \ __4.00d__   \U0001F3F3️ [Dist: 2020.11.30](https://github.com/sourcegraph/sourcegraph/milestone/67)\\n--
+      [x] (\U0001F3C1 300 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __7.00d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9253
+      \ __7.00d__\\n+- [x] (\U0001F3C1 609 days ago) https://github.com/sourcegraph/sourcegraph/issues/9250
+      \ __7.00d__\\n+- [x] (\U0001F3C1 441 days ago) https://github.com/sourcegraph/sourcegraph/issues/12836
+      \ __1.00d__   \U0001F3F3️ [3.20](https://github.com/sourcegraph/sourcegraph/milestone/45)\\n+-
+      [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/sourcegraph/issues/13675
+      \ __7.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 385 days ago) https://github.com/sourcegraph/sourcegraph/issues/14630
+      \ __4.00d__   \U0001F3F3️ [Dist: 2020.11.03](https://github.com/sourcegraph/sourcegraph/milestone/55)\\n+-
+      [x] (\U0001F3C1 357 days ago) https://github.com/sourcegraph/sourcegraph/issues/16087
+      \ __4.00d__   \U0001F3F3️ [Dist: 2020.11.30](https://github.com/sourcegraph/sourcegraph/milestone/67)\\n+-
+      [x] (\U0001F3C1 304 days ago) https://github.com/sourcegraph/sourcegraph/issues/17990
+      \ __7.00d__\\n <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\\n \\r\"},{\"sha\":\"6c559a227ad53e621c2ca64e896716152ba8ac3c\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-13987.md\",\"status\":\"modified\",\"additions\":52,\"deletions\":52,\"changes\":104,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13987.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13987.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-13987.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -22,83 +22,83 @@ Period is from 2020-09-20 to 2020-10-20. Please write the days
+      you won't be work\\n @unassigned\\n \\n - [ ] https://github.com/sourcegraph/sourcegraph/issues/26230
+      \\n-  - [x] (\U0001F3C1 188 days ago) https://github.com/sourcegraph/sourcegraph/issues/12501
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+
+      \ - [x] (\U0001F3C1 192 days ago) https://github.com/sourcegraph/sourcegraph/issues/12501
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n
+      \\n Completed\\n-- [x] (\U0001F3C1 415 days ago) https://github.com/sourcegraph/sourcegraph/issues/14608
+      (PRs: ~[#14637](https://github.com/sourcegraph/sourcegraph/pull/14637)~) \U0001F9F6  
+      \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 188 days ago) https://github.com/sourcegraph/sourcegraph/issues/12501
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 419 days ago) https://github.com/sourcegraph/sourcegraph/issues/14608
+      (PRs: ~[#14637](https://github.com/sourcegraph/sourcegraph/pull/14637)~) \U0001F9F6  
+      \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 192 days ago) https://github.com/sourcegraph/sourcegraph/issues/12501
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n
+      <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: Strum355 -->\\n @Strum355\\n
+      \\n \\n Completed\\n-- [x] (\U0001F3C1 435 days ago) https://github.com/sourcegraph/sourcegraph/issues/14057
+      \ \U0001F575️   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 416 days ago) https://github.com/sourcegraph/sourcegraph/issues/14486
+      (PRs: ~[#14581](https://github.com/sourcegraph/sourcegraph/pull/14581)~)   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 199 days ago) https://github.com/sourcegraph/sourcegraph/issues/3418
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 439 days ago) https://github.com/sourcegraph/sourcegraph/issues/14057
+      \ \U0001F575️   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 420 days ago) https://github.com/sourcegraph/sourcegraph/issues/14486
+      (PRs: ~[#14581](https://github.com/sourcegraph/sourcegraph/pull/14581)~)   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 203 days ago) https://github.com/sourcegraph/sourcegraph/issues/3418
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n
+      <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: aidaeology -->\\n @aidaeology:
+      __1.00d__\\n \\n - [ ] https://github.com/sourcegraph/sourcegraph/issues/26230
+      \ __0.50d__\\n-  - [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/issues/14224
+      \ __0.50d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+
+      \ - [x] (\U0001F3C1 435 days ago) https://github.com/sourcegraph/sourcegraph/issues/14224
+      \ __0.50d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n
+      \\n Completed: __1.00d__\\n-- [x] (\U0001F3C1 435 days ago) https://github.com/sourcegraph/about/pull/1628
+      \\n-- [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/issues/14224
+      \ __0.50d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 412 days ago) https://github.com/sourcegraph/sourcegraph/issues/13200
+      \ __0.50d__ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 184 days ago) https://github.com/sourcegraph/sourcegraph/pull/14257
+      \U0001F9F6\\n+- [x] (\U0001F3C1 439 days ago) https://github.com/sourcegraph/about/pull/1628
+      \\n+- [x] (\U0001F3C1 435 days ago) https://github.com/sourcegraph/sourcegraph/issues/14224
+      \ __0.50d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 416 days ago) https://github.com/sourcegraph/sourcegraph/issues/13200
+      \ __0.50d__ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 187 days ago) https://github.com/sourcegraph/sourcegraph/pull/14257
+      \U0001F9F6\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: beyang -->\\n
+      @beyang: __4.00d__\\n \\n - [ ] https://github.com/sourcegraph/sourcegraph/issues/26230
+      \\n-  - [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/pull/14211
+      \\n+  - [x] (\U0001F3C1 435 days ago) https://github.com/sourcegraph/sourcegraph/pull/14211
+      \\n \\n Completed: __4.00d__\\n-- [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/pull/14211
+      \\n-- [x] (\U0001F3C1 234 days ago) https://github.com/sourcegraph/sourcegraph/issues/12349
+      \ __4.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 435 days ago) https://github.com/sourcegraph/sourcegraph/pull/14211
+      \\n+- [x] (\U0001F3C1 238 days ago) https://github.com/sourcegraph/sourcegraph/issues/12349
+      \ __4.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n
+      <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: efritz -->\\n @efritz: __6.00d__\\n
+      \\n \\n Completed: __6.00d__\\n-- [x] (\U0001F3C1 437 days ago) https://github.com/sourcegraph/sourcegraph/issues/12930
+      \ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 437 days ago) https://github.com/sourcegraph/sourcegraph/issues/13957
+      (PRs: ~[#14005](https://github.com/sourcegraph/sourcegraph/pull/14005)~) __0.50d__  
+      \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 437 days ago) https://github.com/sourcegraph/sourcegraph/issues/14008
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 436 days ago) https://github.com/sourcegraph/sourcegraph/pull/14035
+      \\n-- [x] (\U0001F3C1 435 days ago) https://github.com/sourcegraph/sourcegraph/pull/14060
+      \\n-- [x] (\U0001F3C1 434 days ago) https://github.com/sourcegraph/sourcegraph/issues/14044
+      (PRs: ~[#14061](https://github.com/sourcegraph/sourcegraph/pull/14061)~, ~[#14063](https://github.com/sourcegraph/sourcegraph/pull/14063)~)  
+      \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 434 days ago) https://github.com/sourcegraph/sourcegraph/pull/14124
+      \\n-- [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/sourcegraph/issues/14052
+      (PRs: ~[#14141](https://github.com/sourcegraph/sourcegraph/pull/14141)~) \U0001F41B  
+      \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/sourcegraph/pull/14344
+      \\n-- [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/sourcegraph/pull/14142
+      \\n-- [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/sourcegraph/pull/14353
+      \\n-- [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/sourcegraph/pull/14355
+      \\n-- [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/sourcegraph/pull/14358
+      \\n-- [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/sourcegraph/issues/14264
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 422 days ago) https://github.com/sourcegraph/sourcegraph/pull/14428
+      \\n-- [x] (\U0001F3C1 422 days ago) https://github.com/sourcegraph/sourcegraph/issues/14467
+      (PRs: ~[#14469](https://github.com/sourcegraph/sourcegraph/pull/14469)~)   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 420 days ago) https://github.com/sourcegraph/sourcegraph/pull/14491
+      \\n-- [x] (\U0001F3C1 416 days ago) https://github.com/sourcegraph/sourcegraph/issues/14486
+      (PRs: ~[#14581](https://github.com/sourcegraph/sourcegraph/pull/14581)~)   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 416 days ago) https://github.com/sourcegraph/sourcegraph/pull/14648
+      \\n-- [x] (\U0001F3C1 415 days ago) https://github.com/sourcegraph/sourcegraph/pull/14633
+      \\n-- [x] (\U0001F3C1 415 days ago) https://github.com/sourcegraph/sourcegraph/pull/14637
+      \\n-- [x] (\U0001F3C1 415 days ago) https://github.com/sourcegraph/sourcegraph/pull/14624
+      \\n-- [x] (\U0001F3C1 415 days ago) https://github.com/sourcegraph/sourcegraph/pull/14677
+      \\n-- [x] (\U0001F3C1 414 days ago) https://github.com/sourcegraph/sourcegraph/pull/14695
+      \\n-- [x] (\U0001F3C1 414 days ago) https://github.com/sourcegraph/sourcegraph/pull/14721
+      \\n-- [x] (\U0001F3C1 414 days ago) https://github.com/sourcegraph/sourcegraph/pull/14722
+      \\n-- [x] (\U0001F3C1 414 days ago) https://github.com/sourcegraph/sourcegraph/pull/14733
+      \\n-- [x] (\U0001F3C1 398 days ago) https://github.com/sourcegraph/sourcegraph/pull/14679
+      \\n-- [x] (\U0001F3C1 387 days ago) https://github.com/sourcegraph/sourcegraph/issues/13733
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 379 days ago) https://github.com/sourcegraph/sourcegraph/issues/13891
+      \ __1.00d__\\n-- [x] (\U0001F3C1 307 days ago) https://github.com/sourcegraph/sourcegraph/issues/13882
+      \ __4.50d__\\n+- [x] (\U0001F3C1 441 days ago) https://github.com/sourcegraph/sourcegraph/issues/12930
+      \ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 441 days ago) https://github.com/sourcegraph/sourcegraph/issues/13957
+      (PRs: ~[#14005](https://github.com/sourcegraph/sourcegraph/pull/14005)~) __0.50d__  
+      \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 441 days ago) https://github.com/sourcegraph/sourcegraph/issues/14008
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 440 days ago) https://github.com/sourcegraph/sourcegraph/pull/14035
+      \\n+- [x] (\U0001F3C1 439 days ago) https://github.com/sourcegraph/sourcegraph/pull/14060
+      \\n+- [x] (\U0001F3C1 438 days ago) https://github.com/sourcegraph/sourcegraph/issues/14044
+      (PRs: ~[#14061](https://github.com/sourcegraph/sourcegraph/pull/14061)~, ~[#14063](https://github.com/sourcegraph/sourcegraph/pull/14063)~)  
+      \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 438 days ago) https://github.com/sourcegraph/sourcegraph/pull/14124
+      \\n+- [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/issues/14052
+      (PRs: ~[#14141](https://github.com/sourcegraph/sourcegraph/pull/14141)~) \U0001F41B  
+      \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/pull/14344
+      \\n+- [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/pull/14142
+      \\n+- [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/pull/14353
+      \\n+- [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/pull/14355
+      \\n+- [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/pull/14358
+      \\n+- [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/issues/14264
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 426 days ago) https://github.com/sourcegraph/sourcegraph/pull/14428
+      \\n+- [x] (\U0001F3C1 426 days ago) https://github.com/sourcegraph/sourcegraph/issues/14467
+      (PRs: ~[#14469](https://github.com/sourcegraph/sourcegraph/pull/14469)~)   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 424 days ago) https://github.com/sourcegraph/sourcegraph/pull/14491
+      \\n+- [x] (\U0001F3C1 420 days ago) https://github.com/sourcegraph/sourcegraph/issues/14486
+      (PRs: ~[#14581](https://github.com/sourcegraph/sourcegraph/pull/14581)~)   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 420 days ago) https://github.com/sourcegraph/sourcegraph/pull/14648
+      \\n+- [x] (\U0001F3C1 419 days ago) https://github.com/sourcegraph/sourcegraph/pull/14633
+      \\n+- [x] (\U0001F3C1 419 days ago) https://github.com/sourcegraph/sourcegraph/pull/14637
+      \\n+- [x] (\U0001F3C1 419 days ago) https://github.com/sourcegraph/sourcegraph/pull/14624
+      \\n+- [x] (\U0001F3C1 419 days ago) https://github.com/sourcegraph/sourcegraph/pull/14677
+      \\n+- [x] (\U0001F3C1 418 days ago) https://github.com/sourcegraph/sourcegraph/pull/14695
+      \\n+- [x] (\U0001F3C1 418 days ago) https://github.com/sourcegraph/sourcegraph/pull/14721
+      \\n+- [x] (\U0001F3C1 418 days ago) https://github.com/sourcegraph/sourcegraph/pull/14722
+      \\n+- [x] (\U0001F3C1 418 days ago) https://github.com/sourcegraph/sourcegraph/pull/14733
+      \\n+- [x] (\U0001F3C1 402 days ago) https://github.com/sourcegraph/sourcegraph/pull/14679
+      \\n+- [x] (\U0001F3C1 391 days ago) https://github.com/sourcegraph/sourcegraph/issues/13733
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 383 days ago) https://github.com/sourcegraph/sourcegraph/issues/13891
+      \ __1.00d__\\n+- [x] (\U0001F3C1 311 days ago) https://github.com/sourcegraph/sourcegraph/issues/13882
+      \ __4.50d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: macraig -->\\n@@
+      -107,20 +107,20 @@ Completed: __6.00d__\\n - [ ] ~https://github.com/sourcegraph/sourcegraph/issues/13015~
+         \U0001F3F3️ [Backlog](https://github.com/sourcegraph/sourcegraph/milestone/5)\\n
+      \\n Completed: __0.50d__\\n-- [x] (\U0001F3C1 422 days ago) https://github.com/sourcegraph/sourcegraph/issues/14348
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 412 days ago) https://github.com/sourcegraph/sourcegraph/issues/13200
+      \ __0.50d__ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 426 days ago) https://github.com/sourcegraph/sourcegraph/issues/14348
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 416 days ago) https://github.com/sourcegraph/sourcegraph/issues/13200
+      \ __0.50d__ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n
+      <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: shrouxm -->\\n @shrouxm: __5.00d__\\n
+      \\n \\n Completed: __5.00d__\\n-- [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/lsif-clang/issues/15
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/lsif-clang/milestone/4)\\n--
+      [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/lsif-clang/issues/3
+      \ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/lsif-clang/milestone/4)\\n--
+      [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/sourcegraph/issues/13202
+      \ __1.00d__ \U0001F575️   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n--
+      [x] (\U0001F3C1 409 days ago) https://github.com/sourcegraph/lsif-clang/issues/13
+      \ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/lsif-clang/milestone/4)\\n--
+      [x] (\U0001F3C1 234 days ago) https://github.com/sourcegraph/sourcegraph/issues/12349
+      \ __4.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/lsif-clang/issues/15
+         \U0001F3F3️ [3.21](https://github.com/sourcegraph/lsif-clang/milestone/4)\\n+-
+      [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/lsif-clang/issues/3
+      \ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/lsif-clang/milestone/4)\\n+-
+      [x] (\U0001F3C1 413 days ago) https://github.com/sourcegraph/sourcegraph/issues/13202
+      \ __1.00d__ \U0001F575️   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n+-
+      [x] (\U0001F3C1 413 days ago) https://github.com/sourcegraph/lsif-clang/issues/13
+      \ \U0001F41B   \U0001F3F3️ [3.21](https://github.com/sourcegraph/lsif-clang/milestone/4)\\n+-
+      [x] (\U0001F3C1 238 days ago) https://github.com/sourcegraph/sourcegraph/issues/12349
+      \ __4.00d__   \U0001F3F3️ [3.21](https://github.com/sourcegraph/sourcegraph/milestone/46)\\n
+      <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\\n \\r\"},{\"sha\":\"76332db5be22695c723fd8ac8ca038151dc12e74\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-13988.md\",\"status\":\"modified\",\"additions\":18,\"deletions\":18,\"changes\":36,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13988.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-13988.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-13988.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -34,59 +34,59 @@ If you have planned unavailability this iteration (e.g., vacation),
+      you can note\\n \\n \\n Completed: __7.00d__\\n-- [x] (\U0001F3C1 435 days ago)
+      https://github.com/sourcegraph/sourcegraph/issues/13401 (PRs: ~[#14094](https://github.com/sourcegraph/sourcegraph/pull/14094)~)
+      __0.50d__ \U0001F9F6   \U0001F3F3️ [Cloud 2020-09-23](https://github.com/sourcegraph/sourcegraph/milestone/50)\\n--
+      [x] (\U0001F3C1 428 days ago) https://github.com/sourcegraph/sourcegraph/pull/14098
+      \\n-- [x] (\U0001F3C1 394 days ago) https://github.com/sourcegraph/sourcegraph/issues/14163
+      \ __6.50d__\\n+- [x] (\U0001F3C1 439 days ago) https://github.com/sourcegraph/sourcegraph/issues/13401
+      (PRs: ~[#14094](https://github.com/sourcegraph/sourcegraph/pull/14094)~) __0.50d__
+      \U0001F9F6   \U0001F3F3️ [Cloud 2020-09-23](https://github.com/sourcegraph/sourcegraph/milestone/50)\\n+-
+      [x] (\U0001F3C1 432 days ago) https://github.com/sourcegraph/sourcegraph/pull/14098
+      \\n+- [x] (\U0001F3C1 398 days ago) https://github.com/sourcegraph/sourcegraph/issues/14163
+      \ __6.50d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: daxmc99 -->\\n
+      @daxmc99: __1.00d__\\n \\n \\n Completed: __1.00d__\\n-- [x] (\U0001F3C1 281
+      days ago) https://github.com/sourcegraph/sourcegraph/issues/14166  __1.00d__\\n+-
+      [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __1.00d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: flying-robot
+      -->\\n @flying-robot: __3.00d__\\n \\n \\n Completed: __3.00d__\\n-- [x] (\U0001F3C1
+      423 days ago) https://github.com/sourcegraph/sourcegraph/issues/13956 (PRs:
+      ~[#14370](https://github.com/sourcegraph/sourcegraph/pull/14370)~) __2.00d__  
+      \U0001F3F3️ [Cloud 2020-09-23](https://github.com/sourcegraph/sourcegraph/milestone/50)\\n--
+      [x] (\U0001F3C1 281 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __1.00d__\\n+- [x] (\U0001F3C1 427 days ago) https://github.com/sourcegraph/sourcegraph/issues/13956
+      (PRs: ~[#14370](https://github.com/sourcegraph/sourcegraph/pull/14370)~) __2.00d__  
+      \U0001F3F3️ [Cloud 2020-09-23](https://github.com/sourcegraph/sourcegraph/milestone/50)\\n+-
+      [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __1.00d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: ryanslade -->\\n
+      @ryanslade: __7.50d__\\n \\n \\n Completed: __7.50d__\\n-- [x] (\U0001F3C1 435
+      days ago) https://github.com/sourcegraph/sourcegraph/pull/14095 \\n-- [x] (\U0001F3C1
+      428 days ago) https://github.com/sourcegraph/sourcegraph/pull/14305 \\n-- [x]
+      (\U0001F3C1 428 days ago) https://github.com/sourcegraph/sourcegraph/pull/14334
+      \\n-- [x] (\U0001F3C1 426 days ago) https://github.com/sourcegraph/sourcegraph/pull/14372
+      \\n-- [x] (\U0001F3C1 426 days ago) https://github.com/sourcegraph/sourcegraph/pull/14375
+      \\n-- [x] (\U0001F3C1 423 days ago) https://github.com/sourcegraph/sourcegraph/pull/14376
+      \\n-- [x] (\U0001F3C1 422 days ago) https://github.com/sourcegraph/sourcegraph/pull/14436
+      \\n-- [x] (\U0001F3C1 394 days ago) https://github.com/sourcegraph/sourcegraph/issues/14163
+      \ __6.50d__\\n-- [x] (\U0001F3C1 281 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __1.00d__\\n+- [x] (\U0001F3C1 439 days ago) https://github.com/sourcegraph/sourcegraph/pull/14095
+      \\n+- [x] (\U0001F3C1 432 days ago) https://github.com/sourcegraph/sourcegraph/pull/14305
+      \\n+- [x] (\U0001F3C1 431 days ago) https://github.com/sourcegraph/sourcegraph/pull/14334
+      \\n+- [x] (\U0001F3C1 430 days ago) https://github.com/sourcegraph/sourcegraph/pull/14372
+      \\n+- [x] (\U0001F3C1 430 days ago) https://github.com/sourcegraph/sourcegraph/pull/14375
+      \\n+- [x] (\U0001F3C1 426 days ago) https://github.com/sourcegraph/sourcegraph/pull/14376
+      \\n+- [x] (\U0001F3C1 426 days ago) https://github.com/sourcegraph/sourcegraph/pull/14436
+      \\n+- [x] (\U0001F3C1 398 days ago) https://github.com/sourcegraph/sourcegraph/issues/14163
+      \ __6.50d__\\n+- [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __1.00d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: tsenart -->\\n
+      @tsenart\\n \\n \\n Completed\\n-- [x] (\U0001F3C1 426 days ago) https://github.com/sourcegraph/sourcegraph/pull/14373
+      \U0001F41B\\n+- [x] (\U0001F3C1 430 days ago) https://github.com/sourcegraph/sourcegraph/pull/14373
+      \U0001F41B\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: unknwon -->\\n
+      @unknwon: __2.00d__\\n \\n \\n Completed: __2.00d__\\n-- [x] (\U0001F3C1 434
+      days ago) https://github.com/sourcegraph/sourcegraph/issues/14046  __0.50d__  
+      \U0001F3F3️ [Cloud 2020-09-23](https://github.com/sourcegraph/sourcegraph/milestone/50)\\n--
+      [x] (\U0001F3C1 281 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __1.50d__\\n+- [x] (\U0001F3C1 438 days ago) https://github.com/sourcegraph/sourcegraph/issues/14046
+      \ __0.50d__   \U0001F3F3️ [Cloud 2020-09-23](https://github.com/sourcegraph/sourcegraph/milestone/50)\\n+-
+      [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __1.50d__\\n <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\\n \\r\"},{\"sha\":\"d3d4a901a5468ede99eac25effe2cc7062a7f027\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-14166.md\",\"status\":\"modified\",\"additions\":5,\"deletions\":5,\"changes\":10,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-14166.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-14166.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-14166.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -10,38 +10,38 @@ RFC-214: https://docs.google.com/document/d/1ajVQ11Vyi0Wz67DN15W3girJ5kyB5Zb7vk0\\n
+      \\n \\n Completed\\n-- [x] (\U0001F3C1 281 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \\n+- [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: daxmc99 -->\\n @daxmc99:
+      __9.00d__\\n \\n \\n Completed: __9.00d__\\n-- [x] (\U0001F3C1 281 days ago)
+      https://github.com/sourcegraph/sourcegraph/issues/14166  __9.00d__\\n+- [x]
+      (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __9.00d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: flying-robot
+      -->\\n @flying-robot: __1.00d__\\n \\n \\n Completed: __1.00d__\\n-- [x] (\U0001F3C1
+      281 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166  __1.00d__\\n+-
+      [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __1.00d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: ryanslade -->\\n
+      @ryanslade: __1.00d__\\n \\n \\n Completed: __1.00d__\\n-- [x] (\U0001F3C1 281
+      days ago) https://github.com/sourcegraph/sourcegraph/issues/14166  __1.00d__\\n+-
+      [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __1.00d__\\n <!-- END ASSIGNEE -->\\n \\n <!-- BEGIN ASSIGNEE: unknwon -->\\n
+      @unknwon: __6.50d__\\n \\n \\n Completed: __6.50d__\\n-- [x] (\U0001F3C1 281
+      days ago) https://github.com/sourcegraph/sourcegraph/issues/14166  __6.50d__\\n+-
+      [x] (\U0001F3C1 285 days ago) https://github.com/sourcegraph/sourcegraph/issues/14166
+      \ __6.50d__\\n <!-- END ASSIGNEE -->\\n <!-- END WORK -->\\r\"},{\"sha\":\"a009ac013ead09aebf6caa07ecb0704946cceca2\",\"filename\":\"internal/cmd/tracking-issue/testdata/issue-25768.md\",\"status\":\"added\",\"additions\":8,\"deletions\":0,\"changes\":8,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-25768.md\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/issue-25768.md\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/issue-25768.md?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -0,0 +1,8 @@\\n+This is a tracking issue for [RFC 496](https://docs.google.com/document/d/1fknr3NQGmwbKCfnF3Bcr-tYzV-TeuAGq-_Tm2-z_09M/edit#),
+      a sub-RFC of #25348 \\r\\n+\\r\\n+<!-- OPTIONAL LABEL: okr/ci-stability -->\\r\\n+\\r\\n+###
+      Tracked issues\\r\\n+\\r\\n+<!-- BEGIN WORK -->\\n+<!-- END WORK -->\\n\\\\
+      No newline at end of file\"},{\"sha\":\"ab60e8cf430ae1807d45c02b7c7fe020ae854369\",\"filename\":\"internal/cmd/tracking-issue/testdata/last-update.txt\",\"status\":\"modified\",\"additions\":1,\"deletions\":1,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/last-update.txt\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/fac6d4973acad43fcd2f7579a3b496cd92619172/internal/cmd/tracking-issue/testdata/last-update.txt\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/cmd/tracking-issue/testdata/last-update.txt?ref=fac6d4973acad43fcd2f7579a3b496cd92619172\",\"patch\":\"@@
+      -1 +1 @@\\n-2021-12-03T11:23:08Z\\n\\\\ No newline at end of file\\n+2021-12-07T06:57:42Z\\n\\\\
+      No newline at end of file\"}]}"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:20 GMT
+      Etag:
+      - W/"86b3bc249dc9e3d24a896bb333efa4e30a0b8e8fdd3b42e6ebbf6607f1f61eef"
+      Last-Modified:
+      - Thu, 09 Dec 2021 20:19:54 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126D59:3DFEF88:61BB7824
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4997"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "3"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/repos/sourcegraph/sourcegraph/commits/06a8636c2e0bea69944d8419aafa03ff3992527a
+    method: GET
+  response:
+    body: "{\"sha\":\"06a8636c2e0bea69944d8419aafa03ff3992527a\",\"node_id\":\"C_kwDOAnYEBNoAKDA2YTg2MzZjMmUwYmVhNjk5NDRkODQxOWFhZmEwM2ZmMzk5MjUyN2E\",\"commit\":{\"author\":{\"name\":\"Robert
+      Lin\",\"email\":\"robert@bobheadxi.dev\",\"date\":\"2021-12-01T17:46:07Z\"},\"committer\":{\"name\":\"GitHub\",\"email\":\"noreply@github.com\",\"date\":\"2021-12-01T17:46:07Z\"},\"message\":\"httpcli,
+      actor: propagate actor on all internal requests (#28117)\\n\\nThis change propagates
+      the actor in the context (from the `actor` package) on _all_ outgoing internal
+      requests and adds middleware that services can use to pick up actors from incoming
+      requests and add it to the request context. The middleware is currently only
+      applied to `frontend`'s internal API handler, which already has something similar.
+      Also adds metrics to see the number of requests that are user-authenticated
+      vs internal-authenticated.\\r\\n\\r\\nThis more generalized actor handling replaces
+      all existing usage of `X-Sourcegraph-User-ID`. The header is also renamed to
+      `X-Sourcegraph-Actor-UID` to more accurately reflect `actor.UID`, though backcompat
+      is retained mostly with the existing behaviour (though drops support for setting
+      the ID to 0 to imply an internal user)\",\"tree\":{\"sha\":\"50a623a158b4f961c079044a114f3a198d2e08f7\",\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees/50a623a158b4f961c079044a114f3a198d2e08f7\"},\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits/06a8636c2e0bea69944d8419aafa03ff3992527a\",\"comment_count\":0,\"verification\":{\"verified\":true,\"reason\":\"valid\",\"signature\":\"-----BEGIN
+      PGP SIGNATURE-----\\n\\nwsBcBAABCAAQBQJhp7TfCRBK7hj4Ov3rIwAAgToIAEQyiJTX4+PU3RKmnGGzNkrn\\nNxyVohas76zAod6smByR1J0DpFtArT+XM0Z7HBWiGX3Y/mex1OfD1Uby/2GFybK0\\nviyMEEPU8jWGlpr5DX5/epEkaa3MPRMogoFL21DP2Ld/rcfkNspG2I1qcNvXa1DL\\nlEz5om7+rKOovw33sZL0xGdrLaZ6CgWr+ddmsayIZy3TQ8s4nk3PJTN82VcXTSa2\\nP2bTXmzrJ53lM7epMtA5PSUA/eyjogOEVQyLFHLaIw6z3ocleA5HN3/pZ6gsP3GO\\nH1QqG0zGrFMguMIIP4KNhwJnAOJtjK53iaKyB0NNCQEPPEAVWAKCaA/GLMmGmLY=\\n=kfDq\\n-----END
+      PGP SIGNATURE-----\\n\",\"payload\":\"tree 50a623a158b4f961c079044a114f3a198d2e08f7\\nparent
+      5750e75469f89ee776a1ffcb9ca0ebf3c758941d\\nauthor Robert Lin <robert@bobheadxi.dev>
+      1638380767 -0800\\ncommitter GitHub <noreply@github.com> 1638380767 -0800\\n\\nhttpcli,
+      actor: propagate actor on all internal requests (#28117)\\n\\nThis change propagates
+      the actor in the context (from the `actor` package) on _all_ outgoing internal
+      requests and adds middleware that services can use to pick up actors from incoming
+      requests and add it to the request context. The middleware is currently only
+      applied to `frontend`'s internal API handler, which already has something similar.
+      Also adds metrics to see the number of requests that are user-authenticated
+      vs internal-authenticated.\\r\\n\\r\\nThis more generalized actor handling replaces
+      all existing usage of `X-Sourcegraph-User-ID`. The header is also renamed to
+      `X-Sourcegraph-Actor-UID` to more accurately reflect `actor.UID`, though backcompat
+      is retained mostly with the existing behaviour (though drops support for setting
+      the ID to 0 to imply an internal user)\"}},\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/06a8636c2e0bea69944d8419aafa03ff3992527a\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/06a8636c2e0bea69944d8419aafa03ff3992527a\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/06a8636c2e0bea69944d8419aafa03ff3992527a/comments\",\"author\":{\"login\":\"bobheadxi\",\"id\":23356519,\"node_id\":\"MDQ6VXNlcjIzMzU2NTE5\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/23356519?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/bobheadxi\",\"html_url\":\"https://github.com/bobheadxi\",\"followers_url\":\"https://api.github.com/users/bobheadxi/followers\",\"following_url\":\"https://api.github.com/users/bobheadxi/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/bobheadxi/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/bobheadxi/subscriptions\",\"organizations_url\":\"https://api.github.com/users/bobheadxi/orgs\",\"repos_url\":\"https://api.github.com/users/bobheadxi/repos\",\"events_url\":\"https://api.github.com/users/bobheadxi/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/bobheadxi/received_events\",\"type\":\"User\",\"site_admin\":false},\"committer\":{\"login\":\"web-flow\",\"id\":19864447,\"node_id\":\"MDQ6VXNlcjE5ODY0NDQ3\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/19864447?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/web-flow\",\"html_url\":\"https://github.com/web-flow\",\"followers_url\":\"https://api.github.com/users/web-flow/followers\",\"following_url\":\"https://api.github.com/users/web-flow/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/web-flow/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/web-flow/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/web-flow/subscriptions\",\"organizations_url\":\"https://api.github.com/users/web-flow/orgs\",\"repos_url\":\"https://api.github.com/users/web-flow/repos\",\"events_url\":\"https://api.github.com/users/web-flow/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/web-flow/received_events\",\"type\":\"User\",\"site_admin\":false},\"parents\":[{\"sha\":\"5750e75469f89ee776a1ffcb9ca0ebf3c758941d\",\"url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/commits/5750e75469f89ee776a1ffcb9ca0ebf3c758941d\",\"html_url\":\"https://github.com/sourcegraph/sourcegraph/commit/5750e75469f89ee776a1ffcb9ca0ebf3c758941d\"}],\"stats\":{\"total\":332,\"additions\":304,\"deletions\":28},\"files\":[{\"sha\":\"8c3f85d3cc12daeb4bd2adc00842b043c1170d61\",\"filename\":\"cmd/frontend/internal/cli/http.go\",\"status\":\"modified\",\"additions\":1,\"deletions\":24,\"changes\":25,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd/frontend/internal/cli/http.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd/frontend/internal/cli/http.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/cli/http.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      -2,7 +2,6 @@ package cli\\n \\n import (\\n \\t\\\"net/http\\\"\\n-\\t\\\"strconv\\\"\\n
+      \\t\\\"strings\\\"\\n \\n \\t\\\"github.com/NYTimes/gziphandler\\\"\\n@@ -123,7
+      +122,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {\\n func
+      newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler
+      enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher)
+      http.Handler {\\n \\tinternalMux := http.NewServeMux()\\n \\tinternalMux.Handle(\\\"/.internal/\\\",
+      gziphandler.GzipHandler(\\n-\\t\\twithActor(\\n+\\t\\tactor.HTTPMiddleware(\\n
+      \\t\\t\\tinternalhttpapi.NewInternalHandler(\\n \\t\\t\\t\\trouter.NewInternal(mux.NewRouter().PathPrefix(\\\"/.internal/\\\").Subrouter()),\\n
+      \\t\\t\\t\\tdb,\\n@@ -140,28 +139,6 @@ func newInternalHTTPHandler(schema *graphql.Schema,
+      db database.DB, newCodeIntel\\n \\treturn h\\n }\\n \\n-// withActor wraps an
+      existing HTTP handler by setting an actor in the HTTP request context.\\n-//
+      It takes a user ID from the X-Sourcegraph-User-ID request header and if that
+      fails to parse,\\n-// defaults to an internal actor.\\n-//\\n-// \U0001F6A8
+      SECURITY: This should *never* be called to wrap externally accessible handlers
+      (i.e., only use\\n-// for the internal endpoint), because internal requests
+      can bypass repository permissions checks.\\n-func withActor(h http.Handler)
+      http.Handler {\\n-\\treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
+      {\\n-\\t\\tvar a actor.Actor\\n-\\n-\\t\\tuserID, err := strconv.ParseInt(r.Header.Get(\\\"X-Sourcegraph-User-ID\\\"),
+      10, 32)\\n-\\t\\tif err != nil || userID == 0 {\\n-\\t\\t\\ta.Internal = true\\n-\\t\\t}
+      else {\\n-\\t\\t\\ta.UID = int32(userID)\\n-\\t\\t}\\n-\\n-\\t\\trWithActor
+      := r.WithContext(actor.WithActor(r.Context(), &a))\\n-\\t\\th.ServeHTTP(w, rWithActor)\\n-\\t})\\n-}\\n-\\n
+      // corsAllowHeader is the HTTP header that, if present (and assuming secureHeadersMiddleware
+      is\\n // used), indicates that the incoming HTTP request is either same-origin
+      or is from an allowed\\n // origin. See\"},{\"sha\":\"0137e8ca28fa498c1c4ecdf5d44f6870fa2f582d\",\"filename\":\"cmd/searcher/main.go\",\"status\":\"modified\",\"additions\":3,\"deletions\":1,\"changes\":4,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd/searcher/main.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/cmd/searcher/main.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/searcher/main.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      -74,7 +74,9 @@ func main() {\\n \\t}\\n \\tservice.Store.Start()\\n \\n-\\thandler
+      := ot.Middleware(trace.HTTPTraceMiddleware(service, conf.DefaultClient()))\\n+\\t//
+      Set up handler middleware\\n+\\thandler := trace.HTTPTraceMiddleware(service,
+      conf.DefaultClient())\\n+\\thandler = ot.Middleware(handler)\\n \\n \\thost
+      := \\\"\\\"\\n \\tif env.InsecureDev {\"},{\"sha\":\"f7e3dd3836e892f549fed21a7186cb0fcde898ab\",\"filename\":\"enterprise/internal/batches/service/workspace_resolver.go\",\"status\":\"modified\",\"additions\":0,\"deletions\":1,\"changes\":1,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise/internal/batches/service/workspace_resolver.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise/internal/batches/service/workspace_resolver.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/enterprise/internal/batches/service/workspace_resolver.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      -381,7 +381,6 @@ func (wr *workspaceResolver) runSearch(ctx context.Context,
+      query string, onMatc\\n \\tif !a.IsAuthenticated() {\\n \\t\\treturn errors.New(\\\"no
+      user set in workspaceResolver.runSearch\\\")\\n \\t}\\n-\\treq.Header.Set(\\\"X-Sourcegraph-User-ID\\\",
+      a.UIDString())\\n \\n \\tresp, err := httpcli.InternalClient.Do(req)\\n \\tif
+      err != nil {\"},{\"sha\":\"7dee97b0b7b239b208c64d4b8c9fb9d1bf2e6f83\",\"filename\":\"enterprise/internal/codemonitors/background/graphql.go\",\"status\":\"modified\",\"additions\":0,\"deletions\":2,\"changes\":2,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise/internal/codemonitors/background/graphql.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/enterprise/internal/codemonitors/background/graphql.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/enterprise/internal/codemonitors/background/graphql.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      -8,7 +8,6 @@ import (\\n \\t\\\"net/http\\\"\\n \\t\\\"net/url\\\"\\n \\t\\\"runtime\\\"\\n-\\t\\\"strconv\\\"\\n
+      \\t\\\"time\\\"\\n \\n \\t\\\"github.com/sourcegraph/sourcegraph/internal/api\\\"\\n@@
+      -143,7 +142,6 @@ func search(ctx context.Context, query string, userID int32)
+      (*gqlSearchResponse\\n \\t}\\n \\n \\treq.Header.Set(\\\"Content-Type\\\", \\\"application/json\\\")\\n-\\treq.Header.Set(\\\"X-Sourcegraph-User-ID\\\",
+      strconv.FormatInt(int64(userID), 10))\\n \\tresp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))\\n
+      \\tif err != nil {\\n \\t\\treturn nil, errors.Wrap(err, \\\"Post\\\")\"},{\"sha\":\"2ae2659b9aa4dc576a2c54d6c349b8cc20d3b1b3\",\"filename\":\"internal/actor/actor.go\",\"status\":\"modified\",\"additions\":4,\"deletions\":0,\"changes\":4,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/actor.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/actor.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/actor/actor.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      -16,6 +16,10 @@ import (\\n \\n // Actor represents an agent that accesses resources.
+      It can represent an anonymous user, an\\n // authenticated user, or an internal
+      Sourcegraph service.\\n+//\\n+// Actor can be propagated across services by
+      using actor.HTTPTransport (used by\\n+// httpcli.InternalClientFactory) and
+      actor.HTTPMiddleware. Before assuming this, ensure\\n+// that actor propagation
+      is enabled on both ends of the request.\\n type Actor struct {\\n \\t// UID
+      is the unique ID of the authenticated user, or 0 for anonymous actors.\\n \\tUID
+      int32 `json:\\\",omitempty\\\"`\"},{\"sha\":\"ad4924c7aaea2bca74cc8d27d0a3aa260f8e2692\",\"filename\":\"internal/actor/http.go\",\"status\":\"added\",\"additions\":147,\"deletions\":0,\"changes\":147,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/http.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/http.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/actor/http.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      -0,0 +1,147 @@\\n+package actor\\n+\\n+import (\\n+\\t\\\"fmt\\\"\\n+\\t\\\"net/http\\\"\\n+\\t\\\"strconv\\\"\\n+\\n+\\t\\\"github.com/inconshreveable/log15\\\"\\n+\\t\\\"github.com/prometheus/client_golang/prometheus\\\"\\n+\\t\\\"github.com/prometheus/client_golang/prometheus/promauto\\\"\\n+)\\n+\\n+const
+      (\\n+\\t// headerKeyActorUID is the header key for the actor's user ID.\\n+\\theaderKeyActorUID
+      = \\\"X-Sourcegraph-Actor-UID\\\"\\n+\\t// headerKeyLegacyActorUID is the old
+      header key used for the actor's user ID.\\n+\\t// Prefer headerKeyActorUID where
+      possible.\\n+\\theaderKeyLegacyActorUID = \\\"X-Sourcegraph-User-ID\\\"\\n+)\\n+\\n+const
+      (\\n+\\t// headerValueInternalActor indicates the request uses an internal actor.\\n+\\theaderValueInternalActor
+      = \\\"internal\\\"\\n+\\t// headerValueNoActor indicates the request has no
+      actor.\\n+\\theaderValueNoActor = \\\"none\\\"\\n+)\\n+\\n+const (\\n+\\t//
+      metricActorTypeUser is a label indicating a request was in the context of a
+      user.\\n+\\t// We do not record actual user IDs as metric labels to limit cardinality.\\n+\\tmetricActorTypeUser
+      = \\\"user\\\"\\n+\\t// metricTypeUserActor is a label indicating a request
+      was in the context of an internal actor.\\n+\\tmetricActorTypeInternal = headerValueInternalActor\\n+\\t//
+      metricActorTypeNone is a label indicating a request was in the context of an
+      internal actor.\\n+\\tmetricActorTypeNone = headerValueNoActor\\n+\\t// metricActorTypeInvalid
+      is a label indicating a request was in the context of an internal actor.\\n+\\tmetricActorTypeInvalid
+      = \\\"invalid\\\"\\n+)\\n+\\n+var (\\n+\\tmetricIncomingActors = promauto.NewCounterVec(prometheus.CounterOpts{\\n+\\t\\tName:
+      \\\"src_actors_incoming_requests\\\",\\n+\\t\\tHelp: \\\"Total number of actors
+      set from incoming requests by actor type.\\\",\\n+\\t}, []string{\\\"actor_type\\\"})\\n+\\n+\\tmetricOutgoingActors
+      = promauto.NewCounterVec(prometheus.CounterOpts{\\n+\\t\\tName: \\\"src_actors_outgoing_requests\\\",\\n+\\t\\tHelp:
+      \\\"Total number of actors set on outgoing requests by actor type.\\\",\\n+\\t},
+      []string{\\\"actor_type\\\"})\\n+)\\n+\\n+// HTTPTransport is a roundtripper
+      that sets actors within request context as headers on\\n+// outgoing requests.\\n+type
+      HTTPTransport struct {\\n+\\tRoundTripper http.RoundTripper\\n+}\\n+\\n+var
+      _ http.RoundTripper = &HTTPTransport{}\\n+\\n+func (t *HTTPTransport) RoundTrip(req
+      *http.Request) (*http.Response, error) {\\n+\\tif t.RoundTripper == nil {\\n+\\t\\tt.RoundTripper
+      = http.DefaultTransport\\n+\\t}\\n+\\n+\\tactor := FromContext(req.Context())\\n+\\tswitch
+      {\\n+\\t// Indicate this is an internal user\\n+\\tcase actor.IsInternal():\\n+\\t\\treq.Header.Set(headerKeyActorUID,
+      headerValueInternalActor)\\n+\\t\\tmetricOutgoingActors.WithLabelValues(metricActorTypeInternal).Inc()\\n+\\n+\\t//
+      Indicate this is an authenticated user\\n+\\tcase actor.IsAuthenticated():\\n+\\t\\treq.Header.Set(headerKeyActorUID,
+      actor.UIDString())\\n+\\t\\tmetricOutgoingActors.WithLabelValues(metricActorTypeUser).Inc()\\n+\\n+\\t//
+      Indicate no actor is associated with request\\n+\\tdefault:\\n+\\t\\treq.Header.Set(headerKeyActorUID,
+      headerValueNoActor)\\n+\\t\\tmetricOutgoingActors.WithLabelValues(metricActorTypeNone).Inc()\\n+\\t}\\n+\\n+\\treturn
+      t.RoundTripper.RoundTrip(req)\\n+}\\n+\\n+// HTTPMiddleware wraps the given
+      handle func and attaches the actor indicated in incoming\\n+// requests to the
+      request header. This should only be used to wrap internal handlers for\\n+//
+      communication between Sourcegraph services.\\n+//\\n+// \U0001F6A8 SECURITY:
+      This should *never* be called to wrap externally accessible handlers (i.e.\\n+//
+      only use for internal endpoints), because internal requests can bypass repository\\n+//
+      permissions checks.\\n+func HTTPMiddleware(next http.Handler) http.Handler {\\n+\\treturn
+      http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {\\n+\\t\\tctx
+      := req.Context()\\n+\\n+\\t\\tuidStr := req.Header.Get(headerKeyActorUID)\\n+\\t\\tif
+      uidStr == \\\"\\\" {\\n+\\t\\t\\t// Check legacy header as a fallback.\\n+\\t\\t\\tuidStr
+      = req.Header.Get(headerKeyLegacyActorUID)\\n+\\t\\t}\\n+\\n+\\t\\tswitch uidStr
+      {\\n+\\t\\t// Request associated with internal actor - add internal actor to
+      context\\n+\\t\\tcase headerValueInternalActor:\\n+\\t\\t\\tctx = WithInternalActor(ctx)\\n+\\t\\t\\tmetricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()\\n+\\n+\\t\\t//
+      Request not associated with any actor\\n+\\t\\tcase headerValueNoActor:\\n+\\t\\t\\tmetricIncomingActors.WithLabelValues(metricActorTypeNone).Inc()\\n+\\n+\\t\\t//
+      Request does not have any actor information provided - for internal requests,\\n+\\t\\t//
+      these will likely come from a non-first-party service like Zoekt that will\\n+\\t\\t//
+      explicitly want to be treated as an internal user for full access.\\n+\\t\\t//\\n+\\t\\t//
+      \U0001F6A8 SECURITY: Wherever possible, prefer to set the actor ID explicitly
+      through\\n+\\t\\t// actor.HTTPTransport or similar, since assuming internal
+      actor grants a lot of\\n+\\t\\t// access in some cases.\\n+\\t\\tcase \\\"\\\":\\n+\\t\\t\\tctx
+      = WithInternalActor(ctx)\\n+\\t\\t\\tmetricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()\\n+\\n+\\t\\t//
+      Request associated with authenticated user - add user actor to context\\n+\\t\\tdefault:\\n+\\t\\t\\tuid,
+      err := strconv.Atoi(uidStr)\\n+\\t\\t\\tif err != nil {\\n+\\t\\t\\t\\tlog15.Warn(\\\"invalid
+      user ID in request\\\",\\n+\\t\\t\\t\\t\\t\\\"error\\\", err,\\n+\\t\\t\\t\\t\\t\\\"uid\\\",
+      uidStr)\\n+\\t\\t\\t\\tmetricIncomingActors.WithLabelValues(metricActorTypeInvalid).Inc()\\n+\\n+\\t\\t\\t\\t//
+      Do not proceed with request\\n+\\t\\t\\t\\trw.WriteHeader(http.StatusForbidden)\\n+\\t\\t\\t\\t_,
+      _ = rw.Write([]byte(fmt.Sprintf(\\\"%s was provided, but the value was invalid\\\",
+      headerKeyActorUID)))\\n+\\t\\t\\t\\treturn\\n+\\t\\t\\t}\\n+\\n+\\t\\t\\t//
+      Valid user, add to context\\n+\\t\\t\\tactor := FromUser(int32(uid))\\n+\\t\\t\\tctx
+      = WithActor(ctx, actor)\\n+\\t\\t\\tmetricIncomingActors.WithLabelValues(metricActorTypeUser).Inc()\\n+\\t\\t}\\n+\\n+\\t\\tnext.ServeHTTP(rw,
+      req.WithContext(ctx))\\n+\\t})\\n+}\"},{\"sha\":\"72fbc89dc27253648de4ddd689da091bbf005c02\",\"filename\":\"internal/actor/http_test.go\",\"status\":\"added\",\"additions\":133,\"deletions\":0,\"changes\":133,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/http_test.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/actor/http_test.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/actor/http_test.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      -0,0 +1,133 @@\\n+package actor\\n+\\n+import (\\n+\\t\\\"context\\\"\\n+\\t\\\"net/http\\\"\\n+\\t\\\"net/http/httptest\\\"\\n+\\t\\\"testing\\\"\\n+\\n+\\t\\\"github.com/google/go-cmp/cmp\\\"\\n+)\\n+\\n+type
+      roundTripFunc func(req *http.Request) *http.Response\\n+\\n+func (f roundTripFunc)
+      RoundTrip(req *http.Request) (*http.Response, error) {\\n+\\treturn f(req),
+      nil\\n+}\\n+\\n+func TestHTTPTransport(t *testing.T) {\\n+\\ttests := []struct
+      {\\n+\\t\\tname        string\\n+\\t\\tactor       *Actor\\n+\\t\\twantHeaders
+      map[string]string\\n+\\t}{{\\n+\\t\\tname:  \\\"unauthenticated\\\",\\n+\\t\\tactor:
+      nil,\\n+\\t\\twantHeaders: map[string]string{\\n+\\t\\t\\theaderKeyActorUID:
+      headerValueNoActor,\\n+\\t\\t},\\n+\\t}, {\\n+\\t\\tname:  \\\"internal actor\\\",\\n+\\t\\tactor:
+      &Actor{Internal: true},\\n+\\t\\twantHeaders: map[string]string{\\n+\\t\\t\\theaderKeyActorUID:
+      headerValueInternalActor,\\n+\\t\\t},\\n+\\t}, {\\n+\\t\\tname:  \\\"user actor\\\",\\n+\\t\\tactor:
+      &Actor{UID: 1234},\\n+\\t\\twantHeaders: map[string]string{\\n+\\t\\t\\theaderKeyActorUID:
+      \\\"1234\\\",\\n+\\t\\t},\\n+\\t}}\\n+\\tfor _, tt := range tests {\\n+\\t\\tt.Run(tt.name,
+      func(t *testing.T) {\\n+\\t\\t\\ttransport := &HTTPTransport{\\n+\\t\\t\\t\\tRoundTripper:
+      roundTripFunc(func(req *http.Request) *http.Response {\\n+\\t\\t\\t\\t\\tfor
+      k, want := range tt.wantHeaders {\\n+\\t\\t\\t\\t\\t\\tif got := req.Header.Get(k);
+      got == \\\"\\\" {\\n+\\t\\t\\t\\t\\t\\t\\tt.Errorf(\\\"did not find expected
+      header %q\\\", k)\\n+\\t\\t\\t\\t\\t\\t} else if diff := cmp.Diff(want, got);
+      diff != \\\"\\\" {\\n+\\t\\t\\t\\t\\t\\t\\tt.Errorf(\\\"headers mismatch (-want
+      +got):\\\\n%s\\\", diff)\\n+\\t\\t\\t\\t\\t\\t}\\n+\\t\\t\\t\\t\\t}\\n+\\t\\t\\t\\t\\treturn
+      &http.Response{StatusCode: http.StatusOK}\\n+\\t\\t\\t\\t}),\\n+\\t\\t\\t}\\n+\\t\\t\\tctx
+      := WithActor(context.Background(), tt.actor)\\n+\\t\\t\\treq, err := http.NewRequestWithContext(ctx,
+      http.MethodGet, \\\"/test\\\", nil)\\n+\\t\\t\\tif err != nil {\\n+\\t\\t\\t\\tt.Fatal(err)\\n+\\t\\t\\t}\\n+\\t\\t\\tgot,
+      err := transport.RoundTrip(req)\\n+\\t\\t\\tif err != nil {\\n+\\t\\t\\t\\tt.Fatalf(\\\"Transport.RoundTrip()
+      error = %v\\\", err)\\n+\\t\\t\\t}\\n+\\t\\t\\tif got.StatusCode != http.StatusOK
+      {\\n+\\t\\t\\t\\tt.Fatalf(\\\"Unexpected response: %+v\\\", got)\\n+\\t\\t\\t}\\n+\\t\\t})\\n+\\t}\\n+}\\n+\\n+func
+      TestHTTPMiddleware(t *testing.T) {\\n+\\ttests := []struct {\\n+\\t\\tname      string\\n+\\t\\theaders
+      \  map[string]string\\n+\\t\\twantActor *Actor\\n+\\t}{{\\n+\\t\\tname: \\\"unauthenticated\\\",\\n+\\t\\theaders:
+      map[string]string{\\n+\\t\\t\\theaderKeyActorUID: headerValueNoActor,\\n+\\t\\t},\\n+\\t\\twantActor:
+      &Actor{}, // FromContext provides a zero-value actor if one is not present\\n+\\t},
+      {\\n+\\t\\tname: \\\"invalid actor\\\",\\n+\\t\\theaders: map[string]string{\\n+\\t\\t\\theaderKeyActorUID:
+      \\\"not-a-valid-id\\\",\\n+\\t\\t},\\n+\\t\\twantActor: &Actor{}, // FromContext
+      provides a zero-value actor  if one is not present\\n+\\t}, {\\n+\\t\\tname:
+      \\\"internal actor\\\",\\n+\\t\\theaders: map[string]string{\\n+\\t\\t\\theaderKeyActorUID:
+      headerValueInternalActor,\\n+\\t\\t},\\n+\\t\\twantActor: &Actor{Internal: true},\\n+\\t},
+      {\\n+\\t\\tname: \\\"user actor\\\",\\n+\\t\\theaders: map[string]string{\\n+\\t\\t\\theaderKeyActorUID:
+      \\\"1234\\\",\\n+\\t\\t},\\n+\\t\\twantActor: &Actor{UID: 1234},\\n+\\t}, {\\n+\\t\\tname:
+      \\\"no actor info as internal\\\",\\n+\\t\\theaders: map[string]string{\\n+\\t\\t\\theaderKeyActorUID:
+      \\\"\\\",\\n+\\t\\t},\\n+\\t\\twantActor: &Actor{Internal: true},\\n+\\t}, {\\n+\\t\\tname:
+      \\\"backcompat: legacy user actor header\\\",\\n+\\t\\theaders: map[string]string{\\n+\\t\\t\\theaderKeyLegacyActorUID:
+      \\\"1234\\\",\\n+\\t\\t},\\n+\\t\\twantActor: &Actor{UID: 1234},\\n+\\t}}\\n+\\tfor
+      _, tt := range tests {\\n+\\t\\tt.Run(tt.name, func(t *testing.T) {\\n+\\t\\t\\thandler
+      := HTTPMiddleware(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request)
+      {\\n+\\t\\t\\t\\tgot := FromContext(r.Context())\\n+\\t\\t\\t\\t// Compare string
+      representation\\n+\\t\\t\\t\\tif diff := cmp.Diff(tt.wantActor.String(), got.String());
+      diff != \\\"\\\" {\\n+\\t\\t\\t\\t\\tt.Errorf(\\\"aactor mismatch (-want +got):\\\\n%s\\\",
+      diff)\\n+\\t\\t\\t\\t}\\n+\\t\\t\\t}))\\n+\\t\\t\\treq, err := http.NewRequest(http.MethodGet,
+      \\\"/test\\\", nil)\\n+\\t\\t\\tif err != nil {\\n+\\t\\t\\t\\tt.Fatal(err)\\n+\\t\\t\\t}\\n+\\t\\t\\tfor
+      k, v := range tt.headers {\\n+\\t\\t\\t\\treq.Header.Set(k, v)\\n+\\t\\t\\t}\\n+\\t\\t\\thandler.ServeHTTP(httptest.NewRecorder(),
+      req)\\n+\\t\\t})\\n+\\t}\\n+}\"},{\"sha\":\"490bf147e2bb8552501ec2580fc1aca52bc7f93b\",\"filename\":\"internal/httpcli/client.go\",\"status\":\"modified\",\"additions\":16,\"deletions\":0,\"changes\":16,\"blob_url\":\"https://github.com/sourcegraph/sourcegraph/blob/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/httpcli/client.go\",\"raw_url\":\"https://github.com/sourcegraph/sourcegraph/raw/06a8636c2e0bea69944d8419aafa03ff3992527a/internal/httpcli/client.go\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/sourcegraph/contents/internal/httpcli/client.go?ref=06a8636c2e0bea69944d8419aafa03ff3992527a\",\"patch\":\"@@
+      -25,6 +25,7 @@ import (\\n \\t\\\"github.com/prometheus/client_golang/prometheus\\\"\\n
+      \\t\\\"github.com/prometheus/client_golang/prometheus/promauto\\\"\\n \\n+\\t\\\"github.com/sourcegraph/sourcegraph/internal/actor\\\"\\n
+      \\t\\\"github.com/sourcegraph/sourcegraph/internal/env\\\"\\n \\t\\\"github.com/sourcegraph/sourcegraph/internal/lazyregexp\\\"\\n
+      \\t\\\"github.com/sourcegraph/sourcegraph/internal/metrics\\\"\\n@@ -147,6 +148,7
+      @@ func NewInternalClientFactory(subsystem string) *Factory {\\n \\t\\t\\tExpJitterDelay(internalRetryDelayBase,
+      internalRetryDelayMax),\\n \\t\\t),\\n \\t\\tMeteredTransportOpt(subsystem),\\n+\\t\\tActorTransportOpt,\\n
+      \\t\\tTracedTransportOpt,\\n \\t)\\n }\\n@@ -591,3 +593,17 @@ func getTransportForMutation(cli
+      *http.Client) (*http.Transport, error) {\\n \\n \\treturn tr, nil\\n }\\n+\\n+//
+      ActorTransportOpt wraps an existing http.Transport of an http.Client to pull
+      the actor\\n+// from the context and add it to each request's HTTP headers.\\n+//\\n+//
+      Servers can use actor.HTTPMiddleware to populate actor context from incoming
+      requests.\\n+func ActorTransportOpt(cli *http.Client) error {\\n+\\tif cli.Transport
+      == nil {\\n+\\t\\tcli.Transport = http.DefaultTransport\\n+\\t}\\n+\\n+\\tcli.Transport
+      = &actor.HTTPTransport{RoundTripper: cli.Transport}\\n+\\n+\\treturn nil\\n+}\"}]}"
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:21 GMT
+      Etag:
+      - W/"1cb372f1f238fca3e593c23ce5d0e6539142267ef08726719ab5d349fbdcb137"
+      Last-Modified:
+      - Wed, 01 Dec 2021 17:46:07 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126D91:3DFEFF4:61BB7824
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4996"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "4"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/repos/sourcegraph/sourcegraph/commits/93971fa0b036b3e258cbb9a3eb7098e4032eefc4
+    method: GET
+  response:
+    body: '{"sha":"93971fa0b036b3e258cbb9a3eb7098e4032eefc4","node_id":"C_kwDOAnYEBNoAKDkzOTcxZmEwYjAzNmIzZTI1OGNiYjlhM2ViNzA5OGU0MDMyZWVmYzQ","commit":{"author":{"name":"Jean-Hadrien
+      Chabran","email":"jh@chabran.fr","date":"2021-12-10T14:21:28Z"},"committer":{"name":"GitHub","email":"noreply@github.com","date":"2021-12-10T14:21:28Z"},"message":"Drop
+      code related to deprecated /go/* routes (#28844)","tree":{"sha":"6c5c0dc34da2d33e2cbfdb27e3ac8cf1e023d5d4","url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees/6c5c0dc34da2d33e2cbfdb27e3ac8cf1e023d5d4"},"url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits/93971fa0b036b3e258cbb9a3eb7098e4032eefc4","comment_count":0,"verification":{"verified":true,"reason":"valid","signature":"-----BEGIN
+      PGP SIGNATURE-----\n\nwsBcBAABCAAQBQJhs2JoCRBK7hj4Ov3rIwAAMyAIAJi22wNy+1g/j86PY5GKIr/r\nbwbtnA7qBRNIqatKB+8WUQYNFYtAfDs+1qOlG20aJglMz8QGDeG10Q4l33Rif0Wj\ni2rnR3BJhKGZhS+Q8XM1Fq5fglfGUIAhlyAkcUyxRipnvtA8HVEc+PEZSOp46Ygp\nhsem5jibCplOkx7z+4wkO82fSKXS8md8k0ZSrjCO4t8SF3gPavBRNgUWW7w7OX+4\nWnvsyCRFgXLwi3M4uHdU75uo4mOAvxiF7BeDOdAD0hKbPnNA6Uc/nLYtuxhD2gNF\n3RBmHOSikx8Es+Rv4uLjyeHfYsPkKoqu+lqVkfK0jBzuTx5l+2PNUyKF58J9MwU=\n=lPXo\n-----END
+      PGP SIGNATURE-----\n","payload":"tree 6c5c0dc34da2d33e2cbfdb27e3ac8cf1e023d5d4\nparent
+      06b6f3b80bcc8dabb64283403192b261f57cd819\nauthor Jean-Hadrien Chabran <jh@chabran.fr>
+      1639146088 +0100\ncommitter GitHub <noreply@github.com> 1639146088 +0100\n\nDrop
+      code related to deprecated /go/* routes (#28844)\n\n"}},"url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/93971fa0b036b3e258cbb9a3eb7098e4032eefc4","html_url":"https://github.com/sourcegraph/sourcegraph/commit/93971fa0b036b3e258cbb9a3eb7098e4032eefc4","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/comments","author":{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},"committer":{"login":"web-flow","id":19864447,"node_id":"MDQ6VXNlcjE5ODY0NDQ3","avatar_url":"https://avatars.githubusercontent.com/u/19864447?v=4","gravatar_id":"","url":"https://api.github.com/users/web-flow","html_url":"https://github.com/web-flow","followers_url":"https://api.github.com/users/web-flow/followers","following_url":"https://api.github.com/users/web-flow/following{/other_user}","gists_url":"https://api.github.com/users/web-flow/gists{/gist_id}","starred_url":"https://api.github.com/users/web-flow/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/web-flow/subscriptions","organizations_url":"https://api.github.com/users/web-flow/orgs","repos_url":"https://api.github.com/users/web-flow/repos","events_url":"https://api.github.com/users/web-flow/events{/privacy}","received_events_url":"https://api.github.com/users/web-flow/received_events","type":"User","site_admin":false},"parents":[{"sha":"06b6f3b80bcc8dabb64283403192b261f57cd819","url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits/06b6f3b80bcc8dabb64283403192b261f57cd819","html_url":"https://github.com/sourcegraph/sourcegraph/commit/06b6f3b80bcc8dabb64283403192b261f57cd819"}],"stats":{"total":722,"additions":1,"deletions":721},"files":[{"sha":"c7775eab5592c4e76d1c7fcd17e04f1c8bb09684","filename":"cmd/frontend/internal/app/app.go","status":"modified","additions":0,"deletions":6,"changes":6,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd/frontend/internal/app/app.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd/frontend/internal/app/app.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/app.go?ref=93971fa0b036b3e258cbb9a3eb7098e4032eefc4","patch":"@@
+      -5,7 +5,6 @@ import (\n \n \t\"github.com/NYTimes/gziphandler\"\n \n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar\"\n
+      \t\"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd\"\n
+      \tregistry \"github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api\"\n
+      \n@@ -49,10 +48,6 @@ func NewHandler(db database.DB) http.Handler {\n \t\thttp.Redirect(w,
+      r, \"https://about.sourcegraph.com/go\", http.StatusFound)\n \t})))\n \n-\tif
+      envvar.SourcegraphDotComMode() {\n-\t\tr.Get(router.GoSymbolURL).Handler(trace.Route(errorutil.Handler(serveGoSymbolURL(db))))\n-\t}\n-\n
+      \tr.Get(router.UI).Handler(ui.Router())\n \n \tr.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(db)))\n@@
+      -73,7 +68,6 @@ func NewHandler(db database.DB) http.Handler {\n \t// Ping retrieval\n
+      \tr.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))\n
+      \n-\tr.Get(router.GDDORefs).Handler(trace.Route(errorutil.Handler(serveGDDORefs)))\n
+      \tr.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))\n
+      \n \tr.Get(router.DebugHeaders).Handler(trace.Route(http.HandlerFunc(func(w
+      http.ResponseWriter, r *http.Request) {"},{"sha":"0b0e9bd79ed725d1aae4254fa6cd8892625834ad","filename":"cmd/frontend/internal/app/gddo.go","status":"removed","additions":0,"deletions":71,"changes":71,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/gddo.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/gddo.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/gddo.go?ref=06b6f3b80bcc8dabb64283403192b261f57cd819","patch":"@@
+      -1,71 +0,0 @@\n-package app\n-\n-import (\n-\t\"fmt\"\n-\t\"net/http\"\n-\t\"path\"\n-\t\"strings\"\n-\n-\t\"github.com/cockroachdb/errors\"\n-\n-\t\"github.com/sourcegraph/sourcegraph/internal/errcode\"\n-)\n-\n-//
+      isGoRepoPath returns whether pkg is (likely to be) a Go stdlib\n-// package
+      import path.\n-func isGoRepoPath(pkg string) bool {\n-\t// If no path components
+      have a \".\", then guess that it''s a Go\n-\t// stdlib package.\n-\tparts :=
+      strings.Split(pkg, \"/\")\n-\tfor _, p := range parts {\n-\t\tif strings.Contains(p,
+      \".\") {\n-\t\t\treturn false\n-\t\t}\n-\t}\n-\treturn true\n-}\n-\n-// serveGDDORefs
+      handles requests referred from godoc.org refs links.\n-func serveGDDORefs(w
+      http.ResponseWriter, r *http.Request) error {\n-\tq := r.URL.Query()\n-\trepo
+      := q.Get(\"repo\")\n-\tpkg := q.Get(\"pkg\")\n-\tdef := q.Get(\"def\")\n-\n-\tif
+      path.IsAbs(repo) {\n-\t\t// Prevent open redirect.\n-\t\treturn &errcode.HTTPErr{Status:
+      http.StatusBadRequest, Err: errors.New(\"repo path should not be absolute\")}\n-\t}\n-\n-\t//
+      The Go standard library doesn''t use package import comments (https://golang.org/cmd/go/#hdr-Import_path_checking)\n-\t//
+      and as such standard library packages like e.g. encoding/json are\n-\t// unfortunately
+      viewable at:\n-\t//\n-\t// \thttps://godoc.org/github.com/golang/go/src/encoding/json#Marshal\n-\t//\n-\t//
+      Instead of where they should be viewed:\n-\t//\n-\t// \thttps://godoc.org/encoding/json#Marshal\n-\t//\n-\t//
+      This is really a bug in godoc.org, but because it is easy for users to\n-\t//
+      end up on these links via Google or otherwise general confusion, etc. we\n-\t//
+      handle such links here. The package in this case will always start with\n-\t//
+      \"github.com/golang/go/src/\" and we simply want to remove that to end up\n-\t//
+      with the canonical package import path. In this case, the repo field is\n-\t//
+      correct. Example query to this endpoint:\n-\t//\n-\t// \t?def=Marshal&pkg=github.com%2Fgolang%2Fgo%2Fsrc%2Fencoding%2Fjson&repo=github.com%2Fgolang%2Fgo\n-\t//\n-\tpkg
+      = strings.TrimPrefix(pkg, \"github.com/golang/go/src/\")\n-\n-\tif repo == \"\"
+      && isGoRepoPath(pkg) {\n-\t\trepo = \"github.com/golang/go\"\n-\t}\n-\n-\tif
+      repo == \"\" || pkg == \"\" || def == \"\" {\n-\t\treturn &errcode.HTTPErr{Status:
+      http.StatusBadRequest, Err: errors.New(\"repo, pkg, and def must be specified
+      in query string\")}\n-\t}\n-\n-\thttp.Redirect(w, r, fmt.Sprintf(\"/go/%s/-/%s\",
+      pkg, def), http.StatusMovedPermanently)\n-\treturn nil\n-}"},{"sha":"e797c70a9da2ccbeea1b4b61e146398c55143ab0","filename":"cmd/frontend/internal/app/go_symbol_url.go","status":"removed","additions":0,"deletions":446,"changes":446,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/go_symbol_url.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/go_symbol_url.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/go_symbol_url.go?ref=06b6f3b80bcc8dabb64283403192b261f57cd819","patch":"@@
+      -1,446 +0,0 @@\n-package app\n-\n-import (\n-\t\"context\"\n-\t\"fmt\"\n-\t\"go/ast\"\n-\t\"go/build\"\n-\t\"go/doc\"\n-\t\"go/token\"\n-\t\"io\"\n-\t\"io/fs\"\n-\t\"log\"\n-\t\"net/http\"\n-\t\"net/url\"\n-\t\"path\"\n-\t\"path/filepath\"\n-\t\"runtime\"\n-\t\"strings\"\n-\n-\t\"github.com/cockroachdb/errors\"\n-\t\"github.com/hashicorp/go-multierror\"\n-\t\"github.com/sourcegraph/ctxvfs\"\n-\t\"github.com/sourcegraph/go-lsp\"\n-\t\"golang.org/x/tools/go/buildutil\"\n-\n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/backend\"\n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/gosrc\"\n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/api\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/database\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/errcode\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/httpcli\"\n-\t\"github.com/sourcegraph/sourcegraph/internal/lazyregexp\"\n-)\n-\n-//
+      serveGoSymbolURL handles Go symbol URLs (e.g.,\n-// https://sourcegraph.com/go/github.com/gorilla/mux/-/Vars)
+      by\n-// redirecting them to the file and line/column URL of the definition.\n-func
+      serveGoSymbolURL(db database.DB) func(http.ResponseWriter, *http.Request) error
+      {\n-\treturn func(w http.ResponseWriter, r *http.Request) error {\n-\t\tctx
+      := r.Context()\n-\n-\t\tspec, err := parseGoSymbolURLPath(r.URL.Path)\n-\t\tif
+      err != nil {\n-\t\t\treturn err\n-\t\t}\n-\n-\t\tdir, err := gosrc.ResolveImportPath(httpcli.ExternalDoer,
+      spec.Pkg)\n-\t\tif err != nil {\n-\t\t\treturn err\n-\t\t}\n-\t\tcloneURL :=
+      dir.CloneURL\n-\n-\t\tif cloneURL == \"\" || !strings.HasPrefix(cloneURL, \"https://github.com\")
+      {\n-\t\t\treturn errors.Errorf(\"non-github clone URL resolved for import path
+      %s\", spec.Pkg)\n-\t\t}\n-\n-\t\trepoName := api.RepoName(strings.TrimSuffix(strings.TrimPrefix(cloneURL,
+      \"https://\"), \".git\"))\n-\t\trepo, err := backend.NewRepos(db.Repos()).GetByName(ctx,
+      repoName)\n-\t\tif err != nil {\n-\t\t\treturn err\n-\t\t}\n-\n-\t\tcommitID,
+      err := backend.NewRepos(db.Repos()).ResolveRev(ctx, repo, \"\")\n-\t\tif err
+      != nil {\n-\t\t\treturn err\n-\t\t}\n-\t\t_ = commitID\n-\n-\t\tvfs, err :=
+      repoVFS(r.Context(), repoName, commitID)\n-\t\tif err != nil {\n-\t\t\treturn
+      err\n-\t\t}\n-\n-\t\tpkgPath := path.Join(\"/\", dir.RepoPrefix, strings.TrimPrefix(dir.ImportPath,
+      dir.ProjectRoot))\n-\t\tlocation, err := symbolLocation(r.Context(), vfs, commitID,
+      spec, pkgPath)\n-\t\tif err != nil {\n-\t\t\treturn err\n-\t\t}\n-\t\tif location
+      == nil {\n-\t\t\treturn &errcode.HTTPErr{\n-\t\t\t\tStatus: http.StatusNotFound,\n-\t\t\t\tErr:    errors.New(\"symbol
+      not found\"),\n-\t\t\t}\n-\t\t}\n-\n-\t\turi, err := url.Parse(string(location.URI))\n-\t\tif
+      err != nil {\n-\t\t\treturn err\n-\t\t}\n-\t\tfilePath := uri.Fragment\n-\t\tdest
+      := &url.URL{\n-\t\t\tPath:     \"/\" + path.Join(string(repo.Name), \"-/blob\",
+      filePath),\n-\t\t\tFragment: fmt.Sprintf(\"L%d:%d$references\", location.Range.Start.Line+1,
+      location.Range.Start.Character+1),\n-\t\t}\n-\t\thttp.Redirect(w, r, dest.String(),
+      http.StatusFound)\n-\t\treturn nil\n-\t}\n-}\n-\n-type goSymbolSpec struct {\n-\tPkg      string\n-\tReceiver
+      *string\n-\tSymbol   string\n-}\n-\n-type invalidSymbolURLPathError struct {\n-\tPath
+      string\n-}\n-\n-func (s *invalidSymbolURLPathError) Error() string {\n-\treturn
+      \"invalid symbol URL path: \" + s.Path\n-}\n-\n-func parseGoSymbolURLPath(path
+      string) (*goSymbolSpec, error) {\n-\tparts := strings.SplitN(strings.Trim(path,
+      \"/\"), \"/\", 2)\n-\tif len(parts) < 2 {\n-\t\treturn nil, &invalidSymbolURLPathError{Path:
+      path}\n-\t}\n-\tmode := parts[0]\n-\tsymbolID := parts[1]\n-\n-\tif mode !=
+      \"go\" {\n-\t\treturn nil, &errcode.HTTPErr{\n-\t\t\tStatus: http.StatusNotFound,\n-\t\t\tErr:    errors.New(\"invalid
+      mode (only \\\"go\\\" is supported\"),\n-\t\t}\n-\t}\n-\n-\t//                                                        def\n-\t//                                                    vvvvvvvvvvvv\n-\t//
+      http://sourcegraph.com/go/github.com/gorilla/mux/-/Router/Match\n-\t//                           ^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^
+      ^^^^^\n-\t//                                 importPath      receiver? symbolname\n-\tparts
+      = strings.SplitN(symbolID, \"/-/\", 2)\n-\tif len(parts) < 2 {\n-\t\treturn
+      nil, &invalidSymbolURLPathError{Path: path}\n-\t}\n-\timportPath := parts[0]\n-\tdef
+      := parts[1]\n-\tvar symbolName string\n-\tvar receiver *string\n-\tsymbolComponents
+      := strings.Split(def, \"/\")\n-\tswitch len(symbolComponents) {\n-\tcase 1:\n-\t\tsymbolName
+      = symbolComponents[0]\n-\tcase 2:\n-\t\t// This is a method call.\n-\t\treceiver
+      = &symbolComponents[0]\n-\t\tsymbolName = symbolComponents[1]\n-\tdefault:\n-\t\treturn
+      nil, errors.Errorf(\"invalid def %s (must have 1 or 2 path components)\", def)\n-\t}\n-\n-\treturn
+      &goSymbolSpec{\n-\t\tPkg:      importPath,\n-\t\tReceiver: receiver,\n-\t\tSymbol:   symbolName,\n-\t},
+      nil\n-}\n-\n-func symbolLocation(ctx context.Context, vfs ctxvfs.FileSystem,
+      commitID api.CommitID, symbolSpec *goSymbolSpec, pkgPath string) (*lsp.Location,
+      error) {\n-\tbctx := buildContextFromVFS(ctx, vfs)\n-\n-\tfileSet := token.NewFileSet()\n-\tpkg,
+      err := parseFiles(fileSet, &bctx, symbolSpec.Pkg, pkgPath)\n-\tif err != nil
+      {\n-\t\treturn nil, err\n-\t}\n-\n-\tpos := (func() *token.Pos {\n-\t\tdocPackage
+      := doc.New(pkg, symbolSpec.Pkg, doc.AllDecls)\n-\t\tfor _, docConst := range
+      docPackage.Consts {\n-\t\t\tfor _, spec := range docConst.Decl.Specs {\n-\t\t\t\tif
+      valueSpec, ok := spec.(*ast.ValueSpec); ok {\n-\t\t\t\t\tfor _, ident := range
+      valueSpec.Names {\n-\t\t\t\t\t\tif ident.Name == symbolSpec.Symbol {\n-\t\t\t\t\t\t\treturn
+      &ident.NamePos\n-\t\t\t\t\t\t}\n-\t\t\t\t\t}\n-\t\t\t\t}\n-\t\t\t}\n-\t\t}\n-\t\tfor
+      _, docType := range docPackage.Types {\n-\t\t\tif symbolSpec.Receiver != nil
+      && docType.Name == *symbolSpec.Receiver {\n-\t\t\t\tfor _, method := range docType.Methods
+      {\n-\t\t\t\t\tif method.Name == symbolSpec.Symbol {\n-\t\t\t\t\t\treturn &method.Decl.Name.NamePos\n-\t\t\t\t\t}\n-\t\t\t\t}\n-\t\t\t}\n-\t\t\tfor
+      _, fun := range docType.Funcs {\n-\t\t\t\tif fun.Name == symbolSpec.Symbol {\n-\t\t\t\t\treturn
+      &fun.Decl.Name.NamePos\n-\t\t\t\t}\n-\t\t\t}\n-\t\t\tfor _, spec := range docType.Decl.Specs
+      {\n-\t\t\t\tif typeSpec, ok := spec.(*ast.TypeSpec); ok && typeSpec.Name.Name
+      == symbolSpec.Symbol {\n-\t\t\t\t\treturn &typeSpec.Name.NamePos\n-\t\t\t\t}\n-\t\t\t}\n-\t\t}\n-\t\tfor
+      _, docVar := range docPackage.Vars {\n-\t\t\tfor _, spec := range docVar.Decl.Specs
+      {\n-\t\t\t\tif valueSpec, ok := spec.(*ast.ValueSpec); ok {\n-\t\t\t\t\tfor
+      _, ident := range valueSpec.Names {\n-\t\t\t\t\t\tif ident.Name == symbolSpec.Symbol
+      {\n-\t\t\t\t\t\t\treturn &ident.NamePos\n-\t\t\t\t\t\t}\n-\t\t\t\t\t}\n-\t\t\t\t}\n-\t\t\t}\n-\t\t}\n-\t\tfor
+      _, docFunc := range docPackage.Funcs {\n-\t\t\tif docFunc.Name == symbolSpec.Symbol
+      {\n-\t\t\t\treturn &docFunc.Decl.Name.NamePos\n-\t\t\t}\n-\t\t}\n-\t\treturn
+      nil\n-\t})()\n-\n-\tif pos == nil {\n-\t\treturn nil, nil\n-\t}\n-\n-\tposition
+      := fileSet.Position(*pos)\n-\tlocation := lsp.Location{\n-\t\tURI: lsp.DocumentURI(\"https://\"
+      + symbolSpec.Pkg + \"?\" + string(commitID) + \"#\" + position.Filename),\n-\t\tRange:
+      lsp.Range{\n-\t\t\tStart: lsp.Position{\n-\t\t\t\tLine:      position.Line -
+      1,\n-\t\t\t\tCharacter: position.Column - 1,\n-\t\t\t},\n-\t\t\tEnd: lsp.Position{\n-\t\t\t\tLine:      position.Line
+      - 1,\n-\t\t\t\tCharacter: position.Column - 1,\n-\t\t\t},\n-\t\t},\n-\t}\n-\n-\treturn
+      &location, nil\n-}\n-\n-func buildContextFromVFS(ctx context.Context, vfs ctxvfs.FileSystem)
+      build.Context {\n-\tbctx := build.Default\n-\tPrepareContext(&bctx, ctx, vfs)\n-\treturn
+      bctx\n-}\n-\n-func repoVFS(ctx context.Context, name api.RepoName, rev api.CommitID)
+      (ctxvfs.FileSystem, error) {\n-\tif strings.HasPrefix(string(name), \"github.com/\")
+      {\n-\t\treturn vfsutil.NewGitHubRepoVFS(string(name), string(rev))\n-\t}\n-\n-\t//
+      Fall back to a full git clone for non-github.com repos.\n-\treturn nil, errors.Errorf(\"unable
+      to fetch repo %s (only github.com repos are supported)\", name)\n-}\n-\n-func
+      parseFiles(fset *token.FileSet, bctx *build.Context, importPath, srcDir string)
+      (*ast.Package, error) {\n-\tbpkg, err := bctx.ImportDir(srcDir, 0)\n-\tif err
+      != nil {\n-\t\treturn nil, err\n-\t}\n-\n-\tpkg := &ast.Package{\n-\t\tFiles:
+      map[string]*ast.File{},\n-\t}\n-\tvar errs error\n-\tfor _, file := range append(bpkg.GoFiles,
+      bpkg.TestGoFiles...) {\n-\t\tif src, err := buildutil.ParseFile(fset, bctx,
+      nil, buildutil.JoinPath(bctx, srcDir), file, 0); err == nil {\n-\t\t\tpkg.Name
+      = src.Name.Name\n-\t\t\tpkg.Files[file] = src\n-\t\t} else {\n-\t\t\terrs =
+      multierror.Append(errs, err)\n-\t\t}\n-\t}\n-\n-\treturn pkg, errs\n-}\n-\n-func
+      PrepareContext(bctx *build.Context, ctx context.Context, vfs ctxvfs.FileSystem)
+      {\n-\t// HACK: in the all Context''s methods below we are trying to convert
+      path to virtual one (/foo/bar/..)\n-\t// because some code may pass OS-specific
+      arguments.\n-\t// See golang.org/x/tools/go/buildutil/allpackages.go which uses
+      `filepath` for example\n-\n-\tbctx.OpenFile = func(path string) (io.ReadCloser,
+      error) {\n-\t\tpath = filepath.ToSlash(path)\n-\t\treturn vfs.Open(ctx, path)\n-\t}\n-\tbctx.IsDir
+      = func(path string) bool {\n-\t\tpath = filepath.ToSlash(path)\n-\t\tfi, err
+      := vfs.Stat(ctx, path)\n-\t\treturn err == nil && fi.Mode().IsDir()\n-\t}\n-\tbctx.HasSubdir
+      = func(root, dir string) (rel string, ok bool) {\n-\t\tif !bctx.IsDir(dir) {\n-\t\t\treturn
+      \"\", false\n-\t\t}\n-\t\tif !PathHasPrefix(dir, root) {\n-\t\t\treturn \"\",
+      false\n-\t\t}\n-\t\treturn PathTrimPrefix(dir, root), true\n-\t}\n-\tbctx.ReadDir
+      = func(path string) ([]fs.FileInfo, error) {\n-\t\tpath = filepath.ToSlash(path)\n-\t\treturn
+      vfs.ReadDir(ctx, path)\n-\t}\n-\tbctx.IsAbsPath = func(path string) bool {\n-\t\tpath
+      = filepath.ToSlash(path)\n-\t\treturn IsAbs(path)\n-\t}\n-\tbctx.JoinPath =
+      func(elem ...string) string {\n-\t\t// convert all backslashes to slashes to
+      avoid\n-\t\t// weird paths like C:\\mygopath\\/src/github.com/...\n-\t\tfor
+      i, el := range elem {\n-\t\t\telem[i] = filepath.ToSlash(el)\n-\t\t}\n-\t\treturn
+      path.Join(elem...)\n-\t}\n-}\n-\n-func trimFilePrefix(s string) string {\n-\treturn
+      strings.TrimPrefix(s, \"file://\")\n-}\n-\n-func normalizePath(s string) string
+      {\n-\tif isURI(s) {\n-\t\treturn UriToPath(lsp.DocumentURI(s))\n-\t}\n-\ts =
+      filepath.ToSlash(s)\n-\tif !strings.HasPrefix(s, \"/\") {\n-\t\ts = \"/\" +
+      s\n-\t}\n-\treturn s\n-}\n-\n-// PathHasPrefix returns true if s is starts with
+      the given prefix\n-func PathHasPrefix(s, prefix string) bool {\n-\ts = normalizePath(s)\n-\tprefix
+      = normalizePath(prefix)\n-\tif s == prefix {\n-\t\treturn true\n-\t}\n-\tif
+      !strings.HasSuffix(prefix, \"/\") {\n-\t\tprefix += \"/\"\n-\t}\n-\treturn s
+      == prefix || strings.HasPrefix(s, prefix)\n-}\n-\n-// PathTrimPrefix removes
+      the prefix from s\n-func PathTrimPrefix(s, prefix string) string {\n-\ts = normalizePath(s)\n-\tprefix
+      = normalizePath(prefix)\n-\tif s == prefix {\n-\t\treturn \"\"\n-\t}\n-\tif
+      !strings.HasSuffix(prefix, \"/\") {\n-\t\tprefix += \"/\"\n-\t}\n-\treturn strings.TrimPrefix(s,
+      prefix)\n-}\n-\n-// PathEqual returns true if both a and b are equal\n-func
+      PathEqual(a, b string) bool {\n-\treturn PathTrimPrefix(a, b) == \"\"\n-}\n-\n-//
+      IsVendorDir tells if the specified directory is a vendor directory.\n-func IsVendorDir(dir
+      string) bool {\n-\treturn strings.HasPrefix(dir, \"vendor/\") || strings.Contains(dir,
+      \"/vendor/\")\n-}\n-\n-// IsURI tells if s denotes an URI\n-func IsURI(s lsp.DocumentURI)
+      bool {\n-\treturn isURI(string(s))\n-}\n-\n-func isURI(s string) bool {\n-\treturn
+      strings.HasPrefix(s, \"file://\")\n-}\n-\n-// PathToURI converts given absolute
+      path to file URI\n-func PathToURI(path string) lsp.DocumentURI {\n-\tpath =
+      filepath.ToSlash(path)\n-\tparts := strings.SplitN(path, \"/\", 2)\n-\n-\t//
+      If the first segment is a Windows drive letter, prefix with a slash and skip
+      encoding\n-\thead := parts[0]\n-\tif head != \"\" {\n-\t\thead = \"/\" + head\n-\t}\n-\n-\trest
+      := \"\"\n-\tif len(parts) > 1 {\n-\t\trest = \"/\" + parts[1]\n-\t}\n-\n-\treturn
+      lsp.DocumentURI(\"file://\" + head + rest)\n-}\n-\n-// UriToPath converts given
+      file URI to path\n-func UriToPath(uri lsp.DocumentURI) string {\n-\tu, err :=
+      url.Parse(string(uri))\n-\tif err != nil {\n-\t\treturn trimFilePrefix(string(uri))\n-\t}\n-\treturn
+      u.Path\n-}\n-\n-var regDriveLetter = lazyregexp.New(\"^/[a-zA-Z]:\")\n-\n-//
+      UriToRealPath converts the given file URI to the platform specific path\n-func
+      UriToRealPath(uri lsp.DocumentURI) string {\n-\tpath := UriToPath(uri)\n-\n-\tif
+      regDriveLetter.MatchString(path) {\n-\t\t// remove the leading slash if it starts
+      with a drive letter\n-\t\t// and convert to back slashes\n-\t\tpath = filepath.FromSlash(path[1:])\n-\t}\n-\n-\treturn
+      path\n-}\n-\n-// IsAbs returns true if the given path is absolute\n-func IsAbs(path
+      string) bool {\n-\t// Windows implementation accepts path-like and filepath-like
+      arguments\n-\treturn strings.HasPrefix(path, \"/\") || filepath.IsAbs(path)\n-}\n-\n-//
+      Panicf takes the return value of recover() and outputs data to the log with\n-//
+      the stack trace appended. Arguments are handled in the manner of\n-// fmt.Printf.
+      Arguments should format to a string which identifies what the\n-// panic code
+      was doing. Returns a non-nil error if it recovered from a panic.\n-func Panicf(r
+      interface{}, format string, v ...interface{}) error {\n-\tif r != nil {\n-\t\t//
+      Same as net/http\n-\t\tconst size = 64 << 10\n-\t\tbuf := make([]byte, size)\n-\t\tbuf
+      = buf[:runtime.Stack(buf, false)]\n-\t\tid := fmt.Sprintf(format, v...)\n-\t\tlog.Printf(\"panic
+      serving %s: %v\\n%s\", id, r, string(buf))\n-\t\treturn errors.Errorf(\"unexpected
+      panic: %v\", r)\n-\t}\n-\treturn nil\n-}"},{"sha":"d24b21e4d6051fc86006f07a6dbcb9b2212c4321","filename":"cmd/frontend/internal/app/go_symbol_url_test.go","status":"removed","additions":0,"deletions":188,"changes":188,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/go_symbol_url_test.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/06b6f3b80bcc8dabb64283403192b261f57cd819/cmd/frontend/internal/app/go_symbol_url_test.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/go_symbol_url_test.go?ref=06b6f3b80bcc8dabb64283403192b261f57cd819","patch":"@@
+      -1,188 +0,0 @@\n-package app\n-\n-import (\n-\t\"context\"\n-\t\"strings\"\n-\t\"testing\"\n-\n-\t\"github.com/google/go-cmp/cmp\"\n-\t\"github.com/sourcegraph/ctxvfs\"\n-\t\"github.com/sourcegraph/go-langserver/pkg/lsp\"\n-\n-\t\"github.com/sourcegraph/sourcegraph/internal/api\"\n-)\n-\n-func
+      TestParseGoSymbolURLPath(t *testing.T) {\n-\tvalid := map[string]*goSymbolSpec{\n-\t\t\"/go/github.com/gorilla/mux/-/Router/Match\":
+      {\n-\t\t\tPkg:      \"github.com/gorilla/mux\",\n-\t\t\tReceiver: strptr(\"Router\"),\n-\t\t\tSymbol:   \"Match\",\n-\t\t},\n-\n-\t\t\"/go/github.com/gorilla/mux/-/Router\":
+      {\n-\t\t\tPkg:    \"github.com/gorilla/mux\",\n-\t\t\tSymbol: \"Router\",\n-\t\t},\n-\t}\n-\n-\tinvalid
+      := map[string]string{\n-\t\t\"/ts/github.com/foo/bar/-/Bam\": \"invalid mode\",\n-\t\t\"/go\":                          \"invalid
+      symbol URL path\",\n-\t\t\"/go/\":                         \"invalid symbol
+      URL path\",\n-\t\t\"/go/google.golang.org/api/cloudresourcemanager/v1\": \"invalid
+      symbol URL path\",\n-\t}\n-\n-\tfor path, want := range valid {\n-\t\tt.Log(path)\n-\t\tgot,
+      err := parseGoSymbolURLPath(path)\n-\t\tif err != nil {\n-\t\t\tt.Errorf(\"parseGoSymbolURLPath(%q)
+      got error: %v\", path, err)\n-\t\t} else if diff := cmp.Diff(want, got); diff
+      != \"\" {\n-\t\t\tt.Errorf(\"parseGoSymbolURLPath(%q) mismatch (-want, +got):\\n%s\",
+      path, diff)\n-\t\t}\n-\t}\n-\n-\tfor path, errSub := range invalid {\n-\t\tt.Log(path)\n-\t\tgot,
+      err := parseGoSymbolURLPath(path)\n-\t\tif err == nil {\n-\t\t\tt.Errorf(\"parseGoSymbolURLPath(%q)
+      expected error got: %v\", path, *got)\n-\t\t} else if !strings.Contains(err.Error(),
+      errSub) {\n-\t\t\tt.Errorf(\"parseGoSymbolURLPath(%q) expected error containing
+      %q got: %v\", path, errSub, err)\n-\t\t}\n-\t}\n-}\n-\n-type symbolLocationArgs
+      struct {\n-\tvfs        map[string]string\n-\tcommitID   api.CommitID\n-\timportPath
+      string\n-\tpath       string\n-\treceiver   *string\n-\tsymbol     string\n-}\n-\n-type
+      test struct {\n-\targs symbolLocationArgs\n-\twant *lsp.Location\n-}\n-\n-func
+      mkLocation(uri string, line, character int) *lsp.Location {\n-\treturn &lsp.Location{\n-\t\tURI:
+      \"https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#/mux.go\",\n-\t\tRange:
+      lsp.Range{\n-\t\t\tStart: lsp.Position{\n-\t\t\t\tLine:      line,\n-\t\t\t\tCharacter:
+      character,\n-\t\t\t},\n-\t\t\tEnd: lsp.Position{\n-\t\t\t\tLine:      line,\n-\t\t\t\tCharacter:
+      character,\n-\t\t\t},\n-\t\t},\n-\t}\n-}\n-\n-func strptr(s string) *string
+      {\n-\treturn &s\n-}\n-\n-func TestSymbolLocation(t *testing.T) {\n-\tvfs :=
+      map[string]string{\n-\t\t\"mux.go\": \"package mux\\nconst Foo = 5\\ntype Bar
+      int\\nfunc (b Bar) Quux() {}\\nvar Floop = 6\",\n-\t}\n-\n-\ttests := []test{\n-\t\t{\n-\t\t\targs:
+      symbolLocationArgs{\n-\t\t\t\tvfs:        vfs,\n-\t\t\t\tcommitID:   \"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\",\n-\t\t\t\timportPath:
+      \"github.com/gorilla/mux\",\n-\t\t\t\tpath:       \"/\",\n-\t\t\t\treceiver:   nil,\n-\t\t\t\tsymbol:     \"NonexistentSymbol\",\n-\t\t\t},\n-\t\t\twant:
+      nil,\n-\t\t},\n-\t\t{\n-\t\t\targs: symbolLocationArgs{\n-\t\t\t\tvfs:        vfs,\n-\t\t\t\tcommitID:   \"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\",\n-\t\t\t\timportPath:
+      \"github.com/gorilla/mux\",\n-\t\t\t\tpath:       \"/\",\n-\t\t\t\treceiver:   nil,\n-\t\t\t\tsymbol:     \"Foo\",\n-\t\t\t},\n-\t\t\twant:
+      mkLocation(\"https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go\",
+      1, 6),\n-\t\t},\n-\t\t{\n-\t\t\targs: symbolLocationArgs{\n-\t\t\t\tvfs:        vfs,\n-\t\t\t\tcommitID:   \"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\",\n-\t\t\t\timportPath:
+      \"github.com/gorilla/mux\",\n-\t\t\t\tpath:       \"/\",\n-\t\t\t\treceiver:   nil,\n-\t\t\t\tsymbol:     \"Bar\",\n-\t\t\t},\n-\t\t\twant:
+      mkLocation(\"https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go\",
+      2, 5),\n-\t\t},\n-\t\t{\n-\t\t\targs: symbolLocationArgs{\n-\t\t\t\tvfs:        vfs,\n-\t\t\t\tcommitID:   \"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\",\n-\t\t\t\timportPath:
+      \"github.com/gorilla/mux\",\n-\t\t\t\tpath:       \"/\",\n-\t\t\t\treceiver:   strptr(\"Bar\"),\n-\t\t\t\tsymbol:     \"Quux\",\n-\t\t\t},\n-\t\t\twant:
+      mkLocation(\"https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go\",
+      3, 13),\n-\t\t},\n-\t\t{\n-\t\t\targs: symbolLocationArgs{\n-\t\t\t\tvfs:        vfs,\n-\t\t\t\tcommitID:   \"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef\",\n-\t\t\t\timportPath:
+      \"github.com/gorilla/mux\",\n-\t\t\t\tpath:       \"/\",\n-\t\t\t\treceiver:   nil,\n-\t\t\t\tsymbol:     \"Floop\",\n-\t\t\t},\n-\t\t\twant:
+      mkLocation(\"https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#mux.go\",
+      4, 4),\n-\t\t},\n-\t}\n-\tfor i, test := range tests {\n-\t\tspec := &goSymbolSpec{\n-\t\t\tPkg:      test.args.importPath,\n-\t\t\tReceiver:
+      test.args.receiver,\n-\t\t\tSymbol:   test.args.symbol,\n-\t\t}\n-\t\tgot, _
+      := symbolLocation(context.Background(), mapFS(test.args.vfs), test.args.commitID,
+      spec, test.args.path)\n-\t\tif got != test.want && (got == nil || test.want
+      == nil || *got != *test.want) {\n-\t\t\tt.Errorf(\"Test #%d:\\ngot  %#v\\nwant
+      %#v\", i, got, test.want)\n-\t\t}\n-\t}\n-}\n-\n-// mapFS lets us easily instantiate
+      a VFS with a map[string]string\n-// (which is less noisy than map[string][]byte
+      in test fixtures).\n-func mapFS(m map[string]string) *stringMapFS {\n-\tm2 :=
+      make(map[string][]byte, len(m))\n-\tfilenames := make([]string, 0, len(m))\n-\tfor
+      k, v := range m {\n-\t\tm2[k] = []byte(v)\n-\t\tfilenames = append(filenames,
+      k)\n-\t}\n-\treturn &stringMapFS{\n-\t\tFileSystem: ctxvfs.Map(m2),\n-\t\tfilenames:  filenames,\n-\t}\n-}\n-\n-type
+      stringMapFS struct {\n-\tctxvfs.FileSystem\n-\tfilenames []string\n-}\n-\n-func
+      (fs *stringMapFS) ListAllFiles(ctx context.Context) ([]string, error) {\n-\treturn
+      fs.filenames, nil\n-}"},{"sha":"09d80dc18f25f441000e235d6ca0fe8eac637ec0","filename":"cmd/frontend/internal/app/router/router.go","status":"modified","additions":1,"deletions":10,"changes":11,"blob_url":"https://github.com/sourcegraph/sourcegraph/blob/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd/frontend/internal/app/router/router.go","raw_url":"https://github.com/sourcegraph/sourcegraph/raw/93971fa0b036b3e258cbb9a3eb7098e4032eefc4/cmd/frontend/internal/app/router/router.go","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/cmd/frontend/internal/app/router/router.go?ref=93971fa0b036b3e258cbb9a3eb7098e4032eefc4","patch":"@@
+      -7,7 +7,6 @@ package router\n import (\n \t\"github.com/gorilla/mux\"\n \n-\t\"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar\"\n
+      \t\"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar\"\n )\n
+      \n@@ -41,16 +40,13 @@ const (\n \tOldToolsRedirect = \"old-tools-redirect\"\n
+      \tOldTreeRedirect  = \"old-tree-redirect\"\n \n-\tGDDORefs = \"gddo.refs\"\n-\tEditor   =
+      \"editor\"\n+\tEditor = \"editor\"\n \n \tDebug        = \"debug\"\n \tDebugHeaders
+      = \"debug.headers\"\n \n \tGopherconLiveBlog = \"gophercon.live.blog\"\n \n-\tGoSymbolURL
+      = \"go-symbol-url\"\n-\n \tUI = \"ui\"\n )\n \n@@ -84,7 +80,6 @@ func newRouter()
+      *mux.Router {\n \n \tbase.Path(\"/-/static/extension/{RegistryExtensionReleaseFilename}\").Methods(\"GET\").Name(RegistryExtensionBundle)\n
+      \n-\tbase.Path(\"/-/godoc/refs\").Methods(\"GET\").Name(GDDORefs)\n \tbase.Path(\"/-/editor\").Methods(\"GET\").Name(Editor)\n
+      \n \tbase.Path(\"/-/debug/headers\").Methods(\"GET\").Name(DebugHeaders)\n@@
+      -99,10 +94,6 @@ func newRouter() *mux.Router {\n \n \tbase.Path(\"/site-admin/pings/latest\").Methods(\"GET\").Name(LatestPing)\n
+      \n-\tif envvar.SourcegraphDotComMode() {\n-\t\tbase.PathPrefix(\"/go/\").Methods(\"GET\").Name(GoSymbolURL)\n-\t}\n-\n
+      \trepoPath := `/` + routevar.Repo\n \trepo := base.PathPrefix(repoPath + \"/\"
+      + routevar.RepoPathDelim + \"/\").Subrouter()\n \trepo.Path(\"/badge.svg\").Methods(\"GET\").Name(RepoBadge)"}]}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:21 GMT
+      Etag:
+      - W/"4ab341e8639e3fa42f53d5cc0c43b6d40be9fef9de779c483d51f6ed8bc7f438"
+      Last-Modified:
+      - Fri, 10 Dec 2021 14:21:28 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126DB4:3DFF02A:61BB7825
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4995"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "5"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/orgs/sourcegraph/memberships/davejrt
+    method: GET
+  response:
+    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/davejrt","state":"active","role":"admin","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
+      search and navigation for teams (self-hosted, OSS)"}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:21 GMT
+      Etag:
+      - W/"7964001d34149e9eb970f9326e675dddb1b0d3b4931d9814e8605f9248367161"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - admin:org, read:org, repo, user, write:org
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126DD4:3DFF05F:61BB7825
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4994"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "6"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/orgs/sourcegraph/memberships/bobheadxi
+    method: GET
+  response:
+    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/bobheadxi","state":"active","role":"member","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
+      search and navigation for teams (self-hosted, OSS)"}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:21 GMT
+      Etag:
+      - W/"4a26a02b3c974222a385bc2ddb9f7729aa04d13b4482223d172777709b11981d"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - admin:org, read:org, repo, user, write:org
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126DE9:3DFF073:61BB7825
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4993"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "7"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/orgs/sourcegraph/memberships/bobheadxi
+    method: GET
+  response:
+    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/bobheadxi","state":"active","role":"member","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
+      search and navigation for teams (self-hosted, OSS)"}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:21 GMT
+      Etag:
+      - W/"4a26a02b3c974222a385bc2ddb9f7729aa04d13b4482223d172777709b11981d"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - admin:org, read:org, repo, user, write:org
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126DFE:3DFF089:61BB7825
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4992"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "8"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/orgs/sourcegraph/memberships/jhchabran
+    method: GET
+  response:
+    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/jhchabran","state":"active","role":"member","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
+      search and navigation for teams (self-hosted, OSS)"}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:22 GMT
+      Etag:
+      - W/"52151cdc5e9488ec1eaed4b041a684db072d1290a35132213ef4d10c07d4347b"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - admin:org, read:org, repo, user, write:org
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126E0D:3DFF096:61BB7825
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4991"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "9"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: |
+      {"required_status_checks":{"strict":false,"contexts":["buildkite/sourcegraph"]},"required_pull_request_reviews":{"dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"enforce_admins":false,"restrictions":{"users":["davejrt","bobheadxi","bobheadxi","jhchabran"],"teams":["dev-experience"]},"required_linear_history":true}
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.luke-cage-preview+json
+      Content-Type:
+      - application/json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
+    method: PUT
+  response:
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
+      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"All
+      members of the Dev Experience team","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Enablement","id":5143057,"node_id":"T_kwDOADy5QM4ATnoR","slug":"enablement","description":"Everyone
+      in the Enablement org","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5143057","html_url":"https://github.com/orgs/sourcegraph/teams/enablement","members_url":"https://api.github.com/organizations/3979584/team/5143057/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5143057/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:23 GMT
+      Etag:
+      - W/"841e1b09e9e21268c5d2b0b59620367f042c4a08ffe1f3e31e794b2cbbb79d56"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=luke-cage-preview; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126E22:3DFF0B4:61BB7826
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4990"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "10"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.luke-cage-preview+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
+    method: GET
+  response:
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
+      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"All
+      members of the Dev Experience team","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Enablement","id":5143057,"node_id":"T_kwDOADy5QM4ATnoR","slug":"enablement","description":"Everyone
+      in the Enablement org","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5143057","html_url":"https://github.com/orgs/sourcegraph/teams/enablement","members_url":"https://api.github.com/organizations/3979584/team/5143057/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5143057/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:23 GMT
+      Etag:
+      - W/"841e1b09e9e21268c5d2b0b59620367f042c4a08ffe1f3e31e794b2cbbb79d56"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=luke-cage-preview; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126EC4:3DFF177:61BB7826
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4989"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "11"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.luke-cage-preview+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
+    method: GET
+  response:
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
+      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"All
+      members of the Dev Experience team","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Enablement","id":5143057,"node_id":"T_kwDOADy5QM4ATnoR","slug":"enablement","description":"Everyone
+      in the Enablement org","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5143057","html_url":"https://github.com/orgs/sourcegraph/teams/enablement","members_url":"https://api.github.com/organizations/3979584/team/5143057/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5143057/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:23 GMT
+      Etag:
+      - W/"841e1b09e9e21268c5d2b0b59620367f042c4a08ffe1f3e31e794b2cbbb79d56"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=luke-cage-preview; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126EE3:3DFF19C:61BB7827
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4988"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "12"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.luke-cage-preview+json
+      User-Agent:
+      - go-github
+    url: https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection
+    method: GET
+  response:
+    body: '{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection","required_status_checks":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks","strict":false,"contexts":["buildkite/sourcegraph"],"contexts_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_status_checks/contexts","checks":[{"context":"buildkite/sourcegraph","app_id":72}]},"restrictions":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions","users_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/users","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/teams","apps_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/restrictions/apps","users":[{"login":"jhchabran","id":10151,"node_id":"MDQ6VXNlcjEwMTUx","avatar_url":"https://avatars.githubusercontent.com/u/10151?v=4","gravatar_id":"","url":"https://api.github.com/users/jhchabran","html_url":"https://github.com/jhchabran","followers_url":"https://api.github.com/users/jhchabran/followers","following_url":"https://api.github.com/users/jhchabran/following{/other_user}","gists_url":"https://api.github.com/users/jhchabran/gists{/gist_id}","starred_url":"https://api.github.com/users/jhchabran/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/jhchabran/subscriptions","organizations_url":"https://api.github.com/users/jhchabran/orgs","repos_url":"https://api.github.com/users/jhchabran/repos","events_url":"https://api.github.com/users/jhchabran/events{/privacy}","received_events_url":"https://api.github.com/users/jhchabran/received_events","type":"User","site_admin":false},{"login":"davejrt","id":2067825,"node_id":"MDQ6VXNlcjIwNjc4MjU=","avatar_url":"https://avatars.githubusercontent.com/u/2067825?v=4","gravatar_id":"","url":"https://api.github.com/users/davejrt","html_url":"https://github.com/davejrt","followers_url":"https://api.github.com/users/davejrt/followers","following_url":"https://api.github.com/users/davejrt/following{/other_user}","gists_url":"https://api.github.com/users/davejrt/gists{/gist_id}","starred_url":"https://api.github.com/users/davejrt/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/davejrt/subscriptions","organizations_url":"https://api.github.com/users/davejrt/orgs","repos_url":"https://api.github.com/users/davejrt/repos","events_url":"https://api.github.com/users/davejrt/events{/privacy}","received_events_url":"https://api.github.com/users/davejrt/received_events","type":"User","site_admin":false},{"login":"bobheadxi","id":23356519,"node_id":"MDQ6VXNlcjIzMzU2NTE5","avatar_url":"https://avatars.githubusercontent.com/u/23356519?v=4","gravatar_id":"","url":"https://api.github.com/users/bobheadxi","html_url":"https://github.com/bobheadxi","followers_url":"https://api.github.com/users/bobheadxi/followers","following_url":"https://api.github.com/users/bobheadxi/following{/other_user}","gists_url":"https://api.github.com/users/bobheadxi/gists{/gist_id}","starred_url":"https://api.github.com/users/bobheadxi/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/bobheadxi/subscriptions","organizations_url":"https://api.github.com/users/bobheadxi/orgs","repos_url":"https://api.github.com/users/bobheadxi/repos","events_url":"https://api.github.com/users/bobheadxi/events{/privacy}","received_events_url":"https://api.github.com/users/bobheadxi/received_events","type":"User","site_admin":false}],"teams":[{"name":"Dev
+      Experience","id":5135343,"node_id":"T_kwDOADy5QM4ATlvv","slug":"dev-experience","description":"All
+      members of the Dev Experience team","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5135343","html_url":"https://github.com/orgs/sourcegraph/teams/dev-experience","members_url":"https://api.github.com/organizations/3979584/team/5135343/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5135343/repos","permission":"pull","parent":{"name":"Enablement","id":5143057,"node_id":"T_kwDOADy5QM4ATnoR","slug":"enablement","description":"Everyone
+      in the Enablement org","privacy":"closed","url":"https://api.github.com/organizations/3979584/team/5143057","html_url":"https://github.com/orgs/sourcegraph/teams/enablement","members_url":"https://api.github.com/organizations/3979584/team/5143057/members{/member}","repositories_url":"https://api.github.com/organizations/3979584/team/5143057/repos","permission":"pull"}}],"apps":[]},"required_pull_request_reviews":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_pull_request_reviews","dismiss_stale_reviews":false,"require_code_owner_reviews":false,"required_approving_review_count":1},"required_signatures":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/required_signatures","enabled":false},"enforce_admins":{"url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches/test-buildsherrif-branch/protection/enforce_admins","enabled":false},"required_linear_history":{"enabled":true},"allow_force_pushes":{"enabled":false},"allow_deletions":{"enabled":false},"required_conversation_resolution":{"enabled":false}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 16 Dec 2021 17:32:24 GMT
+      Etag:
+      - W/"841e1b09e9e21268c5d2b0b59620367f042c4a08ffe1f3e31e794b2cbbb79d56"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Accepted-Oauth-Scopes:
+      - ""
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=luke-cage-preview; format=json
+      X-Github-Request-Id:
+      - E826:16A2:2126F01:3DFF1BA:61BB7827
+      X-Oauth-Scopes:
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4987"
+      X-Ratelimit-Reset:
+      - "1639679540"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "13"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

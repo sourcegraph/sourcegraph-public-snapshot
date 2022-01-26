@@ -2,9 +2,9 @@ import React, { useCallback, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Container } from '@sourcegraph/wildcard'
+import { gql, useMutation } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Container, Button, Alert } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
@@ -80,19 +80,18 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, init
                     usernameFieldDisabled={!user.viewerCanChangeUsername}
                     disabled={loading}
                 />
-                <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading}
-                    id="test-EditUserProfileForm__save"
-                >
+                <Button type="submit" disabled={loading} id="test-EditUserProfileForm__save" variant="primary">
                     Save
-                </button>
-                {error && <div className="mt-3 alert alert-danger">{error.message}</div>}
+                </Button>
+                {error && (
+                    <Alert className="mt-3" variant="danger">
+                        {error.message}
+                    </Alert>
+                )}
                 {data?.updateUser && (
-                    <div className="mt-3 mb-0 alert alert-success test-EditUserProfileForm__success">
+                    <Alert className="mt-3 mb-0 test-EditUserProfileForm__success" variant="success">
                         User profile updated.
-                    </div>
+                    </Alert>
                 )}
                 {after && (
                     <>

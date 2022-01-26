@@ -9,13 +9,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type settingsResolver struct {
-	db       dbutil.DB
+	db       database.DB
 	subject  *settingsSubject
 	settings *api.Settings
 	user     *types.User
@@ -48,7 +47,7 @@ func (o *settingsResolver) Author(ctx context.Context) (*UserResolver, error) {
 	}
 	if o.user == nil {
 		var err error
-		o.user, err = database.Users(o.db).GetByID(ctx, *o.settings.AuthorUserID)
+		o.user, err = o.db.Users().GetByID(ctx, *o.settings.AuthorUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +59,7 @@ var globalSettingsAllowEdits, _ = strconv.ParseBool(env.Get("GLOBAL_SETTINGS_ALL
 
 // like database.Settings.CreateIfUpToDate, except it handles notifying the
 // query-runner if any saved queries have changed.
-func settingsCreateIfUpToDate(ctx context.Context, db dbutil.DB, subject *settingsSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
+func settingsCreateIfUpToDate(ctx context.Context, db database.DB, subject *settingsSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 	if os.Getenv("GLOBAL_SETTINGS_FILE") != "" && subject.site != nil && !globalSettingsAllowEdits {
 		return nil, errors.New("Updating global settings not allowed when using GLOBAL_SETTINGS_FILE")
 	}
@@ -72,7 +71,7 @@ func settingsCreateIfUpToDate(ctx context.Context, db dbutil.DB, subject *settin
 	}
 
 	// Update settings.
-	latestSettings, err := database.Settings(db).CreateIfUpToDate(ctx, subject.toSubject(), lastID, &authorUserID, contents)
+	latestSettings, err := db.Settings().CreateIfUpToDate(ctx, subject.toSubject(), lastID, &authorUserID, contents)
 	if err != nil {
 		return nil, err
 	}

@@ -1,22 +1,22 @@
+import { render } from '@testing-library/react'
 import React from 'react'
-import renderer from 'react-test-renderer'
 
 import { Path } from './Path'
 
 describe('Path', () => {
     test('no path components', () => {
-        expect(renderer.create(<Path path="" />).toJSON()).toMatchSnapshot()
+        expect(render(<Path path="" />).asFragment()).toMatchSnapshot()
     })
 
     test('1 path component', () => {
-        expect(renderer.create(<Path path="a" />).toJSON()).toMatchSnapshot()
+        expect(render(<Path path="a" />).asFragment()).toMatchSnapshot()
     })
 
     test('2 path components', () => {
-        expect(renderer.create(<Path path="a/b" />).toJSON()).toMatchSnapshot()
+        expect(render(<Path path="a/b" />).asFragment()).toMatchSnapshot()
     })
 
     test('3 path components', () => {
-        expect(renderer.create(<Path path="a/b/c" />).toJSON()).toMatchSnapshot()
+        expect(render(<Path path="a/b/c" />).asFragment()).toMatchSnapshot()
     })
 })

@@ -1,4 +1,4 @@
-import { InsightType, InsightTypePrefix, SyntheticInsightFields } from './common'
+import { InsightExecutionType, InsightTypePrefix, InsightType, SyntheticInsightFields } from './common'
 
 /**
  * Extended Lang Stats Insight.
@@ -9,7 +9,8 @@ import { InsightType, InsightTypePrefix, SyntheticInsightFields } from './common
  * (like search based insight has)
  */
 export interface LangStatsInsight extends LangStatsInsightConfiguration, SyntheticInsightFields {
-    type: InsightType.Extension
+    type: InsightExecutionType.Runtime
+    viewType: InsightType.LangStats
 }
 
 /**

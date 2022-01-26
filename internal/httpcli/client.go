@@ -25,6 +25,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -64,7 +65,7 @@ func NewMiddleware(mws ...Middleware) Middleware {
 	}
 }
 
-// A Opt configures an aspect of a given *http.Client,
+// Opt configures an aspect of a given *http.Client,
 // returning an error in case of failure.
 type Opt func(*http.Client) error
 
@@ -98,6 +99,7 @@ func NewExternalClientFactory() *Factory {
 	return NewFactory(
 		NewMiddleware(
 			ContextErrorMiddleware,
+			HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
 		),
 		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
@@ -146,6 +148,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 			ExpJitterDelay(internalRetryDelayBase, internalRetryDelayMax),
 		),
 		MeteredTransportOpt(subsystem),
+		ActorTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -589,4 +592,18 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 	cli.Transport = tr
 
 	return tr, nil
+}
+
+// ActorTransportOpt wraps an existing http.Transport of an http.Client to pull the actor
+// from the context and add it to each request's HTTP headers.
+//
+// Servers can use actor.HTTPMiddleware to populate actor context from incoming requests.
+func ActorTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &actor.HTTPTransport{RoundTripper: cli.Transport}
+
+	return nil
 }

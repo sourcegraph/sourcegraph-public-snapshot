@@ -8,17 +8,17 @@ import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { LoadingSpinner, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { ModalPage } from '../../../components/ModalPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -163,7 +163,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
             return (
                 <>
                     <PageTitle title="New extension" />
-                    <ModalPage className="mt-4 overflow-hidden">
+                    <ModalPage className="mt-4">
                         <h2 className="mb-4">
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>
@@ -204,22 +204,22 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                     </code>
                                 </div>
                             )}
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={
                                     isErrorLike(this.state.publishersOrError) ||
                                     this.state.publishersOrError === 'loading' ||
                                     this.state.creationOrError === 'loading'
                                 }
-                                className="btn btn-primary"
+                                variant="primary"
                             >
                                 {this.state.creationOrError === 'loading' ? (
-                                    <LoadingSpinner className="icon-inline" />
+                                    <LoadingSpinner />
                                 ) : (
                                     <AddIcon className="icon-inline" />
                                 )}{' '}
                                 Create extension
-                            </button>
+                            </Button>
                         </Form>
                         {isErrorLike(this.state.creationOrError) && (
                             <ErrorAlert className="mt-3" error={this.state.creationOrError} />

@@ -3,14 +3,14 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { authenticatedUser } from '@sourcegraph/web/src/auth'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { isVirtualDashboard } from '../../../../../core/types'
-import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
+import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
@@ -37,9 +37,9 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const { dashboardID, telemetryService } = props
 
     const history = useHistory()
-    const { getDashboards, getInsightSubjects } = useContext(CodeInsightsBackendContext)
+    const { getDashboards, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
 
-    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
+    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
 
     // State to open/close add/remove insights modal UI
@@ -50,15 +50,29 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const [copyURL, isCopied] = useCopyURLHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
 
+    const user = useObservable(authenticatedUser)
+
+    if (dashboards === undefined) {
+        return (
+            <div data-testid="loading-spinner">
+                <LoadingSpinner inline={false} />
+            </div>
+        )
+    }
+
+    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
+
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
                 if (
+                    currentDashboard &&
                     !isVirtualDashboard(currentDashboard) &&
-                    isSettingsBasedInsightsDashboard(currentDashboard) &&
-                    currentDashboard.settingsKey
+                    isCustomInsightDashboard(currentDashboard)
                 ) {
-                    history.push(`/insights/dashboards/${currentDashboard.settingsKey}/edit`)
+                    const dashboardURL = currentDashboard.settingsKey ?? currentDashboard.id
+
+                    history.push(`/insights/dashboards/${dashboardURL}/edit`)
                 }
                 return
             }
@@ -89,12 +103,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         setAddInsightsState(true)
     }
 
-    if (dashboards === undefined) {
-        return <LoadingSpinner />
-    }
-
-    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
-
     return (
         <div>
             <section className="d-flex flex-wrap align-items-center">
@@ -105,6 +113,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     dashboards={dashboards}
                     onSelect={handleDashboardSelect}
                     className={classNames(styles.dashboardSelect, 'mr-2')}
+                    user={user}
                 />
 
                 <DashboardMenu

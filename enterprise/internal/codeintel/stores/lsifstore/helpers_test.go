@@ -1,23 +1,25 @@
 package lsifstore
 
 import (
+	"bytes"
 	"os"
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const testBundleID = 39162
+const testBundleID = 1
 
 func populateTestStore(t testing.TB) *Store {
+	db := dbtest.NewDB(t)
+
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
 		t.Fatalf("unexpected error reading testdata: %s", err)
 	}
-
-	db := dbtest.NewDB(t)
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -29,15 +31,28 @@ func populateTestStore(t testing.TB) *Store {
 		}
 	}()
 
-	for _, line := range strings.Split(string(contents), "\n") {
-		if line == "" || strings.HasPrefix(line, "---") {
+	// Remove comments from the lines.
+	var withoutComments []byte
+	for _, line := range bytes.Split(contents, []byte{'\n'}) {
+		if string(line) == "" || bytes.HasPrefix(line, []byte("--")) {
 			continue
 		}
+		withoutComments = append(withoutComments, line...)
+		withoutComments = append(withoutComments, '\n')
+	}
 
-		if _, err := tx.Exec(line); err != nil {
+	// Execute each statement. Split on ";\n" because statements may have e.g. string literals that
+	// span multiple lines.
+	for _, statement := range strings.Split(string(withoutComments), ";\n") {
+		if strings.Contains(statement, "_schema_versions") {
+			// Statements which insert into lsif_data_*_schema_versions should not be executed, as
+			// these are already inserted during regular DB up migrations.
+			continue
+		}
+		if _, err := tx.Exec(statement); err != nil {
 			t.Fatalf("unexpected error loading database data: %s", err)
 		}
 	}
 
-	return NewStore(db, &observation.TestContext)
+	return NewStore(db, conf.DefaultClient(), &observation.TestContext)
 }

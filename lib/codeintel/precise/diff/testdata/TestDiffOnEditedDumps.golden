@@ -13,9 +13,9 @@
     struct field field3 string
     ```
 + Definition: test.go:(11:1)-(11:7) -> test.go:(11:1)-(11:7)
-- MonikerDefinition: gomod:github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Function1 -> test.go:(4:5)-(4:14)
-+ MonikerDefinition: gomod:github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Struct1.Field1 -> test.go:(9:1)-(9:7)
-- MonikerReference: gomod:github.com/google/go-cmp/cmp -> test.go:(5:8)-(5:11)
-+ MonikerReference: gomod:github.com/google/go-cmp/cmp:Diff -> test.go:(5:12)-(5:16)
-- MonikerReference: gomod:github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Function1 -> test.go:(4:5)-(4:14)
-+ MonikerReference: gomod:github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Struct1.Field1 -> test.go:(9:1)-(9:7)
+- MonikerDefinition: export:gomod:github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Function1 -> test.go:(4:5)-(4:14)
++ MonikerDefinition: export:gomod:github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Struct1.Field1 -> test.go:(9:1)-(9:7)
+- MonikerReference: export:gomod:github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Function1 -> test.go:(4:5)-(4:14)
++ MonikerReference: export:gomod:github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1:Struct1.Field1 -> test.go:(9:1)-(9:7)
+- MonikerReference: import:gomod:github.com/google/go-cmp/cmp -> test.go:(5:8)-(5:11)
++ MonikerReference: import:gomod:github.com/google/go-cmp/cmp:Diff -> test.go:(5:12)-(5:16)

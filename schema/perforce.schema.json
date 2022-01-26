@@ -68,24 +68,24 @@
       "title": "PerforceAuthorization",
       "description": "If non-null, enforces Perforce depot permissions.",
       "type": "object",
-      "properties": {}
+      "properties": {
+        "subRepoPermissions": {
+          "description": "Experimental: infer sub-repository permissions from protection rules.",
+          "type": "boolean",
+          "default": false
+        }
+      }
     },
     "repositoryPathPattern": {
       "description": "The pattern used to generate the corresponding Sourcegraph repository name for a Perforce depot. In the pattern, the variable \"{depot}\" is replaced with the Perforce depot's path.\n\nFor example, if your Perforce depot path is \"//Sourcegraph/\" and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of \"perforce/{depot}\" would mean that the Perforce depot is available on Sourcegraph at https://src.example.com/perforce/Sourcegraph.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.",
       "type": "string",
       "default": "{depot}"
     },
-    "useFusionClient": {
-      "description": "EXPERIMENTAL: Use the p4-fusion client to clone and fetch repos",
-      "type": "boolean",
-      "default": false,
-      "deprecationMessage": "Deprecated in favour of the fusionClient property"
-    },
     "fusionClient": {
       "type": "object",
       "description": "Configuration for the experimental p4-fusion client",
       "additionalProperties": false,
-      "required": ["lookAhead"],
+      "required": ["enabled", "lookAhead"],
       "properties": {
         "enabled": {
           "description": "Enable the p4-fusion client for cloning and fetching repos",
@@ -94,6 +94,12 @@
         },
         "networkThreads": {
           "description": "The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.",
+          "type": "integer",
+          "default": 12,
+          "minimum": 1
+        },
+        "networkThreadsFetch": {
+          "description": "The number of threads in the threadpool for running network calls when performing fetches. Defaults to the number of logical CPUs.",
           "type": "integer",
           "default": 12,
           "minimum": 1

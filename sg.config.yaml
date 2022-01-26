@@ -5,6 +5,7 @@ env:
   PGPASSWORD: sourcegraph
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
+  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
 
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
@@ -26,7 +27,6 @@ env:
   SEARCHER_URL: http://127.0.0.1:3181
   REPO_UPDATER_URL: http://127.0.0.1:3182
   REDIS_ENDPOINT: 127.0.0.1:6379
-  QUERY_RUNNER_URL: http://localhost:3183
   SYMBOLS_URL: http://localhost:3184
   SRC_SYNTECT_SERVER: http://localhost:9238
   SRC_FRONTEND_INTERNAL: localhost:3090
@@ -45,7 +45,6 @@ env:
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "enterprise-repo-updater", "Host": "127.0.0.1:6074" },
-      { "Name": "query-runner", "Host": "127.0.0.1:6067" },
       { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "enterprise-worker", "Host": "127.0.0.1:6089" },
@@ -241,19 +240,6 @@ commands:
       - enterprise/internal
       - enterprise/cmd/repo-updater
 
-  query-runner:
-    cmd: .bin/query-runner
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='all=-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
-    checkBinary: .bin/query-runner
-    watch:
-      - lib
-      - internal
-      - cmd/query-runner
-
   symbols:
     cmd: .bin/symbols
     install: |
@@ -311,7 +297,7 @@ commands:
         echo "downloading ${url}" 1>&2
         curl -sS -L -f "${url}" | tar -xz --to-stdout "caddy" >"${target}.tmp"
         mv "${target}.tmp" "${target}"
-        chmod +x ${target}
+        chmod +x "${target}"
       fi
     env:
       CADDY_VERSION: 2.4.5
@@ -327,7 +313,7 @@ commands:
       ENTERPRISE: 1
 
   web-standalone-http:
-    cmd: yarn workspace @sourcegraph/web serve:dev
+    cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: yarn --no-progress
     env:
       WEBPACK_SERVE_INDEX: true
@@ -350,7 +336,7 @@ commands:
         -o .bin/docsite_${DOCSITE_VERSION} && chmod +x .bin/docsite_${DOCSITE_VERSION}
       fi
     env:
-      DOCSITE_VERSION: v1.8.4 # make sure to update all DOCSITE_VERSION
+      DOCSITE_VERSION: v1.8.5 # Update DOCSITE_VERSION in all places (including outside this repo)
 
   syntax-highlighter:
     ignoreStdout: true
@@ -543,19 +529,17 @@ commands:
     cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
     env:
       COMPOSE_ARGS: --force-recreate
-      # Set the following to a path on disk to persist data (or unset to not persist data)
-      PGDATA_DIR: $HOME/.sourcegraph-dev/data/postgresql
-      REDIS_DATA_DIR: ""
 
   jaeger:
     cmd: |
       .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL}
     install: |
+      set -e
       mkdir -p "${JAEGER_DISK}"
 
       suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
       target="$PWD/.bin/jaeger-all-in-one-${suffix}"
-      url="https://github.com/jaegertracing/jaeger/releases/download/v${version}/jaeger-${suffix}.tar.gz"
+      url="https://github.com/jaegertracing/jaeger/releases/download/v${JAEGER_VERSION}/jaeger-${suffix}.tar.gz"
 
       if [ ! -f "${target}" ]; then
         echo "downloading ${url}" 1>&2
@@ -565,9 +549,9 @@ commands:
 
       chmod +x "${target}"
     env:
-      JAEGER_VERSION: 1.18.1
+      JAEGER_VERSION: 1.30.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
-      JAEGER_LOG_LEVEL: info
+      JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger
 
   grafana:
@@ -612,6 +596,7 @@ commands:
       # We want to capture that output, but because it's fairly noisy, don't want to
       # display it in the normal case.
       GRAFANA_LOG_FILE: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
+      IMAGE: sourcegraph/grafana:dev
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
@@ -686,6 +671,7 @@ commands:
 
   loki:
     cmd: |
+      echo "Loki: serving on http://localhost:3100"
       echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
       docker run --rm --name=loki \
         -p 3100:3100 -v $LOKI_DISK:/loki \
@@ -708,10 +694,29 @@ commands:
   debug-env:
     cmd: env
 
+  bext:
+    cmd: yarn --cwd client/browser dev
+    install: yarn
+
 checks:
   docker:
     cmd: docker version
     failMessage: "Failed to run 'docker version'. Please make sure Docker is running."
+
+  docker-compose:
+    cmd: docker-compose version
+    failMessage: "Failed to run 'docker-compose version'. Please make sure Docker is running."
+
+  go:
+    cmd: go version || (echo "➡️ Install Go or make it sure it is in the \$PATH" && exit 1)
+    failMessage: 'Failed to run go'
+
+  go-version:
+    cmd: |
+      go_version=$(go version | cut -d' ' -f 3 | sed 's/go//')
+      tools_version=$(cat .tool-versions | grep golang | sed 's/golang //')
+      [ "$go_version" = "$tools_version" ] || (echo "➡️ Need go version $tools_version, but got $go_version instead" && exit 1)
+    failMessage: 'Incorrect go version'
 
   redis:
     cmd: (command -v redis-cli && redis-cli -p 6379 PING) || docker-compose -f dev/redis-postgres.yml exec -T redis redis-cli PING
@@ -720,6 +725,27 @@ checks:
   postgres:
     cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
     failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
+
+  git-version:
+    cmd: |
+      git_version="$(git --version | cut -d' ' -f 3)"
+      git_major_version="$(echo $git_version | cut -d'.' -f 1)"
+      git_minor_version="$(echo $git_version | cut -d'.' -f 2)"
+      git_patch_version="$(echo $git_version | cut -d'.' -f 3)"
+      # See [NOTE: git-version-min-requirement]
+      ERR_MSG="Need git version 2.34.1 or higher but found $git_version."
+      if [[ "$git_major_version" -eq 2 ]]; then
+        if [[ "$git_minor_version" -eq 34 ]]; then
+          if [[ "$git_patch_version" -lt 1 ]]; then
+            echo $ERR_MSG && exit 1
+          fi
+        elif [[ "$git_minor_version" -lt 34 ]]; then
+          echo $ERR_MSG && exit 1
+        fi
+      elif [[ "$git_major_version" -lt 2 ]]; then
+        echo $ERR_MSG && exit 1
+      fi
+    failMessage: 'Incorrect git version'
 
 defaultCommandset: enterprise
 commandsets:
@@ -730,6 +756,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - frontend
       - worker
@@ -737,7 +764,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - web
       - caddy
       - docsite
@@ -754,6 +780,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -762,7 +789,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - caddy
       - docsite
       - syntax-highlighter
@@ -783,6 +809,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -791,7 +818,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - caddy
       - docsite
       - syntax-highlighter
@@ -803,6 +829,9 @@ commandsets:
       - minio
       - precise-code-intel-worker
       - codeintel-executor
+      - jaeger
+      - grafana
+      - prometheus
 
   enterprise-codeinsights:
     requiresDevPrivate: true
@@ -810,6 +839,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -818,7 +848,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - caddy
       - docsite
       - syntax-highlighter
@@ -838,6 +867,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -857,6 +887,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -865,7 +896,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - caddy
       - docsite
       - syntax-highlighter
@@ -882,6 +912,7 @@ commandsets:
       - docker
       - redis
       - postgres
+      - git-version
     commands:
       - enterprise-frontend
       - enterprise-repo-updater
@@ -958,6 +989,20 @@ tests:
     cmd: yarn test-integration
     install: ENTERPRISE=1 yarn build-web
 
+  bext:
+    cmd: yarn --cwd client/browser test
+
+  bext-build:
+    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
+
+  bext-integration:
+    cmd: yarn --cwd client/browser test-integration
+
+  bext-e2e:
+    cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
+    env:
+      SOURCEGRAPH_BASE_URL: https://sourcegraph.com
+
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
@@ -969,4 +1014,4 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.8.4 # make sure to update all DOCSITE_VERSION
+      DOCSITE_VERSION: v1.8.5 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)

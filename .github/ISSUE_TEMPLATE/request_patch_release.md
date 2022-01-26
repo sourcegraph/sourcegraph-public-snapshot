@@ -1,21 +1,21 @@
 ---
 name: Request patch release
-about: Sourcegraph teams, use this issue to request the Distribution team perform a patch release or include your changes in a patch release..
+about: Sourcegraph teams, use this issue to request the Delivery team perform a patch release or include your changes in a patch release..
 title: ''
-labels: 'team/distribution,patch-release-request'
+labels: 'team/delivery,patch-release-request'
 assignees: ''
 
 ---
 
-@sourcegraph/distribution I am requesting the following commits be included in a patch release. They are already merged into `main`:
+@sourcegraph/delivery I am requesting the following commits be included in a patch release. They are already merged into `main`:
 
 - <!-- LINK TO EXACT MERGED COMMITS HERE -->
 
 ---
 
-The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
+The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://handbook.sourcegraph.com/engineering/releases#patch-releases) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
 
-I have read [when and why we perform patch releases](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) and answer the questions as follows:
+I have read [when and why we perform patch releases](https://handbook.sourcegraph.com/engineering/releases#patch-releases) and answer the questions as follows:
 
 > Are users/customers actively asking us for these changes and cannot wait until the next full release?
 
@@ -41,7 +41,7 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 ---
 
-**For the [release captain](https://about.sourcegraph.com/handbook/engineering/releases#release-captain)** - after reviewing this request:
+**For the [release captain](https://handbook.sourcegraph.com/engineering/releases#release-captain)** - after reviewing this request:
 
 - [ ] **Comment on this issue** with a decision regarding the request.
 - [ ] If approved, **add it to a patch release**:

@@ -1,15 +1,16 @@
 import React, { useContext, useEffect, useState } from 'react'
 import type { LineChartContent } from 'sourcegraph'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useDebounce } from '@sourcegraph/wildcard/src'
+import { asError } from '@sourcegraph/common'
+import { useDebounce } from '@sourcegraph/wildcard'
 
-import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
-import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
+import { LivePreviewContainer } from '../../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
+import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit/sanitizers/repositories'
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { EditableDataSeries, InsightStep } from '../../types'
-import { getSanitizedLine, getSanitizedRepositories } from '../../utils/insight-sanitizer'
+import { getSanitizedLine } from '../../utils/insight-sanitizer'
 
 import { DEFAULT_MOCK_CHART_CONTENT } from './live-preview-mock-data'
 
@@ -43,28 +44,25 @@ export interface SearchInsightLivePreviewProps {
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
     const { series, repositories, step, stepValue, disabled = false, isAllReposMode, className } = props
 
-    const { getSearchInsightContent } = useContext(InsightsApiContext)
+    const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
 
     const [loading, setLoading] = useState<boolean>(false)
     const [dataOrError, setDataOrError] = useState<LineChartContent<any, string> | Error | undefined>()
     // Synthetic deps to trigger dry run for fetching live preview data
     const [lastPreviewVersion, setLastPreviewVersion] = useState(0)
 
-    const liveSeries = useDistinctValue(
-        series
+    // Compare live insight settings with deep check to avoid unnecessary
+    // search insight content fetching
+    const liveSettings = useDistinctValue({
+        series: series
             .filter(series => series.valid)
             // Cut off all unnecessary for live preview fields in order to
             // not trigger live preview update if any of unnecessary has been updated
             // Example: edit true => false - chart shouldn't re-fetch data
-            .map<SearchBasedInsightSeries>(getSanitizedLine)
-    )
-
-    // Compare live insight settings with deep check to avoid unnecessary
-    // search insight content fetching
-    const liveSettings = useDistinctValue({
-        series: liveSeries,
+            .map<SearchBasedInsightSeries>(getSanitizedLine),
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
+        disabled,
     })
 
     const liveDebouncedSettings = useDebounce(liveSettings, 500)
@@ -74,13 +72,16 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         setLoading(true)
         setDataOrError(undefined)
 
-        if (disabled) {
+        if (liveDebouncedSettings.disabled) {
             setLoading(false)
 
             return
         }
 
-        getSearchInsightContent(liveDebouncedSettings, { where: 'insightsPage', context: {} })
+        getSearchInsightContent({
+            insight: liveDebouncedSettings,
+            options: { where: 'insightsPage', context: {} },
+        })
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
             .finally(() => !hasRequestCanceled && setLoading(false))
@@ -88,7 +89,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         return () => {
             hasRequestCanceled = true
         }
-    }, [disabled, lastPreviewVersion, getSearchInsightContent, liveDebouncedSettings])
+    }, [lastPreviewVersion, getSearchInsightContent, liveDebouncedSettings])
 
     return (
         <LivePreviewContainer
@@ -113,6 +114,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
                     : null
             }
             className={className}
+            chartContentClassName="pt-4"
             onUpdateClick={() => setLastPreviewVersion(version => version + 1)}
         />
     )

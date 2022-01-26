@@ -8,11 +8,15 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
@@ -22,35 +26,45 @@ import (
 // by the API.
 type Resolver interface {
 	GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error)
-	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]store.Upload, error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
-	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
-	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	DeleteUploadByID(ctx context.Context, uploadID int) error
+
+	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
 	DeleteIndexByID(ctx context.Context, id int) error
-	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
-	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
-	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
-	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, error)
+
+	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, int, error)
 	GetConfigurationPolicyByID(ctx context.Context, id int) (store.ConfigurationPolicy, bool, error)
 	CreateConfigurationPolicy(ctx context.Context, configurationPolicy store.ConfigurationPolicy) (store.ConfigurationPolicy, error)
 	UpdateConfigurationPolicy(ctx context.Context, policy store.ConfigurationPolicy) (err error)
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
+
 	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
 	InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
-	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
+
+	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
+	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
+	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
+	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType store.GitObjectType, pattern string) (map[string][]string, error)
+	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
+
+	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
+	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
+	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
+
+	ExecutorResolver() executor.Resolver
 }
 
 type resolver struct {
-	dbStore         DBStore
-	lsifStore       LSIFStore
-	gitserverClient GitserverClient
-	policyMatcher   *policies.Matcher
-	indexEnqueuer   IndexEnqueuer
-	hunkCache       HunkCache
-	operations      *operations
+	dbStore          DBStore
+	lsifStore        LSIFStore
+	gitserverClient  GitserverClient
+	policyMatcher    *policies.Matcher
+	indexEnqueuer    IndexEnqueuer
+	hunkCache        HunkCache
+	operations       *operations
+	executorResolver executor.Resolver
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -62,8 +76,9 @@ func NewResolver(
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	observationContext *observation.Context,
+	dbConn dbutil.DB,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, observationContext)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, observationContext, dbConn)
 }
 
 func newResolver(
@@ -74,16 +89,22 @@ func newResolver(
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	observationContext *observation.Context,
+	dbConn dbutil.DB,
 ) *resolver {
 	return &resolver{
-		dbStore:         dbStore,
-		lsifStore:       lsifStore,
-		gitserverClient: gitserverClient,
-		policyMatcher:   policyMatcher,
-		indexEnqueuer:   indexEnqueuer,
-		hunkCache:       hunkCache,
-		operations:      newOperations(observationContext),
+		dbStore:          dbStore,
+		lsifStore:        lsifStore,
+		gitserverClient:  gitserverClient,
+		policyMatcher:    policyMatcher,
+		indexEnqueuer:    indexEnqueuer,
+		hunkCache:        hunkCache,
+		operations:       newOperations(observationContext),
+		executorResolver: executor.New(dbConn),
 	}
+}
+
+func (r *resolver) ExecutorResolver() executor.Resolver {
+	return r.executorResolver
 }
 
 func (r *resolver) GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error) {
@@ -145,7 +166,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 			log.String("commit", string(args.Commit)),
 			log.String("path", args.Path),
 			log.Bool("exactPath", args.ExactPath),
-			log.String("toolName", args.ToolName),
+			log.String("indexer", args.ToolName),
 		},
 	})
 	defer endObservation()
@@ -176,10 +197,11 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		args.Path,
 		dumps,
 		r.operations,
+		authz.DefaultSubRepoPermsChecker,
 	), nil
 }
 
-func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, error) {
+func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, int, error) {
 	return r.dbStore.GetConfigurationPolicies(ctx, opts)
 }
 
@@ -228,8 +250,25 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
 }
 
-func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error) {
-	policyMatches, err := r.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, []dbstore.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
+func (r *resolver) PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error) {
+	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
+		repositoryMatchLimit = &val
+
+		if offset+limit > *repositoryMatchLimit {
+			limit = *repositoryMatchLimit - offset
+		}
+	}
+
+	ids, totalCount, err := r.dbStore.RepoIDsByGlobPatterns(ctx, patterns, limit, offset)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+
+	return ids, totalCount, repositoryMatchLimit, nil
+}
+
+func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType store.GitObjectType, pattern string) (map[string][]string, error) {
+	policyMatches, err := r.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, []store.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
 	if err != nil {
 		return nil, err
 	}

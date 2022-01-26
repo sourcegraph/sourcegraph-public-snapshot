@@ -5,16 +5,15 @@ import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { map } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { CopyableText } from '../../../components/CopyableText'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import {
@@ -55,30 +54,29 @@ export const InviteForm: React.FunctionComponent<Props> = ({
         setUsername(event.currentTarget.value)
     }, [])
     const [loading, setLoading] = useState<'inviteUserToOrganization' | 'addUserToOrganization' | Error>()
-    const [invited, setInvited] = useState<Invited[]>([])
+    const [invited, setInvited] = useState<Invited>()
+    const [isInviteShown, setShowInvitation] = useState<boolean>(false)
 
     const inviteUser = useCallback(() => {
         eventLogger.log('InviteOrgMemberClicked')
         ;(async () => {
             setLoading('inviteUserToOrganization')
             const { invitationURL, sentInvitationEmail } = await inviteUserToOrganization(username, orgID)
-            setInvited(previous => [...previous, { username, sentInvitationEmail, invitationURL }])
+            setInvited({ username, sentInvitationEmail, invitationURL })
+            setShowInvitation(true)
             onOrganizationUpdate()
             setUsername('')
             setLoading(undefined)
         })().catch(error => setLoading(asError(error)))
-    }, [onOrganizationUpdate, orgID, username])
+    }, [onOrganizationUpdate, orgID, setShowInvitation, username])
 
     const onInviteClick = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         inviteUser()
     }, [inviteUser])
 
-    const dismissNotification = useCallback((dismissedIndex: number): void => {
-        setInvited(previous => {
-            previous.splice(dismissedIndex, 1)
-            return previous
-        })
-    }, [])
+    const dismissNotification = (): void => {
+        setShowInvitation(false)
+    }
 
     const viewerCanAddUserToOrganization = !!authenticatedUser && authenticatedUser.siteAdmin
 
@@ -125,28 +123,26 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                     />
                     <div className="d-block d-md-inline">
                         {viewerCanAddUserToOrganization && (
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                className="btn btn-primary mr-2"
+                                className="mr-2"
                                 data-tooltip="Add immediately without sending invitation (site admins only)"
+                                variant="primary"
                             >
                                 {loading === 'addUserToOrganization' ? (
-                                    <LoadingSpinner className="icon-inline" />
+                                    <LoadingSpinner />
                                 ) : (
                                     <AddIcon className="icon-inline" />
                                 )}{' '}
                                 Add member
-                            </button>
+                            </Button>
                         )}
                         {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
-                            <button
+                            <Button
                                 type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
                                 disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                className={classNames(
-                                    'btn',
-                                    viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'
-                                )}
+                                className={viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'}
                                 data-tooltip={
                                     emailInvitesEnabled
                                         ? 'Send invitation email with link to join this organization'
@@ -155,7 +151,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                 onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
                             >
                                 {loading === 'inviteUserToOrganization' ? (
-                                    <LoadingSpinner className="icon-inline" />
+                                    <LoadingSpinner />
                                 ) : (
                                     <EmailOpenOutlineIcon className="icon-inline" />
                                 )}{' '}
@@ -164,27 +160,27 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                         ? 'Send invitation to join'
                                         : 'Send invitation'
                                     : 'Generate invitation link'}
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </Form>
             </div>
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
-                <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
+                <DismissibleAlert variant="info" partialStorageKey="org-invite-email-config">
                     <p className=" mb-0">
                         Set <code>email.smtp</code> in <Link to="/site-admin/configuration">site configuration</Link> to
-                        send email notfications about invitations.
+                        send email notifications about invitations.
                     </p>
                 </DismissibleAlert>
             )}
-            {invited.map((invite, index) => (
+            {invited && isInviteShown && (
                 <InvitedNotification
-                    key={index}
-                    {...invite}
-                    className={classNames('alert alert-success', styles.alert)}
-                    onDismiss={() => dismissNotification(index)}
+                    key={invited.username}
+                    {...invited}
+                    className={styles.alert}
+                    onDismiss={dismissNotification}
                 />
-            ))}
+            )}
             {isErrorLike(loading) && <ErrorAlert className={styles.alert} error={loading} />}
         </div>
     )
@@ -266,7 +262,7 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
     invitationURL,
     onDismiss,
 }) => (
-    <div className={classNames(styles.invitedNotification, className)}>
+    <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
         <div className={styles.message}>
             {sentInvitationEmail ? (
                 <>
@@ -277,8 +273,8 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
             )}
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <button type="button" className="btn btn-icon" title="Dismiss" onClick={onDismiss}>
+        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
             <CloseIcon className="icon-inline" />
-        </button>
-    </div>
+        </Button>
+    </Alert>
 )

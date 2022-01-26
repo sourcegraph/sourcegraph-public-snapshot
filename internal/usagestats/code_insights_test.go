@@ -9,13 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
-
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -30,9 +29,9 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 	mockTimeNow(now)
 
-	db := dbtesting.GetDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
-	_, err := db.Exec(`
+	_, err := db.ExecContext(context.Background(), `
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
@@ -100,7 +99,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 
 	want.WeeklyAggregatedUsage = wantedWeeklyUsage
 	want.InsightTimeIntervals = []types.InsightTimeIntervalPing{}
-	want.InsightOrgVisible = []types.OrgVisibleInsightPing{{Type: "search"}, {Type: "lang-stats"}}
+	want.InsightOrgVisible = []types.OrgVisibleInsightPing{}
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
@@ -108,15 +107,17 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 }
 
 func TestWithCreationPings(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 
-	db := dbtesting.GetDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	user1 := "420657f0-d443-4d16-ac7d-003d8cdc91ef"
 	user2 := "55555555-5555-5555-5555-555555555555"
 
-	_, err := db.Exec(`
+	_, err := db.ExecContext(context.Background(), `
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
@@ -178,14 +179,15 @@ func TestFilterSettingJson(t *testing.T) {
 }
 
 func TestGetSearchInsights(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	_, err := db.ExecContext(context.Background(), `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = db.Exec(`
+	_, err = db.ExecContext(context.Background(), `
 
 			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
 			VALUES  (1, 1, $1, CURRENT_TIMESTAMP, NULL, NULL),
@@ -256,14 +258,15 @@ func TestGetSearchInsights(t *testing.T) {
 }
 
 func TestGetLangStatsInsights(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	_, err := db.ExecContext(context.Background(), `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = db.Exec(`
+	_, err = db.ExecContext(context.Background(), `
 
 			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
 			VALUES  (1, 1, $1, CURRENT_TIMESTAMP, NULL, NULL)`,
@@ -272,12 +275,14 @@ func TestGetLangStatsInsights(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	orgId := int32(1)
 	want := []insights.LangStatsInsight{
 		{
 			ID:             "codeStatsInsights.insight.global.lang1",
 			Title:          "my insight",
 			Repository:     "github.com/sourcegraph/sourcegraph",
-			OtherThreshold: float32(0),
+			OtherThreshold: float64(0),
+			OrgID:          &orgId,
 		},
 	}
 

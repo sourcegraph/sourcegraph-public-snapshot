@@ -4,9 +4,9 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React from 'react'
 
-import { InsightDashboard, InsightsDashboardType } from '../../../../../../../core/types'
+import { InsightDashboard, isRealDashboard } from '../../../../../../../core/types'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
-import { Badge } from '../badge/Badge'
+import { InsightsBadge } from '../insights-badge/InsightsBadge'
 import { TruncatedText } from '../trancated-text/TrancatedText'
 
 import styles from './MenuButton.module.scss'
@@ -31,14 +31,10 @@ export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
                     return <MenuButtonContent title="Unknown dashboard" isExpanded={isExpanded} />
                 }
 
-                if (dashboard.type === InsightsDashboardType.All) {
-                    return <MenuButtonContent title="All Insights" isExpanded={isExpanded} />
-                }
-
                 return (
                     <MenuButtonContent
                         title={getDashboardTitle(dashboard)}
-                        badge={getDashboardOwnerName(dashboard)}
+                        badge={isRealDashboard(dashboard) ? getDashboardOwnerName(dashboard) : undefined}
                         isExpanded={isExpanded}
                     />
                 )
@@ -61,7 +57,7 @@ const MenuButtonContent: React.FunctionComponent<MenuButtonContentProps> = props
         <>
             <span className={styles.text}>
                 <TruncatedText title={title}>{title}</TruncatedText>
-                {badge && <Badge value={badge} className={classNames('ml-1 mr-1', styles.badge)} />}
+                {badge && <InsightsBadge value={badge} className={classNames('ml-1 mr-1', styles.badge)} />}
             </span>
 
             <ListboxButtonIcon className={styles.expandedIcon} />

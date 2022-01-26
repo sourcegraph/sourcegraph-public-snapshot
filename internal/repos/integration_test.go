@@ -2,14 +2,12 @@ package repos_test
 
 import (
 	"database/sql"
-	"flag"
 	"testing"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -19,8 +17,6 @@ import (
 // roll-back the transaction a test case executes in.
 // This is meant to ensure each test case has a clean slate.
 var errRollback = errors.New("tx: rollback")
-
-var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
@@ -44,15 +40,19 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/Run", testSyncRun},
 		{"Syncer/MultipleServices", testSyncerMultipleServices},
 		{"Syncer/OrphanedRepos", testOrphanedRepo},
+		{"Syncer/CloudDefaultExternalServicesDontSync", testCloudDefaultExternalServicesDontSync},
 		{"Syncer/DeleteExternalService", testDeleteExternalService},
+		{"Syncer/AbortSyncWhenThereIsRepoLimitError", testAbortSyncWhenThereIsRepoLimitError},
+		{"Syncer/UserAndOrgReposAreCountedCorrectly", testUserAndOrgReposAreCountedCorrectly},
 		{"Syncer/UserAddedRepos", testUserAddedRepos},
 		{"Syncer/NameConflictOnRename", testNameOnConflictOnRename},
 		{"Syncer/ConflictingSyncers", testConflictingSyncers},
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
+		{"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
+		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			db := dbtest.NewFromDSN(t, *dsn)
-			dbconn.Global = db
+			db := dbtest.NewDB(t)
 
 			store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelReadCommitted})
 
@@ -62,8 +62,6 @@ func TestIntegration(t *testing.T) {
 			store.Log = lg
 			store.Metrics = repos.NewStoreMetrics()
 			store.Tracer = trace.Tracer{Tracer: opentracing.GlobalTracer()}
-
-			t.Cleanup(func() { dbconn.Global = nil })
 
 			tc.test(store)(t)
 		})

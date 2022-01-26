@@ -6,14 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -34,77 +32,107 @@ func (err userExternalAccountNotFoundError) NotFound() bool {
 	return true
 }
 
-// UserExternalAccountsStore provides access to the `user_external_accounts` table.
-type UserExternalAccountsStore struct {
+// userExternalAccountsStore provides access to the `user_external_accounts` table.
+type UserExternalAccountsStore interface {
+	// AssociateUserAndSave is used for linking a new, additional external account with an existing
+	// Sourcegraph account.
+	//
+	// It creates a user external account and associates it with the specified user. If the external
+	// account already exists and is associated with:
+	//
+	// - the same user: it updates the data and returns a nil error; or
+	// - a different user: it performs no update and returns a non-nil error
+	AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error)
+
+	Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error)
+
+	// CreateUserAndSave is used to create a new Sourcegraph user account from an external account
+	// (e.g., "signup from SAML").
+	//
+	// It creates a new user and associates it with the specified external account. If the user to
+	// create already exists, it returns an error.
+	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error)
+
+	// Delete deletes a user external account.
+	Delete(ctx context.Context, id int32) error
+
+	// ExecResult performs a query without returning any rows, but includes the
+	// result of the execution.
+	ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error)
+
+	// Get gets information about the user external account.
+	Get(ctx context.Context, id int32) (*extsvc.Account, error)
+
+	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
+
+	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)
+
+	ListBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error)
+
+	// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
+	// association with the external account already exist).
+	//
+	// It looks up the existing user associated with the external account's extsvc.AccountSpec. If
+	// found, it updates the account's data and returns the user. It NEVER creates a user; you must call
+	// CreateUserAndSave for that.
+	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
+
+	// TouchExpired sets the given user external account to be expired now.
+	TouchExpired(ctx context.Context, id int32) error
+
+	// TouchLastValid sets last valid time of the given user external account to be now.
+	TouchLastValid(ctx context.Context, id int32) error
+
+	WithEncryptionKey(key encryption.Key) UserExternalAccountsStore
+
+	QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row
+	Transact(ctx context.Context) (UserExternalAccountsStore, error)
+	With(other basestore.ShareableStore) UserExternalAccountsStore
+	Done(error) error
+	basestore.ShareableStore
+}
+
+type userExternalAccountsStore struct {
 	*basestore.Store
-	once sync.Once
 
 	key encryption.Key
 }
 
 // ExternalAccounts instantiates and returns a new UserExternalAccountsStore with prepared statements.
-func ExternalAccounts(db dbutil.DB) *UserExternalAccountsStore {
-	return &UserExternalAccountsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func ExternalAccounts(db dbutil.DB) UserExternalAccountsStore {
+	return &userExternalAccountsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // ExternalAccountsWith instantiates and returns a new UserExternalAccountsStore using the other store handle.
-func ExternalAccountsWith(other basestore.ShareableStore) *UserExternalAccountsStore {
-	return &UserExternalAccountsStore{Store: basestore.NewWithHandle(other.Handle())}
+func ExternalAccountsWith(other basestore.ShareableStore) UserExternalAccountsStore {
+	return &userExternalAccountsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *UserExternalAccountsStore) With(other basestore.ShareableStore) *UserExternalAccountsStore {
-	return &UserExternalAccountsStore{Store: s.Store.With(other), key: s.key}
+func (s *userExternalAccountsStore) With(other basestore.ShareableStore) UserExternalAccountsStore {
+	return &userExternalAccountsStore{Store: s.Store.With(other), key: s.key}
 }
 
-func (s *UserExternalAccountsStore) WithEncryptionKey(key encryption.Key) *UserExternalAccountsStore {
-	return &UserExternalAccountsStore{Store: s.Store, key: key}
+func (s *userExternalAccountsStore) WithEncryptionKey(key encryption.Key) UserExternalAccountsStore {
+	return &userExternalAccountsStore{Store: s.Store, key: key}
 }
 
-func (s *UserExternalAccountsStore) Transact(ctx context.Context) (*UserExternalAccountsStore, error) {
-	s.ensureStore()
-
+func (s *userExternalAccountsStore) Transact(ctx context.Context) (UserExternalAccountsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &UserExternalAccountsStore{Store: txBase, key: s.key}, err
+	return &userExternalAccountsStore{Store: txBase, key: s.key}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *UserExternalAccountsStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
-func (s *UserExternalAccountsStore) getEncryptionKey() encryption.Key {
+func (s *userExternalAccountsStore) getEncryptionKey() encryption.Key {
 	if s.key != nil {
 		return s.key
 	}
 	return keyring.Default().UserExternalAccountKey
 }
 
-// Get gets information about the user external account.
-func (s *UserExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.Account, error) {
-	if Mocks.ExternalAccounts.Get != nil {
-		return Mocks.ExternalAccounts.Get(id)
-	}
+func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.Account, error) {
 	return s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d AND deleted_at IS NULL LIMIT 1", id))
 }
 
-// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
-// association with the external account already exist).
-//
-// It looks up the existing user associated with the external account's extsvc.AccountSpec. If
-// found, it updates the account's data and returns the user. It NEVER creates a user; you must call
-// CreateUserAndSave for that.
-func (s *UserExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
-	if Mocks.ExternalAccounts.LookupUserAndSave != nil {
-		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
-	}
-	s.ensureStore()
-
+func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
 	var (
 		encrypted, keyID string
 	)
@@ -147,20 +175,7 @@ RETURNING user_id
 	return userID, err
 }
 
-// AssociateUserAndSave is used for linking a new, additional external account with an existing
-// Sourcegraph account.
-//
-// It creates a user external account and associates it with the specified user. If the external
-// account already exists and is associated with:
-//
-// - the same user: it updates the data and returns a nil error; or
-// - a different user: it performs no update and returns a non-nil error
-func (s *UserExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
-	if Mocks.ExternalAccounts.AssociateUserAndSave != nil {
-		return Mocks.ExternalAccounts.AssociateUserAndSave(userID, spec, data)
-	}
-	s.ensureStore()
-
+func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
 	// This "upsert" may cause us to return an ephemeral failure due to a race condition, but it
 	// won't result in inconsistent data.  Wrap in transaction.
 
@@ -197,7 +212,7 @@ AND deleted_at IS NULL
 
 	if !exists {
 		// Create the external account (it doesn't yet exist).
-		return tx.insert(ctx, userID, spec, data)
+		return tx.Insert(ctx, userID, spec, data)
 	}
 
 	var encrypted, keyID string
@@ -248,16 +263,7 @@ AND deleted_at IS NULL
 	return nil
 }
 
-// CreateUserAndSave is used to create a new Sourcegraph user account from an external account
-// (e.g., "signup from SAML").
-//
-// It creates a new user and associates it with the specified external account. If the user to
-// create already exists, it returns an error.
-func (s *UserExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
-	if Mocks.ExternalAccounts.CreateUserAndSave != nil {
-		return Mocks.ExternalAccounts.CreateUserAndSave(newUser, spec, data)
-	}
-
+func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -269,14 +275,14 @@ func (s *UserExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		return 0, err
 	}
 
-	err = tx.insert(ctx, createdUser.ID, spec, data)
+	err = tx.Insert(ctx, createdUser.ID, spec, data)
 	if err == nil {
 		logAccountCreatedEvent(ctx, s.Handle().DB(), createdUser, spec.ServiceType)
 	}
 	return createdUser.ID, err
 }
 
-func (s *UserExternalAccountsStore) insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
+func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
 	var (
 		encrypted, keyID string
 		err              error
@@ -304,13 +310,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data, keyID))
 }
 
-// TouchExpired sets the given user external account to be expired now.
-func (s *UserExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
-	if Mocks.ExternalAccounts.TouchExpired != nil {
-		return Mocks.ExternalAccounts.TouchExpired(ctx, id)
-	}
-	s.ensureStore()
-
+func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
 	_, err := s.Handle().DB().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
@@ -320,13 +320,7 @@ WHERE id = $1
 	return err
 }
 
-// TouchLastValid sets last valid time of the given user external account to be now.
-func (s *UserExternalAccountsStore) TouchLastValid(ctx context.Context, id int32) error {
-	if Mocks.ExternalAccounts.TouchLastValid != nil {
-		return Mocks.ExternalAccounts.TouchLastValid(ctx, id)
-	}
-	s.ensureStore()
-
+func (s *userExternalAccountsStore) TouchLastValid(ctx context.Context, id int32) error {
 	_, err := s.Handle().DB().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchLastValid
 UPDATE user_external_accounts
@@ -338,13 +332,7 @@ WHERE id = $1
 	return err
 }
 
-// Delete deletes a user external account.
-func (s *UserExternalAccountsStore) Delete(ctx context.Context, id int32) error {
-	if Mocks.ExternalAccounts.Delete != nil {
-		return Mocks.ExternalAccounts.Delete(id)
-	}
-	s.ensureStore()
-
+func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
@@ -368,12 +356,7 @@ type ExternalAccountsListOptions struct {
 	*LimitOffset
 }
 
-func (s *UserExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
-	if Mocks.ExternalAccounts.List != nil {
-		return Mocks.ExternalAccounts.List(opt)
-	}
-	s.ensureStore()
-
+func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
 	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.List", "")
 	defer func() {
 		if err != nil {
@@ -389,15 +372,10 @@ func (s *UserExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 	}()
 
 	conds := s.listSQL(opt)
-	return s.listBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+	return s.ListBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
-func (s *UserExternalAccountsStore) Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error) {
-	if Mocks.ExternalAccounts.Count != nil {
-		return Mocks.ExternalAccounts.Count(opt)
-	}
-	s.ensureStore()
-
+func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error) {
 	conds := s.listSQL(opt)
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM user_external_accounts WHERE %s", sqlf.Join(conds, "AND"))
 	var count int
@@ -405,9 +383,8 @@ func (s *UserExternalAccountsStore) Count(ctx context.Context, opt ExternalAccou
 	return count, err
 }
 
-func (s *UserExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*extsvc.Account, error) {
-	s.ensureStore()
-	results, err := s.listBySQL(ctx, querySuffix)
+func (s *userExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*extsvc.Account, error) {
+	results, err := s.ListBySQL(ctx, querySuffix)
 	if err != nil {
 		return nil, err
 	}
@@ -417,8 +394,7 @@ func (s *UserExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *s
 	return results[0], nil
 }
 
-func (s *UserExternalAccountsStore) listBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error) {
-	s.ensureStore()
+func (s *userExternalAccountsStore) ListBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error) {
 	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.client_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at, t.encryption_key_id FROM user_external_accounts t %s`, querySuffix)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -470,7 +446,7 @@ func (s *UserExternalAccountsStore) listBySQL(ctx context.Context, querySuffix *
 	return results, rows.Err()
 }
 
-func (s *UserExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (conds []*sqlf.Query) {
+func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 
 	if opt.UserID != 0 {
@@ -487,19 +463,6 @@ func (s *UserExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	}
 
 	return conds
-}
-
-// MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
-type MockExternalAccounts struct {
-	Get                  func(id int32) (*extsvc.Account, error)
-	LookupUserAndSave    func(extsvc.AccountSpec, extsvc.AccountData) (userID int32, err error)
-	AssociateUserAndSave func(userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
-	CreateUserAndSave    func(NewUser, extsvc.AccountSpec, extsvc.AccountData) (createdUserID int32, err error)
-	Delete               func(id int32) error
-	List                 func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
-	Count                func(ExternalAccountsListOptions) (int, error)
-	TouchExpired         func(ctx context.Context, id int32) error
-	TouchLastValid       func(ctx context.Context, id int32) error
 }
 
 // MaybeEncrypt encrypts data with the given key returns the id of the key. If the key is nil, it returns the data unchanged.

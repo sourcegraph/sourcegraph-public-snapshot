@@ -23,7 +23,7 @@ const makeExtensionLink = (sourcegraphURL: string): React.FunctionComponent<{ id
  * A global debug toolbar shown in the bottom right of the window.
  */
 export const GlobalDebug: React.FunctionComponent<Props> = props => (
-    <div className="global-debug navbar navbar-expand">
+    <div className="navbar navbar-expand" data-global-debug={true}>
         <div className="navbar-nav align-items-center">
             <div className="nav-item">
                 <ShortcutProvider>

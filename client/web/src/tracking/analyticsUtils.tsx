@@ -1,11 +1,14 @@
-import { fromEvent, concat, Observable, of } from 'rxjs'
+import { fromEvent, concat, Observable, of, merge, EMPTY } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, filter, map, mapTo, publishReplay, refCount, take } from 'rxjs/operators'
+
+import { isErrorLike } from '@sourcegraph/common'
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { IS_CHROME } from '../marketing/util'
 import { observeQuerySelector } from '../util/dom'
 
-const extensionMarker = document.querySelector<HTMLDivElement>('#sourcegraph-app-background')
+export const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
 
 /**
  * Indicates if the webapp ever receives a message from the user's Sourcegraph browser extension,
@@ -14,16 +17,41 @@ const extensionMarker = document.querySelector<HTMLDivElement>('#sourcegraph-app
  * You should likely use browserExtensionInstalled, rather than _browserExtensionMessageReceived,
  * which may never emit or complete.
  */
-export const browserExtensionMessageReceived = (extensionMarker
-    ? // If the marker exists, the extension is installed
-      of({ platform: extensionMarker.dataset?.platform })
-    : // If not, listen for a registration event
-      fromEvent<CustomEvent>(document, 'sourcegraph:browser-extension-registration').pipe(
-          take(1),
-          map(({ detail }) => ({
-              platform: detail?.platform,
-          }))
-      )
+export const browserExtensionMessageReceived: Observable<{ platform?: string; version?: string }> = merge(
+    // If the marker exists, the extension is installed
+    observeQuerySelector({ selector: EXTENSION_MARKER_ID, timeout: 10000 }).pipe(
+        map(extensionMarker => ({
+            platform: (extensionMarker as HTMLElement)?.dataset?.platform,
+            version: (extensionMarker as HTMLElement)?.dataset?.version,
+        })),
+        catchError(() => EMPTY)
+    ),
+    // If not, listen for a registration event
+    fromEvent<CustomEvent<{ platform?: string; version?: string }>>(
+        document,
+        'sourcegraph:browser-extension-registration'
+    ).pipe(
+        take(1),
+        map(({ detail }) => {
+            try {
+                return { platform: detail?.platform, version: detail?.version }
+            } catch (error) {
+                // Temporary to fix issues on Firefox (https://github.com/sourcegraph/sourcegraph/issues/25998)
+                if (
+                    isFirefox() &&
+                    isErrorLike(error) &&
+                    error.message.includes('Permission denied to access property "platform"')
+                ) {
+                    return {
+                        platform: 'firefox-extension',
+                        version: 'unknown due to <<Permission denied to access property "platform">>',
+                    }
+                }
+
+                throw error
+            }
+        })
+    )
 ).pipe(
     // Replay the same latest value for every subscriber
     publishReplay(1),
@@ -46,12 +74,12 @@ const checkChromeExtensionInstalled = (): Observable<boolean> => {
 }
 
 /**
- * Indicates if the current user has the browser extension installed. It waits 1000ms for the browser
+ * Indicates if the current user has the browser extension installed. It waits 3000ms for the browser
  * extension to inject a DOM marker element, and if it doesn't, emits false
  */
 export const browserExtensionInstalled: Observable<boolean> = concat(
     checkChromeExtensionInstalled().pipe(filter(isInstalled => isInstalled)),
-    observeQuerySelector({ selector: '#sourcegraph-app-background', timeoutMs: 1000 }).pipe(
+    observeQuerySelector({ selector: EXTENSION_MARKER_ID, timeout: 3000 }).pipe(
         mapTo(true),
         catchError(() => [false])
     )

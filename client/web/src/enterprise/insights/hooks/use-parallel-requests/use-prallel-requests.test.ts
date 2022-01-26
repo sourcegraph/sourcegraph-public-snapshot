@@ -11,7 +11,9 @@ describe('useParallelRequests', () => {
     let useParallelRequests: <D>(request: () => ObservableInput<D>) => FetchResult<D>
 
     beforeEach(() => {
-        useParallelRequests = createUseParallelRequestsHook({ maxRequests: 1 })
+        const { query } = createUseParallelRequestsHook({ maxRequests: 1 })
+
+        useParallelRequests = query
     })
 
     describe('with single request', () => {

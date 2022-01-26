@@ -2,6 +2,7 @@
 <html lang="en" class="base">
 
 <head>
+
 	{{.Injected.HeadTop}}
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -39,6 +40,7 @@
 	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 	})(window,document,'script','dataLayer','GTM-TB4NLS7');</script>
 	<!-- End Google Tag Manager -->
+	<script src='https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js' crossorigin="anonymous"></script>
 	{{ end }}
 	<script ignore-csp>
 		window.context = {{.Context }}
@@ -52,6 +54,26 @@
 	<!-- Google Tag Manager (noscript) -->
 	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 	<!-- End Google Tag Manager (noscript) -->
+
+	<!-- Google Search Result SearchBox -->
+	<!-- See https://developers.google.com/search/docs/advanced/structured-data/sitelinks-searchbox -->
+	<script ignore-csp type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "WebSite",
+			"url": "https://sourcegraph.com",
+			"potentialAction": {
+				"@type": "SearchAction",
+				"target": {
+					"@type": "EntryPoint",
+					"urlTemplate": "https://sourcegraph.com/search?q={search_term_string}&utm_source=google-search-result&utm_campaign=google-search-result-searchbox"
+				},
+				"query-input": "required name=search_term_string"
+			}
+		}
+	</script>
+	<!-- End Google Search Result SearchBox -->
+
 	{{ end }}
 	{{.Injected.BodyTop}}
 	<div id="root"></div>
@@ -64,6 +86,7 @@
 		You need to enable JavaScript to run this app.
 	</noscript>
 	{{if .Manifest.AppJSRuntimeBundlePath}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
+	<script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
 	<script src="{{.Manifest.AppJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
 	{{.Injected.BodyBottom}}
 </body>

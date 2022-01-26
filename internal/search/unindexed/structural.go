@@ -6,7 +6,10 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -50,34 +53,9 @@ type searchRepos struct {
 	stream  streaming.Sender
 }
 
-// RepoFetcher is an object that exposes an interface to retrieve repos to
-// search from Zoekt. The interface exposes a Get(ctx) method that allows
-// parameterizing repo fetches by context.
-type RepoFetcher struct {
-	args              *search.TextParameters
-	mode              search.GlobalSearchMode
-	onMissingRepoRevs zoektutil.OnMissingRepoRevs
-}
-
-func NewRepoFetcher(stream streaming.Sender, args *search.TextParameters) RepoFetcher {
-	return RepoFetcher{
-		mode:              args.Mode,
-		args:              args,
-		onMissingRepoRevs: zoektutil.MissingRepoRevStatus(stream),
-	}
-}
-
-// Get returns the repository data to run structural search on. Importantly, it
-// allows parameterizing the request to specify a context, for when multiple
-// Get() calls are required with different limits or timeouts.
-func (r *RepoFetcher) Get(ctx context.Context) ([]repoData, error) {
-	globalSearch := r.args.Mode == search.ZoektGlobalSearch
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, r.args, globalSearch, search.TextRequest, r.onMissingRepoRevs)
-	if err != nil {
-		return nil, err
-	}
+func PartitionRepos(request zoektutil.IndexedSearchRequest, notSearcherOnly bool) ([]repoData, error) {
 	repoSets := []repoData{UnindexedList(request.UnindexedRepos())} // unindexed included by default
-	if r.mode != search.SearcherOnly {
+	if notSearcherOnly {
 		repoSets = append(repoSets, IndexedMap(request.IndexedRepos()))
 	}
 	return repoSets, nil
@@ -99,15 +77,7 @@ func runJobs(ctx context.Context, jobs []*searchRepos) error {
 }
 
 // streamStructuralSearch runs structural search jobs and streams the results.
-func streamStructuralSearch(ctx context.Context, args *search.SearcherParameters, repoFetcher *RepoFetcher, stream streaming.Sender) (err error) {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
-	defer cleanup()
-
-	repos, err := repoFetcher.Get(ctx)
-	if err != nil {
-		return err
-	}
-
+func streamStructuralSearch(ctx context.Context, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) (err error) {
 	jobs := []*searchRepos{}
 	for _, repoSet := range repos {
 		searcherArgs := &search.SearcherParameters{
@@ -123,32 +93,32 @@ func streamStructuralSearch(ctx context.Context, args *search.SearcherParameters
 
 // retryStructuralSearch runs a structural search with a higher limit file match
 // limit so that Zoekt resolves more potential file matches.
-func retryStructuralSearch(ctx context.Context, args *search.SearcherParameters, repoFetcher *RepoFetcher, stream streaming.Sender) error {
+func retryStructuralSearch(ctx context.Context, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
 	patternCopy := *(args.PatternInfo)
 	patternCopy.FileMatchLimit = 1000
 	argsCopy := *args
 	argsCopy.PatternInfo = &patternCopy
 	args = &argsCopy
-	return streamStructuralSearch(ctx, args, repoFetcher, stream)
+	return streamStructuralSearch(ctx, args, repos, stream)
 }
 
-func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, repoFetcher *RepoFetcher, stream streaming.Sender) error {
+func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
 	if args.PatternInfo.FileMatchLimit != search.DefaultMaxSearchResults {
 		// streamStructuralSearch performs a streaming search when the user sets a value
 		// for `count`. The first return parameter indicates whether the request was
 		// serviced with streaming.
-		return streamStructuralSearch(ctx, args, repoFetcher, stream)
+		return streamStructuralSearch(ctx, args, repos, stream)
 	}
 
 	// For structural search with default limits we retry if we get no results.
 	fileMatches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
-		return streamStructuralSearch(ctx, args, repoFetcher, stream)
+		return streamStructuralSearch(ctx, args, repos, stream)
 	})
 
 	if len(fileMatches) == 0 && err == nil {
 		// retry structural search with a higher limit.
 		fileMatches, stats, err = streaming.CollectStream(func(stream streaming.Sender) error {
-			return retryStructuralSearch(ctx, args, repoFetcher, stream)
+			return retryStructuralSearch(ctx, args, repos, stream)
 		})
 		if err != nil {
 			return err
@@ -177,13 +147,38 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 }
 
 type StructuralSearch struct {
-	RepoFetcher  RepoFetcher
-	Mode         search.GlobalSearchMode
-	SearcherArgs search.SearcherParameters
+	ZoektArgs    *search.ZoektParameters
+	SearcherArgs *search.SearcherParameters
+
+	NotSearcherOnly   bool
+	UseIndex          query.YesNoOnly
+	ContainsRefGlobs  bool
+	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+
+	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, _ []*search.RepositoryRevisions) error {
-	return runStructuralSearch(ctx, &s.SearcherArgs, &s.RepoFetcher, stream)
+func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
+	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
+	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+			if err != nil {
+				return err
+			}
+		}
+
+		partitionedRepos, err := PartitionRepos(request, s.NotSearcherOnly)
+		if err != nil {
+			return err
+		}
+
+		return runStructuralSearch(ctx, s.SearcherArgs, partitionedRepos, stream)
+	})
 }
 
 func (*StructuralSearch) Name() string {

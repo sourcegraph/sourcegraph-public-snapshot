@@ -132,10 +132,10 @@ func RepoUpdater() *monitoring.Container {
 							Description: "total number of user added repos",
 							Query:       `max(src_repoupdater_user_repos_total)`,
 							// 90% of our enforced limit
-							Critical:          monitoring.Alert().GreaterOrEqual(200000*0.9, nil).For(5 * time.Minute),
+							Critical:          monitoring.Alert().GreaterOrEqual(400000*0.9, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
-							PossibleSolutions: "Check for unusual spikes in user added repos. Each user is only allowed to add 2000",
+							PossibleSolutions: "Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 400k.",
 						},
 					},
 					{
@@ -207,7 +207,7 @@ func RepoUpdater() *monitoring.Container {
 							Name:              "sched_error",
 							Description:       "repositories schedule error rate",
 							Query:             `max(rate(src_repoupdater_sched_error[1m]))`,
-							Critical:          monitoring.Alert().GreaterOrEqual(1, nil).For(time.Minute),
+							Critical:          monitoring.Alert().GreaterOrEqual(1, nil).For(15 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs for errors",
@@ -299,6 +299,18 @@ func RepoUpdater() *monitoring.Container {
 							PossibleSolutions: `
 								- Check the network connectivity the Sourcegraph and the code host.
 								- Check if API rate limit quota is exhausted on the code host.
+							`,
+						},
+						{
+							Name:        "perms_syncer_scheduled_repos_total",
+							Description: "total number of repos scheduled for permissions sync",
+							Query:       `max(rate(src_repoupdater_perms_syncer_schedule_repos_total[1m]))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `
+								Indicates how many repositories have been scheduled for a permissions sync.
+								More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/repo/permissions#permissions-sync-scheduling)
 							`,
 						},
 					},
@@ -448,6 +460,7 @@ func RepoUpdater() *monitoring.Container {
 			shared.Batches.NewServiceGroup(containerName),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
+			shared.CodeIntelligence.NewNPMGroup(containerName),
 
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),

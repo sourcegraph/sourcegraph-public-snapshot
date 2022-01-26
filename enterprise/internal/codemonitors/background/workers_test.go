@@ -6,46 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "codemonitorsbackground"
-}
-
 func TestActionRunner(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	externalURL := "https://www.sourcegraph.com"
-	testQuery := "test patternType:literal"
-
-	// Mocks.
-	got := email.TemplateDataNewSearchResults{}
-	email.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *email.TemplateDataNewSearchResults) error {
-		got = *data
-		return nil
-	}
-	email.MockExternalURL = func() *url.URL {
-		externalURL, _ := url.Parse("https://www.sourcegraph.com")
-		return externalURL
-	}
-
-	// Create a TestStore.
-	var err error
-	db := dbtesting.GetDB(t)
-	now := time.Now()
-	clock := func() time.Time { return now }
-	s := codemonitors.NewStoreWithClock(db, clock)
-	ctx, ts := storetest.NewTestStoreWithStore(t, s)
-
 	tests := []struct {
 		name               string
 		numResults         int
@@ -63,57 +31,63 @@ func TestActionRunner(t *testing.T) {
 		},
 	}
 
-	want := email.TemplateDataNewSearchResults{
-		Priority:       "New",
-		SearchURL:      externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
-		Description:    "test description",
-		CodeMonitorURL: externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
-	}
-
-	var (
-		queryID      int64 = 1
-		triggerEvent       = 1
-		record       *codemonitors.ActionJob
-	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			//Empty database, preserve schema.
-			dbtesting.SetupGlobalTestDB(t)
+			db := dbtest.NewDB(t)
 
-			_, _, _, userCtx := storetest.NewTestUser(ctx, t)
+			externalURL := "https://www.sourcegraph.com"
+			testQuery := "test patternType:literal"
+
+			// Mocks.
+			got := TemplateDataNewSearchResults{}
+			MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error {
+				got = *data
+				return nil
+			}
+			MockExternalURL = func() *url.URL {
+				externalURL, _ := url.Parse("https://www.sourcegraph.com")
+				return externalURL
+			}
+
+			// Create a TestStore.
+			now := time.Now()
+			clock := func() time.Time { return now }
+			s := edb.CodeMonitorsWithClock(db, clock)
+			ctx, ts := edb.NewTestStore(t, db)
+
+			_, _, _, userCtx := edb.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
-			_, err = ts.InsertTestMonitor(userCtx, t)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = ts.EnqueueTriggerQueries(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = ts.LogSearch(ctx, testQuery, tt.numResults, triggerEvent)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = ts.EnqueueActionEmailsForQueryIDInt64(ctx, queryID, triggerEvent)
-			if err != nil {
-				t.Fatal(err)
-			}
-			record, err = ts.ActionJobForIDInt(ctx, 1)
-			if err != nil {
-				t.Fatal(err)
-			}
+			_, err := ts.InsertTestMonitor(userCtx, t)
+			require.NoError(t, err)
+
+			triggerJobs, err := ts.EnqueueQueryTriggerJobs(ctx)
+			require.NoError(t, err)
+			require.Len(t, triggerJobs, 1)
+			triggerEventID := triggerJobs[0].ID
+
+			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.numResults)
+			require.NoError(t, err)
+
+			_, err = ts.EnqueueActionJobsForMonitor(ctx, 1, triggerEventID)
+			require.NoError(t, err)
+
+			record, err := ts.GetActionJob(ctx, 1)
+			require.NoError(t, err)
 
 			a := actionRunner{s}
 			err = a.Handle(ctx, record)
-			if err != nil {
-				t.Fatal(err)
+			require.NoError(t, err)
+
+			want := TemplateDataNewSearchResults{
+				Priority:       "New",
+				SearchURL:      externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
+				Description:    "test description",
+				CodeMonitorURL: externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
 			}
 
 			want.NumberOfResultsWithDetail = tt.wantNumResultsText
-			if diff := cmp.Diff(got, want); diff != "" {
-				t.Fatalf("diff: %s", diff)
-			}
+			require.Equal(t, want, got)
 		})
 	}
 }

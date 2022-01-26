@@ -85,8 +85,8 @@ func TestSubstituteAliases(t *testing.T) {
 
 	autogold.Want(
 		"basic substitution",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"field":"repogroup","value":"repogroup","negated":false,"labels":["IsAlias"]},{"field":"file","value":"file","negated":false,"labels":["IsAlias"]}]}]`).
-		Equal(t, test("r:repo g:repogroup f:file", SearchTypeRegex))
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"field":"file","value":"file","negated":false,"labels":["IsAlias"]}]}]`).
+		Equal(t, test("r:repo f:file", SearchTypeRegex))
 
 	autogold.Want(
 		"special case for content substitution",

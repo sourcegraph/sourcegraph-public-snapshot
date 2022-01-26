@@ -85,17 +85,7 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 		searchType = query.SearchTypeLiteral
 	}
 
-	settings, err := decodedViewerFinalSettings(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-
-	globbing := getBoolPtr(settings.SearchGlobbing, false)
-
-	plan, err := query.Pipeline(
-		query.Init(args.Query, searchType),
-		query.With(globbing, query.Globbing),
-	)
+	plan, err := query.Pipeline(query.Init(args.Query, searchType))
 	if err != nil {
 		return nil, err
 	}

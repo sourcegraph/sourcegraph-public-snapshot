@@ -5,12 +5,12 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { Settings } from '../schema/settings.schema'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { CodeHostScopeAlerts, GitLabScopeAlert } from '../site/CodeHostScopeAlerts/CodeHostScopeAlerts'
@@ -64,7 +64,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             />
                         )}
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                        {window.context.likelyDockerOnMac && <DockerForMacAlert className={styles.alert} />}
+                        {window.context.likelyDockerOnMac && window.context.deployType === 'docker-container' && (
+                            <DockerForMacAlert className={styles.alert} />
+                        )}
                         {window.context.sourcegraphDotComMode && (
                             <CodeHostScopeAlerts authenticatedUser={this.props.authenticatedUser} />
                         )}
@@ -96,7 +98,8 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         <DismissibleAlert
                             key={motd}
                             partialStorageKey={`motd.${motd}`}
-                            className={classNames('alert-info', styles.alert)}
+                            variant="info"
+                            className={styles.alert}
                         >
                             <Markdown dangerousInnerHTML={renderMarkdown(motd)} />
                         </DismissibleAlert>
@@ -105,7 +108,8 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                     <DismissibleAlert
                         key="dev-web-server-alert"
                         partialStorageKey="dev-web-server-alert"
-                        className={classNames('alert-danger', styles.alert)}
+                        variant="danger"
+                        className={styles.alert}
                     >
                         <div>
                             <strong>Warning!</strong> This build uses data from the proxied API:{' '}

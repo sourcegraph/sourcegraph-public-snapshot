@@ -10,6 +10,7 @@ import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
+export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 
 export class EventLogger implements TelemetryService {
@@ -18,8 +19,10 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
+    private lastSourceURL?: string
     private deviceID = ''
     private eventID = 0
+    private listeners: Set<(eventName: string) => void> = new Set()
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -36,8 +39,9 @@ export class EventLogger implements TelemetryService {
     constructor() {
         // EventLogger is never teared down
         // eslint-disable-next-line rxjs/no-ignored-subscription
-        browserExtensionMessageReceived.subscribe(({ platform }) => {
-            this.log('BrowserExtensionConnectedToServer', { platform }, { platform })
+        browserExtensionMessageReceived.subscribe(({ platform, version }) => {
+            const args = { platform, version }
+            this.log('BrowserExtensionConnectedToServer', args, args)
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
                 console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
@@ -80,16 +84,19 @@ export class EventLogger implements TelemetryService {
      * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
+        for (const listener of this.listeners) {
+            listener(eventLabel)
+        }
         if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
-        this.logToConsole(eventLabel, eventProperties)
+        this.logToConsole(eventLabel, eventProperties, publicArgument)
     }
 
-    private logToConsole(eventLabel: string, object?: any): void {
+    private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
-            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, object)
+            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
         }
     }
 
@@ -121,6 +128,21 @@ export class EventLogger implements TelemetryService {
 
         this.firstSourceURL = firstSourceURL
         return firstSourceURL
+    }
+
+    public getLastSourceURL(): string {
+        // The cookie value gets overwritten each time a user visits a *.sourcegraph.com property. This code
+        // lives in Google Tag Manager.
+        const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
+
+        const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
+
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+
+        this.lastSourceURL = lastSourceURL
+        return lastSourceURL
     }
 
     // Device ID is a require field for Amplitude events.
@@ -187,13 +209,19 @@ export class EventLogger implements TelemetryService {
 
         let deviceID = cookies.get(DEVICE_ID_KEY)
         if (!deviceID) {
-            deviceID = uuid.v4()
+            // If device ID does not exist, use the anonymous user ID value so these are consolidated.
+            deviceID = anonymousUserID
             cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
 
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
         this.deviceID = deviceID
+    }
+
+    public addEventLogListener(callback: (eventName: string) => void): () => void {
+        this.listeners.add(callback)
+        return () => this.listeners.delete(callback)
     }
 }
 
@@ -227,17 +255,25 @@ function pageViewQueryParameters(url: string): EventQueryParameters {
     const parsedUrl = new URL(url)
 
     const utmSource = parsedUrl.searchParams.get('utm_source')
+    const utmCampaign = parsedUrl.searchParams.get('utm_campaign')
+
+    const utmProps = {
+        utm_campaign: utmCampaign || undefined,
+        utm_source: utmSource || undefined,
+        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
+        utm_term: parsedUrl.searchParams.get('utm_term') || undefined,
+        utm_content: parsedUrl.searchParams.get('utm_content') || undefined,
+    }
+
     if (utmSource === 'saved-search-email') {
         eventLogger.log('SavedSearchEmailClicked')
     } else if (utmSource === 'saved-search-slack') {
         eventLogger.log('SavedSearchSlackClicked')
     } else if (utmSource === 'code-monitoring-email') {
         eventLogger.log('CodeMonitorEmailLinkClicked')
+    } else if (utmSource === 'hubspot' && utmCampaign?.match(/^cloud-onboarding-email(.*)$/)) {
+        eventLogger.log('UTMCampaignLinkClicked', utmProps, utmProps)
     }
 
-    return {
-        utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
-        utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
-        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
-    }
+    return utmProps
 }

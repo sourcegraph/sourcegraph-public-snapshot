@@ -1,7 +1,8 @@
 import { cloneDeep, isFunction } from 'lodash'
 
-import * as GQL from '../graphql/schema'
-import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
+import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+
+import * as GQL from '../schema'
 import { parseJSONCOrError } from '../util/jsonc'
 
 /**
@@ -21,12 +22,12 @@ export interface Settings {
     extensions?: { [extensionID: string]: boolean }
     experimentalFeatures?: {
         enableFastResultLoading?: boolean
-        acceptSearchSuggestionOnEnter?: boolean
         batchChangesExecution?: boolean
         showSearchContext?: boolean
         showSearchContextManagement?: boolean
         fuzzyFinder?: boolean
         fuzzyFinderCaseInsensitiveFileCountThreshold?: number
+        clientSearchResultRanking?: string
     }
     [key: string]: any
 

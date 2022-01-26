@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -17,11 +18,84 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func TestServeConfiguration(t *testing.T) {
+	repos := []types.MinimalRepo{{
+		ID:    5,
+		Name:  "5",
+		Stars: 5,
+	}, {
+		ID:    6,
+		Name:  "6",
+		Stars: 6,
+	}}
+	srv := &searchIndexerServer{
+		RepoStore: &fakeRepoStore{Repos: repos},
+		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+			return map[api.RepoID][]string{6: {"a", "b"}}, nil
+		},
+	}
+
+	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
+		return api.CommitID("!" + spec), nil
+	}
+	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
+
+	data := url.Values{
+		"repoID": []string{"1", "5", "6"},
+	}
+	req := httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	if err := srv.serveConfiguration(w, req); err != nil {
+		t.Fatal(err)
+	}
+
+	resp := w.Result()
+	body, _ := io.ReadAll(resp.Body)
+
+	// This is a very fragile test since it will depend on changes to
+	// searchbackend.GetIndexOptions. If this becomes a problem we can make it
+	// more robust by shifting around responsibilities.
+	want := `{"Name":"","RepoID":0,"Public":false,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":false,"Error":"repo not found: id=1"}
+{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}
+{"Name":"6","RepoID":6,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"},{"Name":"a","Version":"!a"},{"Name":"b","Version":"!b"}],"Priority":6}`
+
+	if d := cmp.Diff(want, string(body)); d != "" {
+		t.Fatalf("mismatch (-want, +got):\n%s", d)
+	}
+
+	// when fingerprint is set we only return a subset. We simulate this by setting RepoStore to only list repo number 5
+	srv.RepoStore = &fakeRepoStore{Repos: repos[:1]}
+	req = httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-Sourcegraph-Config-Fingerprint", resp.Header.Get("X-Sourcegraph-Config-Fingerprint"))
+
+	w = httptest.NewRecorder()
+	if err := srv.serveConfiguration(w, req); err != nil {
+		t.Fatal(err)
+	}
+
+	resp = w.Result()
+	body, _ = io.ReadAll(resp.Body)
+
+	// We want the same as before, except we only want to get back 5.
+	//
+	// This is a very fragile test since it will depend on changes to
+	// searchbackend.GetIndexOptions. If this becomes a problem we can make it
+	// more robust by shifting around responsibilities.
+	want = `{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}`
+
+	if d := cmp.Diff(want, string(body)); d != "" {
+		t.Fatalf("mismatch (-want, +got):\n%s", d)
+	}
+}
+
 func TestReposIndex(t *testing.T) {
-	allRepos := []types.RepoName{
+	allRepos := []types.MinimalRepo{
 		{ID: 1, Name: "github.com/popular/foo"},
 		{ID: 2, Name: "github.com/popular/bar"},
 		{ID: 3, Name: "github.com/alice/foo"},
@@ -32,7 +106,7 @@ func TestReposIndex(t *testing.T) {
 
 	cases := []struct {
 		name      string
-		indexable []types.RepoName
+		indexable []types.MinimalRepo
 		body      string
 		want      []string
 	}{{
@@ -40,11 +114,6 @@ func TestReposIndex(t *testing.T) {
 		indexable: allRepos,
 		body:      `{"Hostname": "foo"}`,
 		want:      []string{"github.com/popular/foo", "github.com/alice/foo"},
-	}, {
-		name:      "indexed",
-		indexable: allRepos,
-		body:      `{"Hostname": "foo", "Indexed": ["github.com/alice/bar"]}`,
-		want:      []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
 	}, {
 		name:      "indexedids",
 		indexable: allRepos,
@@ -55,11 +124,6 @@ func TestReposIndex(t *testing.T) {
 		indexable: indexableRepos,
 		body:      `{"Hostname": "foo"}`,
 		want:      []string{"github.com/popular/foo"},
-	}, {
-		name:      "dot-com indexed",
-		indexable: indexableRepos,
-		body:      `{"Hostname": "foo", "Indexed": ["github.com/popular/bar"]}`,
-		want:      []string{"github.com/popular/foo", "github.com/popular/bar"},
 	}, {
 		name:      "dot-com indexedids",
 		indexable: indexableRepos,
@@ -74,15 +138,17 @@ func TestReposIndex(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			srv := &reposListServer{
-				ListIndexable:   fakeListIndexable(tc.indexable),
-				StreamRepoNames: fakeStreamRepoNames(allRepos),
-				Indexers:        suffixIndexers(true),
+			srv := &searchIndexerServer{
+				ListIndexable: fakeListIndexable(tc.indexable),
+				RepoStore: &fakeRepoStore{
+					Repos: allRepos,
+				},
+				Indexers: suffixIndexers(true),
 			}
 
 			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
 			w := httptest.NewRecorder()
-			if err := srv.serveIndex(w, req); err != nil {
+			if err := srv.serveList(w, req); err != nil {
 				t.Fatal(err)
 			}
 
@@ -94,16 +160,10 @@ func TestReposIndex(t *testing.T) {
 			}
 
 			var data struct {
-				RepoNames []string
-				RepoIDs   []api.RepoID
+				RepoIDs []api.RepoID
 			}
 			if err := json.Unmarshal(body, &data); err != nil {
 				t.Fatal(err)
-			}
-			got := data.RepoNames
-
-			if !cmp.Equal(tc.want, got) {
-				t.Fatalf("names mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}
 
 			wantIDs := make([]api.RepoID, len(tc.want))
@@ -121,40 +181,55 @@ func TestReposIndex(t *testing.T) {
 	}
 }
 
-func fakeListIndexable(indexable []types.RepoName) func(context.Context) ([]types.RepoName, error) {
-	return func(context.Context) ([]types.RepoName, error) {
+func fakeListIndexable(indexable []types.MinimalRepo) func(context.Context) ([]types.MinimalRepo, error) {
+	return func(context.Context) ([]types.MinimalRepo, error) {
 		return indexable, nil
 	}
 }
 
-func fakeStreamRepoNames(repos []types.RepoName) func(context.Context, database.ReposListOptions, func(*types.RepoName)) error {
-	return func(ctx context.Context, opt database.ReposListOptions, cb func(*types.RepoName)) error {
-		names := make(map[string]bool, len(opt.Names))
-		for _, name := range opt.Names {
-			names[name] = true
-		}
+type fakeRepoStore struct {
+	Repos []types.MinimalRepo
+}
 
-		ids := make(map[api.RepoID]bool, len(opt.IDs))
-		for _, id := range opt.IDs {
-			ids[id] = true
-		}
-
-		for i := range repos {
-			r := &repos[i]
-			if names[string(r.Name)] || ids[r.ID] {
-				cb(&repos[i])
+func (f *fakeRepoStore) List(_ context.Context, opts database.ReposListOptions) ([]*types.Repo, error) {
+	var repos []*types.Repo
+	for _, r := range f.Repos {
+		for _, id := range opts.IDs {
+			if id == r.ID {
+				repos = append(repos, r.ToRepo())
 			}
 		}
-
-		return nil
 	}
+
+	return repos, nil
+}
+
+func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.ReposListOptions, cb func(*types.MinimalRepo)) error {
+	names := make(map[string]bool, len(opt.Names))
+	for _, name := range opt.Names {
+		names[name] = true
+	}
+
+	ids := make(map[api.RepoID]bool, len(opt.IDs))
+	for _, id := range opt.IDs {
+		ids[id] = true
+	}
+
+	for i := range f.Repos {
+		r := &f.Repos[i]
+		if names[string(r.Name)] || ids[r.ID] {
+			cb(&f.Repos[i])
+		}
+	}
+
+	return nil
 }
 
 // suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.RepoName) ([]types.RepoName, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}
@@ -162,7 +237,7 @@ func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexe
 		return nil, errors.New("empty hostname")
 	}
 
-	var filter []types.RepoName
+	var filter []types.MinimalRepo
 	for _, r := range indexable {
 		if strings.HasSuffix(string(r.Name), hostname) {
 			filter = append(filter, r)

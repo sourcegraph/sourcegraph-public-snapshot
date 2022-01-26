@@ -1,12 +1,13 @@
 import classNames from 'classnames'
+import { cloneDeep } from 'lodash'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-yaml'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
 
@@ -22,10 +23,10 @@ interface JSONSchema {
 
 export interface Props extends ThemeProps {
     className?: string
+    batchChangeName: string
     value: string | undefined
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
-    height?: number
 }
 
 interface State {}
@@ -78,13 +79,12 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
             <MonacoEditor
                 className={classNames(styles.editor, this.props.className)}
                 language="yaml"
-                height={this.props.height || 400}
+                height="auto"
                 isLightTheme={this.props.isLightTheme}
                 value={this.props.value}
                 editorWillMount={this.editorWillMount}
                 options={{
                     lineNumbers: 'on',
-                    automaticLayout: true,
                     minimap: { enabled: false },
                     formatOnType: true,
                     formatOnPaste: true,
@@ -112,7 +112,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     private onDidEditorMount(): void {
         const monaco = this.monaco!
 
-        setDiagnosticsOptions(monaco)
+        setDiagnosticsOptions(monaco, this.props.batchChangeName)
 
         // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
         // same page (if there are multiple).
@@ -143,7 +143,17 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(editor: typeof monaco): void {
+function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string): void {
+    const schema = cloneDeep(batchSpecSchemaJSON)
+    // We don't allow env forwarding in src-cli so we remove it from the schema
+    // so that monaco can show the error inline.
+    schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf = schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf.filter(
+        type => type.type !== 'string'
+    )
+
+    // Enforce the exact name match. The user must use the settings UI to change the name.
+    schema.properties.name.pattern = `^${batchChangeName}$`
+
     editor.languages.yaml.yamlDefaults.setDiagnosticsOptions({
         validate: true,
         isKubernetes: false,
@@ -153,7 +163,7 @@ function setDiagnosticsOptions(editor: typeof monaco): void {
         schemas: [
             {
                 uri: 'file:///root',
-                schema: batchSpecSchemaJSON as JSONSchema,
+                schema: schema as JSONSchema,
                 fileMatch: ['*'],
             },
         ],

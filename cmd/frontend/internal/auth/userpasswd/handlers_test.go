@@ -6,12 +6,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestCheckEmailAbuse(t *testing.T) {
-	ctx := context.Background()
-
 	now := time.Now()
 	yesterday := now.AddDate(0, 0, -1)
 	farFuture := now.AddDate(100, 0, 0)
@@ -57,15 +54,12 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db := dbtest.NewDB(t)
-			database.Mocks.UserEmails.GetLatestVerificationSentEmail = func(context.Context, string) (*database.UserEmail, error) {
-				return test.mockEmail, test.mockErr
-			}
-			defer func() {
-				database.Mocks.UserEmails.GetLatestVerificationSentEmail = nil
-			}()
+			userEmails := database.NewMockUserEmailsStore()
+			userEmails.GetLatestVerificationSentEmailFunc.SetDefaultReturn(test.mockEmail, test.mockErr)
+			db := database.NewMockDB()
+			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
-			abused, reason, err := checkEmailAbuse(ctx, db, "fake@localhost")
+			abused, reason, err := checkEmailAbuse(context.Background(), db, "fake@localhost")
 			if test.expErr != err {
 				t.Fatalf("err: want %v but got %v", test.expErr, err)
 			} else if test.expAbused != abused {

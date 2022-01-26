@@ -8,6 +8,6 @@
     "baseUrl": "./src",
     "jsx": "react",
   },
-  "references": [{ "path": "../shared" }, { "path": "../build-config" }],
+  "references": [{ "path": "../shared" }, { "path": "../build-config" }, { "path": "../http-client" }],
   "include": ["./src/**/*", "./*.ts"],
 }

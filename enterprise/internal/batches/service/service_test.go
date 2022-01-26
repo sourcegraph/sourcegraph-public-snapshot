@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -38,7 +37,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)
@@ -49,7 +48,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
-	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
+	createTestData := func(t *testing.T, s *store.Store, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
 		spec := testBatchSpec(author)
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
@@ -66,28 +65,6 @@ func TestServicePermissionLevels(t *testing.T) {
 		}
 
 		return batchChange, changeset, spec
-	}
-
-	assertAuthError := func(t *testing.T, err error) {
-		t.Helper()
-
-		if err == nil {
-			t.Fatalf("expected error. got none")
-		}
-		if err != nil {
-			if !errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
-				t.Fatalf("wrong error: %s (%T)", err, err)
-			}
-		}
-	}
-
-	assertNoAuthError := func(t *testing.T, err error) {
-		t.Helper()
-
-		// Ignore other errors, we only want to check whether it's an auth error
-		if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
-			t.Fatalf("got auth error")
-		}
 	}
 
 	tests := []struct {
@@ -119,7 +96,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			batchChange, changeset, batchSpec := createTestData(t, s, svc, tc.batchChangeAuthor)
+			batchChange, changeset, batchSpec := createTestData(t, s, tc.batchChangeAuthor)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
@@ -210,7 +187,7 @@ func TestService(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -338,7 +315,7 @@ func TestService(t *testing.T) {
 		}
 
 		called := false
-		repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+		repoupdater.MockEnqueueChangesetSync = func(_ context.Context, ids []int64) error {
 			if len(ids) != 1 && ids[0] != changeset.ID {
 				t.Fatalf("MockEnqueueChangesetSync received wrong ids: %+v", ids)
 			}
@@ -656,13 +633,13 @@ func TestService(t *testing.T) {
 			}
 
 			c := &btypes.BatchChange{
-				InitialApplierID: authorID,
-				NamespaceUserID:  userID,
-				NamespaceOrgID:   orgID,
-				Name:             name,
-				LastApplierID:    authorID,
-				LastAppliedAt:    time.Now(),
-				BatchSpecID:      spec.ID,
+				CreatorID:       authorID,
+				NamespaceUserID: userID,
+				NamespaceOrgID:  orgID,
+				Name:            name,
+				LastApplierID:   authorID,
+				LastAppliedAt:   time.Now(),
+				BatchSpecID:     spec.ID,
 			}
 
 			if err := s.CreateBatchChange(ctx, c); err != nil {
@@ -765,14 +742,14 @@ func TestService(t *testing.T) {
 		}
 
 		matchingBatchChange := &btypes.BatchChange{
-			Name:             batchSpec.Spec.Name,
-			Description:      batchSpec.Spec.Description,
-			InitialApplierID: admin.ID,
-			NamespaceOrgID:   batchSpec.NamespaceOrgID,
-			NamespaceUserID:  batchSpec.NamespaceUserID,
-			BatchSpecID:      batchSpec.ID,
-			LastApplierID:    admin.ID,
-			LastAppliedAt:    time.Now(),
+			Name:            batchSpec.Spec.Name,
+			Description:     batchSpec.Spec.Description,
+			CreatorID:       admin.ID,
+			NamespaceOrgID:  batchSpec.NamespaceOrgID,
+			NamespaceUserID: batchSpec.NamespaceUserID,
+			BatchSpecID:     batchSpec.ID,
+			LastApplierID:   admin.ID,
+			LastAppliedAt:   time.Now(),
 		}
 		if err := s.CreateBatchChange(ctx, matchingBatchChange); err != nil {
 			t.Fatalf("failed to create batch change: %s\n", err)
@@ -1484,48 +1461,6 @@ func TestService(t *testing.T) {
 			}
 		})
 
-		t.Run("success with importChangesets", func(t *testing.T) {
-			spec := createBatchSpecWithWorkspaces(t)
-
-			newSpec, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
-				BatchSpecRandID: spec.RandID,
-				RawSpec: ct.BuildRawBatchSpecWithImportChangesets(t, []batcheslib.ImportChangeset{
-					{Repository: string(rs[0].Name), ExternalIDs: []interface{}{"#123", 456}},
-					{Repository: string(rs[1].Name), ExternalIDs: []interface{}{"789"}},
-				}),
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
-				BatchSpecID: newSpec.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
-				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
-			}
-
-			changesetSpecs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{BatchSpecID: newSpec.ID})
-			if err != nil {
-				t.Fatal(err)
-			}
-			// Assert that the number of changeset specs is correct. More
-			// extensive assertions are in the tests for
-			// CreateBatchSpecFromRaw.
-			if len(changesetSpecs) != 3 {
-				t.Fatalf("wrong number of changeset specs: %d", len(changesetSpecs))
-			}
-
-			// Assert that old batch spec is deleted
-			_, err = s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: spec.ID})
-			if err != store.ErrNoResults {
-				t.Fatalf("unexpected error: %s", err)
-			}
-		})
-
 		t.Run("batchSpec already has changeset specs", func(t *testing.T) {
 			assertNoChangesetSpecs := func(t *testing.T, batchSpecID int64) {
 				t.Helper()
@@ -1577,59 +1512,6 @@ func TestService(t *testing.T) {
 			}
 			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
 				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
-			}
-		})
-
-		t.Run("success with importChangesets", func(t *testing.T) {
-			rawSpec := ct.BuildRawBatchSpecWithImportChangesets(t, []batcheslib.ImportChangeset{
-				{Repository: string(rs[0].Name), ExternalIDs: []interface{}{"#123", 456}},
-				{Repository: string(rs[1].Name), ExternalIDs: []interface{}{"789"}},
-			})
-
-			newSpec, err := svc.CreateBatchSpecFromRaw(ctx, CreateBatchSpecFromRawOpts{
-				RawSpec:         rawSpec,
-				NamespaceUserID: admin.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if !newSpec.CreatedFromRaw {
-				t.Fatalf("batchSpec not createdFromRaw: %t", newSpec.CreatedFromRaw)
-			}
-
-			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
-				BatchSpecID: newSpec.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
-				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
-			}
-
-			changesetSpecs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{BatchSpecID: newSpec.ID})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			var wantExternalIDs = []string{"#123", "456", "789"}
-			var haveExternalIDs []string
-			for _, cs := range changesetSpecs {
-				if cs.BatchSpecID != newSpec.ID {
-					t.Fatal("changeset spec doesn't have batch spec ID")
-				}
-
-				if cs.RepoID != rs[0].ID && cs.RepoID != rs[1].ID {
-					t.Fatal("changeset spec has wrong repo id")
-				}
-
-				haveExternalIDs = append(haveExternalIDs, cs.Spec.ExternalID)
-			}
-
-			sort.Strings(haveExternalIDs)
-			if diff := cmp.Diff(wantExternalIDs, haveExternalIDs); diff != "" {
-				t.Fatalf("wrong external IDs. diff=%s", diff)
 			}
 		})
 
@@ -1733,19 +1615,643 @@ func TestService(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("RetryBatchSpecWorkspaces", func(t *testing.T) {
+		failureMessage := "this failed"
+
+		t.Run("success", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			changesetSpec1 := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+				Repo:      rs[2].ID,
+				BatchSpec: spec.ID,
+				HeadRef:   "refs/heads/my-spec",
+			})
+
+			changesetSpec2 := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+				Repo:      rs[2].ID,
+				BatchSpec: spec.ID,
+				HeadRef:   "refs/heads/my-spec-2",
+			})
+
+			var workspaceIDs []int64
+			for i, repo := range rs {
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: spec.ID,
+					RepoID:      repo.ID,
+					Steps: []batcheslib.Step{
+						{Run: "echo hello", Container: "alpine:3"},
+					},
+				}
+				// This workspace has the completed job and resulted in 2 changesetspecs
+				if i == 2 {
+					ws.ChangesetSpecIDs = append(ws.ChangesetSpecIDs, changesetSpec1.ID, changesetSpec2.ID)
+				}
+
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+				workspaceIDs = append(workspaceIDs, ws.ID)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: workspaceIDs[0],
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			completedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: workspaceIDs[2],
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateCompleted,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+			}
+			createJob(t, s, completedJob)
+
+			jobs := []*btypes.BatchSpecWorkspaceExecutionJob{failedJob, completedJob}
+
+			// RETRY
+			if err := svc.RetryBatchSpecWorkspaces(ctx, workspaceIDs); err != nil {
+				t.Fatal(err)
+			}
+
+			assertJobsDeleted(t, s, jobs)
+			assertChangesetSpecsDeleted(t, s, []*btypes.ChangesetSpec{changesetSpec1, changesetSpec2})
+			assertJobsCreatedFor(t, s, []int64{workspaceIDs[0], workspaceIDs[1], workspaceIDs[2]})
+		})
+
+		t.Run("batch spec already applied", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := testBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			// RETRY
+			err := svc.RetryBatchSpecWorkspaces(ctx, []int64{ws.ID})
+			if err == nil {
+				t.Fatal("no error")
+			}
+			if err.Error() != "batch spec already applied" {
+				t.Fatalf("wrong error: %s", err)
+			}
+		})
+
+		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			// Associate with draft batch change
+			batchChange := testDraftBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			// RETRY
+			err := svc.RetryBatchSpecWorkspaces(ctx, []int64{ws.ID})
+			if err != nil {
+				t.Fatal("unexpected error")
+			}
+
+			assertJobsDeleted(t, s, []*btypes.BatchSpecWorkspaceExecutionJob{failedJob})
+			assertJobsCreatedFor(t, s, []int64{ws.ID})
+		})
+
+		t.Run("job not retryable", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			queuedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateQueued,
+			}
+			createJob(t, s, queuedJob)
+
+			// RETRY
+			err := svc.RetryBatchSpecWorkspaces(ctx, []int64{ws.ID})
+			if err == nil {
+				t.Fatal("no error")
+			}
+			if !strings.Contains(err.Error(), "not retryable") {
+				t.Fatalf("wrong error: %s", err)
+			}
+		})
+
+		t.Run("user is not namespace user and not admin", func(t *testing.T) {
+			// admin owns batch spec
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := testWorkspace(spec.ID, rs[0].ID)
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			queuedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateQueued,
+			}
+			createJob(t, s, queuedJob)
+
+			// userCtx uses user as actor
+			err := svc.RetryBatchSpecWorkspaces(userCtx, []int64{ws.ID})
+			assertAuthError(t, err)
+		})
+	})
+
+	t.Run("RetryBatchSpecExecution", func(t *testing.T) {
+		failureMessage := "this failed"
+
+		createSpec := func(t *testing.T) *btypes.BatchSpec {
+			t.Helper()
+
+			spec := testBatchSpec(admin.ID)
+			spec.CreatedFromRaw = true
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+			job := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID, State: btypes.BatchSpecResolutionJobStateCompleted}
+			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			return spec
+		}
+
+		t.Run("success", func(t *testing.T) {
+			spec := createSpec(t)
+
+			changesetSpec1 := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+				Repo:      rs[2].ID,
+				BatchSpec: spec.ID,
+				HeadRef:   "refs/heads/my-spec",
+			})
+
+			changesetSpec2 := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+				Repo:      rs[2].ID,
+				BatchSpec: spec.ID,
+				HeadRef:   "refs/heads/my-spec-2",
+			})
+
+			var workspaceIDs []int64
+			for i, repo := range rs {
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: spec.ID,
+					RepoID:      repo.ID,
+					Steps: []batcheslib.Step{
+						{Run: "echo hello", Container: "alpine:3"},
+					},
+				}
+				// This workspace has the completed job and resulted in 2 changesetspecs
+				if i == 2 {
+					ws.ChangesetSpecIDs = append(ws.ChangesetSpecIDs, changesetSpec1.ID, changesetSpec2.ID)
+				}
+
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+				workspaceIDs = append(workspaceIDs, ws.ID)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: workspaceIDs[0],
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			completedJob1 := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: workspaceIDs[1],
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateCompleted,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+			}
+			createJob(t, s, completedJob1)
+
+			completedJob2 := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: workspaceIDs[2],
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateCompleted,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+			}
+			createJob(t, s, completedJob2)
+
+			// RETRY
+			if err := svc.RetryBatchSpecExecution(ctx, RetryBatchSpecExecutionOpts{BatchSpecRandID: spec.RandID}); err != nil {
+				t.Fatal(err)
+			}
+
+			// Completed jobs should not be retried
+			assertJobsDeleted(t, s, []*btypes.BatchSpecWorkspaceExecutionJob{failedJob})
+			assertChangesetSpecsNotDeleted(t, s, []*btypes.ChangesetSpec{changesetSpec1, changesetSpec2})
+			assertJobsCreatedFor(t, s, []int64{workspaceIDs[0], workspaceIDs[1], workspaceIDs[2]})
+		})
+
+		t.Run("success with IncludeCompleted", func(t *testing.T) {
+			spec := createSpec(t)
+
+			changesetSpec1 := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+				Repo:      rs[2].ID,
+				BatchSpec: spec.ID,
+				HeadRef:   "refs/heads/my-spec",
+			})
+
+			changesetSpec2 := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+				Repo:      rs[2].ID,
+				BatchSpec: spec.ID,
+				HeadRef:   "refs/heads/my-spec-2",
+			})
+
+			var workspaceIDs []int64
+			for i, repo := range rs {
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: spec.ID,
+					RepoID:      repo.ID,
+					Steps: []batcheslib.Step{
+						{Run: "echo hello", Container: "alpine:3"},
+					},
+				}
+				// This workspace has the completed job and resulted in 2 changesetspecs
+				if i == 2 {
+					ws.ChangesetSpecIDs = append(ws.ChangesetSpecIDs, changesetSpec1.ID, changesetSpec2.ID)
+				}
+
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+				workspaceIDs = append(workspaceIDs, ws.ID)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: workspaceIDs[0],
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			completedJob1 := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: workspaceIDs[1],
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateCompleted,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+			}
+			createJob(t, s, completedJob1)
+
+			completedJob2 := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: workspaceIDs[2],
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateCompleted,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+			}
+			createJob(t, s, completedJob2)
+
+			// RETRY
+			opts := RetryBatchSpecExecutionOpts{BatchSpecRandID: spec.RandID, IncludeCompleted: true}
+			if err := svc.RetryBatchSpecExecution(ctx, opts); err != nil {
+				t.Fatal(err)
+			}
+
+			// Queued job should not be deleted
+			assertJobsDeleted(t, s, []*btypes.BatchSpecWorkspaceExecutionJob{
+				failedJob,
+				completedJob1,
+				completedJob2,
+			})
+			assertChangesetSpecsDeleted(t, s, []*btypes.ChangesetSpec{changesetSpec1, changesetSpec2})
+			assertJobsCreatedFor(t, s, []int64{workspaceIDs[0], workspaceIDs[1], workspaceIDs[2]})
+		})
+
+		t.Run("batch spec already applied", func(t *testing.T) {
+			spec := createSpec(t)
+
+			batchChange := testBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps:       []batcheslib.Step{{Run: "echo hello", Container: "alpine:3"}},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			// RETRY
+			err := svc.RetryBatchSpecExecution(ctx, RetryBatchSpecExecutionOpts{BatchSpecRandID: spec.RandID})
+			if err == nil {
+				t.Fatal("no error")
+			}
+			if err.Error() != "batch spec already applied" {
+				t.Fatalf("wrong error: %s", err)
+			}
+		})
+
+		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			// Associate with draft batch change
+			batchChange := testDraftBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			// RETRY
+			opts := RetryBatchSpecExecutionOpts{BatchSpecRandID: spec.RandID, IncludeCompleted: true}
+			if err := svc.RetryBatchSpecExecution(ctx, opts); err != nil {
+				t.Fatal(err)
+			}
+
+			// Queued job should not be deleted
+			assertJobsDeleted(t, s, []*btypes.BatchSpecWorkspaceExecutionJob{
+				failedJob,
+			})
+			assertJobsCreatedFor(t, s, []int64{ws.ID})
+		})
+
+		t.Run("user is not namespace user and not admin", func(t *testing.T) {
+			// admin owns batch spec
+			spec := createSpec(t)
+
+			ws := testWorkspace(spec.ID, rs[0].ID)
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			queuedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateQueued,
+			}
+			createJob(t, s, queuedJob)
+
+			// userCtx uses user as actor
+			err := svc.RetryBatchSpecExecution(userCtx, RetryBatchSpecExecutionOpts{BatchSpecRandID: spec.RandID})
+			assertAuthError(t, err)
+		})
+
+		t.Run("batch spec not in final state", func(t *testing.T) {
+			spec := createSpec(t)
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps:       []batcheslib.Step{{Run: "echo hello", Container: "alpine:3"}},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			queuedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateQueued,
+			}
+			createJob(t, s, queuedJob)
+
+			// RETRY
+			err := svc.RetryBatchSpecExecution(ctx, RetryBatchSpecExecutionOpts{BatchSpecRandID: spec.RandID})
+			if err == nil {
+				t.Fatal("no error")
+			}
+			if err != ErrRetryNonFinal {
+				t.Fatalf("wrong error: %s", err)
+			}
+		})
+	})
+}
+
+func createJob(t *testing.T, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+	t.Helper()
+
+	clone := *job
+
+	if err := ct.CreateBatchSpecWorkspaceExecutionJob(context.Background(), s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+		t.Fatal(err)
+	}
+
+	job.State = clone.State
+	job.Cancel = clone.Cancel
+	job.WorkerHostname = clone.WorkerHostname
+	job.StartedAt = clone.StartedAt
+	job.FinishedAt = clone.FinishedAt
+	job.FailureMessage = clone.FailureMessage
+
+	ct.UpdateJobState(t, context.Background(), s, job)
+}
+
+func assertJobsDeleted(t *testing.T, s *store.Store, jobs []*btypes.BatchSpecWorkspaceExecutionJob) {
+	t.Helper()
+
+	jobIDs := make([]int64, len(jobs))
+	for i, j := range jobs {
+		jobIDs[i] = j.ID
+	}
+	old, err := s.ListBatchSpecWorkspaceExecutionJobs(context.Background(), store.ListBatchSpecWorkspaceExecutionJobsOpts{
+		IDs: jobIDs,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(old) != 0 {
+		t.Fatal("old jobs not deleted")
+	}
+}
+
+func assertJobsCreatedFor(t *testing.T, s *store.Store, workspaceIDs []int64) {
+	t.Helper()
+
+	idMap := make(map[int64]struct{}, len(workspaceIDs))
+	for _, id := range workspaceIDs {
+		idMap[id] = struct{}{}
+	}
+	jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(context.Background(), store.ListBatchSpecWorkspaceExecutionJobsOpts{
+		BatchSpecWorkspaceIDs: workspaceIDs,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jobs) != len(workspaceIDs) {
+		t.Fatal("jobs not created")
+	}
+	for _, job := range jobs {
+		if _, ok := idMap[job.BatchSpecWorkspaceID]; !ok {
+			t.Fatalf("job created for wrong workspace")
+		}
+	}
+}
+
+func assertChangesetSpecsDeleted(t *testing.T, s *store.Store, specs []*btypes.ChangesetSpec) {
+	t.Helper()
+
+	ids := make([]int64, len(specs))
+	for i, j := range specs {
+		ids[i] = j.ID
+	}
+	old, _, err := s.ListChangesetSpecs(context.Background(), store.ListChangesetSpecsOpts{
+		IDs: ids,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(old) != 0 {
+		t.Fatal("specs not deleted")
+	}
+}
+
+func assertChangesetSpecsNotDeleted(t *testing.T, s *store.Store, specs []*btypes.ChangesetSpec) {
+	t.Helper()
+
+	ids := make([]int64, len(specs))
+	for i, j := range specs {
+		ids[i] = j.ID
+	}
+	have, _, err := s.ListChangesetSpecs(context.Background(), store.ListChangesetSpecsOpts{
+		IDs: ids,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(have) != len(ids) {
+		t.Fatalf("wrong number of changeset specs. want=%d, have=%d", len(ids), len(have))
+	}
+	haveIDs := make([]int64, len(have))
+	for i, j := range have {
+		haveIDs[i] = j.ID
+	}
+
+	if diff := cmp.Diff(ids, haveIDs); diff != "" {
+		t.Fatalf("wrong changeset specs exist: %s", diff)
+	}
 }
 
 func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 	c := &btypes.BatchChange{
-		Name:             "test-batch-change",
-		InitialApplierID: user,
-		NamespaceUserID:  user,
-		BatchSpecID:      spec.ID,
-		LastApplierID:    user,
-		LastAppliedAt:    time.Now(),
+		Name:            "test-batch-change",
+		CreatorID:       user,
+		NamespaceUserID: user,
+		BatchSpecID:     spec.ID,
+		LastApplierID:   user,
+		LastAppliedAt:   time.Now(),
 	}
 
 	return c
+}
+
+func testDraftBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
+	bc := testBatchChange(user, spec)
+	bc.LastAppliedAt = time.Time{}
+	bc.CreatorID = 0
+	bc.LastApplierID = 0
+	return bc
 }
 
 func testBatchSpec(user int32) *btypes.BatchSpec {
@@ -1770,4 +2276,34 @@ func testChangeset(repoID api.RepoID, batchChange int64, extState btypes.Changes
 	}
 
 	return changeset
+}
+
+func testWorkspace(batchSpecID int64, repoID api.RepoID) *btypes.BatchSpecWorkspace {
+	return &btypes.BatchSpecWorkspace{
+		BatchSpecID: batchSpecID,
+		RepoID:      repoID,
+		Steps:       []batcheslib.Step{{Run: "echo hello", Container: "alpine:3"}},
+	}
+}
+
+func assertAuthError(t *testing.T, err error) {
+	t.Helper()
+
+	if err == nil {
+		t.Fatalf("expected error. got none")
+	}
+	if err != nil {
+		if !errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
+			t.Fatalf("wrong error: %s (%T)", err, err)
+		}
+	}
+}
+
+func assertNoAuthError(t *testing.T, err error) {
+	t.Helper()
+
+	// Ignore other errors, we only want to check whether it's an auth error
+	if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
+		t.Fatalf("got auth error")
+	}
 }

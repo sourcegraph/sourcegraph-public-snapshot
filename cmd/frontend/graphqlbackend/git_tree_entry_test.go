@@ -7,20 +7,19 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
-	db := dbmock.NewMockDB()
-	got := (&GitTreeEntryResolver{
-		db: db,
-		commit: &GitCommitResolver{
+	db := database.NewMockDB()
+	got := NewGitTreeEntryResolver(db,
+		&GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}),
 		},
-		stat: CreateFileInfo("a/b", true),
-	}).RawZipArchiveURL()
+		CreateFileInfo("a/b", true)).
+		RawZipArchiveURL()
 	want := "http://example.com/my/repo/-/raw/a/b?format=zip"
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
@@ -39,14 +38,12 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	}
 	t.Cleanup(func() { git.Mocks.ReadFile = nil })
 
-	db := dbmock.NewMockDB()
-	gitTree := &GitTreeEntryResolver{
-		db: db,
-		commit: &GitCommitResolver{
+	db := database.NewMockDB()
+	gitTree := NewGitTreeEntryResolver(db,
+		&GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}),
 		},
-		stat: CreateFileInfo(wantPath, true),
-	}
+		CreateFileInfo(wantPath, true))
 
 	newFileContent, err := gitTree.Content(context.Background())
 	if err != nil {

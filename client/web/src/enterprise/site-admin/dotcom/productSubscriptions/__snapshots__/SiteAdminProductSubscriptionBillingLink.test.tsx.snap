@@ -1,48 +1,48 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SiteAdminProductSubscriptionBillingLink linked billing 1`] = `
-<div
-  className="site-admin-product-subscription-billing-link"
->
+<DocumentFragment>
   <div
-    className="d-flex align-items-center"
+    class="site-admin-product-subscription-billing-link"
   >
-    <a
-      className="mr-2 d-flex align-items-center"
-      href="https://example.com"
+    <div
+      class="d-flex align-items-center"
     >
-      View billing subscription 
-      <ExternalLinkIcon
-        className="icon-inline ml-1"
-      />
-    </a>
-    <button
-      className="btn btn-secondary btn-sm"
-      disabled={false}
-      onClick={[Function]}
-      type="button"
-    >
-      Unlink
-    </button>
+      <a
+        class="mr-2 d-flex align-items-center"
+        href="https://example.com"
+      >
+        View billing subscription 
+        <externallinkicon
+          class="icon-inline ml-1"
+        />
+      </a>
+      <button
+        class="btn btn-secondary btn-sm"
+        type="button"
+      >
+        Unlink
+      </button>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`SiteAdminProductSubscriptionBillingLink no linked billing 1`] = `
-<div
-  className="site-admin-product-subscription-billing-link"
->
+<DocumentFragment>
   <div
-    className="d-flex align-items-center"
+    class="site-admin-product-subscription-billing-link"
   >
-    <button
-      className="btn btn-secondary btn-sm"
-      disabled={false}
-      onClick={[Function]}
-      type="button"
+    <div
+      class="d-flex align-items-center"
     >
-      Link billing subscription
-    </button>
+      <button
+        class="btn btn-secondary btn-sm"
+        type="button"
+      >
+        Link billing subscription
+      </button>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;

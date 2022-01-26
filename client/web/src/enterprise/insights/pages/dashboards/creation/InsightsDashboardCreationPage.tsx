@@ -1,14 +1,11 @@
 import classNames from 'classnames'
-import { camelCase } from 'lodash'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader, Container, Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, Container, Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
@@ -22,26 +19,24 @@ import {
 } from './components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 import styles from './InsightsDashboardCreationPage.module.scss'
 
-interface InsightsDashboardCreationPageProps extends TelemetryProps {
-    authenticatedUser: AuthenticatedUser
-}
+interface InsightsDashboardCreationPageProps extends TelemetryProps {}
 
 export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDashboardCreationPageProps> = props => {
     const { telemetryService } = props
 
     const history = useHistory()
-    const { createDashboard, getInsightSubjects } = useContext(CodeInsightsBackendContext)
+    const { createDashboard, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
 
-    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
+    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
 
-    const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
+    const handleSubmit = async (values: DashboardCreationFields): Promise<SubmissionErrors> => {
         try {
-            await createDashboard(values).toPromise()
+            const createdDashboard = await createDashboard(values).toPromise()
 
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 
             // Navigate user to the dashboard page with new created dashboard
-            history.push(`/insights/dashboards/${camelCase(values.name)}`)
+            history.push(`/insights/dashboards/${createdDashboard.id}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }

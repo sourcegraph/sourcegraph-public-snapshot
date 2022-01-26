@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
 
 import { SingleValueCard } from '../../components/SingleValueCard'

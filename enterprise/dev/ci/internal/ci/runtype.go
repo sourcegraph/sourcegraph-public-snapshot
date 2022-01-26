@@ -61,7 +61,8 @@ func computeRunType(tag, branch string) RunType {
 		return ImagePatchNoTest
 	case branch == "docker-images-candidates-notest":
 		return CandidatesNoTest
-	case branch == "executor-patch-notest":
+	case branch == "executor-patch-notest",
+		strings.HasPrefix(branch, "executor-patch-notest/"):
 		return ExecutorPatchNoTest
 
 	case strings.HasPrefix(branch, "backend-integration/"):

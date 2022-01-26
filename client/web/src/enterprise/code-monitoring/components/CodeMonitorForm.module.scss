@@ -19,10 +19,11 @@
         border-radius: 4px;
         border: 1px solid var(--border-color);
 
-        &:hover:not(:disabled) {
+        &:hover:not(:global(.disabled)):not(:disabled) {
             /* stylelint-disable-next-line declaration-property-unit-whitelist */
             padding: calc(1rem - 1px);
             border: 2px solid var(--border-active-color);
+            cursor: pointer;
         }
     }
 }

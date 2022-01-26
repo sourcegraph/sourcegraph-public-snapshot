@@ -25,11 +25,6 @@
     # repo-updater
     - host.docker.internal:6074
 - labels:
-    job: query-runner
-  targets:
-    # query-runner
-    - host.docker.internal:6067
-- labels:
     job: zoekt-indexserver
   targets:
     # zoekt-indexserver

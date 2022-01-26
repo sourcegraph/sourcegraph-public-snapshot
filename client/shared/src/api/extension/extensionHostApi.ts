@@ -13,12 +13,13 @@ import {
 import * as sourcegraph from 'sourcegraph'
 
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { asError, ErrorLike, isDefined } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { Context } from '@sourcegraph/template-parser'
 
 import { getModeFromPath } from '../../languages'
-import { asError, ErrorLike } from '../../util/errors'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
-import { allOf, isDefined, isExactly, isNot, property } from '../../util/types'
+import { allOf, isExactly, isNot, property } from '../../util/types'
 import { parseRepoURI } from '../../util/url'
 import { fromHoverMerged } from '../client/types/hover'
 import { match, TextDocumentIdentifier } from '../client/types/textDocument'
@@ -28,7 +29,7 @@ import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerType
 
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
-import { computeContext, Context, ContributionScope } from './api/context/context'
+import { computeContext, ContributionScope } from './api/context/context'
 import {
     evaluateContributions,
     filterContributions,
@@ -305,6 +306,9 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 state.activeLanguages.next(new Set<string>(state.languageReferences.keys()))
             }
         },
+
+        // For filtering visible panels by DocumentSelector
+        getActiveViewComponentChanges: () => proxySubscribable(state.activeViewComponentChanges),
 
         // For panel view location provider arguments
         getActiveCodeEditorPosition: () =>

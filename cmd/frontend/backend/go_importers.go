@@ -16,6 +16,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -32,7 +34,7 @@ var (
 // a special case used only on Sourcegraph.com for repository badges.
 //
 // TODO: The import path is not always the same as the repository name.
-func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err error) {
+func CountGoImporters(ctx context.Context, db database.DB, repo api.RepoName) (count int, err error) {
 	if MockCountGoImporters != nil {
 		return MockCountGoImporters(ctx, repo)
 	}
@@ -64,7 +66,7 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 	defer cancel()
 
 	// Find all (possible) Go packages in the repository.
-	goPackages, err := listGoPackagesInRepoImprecise(ctx, repo)
+	goPackages, err := listGoPackagesInRepoImprecise(ctx, db, repo)
 	if err != nil {
 		return 0, err
 	}
@@ -115,7 +117,7 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 // the repository. It computes the list based solely on the repository name (as a prefix) and
 // filenames in the repository; it does not parse or build the Go files to determine the list
 // precisely.
-func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) ([]string, error) {
+func listGoPackagesInRepoImprecise(ctx context.Context, db database.DB, repoName api.RepoName) ([]string, error) {
 	if !envvar.SourcegraphDotComMode() {
 		// 🚨 SECURITY: Avoid leaking information about private repositories that the viewer is not
 		// allowed to access.
@@ -124,7 +126,7 @@ func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) (
 		)
 	}
 
-	repo, err := Repos.GetByName(ctx, repoName)
+	repo, err := NewRepos(db.Repos()).GetByName(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +135,7 @@ func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) (
 	if err != nil {
 		return nil, err
 	}
-	fis, err := git.ReadDir(ctx, repo.Name, commitID, "", true)
+	fis, err := git.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "", true)
 	if err != nil {
 		return nil, err
 	}

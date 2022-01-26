@@ -1,11 +1,12 @@
-import * as sentry from '@sentry/browser'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import React from 'react'
 
-import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
+import { Button } from '@sourcegraph/wildcard'
+
+import { isWebpackChunkError } from '../sentry/shouldErrorBeReported'
 
 import { HeroPage } from './HeroPage'
 
@@ -51,12 +52,12 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public componentDidCatch(error: unknown, errorInfo: React.ErrorInfo): void {
-        if (shouldErrorBeReported(error)) {
-            sentry.withScope(scope => {
+        if (typeof Sentry !== 'undefined') {
+            Sentry.withScope(scope => {
                 for (const [key, value] of Object.entries(errorInfo)) {
                     scope.setExtra(key, value)
                 }
-                sentry.captureException(error)
+                Sentry.captureException(error)
             })
         }
     }
@@ -83,9 +84,9 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                         subtitle={
                             <div className="container">
                                 <p>A new version of Sourcegraph is available.</p>
-                                <button type="button" className="btn btn-primary" onClick={this.onReloadClick}>
+                                <Button onClick={this.onReloadClick} variant="primary">
                                     Reload to update
-                                </button>
+                                </Button>
                             </div>
                         }
                     />
@@ -123,17 +124,4 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
     private onReloadClick: React.MouseEventHandler<HTMLElement> = () => {
         window.location.reload() // hard page reload
     }
-}
-
-function shouldErrorBeReported(error: unknown): boolean {
-    if (error instanceof HTTPStatusError) {
-        // Ignore Server error responses (5xx)
-        return error.status < 500
-    }
-
-    return true
-}
-
-function isWebpackChunkError(value: unknown): boolean {
-    return isErrorLike(value) && value.name === 'ChunkLoadError'
 }

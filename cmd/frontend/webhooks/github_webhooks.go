@@ -33,7 +33,7 @@ type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, eve
 // and routing to any registered WebhookHandlers, events are routed by their event type,
 // passed in the X-Github-Event header
 type GitHubWebhook struct {
-	ExternalServices *database.ExternalServiceStore
+	ExternalServices database.ExternalServiceStore
 
 	mu       sync.RWMutex
 	handlers map[string][]WebhookHandler
@@ -54,6 +54,8 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "External service not found", http.StatusInternalServerError)
 		return
 	}
+
+	SetExternalServiceID(r.Context(), extSvc.ID)
 
 	// 🚨 SECURITY: now that the payload and shared secret have been validated,
 	// we can use an internal actor on the context.

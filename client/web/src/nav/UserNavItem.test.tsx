@@ -1,9 +1,9 @@
-import { mount } from 'enzyme'
+import { render } from '@testing-library/react'
 import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
-import { ThemePreference } from '../theme'
+import { ThemePreference } from '../stores/themeState'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
@@ -39,7 +39,7 @@ describe('UserNavItem', () => {
 
     test('simple', () => {
         expect(
-            mount(
+            render(
                 <MemoryRouter>
                     <UserNavItem
                         showRepositorySection={true}
@@ -51,11 +51,9 @@ describe('UserNavItem', () => {
                         showDotComMarketing={true}
                         isExtensionAlertAnimating={false}
                         codeHostIntegrationMessaging="browser-extension"
-                        showSearchContext={true}
-                        showSearchContextManagement={true}
                     />
                 </MemoryRouter>
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })

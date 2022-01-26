@@ -10,8 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
-	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -22,7 +21,7 @@ const (
 	eventRetentionInDays int = 7
 )
 
-func newTriggerQueryRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newTriggerQueryRunner(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_trigger_jobs_worker",
 		NumHandlers:       1,
@@ -34,16 +33,17 @@ func newTriggerQueryRunner(ctx context.Context, s *cm.Store, metrics codeMonitor
 	return worker
 }
 
-func newTriggerQueryEnqueuer(ctx context.Context, store *cm.Store) goroutine.BackgroundRoutine {
+func newTriggerQueryEnqueuer(ctx context.Context, store edb.CodeMonitorStore) goroutine.BackgroundRoutine {
 	enqueueActive := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_query_enqueuer",
 		func(ctx context.Context) error {
-			return store.EnqueueTriggerQueries(ctx)
+			_, err := store.EnqueueQueryTriggerJobs(ctx)
+			return err
 		})
 	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, enqueueActive)
 }
 
-func newTriggerQueryResetter(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *dbworker.Resetter {
+func newTriggerQueryResetter(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStoreForTriggerJobs(s)
 
 	options := dbworker.ResetterOptions{
@@ -58,17 +58,17 @@ func newTriggerQueryResetter(ctx context.Context, s *cm.Store, metrics codeMonit
 	return dbworker.NewResetter(workerStore, options)
 }
 
-func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.BackgroundRoutine {
+func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) goroutine.BackgroundRoutine {
 	deleteLogs := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_jobs_log_deleter",
 		func(ctx context.Context) error {
 			// Delete logs without search results.
-			err := store.DeleteObsoleteJobLogs(ctx)
+			err := store.DeleteObsoleteTriggerJobs(ctx)
 			if err != nil {
 				return err
 			}
 			// Delete old logs, even if they have search results.
-			err = store.DeleteOldJobLogs(ctx, eventRetentionInDays)
+			err = store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 			if err != nil {
 				return err
 			}
@@ -77,7 +77,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.Ba
 	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
 }
 
-func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newActionRunner(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_action_jobs_worker",
 		NumHandlers:       1,
@@ -89,7 +89,7 @@ func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetri
 	return worker
 }
 
-func newActionJobResetter(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *dbworker.Resetter {
+func newActionJobResetter(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStoreForActionJobs(s)
 
 	options := dbworker.ResetterOptions{
@@ -104,12 +104,12 @@ func newActionJobResetter(ctx context.Context, s *cm.Store, metrics codeMonitors
 	return dbworker.NewResetter(workerStore, options)
 }
 
-func createDBWorkerStoreForTriggerJobs(s *cm.Store) dbworkerstore.Store {
+func createDBWorkerStoreForTriggerJobs(s edb.CodeMonitorStore) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:              "code_monitors_trigger_jobs_worker_store",
 		TableName:         "cm_trigger_jobs",
-		ColumnExpressions: cm.TriggerJobsColumns,
-		Scan:              cm.ScanTriggerJobs,
+		ColumnExpressions: edb.TriggerJobsColumns,
+		Scan:              edb.ScanTriggerJobsRecord,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -117,12 +117,12 @@ func createDBWorkerStoreForTriggerJobs(s *cm.Store) dbworkerstore.Store {
 	})
 }
 
-func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
+func createDBWorkerStoreForActionJobs(s edb.CodeMonitorStore) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:              "code_monitors_action_jobs_worker_store",
 		TableName:         "cm_action_jobs",
-		ColumnExpressions: cm.ActionJobsColumns,
-		Scan:              cm.ScanActionJobs,
+		ColumnExpressions: edb.ActionJobColumns,
+		Scan:              edb.ScanActionJobRecord,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -131,7 +131,7 @@ func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
 }
 
 type queryRunner struct {
-	*cm.Store
+	edb.CodeMonitorStore
 }
 
 func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -141,22 +141,31 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		}
 	}()
 
-	s, err := r.Store.Transact(ctx)
+	triggerJob, ok := record.(*edb.TriggerJob)
+	if !ok {
+		return errors.Errorf("unexpected record type %T", record)
+	}
+
+	s, err := r.CodeMonitorStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = s.Done(err) }()
 
-	var q *cm.MonitorQuery
-	q, err = s.GetQueryByRecordID(ctx, record.RecordID())
+	q, err := s.GetQueryTriggerForJob(ctx, triggerJob.ID)
 	if err != nil {
 		return err
 	}
+
+	m, err := s.GetMonitor(ctx, q.Monitor)
+	if err != nil {
+		return err
+	}
+
 	newQuery := newQueryWithAfterFilter(q)
 
 	// Search.
-	var results *gqlSearchResponse
-	results, err = search(ctx, newQuery)
+	results, err := search(ctx, newQuery, m.UserID)
 	if err != nil {
 		return err
 	}
@@ -165,27 +174,27 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		numResults = len(results.Data.Search.Results.Results)
 	}
 	if numResults > 0 {
-		err := s.EnqueueActionEmailsForQueryIDInt64(ctx, q.Id, record.RecordID())
+		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
-			return errors.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
+			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
 		}
 	}
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, err)
-	err = s.SetTriggerQueryNextRun(ctx, q.Id, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
+	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
 	if err != nil {
 		return err
 	}
 	// Log the actual query we ran and whether we got any new results.
-	err = s.LogSearch(ctx, newQuery, numResults, record.RecordID())
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, numResults)
 	if err != nil {
-		return errors.Errorf("LogSearch: %w", err)
+		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
 	return nil
 }
 
 type actionRunner struct {
-	*cm.Store
+	edb.CodeMonitorStore
 }
 
 func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -196,44 +205,48 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 		}
 	}()
 
-	s, err := r.Store.Transact(ctx)
+	j, ok := record.(*edb.ActionJob)
+	if !ok {
+		return errors.Errorf("expected record of type *edb.ActionJob, got %T", record)
+	}
+
+	switch {
+	case j.Email != nil:
+		return r.handleEmail(ctx, j)
+	case j.Webhook != nil:
+		return r.handleWebhook(ctx, j)
+	case j.SlackWebhook != nil:
+		return r.handleSlackWebhook(ctx, j)
+	default:
+		return errors.New("job must be one of type email, webhook, or slack webhook")
+	}
+}
+
+func (r *actionRunner) handleEmail(ctx context.Context, j *edb.ActionJob) error {
+	s, err := r.CodeMonitorStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = s.Done(err) }()
 
-	var (
-		j    *cm.ActionJob
-		m    *cm.ActionJobMetadata
-		e    *cm.MonitorEmail
-		recs []*cm.Recipient
-		data *email.TemplateDataNewSearchResults
-	)
-
-	var ok bool
-	j, ok = record.(*cm.ActionJob)
-	if !ok {
-		return errors.Errorf("type assertion failed")
+	m, err := s.GetActionJobMetadata(ctx, j.ID)
+	if err != nil {
+		return errors.Wrap(err, "GetActionJobMetadata")
 	}
 
-	m, err = s.GetActionJobMetadata(ctx, record.RecordID())
+	e, err := s.GetEmailAction(ctx, *j.Email)
 	if err != nil {
-		return errors.Errorf("store.GetActionJobMetadata: %w", err)
+		return errors.Wrap(err, "GetEmailAction")
 	}
 
-	e, err = s.ActionEmailByIDInt64(ctx, j.Email)
+	recs, err := s.ListRecipients(ctx, edb.ListRecipientsOpts{EmailID: j.Email})
 	if err != nil {
-		return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
+		return errors.Wrap(err, "ListRecipients")
 	}
 
-	recs, err = s.AllRecipientsForEmailIDInt64(ctx, j.Email)
+	data, err := NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
 	if err != nil {
-		return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
-	}
-
-	data, err = email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
-	if err != nil {
-		return errors.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
+		return errors.Wrap(err, "NewTemplateDataForNewSearchResults")
 	}
 	for _, rec := range recs {
 		if rec.NamespaceOrgID != nil {
@@ -241,9 +254,9 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 			continue
 		}
 		if rec.NamespaceUserID == nil {
-			return errors.Errorf("nil recipient")
+			return errors.New("nil recipient")
 		}
-		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+		err = SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
 		if err != nil {
 			return err
 		}
@@ -251,9 +264,97 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 	return nil
 }
 
+func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) error {
+	s, err := r.CodeMonitorStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = s.Done(err) }()
+
+	m, err := s.GetActionJobMetadata(ctx, j.ID)
+	if err != nil {
+		return errors.Wrap(err, "GetActionJobMetadata")
+	}
+
+	w, err := s.GetSlackWebhookAction(ctx, *j.SlackWebhook)
+	if err != nil {
+		return errors.Wrap(err, "GetSlackWebhookAction")
+	}
+
+	utmSource := "code-monitor-slack-webhook"
+	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
+	if err != nil {
+		return errors.Wrap(err, "GetSearchURL")
+	}
+
+	codeMonitorURL, err := getCodeMonitorURL(ctx, w.Monitor, utmSource)
+	if err != nil {
+		return errors.Wrap(err, "GetCodeMonitorURL")
+	}
+
+	args := actionArgs{
+		MonitorDescription: m.Description,
+		MonitorURL:         codeMonitorURL,
+		Query:              m.Query,
+		QueryURL:           searchURL,
+		NumResults:         zeroOrVal(m.NumResults),
+	}
+
+	return sendWebhookNotification(ctx, w.URL, args)
+}
+
+func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob) error {
+	s, err := r.CodeMonitorStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = s.Done(err) }()
+
+	m, err := s.GetActionJobMetadata(ctx, j.ID)
+	if err != nil {
+		return errors.Wrap(err, "GetActionJobMetadata")
+	}
+
+	w, err := s.GetSlackWebhookAction(ctx, *j.SlackWebhook)
+	if err != nil {
+		return errors.Wrap(err, "GetSlackWebhookAction")
+	}
+
+	utmSource := "code-monitor-slack-webhook"
+	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
+	if err != nil {
+		return errors.Wrap(err, "GetSearchURL")
+	}
+
+	codeMonitorURL, err := getCodeMonitorURL(ctx, w.Monitor, utmSource)
+	if err != nil {
+		return errors.Wrap(err, "GetCodeMonitorURL")
+	}
+
+	args := actionArgs{
+		MonitorDescription: m.Description,
+		MonitorURL:         codeMonitorURL,
+		Query:              m.Query,
+		QueryURL:           searchURL,
+		NumResults:         zeroOrVal(m.NumResults),
+	}
+
+	return sendSlackNotification(ctx, w.URL, args)
+}
+
+type StatusCodeError struct {
+	Code   int
+	Status string
+	Body   string
+}
+
+func (s StatusCodeError) Error() string {
+	return fmt.Sprintf("non-200 response %d %s with body %q", s.Code, s.Status, s.Body)
+}
+
 // newQueryWithAfterFilter constructs a new query which finds search results
 // introduced after the last time we queried.
-func newQueryWithAfterFilter(q *cm.MonitorQuery) string {
+func newQueryWithAfterFilter(q *edb.QueryTrigger) string {
 	// For q.LatestResult = nil we return a query string without after: filter, which
 	// effectively triggers actions immediately provided the query returns any
 	// results.
@@ -286,7 +387,7 @@ func latestResultTime(previousLastResult *time.Time, v *gqlSearchResponse, searc
 		// Error already logged by extractTime.
 		return time.Now()
 	}
-	return *t
+	return t
 }
 
 func zeroOrVal(i *int) int {

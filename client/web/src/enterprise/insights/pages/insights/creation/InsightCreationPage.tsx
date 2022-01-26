@@ -1,21 +1,23 @@
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { parseDashboardScope } from '../../../core/backend/utils/parse-dashboard-scope'
 import { InsightDashboard, isVirtualDashboard, Insight } from '../../../core/types'
 import { isUserSubject } from '../../../core/types/subjects'
 import { useQueryParameters } from '../../../hooks/use-query-parameters'
 
+import { CaptureGroupCreationPage } from './capture-group/CaptureGroupCreationPage'
 import { LangStatsInsightCreationPage } from './lang-stats/LangStatsInsightCreationPage'
 import { SearchInsightCreationPage } from './search-insight/SearchInsightCreationPage'
 
 export enum InsightCreationPageType {
     LangStats = 'lang-stats',
     Search = 'search-based',
+    CaptureGroup = 'capture-group',
 }
 
 const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string | undefined => {
@@ -23,8 +25,9 @@ const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string 
         return undefined
     }
 
+    // If no owner, this is using the graphql api
     if (!dashboard.owner) {
-        throw new Error('TODO: support GraphQL API')
+        return parseDashboardScope(dashboard.grants)
     }
 
     return dashboard.owner.id
@@ -42,19 +45,17 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     const { mode, telemetryService } = props
 
     const history = useHistory()
-
-    const { dashboardId } = useQueryParameters(['dashboardId'])
-
     const { getDashboardById, getInsightSubjects, createInsight } = useContext(CodeInsightsBackendContext)
 
-    const dashboard = useObservable(useMemo(() => getDashboardById(dashboardId), [getDashboardById, dashboardId]))
+    const { dashboardId } = useQueryParameters(['dashboardId'])
+    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
 
     if (dashboard === undefined || subjects === undefined) {
-        return <LoadingSpinner />
+        return <LoadingSpinner inline={false} />
     }
 
-    const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<void> => {
+    const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
 
         return createInsight({ insight, dashboard }).toPromise()
@@ -69,7 +70,8 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
         }
 
         if (!dashboard.owner) {
-            throw new Error('TODO: support GraphQL API')
+            history.push(`/insights/dashboards/${dashboard.id}`)
+            return
         }
 
         if (dashboard.owner.id === insight.visibility) {
@@ -87,6 +89,17 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     const personalVisibility = subjects.find(isUserSubject)?.id ?? ''
     const dashboardBasedVisibility = getVisibilityFromDashboard(dashboard)
     const insightVisibility = dashboardBasedVisibility ?? personalVisibility
+
+    if (mode === InsightCreationPageType.CaptureGroup) {
+        return (
+            <CaptureGroupCreationPage
+                telemetryService={telemetryService}
+                onInsightCreateRequest={handleInsightCreateRequest}
+                onSuccessfulCreation={handleInsightSuccessfulCreation}
+                onCancel={handleCancel}
+            />
+        )
+    }
 
     if (mode === InsightCreationPageType.Search) {
         return (

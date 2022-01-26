@@ -11,14 +11,17 @@ jobs:
         - uses: jenschelkopf/issue-label-notification-action@f7d2363e5efa18b8aeea671ca8093e183ae8f218 # 1.3
           with:
              recipients: |
-                  team/extensibility=@joelkw @muratsu
-                  team/frontend-platform=@umpox @valerybugakov @5h1ru @pdubroy @taylorsperry
+                  team/extensibility=@muratsu
                   team/cloud=@RafLeszczynski
-                  team/search=@lguychard
+                  team/search-product=@benvenker @lguychard
+                  team/search-core=@jjeffwarner
+                  [deprecated]team/search=@lguychard @benvenker @jjeffwarner
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
-                  team/distribution=@davejrt @ggilmore @daxmc99 @dan-mckean
-                  team/delivery=@davejrt @ggilmore @dan-mckean @caugustus-sourcegraph @stephanx
-                  team/security=@dan-mckean
-                  team/dev-experience=@taylorsperry @pdubroy
+                  team/distribution=@dan-mckean
+                  team/delivery=@dan-mckean @caugustus-sourcegraph @kevinwojo
+                  team/security=@dcomas
+                  team/dev-experience=@taylorsperry @jhchabran @kstretch9
                   team/repo-management=@jplahn @dan-mckean
+                  team/devops=@sourcegraph/cloud-devops
+                  team/cloud-growth=@muratsu @rrhyne

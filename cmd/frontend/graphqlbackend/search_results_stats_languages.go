@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -23,7 +24,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srr.Matches)
+	langs, err := searchResultsStatsLanguages(ctx, srs.sr.db, srr.Matches)
 	if err != nil {
 		return nil, err
 	}
@@ -37,12 +38,12 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
 	srs.once.Do(func() {
-		args, jobs, err := srs.sr.toSearchInputs(srs.sr.Query)
+		job, err := srs.sr.toSearchJob(srs.sr.Query)
 		if err != nil {
 			srs.srsErr = err
 			return
 		}
-		results, err := srs.sr.doResults(ctx, args, jobs)
+		results, err := srs.sr.doResults(ctx, job)
 		if err != nil {
 			srs.srsErr = err
 			return
@@ -52,7 +53,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsRe
 	return srs.srs, srs.srsErr
 }
 
-func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([]inventory.Lang, error) {
+func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []result.Match) ([]inventory.Lang, error) {
 	// Batch our operations by repo-commit.
 	type repoCommit struct {
 		repo     api.RepoID
@@ -66,7 +67,7 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 	}
 
 	var (
-		repos    = map[api.RepoID]types.RepoName{}
+		repos    = map[api.RepoID]types.MinimalRepo{}
 		filesMap = map[repoCommit]*fileStatsWork{}
 
 		run = parallel.NewRun(16)
@@ -76,7 +77,7 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 	)
 
 	// Track the mapping of repo ID -> repo object as we iterate.
-	sawRepo := func(repo types.RepoName) {
+	sawRepo := func(repo types.MinimalRepo) {
 		if _, ok := repos[repo.ID]; !ok {
 			repos[repo.ID] = repo
 		}
@@ -126,7 +127,7 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 					run.Error(err)
 					return
 				}
-				inv, err := backend.Repos.GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := backend.NewRepos(db.Repos()).GetInventory(ctx, repoName.ToRepo(), oid, true)
 				if err != nil {
 					run.Error(err)
 					return

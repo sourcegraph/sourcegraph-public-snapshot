@@ -38,7 +38,7 @@ body.theme-dark .markdown-body ul li:before {
 > WARNING: Campaigns was renamed to Sourcegraph Batch Changes in version 3.26. [Read more](references/name-change.md)
 
 <p class="lead">
-Create a batch change by specifying a search query to get a list of repositories and a script to run in each. You can also <a class="btn btn-primary" href="how-tos/creating_changesets_per_project_in_monorepos">create a batch change on a monorepo</a> by specifying which projects to run the script on. The batch change then lets you create changesets (a generic term for pull requests or merge requests) on all affected repositories or projects. Batch Changes allows you track their progress until they're all merged. You can preview the changes and update them at any time. A batch change can also be used to track and manage manually created changesets.
+Create a batch change by specifying a search query to get a list of repositories and a script to run in each. You can also <a href="how-tos/creating_changesets_per_project_in_monorepos">create a batch change on a monorepo</a> by specifying which projects to run the script on. The batch change then lets you create changesets (a generic term for pull requests or merge requests) on all affected repositories or projects. Batch Changes allows you to track their progress until they're all merged. You can preview the changes and update them at any time. A batch change can also be used to track and manage manually created changesets.
 </p>
 
 <div class="cta-group">
@@ -76,6 +76,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Batch Changes design](explanations/batch_changes_design.md)
 - [How `src` executes a batch spec](explanations/how_src_executes_a_batch_spec.md)
 - [Re-executing batch specs multiple times](explanations/reexecuting_batch_specs_multiple_times.md)
+- [Running batch changes server-side](explanations/server_side.md)
 
 ## How-tos
 
@@ -108,7 +109,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Batch spec YAML reference](references/batch_spec_yaml_reference.md)
 - [Batch spec templating](references/batch_spec_templating.md)
 - [Batch spec cheat sheet](references/batch_spec_cheat_sheet.md)
-- [Configuring Batch Changes publishing times](../admin/config/batch_changes.md)
+- [Site admin configuration reference](../admin/config/batch_changes.md)
 - [Troubleshooting](references/troubleshooting.md)
 - [FAQ](references/faq.md)
 - [CLI](../cli/references/batch/index.md)

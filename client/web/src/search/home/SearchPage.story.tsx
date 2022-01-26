@@ -9,12 +9,12 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
-import { SearchPatternType } from '../../graphql-operations'
-import { ThemePreference } from '../../theme'
+import { useExperimentalFeatures } from '../../stores'
+import { ThemePreference } from '../../stores/themeState'
 import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
@@ -34,21 +34,12 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     onThemePreferenceChange: () => undefined,
     authenticatedUser: authUser,
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
-    caseSensitive: false,
-    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
     searchContextsEnabled: true,
-    showSearchContext: false,
-    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: '',
-    showEnterpriseHomePanels: false,
-    showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
@@ -63,19 +54,25 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     extensionViews: () => null,
 })
 
-const { add } = storiesOf('web/search/home/SearchPage', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
-    },
-    chromatic: { viewports: [544, 577, 769, 993, 1200] },
-})
+const { add } = storiesOf('web/search/home/SearchPage', module)
+    .addParameters({
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
+        },
+        chromatic: { viewports: [544, 577, 769, 993, 1200] },
+    })
+    .addDecorator(Story => {
+        useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
+        return <Story />
+    })
 
 add('Cloud with panels', () => (
     <WebStory>
-        {webProps => (
-            <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} showEnterpriseHomePanels={true} />
-        )}
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+        }}
     </WebStory>
 ))
 
@@ -101,5 +98,10 @@ add('Cloud with notebook onboarding', () => (
 add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
 
 add('Server with panels', () => (
-    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} />}</WebStory>
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return <SearchPage {...defaultProps(webProps)} />
+        }}
+    </WebStory>
 ))

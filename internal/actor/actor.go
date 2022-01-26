@@ -16,6 +16,10 @@ import (
 
 // Actor represents an agent that accesses resources. It can represent an anonymous user, an
 // authenticated user, or an internal Sourcegraph service.
+//
+// Actor can be propagated across services by using actor.HTTPTransport (used by
+// httpcli.InternalClientFactory) and actor.HTTPMiddleware. Before assuming this, ensure
+// that actor propagation is enabled on both ends of the request.
 type Actor struct {
 	// UID is the unique ID of the authenticated user, or 0 for anonymous actors.
 	UID int32 `json:",omitempty"`
@@ -33,10 +37,16 @@ type Actor struct {
 	user     *types.User
 	userErr  error
 	userOnce sync.Once
+
+	// mockUser indicates this user was created in the context of a test.
+	mockUser bool
 }
 
 // FromUser returns an actor corresponding to a user
 func FromUser(uid int32) *Actor { return &Actor{UID: uid} }
+
+// FromMockUser returns an actor corresponding to a test user. Do not use outside of tests.
+func FromMockUser(uid int32) *Actor { return &Actor{UID: uid, mockUser: true} }
 
 // UIDString is a helper method that returns the UID as a string.
 func (a *Actor) UIDString() string { return strconv.Itoa(int(a.UID)) }
@@ -55,6 +65,11 @@ func (a *Actor) IsInternal() bool {
 	return a != nil && a.Internal
 }
 
+// IsMockUser returns true if the Actor is a test user.
+func (a *Actor) IsMockUser() bool {
+	return a != nil && a.mockUser
+}
+
 type userFetcher interface {
 	GetByID(context.Context, int32) (*types.User, error)
 }
@@ -71,9 +86,9 @@ func (a *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, err
 	return a.user, a.userErr
 }
 
-type key int
+type contextKey int
 
-const actorKey key = iota
+const actorKey contextKey = iota
 
 // FromContext returns a new Actor instance from a given context.
 func FromContext(ctx context.Context) *Actor {

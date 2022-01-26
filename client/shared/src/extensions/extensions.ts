@@ -1,5 +1,6 @@
+import { isErrorLike } from '@sourcegraph/common'
+
 import { Settings, SettingsCascadeOrError, SettingsSubject } from '../settings/settings'
-import { isErrorLike } from '../util/errors'
 
 /**
  * Determines if only default extensions are added

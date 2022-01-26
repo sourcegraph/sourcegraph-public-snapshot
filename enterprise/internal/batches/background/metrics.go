@@ -24,12 +24,12 @@ type batchChangesMetrics struct {
 
 func newMetrics(observationContext *observation.Context) batchChangesMetrics {
 	return batchChangesMetrics{
-		reconcilerWorkerMetrics:            workerutil.NewMetrics(observationContext, "batch_changes_reconciler", nil),
-		bulkProcessorWorkerMetrics:         workerutil.NewMetrics(observationContext, "batch_changes_bulk_processor", nil),
+		reconcilerWorkerMetrics:            workerutil.NewMetrics(observationContext, "batch_changes_reconciler"),
+		bulkProcessorWorkerMetrics:         workerutil.NewMetrics(observationContext, "batch_changes_bulk_processor"),
 		reconcilerWorkerResetterMetrics:    makeResetterMetrics(observationContext, "batch_changes_reconciler"),
 		bulkProcessorWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_changes_bulk_processor"),
 
-		batchSpecResolutionWorkerMetrics:         workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker", nil),
+		batchSpecResolutionWorkerMetrics:         workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker"),
 		batchSpecResolutionWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_changes_batch_spec_resolution_worker_resetter"),
 
 		batchSpecWorkspaceExecutionWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_spec_workspace_execution_worker_resetter"),

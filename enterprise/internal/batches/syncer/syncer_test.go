@@ -316,6 +316,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		}
 		return nil, store.ErrNoResults
 	})
+	syncStore.ExternalServicesFunc.SetDefaultReturn(database.ExternalServices(nil))
 
 	// If no site-credential exists, the token from the external service should be used.
 	src, err := loadChangesetSource(ctx, cf, syncStore, repo)

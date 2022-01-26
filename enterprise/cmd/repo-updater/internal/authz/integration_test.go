@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -38,8 +37,6 @@ func update(name string) bool {
 	}
 	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
-
-var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 // NOTE: To update VCR for these tests, please use the token of "sourcegraph-vcr"
 // for GITHUB_TOKEN, which can be found in 1Password.
@@ -90,7 +87,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewFromDSN(t, *dsn)
+			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -130,14 +127,14 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			dbconn.Global = testDB
 			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -171,7 +168,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewFromDSN(t, *dsn)
+			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -211,14 +208,14 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			dbconn.Global = testDB
 			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -275,7 +272,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewFromDSN(t, *dsn)
+			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -315,8 +312,6 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			dbconn.Global = testDB
-
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
 			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: &authData,
@@ -325,8 +320,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -360,7 +356,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewFromDSN(t, *dsn)
+			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -400,8 +396,6 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			dbconn.Global = testDB
-
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
 			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: &authData,
@@ -410,8 +404,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			db := database.NewDB(testDB)
 			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+			syncer := NewPermsSyncer(db, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {

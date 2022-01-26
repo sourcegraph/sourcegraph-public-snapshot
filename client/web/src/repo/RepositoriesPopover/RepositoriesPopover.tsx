@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react'
 
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
-    ConnectionContainer,
     ConnectionError,
-    ConnectionForm,
-    ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
     ShowMoreButton,
@@ -22,6 +20,12 @@ import {
     RepositoryPopoverFields,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import {
+    ConnectionPopover,
+    ConnectionPopoverContainer,
+    ConnectionPopoverForm,
+    ConnectionPopoverList,
+} from '../RevisionsPopover/components'
 
 import { RepositoryNode } from './RepositoryNode'
 
@@ -45,7 +49,7 @@ export const REPOSITORIES_FOR_POPOVER = gql`
     }
 `
 
-export interface RepositoriesPopoverProps {
+export interface RepositoriesPopoverProps extends TelemetryProps {
     /**
      * The current repository (shown as selected in the list), if any.
      */
@@ -57,13 +61,17 @@ export const BATCH_COUNT = 10
 /**
  * A popover that displays a searchable list of repositories.
  */
-export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({ currentRepo }) => {
+export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({
+    currentRepo,
+    telemetryService,
+}) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
 
     useEffect(() => {
         eventLogger.logViewEvent('RepositoriesPopover')
-    }, [])
+        telemetryService.log('RepositoriesPopover')
+    }, [telemetryService])
 
     const { connection, loading, error, hasNextPage, fetchMore } = useConnection<
         RepositoriesForPopoverResult,
@@ -97,24 +105,23 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
     )
 
     return (
-        <div className="repositories-popover connection-popover">
-            <ConnectionContainer className="connection-popover__content" compact={true}>
-                <ConnectionForm
+        <ConnectionPopover>
+            <ConnectionPopoverContainer>
+                <ConnectionPopoverForm
                     inputValue={searchValue}
                     onInputChange={event => setSearchValue(event.target.value)}
                     inputPlaceholder="Search repositories..."
-                    inputClassName="connection-popover__input"
                     autoFocus={true}
                     compact={true}
                 />
                 <SummaryContainer compact={true}>{query && summary}</SummaryContainer>
                 {error && <ConnectionError errors={[error.message]} compact={true} />}
                 {connection && (
-                    <ConnectionList compact={true} className="connection-popover__nodes">
+                    <ConnectionPopoverList>
                         {connection.nodes.map(node => (
                             <RepositoryNode key={node.id} node={node} currentRepo={currentRepo} />
                         ))}
-                    </ConnectionList>
+                    </ConnectionPopoverList>
                 )}
                 {loading && <ConnectionLoading compact={true} />}
                 {!loading && connection && (
@@ -123,7 +130,7 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
                         {hasNextPage && <ShowMoreButton compact={true} onClick={fetchMore} />}
                     </SummaryContainer>
                 )}
-            </ConnectionContainer>
-        </div>
+            </ConnectionPopoverContainer>
+        </ConnectionPopover>
     )
 }

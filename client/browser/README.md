@@ -125,12 +125,25 @@ You should ensure you're signed into any Sourcegraph instance you point the exte
 
 Click reload for Sourcegraph at `about:debugging`
 
+### Safari
+
+> **Note**: Requires MacOS with Xcode installed
+
+1. `yarn --cwd client/browser dev:safari`
+1. Open Safari then: `Develop > Allow Unsigned Extensions`
+1. Open `client/browser/build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj` using Xcode
+1. Choose `Sourcegraph for Safari (macOS)` in the top toolbar and click Run icon
+1. It should build and add extension to your local Safari (Check `Preferences > Extensions tab`)
+
+[See more details.](https://developer.apple.com/documentation/safariservices/safari_web_extensions/running_your_safari_web_extension)
+
 ## Testing
 
-- Unit tests: `yarn test`
-- E2E tests: `yarn test-e2e`
+- Unit tests: `sg test bext`
+- Integration tests: `sg test bext-build` & `sg test bext-integration`
+- E2E tests: `sg test bext-build` & `sg test bext-e2e`
 
-### e2e tests
+### E2E tests
 
 The test suite in `end-to-end/github.test.ts` runs on the release branch `bext/release` in both Chrome and Firefox against a Sourcegraph Docker instance.
 
@@ -147,7 +160,7 @@ It currently does not run in CI and is intended to be run manually for release t
 
 All test suites in `integration` run in CI. These tests run the browser extension against recordings of code hosts (using [Polly.JS](https://netflix.github.io/pollyjs/#/)) and mock data for our GraphQL API.
 
-To update all recordings, run `yarn record-integration`. To update a subset of recordings, run `RECORD=true SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep=YOUR_PATTERN`, where `YOUR_PATTERN` is typically a test name.
+To update all recordings, run `yarn record-integration`. To update a subset of recordings, run `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep=YOUR_PATTERN`, where `YOUR_PATTERN` is typically a test name.
 
 ## Deploy
 

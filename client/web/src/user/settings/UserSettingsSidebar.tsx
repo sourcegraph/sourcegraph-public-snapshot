@@ -1,18 +1,21 @@
 import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
+
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { ProductStatusBadge, Button, Link } from '@sourcegraph/wildcard'
+import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Badge'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
-import { Badge, BadgeStatus } from '../../components/Badge'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { OnboardingTourProps } from '../../search'
-import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
+import { useExperimentalFeatures } from '../../stores'
 import { NavItemDescriptor } from '../../util/contributions'
 
 import { UserSettingsAreaRouteContext } from './UserSettingsArea'
+import styles from './UserSettingsSidebar.module.scss'
 
 export interface UserSettingsSidebarItemConditionContext extends BatchChangesProps {
     user: UserSettingsAreaUserFields
@@ -21,7 +24,7 @@ export interface UserSettingsSidebarItemConditionContext extends BatchChangesPro
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
-    status?: BadgeStatus
+    status?: ProductStatusType
 }
 
 export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
@@ -29,7 +32,6 @@ export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 export interface UserSettingsSidebarProps
     extends UserSettingsAreaRouteContext,
         BatchChangesProps,
-        OnboardingTourProps,
         RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
@@ -39,6 +41,7 @@ export interface UserSettingsSidebarProps
 /** Sidebar for user account pages. */
 export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarProps> = props => {
     const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
+    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
 
     if (!props.authenticatedUser) {
         return null
@@ -49,6 +52,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     const context: UserSettingsSidebarItemConditionContext = {
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
+        batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
@@ -66,7 +70,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     ({ label, to, exact, status, condition = () => true }) =>
                         condition(context) && (
                             <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                {label} {status && <Badge className="ml-1" status={status} />}
+                                {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                             </SidebarNavItem>
                         )
                 )}
@@ -90,10 +94,10 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                                 About organizations
                             </SidebarNavItem>
                         ) : (
-                            <div className="user-settings-sidebar__new-org-btn-wrapper">
-                                <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
+                            <div className={styles.newOrgBtnWrapper}>
+                                <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
                                     <AddIcon className="icon-inline" /> New organization
-                                </Link>
+                                </Button>
                             </div>
                         ))}
                 </SidebarGroup>
@@ -102,14 +106,10 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 <SidebarGroupHeader label="Other actions" />
                 {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
                 {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
-                {props.showOnboardingTour && (
-                    <button
-                        type="button"
-                        className="btn text-left sidebar__link--inactive d-flex w-100"
-                        onClick={reEnableSearchTour}
-                    >
+                {showOnboardingTour && (
+                    <Button className="text-left sidebar__link--inactive d-flex w-100" onClick={reEnableSearchTour}>
                         Show search tour
-                    </button>
+                    </Button>
                 )}
             </SidebarGroup>
             <div>Version: {window.context.version}</div>

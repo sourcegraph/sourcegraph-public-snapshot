@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"os"
 	"strconv"
@@ -21,8 +20,6 @@ import (
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -40,7 +37,7 @@ func main() {
 }
 
 func enterpriseInit(
-	db *sql.DB,
+	db ossDB.DB,
 	repoStore *repos.Store,
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
@@ -61,10 +58,8 @@ func enterpriseInit(
 		}
 	}
 
-	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
-	dbconn.Global = db
 	permsStore := edb.Perms(db, timeutil.Now)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
+	permsSyncer := authz.NewPermsSyncer(db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {
@@ -75,7 +70,7 @@ func enterpriseInit(
 }
 
 // startBackgroundPermsSync sets up background permissions syncing.
-func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db dbutil.DB) {
+func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db ossDB.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {
 		t := time.NewTicker(5 * time.Second)

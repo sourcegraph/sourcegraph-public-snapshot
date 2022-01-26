@@ -37,24 +37,19 @@ The fastest way to run Sourcegraph self-hosted is with the Docker container. See
 
 ### Sourcegraph OSS
 
-1. [Install dependencies](doc/dev/getting-started/quickstart_1_install_dependencies.md)
-1. Clone this repository
-1. [Install `sg`](doc/dev/getting-started/quickstart_3_install_sg.md)
-1. [Ensure Docker is running](doc/dev/getting-started/quickstart_4_start_docker.md)
-1. [Initialize the PostgreSQL database](doc/dev/getting-started/quickstart_5_initialize_database.md)
-1. [Configure the HTTPS reverse proxy](doc/dev/getting-started/quickstart_6_configure_https_reverse_proxy.md)
-1. [Start the development server](doc/dev/getting-started/quickstart_7_start_server.md)
+1. Go through [Quickstart](https://docs.sourcegraph.com/dev/setup/quickstart) to install `sg` and dependencies
+1. Start the development environment in OSS mode:
    ```sh
    sg start oss
    ```
 
 Sourcegraph should now be running at https://sourcegraph.test:3443.
 
-For detailed instructions and troubleshooting, see the [local development documentation](./doc/dev/index.md).
+For detailed instructions and troubleshooting, see the [local development documentation](https://docs.sourcegraph.com/dev).
 
 ## Development
 
-Refer to the [Developing Sourcegraph guide](doc/dev/index.md) to get started.
+Refer to the [Developing Sourcegraph guide](https://docs.sourcegraph.com/dev) to get started.
 
 ### Documentation
 
@@ -63,9 +58,8 @@ The `doc` directory has additional documentation for developing and understandin
 - [Project FAQ](./doc/admin/faq.md)
 - [Architecture](./doc/dev/background-information/architecture/index.md): high-level architecture
 - [Database setup](./doc/dev/background-information/postgresql.md): database best practices
-- [General style guide](https://about.sourcegraph.com/handbook/communication/style_guide)
-- [Go style guide](https://about.sourcegraph.com/handbook/engineering/languages/go)
-- [Documentation style guide](https://about.sourcegraph.com/handbook/engineering/product_documentation)
+- [Go style guide](./doc/dev/background-information/languages/go.md)
+- [Documentation style guide](https://handbook.sourcegraph.com/engineering/product_documentation)
 - [GraphQL API](./doc/api/graphql/index.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
 

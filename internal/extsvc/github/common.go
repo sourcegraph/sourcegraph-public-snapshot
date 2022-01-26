@@ -23,6 +23,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -153,27 +154,36 @@ type Label struct {
 	Name        string
 }
 
+type PullRequestRepo struct {
+	ID    string
+	Owner struct {
+		Login string
+	}
+}
+
 // PullRequest is a GitHub pull request.
 type PullRequest struct {
-	RepoWithOwner string `json:"-"`
-	ID            string
-	Title         string
-	Body          string
-	State         string
-	URL           string
-	HeadRefOid    string
-	BaseRefOid    string
-	HeadRefName   string
-	BaseRefName   string
-	Number        int64
-	Author        Actor
-	Participants  []Actor
-	Labels        struct{ Nodes []Label }
-	TimelineItems []TimelineItem
-	Commits       struct{ Nodes []CommitWithChecks }
-	IsDraft       bool
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	RepoWithOwner  string `json:"-"`
+	ID             string
+	Title          string
+	Body           string
+	State          string
+	URL            string
+	HeadRefOid     string
+	BaseRefOid     string
+	HeadRefName    string
+	BaseRefName    string
+	Number         int64
+	Author         Actor
+	BaseRepository PullRequestRepo
+	HeadRepository PullRequestRepo
+	Participants   []Actor
+	Labels         struct{ Nodes []Label }
+	TimelineItems  []TimelineItem
+	Commits        struct{ Nodes []CommitWithChecks }
+	IsDraft        bool
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // AssignedEvent represents an 'assigned' event on a PullRequest.
@@ -1082,6 +1092,7 @@ var (
 	ghe220Semver, _             = semver.NewConstraint("~2.20.0")
 	ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
 	ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
+	ghe330PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.3.0")
 )
 
 func timelineItemTypes(version *semver.Version) (string, error) {
@@ -1373,6 +1384,13 @@ fragment prCommit on PullRequestCommit {
   }
 }
 
+fragment repo on Repository {
+  id
+  owner {
+    login
+  }
+}
+
 fragment pr on PullRequest {
   id
   title
@@ -1389,6 +1407,12 @@ fragment pr on PullRequest {
   %s
   author {
     ...actor
+  }
+  baseRepository {
+    ...repo
+  }
+  headRepository {
+    ...repo
   }
   participants(first: 100) {
     nodes {
@@ -1641,6 +1665,26 @@ func SplitRepositoryNameWithOwner(nameWithOwner string) (owner, repo string, err
 	return parts[0], parts[1], nil
 }
 
+// Owner splits a GitHub repository's "owner/name" string and only returns the
+// owner.
+func (r *Repository) Owner() (string, error) {
+	if owner, _, err := SplitRepositoryNameWithOwner(r.NameWithOwner); err != nil {
+		return "", err
+	} else {
+		return owner, nil
+	}
+}
+
+// Name splits a GitHub repository's "owner/name" string and only returns the
+// name.
+func (r *Repository) Name() (string, error) {
+	if _, name, err := SplitRepositoryNameWithOwner(r.NameWithOwner); err != nil {
+		return "", err
+	} else {
+		return name, nil
+	}
+}
+
 // Repository is a GitHub repository.
 type Repository struct {
 	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
@@ -1660,6 +1704,11 @@ type Repository struct {
 	// Metadata retained for ranking
 	StargazerCount int `json:",omitempty"`
 	ForkCount      int `json:",omitempty"`
+
+	// This is available for GitHub Enterprise Cloud and GitHub Enterprise Server 3.3.0+ and is used
+	// to identify if a repository is public or private or internal.
+	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
+	Visibility Visibility `json:",omitempty"`
 }
 
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
@@ -1670,15 +1719,13 @@ func nodeIDCacheKey(id string) string                   { return "1:" + id }
 var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
-func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
-	if !nocache {
-		if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
-			reposGitHubCacheCounter.WithLabelValues("hit").Inc()
-			if cached.NotFound {
-				return nil, ErrRepoNotFound
-			}
-			return &cached.Repository, nil
+func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error)) (*Repository, error) {
+	if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
+		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
+		if cached.NotFound {
+			return nil, ErrRepoNotFound
 		}
+		return &cached.Repository, nil
 	}
 
 	repo, keys, err := getRepositoryFromAPI(ctx)
@@ -1731,6 +1778,7 @@ type restRepository struct {
 	Permissions restRepositoryPermissions `json:"permissions"`
 	Stars       int                       `json:"stargazers_count"`
 	Forks       int                       `json:"forks_count"`
+	Visibility  string                    `json:"visibility"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1752,7 +1800,7 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 // convertRestRepo converts repo information returned by the rest API
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
-	return &Repository{
+	repo := Repository{
 		ID:               restRepo.ID,
 		DatabaseID:       restRepo.DatabaseID,
 		NameWithOwner:    restRepo.FullName,
@@ -1767,6 +1815,12 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
 	}
+
+	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
+		repo.Visibility = Visibility(restRepo.Visibility)
+	}
+
+	return &repo
 }
 
 // convertRestRepoPermissions converts repo information returned by the rest API
@@ -1793,9 +1847,10 @@ var ErrBatchTooLarge = errors.New("requested batch of GitHub repositories too la
 type Visibility string
 
 const (
-	VisibilityAll     Visibility = "all"
-	VisibilityPublic  Visibility = "public"
-	VisibilityPrivate Visibility = "private"
+	VisibilityAll      Visibility = "all"
+	VisibilityPublic   Visibility = "public"
+	VisibilityPrivate  Visibility = "private"
+	VisibilityInternal Visibility = "internal"
 )
 
 // RepositoryAffiliation is the affiliation filter for listing repositories.

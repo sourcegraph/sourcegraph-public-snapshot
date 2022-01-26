@@ -5,11 +5,13 @@ import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
 import React from 'react'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link } from '@sourcegraph/wildcard'
 
 import { FileDecorator } from '../../tree/FileDecorator'
+
+import styles from './TreeEntriesSection.module.scss'
 
 /**
  * Use a multi-column layout for tree entries when there are at least this many. See TreeEntriesSection.scss
@@ -29,12 +31,14 @@ const TreeEntry: React.FunctionComponent<{
     <Link
         to={url}
         className={classNames(
-            'tree-entry test-page-file-decorable',
+            'test-page-file-decorable',
+            styles.treeEntry,
             isDirectory && 'font-weight-bold',
             `test-tree-entry-${isDirectory ? 'directory' : 'file'}`,
-            !isColumnLayout && 'tree-entry--no-columns'
+            !isColumnLayout && styles.treeEntryNoColumns
         )}
         title={path}
+        data-testid="tree-entry"
     >
         <div
             className={classNames(
@@ -102,9 +106,11 @@ export const TreeEntriesSection: React.FunctionComponent<TreeEntriesSectionProps
         <div
             className={
                 isColumnLayout
-                    ? classNames('tree-entries-section--columns pr-2', {
-                          'tree-entries-section--no-decorations': noDecorations,
-                      })
+                    ? classNames(
+                          'pr-2',
+                          styles.treeEntriesSectionColumns,
+                          noDecorations && styles.treeEntriesSectionNoDecorations
+                      )
                     : undefined
             }
         >

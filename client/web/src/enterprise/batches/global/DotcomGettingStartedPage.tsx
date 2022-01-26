@@ -1,12 +1,13 @@
 import classNames from 'classnames'
-import React from 'react'
+import React, { useEffect } from 'react'
 
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CtaBanner } from '../../../components/CtaBanner'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { GettingStarted } from '../list/GettingStarted'
 
 import styles from './DotcomGettingStartedPage.module.scss'
@@ -15,22 +16,26 @@ export interface DotcomGettingStartedPageProps {
     // Nothing for now.
 }
 
-export const DotcomGettingStartedPage: React.FunctionComponent<DotcomGettingStartedPageProps> = () => (
-    <Page>
-        <PageTitle title="Batch Changes" />
-        <PageHeader
-            path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
-            description="Run custom code over hundreds of repositories and manage the resulting changesets."
-            className="mb-3"
-        />
-        <GettingStarted footer={<DotcomGettingStartedPageFooter />} />
-    </Page>
-)
+export const DotcomGettingStartedPage: React.FunctionComponent<DotcomGettingStartedPageProps> = () => {
+    useEffect(() => eventLogger.logViewEvent('BatchChangesCloudLandingPage'), [])
+
+    return (
+        <Page>
+            <PageTitle title="Batch Changes" />
+            <PageHeader
+                path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
+                description="Run custom code over hundreds of repositories and manage the resulting changesets."
+                className="mb-3"
+            />
+            <GettingStarted footer={<DotcomGettingStartedPageFooter />} />
+        </Page>
+    )
+}
 
 const DotcomGettingStartedPageFooter: React.FunctionComponent<{}> = () => (
     <div className="d-flex justify-content-between">
-        <div className={classNames(styles.requirementsCard, 'card mr-3')}>
-            <div className="card-body p-3">
+        <Card className={classNames(styles.requirementsCard, 'mr-3')}>
+            <CardBody>
                 <p>
                     <strong>Batch Changes requirements</strong>
                 </p>
@@ -39,15 +44,16 @@ const DotcomGettingStartedPageFooter: React.FunctionComponent<{}> = () => (
                     <li>Unlicensed users can create 5 changesets per batch change</li>
                     <li>Enterprise plan (or trial) allows unlimited use </li>
                 </ul>
-            </div>
-        </div>
+            </CardBody>
+        </Card>
         <CtaBanner
             bodyText="Batch Changes requires a local Sourcegraph installation. You can check it out for free by installing with a single line of code."
             title="Install locally to get started"
             linkText="Install local instance"
-            href="https://docs.sourcegraph.com/admin/install"
+            href="https://docs.sourcegraph.com/admin/install?utm_medium=inproduct&utm_source=inproduct-batch-changes&utm_campaign=inproduct-batch-changes&term="
             icon={<DownloadSourcegraphIcon />}
             className="ml-3"
+            onClick={() => eventLogger.log('BatchChangesInstallFromCloudClicked')}
         />
     </div>
 )

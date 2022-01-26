@@ -7,18 +7,22 @@ import React, { useState, useCallback, useRef, useMemo } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
-import { useQueryDiagnostics } from '../useQueryIntelligence'
+import { AuthenticatedUser } from '../../auth'
+import { useExperimentalFeatures } from '../../stores'
+import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
@@ -32,13 +36,17 @@ import { BlockProps, QueryBlock } from '.'
 
 interface SearchNotebookQueryBlockProps
     extends BlockProps,
-        Omit<QueryBlock, 'type'>,
+        QueryBlock,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
         ThemeProps,
         SettingsCascadeProps,
-        TelemetryProps {
+        TelemetryProps,
+        PlatformContextProps<'requestGraphQL'> {
     isMacPlatform: boolean
+    isSourcegraphDotCom: boolean
     sourcegraphSearchLanguageId: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQueryBlockProps> = ({
@@ -57,6 +65,8 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     onSelectBlock,
     ...props
 }) => {
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const blockElement = useRef<HTMLDivElement>(null)
     const searchResults = useObservable(output ?? of(undefined))
@@ -170,6 +180,8 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                 {searchResults && searchResults.state !== 'loading' && (
                     <div className={styles.results}>
                         <StreamingSearchResultsList
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            searchContextsEnabled={props.searchContextsEnabled}
                             location={location}
                             allExpanded={false}
                             results={searchResults}
@@ -177,6 +189,11 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             telemetryService={telemetryService}
                             settingsCascade={settingsCascade}
+                            authenticatedUser={props.authenticatedUser}
+                            showSearchContext={showSearchContext}
+                            assetsRoot={window.context?.assetsRoot || ''}
+                            renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
+                            platformContext={props.platformContext}
                         />
                     </div>
                 )}

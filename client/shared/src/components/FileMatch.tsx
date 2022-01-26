@@ -1,7 +1,10 @@
 import * as H from 'history'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
-import { AggregableBadge, Badge } from 'sourcegraph'
+import { AggregableBadge } from 'sourcegraph'
+
+import { isErrorLike } from '@sourcegraph/common'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
@@ -10,26 +13,12 @@ import { pluralize } from '../util/strings'
 
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
-import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
-import { LinkOrSpan } from './LinkOrSpan'
+import { LineRanking } from './ranking/LineRanking'
+import { MatchGroup, MatchItem } from './ranking/PerFileResultRanking'
+import { ZoektRanking } from './ranking/ZoektRanking'
 import { RepoFileLink } from './RepoFileLink'
 import { RepoIcon } from './RepoIcon'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
-
-const SUBSET_MATCHES_COUNT = 10
-
-export interface MatchItem extends Badge {
-    highlightRanges: {
-        start: number
-        highlightLength: number
-    }[]
-    preview: string
-    /**
-     * The 0-based line number of this match.
-     */
-    line: number
-    aggregableBadges?: AggregableBadge[]
-}
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
@@ -67,14 +56,29 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     allExpanded?: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+
+    /**
+     * CSS class name to be applied to the ResultContainer Component
+     */
+    containerClassName?: string
 }
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
+
+const BY_LINE_RANKING = 'by-line-number'
+const DEFAULT_CONTEXT = 1
 
 export const FileMatch: React.FunctionComponent<Props> = props => {
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
+    const settings = props.settingsCascade.final
+    const ranking = useMemo(() => {
+        if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
+            return new LineRanking()
+        }
+        return new ZoektRanking()
+    }, [settings])
     const renderTitle = (): JSX.Element => (
         <>
             <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
@@ -106,7 +110,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 return contextLinesSetting
             }
         }
-        return 1
+        return DEFAULT_CONTEXT
     }, [props.location, props.settingsCascade])
 
     const items: MatchItem[] = useMemo(
@@ -129,27 +133,25 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         items.length > 0 ? (
             <>
                 {aggregateBadges(items).map(badge => (
-                    <LinkOrSpan
+                    <Badge
                         key={badge.text}
-                        to={badge.linkURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-tooltip={badge.hoverMessage}
-                        className="badge badge-secondary badge-sm text-muted text-uppercase file-match__badge"
+                        href={badge.linkURL}
+                        tooltip={badge.hoverMessage}
+                        variant="secondary"
+                        small={true}
+                        className="text-muted text-uppercase file-match__badge"
                     >
                         {badge.text}
-                    </LinkOrSpan>
+                    </Badge>
                 ))}
             </>
         ) : undefined
 
     let containerProps: ResultContainerProps
 
-    const expandedMatchGroups = useMemo(() => calculateMatchGroups(items, 0, context), [items, context])
-    const collapsedMatchGroups = useMemo(() => calculateMatchGroups(items, SUBSET_MATCHES_COUNT, context), [
-        items,
-        context,
-    ])
+    const expandedMatchGroups = useMemo(() => ranking.expandedResults(items, context), [items, context, ranking])
+    const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(items, context), [items, context, ranking])
+    const collapsedMatchCount = collapsedMatchGroups.matches.length
 
     const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
     const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0), [
@@ -188,7 +190,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
         const { limitedGrouped, limitedMatchCount } = grouped.reduce(
             (previous, group) => {
-                const remaining = SUBSET_MATCHES_COUNT - previous.limitedMatchCount
+                const remaining = collapsedMatchCount - previous.limitedMatchCount
                 if (remaining <= 0) {
                     return previous
                 }
@@ -221,6 +223,9 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 matchCountLabel,
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
+                onResultClicked: props.onSelect,
+                className: props.containerClassName,
+                resultType: result.type,
             }
         } else {
             const hideCount = matchCount - limitedMatchCount
@@ -238,6 +243,9 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 matchCountLabel,
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
+                onResultClicked: props.onSelect,
+                className: props.containerClassName,
+                resultType: result.type,
             }
         }
     } else if (props.showAllMatches) {
@@ -252,11 +260,14 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             matchCountLabel,
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
+            onResultClicked: props.onSelect,
+            className: props.containerClassName,
+            resultType: result.type,
         }
     } else {
         const length = highlightRangesCount - collapsedHighlightRangesCount
         containerProps = {
-            collapsible: items.length > SUBSET_MATCHES_COUNT,
+            collapsible: items.length > collapsedMatchCount,
             defaultExpanded: props.expanded,
             icon: props.icon,
             title: renderTitle(),
@@ -269,6 +280,9 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             matchCountLabel,
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
+            onResultClicked: props.onSelect,
+            className: props.containerClassName,
+            resultType: result.type,
         }
     }
 

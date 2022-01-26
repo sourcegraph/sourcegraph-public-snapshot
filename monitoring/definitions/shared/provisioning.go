@@ -21,7 +21,7 @@ var (
 		return Observable{
 			Name:        "provisioning_container_cpu_usage_long_term",
 			Description: "container cpu usage total (90th percentile over 1d) across all cores by instance",
-			Query:       fmt.Sprintf(`quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, CadvisorNameMatcher(containerName)),
+			Query:       fmt.Sprintf(`quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, CadvisorContainerNameMatcher(containerName)),
 			Warning:     monitoring.Alert().GreaterOrEqual(80, nil).For(14 * 24 * time.Hour),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:       owner,
@@ -36,7 +36,7 @@ var (
 		return Observable{
 			Name:        "provisioning_container_memory_usage_long_term",
 			Description: "container memory usage (1d maximum) by instance",
-			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, CadvisorNameMatcher(containerName)),
+			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, CadvisorContainerNameMatcher(containerName)),
 			Warning:     monitoring.Alert().GreaterOrEqual(80, nil).For(14 * 24 * time.Hour),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
 			Owner:       owner,
@@ -51,7 +51,7 @@ var (
 		return Observable{
 			Name:        "provisioning_container_cpu_usage_short_term",
 			Description: "container cpu usage total (5m maximum) across all cores by instance",
-			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, CadvisorNameMatcher(containerName)),
+			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, CadvisorContainerNameMatcher(containerName)),
 			Warning:     monitoring.Alert().GreaterOrEqual(90, nil).For(30 * time.Minute),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
@@ -66,7 +66,7 @@ var (
 		return Observable{
 			Name:        "provisioning_container_memory_usage_short_term",
 			Description: "container memory usage (5m maximum) by instance",
-			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, CadvisorNameMatcher(containerName)),
+			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, CadvisorContainerNameMatcher(containerName)),
 			Warning:     monitoring.Alert().GreaterOrEqual(90, nil),
 			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
 			Owner:       owner,
@@ -90,6 +90,9 @@ type ContainerProvisioningIndicatorsGroupOptions struct {
 
 	// ShortTermMemoryUsage transforms the default observable used to construct the short-term memory usage panel.
 	ShortTermMemoryUsage ObservableOption
+
+	// CustomTitle, if provided, provides a custom title for this provisioning group that will be displayed in Grafana.
+	CustomTitle string
 }
 
 // NewProvisioningIndicatorsGroup creates a group containing panels displaying
@@ -100,8 +103,13 @@ func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.Obser
 		options = &ContainerProvisioningIndicatorsGroupOptions{}
 	}
 
+	title := TitleProvisioningIndicators
+	if options.CustomTitle != "" {
+		title = options.CustomTitle
+	}
+
 	return monitoring.Group{
-		Title:  TitleProvisioningIndicators,
+		Title:  title,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{

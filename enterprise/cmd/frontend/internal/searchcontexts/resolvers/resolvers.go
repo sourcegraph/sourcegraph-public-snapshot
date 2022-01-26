@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -11,17 +12,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func NewResolver(db dbutil.DB) graphqlbackend.SearchContextsResolver {
+func NewResolver(db database.DB) graphqlbackend.SearchContextsResolver {
 	return &Resolver{db: db}
 }
 
 type Resolver struct {
-	db dbutil.DB
+	db database.DB
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
@@ -69,7 +69,7 @@ func (r *Resolver) SearchContextBySpec(ctx context.Context, args graphqlbackend.
 	return &searchContextResolver{searchContext, r.db}, nil
 }
 
-func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.CreateSearchContextArgs) (graphqlbackend.SearchContextResolver, error) {
+func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.CreateSearchContextArgs) (_ graphqlbackend.SearchContextResolver, err error) {
 	var namespaceUserID, namespaceOrgID int32
 	if args.SearchContext.Namespace != nil {
 		err := graphqlbackend.UnmarshalNamespaceID(*args.SearchContext.Namespace, &namespaceUserID, &namespaceOrgID)
@@ -78,9 +78,12 @@ func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.
 		}
 	}
 
-	repositoryRevisions, err := r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
-	if err != nil {
-		return nil, err
+	var repositoryRevisions []*types.SearchContextRepositoryRevisions
+	if len(args.Repositories) > 0 {
+		repositoryRevisions, err = r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	searchContext, err := searchcontexts.CreateSearchContextWithRepositoryRevisions(
@@ -92,6 +95,7 @@ func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.
 			Public:          args.SearchContext.Public,
 			NamespaceUserID: namespaceUserID,
 			NamespaceOrgID:  namespaceOrgID,
+			Query:           args.SearchContext.Query,
 		},
 		repositoryRevisions,
 	)
@@ -107,9 +111,12 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 		return nil, err
 	}
 
-	repositoryRevisions, err := r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
-	if err != nil {
-		return nil, err
+	var repositoryRevisions []*types.SearchContextRepositoryRevisions
+	if len(args.Repositories) > 0 {
+		repositoryRevisions, err = r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	original, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
@@ -121,6 +128,7 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 	updated.Name = args.SearchContext.Name
 	updated.Description = args.SearchContext.Description
 	updated.Public = args.SearchContext.Public
+	updated.Query = args.SearchContext.Query
 
 	searchContext, err := searchcontexts.UpdateSearchContextWithRepositoryRevisions(
 		ctx,
@@ -134,30 +142,32 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 	return &searchContextResolver{searchContext, r.db}, nil
 }
 
-func repositoryByID(ctx context.Context, id graphql.ID, db dbutil.DB) (*graphqlbackend.RepositoryResolver, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
-		return nil, err
-	}
-	repo, err := database.Repos(db).Get(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	return graphqlbackend.NewRepositoryResolver(database.NewDB(db), repo), nil
-}
-
 func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []graphqlbackend.SearchContextRepositoryRevisionsInputArgs) ([]*types.SearchContextRepositoryRevisions, error) {
-	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
+	repoIDs := make([]api.RepoID, 0, len(args))
 	for _, repository := range args {
-		repoResolver, err := repositoryByID(ctx, repository.RepositoryID, r.db)
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(repository.RepositoryID)
 		if err != nil {
 			return nil, err
 		}
+		repoIDs = append(repoIDs, repoID)
+	}
+	idToRepo, err := database.Repos(r.db).GetReposSetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
+	for _, repository := range args {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(repository.RepositoryID)
+		if err != nil {
+			return nil, err
+		}
+		repo, ok := idToRepo[repoID]
+		if !ok {
+			return nil, errors.Errorf("cannot find repo with id: %q", repository.RepositoryID)
+		}
 		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
-			Repo: types.RepoName{
-				ID:   repoResolver.IDInt32(),
-				Name: repoResolver.RepoName(),
-			},
+			Repo:      types.MinimalRepo{ID: repo.ID, Name: repo.Name},
 			Revisions: repository.Revisions,
 		})
 	}
@@ -250,7 +260,7 @@ func (r *Resolver) SearchContexts(ctx context.Context, args *graphqlbackend.List
 		OrderByDescending: args.Descending,
 	}
 
-	searchContextsStore := database.SearchContexts(r.db)
+	searchContextsStore := r.db.SearchContexts()
 	pageOpts := database.ListSearchContextsPageOptions{First: newArgs.First, After: afterCursor}
 	searchContexts, err := searchContextsStore.ListSearchContexts(ctx, pageOpts, opts)
 	if err != nil {
@@ -326,26 +336,26 @@ func (r *Resolver) SearchContextByID(ctx context.Context, id graphql.ID) (graphq
 
 type searchContextResolver struct {
 	sc *types.SearchContext
-	db dbutil.DB
+	db database.DB
 }
 
 func (r *searchContextResolver) ID() graphql.ID {
 	return marshalSearchContextID(searchcontexts.GetSearchContextSpec(r.sc))
 }
 
-func (r *searchContextResolver) Name(ctx context.Context) string {
+func (r *searchContextResolver) Name() string {
 	return r.sc.Name
 }
 
-func (r *searchContextResolver) Description(ctx context.Context) string {
+func (r *searchContextResolver) Description() string {
 	return r.sc.Description
 }
 
-func (r *searchContextResolver) Public(ctx context.Context) bool {
+func (r *searchContextResolver) Public() bool {
 	return r.sc.Public
 }
 
-func (r *searchContextResolver) AutoDefined(ctx context.Context) bool {
+func (r *searchContextResolver) AutoDefined() bool {
 	return searchcontexts.IsAutoDefinedSearchContext(r.sc)
 }
 
@@ -353,7 +363,7 @@ func (r *searchContextResolver) Spec() string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
 }
 
-func (r *searchContextResolver) UpdatedAt(ctx context.Context) graphqlbackend.DateTime {
+func (r *searchContextResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.sc.UpdatedAt}
 }
 
@@ -392,9 +402,13 @@ func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlback
 
 	searchContextRepositories := make([]graphqlbackend.SearchContextRepositoryRevisionsResolver, len(repoRevs))
 	for idx, repoRev := range repoRevs {
-		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(database.NewDB(r.db), repoRev.Repo.ToRepo()), repoRev.Revisions}
+		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, repoRev.Repo.ToRepo()), repoRev.Revisions}
 	}
 	return searchContextRepositories, nil
+}
+
+func (r *searchContextResolver) Query() string {
+	return r.sc.Query
 }
 
 type searchContextConnectionResolver struct {
@@ -404,20 +418,20 @@ type searchContextConnectionResolver struct {
 	hasNextPage    bool
 }
 
-func (s *searchContextConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.SearchContextResolver, error) {
-	return s.searchContexts, nil
+func (s *searchContextConnectionResolver) Nodes() []graphqlbackend.SearchContextResolver {
+	return s.searchContexts
 }
 
-func (s *searchContextConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return s.totalCount, nil
+func (s *searchContextConnectionResolver) TotalCount() int32 {
+	return s.totalCount
 }
 
-func (s *searchContextConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (s *searchContextConnectionResolver) PageInfo() *graphqlutil.PageInfo {
 	if len(s.searchContexts) == 0 || !s.hasNextPage {
-		return graphqlutil.HasNextPage(false), nil
+		return graphqlutil.HasNextPage(false)
 	}
 	// The after value (offset) for the next page is computed from the current after value + the number of retrieved search contexts
-	return graphqlutil.NextPageCursor(marshalSearchContextCursor(s.afterCursor + int32(len(s.searchContexts)))), nil
+	return graphqlutil.NextPageCursor(marshalSearchContextCursor(s.afterCursor + int32(len(s.searchContexts))))
 }
 
 type searchContextRepositoryRevisionsResolver struct {
@@ -425,10 +439,10 @@ type searchContextRepositoryRevisionsResolver struct {
 	revisions  []string
 }
 
-func (r *searchContextRepositoryRevisionsResolver) Repository(ctx context.Context) *graphqlbackend.RepositoryResolver {
+func (r *searchContextRepositoryRevisionsResolver) Repository() *graphqlbackend.RepositoryResolver {
 	return r.repository
 }
 
-func (r *searchContextRepositoryRevisionsResolver) Revisions(ctx context.Context) []string {
+func (r *searchContextRepositoryRevisionsResolver) Revisions() []string {
 	return r.revisions
 }

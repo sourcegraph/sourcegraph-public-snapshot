@@ -11,7 +11,6 @@
   - [The directory and homepage](#the-directory-and-search-(home)-pages)
 - [Code Insights loading logic in details](#code-insights-loading-logic-in-details)
 
-
 ## Insights directory structure
 
 We store all insights related parts of components and logic in the `insights` directory.
@@ -41,7 +40,7 @@ Note: that some part of insights logic is stored in `./client/web/src/insights`
 At the moment, we have two different types of insights.
 
 1. **Built-in (former Extension based) insights.** <br/>
-These types of insights fetch data via frontend insight fetcher function. That means that we make a few network request to our search 
+These types of insights fetch data via frontend insight fetcher function. That means that we make a few network request to our search
 API to collect and process insight data on the frontend [(source)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/components/insights-view-grid/components/built-in-insight/BuiltInInsight.tsx).
 At some point, we used Extension API to get information about these insights.
 You still can find these extensions by links below but they currently are not used for insight data fetching.
@@ -83,7 +82,6 @@ something like this
 }
 ```
 
-
 Backend based insights also have their insight configurations, and they are also stored
 in the same settings cascade but by special property key `insights.allrepos`
 
@@ -114,13 +112,12 @@ You can find typescript types that describe these insight entities
 in [core/types/insights/index.ts](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/core/types/insight/index.ts)
 
 > This way to store insights isn't the best, but this is the easiest way to get insight configs from extensions.
-> Eventually, we want to migrate all insights to our BE and store them in real DB. At the moment we already have moved 
-> our extension based insight to the main app. 
+> Eventually, we want to migrate all insights to our BE and store them in real DB. At the moment we already have moved
+> our extension based insight to the main app.
 
 We also can write to these `jsonc` files and therefore create or delete some insights. This is actually how it works
 on the creation UI. After submitting, we just produce a valid insight configuration, write this config to the setting subject `jsonc` file,
 and upload this new config back via GQL API.
-
 
 **Important note:** Each insight (search backend or built-in based or code stats insight) has the
 visibility setting.
@@ -155,7 +152,6 @@ You can find this merge logic here [client/shared/src/settings/settings.ts](http
 We use settings cascade a lot in different places, In fact, our dashboard system and insight visibility were built on top
 of settings cascade levels.
 
-
 ## Insight consumers
 
 The first thing we should know before diving deep into the code insights codebase are the places
@@ -171,7 +167,6 @@ code insights components/logic
 4. The directory page
 
 Further, we will cover all three places where we use something from the insights code-base.
-
 
 ### The dashboard page
 
@@ -255,7 +250,6 @@ by few FE network search API requests in case of Built-In insight.
 > NOTE: We load our insights one by one with a maximum of two insight data requests in parallel to avoid HTTP request bombarding and HTTP 1 limit
 > with only six requests in parallel. To do that, we use [`useParallelRequests` react hook](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/hooks/use-parallel-requests/use-parallel-request.ts)
 
-
 ### The directory and search (home) pages
 
 ![directory-page.png](https://storage.googleapis.com/sourcegraph-assets/code_insights/directory-page.png)
@@ -264,15 +258,13 @@ The directory page is another place where you can find insights (and other exten
 This page renders an insight grid component with all insights that you have in your subject settings so that we could say that
 this is kind of analog of the All insights dashboard on the dashboard page.
 
-But this page uses a slightly different approach how to load insights data. The directory and search pages render `ExtensionViewsSection` 
-component. This component is different from the OSS to Enterprise version. But in both cases, this component is responsible for loading 
-extension and insight-like views and render them into the grid layout views component as it's shown in the picture above. 
+But this page uses a slightly different approach how to load insights data. The directory and search pages render `ExtensionViewsSection`
+component. This component is different from the OSS to Enterprise version. But in both cases, this component is responsible for loading
+extension and insight-like views and render them into the grid layout views component as it's shown in the picture above.
 
-- In OSS version it renders only extension views [source](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/insights/sections/ExtenstionViewsSection.tsx)
+- In OSS version it renders only extension views [source](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/insights/sections/ExtensionViewsSection.tsx)
 - In Enterprise it renders extension and insight like views together. (Code insights is part of enterprise version)
-[source](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/sections/ExtenstionViewsSection.tsx)
-
-
+[source](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/sections/ExtensionViewsSection.tsx)
 
 ## Code Insights loading logic (InsightsApiContext)
 
@@ -297,7 +289,7 @@ function BuiltInInsight(props) {
 }
 ```
 
-So in this component we use `getBuiltInInsight` function from our `InsightsApiContext` context. If we go to [`InsightsApiContext`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/core/backend/create-insights-api.ts) 
+So in this component we use `getBuiltInInsight` function from our `InsightsApiContext` context. If we go to [`InsightsApiContext`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/core/backend/create-insights-api.ts)
 definition we will see that this is just an object with some async function collection.
 All these functions and their interfaces are described in this one interface [`ApiService`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/core/backend/types.ts)
 
@@ -319,5 +311,3 @@ it('BuiltInInsight should render', () => {
   /* Further test logic here */
 })
 ```
-
-

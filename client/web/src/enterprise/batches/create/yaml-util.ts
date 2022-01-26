@@ -68,19 +68,20 @@ const appendExcludeRepoToQuery = (spec: string, ast: YAMLMap, repo: string): YAM
         return { spec, success: false, error: 'Non-scalar value found for "repositoriesMatchingQuery" key' }
     }
 
+    const isQuoted = queryValue.doubleQuoted || queryValue.singleQuoted || false
+
+    // If the value is not quoted, we need to escape characters
+    const excludeQualifierString = isQuoted ? ` -repo:${repo}` : ` -repo:${escapeRegExp(repo)}`
+    // If the value is quoted, we also need to shift the slice position so that the string
+    // is inserted inside of the quotes
+    const slicePosition = isQuoted ? queryValue.endPosition - 1 : queryValue.endPosition
+
     // Insert "-repo:" qualifier at the end of the query string
     // TODO: In the future this can be integrated into the batch spec under its own
     // "excludes" keyword instead.
-    // If the value is quoted, we need to move the addition to the string to _within_
-    // the string value.
-    let slicePosition = queryValue.endPosition
-    if (queryValue.doubleQuoted || queryValue.singleQuoted) {
-        slicePosition--
-    }
-    return {
-        success: true,
-        spec: spec.slice(0, slicePosition) + ` -repo:${escapeRegExp(repo)}` + spec.slice(slicePosition),
-    }
+    const newSpec = spec.slice(0, slicePosition) + excludeQualifierString + spec.slice(slicePosition)
+
+    return { success: true, spec: newSpec }
 }
 
 /**
@@ -236,4 +237,96 @@ export const excludeRepo = (spec: string, repo: string, branch: string): YAMLMan
     const removeRepoResult = removeRepoDirective(appendToQueryResult.spec, ast, repo, branch)
 
     return removeRepoResult
+}
+
+/**
+ * Checks for a valid "on: " sequence within the provided YAML AST parsed from the input
+ * batch spec.
+ *
+ * @param ast the `YAMLMap` node parsed from the input batch spec
+ */
+const hasOnStatement = (ast: YAMLMap): boolean => {
+    // Find the `YAMLMapping` node with the key "on"
+    const onMapping = find(ast.mappings, mapping => mapping.key.value === 'on')
+    // Take the sequence of values for the "on" key
+    const onSequence = onMapping?.value
+
+    return Boolean(onSequence && isYAMLSequence(onSequence) && onSequence.items.length > 0)
+}
+
+/**
+ * Checks for a valid "importChangesets: " sequence within the provided YAML AST parsed
+ * from the input batch spec.
+ *
+ * @param ast the `YAMLMap` node parsed from the input batch spec
+ */
+const hasImportChangesetsStatement = (ast: YAMLMap): boolean => {
+    // Find the `YAMLMapping` node with the key "importing changesets"
+    const importMapping = find(ast.mappings, mapping => mapping.key.value === 'importChangesets')
+    // Take the sequence of values for the "importChangesets" key
+    const importSequence = importMapping?.value
+
+    return Boolean(importSequence && isYAMLSequence(importSequence) && importSequence.items.length > 0)
+}
+
+/**
+ * Checks for a valid "on" or "importChangesets: " sequence within the provided raw batch
+ * spec YAML string.
+ *
+ * @param spec the raw batch spec YAML string
+ */
+export const hasOnOrImportChangesetsStatement = (spec: string): boolean => {
+    const ast = load(spec)
+
+    if (!isYAMLMap(ast) || ast.errors.length > 0) {
+        return false
+    }
+
+    return hasOnStatement(ast) || hasImportChangesetsStatement(ast)
+}
+
+/**
+ * Checks whether or not the provided raw batch spec YAML string is a minimal batch spec
+ * (i.e. the type auto-created for a brand new draft batch change) or something that the
+ * user has touched. If the spec is not parseable, as it might be for an in-progress draft
+ * batch spec, this function will return `false`.
+ *
+ * @param spec the raw batch spec YAML string to check
+ */
+export const isMinimalBatchSpec = (spec: string): boolean => {
+    const ast = load(spec)
+
+    if (!isYAMLMap(ast) || ast.errors.length > 0) {
+        return false
+    }
+
+    return ast.mappings.length === 1 && ast.mappings[0].key.value === 'name'
+}
+
+/**
+ * Replaces the "name" value of the provided `librarySpec` with the provided `name`. If
+ * `librarySpec` or its "name" is not properly parsable, just returns the original
+ * `librarySpec`.
+ *
+ * @param librarySpec the raw batch spec YAML example code from a library spec
+ * @param name the name of the batch change to be inserted
+ */
+export const insertNameIntoLibraryItem = (librarySpec: string, name: string): string => {
+    const ast = load(librarySpec)
+
+    if (!isYAMLMap(ast) || ast.errors.length > 0) {
+        return librarySpec
+    }
+
+    // Find the `YAMLMapping` node with the key "name"
+    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name')
+
+    if (!nameMapping || !isYAMLScalar(nameMapping.value)) {
+        return librarySpec
+    }
+
+    // Stitch the new "name" value into the spec
+    return (
+        librarySpec.slice(0, nameMapping.value.startPosition) + name + librarySpec.slice(nameMapping.value.endPosition)
+    )
 }

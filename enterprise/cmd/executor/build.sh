@@ -22,7 +22,26 @@ export CGO_ENABLED=0
 
 echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
-go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
+bin_name="$OUTPUT/$(basename $pkg)"
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$bin_name" "$pkg"
+
+echo "--- create binary artifacts"
+# Setup new release folder that contains binary, info text.
+mkdir -p "artifacts/executor/$(git rev-parse HEAD)"
+cd "artifacts/executor/$(git rev-parse HEAD)"
+
+echo "executor built from https://github.com/sourcegraph/sourcegraph" >info.txt
+echo >>info.txt
+git log -n1 >>info.txt
+mkdir -p linux-amd64
+# Copy binary into new folder
+cp "$bin_name" linux-amd64/executor
+sha256sum linux-amd64/executor >>linux-amd64/executor_SHA256SUM
+cd ../../..
+# Upload the new release folder
+echo "--- upload binary artifacts"
+gsutil cp -r artifacts/executor gs://sourcegraph-artifacts
+gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts
 
 echo "--- gcp secret"
 gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$OUTPUT/builder-sa-key.json"

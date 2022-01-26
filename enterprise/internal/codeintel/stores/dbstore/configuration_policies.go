@@ -7,11 +7,13 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 type GitObjectType string
@@ -25,6 +27,7 @@ const (
 type ConfigurationPolicy struct {
 	ID                        int
 	RepositoryID              *int
+	RepositoryPatterns        *[]string
 	Name                      string
 	Type                      GitObjectType
 	Pattern                   string
@@ -46,12 +49,14 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 
 	var configurationPolicies []ConfigurationPolicy
 	for rows.Next() {
+		var repositoryPatterns []string
 		var configurationPolicy ConfigurationPolicy
 		var retentionDurationHours, indexCommitMaxAgeHours *int
 
 		if err := rows.Scan(
 			&configurationPolicy.ID,
 			&configurationPolicy.RepositoryID,
+			pq.Array(&repositoryPatterns),
 			&configurationPolicy.Name,
 			&configurationPolicy.Type,
 			&configurationPolicy.Pattern,
@@ -66,6 +71,9 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 			return nil, err
 		}
 
+		if len(repositoryPatterns) != 0 {
+			configurationPolicy.RepositoryPatterns = &repositoryPatterns
+		}
 		if retentionDurationHours != nil {
 			duration := time.Duration(*retentionDurationHours) * time.Hour
 			configurationPolicy.RetentionDuration = &duration
@@ -92,25 +100,57 @@ func scanFirstConfigurationPolicy(rows *sql.Rows, err error) (ConfigurationPolic
 }
 
 type GetConfigurationPoliciesOptions struct {
-	RepositoryID     int
+	// RepositoryID indicates that only configuration policies that apply to the
+	// specified repository (directly or via pattern) should be returned. This value
+	// has no effect when equal to zero.
+	RepositoryID int
+
+	// Term is a string to search within the configuration title.
+	Term string
+
+	// ForIndexing indicates that only configuration policies with data retention enabled
+	// should be returned.
 	ForDataRetention bool
-	ForIndexing      bool
+
+	// ForIndexing indicates that only configuration policies with indexing enabled should
+	// be returned.
+	ForIndexing bool
+
+	// Limit indicates the number of results to take from the result set.
+	Limit int
+
+	// Offset indicates the number of results to skip in the result set.
+	Offset int
 }
 
 // GetConfigurationPolicies retrieves the set of configuration policies matching the the given options.
-// If no repository identifier is supplied (if zero), then only global policies are returned. Otherwise,
-// only policies attached to the given repository are returned.
-func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurationPoliciesOptions) (_ []ConfigurationPolicy, err error) {
-	ctx, traceLog, endObservation := s.operations.getConfigurationPolicies.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+// If a repository identifier is supplied (is non-zero), then only the configuration policies that apply
+// to repository are returned. If repository is not supplied, then all policies may be returned.
+func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurationPoliciesOptions) (_ []ConfigurationPolicy, totalCount int, err error) {
+	ctx, trace, endObservation := s.operations.getConfigurationPolicies.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
+		log.String("term", opts.Term),
+		log.Bool("forDataRetention", opts.ForDataRetention),
+		log.Bool("forIndexing", opts.ForIndexing),
+		log.Int("limit", opts.Limit),
+		log.Int("offset", opts.Offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	conds := make([]*sqlf.Query, 0, 3)
-	if opts.RepositoryID == 0 {
-		conds = append(conds, sqlf.Sprintf("p.repository_id IS NULL"))
-	} else {
-		conds = append(conds, sqlf.Sprintf("p.repository_id = %s", opts.RepositoryID))
+	conds := make([]*sqlf.Query, 0, 5)
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf(`(
+			(p.repository_id IS NULL AND p.repository_patterns IS NULL) OR
+			p.repository_id = %s OR
+			EXISTS (
+				SELECT 1
+				FROM lsif_configuration_policies_repository_pattern_lookup l
+				WHERE l.policy_id = p.id AND l.repo_id = %s
+			)
+		)`, opts.RepositoryID, opts.RepositoryID))
+	}
+	if opts.Term != "" {
+		conds = append(conds, makeConfigurationPolicySearchCondition(opts.Term))
 	}
 	if opts.ForDataRetention {
 		conds = append(conds, sqlf.Sprintf("p.retention_enabled"))
@@ -118,29 +158,53 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	if opts.ForIndexing {
 		conds = append(conds, sqlf.Sprintf("p.indexing_enabled"))
 	}
-
-	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
-	if err != nil {
-		return nil, err
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
-	// Global policies are visible to anyone
-	// Repository-specific policies must check repository permissions
-	conds = append(conds, sqlf.Sprintf("(p.repository_id IS NULL OR (%s))", authzConds))
 
-	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPoliciesQuery, sqlf.Join(conds, "AND"))))
+	tx, err := s.transact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	traceLog(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+	defer func() { err = tx.Done(err) }()
 
-	return configurationPolicies, nil
+	totalCount, _, err = basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		getConfigurationPoliciesCountQuery,
+		sqlf.Join(conds, "AND"),
+	)))
+	if err != nil {
+		return nil, 0, err
+	}
+	trace.Log(log.Int("totalCount", totalCount))
+
+	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(
+		getConfigurationPoliciesLimitedQuery,
+		sqlf.Join(conds, "AND"),
+		opts.Limit,
+		opts.Offset,
+	)))
+	if err != nil {
+		return nil, 0, err
+	}
+	trace.Log(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+
+	return configurationPolicies, totalCount, nil
 }
 
-const getConfigurationPoliciesQuery = `
+const getConfigurationPoliciesCountQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicies
+SELECT COUNT(*)
+FROM lsif_configuration_policies p
+LEFT JOIN repo ON repo.id = p.repository_id
+WHERE %s
+`
+
+const getConfigurationPoliciesUnlimitedQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicies
 SELECT
 	p.id,
 	p.repository_id,
+	p.repository_patterns,
 	p.name,
 	p.type,
 	p.pattern,
@@ -154,8 +218,27 @@ SELECT
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
 WHERE %s
-ORDER BY name
+ORDER BY p.name
 `
+
+const getConfigurationPoliciesLimitedQuery = getConfigurationPoliciesUnlimitedQuery + `
+LIMIT %s OFFSET %s
+`
+
+// makeConfigurationPolicySearchCondition returns a disjunction of LIKE clauses against all searchable
+// columns of an configuration policy.
+func makeConfigurationPolicySearchCondition(term string) *sqlf.Query {
+	searchableColumns := []string{
+		"p.name",
+	}
+
+	var termConds []*sqlf.Query
+	for _, column := range searchableColumns {
+		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
+	}
+
+	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
+}
 
 // GetConfigurationPolicyByID retrieves the configuration policy with the given identifier.
 func (s *Store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ ConfigurationPolicy, _ bool, err error) {
@@ -164,7 +247,7 @@ func (s *Store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ Confi
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
 	if err != nil {
 		return ConfigurationPolicy{}, false, err
 	}
@@ -177,6 +260,7 @@ const getConfigurationPolicyByIDQuery = `
 SELECT
 	p.id,
 	p.repository_id,
+	p.repository_patterns,
 	p.name,
 	p.type,
 	p.pattern,
@@ -212,9 +296,15 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		indexingCommitMaxAgeHours = &duration
 	}
 
+	var repositoryPatterns interface{}
+	if configurationPolicy.RepositoryPatterns != nil {
+		repositoryPatterns = pq.Array(*configurationPolicy.RepositoryPatterns)
+	}
+
 	hydratedConfigurationPolicy, _, err := scanFirstConfigurationPolicy(s.Query(ctx, sqlf.Sprintf(
 		createConfigurationPolicyQuery,
 		configurationPolicy.RepositoryID,
+		repositoryPatterns,
 		configurationPolicy.Name,
 		configurationPolicy.Type,
 		configurationPolicy.Pattern,
@@ -236,6 +326,7 @@ const createConfigurationPolicyQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:CreateConfigurationPolicy
 INSERT INTO lsif_configuration_policies (
 	repository_id,
+	repository_patterns,
 	name,
 	type,
 	pattern,
@@ -245,10 +336,11 @@ INSERT INTO lsif_configuration_policies (
 	indexing_enabled,
 	index_commit_max_age_hours,
 	index_intermediate_commits
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repository_id,
+	repository_patterns,
 	name,
 	type,
 	pattern,
@@ -261,9 +353,11 @@ RETURNING
 	index_intermediate_commits
 `
 
-var errUnknownConfigurationPolicy = errors.New("unknown configuration policy")
-var errIllegalConfigurationPolicyUpdate = errors.New("protected configuration policies must keep the same names, types, patterns, and retention values (except duration)")
-var errIllegalConfigurationPolicyDelete = errors.New("protected configuration policies cannot be deleted")
+var (
+	errUnknownConfigurationPolicy       = errors.New("unknown configuration policy")
+	errIllegalConfigurationPolicyUpdate = errors.New("protected configuration policies must keep the same names, types, patterns, and retention values (except duration)")
+	errIllegalConfigurationPolicyDelete = errors.New("protected configuration policies cannot be deleted")
+)
 
 // UpdateConfigurationPolicy updates the fields of the configuration policy record with the given identifier.
 func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy ConfigurationPolicy) (err error) {
@@ -307,8 +401,14 @@ func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy Configurat
 		}
 	}
 
+	var repositoryPatterns interface{}
+	if policy.RepositoryPatterns != nil {
+		repositoryPatterns = pq.Array(*policy.RepositoryPatterns)
+	}
+
 	return tx.Exec(ctx, sqlf.Sprintf(updateConfigurationPolicyQuery,
 		policy.Name,
+		repositoryPatterns,
 		policy.Type,
 		policy.Pattern,
 		policy.RetentionEnabled,
@@ -326,6 +426,7 @@ const updateConfigurationPolicySelectQuery = `
 SELECT
 	id,
 	repository_id,
+	repository_patterns,
 	name,
 	type,
 	pattern,
@@ -345,6 +446,7 @@ const updateConfigurationPolicyQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:UpdateConfigurationPolicy
 UPDATE lsif_configuration_policies SET
 	name = %s,
+	repository_patterns = %s,
 	type = %s,
 	pattern = %s,
 	retention_enabled = %s,
@@ -381,13 +483,61 @@ const deleteConfigurationPolicyByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:DeleteConfigurationPolicyByID
 WITH
 candidate AS (
-	SELECT id, protected FROM
-	lsif_configuration_policies
+	SELECT id, protected
+	FROM lsif_configuration_policies
 	WHERE id = %s
 	ORDER BY id FOR UPDATE
 ),
-deletd AS (
+deleted AS (
 	DELETE FROM lsif_configuration_policies WHERE id IN (SELECT id FROM candidate WHERE NOT protected)
 )
 SELECT protected FROM candidate
+`
+
+// SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
+// for repository membership updates. Configuration policies are returned in the order of least recently updated.
+func (s *Store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []ConfigurationPolicy, err error) {
+	ctx, trace, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.WithAndLogger(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	configurationPolicies, err = scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(selectPoliciesForRepositoryMembershipUpdate, batchSize, timeutil.Now())))
+	if err != nil {
+		return nil, err
+	}
+	trace.Log(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+
+	return configurationPolicies, nil
+}
+
+const selectPoliciesForRepositoryMembershipUpdate = `
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:SelectPoliciesForRepositoryMembershipUpdate
+WITH
+candidate_policies AS (
+	SELECT p.id
+	FROM lsif_configuration_policies p
+	ORDER BY p.last_resolved_at NULLS FIRST
+	LIMIT %d
+),
+locked_policies AS (
+	SELECT c.id
+	FROM candidate_policies c
+	ORDER BY c.id FOR UPDATE
+)
+UPDATE lsif_configuration_policies
+SET last_resolved_at = %s
+WHERE id IN (SELECT id FROM locked_policies)
+RETURNING
+	id,
+	repository_id,
+	repository_patterns,
+	name,
+	type,
+	pattern,
+	protected,
+	retention_enabled,
+	retention_duration_hours,
+	retain_intermediate_commits,
+	indexing_enabled,
+	index_commit_max_age_hours,
+	index_intermediate_commits
 `

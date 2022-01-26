@@ -1,6 +1,13 @@
 {
   "extends": "../../tsconfig.json",
-  "references": [{ "path": "../shared" }, { "path": "../branded" }, { "path": "../../schema" }],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../branded" },
+    { "path": "../../schema" },
+    { "path": "../http-client" },
+    { "path": "../common" },
+    { "path": "../codeintellify" },
+  ],
   "compilerOptions": {
     "module": "commonjs",
     "baseUrl": ".",

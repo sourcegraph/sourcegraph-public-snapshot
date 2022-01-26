@@ -4,7 +4,7 @@ import (
 	"cloud.google.com/go/profiler"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -18,7 +18,7 @@ func Init() error {
 
 	// SourcegraphDotComMode can be true in dev, so check we are in a k8s
 	// cluster.
-	if !conf.IsDeployTypeKubernetes(conf.DeployType()) {
+	if !deploy.IsDeployTypeKubernetes(deploy.Type()) {
 		return nil
 	}
 

@@ -3,6 +3,7 @@ package server
 import (
 	"io"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -10,8 +11,24 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
+
+var gitServiceMaxEgressBytesPerSecond = func() int64 {
+	bps, err := strconv.ParseInt(env.Get(
+		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
+		"1000000000",
+		"Git service egress rate limit in bytes per second (-1 = no limit, default = 1Gbps)"),
+		10,
+		64,
+	)
+	if err != nil {
+		log15.Error("gitservice: failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND. defaulting to 1Gbps", "error", err)
+		bps = 1000 * 1000 * 1000 // 1Gbps
+	}
+	return bps
+}()
 
 // flowrateWriter limits the write rate of w to 1 Gbps.
 //
@@ -27,9 +44,10 @@ import (
 // We play it safe and default to 1 Gbps here (~119 MiB/s), which
 // means we can fetch a 1 GiB archive in ~8.5 seconds.
 func flowrateWriter(w io.Writer) io.Writer {
-	const megabit = int64(1000 * 1000)
-	const limit = 1000 * megabit // 1 Gbps
-	return flowrate.NewWriter(w, limit)
+	if gitServiceMaxEgressBytesPerSecond > 0 {
+		return flowrate.NewWriter(w, gitServiceMaxEgressBytesPerSecond)
+	}
+	return w
 }
 
 func (s *Server) gitServiceHandler() *gitservice.Handler {
@@ -47,8 +65,9 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 			start := time.Now()
 			metricServiceRunning.WithLabelValues(svc).Inc()
 			return func(err error) {
+				errLabel := strconv.FormatBool(err != nil)
 				metricServiceRunning.WithLabelValues(svc).Dec()
-				metricServiceDuration.WithLabelValues(svc).Observe(time.Since(start).Seconds())
+				metricServiceDuration.WithLabelValues(svc, errLabel).Observe(time.Since(start).Seconds())
 
 				if err != nil {
 					log15.Error("gitservice.ServeHTTP", "svc", svc, "repo", repo, "protocol", protocol, "duration", time.Since(start), "error", err.Error())
@@ -64,8 +83,9 @@ var (
 	metricServiceDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_gitserver_gitservice_duration_seconds",
 		Help:    "A histogram of latencies for the git service (upload-pack for internal clones) endpoint.",
-		Buckets: prometheus.ExponentialBuckets(.1, 5, 5), // 100ms -> 62s
-	}, []string{"type"})
+		Buckets: prometheus.ExponentialBuckets(.1, 4, 9),
+		// [0.1 0.4 1.6 6.4 25.6 102.4 409.6 1638.4 6553.6]
+	}, []string{"type", "error"})
 
 	metricServiceRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_gitserver_gitservice_running",

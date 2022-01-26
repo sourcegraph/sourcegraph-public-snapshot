@@ -9,14 +9,14 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
-import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import { ThemePreference } from '../theme'
+import { useExperimentalFeatures } from '../stores'
+import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
@@ -44,27 +44,18 @@ const defaultProps = (
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
-    caseSensitive: false,
-    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    showSearchContext: false,
-    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
-    showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     isExtensionAlertAnimating: false,
     searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
-    enableCodeMonitoring: true,
+    batchChangesWebhookLogsEnabled: true,
     activation: undefined,
-    hideNavLinks: false,
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
@@ -74,7 +65,10 @@ const defaultProps = (
     extensionViews: () => null,
 })
 
-const { add } = storiesOf('web/nav/GlobalNav', module)
+const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {
+    useExperimentalFeatures.setState({ codeMonitoring: true })
+    return <Story />
+})
 
 add('Anonymous viewer', () => (
     <WebStory>

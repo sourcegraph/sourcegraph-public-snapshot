@@ -2,6 +2,7 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
+import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -53,7 +54,7 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
     ...commonWebGraphQlResults,
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: true,
@@ -73,7 +74,23 @@ describe('Search', () => {
             currentTest: this.currentTest!,
             directory: __dirname,
         })
-        testContext.overrideGraphQL(commonSearchGraphQLResults)
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            UserAreaUserProfile: () => ({
+                user: {
+                    __typename: 'User',
+                    id: 'user123',
+                    username: 'alice',
+                    displayName: 'alice',
+                    url: '/users/test',
+                    settingsURL: '/users/test/settings',
+                    avatarURL: '',
+                    viewerCanAdminister: true,
+                    builtinAuth: true,
+                    tags: [],
+                },
+            }),
+        })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -99,7 +116,7 @@ describe('Search', () => {
                 await driver.page.waitForSelector(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
                 await driver.page.click(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
                 await driver.page.waitForFunction(
-                    expectedQuery => {
+                    (expectedQuery: string) => {
                         const url = new URL(document.location.href)
                         const query = url.searchParams.get('q')
                         return query && query.trim() === expectedQuery
@@ -129,6 +146,7 @@ describe('Search', () => {
                 selector: '#monaco-query-input .suggest-widget.visible span',
             })
             expect(await getSearchFieldValue(driver)).toStrictEqual('-file:')
+            await percySnapshotWithVariants(driver.page, 'Search home page')
         })
     })
 
@@ -279,7 +297,7 @@ describe('Search', () => {
             await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
-        test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
+        test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
@@ -431,7 +449,7 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            await driver.page.waitForSelector('.code-excerpt .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="code-excerpt"] .selection-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
@@ -510,6 +528,37 @@ describe('Search', () => {
             await resetCreateCodeMonitorFeatureTour(false)
             await driver.page.waitForSelector('.test-search-result-label', { visible: true })
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
+        })
+    })
+
+    describe('Saved searches', () => {
+        test('is styled correctly, with saved searches', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                savedSearches: () => ({
+                    savedSearches: [
+                        {
+                            description: 'Demo',
+                            id: 'U2F2ZWRTZWFyY2g6NQ==',
+                            namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
+                            notify: false,
+                            notifySlack: false,
+                            query: 'context:global Batch Change patternType:literal',
+                            slackWebhookURL: null,
+                        },
+                    ],
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('[data-testid="saved-searches-list-page"]')
+            await percySnapshotWithVariants(driver.page, 'Saved searches list')
+        })
+
+        test('is styled correctly, with saved search form', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches/add')
+            await driver.page.waitForSelector('[data-testid="saved-search-form"]')
+            await percySnapshotWithVariants(driver.page, 'Saved search - Form')
         })
     })
 })

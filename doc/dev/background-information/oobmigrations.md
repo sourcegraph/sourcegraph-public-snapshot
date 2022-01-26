@@ -1,6 +1,6 @@
 # Developing an out-of-band migration
 
-Normal migrations apply a sequence of pure-SQL migrations (each in a transaction) to the database on application startup. This happens to block the new application version from reaching a working state until all migrations since the previous version have been applied. This is generally a non-issue as most schema migrations fast, and _most_ data migrations are fast enough to apply on application startup.
+Normal migrations apply a sequence of pure-SQL migrations (each in a transaction) to the database on application startup. This happens to block the new application version from reaching a working state until all migrations since the previous version have been applied. This is generally a non-issue as most schema migrations are fast, and _most_ data migrations are fast enough to apply on application startup.
 
 Out-of-band migrations allow for application-specific logic to exist in a migration that can't be easily performed within a SQL command. For example:
 
@@ -34,7 +34,7 @@ For every registered migrator, the migration runner will periodically check for 
 
 #### Upgrades
 
-Site admins will be prevented from upgrading beyond the version where an incomplete migration has been deprecated. i.e., site-admin must wait for these migrations to finish before an upgrade. Otherwise, the instance will have data in a format that is no longer readable by the new version. In these cases, the instance will shut down with an error message similar to what happens when an in-band migration fails to apply.
+Site-admins will be prevented from upgrading beyond the version where an incomplete migration has been deprecated. i.e., site-admin must wait for these migrations to finish before an upgrade. Otherwise, the instance will have data in a format that is no longer readable by the new version. In these cases, the instance will shut down with an error message similar to what happens when an in-band migration fails to apply.
 
 The `Site Admin > Maintenance > Migrations` page shows the current progress of each out-of-band migration, as well as disclaimers warning when an immediate upgrade would fail due to an incomplete migration.
 
@@ -42,7 +42,7 @@ The `Site Admin > Maintenance > Migrations` page shows the current progress of e
 
 If a migration is non-destructive (it only adds data), then it is safe to downgrade to a previous version. If a migration is destructive (it removes or changes the shape of data), then the migration must be run _in reverse_. We can do this by flipping the direction of the migration record. The runner takes care of the rest.
 
-It is not valid for a user to downgrade beyond the version in which a non-0% migration was introduced. Site-admin must wait for these migrations to completely revert before a downgrade. Otherwise, the instance will have data i a format that is not yet readable by the old version.
+It is not valid for a user to downgrade beyond the version in which a non-0% migration was introduced. Site-admin must wait for these migrations to completely revert before a downgrade. Otherwise, the instance will have data in a format that is not yet readable by the old version.
 
 In order to run the 'down' side of a migration, set the `apply_reverse` field to the migration row in the `out_of_band_migrations` table via psql or the graphql API.
 
@@ -72,13 +72,14 @@ The first step is to register the migration in the database. This should be done
 ```sql
 BEGIN;
 
-INSERT INTO out_of_band_migrations (id, team, component, description, introduced, non_destructive)
+INSERT INTO out_of_band_migrations (id, team, component, description, introduced_version_major, introduced_version_minor, non_destructive)
 VALUES (
     42,                           -- This must be consistent across all Sourcegraph instances
     'skunkworks',                 -- Team owning migration
     'db.skunk_payloads',          -- Component being migrated
     'Re-encode our skunky data',  -- Description
-    '3.28.0',                     -- The next minor release
+    3,                            -- The current major release
+    34,                           -- The current minor release
     true                          -- Can be read with previous version without down migration
 )
 ON CONFLICT DO NOTHING;
@@ -180,7 +181,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	// Select and lock a single record within this transaction. This ensures
-	// that many frontend instances can run the same migration concurrently
+	// that many worker instances can run the same migration concurrently
 	// without them all trying to convert the same record.
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		"SELECT id, payload FROM skunk_payloads WHERE payload2 IS NULL LIMIT %s FOR UPDATE SKIP LOCKED",
@@ -261,11 +262,12 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 }
 ```
 
-Lastly, in order for this migration to run, we need to register it to the [outOfBandMigrator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/cmd/frontend/internal/cli/serve_cmd.go#L173:2). This instance is also available in the initialization functions for each component in the enterprise frontend.
+Lastly, in order for this migration to run, we need to [register it to the out of band migrator runner instance](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:.*.go+%28outOfBandMigration%29%3Frunner%5C.Register%5C%28&patternType=regexp) in the OSS or enterprise `worker` service.
 
 ```go
-if err := outOfBandMigrationRunner.Register(42, NewMigrator(store), oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-	return err
+migrator := database.NewMigrator(db)
+if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+	log.Fatalf("failed to run skunk payloads job: %v", err)
 }
 ```
 
@@ -279,7 +281,7 @@ A new in-band migration can be created to update the deprecation field of the ta
 
 ```sql
 BEGIN;
-UPDATE out_of_band_migrations SET deprecated = '3.38.0' WHERE id = 42;
+UPDATE out_of_band_migrations SET deprecated_version_major = 3, deprecated_version_minor = 39 WHERE id = 42;
 COMMIT;
 ```
 

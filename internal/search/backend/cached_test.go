@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 )
@@ -52,8 +53,9 @@ func TestCachedSearcher(t *testing.T) {
 	have, _ = s.List(ctx, &zoektquery.Const{Value: true}, nil)
 	want = &zoekt.RepoList{Repos: ms.FakeSearcher.Repos}
 
-	if !cmp.Equal(have, want) {
-		t.Fatalf("list mismatch: %s", cmp.Diff(have, want))
+	diffOpts := cmpopts.IgnoreUnexported(zoekt.Repository{})
+	if d := cmp.Diff(want, have, diffOpts); d != "" {
+		t.Fatalf("list mismatch: %s", d)
 	}
 
 	if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
@@ -68,7 +70,7 @@ func TestCachedSearcher(t *testing.T) {
 		have, _ = s.List(ctx, &zoektquery.Const{Value: true}, nil)
 		want = &zoekt.RepoList{Repos: ms.FakeSearcher.Repos}
 
-		if !cmp.Equal(have, want) {
+		if !cmp.Equal(have, want, diffOpts) {
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}

@@ -27,6 +27,7 @@ var _ authz.Provider = (*Provider)(nil)
 type Provider struct {
 	urn      string
 	codeHost *extsvc.CodeHost
+	depots   []extsvc.RepoID
 
 	host     string
 	user     string
@@ -48,11 +49,12 @@ type p4Execer interface {
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
 // with emails of Perforce Server users. It uses our default gitserver client.
-func NewProvider(urn, host, user, password string) *Provider {
+func NewProvider(urn, host, user, password string, depots []extsvc.RepoID) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{
 		urn:                urn,
 		codeHost:           extsvc.NewCodeHost(baseURL, extsvc.TypePerforce),
+		depots:             depots,
 		host:               host,
 		user:               user,
 		password:           password,
@@ -164,19 +166,23 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 
 	// Pull permissions from protects file.
 	perms := &authz.ExternalUserPermissions{}
-	err = scanProtects(rc, repoIncludesExcludesScanner(perms))
-
-	// Treat all paths as prefixes.
-	for i, include := range perms.IncludeContains {
-		perms.IncludeContains[i] = extsvc.RepoID(string(include) + postgresWildcardMatchAll)
-	}
-	for i, exclude := range perms.ExcludeContains {
-		perms.ExcludeContains[i] = extsvc.RepoID(string(exclude) + postgresWildcardMatchAll)
+	if len(p.depots) == 0 {
+		err = errors.Wrap(scanProtects(rc, repoIncludesExcludesScanner(perms)), "repoIncludesExcludesScanner")
+	} else {
+		// SubRepoPermissions-enabled code path
+		perms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(p.depots))
+		err = errors.Wrap(scanProtects(rc, fullRepoPermsScanner(perms, p.depots)), "fullRepoPermsScanner")
 	}
 
 	// As per interface definition for this method, implementation should return
 	// partial but valid results even when something went wrong.
-	return perms, errors.Wrap(err, "scanRepoIncludesExcludes.Err")
+	return perms, errors.Wrap(err, "FetchUserPerms")
+}
+
+// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
+// token.
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchUserPermsByToken"}
 }
 
 // getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
@@ -278,6 +284,11 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
 		return nil, errors.Errorf("not a code host of the repository: want %q but have %q",
 			repo.ServiceID, p.codeHost.ServiceID)
+	}
+
+	// Disable FetchRepoPerms until we implement sub-repo permissions for it.
+	if len(p.depots) > 0 {
+		return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchRepoPerms for sub-repo permissions"}
 	}
 
 	// -a : Displays protection lines for all users. This option requires super

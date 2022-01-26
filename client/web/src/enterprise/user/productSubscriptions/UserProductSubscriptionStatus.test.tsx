@@ -1,5 +1,6 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
-import renderer, { act } from 'react-test-renderer'
 
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
@@ -9,7 +10,7 @@ jest.mock('../../../components/CopyableText', () => ({ CopyableText: 'CopyableTe
 
 describe('UserProductSubscriptionStatus', () => {
     test('toggle', () => {
-        const component = renderer.create(
+        const { asFragment } = render(
             <UserProductSubscriptionStatus
                 subscriptionName="L-123"
                 productNameWithBrand="P"
@@ -18,10 +19,11 @@ describe('UserProductSubscriptionStatus', () => {
                 licenseKey="lk"
             />
         )
-        expect(component.toJSON()).toMatchSnapshot('license key hidden')
+        expect(asFragment()).toMatchSnapshot('license key hidden')
 
         // Click "Reveal license key" button.
-        act(() => component.root.findByType('button').props.onClick())
-        expect(component.toJSON()).toMatchSnapshot('license key revealed')
+        const button = screen.getByRole('button')
+        userEvent.click(button)
+        expect(asFragment()).toMatchSnapshot('license key revealed')
     })
 })

@@ -1,27 +1,21 @@
 #!/usr/bin/env bash
 
 set -eu
-pushd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-ORPHAN_ASDF=()
-mapfile ORPHAN_ASDF < <(find "$HOME/.asdf/installs/" -maxdepth 2 -empty)
+echo "install asdf plugins"
+asdf install
+echo "done installing"
 
-for dir in "${ORPHAN_ASDF[@]}"; do
-    echo "Removing orphaned .asdf directory: ${dir}"
-    rm -rf "${dir}"
-done
+# HoneyComb's buildevent plumbing.
+# -------------------------------
 
-TOOL_VERSION_FILES=()
-mapfile -d $'\0' TOOL_VERSION_FILES < <(fd .tool-versions --hidden --absolute-path --print0)
+# Record start time if we need to exit
+BUILD_START_TIME=$(curl -H "Authorization: Bearer $BUILDKITE_API_TOKEN" "https://api.buildkite.com/v2/organizations/$BUILDKITE_ORGANIZATION_SLUG/pipelines/$BUILDKITE_PIPELINE_SLUG/builds/$BUILDKITE_BUILD_NUMBER/" | jq -r .started_at)
 
-for file in "${TOOL_VERSION_FILES[@]}"; do
-    echo "Installing asdf dependencies as defined in ${file}:"
-    parent=$(dirname "${file}")
-    pushd "${parent}"
+# Convert to UTC & Epoch
+BUILD_START_TIME=$(TZ=UTC date -d "$BUILD_START_TIME" +'%s')
+export BUILD_START_TIME
 
-    asdf install
-
-    popd
-done
-
-popd
+# Init the step
+STEP_START=$(date +'%s')
+export STEP_START

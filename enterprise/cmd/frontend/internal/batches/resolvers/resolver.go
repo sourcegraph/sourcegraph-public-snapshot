@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -44,7 +43,7 @@ func New(store *store.Store) graphqlbackend.BatchChangesResolver {
 
 // batchChangesCreateAccess returns true if the current user has batch changes enabled for
 // them and can create batchChanges/changesetSpecs/batchSpecs.
-func batchChangesCreateAccess(ctx context.Context, db dbutil.DB) error {
+func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, db); err != nil {
 		return err
 	}
@@ -89,7 +88,7 @@ type batchChangeEventArg struct {
 	BatchChangeID int64 `json:"batch_change_id"`
 }
 
-func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interface{}, publicArgs interface{}) error {
+func logBackendEvent(ctx context.Context, db database.DB, name string, args interface{}, publicArgs interface{}) error {
 	actor := actor.FromContext(ctx)
 	jsonArg, err := json.Marshal(args)
 	if err != nil {
@@ -131,7 +130,7 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 }
 
 func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -163,7 +162,7 @@ func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 }
 
 func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -188,7 +187,7 @@ func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlb
 }
 
 func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -211,7 +210,7 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 }
 
 func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -225,6 +224,10 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 	}
 
 	opts := store.GetBatchSpecOpts{RandID: batchSpecRandID}
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
+	}
+
 	batchSpec, err := r.store.GetBatchSpec(ctx, opts)
 	if err != nil {
 		if err == store.ErrNoResults {
@@ -237,7 +240,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 }
 
 func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -263,7 +266,7 @@ func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 }
 
 func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -292,7 +295,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DB(), cred.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), cred.UserID); err != nil {
 		return nil, err
 	}
 
@@ -301,7 +304,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 
 func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// Todo: Is this required? Should everyone be able to see there are _some_ credentials?
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -317,7 +320,7 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 }
 
 func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkOperationResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -345,8 +348,7 @@ func (r *Resolver) bulkOperationByIDString(ctx context.Context, id string) (grap
 }
 
 func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -356,7 +358,7 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 	}
 
 	if id == 0 {
-		return nil, ErrIDIsZero{}
+		return nil, nil
 	}
 
 	w, err := r.store.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: id})
@@ -366,6 +368,21 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 		}
 		return nil, err
 	}
+
+	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: w.BatchSpecID})
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the requesting user is either an admin or created the spec.
+	//
+	// TODO: Once we introduce finer-grained permissions, this needs to be
+	// changed to check for namespace access and then check repository
+	// permissions and return hidden/visible workspaces accordingly.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), spec.UserID); err != nil {
+		return nil, err
+	}
+
 	ex, err := r.store.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: w.ID})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
@@ -396,7 +413,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	}
 
 	arg := &batchChangeEventArg{BatchChangeID: batchChange.ID}
-	err = logBackendEvent(ctx, r.store.DB(), "BatchChangeCreated", arg, arg)
+	err = logBackendEvent(ctx, r.store.DatabaseDB(), "BatchChangeCreated", arg, arg)
 	if err != nil {
 		return nil, err
 	}
@@ -418,7 +435,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 	}
 
 	arg := &batchChangeEventArg{BatchChangeID: batchChange.ID}
-	err = logBackendEvent(ctx, r.store.DB(), "BatchChangeCreatedOrUpdated", arg, arg)
+	err = logBackendEvent(ctx, r.store.DatabaseDB(), "BatchChangeCreatedOrUpdated", arg, arg)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +464,7 @@ func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublication
 }
 
 func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs, opts service.ApplyBatchChangeOpts) (*btypes.BatchChange, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -497,7 +514,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 		tr.Finish()
 	}()
 
-	if err := batchChangesCreateAccess(ctx, r.store.DB()); err != nil {
+	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -533,7 +550,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 	}
 
 	eventArg := &batchSpecCreatedArg{ChangesetSpecsCount: len(opts.ChangesetSpecRandIDs)}
-	if err := logBackendEvent(ctx, r.store.DB(), "BatchSpecCreated", eventArg, eventArg); err != nil {
+	if err := logBackendEvent(ctx, r.store.DatabaseDB(), "BatchSpecCreated", eventArg, eventArg); err != nil {
 		return nil, err
 	}
 
@@ -553,7 +570,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		tr.Finish()
 	}()
 
-	if err := batchChangesCreateAccess(ctx, r.store.DB()); err != nil {
+	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -582,7 +599,7 @@ func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.Mov
 		tr.Finish()
 	}()
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -626,7 +643,7 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -647,7 +664,7 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 	}
 
 	arg := &batchChangeEventArg{BatchChangeID: batchChangeID}
-	if err := logBackendEvent(ctx, r.store.DB(), "BatchChangeDeleted", arg, arg); err != nil {
+	if err := logBackendEvent(ctx, r.store.DatabaseDB(), "BatchChangeDeleted", arg, arg); err != nil {
 		return nil, err
 	}
 
@@ -655,7 +672,7 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 }
 
 func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -678,16 +695,20 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 		opts.Cursor = cursor
 	}
 
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
 	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
 		return nil, authErr
 	}
 	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
+		actor := actor.FromContext(ctx)
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			actor := actor.FromContext(ctx)
-			opts.InitialApplierID = actor.UID
+			opts.CreatorID = actor.UID
 		}
+
+		// 🚨 SECURITY: If the user is not an admin, we don't want to include
+		// unapplied (draft) BatchChanges except those that the user owns.
+		opts.ExcludeDraftsNotOwnedByUserID = actor.UID
 	}
 
 	if args.Namespace != nil {
@@ -738,13 +759,13 @@ func (r *Resolver) RepoDiffStat(ctx context.Context, repo *graphql.ID) (*graphql
 }
 
 func (r *Resolver) BatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
 	if args.UserID != nil {
 		// 🚨 SECURITY: Only viewable for self or by site admins.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DB(), *args.UserID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), *args.UserID); err != nil {
 			return nil, err
 		}
 	}
@@ -908,7 +929,7 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 		tr.Finish()
 	}()
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -929,7 +950,7 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 	}
 
 	arg := &batchChangeEventArg{BatchChangeID: batchChangeID}
-	if err := logBackendEvent(ctx, r.store.DB(), "BatchChangeClosed", arg, arg); err != nil {
+	if err := logBackendEvent(ctx, r.store.DatabaseDB(), "BatchChangeClosed", arg, arg); err != nil {
 		return nil, err
 	}
 
@@ -942,7 +963,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -970,7 +991,7 @@ func (r *Resolver) ReenqueueChangeset(ctx context.Context, args *graphqlbackend.
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -999,7 +1020,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1034,7 +1055,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 
 func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DB(), userID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), userID); err != nil {
 		return nil, err
 	}
 
@@ -1068,7 +1089,7 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that a site credential can only be created
 	// by a site-admin.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1144,7 +1165,7 @@ func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graph
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1172,7 +1193,7 @@ func (r *Resolver) deleteBatchChangesUserCredential(ctx context.Context, credent
 	}
 
 	// 🚨 SECURITY: Check that the requesting user may delete the credential.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DB(), cred.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), cred.UserID); err != nil {
 		return nil, err
 	}
 
@@ -1186,7 +1207,7 @@ func (r *Resolver) deleteBatchChangesUserCredential(ctx context.Context, credent
 
 func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credentialDBID int64) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Check that the requesting user may delete the credential.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1204,7 +1225,7 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1239,7 +1260,7 @@ func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbac
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1283,7 +1304,7 @@ func (r *Resolver) ReenqueueChangesets(ctx context.Context, args *graphqlbackend
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1318,7 +1339,7 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1356,7 +1377,7 @@ func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.Clo
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1393,7 +1414,7 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1421,19 +1442,33 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 }
 
 func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatchSpecArgs) (_ graphqlbackend.BatchSpecConnectionResolver, err error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+	tr, ctx := trace.New(ctx, "Resolver.BatchSpecs", fmt.Sprintf("First: %d, After: %v", args.First, args.After))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
+
 	opts := store.ListBatchSpecsOpts{
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),
 		},
 	}
+
+	// 🚨 SECURITY: If the user is not an admin, we don't want to include
+	// BatchSpecs that were created with CreateBatchSpecFromRaw and not owned
+	// by the user
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
+	}
+
 	if args.After != nil {
 		id, err := strconv.Atoi(*args.After)
 		if err != nil {
@@ -1445,18 +1480,61 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 	return &batchSpecConnectionResolver{store: r.store, opts: opts}, nil
 }
 
-func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlbackend.CreateBatchSpecFromRawArgs) (graphqlbackend.BatchSpecResolver, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlbackend.CreateEmptyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateEmptyBatchChange", fmt.Sprintf("Namespace: %+v", args.Namespace))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
 	svc := service.New(r.store)
+
+	var uid, oid int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+		return nil, err
+	}
+
+	batchChange, err := svc.CreateEmptyBatchChange(ctx, service.CreateEmptyBatchChangeOpts{
+		NamespaceUserID: uid,
+		NamespaceOrgID:  oid,
+		Name:            args.Name,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
+}
+
+func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlbackend.CreateBatchSpecFromRawArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateBatchSpecFromRaw", fmt.Sprintf("Namespace: %+v", args.Namespace))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+
+	var uid, oid int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+		return nil, err
+	}
+
 	batchSpec, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
-		NamespaceUserID:  actor.FromContext(ctx).UID,
+		NamespaceUserID:  uid,
+		NamespaceOrgID:   oid,
 		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
+		NoCache:          args.NoCache,
 	})
 	if err != nil {
 		return nil, err
@@ -1465,17 +1543,13 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
-func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.DeleteBatchSpecArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
-}
-
-func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.ExecuteBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.ExecuteBatchSpecArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.ExecuteBatchSpec", fmt.Sprintf("BatchSpec: %+v", args.BatchSpec))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1488,6 +1562,11 @@ func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.Ex
 		return nil, ErrIDIsZero{}
 	}
 
+	// 🚨 SECURITY: ExecuteBatchSpec checks whether current user is authorized
+	// and has access to namespace.
+	// Right now we also only allow creating batch specs in a user-namespace,
+	// so the check makes sure the current user is the creator of the batch
+	// spec or an admin.
 	svc := service.New(r.store)
 	batchSpec, err := svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
 		BatchSpecRandID: batchSpecRandID,
@@ -1500,9 +1579,14 @@ func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.Ex
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
-func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (graphqlbackend.BatchSpecResolver, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CancelBatchSpecExecution", fmt.Sprintf("BatchSpec: %+v", args.BatchSpec))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1526,54 +1610,53 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
-func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+func (r *Resolver) RetryBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecWorkspaceExecutionArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.RetryBatchSpecWorkspaceExecution", fmt.Sprintf("Workspaces: %+v", args.BatchSpecWorkspaces))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
-}
 
-func (r *Resolver) RetryBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+	var workspaceIDs []int64
+	for _, raw := range args.BatchSpecWorkspaces {
+		id, err := unmarshalBatchSpecWorkspaceID(raw)
+		if err != nil {
+			return nil, err
+		}
+
+		if id == 0 {
+			return nil, ErrIDIsZero{}
+		}
+
+		workspaceIDs = append(workspaceIDs, id)
+	}
+
+	// 🚨 SECURITY: RetryBatchSpecWorkspaces checks whether current user is authorized
+	// and has access to namespace.
+	// Right now we also only allow creating batch specs in a user-namespace,
+	// so the check makes sure the current user is the creator of the batch
+	// spec or an admin.
+	svc := service.New(r.store)
+	err = svc.RetryBatchSpecWorkspaces(ctx, workspaceIDs)
+	if err != nil {
 		return nil, err
 	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
-}
+func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbackend.ReplaceBatchSpecInputArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.ReplaceBatchSpecInput", fmt.Sprintf("BatchSpec: %+v", args.BatchSpec))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
-func (r *Resolver) EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.EnqueueBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
-}
-
-func (r *Resolver) ToggleBatchSpecAutoApply(ctx context.Context, args *graphqlbackend.ToggleBatchSpecAutoApplyArgs) (graphqlbackend.BatchSpecResolver, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
-}
-
-func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbackend.ReplaceBatchSpecInputArgs) (graphqlbackend.BatchSpecResolver, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1586,12 +1669,18 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 		return nil, ErrIDIsZero{}
 	}
 
+	// 🚨 SECURITY: ReplaceBatchSpecInput checks whether current user is authorized
+	// and has access to namespace.
+	// Right now we also only allow creating batch specs in a user-namespace,
+	// so the check makes sure the current user is the creator of the batch
+	// spec or an admin.
 	svc := service.New(r.store)
 	batchSpec, err := svc.ReplaceBatchSpecInput(ctx, service.ReplaceBatchSpecInputOpts{
 		BatchSpecRandID:  batchSpecRandID,
 		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
+		NoCache:          args.NoCache,
 	})
 	if err != nil {
 		return nil, err
@@ -1600,21 +1689,92 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
+func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.RetryBatchSpecExecution", fmt.Sprintf("BatchSpec: %+v", args.BatchSpec))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchSpecRandID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	// 🚨 SECURITY: RetryBatchSpecExecution checks whether current user is authorized
+	// and has access to namespace.
+	svc := service.New(r.store)
+	if err = svc.RetryBatchSpecExecution(ctx, service.RetryBatchSpecExecutionOpts{
+		BatchSpecRandID:  batchSpecRandID,
+		IncludeCompleted: args.IncludeCompleted,
+	}); err != nil {
+		return nil, err
+	}
+
+	return r.batchSpecByID(ctx, args.BatchSpec)
+}
+
+func (r *Resolver) EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.EnqueueBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) ToggleBatchSpecAutoApply(ctx context.Context, args *graphqlbackend.ToggleBatchSpecAutoApplyArgs) (graphqlbackend.BatchSpecResolver, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.DeleteBatchSpecArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
-		return btypes.BatchChangeStateAny, nil
+		return "", nil
 	}
 	switch *s {
 	case "OPEN":
 		return btypes.BatchChangeStateOpen, nil
 	case "CLOSED":
 		return btypes.BatchChangeStateClosed, nil
+	case "DRAFT":
+		return btypes.BatchChangeStateDraft, nil
 	default:
-		return btypes.BatchChangeStateAny, errors.Errorf("unknown state %q", *s)
+		return "", errors.Errorf("unknown state %q", *s)
 	}
 }
 
-func checkSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, userID int32) (bool, error) {
+func checkSiteAdminOrSameUser(ctx context.Context, db database.DB, userID int32) (bool, error) {
 	// 🚨 SECURITY: Only site admins or the authors of a batch change have batch change
 	// admin rights.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {

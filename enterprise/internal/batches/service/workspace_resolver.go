@@ -15,7 +15,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -26,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -43,8 +47,9 @@ func (r *RepoRevision) HasBranch() bool {
 
 type RepoWorkspace struct {
 	*RepoRevision
-	Path  string
-	Steps []batcheslib.Step
+	Path         string
+	Steps        []batcheslib.Step
+	SkippedSteps []int32
 
 	OnlyFetchWorkspace bool
 
@@ -65,7 +70,7 @@ type WorkspaceResolver interface {
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{store: s, frontendInternalURL: api.InternalClient.URL + "/.internal"}
+	return &workspaceResolver{store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
 }
 
 type workspaceResolver struct {
@@ -127,37 +132,31 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 }
 
 func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*RepoRevision, error) {
-	seen := map[api.RepoID]*RepoRevision{}
+	agg := onlib.NewRepoRevisionAggregator()
 
 	var errs error
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range batchSpec.On {
-		repos, err := wr.resolveRepositoriesOn(ctx, &on)
+		revs, ruleType, err := wr.resolveRepositoriesOn(ctx, &on)
 		if err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "resolving %q", on.String()))
 			continue
 		}
 
-		for _, repo := range repos {
+		result := agg.NewRuleRevisions(ruleType)
+		for _, rev := range revs {
 			// Skip repos where no branch exists.
-			if !repo.HasBranch() {
+			if !rev.HasBranch() {
 				continue
 			}
 
-			if other, ok := seen[repo.Repo.ID]; !ok {
-				seen[repo.Repo.ID] = repo
-			} else {
-				// If we've already seen this repository, we overwrite the
-				// Commit/Branch fields with the latest value we have
-				other.Commit = repo.Commit
-				other.Branch = repo.Branch
-			}
+			result.AddRepoRevision(rev.Repo.ID, rev)
 		}
 	}
 
-	repoRevs := make([]*RepoRevision, 0, len(seen))
-	for _, rr := range seen {
-		repoRevs = append(repoRevs, rr)
+	repoRevs := []*RepoRevision{}
+	for _, rev := range agg.Revisions() {
+		repoRevs = append(repoRevs, rev.(*RepoRevision))
 	}
 	return repoRevs, errs
 }
@@ -184,7 +183,7 @@ func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*t
 			defer wg.Done()
 			for repo := range in {
 				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, repo)
-				results <- result{repo, hasBatchIgnore, err}
+				out <- result{repo, hasBatchIgnore, err}
 			}
 		}(input, results)
 	}
@@ -216,7 +215,8 @@ func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*t
 
 var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("malformed 'on' field; missing either a repository name or a query"))
 
-func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, err error) {
+// resolveRepositoriesOn resolves a single on: entry in a batch spec.
+func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, _ onlib.RepositoryRuleType, err error) {
 	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoriesOn", "")
 	defer func() {
 		tr.SetError(err)
@@ -224,28 +224,39 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 	}()
 
 	if on.RepositoriesMatchingQuery != "" {
-		return wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
+		revs, err := wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
+		return revs, onlib.RepositoryRuleTypeQuery, err
 	}
 
-	if on.Repository != "" && on.Branch != "" {
-		repo, err := wr.resolveRepositoryNameAndBranch(ctx, on.Repository, on.Branch)
-		if err != nil {
-			return nil, err
+	branches, err := on.GetBranches()
+	if err != nil {
+		return nil, onlib.RepositoryRuleTypeExplicit, err
+	}
+
+	if on.Repository != "" && len(branches) > 0 {
+		revs := make([]*RepoRevision, len(branches))
+		for i, branch := range branches {
+			repo, err := wr.resolveRepositoryNameAndBranch(ctx, on.Repository, branch)
+			if err != nil {
+				return nil, onlib.RepositoryRuleTypeExplicit, err
+			}
+
+			revs[i] = repo
 		}
-		return []*RepoRevision{repo}, nil
+		return revs, onlib.RepositoryRuleTypeExplicit, nil
 	}
 
 	if on.Repository != "" {
 		repo, err := wr.resolveRepositoryName(ctx, on.Repository)
 		if err != nil {
-			return nil, err
+			return nil, onlib.RepositoryRuleTypeExplicit, err
 		}
-		return []*RepoRevision{repo}, nil
+		return []*RepoRevision{repo}, onlib.RepositoryRuleTypeExplicit, nil
 	}
 
 	// This shouldn't happen on any batch spec that has passed validation, but,
 	// alas, software.
-	return nil, ErrMalformedOnQueryOrRepository
+	return nil, onlib.RepositoryRuleTypeExplicit, ErrMalformedOnQueryOrRepository
 }
 
 func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name string) (_ *RepoRevision, err error) {
@@ -338,7 +349,8 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 	}
 
 	// 🚨 SECURITY: We use database.Repos.List to check whether the user has access to
-	// the repositories or not.
+	// the repositories or not. We also impersonate on the internal search request to
+	// properly respect these permissions.
 	accessibleRepos, err := wr.store.Repos().List(ctx, database.ReposListOptions{IDs: repoIDs})
 	if err != nil {
 		return nil, err
@@ -370,10 +382,14 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	}
 	req = req.WithContext(ctx)
 
-	// We don't set an auth token here and don't authenticate on the users
-	// behalf in any way, because we will fetch the repositories from the
-	// database later and check for repository permissions that way.
 	req.Header.Set("User-Agent", internalSearchClientUserAgent)
+
+	// We impersonate as the user who initiated this search. This is to properly
+	// scope repository permissions while running the search.
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return errors.New("no user set in workspaceResolver.runSearch")
+	}
 
 	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {
@@ -427,7 +443,7 @@ func hasBatchIgnoreFile(ctx context.Context, r *RepoRevision) (_ bool, err error
 	}()
 
 	const path = ".batchignore"
-	stat, err := git.Stat(ctx, r.Repo.Name, r.Commit, path)
+	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
@@ -465,7 +481,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 		err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
 			for _, match := range matches {
 				switch m := match.(type) {
-				case (*streamhttp.EventPathMatch):
+				case *streamhttp.EventPathMatch:
 					// We use path.Dir and not filepath.Dir here, because while
 					// src-cli might be executed on Windows, we need the paths to
 					// be Unix paths, since they will be used inside Docker
@@ -545,9 +561,14 @@ func findWorkspaces(
 	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
 	var errs *multierror.Error
 	for _, conf := range spec.Workspaces {
-		g, err := glob.Compile(conf.In)
+		in := conf.In
+		// Empty `in` should fall back to matching all, instead of nothing.
+		if in == "" {
+			in = "*"
+		}
+		g, err := glob.Compile(in)
 		if err != nil {
-			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", conf.In, err)))
+			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", in, err)))
 		}
 		workspaceMatchers[conf] = g
 	}
@@ -631,10 +652,10 @@ func findWorkspaces(
 
 	workspaces := make([]*RepoWorkspace, 0, len(workspacesByRepoRev))
 	for _, workspace := range workspacesByRepoRev {
-		steps, err := stepsForRepo(
+		steps, skipped, err := stepsForRepo(
 			spec,
-			string(workspace.RepoRevision.Repo.Name),
-			workspace.RepoRevision.FileMatches,
+			string(workspace.Repo.Name),
+			workspace.FileMatches,
 		)
 		if err != nil {
 			return nil, err
@@ -651,6 +672,7 @@ func findWorkspaces(
 				Path:               path,
 				Steps:              steps,
 				OnlyFetchWorkspace: fetchWorkspace,
+				SkippedSteps:       skipped,
 			})
 		}
 	}
@@ -667,13 +689,13 @@ func findWorkspaces(
 }
 
 // stepsForRepo calculates the steps required to run on the given repo.
-func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []string) ([]batcheslib.Step, error) {
-	taskSteps := []batcheslib.Step{}
+func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []string) (steps []batcheslib.Step, skipped []int32, err error) {
+	steps = []batcheslib.Step{}
 
-	for _, step := range spec.Steps {
+	for idx, step := range spec.Steps {
 		// If no if condition is given, just go ahead and add the step to the list.
 		if step.IfCondition() == "" {
-			taskSteps = append(taskSteps, step)
+			steps = append(steps, step)
 			continue
 		}
 
@@ -681,6 +703,9 @@ func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []str
 			Name:        spec.Name,
 			Description: spec.Description,
 		}
+		// TODO: This step ctx is incomplete, is this allowed?
+		// We can at least optimize further here and do more static evaluation
+		// when we have a cached result for the previous step.
 		stepCtx := &template.StepContext{
 			Repository: template.Repository{
 				Name:        repoName,
@@ -690,19 +715,17 @@ func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []str
 		}
 		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		// If we could evaluate the condition statically and the resulting
-		// boolean is false, we don't add that step.
-		if !static {
-			taskSteps = append(taskSteps, step)
-		} else if boolVal {
-			taskSteps = append(taskSteps, step)
+		steps = append(steps, step)
+
+		if static && !boolVal {
+			skipped = append(skipped, int32(idx))
 		}
 	}
 
-	return taskSteps, nil
+	return steps, skipped, nil
 }
 
 type repoRevKey struct {

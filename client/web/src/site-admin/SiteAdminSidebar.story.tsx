@@ -22,6 +22,7 @@ add(
                     isSourcegraphDotCom={false}
                     batchChangesEnabled={false}
                     batchChangesExecutionEnabled={false}
+                    batchChangesWebhookLogsEnabled={false}
                 />
             )}
         </WebStory>

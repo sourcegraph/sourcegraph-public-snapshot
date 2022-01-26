@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -20,8 +21,14 @@ func NewAuthzStore(db dbutil.DB, clock func() time.Time) database.AuthzStore {
 	}
 }
 
+func NewAuthzStoreWith(other basestore.ShareableStore, clock func() time.Time) database.AuthzStore {
+	return &authzStore{
+		store: PermsWith(other, clock),
+	}
+}
+
 type authzStore struct {
-	store *PermsStore
+	store PermsStore
 }
 
 // GrantPendingPermissions grants pending permissions for a user, which implements the database.AuthzStore interface.

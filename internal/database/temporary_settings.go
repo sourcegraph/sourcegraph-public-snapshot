@@ -9,23 +9,21 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
 )
 
-type TemporarySettingsStore struct {
+type TemporarySettingsStore interface {
+	basestore.ShareableStore
+	GetTemporarySettings(ctx context.Context, userID int32) (*ts.TemporarySettings, error)
+	OverwriteTemporarySettings(ctx context.Context, userID int32, contents string) error
+	EditTemporarySettings(ctx context.Context, userID int32, settingsToEdit string) error
+}
+
+type temporarySettingsStore struct {
 	*basestore.Store
 }
 
-func TemporarySettings(db dbutil.DB) *TemporarySettingsStore {
-	return &TemporarySettingsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
-	if Mocks.TemporarySettings.GetTemporarySettings != nil {
-		return Mocks.TemporarySettings.GetTemporarySettings(ctx, userID)
-	}
-
+func (f *temporarySettingsStore) GetTemporarySettings(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
 	const getTemporarySettingsQuery = `
 		SELECT contents
 		FROM temporary_settings
@@ -46,11 +44,7 @@ func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userI
 	return &ts.TemporarySettings{Contents: contents}, nil
 }
 
-func (f *TemporarySettingsStore) OverwriteTemporarySettings(ctx context.Context, userID int32, contents string) error {
-	if Mocks.TemporarySettings.OverwriteTemporarySettings != nil {
-		return Mocks.TemporarySettings.OverwriteTemporarySettings(ctx, userID, contents)
-	}
-
+func (f *temporarySettingsStore) OverwriteTemporarySettings(ctx context.Context, userID int32, contents string) error {
 	const overwriteTemporarySettingsQuery = `
 		INSERT INTO temporary_settings (user_id, contents)
 		VALUES (%s, %s)
@@ -62,11 +56,7 @@ func (f *TemporarySettingsStore) OverwriteTemporarySettings(ctx context.Context,
 	return f.Exec(ctx, sqlf.Sprintf(overwriteTemporarySettingsQuery, userID, contents, contents))
 }
 
-func (f *TemporarySettingsStore) EditTemporarySettings(ctx context.Context, userID int32, settingsToEdit string) error {
-	if Mocks.TemporarySettings.EditTemporarySettings != nil {
-		return Mocks.TemporarySettings.EditTemporarySettings(ctx, userID, settingsToEdit)
-	}
-
+func (f *temporarySettingsStore) EditTemporarySettings(ctx context.Context, userID int32, settingsToEdit string) error {
 	const editTemporarySettingsQuery = `
 		INSERT INTO temporary_settings AS t (user_id, contents)
 			VALUES (%s, %s)

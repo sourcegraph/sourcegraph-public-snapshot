@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
@@ -42,7 +42,7 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
      * @param event - creation event with subject id and updated settings content
      * info.
      */
-    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<void>
+    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<unknown>
 
     /**
      * Whenever insight was created and all operations after creation were completed.
@@ -55,7 +55,6 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
     onCancel: () => void
 }
 
-/** Displays create insight page with creation form. */
 export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
     const { visibility, subjects, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
@@ -77,7 +76,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
                 telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
                 telemetryService.log(
-                    'Insight Addition',
+                    'InsightAddition',
                     { insightType: 'searchInsights' },
                     { insightType: 'searchInsights' }
                 )
@@ -106,13 +105,13 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     }, [telemetryService, setLocalStorageFormValues, onCancel])
 
     return (
-        <Page className={classNames('col-10', styles.creationPage)}>
+        <Page className={classNames(styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
             {loading && (
                 // loading state for 1 click creation insight values resolve operation
                 <div>
-                    <LoadingSpinner className="icon-inline" /> Resolving search query
+                    <LoadingSpinner /> Resolving search query
                 </div>
             )}
 
@@ -122,7 +121,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 // page without resolving URL query based insight values.
                 !loading && (
                     <>
-                        <div className="mb-5">
+                        <header className="mb-5">
                             <h2>Create new code insight</h2>
 
                             <p className="text-muted">
@@ -131,7 +130,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                                     Learn more.
                                 </a>
                             </p>
-                        </div>
+                        </header>
 
                         <SearchInsightCreationContent
                             className="pb-5"

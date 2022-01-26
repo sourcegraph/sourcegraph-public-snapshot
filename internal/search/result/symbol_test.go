@@ -23,7 +23,7 @@ func TestSymbolRange(t *testing.T) {
 }
 
 func TestSymbolURL(t *testing.T) {
-	repoA := types.RepoName{Name: "repo/A", ID: 1}
+	repoA := types.MinimalRepo{Name: "repo/A", ID: 1}
 	fileAA := File{Repo: repoA, Path: "A"}
 
 	rev := "testrev"

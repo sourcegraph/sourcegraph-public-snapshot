@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
 import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -12,6 +12,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
+import { CodeHostListItem } from './CodeHostListItem'
 
 export interface UserCodeHosts {
     user: AuthenticatedUser
@@ -92,7 +93,7 @@ export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
             <ul className="list-group">
                 {Object.entries(cloudSupportedServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                     authProvidersByKind[kind] ? (
-                        <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
+                        <CodeHostListItem key={id}>
                             <CodeHostItem
                                 owner={{ id: user.id, type: 'user' }}
                                 service={services[kind]}
@@ -104,7 +105,7 @@ export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
                                 onDidRemove={removeService(kind)}
                                 onDidError={onDidError}
                             />
-                        </li>
+                        </CodeHostListItem>
                     ) : null
                 )}
             </ul>

@@ -14,6 +14,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -251,7 +252,8 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		}
 	}
 
-	summary, err := EventLogs(db).siteUsage(ctx, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	summary, err := el.siteUsage(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,7 +337,8 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 		"codeintel.searchReferences",
 	}
 
-	count, err := EventLogs(db).codeIntelligenceWeeklyUsersCount(ctx, eventNames, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	count, err := el.codeIntelligenceWeeklyUsersCount(ctx, eventNames, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -544,7 +547,8 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	count, err := EventLogs(db).codeIntelligenceSettingsPageViewCount(ctx, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	count, err := el.codeIntelligenceSettingsPageViewCount(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -607,7 +611,8 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	events, err := EventLogs(db).aggregatedCodeIntelEvents(ctx, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	events, err := el.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -660,7 +665,8 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 		}
 	}
 
-	events, err := EventLogs(db).aggregatedCodeIntelEvents(ctx, now)
+	el := &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	events, err := el.aggregatedCodeIntelEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}

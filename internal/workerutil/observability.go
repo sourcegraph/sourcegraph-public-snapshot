@@ -21,7 +21,24 @@ type Gauge interface {
 }
 
 type operations struct {
-	handle *observation.Operation
+	handle     *observation.Operation
+	postHandle *observation.Operation
+	preHandle  *observation.Operation
+}
+
+type metricOptions struct {
+	labels          map[string]string
+	durationBuckets []float64
+}
+
+type MetricOption func(o *metricOptions)
+
+func WithLabels(labels map[string]string) MetricOption {
+	return func(o *metricOptions) { o.labels = labels }
+}
+
+func WithDurationBuckets(buckets []float64) MetricOption {
+	return func(o *metricOptions) { o.durationBuckets = buckets }
 }
 
 // NewMetrics creates and registers the following metrics for a generic worker instance.
@@ -32,10 +49,18 @@ type operations struct {
 //   - {prefix}_handlers: the number of active handler routines
 //
 // The given labels are emitted on each metric.
-func NewMetrics(observationContext *observation.Context, prefix string, labels map[string]string) WorkerMetrics {
-	keys := make([]string, 0, len(labels))
-	values := make([]string, 0, len(labels))
-	for key, value := range labels {
+func NewMetrics(observationContext *observation.Context, prefix string, opts ...MetricOption) WorkerMetrics {
+	options := &metricOptions{
+		durationBuckets: prometheus.DefBuckets,
+	}
+
+	for _, fn := range opts {
+		fn(options)
+	}
+
+	keys := make([]string, 0, len(options.labels))
+	values := make([]string, 0, len(options.labels))
+	for key, value := range options.labels {
 		keys = append(keys, key)
 		values = append(values, value)
 	}
@@ -56,17 +81,18 @@ func NewMetrics(observationContext *observation.Context, prefix string, labels m
 	)
 
 	return WorkerMetrics{
-		operations: newOperations(observationContext, prefix, keys, values),
+		operations: newOperations(observationContext, prefix, keys, values, options.durationBuckets),
 		numJobs:    newLenientConcurrencyGauge(numJobs, time.Second*5),
 	}
 }
 
-func newOperations(observationContext *observation.Context, prefix string, keys, values []string) *operations {
-	metrics := metrics.NewOperationMetrics(
+func newOperations(observationContext *observation.Context, prefix string, keys, values []string, durationBuckets []float64) *operations {
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		prefix,
 		metrics.WithLabels(append(keys, "op")...),
 		metrics.WithCountHelp("Total number of method invocations."),
+		metrics.WithDurationBuckets(durationBuckets),
 	)
 
 	op := func(name string) *observation.Operation {
@@ -78,7 +104,9 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 	}
 
 	return &operations{
-		handle: op("Handle"),
+		handle:     op("Handle"),
+		postHandle: op("PostHandle"),
+		preHandle:  op("PreHandle"),
 	}
 }
 

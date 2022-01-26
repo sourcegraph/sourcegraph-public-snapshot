@@ -122,7 +122,7 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	return g.Wait()
 }
 
-func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) error {
+func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
 	revArgs := revsToGitArgs(cs.Revisions)
 	cmd := exec.CommandContext(ctx, "git", append(logArgs, revArgs...)...)
 	cmd.Dir = cs.RepoDir
@@ -136,6 +136,13 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+
+	defer func() {
+		// Always call cmd.Wait to avoid leaving zombie processes around.
+		if e := cmd.Wait(); e != nil {
+			err = multierror.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String())).ErrorOrNil()
+		}
+	}()
 
 	batch := make([]*RawCommit, 0, batchSize)
 	sendBatch := func() {
@@ -151,7 +158,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	scanner := NewCommitScanner(stdoutReader)
 	for scanner.Scan() {
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return nil
 		}
 		cv := scanner.NextRawCommit()
 		batch = append(batch, cv)
@@ -164,22 +171,19 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		sendBatch()
 	}
 
-	if scanner.Err() != nil {
-		return scanner.Err()
-	}
-
-	if err := cmd.Wait(); err != nil {
-		return tryInterpretErrorWithStderr(err, stderrBuf.String())
-	}
-	return nil
+	return scanner.Err()
 }
 
-func tryInterpretErrorWithStderr(err error, stderr string) error {
+func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string) error {
+	if ctx.Err() != nil {
+		// Ignore errors when context is cancelled
+		return nil
+	}
 	if strings.Contains(stderr, "does not have any commits yet") {
 		// Ignore no commits error error
 		return nil
 	}
-	log15.Warn("git search command exited with non-zero status and stderr content: %q", stderr)
+	log15.Warn("git search command exited with non-zero status code", "stderr", stderr)
 	return err
 }
 
@@ -222,11 +226,11 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 		return nil
 	}
 
-	var errors error
+	var errors *multierror.Error
 	for j := range jobs {
-		multierror.Append(errors, runJob(j))
+		errors = multierror.Append(errors, runJob(j))
 	}
-	return errors
+	return errors.ErrorOrNil()
 }
 
 func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
@@ -237,7 +241,7 @@ func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
 		} else if rev.RefGlob != "" {
 			revArgs = append(revArgs, "--glob="+rev.RefGlob)
 		} else if rev.ExcludeRefGlob != "" {
-			revArgs = append(revArgs, "--exclude="+rev.RefGlob)
+			revArgs = append(revArgs, "--exclude="+rev.ExcludeRefGlob)
 		} else {
 			revArgs = append(revArgs, "HEAD")
 		}

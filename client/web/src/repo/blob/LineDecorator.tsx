@@ -3,6 +3,7 @@ import React, { useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom'
 import { ReplaySubject } from 'rxjs'
 
+import { isDefined } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,
@@ -10,7 +11,9 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import { property } from '@sourcegraph/shared/src/util/types'
+
+import styles from './LineDecorator.module.scss'
 
 export interface LineDecoratorProps extends ThemeProps {
     /** 1-based line number */
@@ -86,7 +89,8 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     innerPortalNode?.remove()
                     innerPortalNode = document.createElement('div')
                     innerPortalNode.id = portalID
-                    innerPortalNode.classList.add('line-decoration-attachment-portal')
+                    innerPortalNode.dataset.testid = 'line-decoration'
+                    innerPortalNode.dataset.lineDecorationAttachmentPortal = 'true'
                     codeCell?.append(innerPortalNode)
                     setPortalNode(innerPortalNode)
                 } else {
@@ -127,7 +131,8 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     <LinkOrSpan
                         // Key by content, use index to remove possibility of duplicate keys
                         key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
-                        className="line-decoration-attachment"
+                        className={styles.lineDecorationAttachment}
+                        data-line-decoration-attachment={true}
                         to={attachment.linkURL}
                         data-tooltip={attachment.hoverMessage}
                         // Use target to open external URLs
@@ -136,7 +141,8 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                         rel="noreferrer noopener"
                     >
                         <span
-                            className="line-decoration-attachment__contents"
+                            className={styles.contents}
+                            data-line-decoration-attachment-content={true}
                             // eslint-disable-next-line react/forbid-dom-props
                             style={{
                                 color: style.color,

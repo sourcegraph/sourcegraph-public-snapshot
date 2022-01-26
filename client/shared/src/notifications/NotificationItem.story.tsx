@@ -9,14 +9,13 @@ import { NotificationType } from '@sourcegraph/extension-api-classes'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { NotificationItem } from './NotificationItem'
-import notificationItemStyles from './NotificationItem.scss'
 
 const notificationClassNames = {
-    [NotificationType.Log]: 'alert alert-secondary',
-    [NotificationType.Success]: 'alert alert-success',
-    [NotificationType.Info]: 'alert alert-info',
-    [NotificationType.Warning]: 'alert alert-warning',
-    [NotificationType.Error]: 'alert alert-danger',
+    [NotificationType.Log]: 'bg-secondary',
+    [NotificationType.Success]: 'bg-success',
+    [NotificationType.Info]: 'bg-info',
+    [NotificationType.Warning]: 'bg-warning',
+    [NotificationType.Error]: 'bg-danger',
 }
 
 const onDismiss = action('onDismiss')
@@ -24,7 +23,6 @@ const onDismiss = action('onDismiss')
 const decorator: DecoratorFn = story => (
     <>
         <style>{webStyles}</style>
-        <style>{notificationItemStyles}</style>
         <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
     </>
 )
@@ -45,7 +43,7 @@ export const WithoutProgress: Story = () => {
     return (
         <NotificationItem
             notification={{ message, type, source }}
-            notificationClassNames={notificationClassNames}
+            notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
             onDismiss={onDismiss}
         />
     )
@@ -72,7 +70,7 @@ export const WithProgress: Story = () => {
                     percentage: progressPercentage,
                 }),
             }}
-            notificationClassNames={notificationClassNames}
+            notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
             onDismiss={onDismiss}
         />
     )

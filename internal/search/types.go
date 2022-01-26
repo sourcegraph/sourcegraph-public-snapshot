@@ -8,14 +8,12 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -23,38 +21,8 @@ type TypeParameters interface {
 	typeParametersValue()
 }
 
-func (CommitParameters) typeParametersValue()  {}
-func (DiffParameters) typeParametersValue()    {}
 func (SymbolsParameters) typeParametersValue() {}
 func (TextParameters) typeParametersValue()    {}
-
-type CommitParameters struct {
-	RepoRevs           *RepositoryRevisions
-	PatternInfo        *CommitPatternInfo
-	Query              query.Q
-	Diff               bool
-	ExtraMessageValues []string
-}
-
-type DiffParameters struct {
-	Repo    api.RepoName
-	Options git.RawLogDiffSearchOptions
-}
-
-// CommitPatternInfo is the data type that describes the properties of
-// a pattern used for commit search.
-type CommitPatternInfo struct {
-	Pattern         string
-	IsRegExp        bool
-	IsCaseSensitive bool
-	FileMatchLimit  int32
-
-	IncludePatterns []string
-	ExcludePattern  string
-
-	PathPatternsAreRegExps       bool
-	PathPatternsAreCaseSensitive bool
-}
 
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
@@ -170,13 +138,14 @@ type SearcherParameters struct {
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
 	RepoOptions RepoOptions
+	Features    Features
 	ResultTypes result.Types
 	Timeout     time.Duration
 
 	Repos []*RepositoryRevisions
 
 	// perf: For global queries, we only resolve private repos.
-	UserPrivateRepos []types.RepoName
+	UserPrivateRepos []types.MinimalRepo
 	Mode             GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern
@@ -195,16 +164,6 @@ type TextParameters struct {
 
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
-}
-
-// TextParametersForCommitParameters is an intermediate type based on
-// TextParameters that encodes parameters exclusively for a commit search. The
-// commit search internals converts this type to CommitParameters. The
-// commitParameter type definitions will be merged in future.
-type TextParametersForCommitParameters struct {
-	PatternInfo *CommitPatternInfo
-	Repos       []*RepositoryRevisions
-	Query       query.Q
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
@@ -289,22 +248,39 @@ func (p *TextPatternInfo) String() string {
 	return fmt.Sprintf("TextPatternInfo{%s}", strings.Join(args, ","))
 }
 
+// Features describe feature flags for a request. This is state that differs
+// across users and time. It is created based on user feature flags and
+// configuration.
+//
+// The Feature struct should be initialized once per search request early on.
+//
+// The default value for a Feature should be the go zero value, such that
+// creating an empty Feature struct represents the usual search
+// experience. This is to avoid needing to update a large number of tests when
+// a new feature flag is introduced, and instead changes are localized to this
+// struct and read sites of a flag.
+type Features struct {
+	// ContentBasedLangFilters when true will use the language detected from
+	// the content of the file, rather than just file name patterns. This is
+	// currently just supported by Zoekt.
+	ContentBasedLangFilters bool
+}
+
 type RepoOptions struct {
-	RepoFilters       []string
-	MinusRepoFilters  []string
-	RepoGroupFilters  []string
-	SearchContextSpec string
-	UserSettings      *schema.Settings
-	NoForks           bool
-	OnlyForks         bool
-	NoArchived        bool
-	OnlyArchived      bool
-	CommitAfter       string
-	Visibility        query.RepoVisibility
-	Ranked            bool // Return results ordered by rank
-	Limit             int
-	CacheLookup       bool
-	Query             query.Q
+	RepoFilters              []string
+	MinusRepoFilters         []string
+	CaseSensitiveRepoFilters bool
+	SearchContextSpec        string
+	UserSettings             *schema.Settings
+	NoForks                  bool
+	OnlyForks                bool
+	NoArchived               bool
+	OnlyArchived             bool
+	CommitAfter              string
+	Visibility               query.RepoVisibility
+	Limit                    int
+	Cursors                  []*types.Cursor
+	Query                    query.Q
 }
 
 func (op *RepoOptions) String() string {
@@ -322,11 +298,12 @@ func (op *RepoOptions) String() string {
 	if len(op.MinusRepoFilters) > 0 {
 		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
 	}
-	if len(op.RepoGroupFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " groups=%v", op.RepoGroupFilters)
-	}
 	if op.CommitAfter != "" {
 		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
+	}
+
+	if op.CaseSensitiveRepoFilters {
+		b.WriteString(" CaseSensitiveRepoFilters")
 	}
 
 	if op.NoForks {

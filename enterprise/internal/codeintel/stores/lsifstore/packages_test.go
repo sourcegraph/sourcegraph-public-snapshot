@@ -10,19 +10,16 @@ import (
 )
 
 func TestDatabasePackageInformation(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
-	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "251"); err != nil {
+	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "114"); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no package information")
 	} else {
 		expected := precise.PackageInformationData{
-			Name:    "github.com/sourcegraph/lsif-go",
-			Version: "v0.0.0-ad3507cbeb18",
+			Name:    "https://github.com/sourcegraph/lsif-go",
+			Version: "ad3507cbeb18",
 		}
 
 		if diff := cmp.Diff(expected, actual); diff != "" {

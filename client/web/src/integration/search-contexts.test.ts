@@ -4,7 +4,7 @@ import { range } from 'lodash'
 import { test } from 'mocha'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -14,6 +14,7 @@ import { WebIntegrationTestContext, createWebIntegrationTestContext } from './co
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -41,7 +42,7 @@ describe('Search contexts', () => {
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
-    const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations> = {
+    const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ViewerSettings: () => ({
             viewerSettings: {
                 __typename: 'SettingsCascade',
@@ -170,7 +171,9 @@ describe('Search contexts', () => {
     test('Create search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+            RepositoriesByNames: ({ names }) => ({
+                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
+            }),
             CreateSearchContext: ({ searchContext, repositories }) => ({
                 createSearchContext: {
                     __typename: 'SearchContext',
@@ -183,6 +186,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: '',
                     viewerCanManage: true,
+                    query: '',
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
@@ -226,19 +230,26 @@ describe('Search contexts', () => {
 
         // Test configuration
         await driver.page.click('[data-testid="repositories-config-button"]')
-        await driver.page.waitForSelector('[data-testid="repositories-config-button"] .text-success')
+        await driver.page.waitForSelector(
+            '[data-testid="repositories-config-button"] [data-testid="repositories-config-success"]'
+        )
+
+        // Take Snapshot
+        await percySnapshotWithVariants(driver.page, 'Create search context page')
 
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
 
         // Wait for submit request to finish and redirect to list page
-        await driver.page.waitForSelector('.search-contexts-list-page')
+        await driver.page.waitForSelector('[data-testid="search-contexts-list-page"]')
     })
 
     test('Edit search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+            RepositoriesByNames: ({ names }) => ({
+                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
+            }),
             UpdateSearchContext: ({ id, searchContext, repositories }) => ({
                 updateSearchContext: {
                     __typename: 'SearchContext',
@@ -255,6 +266,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    query: '',
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
@@ -278,6 +290,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    query: '',
                     repositories: [
                         {
                             __typename: 'SearchContextRepositoryRevisions',
@@ -327,13 +340,15 @@ describe('Search contexts', () => {
 
         // Test configuration
         await driver.page.click('[data-testid="repositories-config-button"]')
-        await driver.page.waitForSelector('[data-testid="repositories-config-button"] .text-success')
+        await driver.page.waitForSelector(
+            '[data-testid="repositories-config-button"] [data-testid="repositories-config-success"]'
+        )
 
         // Click save
         await driver.page.click('[data-testid="search-context-submit-button"]')
 
         // Wait for submit request to finish and redirect to list page
-        await driver.page.waitForSelector('.search-contexts-list-page')
+        await driver.page.waitForSelector('[data-testid="search-contexts-list-page"]')
     })
 
     test('Cannot edit search context without necessary permissions', async () => {
@@ -351,6 +366,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: false,
+                    query: '',
                     repositories: [],
                 },
             }),
@@ -358,8 +374,10 @@ describe('Search contexts', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/context-1/edit')
 
-        await driver.page.waitForSelector('.alert-danger')
-        const errorText = await driver.page.evaluate(() => document.querySelector('.alert-danger')?.textContent)
+        await driver.page.waitForSelector('[data-testid="search-contexts-alert-danger"]')
+        const errorText = await driver.page.evaluate(
+            () => document.querySelector('[data-testid="search-contexts-alert-danger"]')?.textContent
+        )
         expect(errorText).toContain('You do not have sufficient permissions to edit this context.')
     })
 
@@ -388,6 +406,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    query: '',
                     repositories: [
                         {
                             __typename: 'SearchContextRepositoryRevisions',
@@ -410,7 +429,7 @@ describe('Search contexts', () => {
         await driver.page.click('[data-testid="confirm-delete-search-context"]')
 
         // Wait for delete request to finish and redirect to list page
-        await driver.page.waitForSelector('.search-contexts-list-page')
+        await driver.page.waitForSelector('[data-testid="search-contexts-list-page"]')
     })
 
     test('Infinite scrolling in dropdown menu', async () => {
@@ -434,6 +453,7 @@ describe('Search contexts', () => {
                     viewerCanManage: false,
                     description: '',
                     repositories: [],
+                    query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                 })) as ISearchContext[]
 
@@ -481,12 +501,14 @@ describe('Search contexts', () => {
 
         // Wait for correct number of total elements to load
         await driver.page.waitFor(
-            searchContextsCount =>
+            (searchContextsCount: number) =>
                 document.querySelectorAll('[data-testid="search-context-menu-item-name"]').length ===
                 searchContextsCount,
             {},
             searchContextsCount
         )
+
+        await percySnapshotWithVariants(driver.page, 'Search contexts list page')
     })
 
     test('Switching contexts with empty query', async () => {
@@ -510,6 +532,7 @@ describe('Search contexts', () => {
                     viewerCanManage: false,
                     description: '',
                     repositories: [],
+                    query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                 })) as ISearchContext[]
 

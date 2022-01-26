@@ -1,4 +1,4 @@
-import { SiteConfiguration } from './schema/site.schema'
+import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev'
 
@@ -15,7 +15,6 @@ export interface AuthProvider {
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
-    csrfToken: string
     userAgentIsBot: boolean
 
     /**
@@ -94,8 +93,23 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the batch changes feature is enabled on the site. */
     batchChangesEnabled: boolean
 
+    /** Whether the warning about unconfigured webhooks is disabled within Batch
+     * Changes. */
+    batchChangesDisableWebhooksWarning: boolean
+
+    batchChangesWebhookLogsEnabled: boolean
+
+    /** Whether executors are enabled on the site. */
+    executorsEnabled: boolean
+
     /** Whether the code intel auto-indexer feature is enabled on the site. */
     codeIntelAutoIndexingEnabled: boolean
+
+    /** Whether global policies are enabled for auto-indexing. */
+    codeIntelAutoIndexingAllowGlobalPolicies: boolean
+
+    /** Whether the new gql api for code insights is enabled. */
+    codeInsightsGqlApiEnabled: boolean
 
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'

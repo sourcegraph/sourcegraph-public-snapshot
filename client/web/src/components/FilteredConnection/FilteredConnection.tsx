@@ -18,7 +18,7 @@ import {
     share,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
@@ -343,6 +343,8 @@ export class FilteredConnection<
                                 this.props.history.replace({
                                     search: searchFragment,
                                     hash: this.props.location.hash,
+                                    // Do not throw away flash messages
+                                    state: this.props.location.state,
                                 })
                             }
                         }

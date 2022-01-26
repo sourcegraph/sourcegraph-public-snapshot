@@ -6,7 +6,6 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../WebStory'
 
 import { AddExternalServicesPage } from './AddExternalServicesPage'
-import { fetchExternalService as _fetchExternalService } from './backend'
 import { codeHostExternalServices, nonCodeHostExternalServices } from './externalServices'
 
 const { add } = storiesOf('web/External services/AddExternalServicesPage', module)

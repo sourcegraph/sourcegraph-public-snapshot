@@ -16,8 +16,8 @@ type Config struct {
 	ManageBucket bool
 	Bucket       string
 	TTL          time.Duration
-	S3           S3Config
-	GCS          GCSConfig
+	S3           S3Config  // loader, not embedded config
+	GCS          GCSConfig // loader, not embedded config
 }
 
 type loader interface {

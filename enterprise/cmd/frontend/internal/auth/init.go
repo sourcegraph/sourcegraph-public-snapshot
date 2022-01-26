@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // Init must be called by the frontend to initialize the auth middlewares.
-func Init(db dbutil.DB) {
+func Init(db database.DB) {
 	githuboauth.Init(db)
 	gitlaboauth.Init(db)
 

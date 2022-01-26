@@ -6,8 +6,9 @@ import { BehaviorSubject, of } from 'rxjs'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
+import { AppRouterContainer } from '../../components/AppRouterContainer'
 import webStyles from '../../SourcegraphWebApp.scss'
 
 import { StatusBar } from './StatusBar'
@@ -17,9 +18,9 @@ const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undef
 const { add } = storiesOf('web/extensions/StatusBar', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
-        <div className="layout__app-router-container">
+        <AppRouterContainer>
             <div className="container mt-3">{story()}</div>
-        </div>
+        </AppRouterContainer>
     </>
 ))
 

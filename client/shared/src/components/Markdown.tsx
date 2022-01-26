@@ -4,6 +4,8 @@ import { useHistory } from 'react-router'
 
 import { createLinkClickHandler } from '../util/link-click-handler/linkClickHandler'
 
+import styles from './Markdown.module.scss'
+
 interface Props {
     wrapper?: 'div' | 'span'
     dangerousInnerHTML: string
@@ -30,7 +32,7 @@ export const Markdown: React.FunctionComponent<Props> = ({
             data-testid={testId}
             onClick={onClick}
             ref={refFn}
-            className={classNames(className, 'markdown')}
+            className={classNames(className, styles.markdown)}
             dangerouslySetInnerHTML={{ __html: dangerousInnerHTML }}
         />
     )

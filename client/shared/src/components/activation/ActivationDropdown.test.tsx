@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render } from '@testing-library/react'
 import * as H from 'history'
 import React from 'react'
 import sinon from 'sinon'
@@ -48,13 +48,13 @@ const baseActivation: Activation = {
 describe('ActivationDropdown', () => {
     it('renders the activation dropdown', () => {
         expect(
-            mount(
+            render(
                 <ActivationDropdown
                     activation={baseActivation}
                     history={H.createMemoryHistory({ keyLength: 0 })}
                     alwaysShow={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })

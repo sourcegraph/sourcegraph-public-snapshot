@@ -5,11 +5,11 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
-import { Settings } from '../schema/settings.schema'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
@@ -52,6 +52,15 @@ describe('Blob viewer', () => {
             createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
         TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
         Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
+        FileNames: () => ({
+            repository: {
+                __typename: 'Repository',
+                commit: {
+                    __typename: 'GitCommit',
+                    fileNames: ['README.md'],
+                },
+            },
+        }),
     }
 
     beforeEach(() => {
@@ -145,15 +154,6 @@ describe('Blob viewer', () => {
 
     // Describes the ways the blob viewer can be extended through Sourcegraph extensions.
     describe('extensibility', () => {
-        const getHoverContents = async (): Promise<string[]> => {
-            // Search for any child of e2e-tooltip-content: as e2e-tooltip-content has display: contents,
-            // it will never be detected as visible by waitForSelector(), but its children will.
-            await driver.page.waitForSelector('.test-tooltip-content *', { visible: true })
-            return driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-tooltip-content')].map(content => content.textContent ?? '')
-            )
-        }
-
         beforeEach(() => {
             const userSettings: Settings = {
                 extensions: {
@@ -277,19 +277,6 @@ describe('Blob viewer', () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
             await driver.page.waitForSelector('.test-repo-blob')
             // TODO
-        })
-
-        it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async () => {
-            await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-
-            // Click on "log" in "console.log()" in line 2
-            await driver.page.waitForSelector('.test-log-token', { visible: true })
-            await driver.page.click('.test-log-token')
-
-            await driver.assertWindowLocation('/github.com/sourcegraph/test/-/blob/test.ts?L2:9')
-            assert.deepStrictEqual(await getHoverContents(), ['Test hover content\n'])
-            // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
-            // await percySnapshot(driver.page, this.test!.fullTitle())
         })
 
         interface MockExtension {
@@ -525,7 +512,7 @@ describe('Blob viewer', () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // Wait for some line decoration attachment portal
-            await driver.page.waitForSelector('.line-decoration-attachment-portal', { timeout })
+            await driver.page.waitForSelector('[data-line-decoration-attachment-portal]', { timeout })
             assert(
                 !(await driver.page.$('#line-decoration-attachment-1')),
                 'Expected line 1 to not have a decoration attachment portal'
@@ -1089,7 +1076,7 @@ describe('Blob viewer', () => {
             const HOVER_THRESHOLD = 5
             const HOVER_COUNT_KEY = 'hover-count'
 
-            it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
+            it.skip(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
                 testContext.server.get('https://github.com/*').intercept((request, response) => {
                     response.sendStatus(200)
                 })
@@ -1111,10 +1098,10 @@ describe('Blob viewer', () => {
                     'Expected popover to not be displayed before user reaches hover threshold'
                 )
 
-                // Click 'console' and 'log' 5 times combined
+                // Hover over 'console' and 'log' 5 times combined
                 await driver.page.waitForSelector('.test-log-token', { visible: true })
                 for (let index = 0; index < HOVER_THRESHOLD; index++) {
-                    await driver.page.click(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
+                    await driver.page.hover(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
                     await driver.page.waitForSelector('[data-testid="hover-overlay"]', { visible: true })
                 }
 
@@ -1135,7 +1122,7 @@ describe('Blob viewer', () => {
                 )
             })
 
-            it(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {
+            it.skip(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
                 await driver.page.evaluate(HOVER_COUNT_KEY => localStorage.removeItem(HOVER_COUNT_KEY), HOVER_COUNT_KEY)
                 await driver.page.reload()
@@ -1146,10 +1133,10 @@ describe('Blob viewer', () => {
                     'Expected "Install browser extension" alert to not be displayed before user reaches hover threshold'
                 )
 
-                // Click 'console' and 'log' $HOVER_THRESHOLD times combined
+                // Hover over 'console' and 'log' $HOVER_THRESHOLD times combined
                 await driver.page.waitForSelector('.test-log-token', { visible: true })
                 for (let index = 0; index < HOVER_THRESHOLD; index++) {
-                    await driver.page.click(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
+                    await driver.page.hover(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
                     await driver.page.waitForSelector('[data-testid="hover-overlay"]', { visible: true })
                 }
                 await driver.page.reload()
@@ -1162,14 +1149,14 @@ describe('Blob viewer', () => {
                 await driver.page.reload()
 
                 // Alert should not show up now that the user has dismissed it once
-                await driver.page.waitForSelector('.repo-header')
+                await driver.page.waitForSelector('[data-testid="repo-header"]')
                 // `browserExtensionInstalled` emits false after 500ms, so
-                // wait 500ms after .repo-header is visible, at which point we know
+                // wait 500ms after [data-testid="repo-header"] is visible, at which point we know
                 // that `RepoContainer` has subscribed to `browserExtensionInstalled`.
                 // After this point, we know whether or not the alert will be displayed for this page load.
                 await driver.page.waitFor(500)
                 assert(
-                    !(await driver.page.$('.install-browser-extension-alert')),
+                    !(await driver.page.$('[data-testid="install-browser-extension-alert"]')),
                     'Expected "Install browser extension" alert to not be displayed before user dismisses it once'
                 )
             })

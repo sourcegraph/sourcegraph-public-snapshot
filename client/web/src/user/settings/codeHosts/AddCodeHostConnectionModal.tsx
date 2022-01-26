@@ -1,15 +1,18 @@
-import Dialog from '@reach/dialog'
-import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike } from '@sourcegraph/common'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { addExternalService } from '../../../components/externalServices/backend'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+
+import styles from './AddCodeHostConnectionModal.module.scss'
+import { EncryptedDataIcon } from './components/EncryptedDataIcon'
+import { getMachineUserFragment } from './modalHints'
 
 interface CodeHostConfig {
     url: string
@@ -35,8 +38,10 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
 }> = ({ ownerID, serviceName, serviceKind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
+    const [didAckMachineUserHint, setAckMachineUserHint] = useState(false)
 
     const onChangeToken: React.ChangeEventHandler<HTMLInputElement> = event => setToken(event.target.value)
+    const machineUserFragment = getMachineUserFragment(serviceName)
 
     const handleError = useCallback(
         (error: ErrorLike | string): void => {
@@ -72,8 +77,8 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
     )
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third user-code-hosts-page__modal--plain p-4 rounded border"
+        <Modal
+            className={styles.modalPlain}
             aria-labelledby={`heading--connect-with-${serviceName}`}
             onDismiss={onDidCancel}
         >
@@ -83,42 +88,53 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                 </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
-                        <label htmlFor="code-host-token">Personal access token</label>
-                        <div className="position-relative">
-                            <input
-                                id="code-host-token"
-                                name="code-host-token"
-                                type="text"
-                                value={token}
-                                onChange={onChangeToken}
-                                className="form-control pr-4"
-                                autoComplete="off"
-                            />
-                            <small>
-                                <ShieldCheckIcon
-                                    className="icon-inline user-code-hosts-page__icon--inside text-muted"
-                                    data-tooltip="Data will be encrypted and will not be visible again."
-                                />
-                            </small>
-                        </div>
-
-                        <p className="mt-1">{hintFragment}</p>
+                        {didAckMachineUserHint ? (
+                            <>
+                                <label htmlFor="code-host-token">Access token</label>
+                                <div className="position-relative">
+                                    <input
+                                        id="code-host-token"
+                                        name="code-host-token"
+                                        type="text"
+                                        value={token}
+                                        onChange={onChangeToken}
+                                        className="form-control pr-4"
+                                        autoComplete="off"
+                                    />
+                                    <small>
+                                        <EncryptedDataIcon />
+                                    </small>
+                                </div>
+                                <p className="mt-1">{hintFragment}</p>
+                            </>
+                        ) : (
+                            machineUserFragment
+                        )}
                     </div>
                     <div className="d-flex justify-content-end">
-                        <button type="button" className="btn btn-outline-secondary mr-2" onClick={onDidCancel}>
+                        <Button className="mr-2" onClick={onDidCancel} outline={true} variant="secondary">
                             Cancel
-                        </button>
-                        <LoaderButton
-                            type="submit"
-                            className="btn btn-primary"
-                            loading={isLoading}
-                            disabled={!token || isLoading}
-                            label="Add code host connection"
-                            alwaysShowLabel={true}
-                        />
+                        </Button>
+                        {didAckMachineUserHint ? (
+                            <LoaderButton
+                                type="submit"
+                                className="btn btn-primary"
+                                loading={isLoading}
+                                disabled={!token || isLoading}
+                                label="Add code host connection"
+                                alwaysShowLabel={true}
+                            />
+                        ) : (
+                            <Button
+                                onClick={() => setAckMachineUserHint(previousAckStatus => !previousAckStatus)}
+                                variant="secondary"
+                            >
+                                I understand, continue
+                            </Button>
+                        )}
                     </div>
                 </Form>
             </div>
-        </Dialog>
+        </Modal>
     )
 }

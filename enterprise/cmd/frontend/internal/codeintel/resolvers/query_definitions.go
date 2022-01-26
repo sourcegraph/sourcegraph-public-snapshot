@@ -7,7 +7,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -18,7 +17,7 @@ const DefinitionsLimit = 100
 
 // Definitions returns the list of source locations that define the symbol at the given position.
 func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_ []AdjustedLocation, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Definitions", r.operations.definitions, slowDefinitionsRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "Definitions", r.operations.definitions, slowDefinitionsRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -44,7 +43,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	// traversal and should not require an additional moniker search in the same index.
 
 	for i := range adjustedUploads {
-		traceLog(log.Int("uploadID", adjustedUploads[i].Upload.ID))
+		trace.Log(log.Int("uploadID", adjustedUploads[i].Upload.ID))
 
 		locations, _, err := r.lsifStore.Definitions(
 			ctx,
@@ -59,12 +58,8 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 			return nil, errors.Wrap(err, "lsifStore.Definitions")
 		}
 		if len(locations) > 0 {
-			uploadsByID := map[int]dbstore.Dump{
-				adjustedUploads[i].Upload.ID: adjustedUploads[i].Upload,
-			}
-
 			// If we have a local definition, we won't find a better one and can exit early
-			return r.adjustLocations(ctx, uploadsByID, locations)
+			return r.adjustLocations(ctx, locations)
 		}
 	}
 
@@ -73,7 +68,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numMonikers", len(orderedMonikers)),
 		log.String("monikers", monikersToString(orderedMonikers)),
 	)
@@ -85,9 +80,9 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
-	traceLog(
-		log.Int("numDefinitionUploads", len(uploads)),
-		log.String("definitionUploads", uploadIDsToString(uploads)),
+	trace.Log(
+		log.Int("numXrepoDefinitionUploads", len(uploads)),
+		log.String("xrepoDefinitionUploads", uploadIDsToString(uploads)),
 	)
 
 	// Perform the moniker search
@@ -95,22 +90,17 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
-	traceLog(log.Int("numLocations", len(locations)))
+	trace.Log(log.Int("numXrepoLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all definitions
 	// are occurring at the same commit they are looking at.
 
-	uploadsByID := make(map[int]dbstore.Dump, len(uploads))
-	for i := range uploads {
-		uploadsByID[uploads[i].ID] = uploads[i]
-	}
-
-	adjustedLocations, err := r.adjustLocations(ctx, uploadsByID, locations)
+	adjustedLocations, err := r.adjustLocations(ctx, locations)
 	if err != nil {
 		return nil, err
 	}
-	traceLog(log.Int("numAdjustedLocations", len(adjustedLocations)))
+	trace.Log(log.Int("numAdjustedXrepoLocations", len(adjustedLocations)))
 
 	return adjustedLocations, nil
 }

@@ -1,18 +1,17 @@
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import React from 'react'
-import { Link } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../components/form/form-input/FormInput'
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
 import { useField } from '../../../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
 import { ReachableInsight } from '../../../../../../../core/backend/code-insights-backend-types'
-import { Badge } from '../../../dashboard-select/components/badge/Badge'
+import { InsightsBadge } from '../../../dashboard-select/components/insights-badge/InsightsBadge'
 import { TruncatedText } from '../../../dashboard-select/components/trancated-text/TrancatedText'
 
 import styles from './AddInsightModalContent.module.scss'
@@ -79,7 +78,9 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                         />
 
                         <TruncatedText>{insight.title}</TruncatedText>
-                        <Badge value={insight.owner.name} className={styles.insightOwnerName} />
+                        {insight.owner.name.length > 0 && (
+                            <InsightsBadge value={insight.owner.name} className={styles.insightOwnerName} />
+                        )}
                     </label>
                 ))}
             </fieldset>

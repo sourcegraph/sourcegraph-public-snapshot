@@ -2,13 +2,13 @@
 import fs from 'fs'
 import path from 'path'
 
-import { omit } from 'lodash'
+import { omit, cloneDeep, curry } from 'lodash'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
 import { Configuration } from 'webpack'
 
-import extensionInfo from '../src/browser-extension/manifest.spec.json'
+import manifestSpec from '../src/browser-extension/manifest.spec.json'
 import schema from '../src/browser-extension/schema.json'
 
 /**
@@ -45,12 +45,16 @@ export const WEBPACK_STATS_OPTIONS: Configuration['stats'] = {
     colors: true,
 }
 
-function ensurePaths(): void {
+function ensurePaths(browser?: Browser): void {
     shelljs.mkdir('-p', 'build/dist')
     shelljs.mkdir('-p', 'build/bundles')
-    shelljs.mkdir('-p', 'build/chrome')
-    shelljs.mkdir('-p', 'build/firefox')
-    shelljs.mkdir('-p', 'build/safari')
+    if (browser) {
+        shelljs.mkdir('-p', `build/${browser}`)
+    } else {
+        shelljs.mkdir('-p', 'build/chrome')
+        shelljs.mkdir('-p', 'build/firefox')
+        shelljs.mkdir('-p', 'build/safari')
+    }
 }
 
 /**
@@ -149,7 +153,7 @@ const BROWSER_BLOCKLIST = {
     safari: [] as const,
 }
 
-function writeSchema(environment: BuildEnvironment, browser: Browser, writeDirectory: string): void {
+function writeSchema(writeDirectory: string): void {
     fs.writeFileSync(`${writeDirectory}/schema.json`, JSON.stringify(schema, null, 4))
 }
 
@@ -158,6 +162,7 @@ const version = process.env.BROWSER_EXTENSION_VERSION || utcVersion()
 const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
 
 function writeManifest(environment: BuildEnvironment, browser: Browser, writeDirectory: string): void {
+    const extensionInfo = cloneDeep(manifestSpec)
     const manifest = {
         ...omit(extensionInfo, ['dev', 'prod', ...BROWSER_BLOCKLIST[browser]]),
         ...omit(extensionInfo[environment], BROWSER_BLOCKLIST[browser]),
@@ -199,49 +204,45 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
     fs.writeFileSync(`${writeDirectory}/manifest.json`, JSON.stringify(manifest, null, 4))
 }
 
-function buildForBrowser(browser: Browser): (environment: BuildEnvironment) => () => void {
-    ensurePaths()
-    return environment => {
-        const title = BROWSER_TITLES[browser]
+const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment): (() => void) => () => {
+    // Allow only building for specific browser targets.
+    // Useful in local dev for faster builds.
+    if (process.env.TARGETS && !process.env.TARGETS.includes(browser)) {
+        return
+    }
 
-        const buildDirectory = path.resolve(process.cwd(), `${BUILDS_DIR}/${browser}`)
+    const title = BROWSER_TITLES[browser]
+    signale.await(`Building the ${title} ${environment} bundle`)
 
-        writeManifest(environment, browser, buildDirectory)
-        writeSchema(environment, browser, buildDirectory)
+    ensurePaths(browser)
 
-        return () => {
-            // Allow only building for specific browser targets.
-            // Useful in local dev for faster builds.
-            if (process.env.TARGETS && !process.env.TARGETS.includes(browser)) {
-                return
-            }
+    const buildDirectory = path.resolve(process.cwd(), `${BUILDS_DIR}/${browser}`)
 
-            signale.await(`Building the ${title} ${environment} bundle`)
+    writeManifest(environment, browser, buildDirectory)
+    writeSchema(buildDirectory)
 
-            copyExtensionAssets(buildDirectory)
-            if (shouldBuildWithInlineExtensions(browser)) {
-                copyInlineExtensions(buildDirectory)
-            }
+    copyExtensionAssets(buildDirectory)
+    if (shouldBuildWithInlineExtensions(browser)) {
+        copyInlineExtensions(buildDirectory)
+    }
 
-            // Create a bundle by zipping the web extension directory.
-            const browserBundleZip = BROWSER_BUNDLE_ZIPS[browser]
-            if (browserBundleZip) {
-                const zipDestination = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${browserBundleZip}`)
-                if (zipDestination) {
-                    shelljs.mkdir('-p', `./${BUILDS_DIR}/bundles`)
-                    shelljs.exec(`cd ${buildDirectory} && zip -q -r ${zipDestination} *`)
-                }
-            }
-
-            // Safari-specific build step
-            if (browser === 'safari') {
-                buildSafariExtensionApp()
-            }
-
-            signale.success(`Done building the ${title} ${environment} bundle`)
+    // Create a bundle by zipping the web extension directory.
+    const browserBundleZip = BROWSER_BUNDLE_ZIPS[browser]
+    if (browserBundleZip) {
+        const zipDestination = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${browserBundleZip}`)
+        if (zipDestination) {
+            shelljs.mkdir('-p', `./${BUILDS_DIR}/bundles`)
+            shelljs.exec(`cd ${buildDirectory} && zip -q -r ${zipDestination} *`)
         }
     }
-}
+
+    // Safari-specific build step
+    if (browser === 'safari') {
+        buildSafariExtensionApp()
+    }
+
+    signale.success(`Done building the ${title} ${environment} bundle`)
+})
 
 export const buildFirefox = buildForBrowser('firefox')
 export const buildChrome = buildForBrowser('chrome')

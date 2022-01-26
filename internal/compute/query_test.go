@@ -20,8 +20,12 @@ func TestParse(t *testing.T) {
 		Equal(t, test("not a(foo)"))
 
 	autogold.Want("`content` normalized",
-		"Command: `Match only: foo`").
+		"Command: `Match only search pattern: foo, compute pattern: (?i:foo)`").
 		Equal(t, test("content:'foo'"))
+
+	autogold.Want("`case:yes` honored for `Match only` command",
+		"Command: `Match only search pattern: milk, compute pattern: milk`, Parameters: `\"case:yes\"`").
+		Equal(t, test("milk case:yes"))
 
 	autogold.Want("no pattern",
 		"compute endpoint expects nonempty pattern").

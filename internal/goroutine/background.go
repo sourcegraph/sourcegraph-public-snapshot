@@ -6,7 +6,12 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
+
+var GracefulShutdownTimeout = env.MustGetDuration("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", 10*time.Second, "Graceful shutdown timeout")
 
 // StartableRoutine represents a component of a binary that consists of a long
 // running process.
@@ -47,7 +52,7 @@ type WaitableBackgroundRoutine interface {
 // immediately.
 func MonitorBackgroundRoutines(ctx context.Context, routines ...BackgroundRoutine) {
 	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT)
+	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 	monitorBackgroundRoutines(ctx, signals, routines...)
 }
 

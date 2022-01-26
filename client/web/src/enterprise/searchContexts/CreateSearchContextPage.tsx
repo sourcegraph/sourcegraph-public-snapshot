@@ -3,12 +3,14 @@ import React, { useCallback } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { SearchContextProps } from '@sourcegraph/search'
 import {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
@@ -17,7 +19,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { SearchContextProps } from '../../search'
+import { parseSearchURLQuery } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -25,19 +27,24 @@ export interface CreateSearchContextPageProps
     extends RouteComponentProps,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'> {
+        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
+    isSourcegraphDotCom: boolean
 }
 
 export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
-    const { authenticatedUser, createSearchContext } = props
+    const { authenticatedUser, createSearchContext, platformContext } = props
+
+    const query = parseSearchURLQuery(props.location.search)
+
     const onSubmit = useCallback(
         (
             id: Scalars['ID'] | undefined,
             searchContext: SearchContextInput,
             repositories: SearchContextRepositoryRevisionsInput[]
-        ): Observable<ISearchContext> => createSearchContext({ searchContext, repositories }),
-        [createSearchContext]
+        ): Observable<ISearchContext> => createSearchContext({ searchContext, repositories }, platformContext),
+        [createSearchContext, platformContext]
     )
 
     if (!authenticatedUser) {
@@ -76,7 +83,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                         }
                         className="mb-3"
                     />
-                    <SearchContextForm {...props} onSubmit={onSubmit} />
+                    <SearchContextForm {...props} query={query} onSubmit={onSubmit} />
                 </div>
             </Page>
         </div>

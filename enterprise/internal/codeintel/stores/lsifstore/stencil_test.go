@@ -10,9 +10,6 @@ import (
 )
 
 func TestStencil(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	ranges, err := store.Stencil(context.Background(), testBundleID, "internal/index/indexer.go")
@@ -252,6 +249,7 @@ func TestStencil(t *testing.T) {
 		"198:10-198:12",
 		"198:4-198:9",
 		"19:5-19:12",
+		"1:8-1:13",
 		"200:3-200:12",
 		"201:19-201:24",
 		"201:7-201:9",

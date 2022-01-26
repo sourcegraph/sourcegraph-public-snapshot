@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -35,7 +34,7 @@ type repositoryArgs struct {
 func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
 	opt := database.ReposListOptions{
 		OrderBy: database.RepoListOrderBy{{
-			Field:      toDBRepoListColumn(args.OrderBy),
+			Field:      ToDBRepoListColumn(args.OrderBy),
 			Descending: args.Descending,
 		}},
 	}
@@ -46,21 +45,23 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 		opt.Query = *args.Query
 	}
 	if args.After != nil {
-		cursor, err := unmarshalRepositoryCursor(args.After)
+		cursor, err := UnmarshalRepositoryCursor(args.After)
 		if err != nil {
 			return nil, err
 		}
-		opt.CursorColumn = cursor.Column
-		opt.CursorValue = cursor.Value
-		opt.CursorDirection = cursor.Direction
+		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.CursorColumn = string(toDBRepoListColumn(args.OrderBy))
-		opt.CursorValue = ""
-		if args.Descending {
-			opt.CursorDirection = "prev"
-		} else {
-			opt.CursorDirection = "next"
+		cursor := types.Cursor{
+			Column: string(ToDBRepoListColumn(args.OrderBy)),
 		}
+
+		if args.Descending {
+			cursor.Direction = "prev"
+		} else {
+			cursor.Direction = "next"
+		}
+
+		opt.Cursors = append(opt.Cursors, &cursor)
 	}
 
 	opt.FailedFetch = args.FailedFetch
@@ -87,10 +88,21 @@ type RepositoryConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+func NewRepositoryConnectionResolver(db database.DB, opt database.ReposListOptions, cloned, notCloned, indexed, notIndexed bool) RepositoryConnectionResolver {
+	return &repositoryConnectionResolver{
+		db:         db,
+		opt:        opt,
+		cloned:     cloned,
+		notCloned:  notCloned,
+		indexed:    indexed,
+		notIndexed: notIndexed,
+	}
+}
+
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	db          dbutil.DB
+	db          database.DB
 	opt         database.ReposListOptions
 	cloned      bool
 	notCloned   bool
@@ -159,7 +171,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset != nil {
 				opt2.LimitOffset.Limit++
 			}
-			repos, err := backend.Repos.List(ctx, opt2)
+			repos, err := backend.NewRepos(r.db.Repos()).List(ctx, opt2)
 			if err != nil {
 				r.err = err
 				return
@@ -208,7 +220,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(r.db), repo))
+		resolvers = append(resolvers, NewRepositoryResolver(r.db, repo))
 	}
 	return resolvers, nil
 }
@@ -261,7 +273,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}()
 	}
 
-	count, err := database.Repos(r.db).Count(ctx, r.opt)
+	count, err := r.db.Repos().Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }
 
@@ -270,35 +282,29 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	if err != nil {
 		return nil, err
 	}
-	if len(repos) == 0 || r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit {
+	if len(repos) == 0 || r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit || len(r.opt.Cursors) == 0 {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
+	cursor := r.opt.Cursors[0]
+
 	var value string
-	switch r.opt.CursorColumn {
+	switch cursor.Column {
 	case string(database.RepoListName):
 		value = string(repos[len(repos)-1].Name)
 	case string(database.RepoListCreatedAt):
 		value = repos[len(repos)-1].CreatedAt.Format("2006-01-02 15:04:05.999999")
 	}
-	return graphqlutil.NextPageCursor(marshalRepositoryCursor(
-		&repositoryCursor{
-			Column:    r.opt.CursorColumn,
+	return graphqlutil.NextPageCursor(MarshalRepositoryCursor(
+		&types.Cursor{
+			Column:    cursor.Column,
 			Value:     value,
-			Direction: r.opt.CursorDirection,
+			Direction: cursor.Direction,
 		},
 	)), nil
 }
 
-func repoNamesToStrings(repoNames []api.RepoName) []string {
-	strings := make([]string, len(repoNames))
-	for i, repoName := range repoNames {
-		strings[i] = string(repoName)
-	}
-	return strings
-}
-
-func toDBRepoListColumn(ob string) database.RepoListColumn {
+func ToDBRepoListColumn(ob string) database.RepoListColumn {
 	switch ob {
 	case "REPO_URI", "REPOSITORY_NAME":
 		return database.RepoListName

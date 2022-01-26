@@ -1,10 +1,14 @@
 package graphql
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+)
 
 func TestCursor(t *testing.T) {
 	expected := "test"
-	pageInfo := encodeCursor(&expected)
+	pageInfo := graphqlutil.EncodeCursor(&expected)
 
 	if !pageInfo.HasNextPage() {
 		t.Fatalf("expected next page")
@@ -13,7 +17,7 @@ func TestCursor(t *testing.T) {
 		t.Fatalf("unexpected nil cursor")
 	}
 
-	value, err := decodeCursor(pageInfo.EndCursor())
+	value, err := graphqlutil.DecodeCursor(pageInfo.EndCursor())
 	if err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	}
@@ -23,7 +27,7 @@ func TestCursor(t *testing.T) {
 }
 
 func TestCursorEmpty(t *testing.T) {
-	pageInfo := encodeCursor(nil)
+	pageInfo := graphqlutil.EncodeCursor(nil)
 
 	if pageInfo.HasNextPage() {
 		t.Errorf("unexpected next page")
@@ -32,7 +36,7 @@ func TestCursorEmpty(t *testing.T) {
 		t.Errorf("unexpected encoded cursor: %s", *pageInfo.EndCursor())
 	}
 
-	value, err := decodeCursor(nil)
+	value, err := graphqlutil.DecodeCursor(nil)
 	if err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	}
@@ -43,7 +47,7 @@ func TestCursorEmpty(t *testing.T) {
 
 func TestIntCursor(t *testing.T) {
 	expected := 42
-	pageInfo := encodeIntCursor(toInt32(&expected))
+	pageInfo := graphqlutil.EncodeIntCursor(toInt32(&expected))
 
 	if !pageInfo.HasNextPage() {
 		t.Fatalf("expected next page")
@@ -52,7 +56,7 @@ func TestIntCursor(t *testing.T) {
 		t.Fatalf("unexpected nil cursor")
 	}
 
-	value, err := decodeIntCursor(pageInfo.EndCursor())
+	value, err := graphqlutil.DecodeIntCursor(pageInfo.EndCursor())
 	if err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	}
@@ -62,7 +66,7 @@ func TestIntCursor(t *testing.T) {
 }
 
 func TestIntCursorEmpty(t *testing.T) {
-	pageInfo := encodeIntCursor(nil)
+	pageInfo := graphqlutil.EncodeIntCursor(nil)
 
 	if pageInfo.HasNextPage() {
 		t.Errorf("unexpected next page")
@@ -71,7 +75,7 @@ func TestIntCursorEmpty(t *testing.T) {
 		t.Errorf("unexpected encoded cursor: %s", *pageInfo.EndCursor())
 	}
 
-	value, err := decodeIntCursor(nil)
+	value, err := graphqlutil.DecodeIntCursor(nil)
 	if err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	}

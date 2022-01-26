@@ -1,8 +1,8 @@
 .repository-commit-page {
     width: 100%;
     position: relative; /* For HoverOverlay positioning */
+}
 
-    :global(.git-commit-node) {
-        padding: 0;
-    }
+.git-commit-node {
+    padding: 0;
 }

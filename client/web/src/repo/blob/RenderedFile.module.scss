@@ -1,0 +1,10 @@
+.rendered-file {
+    overflow: auto;
+    padding: 1rem 1.5rem;
+    flex: 1;
+    background-color: var(--code-bg);
+}
+
+.container {
+    max-width: 50rem;
+}

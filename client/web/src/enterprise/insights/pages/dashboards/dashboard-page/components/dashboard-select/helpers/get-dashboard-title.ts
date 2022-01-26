@@ -1,17 +1,26 @@
-import { InsightsDashboardType, RealInsightDashboard } from '../../../../../../core/types'
+import {
+    InsightDashboard,
+    isGlobalDashboard,
+    isPersonalDashboard,
+    isVirtualDashboard,
+    RealInsightDashboard,
+} from '../../../../../../core/types'
+import { isBuiltInInsightDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
 
 /**
  * Get formatted dashboard title for the dashboard select option.
  */
-export const getDashboardTitle = (dashboard: RealInsightDashboard): string => {
-    const { builtIn } = dashboard
+export const getDashboardTitle = (dashboard: InsightDashboard): string => {
+    if (isVirtualDashboard(dashboard)) {
+        return dashboard.title
+    }
 
-    if (builtIn) {
-        if (dashboard.type === InsightsDashboardType.Global) {
+    if (isBuiltInInsightDashboard(dashboard)) {
+        if (isGlobalDashboard(dashboard)) {
             return 'Global Insights'
         }
 
-        return `${dashboard.owner!.name}'s Insights`
+        return `${dashboard.owner.name}'s Insights`
     }
 
     return dashboard.title
@@ -21,19 +30,13 @@ export const getDashboardTitle = (dashboard: RealInsightDashboard): string => {
  * Get formatted dashboard owner name. Used for list option badge element.
  */
 export const getDashboardOwnerName = (dashboard: RealInsightDashboard): string => {
-    const { type } = dashboard
-
-    if (type === InsightsDashboardType.Personal) {
+    if (isPersonalDashboard(dashboard)) {
         return 'Private'
     }
 
-    if (type === InsightsDashboardType.Global) {
+    if (isGlobalDashboard(dashboard)) {
         return 'Global'
     }
 
-    if (!dashboard.owner) {
-        throw new Error('TODO: support GraphQL API')
-    }
-
-    return dashboard.owner.name
+    return dashboard.owner?.name ?? ''
 }

@@ -1,7 +1,7 @@
 package search
 
 import (
-	"fmt"
+	"sort"
 	"time"
 
 	sgapi "github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,6 +18,8 @@ type progressAggregator struct {
 	DisplayLimit int
 	Trace        string // may be empty
 
+	RepoNamer api.RepoNamer
+
 	// Dirty is true if p has changed since the last call to Current.
 	Dirty bool
 }
@@ -27,10 +29,20 @@ func (p *progressAggregator) Update(event streaming.SearchEvent) {
 		return
 	}
 
+	if p.Stats.Repos == nil {
+		p.Stats.Repos = map[sgapi.RepoID]struct{}{}
+	}
+
 	p.Dirty = true
 	p.Stats.Update(&event.Stats)
 	for _, match := range event.Results {
 		p.MatchCount += match.ResultCount()
+
+		// Historically we only had one event populate Stats.Repos and it was
+		// the full universe of repos. With Repo Pagination this is no longer
+		// true. Rather than updating every backend to populate this field, we
+		// iterate over results and union in the result IDs.
+		p.Stats.Repos[match.RepoName().ID] = struct{}{}
 	}
 
 	if p.MatchCount > p.Limit {
@@ -48,9 +60,9 @@ func (p *progressAggregator) currentStats() api.ProgressStats {
 		ElapsedMilliseconds: int(time.Since(p.Start).Milliseconds()),
 		ExcludedArchived:    p.Stats.ExcludedArchived,
 		ExcludedForks:       p.Stats.ExcludedForks,
-		Timedout:            getNames(p.Stats, searchshared.RepoStatusTimedout),
-		Missing:             getNames(p.Stats, searchshared.RepoStatusMissing),
-		Cloning:             getNames(p.Stats, searchshared.RepoStatusCloning),
+		Timedout:            getRepos(p.Stats, searchshared.RepoStatusTimedout),
+		Missing:             getRepos(p.Stats, searchshared.RepoStatusMissing),
+		Cloning:             getRepos(p.Stats, searchshared.RepoStatusCloning),
 		LimitHit:            p.Stats.IsLimitHit,
 		SuggestedLimit:      suggestedLimit,
 		Trace:               p.Trace,
@@ -62,7 +74,7 @@ func (p *progressAggregator) currentStats() api.ProgressStats {
 func (p *progressAggregator) Current() api.Progress {
 	p.Dirty = false
 
-	return api.BuildProgressEvent(p.currentStats())
+	return api.BuildProgressEvent(p.currentStats(), p.RepoNamer)
 }
 
 // Final returns the current progress event, but with final fields set to
@@ -78,27 +90,22 @@ func (p *progressAggregator) Final() api.Progress {
 		s.RepositoriesCount = intPtr(c)
 	}
 
-	event := api.BuildProgressEvent(s)
+	event := api.BuildProgressEvent(s, p.RepoNamer)
 	event.Done = true
 	return event
 }
 
-type namerFunc string
-
-func (n namerFunc) Name() string {
-	return string(n)
-}
-
-func getNames(stats streaming.Stats, status searchshared.RepoStatus) []api.Namer {
-	var names []api.Namer
+func getRepos(stats streaming.Stats, status searchshared.RepoStatus) []sgapi.RepoID {
+	var repos []sgapi.RepoID
 	stats.Status.Filter(status, func(id sgapi.RepoID) {
-		if name, ok := stats.Repos[id]; ok {
-			names = append(names, namerFunc(name.Name))
-		} else {
-			names = append(names, namerFunc(fmt.Sprintf("UNKNOWN{ID=%d}", id)))
-		}
+		repos = append(repos, id)
 	})
-	return names
+	// Filter runs in a random order (map traversal), so we should sort to
+	// give deterministic messages between updates.
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i] < repos[j]
+	})
+	return repos
 }
 
 func intPtr(i int) *int {

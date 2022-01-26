@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pagure.schema.json#",
+  "title": "PagureConnection",
+  "description": "Configuration for a connection to Pagure.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "rateLimit": {
+      "description": "Rate limit applied when making API requests to Pagure.",
+      "title": "PagureRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 500, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 500 requests immediately, provided that the complexity cost of each request is 1.",
+          "type": "number",
+          "default": 28800,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPerHour": 28800
+      }
+    },
+    "url": {
+      "description": "URL of a Pagure instance, such as https://pagure.example.com",
+      "type": "string",
+      "examples": ["https://pagure.example.com"]
+    },
+    "token": {
+      "description": "API token for the Pagure instance.",
+      "type": "string",
+      "minLength": 1
+    },
+    "forks": {
+      "description": "If true, it includes forks in the returned projects.",
+      "type": "boolean",
+      "default": false
+    },
+    "pattern": {
+      "description": "Filters projects by pattern string.",
+      "type": "string",
+      "minLength": 1
+    },
+    "namespace": {
+      "description": "Filters projects by namespace.",
+      "type": "string",
+      "minLength": 1
+    },
+    "tags": {
+      "description": "Filters the projects returned by their tags.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

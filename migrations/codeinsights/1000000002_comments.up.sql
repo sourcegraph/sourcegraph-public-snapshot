@@ -1,8 +1,8 @@
-BEGIN;
+-- +++
+-- parent: 1000000001
+-- +++
 
-COMMENT ON TABLE codeinsights_schema_migrations IS 'Holds a single column storing the status of the most recent migration attempt.';
-COMMENT ON COLUMN codeinsights_schema_migrations.version IS 'The schema version that was the target of the most recent migration attempt.';
-COMMENT ON COLUMN codeinsights_schema_migrations.dirty IS 'Whether or not the most recent migration attempt failed.';
+BEGIN;
 
 COMMENT ON TABLE repo_names IS 'Records repository names, both historical and present, using a unique repository _name_ ID (unrelated to the repository ID.)';
 COMMENT ON COLUMN repo_names.id IS 'The repository _name_ ID.';

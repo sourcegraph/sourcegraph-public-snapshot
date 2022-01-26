@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -58,12 +57,12 @@ type GetAndSaveUserOp struct {
 // 🚨 SECURITY: The safeErrMsg is an error message that can be shown to unauthenticated users to
 // describe the problem. The err may contain sensitive information and should only be written to the
 // server error logs, not to the HTTP response to shown to unauthenticated users.
-func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
 	if MockGetAndSaveUser != nil {
 		return MockGetAndSaveUser(ctx, op)
 	}
 
-	extacc := database.ExternalAccounts(db)
+	extacc := db.UserExternalAccounts()
 
 	userID, userSaved, extAcctSaved, safeErrMsg, err := func() (int32, bool, bool, string, error) {
 		if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
@@ -79,7 +78,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 		}
 
 		if op.LookUpByUsername {
-			user, getByUsernameErr := database.Users(db).GetByUsername(ctx, op.UserProps.Username)
+			user, getByUsernameErr := db.Users().GetByUsername(ctx, op.UserProps.Username)
 			if getByUsernameErr == nil {
 				return user.ID, false, false, "", nil
 			}
@@ -90,7 +89,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 				return 0, false, false, fmt.Sprintf("User account with username %q does not exist. Ask a site admin to create your account.", op.UserProps.Username), getByUsernameErr
 			}
 		} else if op.UserProps.EmailIsVerified {
-			user, getByVerifiedEmailErr := database.Users(db).GetByVerifiedEmail(ctx, op.UserProps.Email)
+			user, getByVerifiedEmailErr := db.Users().GetByVerifiedEmail(ctx, op.UserProps.Email)
 			if getByVerifiedEmailErr == nil {
 				return user.ID, false, false, "", nil
 			}
@@ -116,7 +115,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", err
 		}
 
-		if err = database.Authz(db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: userID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
@@ -143,7 +142,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 	if !userSaved {
 		// Update user in our DB if their profile info changed on the issuer. (Except username and
 		// email, which the user is somewhat likely to want to control separately on Sourcegraph.)
-		user, err := database.Users(db).GetByID(ctx, userID)
+		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return 0, "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.", err
 		}
@@ -155,7 +154,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 			userUpdate.AvatarURL = &op.UserProps.AvatarURL
 		}
 		if userUpdate != (database.UserUpdate{}) {
-			if err := database.Users(db).Update(ctx, user.ID, userUpdate); err != nil {
+			if err := db.Users().Update(ctx, user.ID, userUpdate); err != nil {
 				return 0, "Unexpected error updating the Sourcegraph user account with new user profile information from the external account. Ask a site admin for help.", err
 			}
 		}
@@ -168,7 +167,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 			return 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
 		}
 
-		if err = database.Authz(db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: userID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,

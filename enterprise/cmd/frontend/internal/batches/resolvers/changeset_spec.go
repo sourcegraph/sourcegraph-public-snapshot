@@ -11,10 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -85,7 +84,7 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 		store: r.store,
 		desc:  r.changesetSpec.Spec,
 		// Note: r.repo can never be nil, because Description is a VisibleChangesetSpecResolver-only field.
-		repoResolver: graphqlbackend.NewRepositoryResolver(database.NewDB(r.store.DB()), r.repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), r.repo),
 		diffStat:     r.changesetSpec.DiffStat(),
 	}
 
@@ -94,6 +93,10 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 
 func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
+}
+
+func (r *changesetSpecResolver) ForkTarget() graphqlbackend.ForkTargetInterface {
+	return &forkTargetResolver{changesetSpec: r.changesetSpec}
 }
 
 func (r *changesetSpecResolver) repoAccessible() bool {
@@ -175,7 +178,7 @@ func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repoResolver, r.desc.BaseRev, diff)
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repoResolver, r.desc.BaseRev, diff)
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {
@@ -204,7 +207,7 @@ type gitCommitDescriptionResolver struct {
 
 func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
 	return graphqlbackend.NewPersonResolver(
-		r.store.DB(),
+		r.store.DatabaseDB(),
 		r.authorName,
 		r.authorEmail,
 		// Try to find the corresponding Sourcegraph user.
@@ -213,13 +216,27 @@ func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
 }
 func (r *gitCommitDescriptionResolver) Message() string { return r.message }
 func (r *gitCommitDescriptionResolver) Subject() string {
-	return gitapi.Message(r.message).Subject()
+	return gitdomain.Message(r.message).Subject()
 }
 func (r *gitCommitDescriptionResolver) Body() *string {
-	body := gitapi.Message(r.message).Body()
+	body := gitdomain.Message(r.message).Body()
 	if body == "" {
 		return nil
 	}
 	return &body
 }
 func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }
+
+type forkTargetResolver struct {
+	changesetSpec *btypes.ChangesetSpec
+}
+
+var _ graphqlbackend.ForkTargetInterface = &forkTargetResolver{}
+
+func (r *forkTargetResolver) PushUser() bool {
+	return r.changesetSpec.IsFork()
+}
+
+func (r *forkTargetResolver) Namespace() *string {
+	return r.changesetSpec.GetForkNamespace()
+}

@@ -47,6 +47,10 @@ type StreamLabels struct {
 
 	App       string `json:"app"`
 	Component string `json:"component"`
+
+	// Additional metadata for CI when pushing
+
+	Branch string `json:"branch"`
 }
 
 // Logs come out with a ton yikes
@@ -64,9 +68,27 @@ func cleanAnsi(s string) string {
 // NewStreamFromJobLogs cleans the given log data, splits it into log entries, merges
 // entries with the same timestamp, and returns a Stream that can be pushed to Loki.
 func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
-	// seems to be some kind of buildkite line separator, followed by a timestamp
-	lines := strings.Split(cleanAnsi(*log.Content), "_bk;")
+	stream := StreamLabels{
+		JobMeta:   log.JobMeta,
+		App:       "buildkite",
+		Component: "build-logs",
+	}
+	cleanedContent := cleanAnsi(*log.Content)
 
+	// seems to be some kind of buildkite line separator, followed by a timestamp
+	const bkTimestampSeparator = "_bk;"
+	if len(cleanedContent) == 0 {
+		return &Stream{
+			Stream: stream,
+			Values: make([][2]string, 0),
+		}, nil
+	}
+	if !strings.Contains(cleanedContent, bkTimestampSeparator) {
+		return nil, fmt.Errorf("log content does not contain Buildkite timestamps, denoted by %q", bkTimestampSeparator)
+	}
+	lines := strings.Split(cleanedContent, bkTimestampSeparator)
+
+	// parse lines into loki log entries
 	values := make([][2]string, 0, len(lines))
 	var previousTimestamp string
 	timestamp := regexp.MustCompile(`t=(?P<ts>\d{13})`) // 13 digits for unix epoch in nanoseconds
@@ -97,12 +119,7 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 	}
 
 	return &Stream{
-		Stream: StreamLabels{
-			JobMeta: log.JobMeta,
-
-			App:       "buildkite",
-			Component: "build-logs",
-		},
+		Stream: stream,
 		Values: values,
 	}, nil
 }
@@ -137,6 +154,10 @@ func (c *Client) PushStreams(ctx context.Context, streams []*Stream) error {
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		b, _ := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
+		// Stream already published
+		if strings.Contains(string(b), "entry out of order") {
+			return nil
+		}
 		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(b))
 	}
 	return nil

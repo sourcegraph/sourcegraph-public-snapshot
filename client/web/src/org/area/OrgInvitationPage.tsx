@@ -1,20 +1,20 @@
 import * as React from 'react'
-import { Link, Redirect } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { requestGraphQL } from '../../backend/graphql'
-import { ErrorAlert } from '../../components/alerts'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
 import {
@@ -31,7 +31,7 @@ interface Props extends OrgAreaPageProps {
     authenticatedUser: AuthenticatedUser
 
     /** Called when the viewer responds to the invitation. */
-    onDidRespondToInvitation: () => void
+    onDidRespondToInvitation: (accepted: boolean) => void
 }
 
 interface State {
@@ -77,12 +77,12 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     responseType,
                                 }).pipe(
                                     tap(() => eventLogger.log('OrgInvitationRespondedTo')),
-                                    tap(() => this.props.onDidRespondToInvitation()),
-                                    concatMap(() => [
-                                        // Refresh current user's list of organizations.
-                                        refreshAuthenticatedUser(),
-                                        { submissionOrError: null },
-                                    ]),
+                                    tap(() =>
+                                        this.props.onDidRespondToInvitation(
+                                            responseType === OrganizationInvitationResponseType.ACCEPT
+                                        )
+                                    ),
+                                    concatMap(() => concat(refreshAuthenticatedUser(), [{ submissionOrError: null }])),
                                     catchError(error => [{ submissionOrError: asError(error) }])
                                 )
                             )
@@ -142,38 +142,39 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     </small>
                                 </p>
                                 <div className="mt-3">
-                                    <button
+                                    <Button
                                         type="submit"
-                                        className="btn btn-primary mr-sm-2"
+                                        className="mr-sm-2"
                                         disabled={this.state.submissionOrError === 'loading'}
                                         onClick={this.onAcceptInvitation}
+                                        variant="primary"
                                     >
                                         Join {this.props.org.name}
-                                    </button>
-                                    <Link className="btn btn-link" to={orgURL(this.props.org.name)}>
+                                    </Button>
+                                    <Button to={orgURL(this.props.org.name)} variant="link" as={Link}>
                                         Go to {this.props.org.name}'s profile
-                                    </Link>
+                                    </Button>
                                 </div>
                                 <div>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link btn-sm"
+                                    <Button
                                         disabled={this.state.submissionOrError === 'loading'}
                                         onClick={this.onDeclineInvitation}
+                                        variant="link"
+                                        size="sm"
                                     >
                                         Decline invitation
-                                    </button>
+                                    </Button>
                                 </div>
                                 {isErrorLike(this.state.submissionOrError) && (
                                     <ErrorAlert className="my-2" error={this.state.submissionOrError} />
                                 )}
-                                {this.state.submissionOrError === 'loading' && (
-                                    <LoadingSpinner className="icon-inline" />
-                                )}
+                                {this.state.submissionOrError === 'loading' && <LoadingSpinner />}
                             </Form>
                         </ModalPage>
                     ) : (
-                        <div className="alert alert-danger">No pending invitation found.</div>
+                        <Alert className="align-self-start mt-4 mx-auto" variant="danger">
+                            No pending invitation found.
+                        </Alert>
                     )}
                 </>
             )

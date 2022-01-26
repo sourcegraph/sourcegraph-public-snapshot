@@ -3,14 +3,13 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
-import { Tooltip } from 'reactstrap'
+import React, { useCallback, useMemo, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import { Button, Link, Card } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 
@@ -30,71 +29,47 @@ interface TriggerAreaProps {
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 const isLiteralOrRegexp = (value: string): boolean => value === 'literal' || value === 'regexp'
 
-const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?: string; className?: string }> = ({
-    checked,
-    children,
-    hint,
-    className,
-}) => {
-    const tooltipTarget = useRef<HTMLElement | null>(null)
-    const [tooltipOpen, setTooltipOpen] = useState(false)
-    const toggleTooltip = useCallback(() => setTooltipOpen(isOpen => !isOpen), [])
-    const showTooltip = useCallback(() => setTooltipOpen(true), [])
-    const hideTooltip = useCallback(() => setTooltipOpen(false), [])
+const ValidQueryChecklistItem: React.FunctionComponent<{
+    checked: boolean
+    hint?: string
+    className?: string
+    dataTestid?: string
+}> = ({ checked, children, hint, className, dataTestid }) => (
+    <label className={classNames('d-flex align-items-center mb-1 text-muted', className)}>
+        <input className="sr-only" type="checkbox" disabled={true} checked={checked} data-testid={dataTestid} />
 
-    return (
-        <label
-            className={classNames('d-flex align-items-center mb-1 text-muted', className)}
-            onMouseOver={showTooltip}
-            onMouseOut={hideTooltip}
-            onFocus={showTooltip}
-            onBlur={hideTooltip}
-        >
-            <input className="sr-only" type="checkbox" disabled={true} checked={checked} />
+        {checked ? (
+            <CheckIcon
+                className={classNames('icon-inline text-success', styles.checklistCheckbox)}
+                aria-hidden={true}
+            />
+        ) : (
+            <RadioboxBlankIcon
+                className={classNames('icon-inline', styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
+                aria-hidden={true}
+            />
+        )}
 
-            {checked ? (
-                <CheckIcon
-                    className={classNames('icon-inline text-success', styles.checklistCheckbox)}
-                    aria-hidden={true}
-                />
-            ) : (
-                <RadioboxBlankIcon
-                    className={classNames('icon-inline', styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
-                    aria-hidden={true}
-                />
-            )}
+        <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
 
-            <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
+        {hint && (
+            <>
+                <span className="sr-only"> {hint}</span>
 
-            {hint && (
-                <>
-                    <span className="sr-only"> {hint}</span>
-
-                    <span ref={tooltipTarget} className="d-flex">
-                        <HelpCircleIcon
-                            className={classNames(
-                                styles.checklistHint,
-                                'icon-inline',
-                                checked && styles.checklistHintFaded
-                            )}
-                            aria-hidden={true}
-                        />
-                    </span>
-
-                    <Tooltip
-                        target={tooltipTarget}
-                        toggle={toggleTooltip}
-                        isOpen={tooltipOpen}
-                        placement="bottom"
-                        innerClassName={styles.checklistTooltip}
-                    >
-                        {hint}
-                    </Tooltip>
-                </>
-            )}
-        </label>
-    )
-}
+                <span data-tooltip={hint} data-placement="bottom" className="d-flex">
+                    <HelpCircleIcon
+                        className={classNames(
+                            styles.checklistHint,
+                            'icon-inline',
+                            checked && styles.checklistHintFaded
+                        )}
+                        aria-hidden={true}
+                    />
+                </span>
+            </>
+        )}
+    </label>
+)
 
 export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     query,
@@ -220,7 +195,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         <>
             <h3>Trigger</h3>
             {showQueryForm && (
-                <div className={classNames(cardClassName, 'card p-3')}>
+                <Card className={classNames(cardClassName, 'p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
                     <span className="text-muted">
                         This trigger will fire when new search results are found for a given search query.
@@ -247,33 +222,33 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 <ul className={styles.checklist}>
                                     <li>
                                         <ValidQueryChecklistItem
-                                            className="test-patterntype-checkbox"
                                             checked={hasValidPatternTypeFilter}
                                             hint="Code monitors support literal and regex search. Searches are literal by default."
+                                            dataTestid="patterntype-checkbox"
                                         >
                                             Is <code>patternType:literal</code> or <code>patternType:regexp</code>
                                         </ValidQueryChecklistItem>
                                     </li>
                                     <li>
                                         <ValidQueryChecklistItem
-                                            className="test-type-checkbox"
                                             checked={hasTypeDiffOrCommitFilter}
                                             hint="type:diff targets code present in new commits, while type:commit targets commit messages"
+                                            dataTestid="type-checkbox"
                                         >
                                             Contains a <code>type:diff</code> or <code>type:commit</code> filter
                                         </ValidQueryChecklistItem>
                                     </li>
                                     <li>
                                         <ValidQueryChecklistItem
-                                            className="test-repo-checkbox"
                                             checked={hasRepoFilter}
                                             hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
+                                            dataTestid="repo-checkbox"
                                         >
                                             Contains a <code>repo:</code> filter
                                         </ValidQueryChecklistItem>
                                     </li>
                                     <li>
-                                        <ValidQueryChecklistItem checked={isValidQuery} className="test-valid-checkbox">
+                                        <ValidQueryChecklistItem checked={isValidQuery} dataTestid="valid-checkbox">
                                             Is a valid search query
                                         </ValidQueryChecklistItem>
                                     </li>
@@ -299,24 +274,27 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         </div>
                     </div>
                     <div>
-                        <button
-                            className="btn btn-secondary mr-1 test-submit-trigger"
+                        <Button
+                            data-testid="submit-trigger"
+                            className="mr-1 test-submit-trigger"
                             onClick={completeForm}
                             type="submit"
                             disabled={queryState.kind !== 'VALID'}
+                            variant="secondary"
                         >
                             Continue
-                        </button>
-                        <button type="button" className="btn btn-outline-secondary" onClick={cancelForm}>
+                        </Button>
+                        <Button onClick={cancelForm} outline={true} variant="secondary">
                             Cancel
-                        </button>
+                        </Button>
                     </div>
-                </div>
+                </Card>
             )}
             {!showQueryForm && (
-                <button
-                    type="button"
-                    className={classNames('btn card test-trigger-button', cardBtnClassName)}
+                <Card
+                    data-testid="trigger-button"
+                    as={Button}
+                    className={classNames('test-trigger-button', cardBtnClassName)}
                     aria-label="Edit trigger: When there are new search results"
                     onClick={toggleQueryForm}
                 >
@@ -332,10 +310,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             </div>
                             {triggerCompleted ? (
                                 <code
-                                    className={classNames(
-                                        'text-break text-muted test-existing-query',
-                                        styles.queryLabel
-                                    )}
+                                    className={classNames('text-break text-muted', styles.queryLabel)}
                                     data-testid="trigger-query-existing"
                                 >
                                     {query}
@@ -348,7 +323,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         </div>
                         {triggerCompleted && <div className="btn-link">Edit</div>}
                     </div>
-                </button>
+                </Card>
             )}
             <small className="text-muted">
                 {' '}

@@ -1,6 +1,6 @@
 # Product documentation implementation
 
-The [documentation guidelines](https://about.sourcegraph.com/handbook/engineering/product_documentation) apply to product documentation. This page has information specific to this repository's documentation.
+The [documentation guidelines](https://handbook.sourcegraph.com/engineering/product_documentation) apply to product documentation. This page has information specific to this repository's documentation.
 
 ## Documentation directory structure
 
@@ -21,7 +21,7 @@ This structure is inspired by the [Divio documentation system](https://documenta
 
 ## Previewing changes locally
 
-You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../getting-started/index.md) (using `sg start`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
+You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../setup/index.md) (using `sg start`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
 
 You can also run the docsite on its own with the following command:
 
@@ -89,7 +89,7 @@ If you need to force a reload — either because your change is _extremely_ urge
 
 >WARNING: There may be a few seconds of downtime when restarting the docs cluster this way. This shouldn't be a routine part of your workflow!
 
-To do this, follow the ["Restarting about.sourcegraph.com and docs.sourcegraph.com" playbook](https://about.sourcegraph.com/handbook/engineering/deployments/playbooks#restarting-about-sourcegraph-com-and-docs-sourcegraph-com).
+To do this, follow the ["Restarting about.sourcegraph.com and docs.sourcegraph.com" playbook](https://handbook.sourcegraph.com/engineering/deployments/playbooks#restarting-about-sourcegraph-com-and-docs-sourcegraph-com).
 
 ## Other ways of previewing changes locally (very rare)
 

@@ -2,8 +2,8 @@ import { useContext, useEffect, useMemo, useState } from 'react'
 
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { RepositorySuggestion } from '../../../../core/backend/requests/fetch-repository-suggestions'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { RepositorySuggestionData } from '../../../../core/backend/code-insights-backend-types'
 import { memoizeAsync } from '../utils/memoize-async'
 
 interface UseRepoSuggestionsProps {
@@ -13,18 +13,18 @@ interface UseRepoSuggestionsProps {
 
 interface UseRepoSuggestionsResult {
     searchValue: string | null
-    suggestions: RepositorySuggestion[] | Error | undefined
+    suggestions: RepositorySuggestionData[] | Error | undefined
 }
 
 /**
  * Returns fetch method for repository suggestions with local cache
  */
-function useFetchSuggestions(): (search: string) => Promise<RepositorySuggestion[]> {
-    const { getRepositorySuggestions } = useContext(InsightsApiContext)
+function useFetchSuggestions(): (search: string) => Promise<RepositorySuggestionData[]> {
+    const { getRepositorySuggestions } = useContext(CodeInsightsBackendContext)
 
     return useMemo(
         // memoizeAsync adds local result cache
-        () => memoizeAsync<string, RepositorySuggestion[]>(getRepositorySuggestions, query => query),
+        () => memoizeAsync<string, RepositorySuggestionData[]>(getRepositorySuggestions, query => query),
         [getRepositorySuggestions]
     )
 }
@@ -35,7 +35,7 @@ function useFetchSuggestions(): (search: string) => Promise<RepositorySuggestion
 export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSuggestionsResult {
     const { search, disable = false } = props
 
-    const [suggestions, setSuggestions] = useState<RepositorySuggestion[] | Error | undefined>([])
+    const [suggestions, setSuggestions] = useState<RepositorySuggestionData[] | Error | undefined>([])
     const debouncedSearchTerm = useDebounce(search, 1000)
     const fetchSuggestions = useFetchSuggestions()
 

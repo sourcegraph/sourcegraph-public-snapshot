@@ -22,9 +22,9 @@ func TestGet(t *testing.T) {
 	defer cleanup()
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
-	_, err := timescale.Exec(`INSERT INTO insight_view (title, description, unique_id)
-									VALUES ('test title', 'test description', 'unique-1'),
-									       ('test title 2', 'test description 2', 'unique-2')`)
+	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
+									VALUES (1, 'test title', 'test description', 'unique-1'),
+									       (2, 'test title 2', 'test description 2', 'unique-2')`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,10 +38,10 @@ func TestGet(t *testing.T) {
 	}
 
 	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search');`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,6 +67,7 @@ func TestGet(t *testing.T) {
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-1",
 				Title:               "test title",
@@ -82,8 +83,11 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label1",
 				LineColor:           "color1",
+				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-2",
 				Title:               "test title",
@@ -99,8 +103,11 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label2",
 				LineColor:           "color2",
+				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 			{
+				ViewID:              2,
 				UniqueID:            "unique-2",
 				SeriesID:            "series-id-2",
 				Title:               "test title 2",
@@ -116,6 +123,8 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "second-label-2",
 				LineColor:           "second-color-2",
+				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 		}
 
@@ -134,6 +143,7 @@ func TestGet(t *testing.T) {
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-1",
 				Title:               "test title",
@@ -149,8 +159,11 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label1",
 				LineColor:           "color1",
+				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-2",
 				Title:               "test title",
@@ -166,6 +179,8 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label2",
 				LineColor:           "color2",
+				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 		}
 
@@ -183,6 +198,7 @@ func TestGet(t *testing.T) {
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-1",
 				Title:               "test title",
@@ -198,8 +214,11 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label1",
 				LineColor:           "color1",
+				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-2",
 				Title:               "test title",
@@ -215,6 +234,8 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label2",
 				LineColor:           "color2",
+				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 		}
 
@@ -224,10 +245,267 @@ func TestGet(t *testing.T) {
 	})
 }
 
-func TestCreateSeries(t *testing.T) {
+func TestGetAllOnDashboard(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
 	now := time.Now().Truncate(time.Microsecond).Round(0)
+
+	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
+									VALUES (1, 'test title', 'test description', 'unique-1'),
+									       (2, 'test title 2', 'test description 2', 'unique-2'),
+										   (3, 'test title 3', 'test description 3', 'unique-3'),
+										   (4, 'test title 4', 'test description 4', 'unique-4')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
+                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search');`, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
+									VALUES  (1, 1, 'label1-1', 'color1'),
+											(2, 2, 'label2-2', 'color2'),
+											(3, 1, 'label3-1', 'color3'),
+											(4, 2, 'label4-2', 'color4');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO dashboard (id, title) VALUES  (1, 'dashboard 1');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+									VALUES  (1, 2),
+											(1, 1),
+											(1, 4),
+											(1, 3);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	t.Run("test get all on dashboard", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		got, err := store.GetAllOnDashboard(ctx, InsightsOnDashboardQueryArgs{DashboardID: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := []types.InsightViewSeries{
+			{
+				ViewID:              2,
+				DashboardViewID:     1,
+				UniqueID:            "unique-2",
+				SeriesID:            "series-id-2",
+				Title:               "test title 2",
+				Description:         "test description 2",
+				Query:               "query-2",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label2-2",
+				LineColor:           "color2",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              1,
+				DashboardViewID:     2,
+				UniqueID:            "unique-1",
+				SeriesID:            "series-id-1",
+				Title:               "test title",
+				Description:         "test description",
+				Query:               "query-1",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label1-1",
+				LineColor:           "color1",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              4,
+				DashboardViewID:     3,
+				UniqueID:            "unique-4",
+				SeriesID:            "series-id-2",
+				Title:               "test title 4",
+				Description:         "test description 4",
+				Query:               "query-2",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label4-2",
+				LineColor:           "color4",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              3,
+				DashboardViewID:     4,
+				UniqueID:            "unique-3",
+				SeriesID:            "series-id-1",
+				Title:               "test title 3",
+				Description:         "test description 3",
+				Query:               "query-1",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label3-1",
+				LineColor:           "color3",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("test get first 2 on dashboard", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		got, err := store.GetAllOnDashboard(ctx, InsightsOnDashboardQueryArgs{DashboardID: 1, Limit: 2})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := []types.InsightViewSeries{
+			{
+				ViewID:              2,
+				DashboardViewID:     1,
+				UniqueID:            "unique-2",
+				SeriesID:            "series-id-2",
+				Title:               "test title 2",
+				Description:         "test description 2",
+				Query:               "query-2",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label2-2",
+				LineColor:           "color2",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              1,
+				DashboardViewID:     2,
+				UniqueID:            "unique-1",
+				SeriesID:            "series-id-1",
+				Title:               "test title",
+				Description:         "test description",
+				Query:               "query-1",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label1-1",
+				LineColor:           "color1",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("test get after 2 on dashboard", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		got, err := store.GetAllOnDashboard(ctx, InsightsOnDashboardQueryArgs{DashboardID: 1, After: "2"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		want := []types.InsightViewSeries{
+			{
+				ViewID:              4,
+				DashboardViewID:     3,
+				UniqueID:            "unique-4",
+				SeriesID:            "series-id-2",
+				Title:               "test title 4",
+				Description:         "test description 4",
+				Query:               "query-2",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label4-2",
+				LineColor:           "color4",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              3,
+				DashboardViewID:     4,
+				UniqueID:            "unique-3",
+				SeriesID:            "series-id-1",
+				Title:               "test title 3",
+				Description:         "test description 3",
+				Query:               "query-1",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label3-1",
+				LineColor:           "color3",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+}
+
+func TestCreateSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2021, 5, 1, 1, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 
 	store := NewInsightStore(timescale)
 	store.Now = func() time.Time {
@@ -247,6 +525,7 @@ func TestCreateSeries(t *testing.T) {
 			NextSnapshotAfter:  now,
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 
 		got, err := store.CreateSeries(ctx, series)
@@ -266,6 +545,7 @@ func TestCreateSeries(t *testing.T) {
 			CreatedAt:          now,
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 
 		log15.Info("values", "want", want, "got", got)
@@ -273,6 +553,41 @@ func TestCreateSeries(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result from create insight series (want/got): %s", diff)
 		}
+	})
+	t.Run("test create and get capture groups series", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		sampleIntervalUnit := "MONTH"
+		_, err := store.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:                   "capture-group-1",
+			Query:                      "well hello there",
+			Enabled:                    true,
+			SampleIntervalUnit:         sampleIntervalUnit,
+			SampleIntervalValue:        0,
+			OldestHistoricalAt:         now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:             now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:         now,
+			LastSnapshotAt:             now,
+			NextSnapshotAfter:          now,
+			CreatedAt:                  now,
+			GeneratedFromCaptureGroups: true,
+			GenerationMethod:           types.Search,
+		})
+		if err != nil {
+			return
+		}
+
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
+			SeriesID: "capture-group-1",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) < 1 {
+			t.Fatal(err)
+		}
+		got[0].ID = 1 // normalizing this for test determinism
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }
 
@@ -290,9 +605,10 @@ func TestCreateView(t *testing.T) {
 	t.Run("test create view", func(t *testing.T) {
 
 		view := types.InsightView{
-			Title:       "my view",
-			Description: "my view description",
-			UniqueID:    "1234567",
+			Title:            "my view",
+			Description:      "my view description",
+			UniqueID:         "1234567",
+			PresentationType: types.Line,
 		}
 
 		got, err := store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
@@ -301,10 +617,11 @@ func TestCreateView(t *testing.T) {
 		}
 
 		want := types.InsightView{
-			ID:          1,
-			Title:       "my view",
-			Description: "my view description",
-			UniqueID:    "1234567",
+			ID:               1,
+			Title:            "my view",
+			Description:      "my view description",
+			UniqueID:         "1234567",
+			PresentationType: types.Line,
 		}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -326,9 +643,10 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 
 	uniqueID := "user1viewonly"
 	view, err := store.CreateView(ctx, types.InsightView{
-		Title:       "user 1 view only",
-		Description: "user 1 should see this only",
-		UniqueID:    uniqueID,
+		Title:            "user 1 view only",
+		Description:      "user 1 should see this only",
+		UniqueID:         uniqueID,
+		PresentationType: types.Line,
 	}, []InsightViewGrant{UserGrant(1), OrgGrant(5)})
 	if err != nil {
 		t.Fatal(err)
@@ -344,6 +662,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		NextSnapshotAfter:  now,
 		BackfillQueuedAt:   now,
 		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -399,9 +718,10 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 	t.Run("no users or orgs provided should only return global", func(t *testing.T) {
 		uniqueID := "globalonly"
 		view, err := store.CreateView(ctx, types.InsightView{
-			Title:       "global only",
-			Description: "global only",
-			UniqueID:    uniqueID,
+			Title:            "global only",
+			Description:      "global only",
+			UniqueID:         uniqueID,
+			PresentationType: types.Line,
 		}, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
 			t.Fatal(err)
@@ -417,6 +737,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 			NextSnapshotAfter:  now,
 			BackfillQueuedAt:   now,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -453,17 +774,20 @@ func TestUpdateView(t *testing.T) {
 
 	t.Run("test update view", func(t *testing.T) {
 		view := types.InsightView{
-			Title:       "my view",
-			Description: "my view description",
-			UniqueID:    "1234567",
+			Title:            "my view",
+			Description:      "my view description",
+			UniqueID:         "1234567",
+			PresentationType: types.Line,
 		}
 		got, err := store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
 			t.Fatal(err)
 		}
 		autogold.Want("AfterCreateView", types.InsightView{
-			ID: 1, Title: "my view", Description: "my view description",
-			UniqueID: "1234567",
+			ID: 1, Title: "my view",
+			Description:      "my view description",
+			UniqueID:         "1234567",
+			PresentationType: types.Line,
 		}).Equal(t, got)
 
 		include, exclude := "include repos", "exclude repos"
@@ -474,17 +798,79 @@ func TestUpdateView(t *testing.T) {
 				IncludeRepoRegex: &include,
 				ExcludeRepoRegex: &exclude,
 			},
+			PresentationType: types.Line,
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 		autogold.Want("AfterUpdateView", types.InsightView{
-			Title: "new title", UniqueID: "1234567",
+			ID: 1, Title: "new title", UniqueID: "1234567",
 			Filters: types.InsightViewFilters{
 				IncludeRepoRegex: valast.Addr("include repos").(*string),
 				ExcludeRepoRegex: valast.Addr("exclude repos").(*string),
 			},
+			PresentationType: types.PresentationType("LINE"),
 		}).Equal(t, got)
+	})
+}
+
+func TestUpdateViewSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test update view series", func(t *testing.T) {
+		view, err := store.CreateView(ctx, types.InsightView{
+			Title:            "my view",
+			Description:      "my view description",
+			UniqueID:         "1234567",
+			PresentationType: types.Line,
+		}, []InsightViewGrant{GlobalGrant()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series, err := store.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:           "unique-1",
+			Query:              "query-1",
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			Enabled:            true,
+			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = store.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{
+			Label:  "label",
+			Stroke: "blue",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = store.UpdateViewSeries(ctx, series.SeriesID, view.ID, types.InsightViewSeriesMetadata{
+			Label:  "new label",
+			Stroke: "orange",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := store.Get(ctx, InsightQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("LabelAfterUpdateViewSeries", "new label").Equal(t, got[0].Label)
+		autogold.Want("ColorAfterUpdateViewSeries", "orange").Equal(t, got[0].LineColor)
 	})
 }
 
@@ -501,9 +887,10 @@ func TestDeleteView(t *testing.T) {
 
 	uniqueID := "user1viewonly"
 	view, err := store.CreateView(ctx, types.InsightView{
-		Title:       "user 1 view only",
-		Description: "user 1 should see this only",
-		UniqueID:    uniqueID,
+		Title:            "user 1 view only",
+		Description:      "user 1 should see this only",
+		UniqueID:         uniqueID,
+		PresentationType: types.Line,
 	}, []InsightViewGrant{GlobalGrant()})
 	if err != nil {
 		t.Fatal(err)
@@ -519,6 +906,7 @@ func TestDeleteView(t *testing.T) {
 		NextSnapshotAfter:  now,
 		BackfillQueuedAt:   now,
 		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -575,15 +963,17 @@ func TestAttachSeriesView(t *testing.T) {
 			NextSnapshotAfter:   now,
 			SampleIntervalUnit:  string(types.Month),
 			SampleIntervalValue: 1,
+			GenerationMethod:    types.Search,
 		}
 		series, err := store.CreateSeries(ctx, series)
 		if err != nil {
 			t.Fatal(err)
 		}
 		view := types.InsightView{
-			Title:       "my view",
-			Description: "my view description",
-			UniqueID:    "1234567",
+			Title:            "my view",
+			Description:      "my view description",
+			UniqueID:         "1234567",
+			PresentationType: types.Line,
 		}
 		view, err = store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
@@ -604,6 +994,7 @@ func TestAttachSeriesView(t *testing.T) {
 
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{{
+			ViewID:              1,
 			UniqueID:            view.UniqueID,
 			SeriesID:            series.SeriesID,
 			Title:               view.Title,
@@ -619,10 +1010,110 @@ func TestAttachSeriesView(t *testing.T) {
 			SampleIntervalUnit:  sampleIntervalUnit,
 			Label:               "my label",
 			LineColor:           "my stroke",
+			PresentationType:    types.Line,
+			GenerationMethod:    types.Search,
 		}}
 
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result after attaching series to view (want/got): %s", diff)
+		}
+	})
+}
+
+func TestRemoveSeriesFromView(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test remove series from view", func(t *testing.T) {
+		series := types.InsightSeries{
+			SeriesID:            "unique-1",
+			Query:               "query-1",
+			OldestHistoricalAt:  now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:      now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:  now,
+			LastSnapshotAt:      now,
+			NextSnapshotAfter:   now,
+			SampleIntervalUnit:  string(types.Month),
+			SampleIntervalValue: 1,
+			GenerationMethod:    types.Search,
+		}
+		series, err := store.CreateSeries(ctx, series)
+		if err != nil {
+			t.Fatal(err)
+		}
+		view := types.InsightView{
+			Title:            "my view",
+			Description:      "my view description",
+			UniqueID:         "1234567",
+			PresentationType: types.Line,
+		}
+		view, err = store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		metadata := types.InsightViewSeriesMetadata{
+			Label:  "my label",
+			Stroke: "my stroke",
+		}
+		err = store.AttachSeriesToView(ctx, series, view, metadata)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := store.Get(ctx, InsightQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		sampleIntervalUnit := "MONTH"
+		want := []types.InsightViewSeries{{
+			ViewID:              1,
+			UniqueID:            view.UniqueID,
+			SeriesID:            series.SeriesID,
+			Title:               view.Title,
+			Description:         view.Description,
+			Query:               series.Query,
+			CreatedAt:           series.CreatedAt,
+			OldestHistoricalAt:  series.OldestHistoricalAt,
+			LastRecordedAt:      series.LastRecordedAt,
+			NextRecordingAfter:  series.NextRecordingAfter,
+			LastSnapshotAt:      now,
+			NextSnapshotAfter:   now,
+			SampleIntervalValue: 1,
+			SampleIntervalUnit:  sampleIntervalUnit,
+			Label:               "my label",
+			LineColor:           "my stroke",
+			PresentationType:    types.Line,
+			GenerationMethod:    types.Search,
+		}}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected result after attaching series to view (want/got): %s", diff)
+		}
+
+		err = store.RemoveSeriesFromView(ctx, series.SeriesID, view.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err = store.Get(ctx, InsightQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want = []types.InsightViewSeries{}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected result after removing series from view (want/got): %s", diff)
+		}
+		gotSeries, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: series.SeriesID, IncludeDeleted: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(gotSeries) == 0 || gotSeries[0].Enabled {
+			t.Errorf("unexpected result: series does not exist or was not deleted after being removed from view")
 		}
 	})
 }
@@ -659,6 +1150,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 			NextSnapshotAfter:  now,
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -667,6 +1159,36 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 		want := []types.InsightSeries{created}
 
 		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatched insight data series want/got: %v", diff)
+		}
+	})
+
+	t.Run("test create and get series just in time generation method", func(t *testing.T) {
+		series := types.InsightSeries{
+			SeriesID:           "unique-1-gm-jit",
+			Query:              "query-1-abc",
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			Enabled:            true,
+			SampleIntervalUnit: string(types.Month),
+			JustInTime:         true,
+			GenerationMethod:   types.Search,
+		}
+		created, err := store.CreateSeries(ctx, series)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []types.InsightSeries{created}
+
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: "unique-1-gm-jit"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -690,15 +1212,16 @@ func TestInsightStore_StampRecording(t *testing.T) {
 
 	t.Run("test create and update stamp", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID:           "unique-1",
-			Query:              "query-1",
-			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter: now,
-			LastSnapshotAt:     now,
-			NextSnapshotAfter:  now,
-			Enabled:            true,
-			SampleIntervalUnit: string(types.Month),
+			SeriesID:            "unique-1",
+			Query:               "query-1",
+			OldestHistoricalAt:  now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:      now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:  now,
+			LastSnapshotAt:      now,
+			NextSnapshotAfter:   now,
+			Enabled:             true,
+			SampleIntervalUnit:  string(types.Month),
+			SampleIntervalValue: 1,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -707,7 +1230,7 @@ func TestInsightStore_StampRecording(t *testing.T) {
 
 		want := created
 		want.LastRecordedAt = now
-		want.NextRecordingAfter = time.Date(2020, 2, 1, 0, 0, 0, 0, time.UTC)
+		want.NextRecordingAfter = time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC)
 
 		got, err := store.StampRecording(ctx, created)
 		if err != nil {
@@ -741,6 +1264,7 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 		NextSnapshotAfter:  now,
 		Enabled:            true,
 		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
 	}
 	created, err := store.CreateSeries(ctx, series)
 	if err != nil {
@@ -808,6 +1332,7 @@ func TestDirtyQueries(t *testing.T) {
 			SeriesID:           "asdf",
 			Query:              "qwerwre",
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 
 		created, err := store.CreateSeries(ctx, series)
@@ -877,6 +1402,7 @@ func TestDirtyQueriesAggregated(t *testing.T) {
 			SeriesID:           "asdf",
 			Query:              "qwerwre",
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 
 		created, err := store.CreateSeries(ctx, series)
@@ -943,6 +1469,7 @@ func TestSetSeriesEnabled(t *testing.T) {
 			NextSnapshotAfter:  now,
 			BackfillQueuedAt:   now,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -981,5 +1508,159 @@ func TestSetSeriesEnabled(t *testing.T) {
 		if !got[0].Enabled {
 			t.Errorf("series is enabled but should be disabled")
 		}
+	})
+}
+
+func TestFindMatchingSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	_, err := store.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            "series id 1",
+		Query:               "query 1",
+		CreatedAt:           now,
+		OldestHistoricalAt:  now,
+		LastRecordedAt:      now,
+		NextRecordingAfter:  now,
+		LastSnapshotAt:      now,
+		NextSnapshotAfter:   now,
+		BackfillQueuedAt:    now,
+		SampleIntervalUnit:  string(types.Week),
+		SampleIntervalValue: 1,
+		GenerationMethod:    types.Search,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("find a matching series when one exists", func(t *testing.T) {
+		gotSeries, gotFound, err := store.FindMatchingSeries(ctx, MatchSeriesArgs{Query: "query 1", StepIntervalUnit: string(types.Week), StepIntervalValue: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
+		autogold.Want("FoundTrue", true).Equal(t, gotFound)
+	})
+	t.Run("find no matching series when none exist", func(t *testing.T) {
+		gotSeries, gotFound, err := store.FindMatchingSeries(ctx, MatchSeriesArgs{Query: "query 2", StepIntervalUnit: string(types.Week), StepIntervalValue: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
+		autogold.Want("FoundFalse", false).Equal(t, gotFound)
+	})
+	t.Run("match capture group series", func(t *testing.T) {
+		_, err := store.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:                   "series id capture group",
+			Query:                      "query 1",
+			CreatedAt:                  now,
+			OldestHistoricalAt:         now,
+			LastRecordedAt:             now,
+			NextRecordingAfter:         now,
+			LastSnapshotAt:             now,
+			NextSnapshotAfter:          now,
+			BackfillQueuedAt:           now,
+			SampleIntervalUnit:         string(types.Week),
+			SampleIntervalValue:        1,
+			GeneratedFromCaptureGroups: true,
+			GenerationMethod:           types.SearchCompute,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotSeries, gotFound, err := store.FindMatchingSeries(ctx, MatchSeriesArgs{Query: "query 1", StepIntervalUnit: string(types.Week), StepIntervalValue: 1, GenerateFromCaptureGroups: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
+		autogold.Want("FoundTrueCaptureGroups", true).Equal(t, gotFound)
+	})
+}
+
+func TestUpdateFrontendSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	_, err := store.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            "series id 1",
+		Query:               "query 1",
+		CreatedAt:           now,
+		OldestHistoricalAt:  now,
+		LastRecordedAt:      now,
+		NextRecordingAfter:  now,
+		LastSnapshotAt:      now,
+		NextSnapshotAfter:   now,
+		BackfillQueuedAt:    now,
+		SampleIntervalUnit:  string(types.Week),
+		SampleIntervalValue: 1,
+		GenerationMethod:    types.Search,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("updates a series", func(t *testing.T) {
+		gotBeforeUpdate, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: "series id 1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("BeforeUpdateSeries", []types.InsightSeries{{
+			ID:                  1,
+			SeriesID:            "series id 1",
+			Query:               "query 1",
+			CreatedAt:           now,
+			OldestHistoricalAt:  now,
+			LastRecordedAt:      now,
+			NextRecordingAfter:  now,
+			LastSnapshotAt:      now,
+			NextSnapshotAfter:   now,
+			Enabled:             true,
+			SampleIntervalUnit:  "WEEK",
+			SampleIntervalValue: 1,
+			GenerationMethod:    "search",
+		}}).Equal(t, gotBeforeUpdate)
+
+		err = store.UpdateFrontendSeries(ctx, UpdateFrontendSeriesArgs{
+			SeriesID:          "series id 1",
+			Query:             "updated query!",
+			StepIntervalUnit:  string(types.Month),
+			StepIntervalValue: 5,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotAfterUpdate, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: "series id 1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterUpdateSeries", []types.InsightSeries{{
+			ID:                  1,
+			SeriesID:            "series id 1",
+			Query:               "updated query!",
+			CreatedAt:           now,
+			OldestHistoricalAt:  now,
+			LastRecordedAt:      now,
+			NextRecordingAfter:  now,
+			LastSnapshotAt:      now,
+			NextSnapshotAfter:   now,
+			Enabled:             true,
+			SampleIntervalUnit:  "MONTH",
+			SampleIntervalValue: 5,
+			GenerationMethod:    "search",
+		}}).Equal(t, gotAfterUpdate)
 	})
 }

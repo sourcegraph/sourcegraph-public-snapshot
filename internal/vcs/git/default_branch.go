@@ -19,8 +19,33 @@ func GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, c
 	if Mocks.GetDefaultBranch != nil {
 		return Mocks.GetDefaultBranch(repo)
 	}
+	return getDefaultBranch(ctx, repo, false)
+}
 
-	refBytes, _, exitCode, err := ExecSafe(ctx, repo, []string{"symbolic-ref", "HEAD"})
+// GetDefaultBranchShort returns the short name of the default branch for the
+// given repository and the commit it's currently at. A short name would return
+// something like `main` instead of `refs/heads/main`.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	if Mocks.GetDefaultBranchShort != nil {
+		return Mocks.GetDefaultBranchShort(repo)
+	}
+	return getDefaultBranch(ctx, repo, true)
+}
+
+// GetDefaultBranch returns the name of the default branch and the commit it's
+// currently at from the given repository.
+//
+// If the repository is empty or currently being cloned, empty values and no
+// error are returned.
+func getDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
+	args := []string{"symbolic-ref", "HEAD"}
+	if short {
+		args = append(args, "--short")
+	}
+	refBytes, _, exitCode, err := execSafe(ctx, repo, args)
 	refName = string(bytes.TrimSpace(refBytes))
 
 	if err == nil && exitCode == 0 {

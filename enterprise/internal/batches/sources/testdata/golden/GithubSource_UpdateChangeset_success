@@ -10,18 +10,40 @@
   "BaseRefName": "master",
   "Number": 358,
   "Author": {
-   "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+   "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
    "Login": "eseliger",
    "URL": "https://github.com/eseliger"
   },
+  "BaseRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
+  "HeadRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
   "Participants": [
    {
-    "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
     "Login": "eseliger",
     "URL": "https://github.com/eseliger"
    },
    {
-    "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/4594088?u=f8fd21b72a8295544123747e41fcd2d2dc3513fc\u0026v=4",
+    "Login": "chrispine",
+    "URL": "https://github.com/chrispine"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+    "Login": "LawnGnome",
+    "URL": "https://github.com/LawnGnome"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
     "Login": "mrnugget",
     "URL": "https://github.com/mrnugget"
    }
@@ -39,11 +61,11 @@
       "MessageHeadline": "Add foobar.md file",
       "URL": "https://github.com/sourcegraph/automation-testing/commit/05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
       "Committer": {
-       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?v=4",
        "Email": "mrnugget@gmail.com",
        "Name": "Thorsten Ball",
        "User": {
-        "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
         "Login": "mrnugget",
         "URL": "https://github.com/mrnugget"
        }
@@ -57,13 +79,54 @@
     "Type": "RenamedTitleEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
       "Login": "eseliger",
       "URL": "https://github.com/eseliger"
      },
      "PreviousTitle": "This is a test PR",
      "CurrentTitle": "This is a new title",
      "CreatedAt": "2020-10-15T23:57:12Z"
+    }
+   },
+   {
+    "Type": "IssueComment",
+    "Item": {
+     "DatabaseID": 883482926,
+     "Author": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/4594088?u=f8fd21b72a8295544123747e41fcd2d2dc3513fc\u0026v=4",
+      "Login": "chrispine",
+      "URL": "https://github.com/chrispine"
+     },
+     "Editor": null,
+     "AuthorAssociation": "MEMBER",
+     "Body": "Is it time to close these test PRs?",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/358#issuecomment-883482926",
+     "CreatedAt": "2021-07-20T15:24:26Z",
+     "UpdatedAt": "2021-07-20T15:24:26Z",
+     "IncludesCreatedEdit": false
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "CreatedAt": "2021-07-20T15:58:07Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/358#event-5045222623"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+      "Login": "LawnGnome",
+      "URL": "https://github.com/LawnGnome"
+     },
+     "CreatedAt": "2021-12-30T23:06:39Z"
     }
    }
   ],
@@ -76,8 +139,8 @@
        "Nodes": [
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzM=",
-         "Status": "QUEUED",
-         "Conclusion": "",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
          "ReceivedAt": "0001-01-01T00:00:00Z",
          "CheckRuns": {
           "Nodes": []
@@ -85,8 +148,8 @@
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzY=",
-         "Status": "QUEUED",
-         "Conclusion": "",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
          "ReceivedAt": "0001-01-01T00:00:00Z",
          "CheckRuns": {
           "Nodes": []
@@ -105,5 +168,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2020-10-15T23:47:12Z",
-  "UpdatedAt": "2020-10-15T23:57:13Z"
+  "UpdatedAt": "2021-12-30T23:06:46Z"
  }

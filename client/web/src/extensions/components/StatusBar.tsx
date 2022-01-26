@@ -3,7 +3,6 @@ import * as H from 'history'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable, timer } from 'rxjs'
 import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 
@@ -12,7 +11,7 @@ import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Badge, Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -105,16 +104,20 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 )}
             >
                 {canScrollNegative && (
-                    <button
-                        type="button"
-                        className={classNames('btn btn-link border-0', styles.scroll)}
+                    <Button
+                        className={classNames('border-0', styles.scroll)}
                         onClick={onNegativeClicked}
+                        variant="link"
                     >
                         <ChevronLeftIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 )}
                 <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
-                    {badgeText && <p className="badge badge-secondary m-0">{badgeText}</p>}
+                    {badgeText && (
+                        <Badge variant="secondary" className="m-0" as="p">
+                            {badgeText}
+                        </Badge>
+                    )}
                     {!!statusBarItems && statusBarItems !== 'loading' && statusBarItems.length > 0
                         ? statusBarItems.map(statusBarItem => (
                               <StatusBarItem
@@ -137,13 +140,13 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                           )}
                 </div>
                 {canScrollPositive && (
-                    <button
-                        type="button"
-                        className={classNames('btn btn-link border-0', styles.scroll)}
+                    <Button
+                        className={classNames('border-0', styles.scroll)}
                         onClick={onPositiveClicked}
+                        variant="link"
                     >
                         <ChevronRightIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 )}
             </ErrorBoundary>
         </div>
@@ -163,7 +166,8 @@ const StatusBarItem: React.FunctionComponent<
     const command = useMemo(() => statusBarItem.command, [statusBarItem.command])
 
     const to = useMemo(
-        () => command && urlForClientCommandOpen({ command: command.id, commandArguments: command.args }, location),
+        () =>
+            command && urlForClientCommandOpen({ command: command.id, commandArguments: command.args }, location.hash),
         [command, location]
     )
 

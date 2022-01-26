@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
 
 type batchSpecWorkspaceStepResolver struct {
@@ -16,6 +17,12 @@ type batchSpecWorkspaceStepResolver struct {
 	index    int
 	step     batcheslib.Step
 	stepInfo *btypes.StepInfo
+
+	cachedResult *execution.AfterStepResult
+}
+
+func (r *batchSpecWorkspaceStepResolver) Number() int32 {
+	return int32(r.index + 1)
 }
 
 func (r *batchSpecWorkspaceStepResolver) Run() string {
@@ -26,13 +33,20 @@ func (r *batchSpecWorkspaceStepResolver) Container() string {
 	return r.step.Container
 }
 
+func (r *batchSpecWorkspaceStepResolver) IfCondition() *string {
+	cond := r.step.IfCondition()
+	if cond == "" {
+		return nil
+	}
+	return &cond
+}
+
 func (r *batchSpecWorkspaceStepResolver) CachedResultFound() bool {
-	// TODO(ssbc): not implemented
-	return false
+	return r.stepInfo.StartedAt.IsZero() && r.cachedResult != nil
 }
 
 func (r *batchSpecWorkspaceStepResolver) Skipped() bool {
-	return r.stepInfo.Skipped
+	return r.CachedResultFound() || r.stepInfo.Skipped
 }
 
 func (r *batchSpecWorkspaceStepResolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error) {
@@ -43,7 +57,7 @@ func (r *batchSpecWorkspaceStepResolver) OutputLines(ctx context.Context, args *
 	if int(args.First) < len(lines) {
 		lines = lines[:args.First]
 	}
-	// TODO: Should sometimes return nil.
+	// TODO: Return nil when execution not yet started.
 	return &lines, nil
 }
 
@@ -75,7 +89,7 @@ func (r *batchSpecWorkspaceStepResolver) Environment() ([]graphqlbackend.BatchSp
 	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
 	// resolve workspaces step.
 
-	var env map[string]string = r.stepInfo.Environment
+	var env = r.stepInfo.Environment
 
 	// Not yet resolved, do a server-side pass.
 	if env == nil {
@@ -94,6 +108,14 @@ func (r *batchSpecWorkspaceStepResolver) Environment() ([]graphqlbackend.BatchSp
 }
 
 func (r *batchSpecWorkspaceStepResolver) OutputVariables() *[]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver {
+	if r.CachedResultFound() {
+		resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.cachedResult.Outputs))
+		for k, v := range r.cachedResult.Outputs {
+			resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
+		}
+		return &resolvers
+	}
+
 	if r.stepInfo.OutputVariables == nil {
 		return nil
 	}
@@ -121,8 +143,11 @@ func (r *batchSpecWorkspaceStepResolver) DiffStat(ctx context.Context) (*graphql
 }
 
 func (r *batchSpecWorkspaceStepResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
+	if r.CachedResultFound() {
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repo, r.baseRev, r.cachedResult.Diff)
+	}
 	if r.stepInfo.Diff != nil {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repo, r.baseRev, *r.stepInfo.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repo, r.baseRev, *r.stepInfo.Diff)
 	}
 	return nil, nil
 }

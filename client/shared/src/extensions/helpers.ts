@@ -1,15 +1,16 @@
 import { Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
+import { createAggregateError } from '@sourcegraph/common'
+import { fromObservableQueryPromise, getDocumentNode, gql } from '@sourcegraph/http-client'
+
 import {
     ExtensionsResult,
     ExtensionsVariables,
     ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsResult,
     ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsVariables,
 } from '../graphql-operations'
-import { fromObservableQueryPromise, getDocumentNode, gql } from '../graphql/graphql'
 import { PlatformContext } from '../platform/context'
-import { createAggregateError } from '../util/errors'
 
 import {
     ConfiguredExtension,

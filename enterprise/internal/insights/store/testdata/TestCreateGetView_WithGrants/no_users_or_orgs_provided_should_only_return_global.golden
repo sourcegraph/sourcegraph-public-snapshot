@@ -1,4 +1,5 @@
-[]types.InsightViewSeries{types.InsightViewSeries{
+[]types.InsightViewSeries{{
+	ViewID:             2,
 	UniqueID:           "globalonly",
 	SeriesID:           "globalseries",
 	Title:              "global only",
@@ -13,4 +14,6 @@
 	Label:              "label2",
 	LineColor:          "red",
 	SampleIntervalUnit: "MONTH",
+	PresentationType:   types.PresentationType("LINE"),
+	GenerationMethod:   types.GenerationMethod("search"),
 }}

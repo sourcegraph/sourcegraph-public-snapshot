@@ -7,33 +7,25 @@ import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon
 import React, { useEffect, useMemo } from 'react'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/SyntaxHighlightedSearchQuery'
+import { Button, useObservable, Link, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
-import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
-    ParsedSearchQueryProps,
-    SearchContextInputProps,
-    SearchContextProps,
-} from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
+import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -46,15 +38,11 @@ export interface CommunitySearchContextPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        PatternTypeProps,
-        CaseSensitivityProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         SearchContextInputProps,
-        Pick<SearchContextProps, 'fetchSearchContextBySpec'>,
-        OnboardingTourProps {
+        Pick<SearchContextProps, 'fetchSearchContextBySpec'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -77,6 +65,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
             props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`),
         [props.communitySearchContextMetadata.spec, props.telemetryService]
     )
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     const contextQuery = `context:${props.communitySearchContextMetadata.spec}`
 
@@ -84,11 +73,11 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContextBySpec(props.communitySearchContextMetadata.spec).pipe(
+                fetchSearchContextBySpec(props.communitySearchContextMetadata.spec, props.platformContext).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [props.communitySearchContextMetadata.spec, fetchSearchContextBySpec]
+            [props.communitySearchContextMetadata.spec, fetchSearchContextBySpec, props.platformContext]
         )
     )
 
@@ -97,7 +86,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
     ): void => {
         eventLogger.log('CommunitySearchContextSuggestionClicked')
         event?.preventDefault()
-        submitSearch({ ...props, query, patternType, source: 'communitySearchContextPage' })
+        submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
     }
 
     return (
@@ -150,17 +139,18 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
                                     </small>
                                     <div className="d-flex">
-                                        <button
-                                            className={classNames('btn btn-secondary btn-sm', styles.searchButton)}
-                                            type="button"
+                                        <Button
+                                            className={styles.searchButton}
                                             aria-label="Search"
                                             onClick={onSubmitExample(
                                                 `${contextQuery} ${example.query}`,
                                                 example.patternType
                                             )}
+                                            variant="secondary"
+                                            size="sm"
                                         >
                                             Search
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
@@ -168,7 +158,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                     </div>
                     <div className={classNames('col-xs-12 col-lg-5', styles.column)}>
                         <div className="order-2-lg order-1-xs">
-                            <div className={classNames('card', styles.repoCard)}>
+                            <Card className={styles.repoCard}>
                                 <h2>
                                     <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
                                     Repositories
@@ -207,7 +197,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                             </div>
                                         </div>
                                     )}
-                            </div>
+                            </Card>
                         </div>
                     </div>
                 </div>
@@ -223,9 +213,9 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
     <li className={classNames('list-unstyled mb-3', styles.repoItem)} key={repo}>
         {repo.startsWith('github.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GithubIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </a>
+                </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>
@@ -233,9 +223,9 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         )}
         {repo.startsWith('gitlab.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GitlabIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </a>
+                </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>
@@ -243,9 +233,9 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         )}
         {repo.startsWith('bitbucket.com') && (
             <>
-                <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <BitbucketIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </a>
+                </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
                 </Link>

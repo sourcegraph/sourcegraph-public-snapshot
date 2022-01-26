@@ -3,17 +3,20 @@ package insights
 import (
 	"context"
 	"database/sql"
-	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -29,7 +32,7 @@ func IsEnabled() bool {
 		// Insights.
 		return false
 	}
-	if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 		// Code insights is not supported in single-container Docker demo deployments.
 		return false
 	}
@@ -37,9 +40,9 @@ func IsEnabled() bool {
 }
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
-func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	if !IsEnabled() {
-		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("backend-run code insights are not available on single-container deployments")
 		} else {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights has been disabled")
@@ -51,6 +54,7 @@ func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oob
 		return err
 	}
 	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
+
 	return nil
 }
 
@@ -59,20 +63,42 @@ func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oob
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
 func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
-	timescaleDSN := conf.Get().ServiceConnections.CodeInsightsTimescaleDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections.CodeInsightsTimescaleDSN; timescaleDSN != newDSN {
-			log.Fatalf("Detected codeinsights database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeInsightsTimescaleDSN
 	})
-
-	db, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DBName: "codeinsights", AppName: app})
+	var (
+		db  *sql.DB
+		err error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		db, err = connections.NewCodeInsightsDB(dsn, app, true, &observation.TestContext)
+	} else {
+		db, err = connections.EnsureNewCodeInsightsDB(dsn, app, &observation.TestContext)
+	}
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	if err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
-		return nil, errors.Errorf("Failed to perform codeinsights database migration: %s", err)
-	}
 	return db, nil
+}
+
+func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	if !IsEnabled() {
+		return nil
+	}
+
+	timescale, err := InitializeCodeInsightsDB("worker-oobmigrator")
+	if err != nil {
+		return err
+	}
+
+	insightsMigrator := migration.NewMigrator(timescale, db)
+
+	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
+	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {
+		return errors.Wrap(err, "failed to register settings migration job")
+	}
+
+	return nil
 }

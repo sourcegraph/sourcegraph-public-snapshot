@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"sort"
 	"time"
 
@@ -37,12 +36,21 @@ type Store struct {
 	Tracer trace.Tracer
 	// RepoStore is a database.RepoStore using the same database handle.
 	RepoStore database.RepoStore
+	// GitserverReposStore is a database.GitserverReposStore using the same database handle.
+	GitserverReposStore database.GitserverRepoStore
 	// ExternalServiceStore is a database.ExternalServiceStore using the same database handle.
-	ExternalServiceStore *database.ExternalServiceStore
+	ExternalServiceStore database.ExternalServiceStore
 
 	txtrace *trace.Trace
 	txctx   context.Context
 }
+
+type ReposMocks struct {
+	ListExternalServiceUserIDsByRepoID func(ctx context.Context, repoID api.RepoID) ([]int32, error)
+	ListExternalServiceRepoIDsByUserID func(ctx context.Context, userID int32) ([]api.RepoID, error)
+}
+
+var Mocks ReposMocks
 
 // NewStore instantiates and returns a new DBStore with prepared statements.
 func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
@@ -50,6 +58,7 @@ func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
 	return &Store{
 		Store:                s,
 		RepoStore:            database.ReposWith(s),
+		GitserverReposStore:  database.NewGitserverReposWith(s),
 		ExternalServiceStore: database.ExternalServicesWith(s),
 		Log:                  log15.Root(),
 		Tracer:               trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -60,6 +69,7 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{
 		Store:                s.Store.With(other),
 		RepoStore:            s.RepoStore.With(other),
+		GitserverReposStore:  s.GitserverReposStore.With(other),
 		ExternalServiceStore: s.ExternalServiceStore.With(other),
 		Log:                  s.Log,
 		Metrics:              s.Metrics,
@@ -134,38 +144,40 @@ func (s *Store) trace(ctx context.Context, family string) (*trace.Trace, context
 	return tr, ctx
 }
 
-// CountUserAddedRepos counts the total number of repos that have been added
-// by user owned external services. If userIDs are specified, only repos owned by the given
-// users are counted.
-func (s *Store) CountUserAddedRepos(ctx context.Context, userIDs ...int32) (count uint64, err error) {
-	tr, ctx := s.trace(ctx, "Store.CountUserAddedRepos")
+// CountNamespacedRepos counts the total number of repos that have been added
+// by user or organization owned external services.
+// If userID is specified, only repos owned by that user are counted.
+// If orgID is specified, only repos owned by that organization are counted.
+func (s *Store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
+	tr, ctx := s.trace(ctx, "Store.CountNamespacedRepos")
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
-		uids := fmt.Sprint(userIDs)
-		tr.LogFields(otlog.String("user-ids", uids))
-		s.Metrics.CountUserAddedRepos.Observe(secs, float64(count), &err)
-		logging.Log(s.Log, "store.count-user-added-repos", &err, "count", count, "user-ids", uids)
+		tr.LogFields(otlog.Int32("user-id", userID), otlog.Int32("org-id", orgID))
+		s.Metrics.CountNamespacedRepos.Observe(secs, float64(count), &err)
+		logging.Log(s.Log, "store.count-namespaced-repos", &err, "count", count, "user-id", userID, "org-id", orgID)
 
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
 
 	var q *sqlf.Query
-	if len(userIDs) > 0 {
-		q = sqlf.Sprintf(countTotalUserAddedReposQueryFmtstr+"\nAND user_id = ANY(%s)", pq.Array(userIDs))
+	if userID > 0 {
+		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND user_id = %d", userID)
+	} else if orgID > 0 {
+		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND org_id = %d", orgID)
 	} else {
-		q = sqlf.Sprintf(countTotalUserAddedReposQueryFmtstr)
+		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr)
 	}
 
 	err = s.QueryRow(ctx, q).Scan(&count)
 	return count, err
 }
 
-const countTotalUserAddedReposQueryFmtstr = `
+const countTotalNamespacedReposQueryFmtstr = `
 SELECT COUNT(DISTINCT(repo_id))
 FROM external_service_repos
-WHERE user_id IS NOT NULL`
+WHERE (user_id IS NOT NULL OR org_id IS NOT NULL)`
 
 // DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo not in the given ids that is owned
 // by the given external service. We run one query per repo rather than one batch query in order to reduce the chances
@@ -282,8 +294,8 @@ WHERE repo_id = %s AND user_id IS NOT NULL
 // given repository. These users have proven that they have read access to the
 // repository given records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
-	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
-		return database.Mocks.Repos.ListExternalServiceUserIDsByRepoID(ctx, repoID)
+	if Mocks.ListExternalServiceUserIDsByRepoID != nil {
+		return Mocks.ListExternalServiceUserIDsByRepoID(ctx, repoID)
 	}
 
 	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
@@ -319,8 +331,8 @@ AND repo.private
 // user has already proven that they have read access to the repositories since
 // records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
-	if database.Mocks.Repos.ListExternalServiceRepoIDsByUserID != nil {
-		return database.Mocks.Repos.ListExternalServiceRepoIDsByUserID(ctx, userID)
+	if Mocks.ListExternalServiceRepoIDsByUserID != nil {
+		return Mocks.ListExternalServiceRepoIDsByUserID(ctx, userID)
 	}
 
 	tr, ctx := s.trace(ctx, "Store.ListExternalServicePrivateRepoIDsByUserID")
@@ -569,9 +581,9 @@ INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT %s
 WHERE NOT EXISTS (
 	SELECT
-	FROM external_service_sync_jobs j
-	JOIN external_services es ON es.id = j.external_service_id
-	WHERE j.external_service_id = %s
+	FROM external_services es
+	LEFT JOIN external_service_sync_jobs j ON es.id = j.external_service_id
+	WHERE es.id = %s
 	AND (
 		j.state IN ('queued', 'processing')
 		OR es.cloud_default

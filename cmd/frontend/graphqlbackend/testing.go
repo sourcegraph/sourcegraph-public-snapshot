@@ -1,34 +1,26 @@
 package graphqlbackend
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
-	"sync"
 	"testing"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-var (
-	parseSchemaOnce sync.Once
-	parseSchemaErr  error
-	parsedSchema    *graphql.Schema
-)
-
-func mustParseGraphQLSchema(t *testing.T) *graphql.Schema {
+func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
-	parseSchemaOnce.Do(func() {
-		parsedSchema, parseSchemaErr = NewSchema(nil, nil, nil, nil, nil, nil, nil, nil, nil)
-	})
+	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}
@@ -96,11 +88,7 @@ func RunTest(t *testing.T, test *Test) {
 		t.Fatalf("want: invalid JSON: %s", err)
 	}
 
-	if !bytes.Equal(got, want) {
-		t.Logf("got:  %s", got)
-		t.Logf("want: %s", want)
-		t.Fail()
-	}
+	require.JSONEq(t, string(want), string(got))
 }
 
 func formatJSON(data []byte) ([]byte, error) {

@@ -10,15 +10,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestGetDumpsByIDs(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// Dumps do not exist initially
@@ -86,10 +84,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 }
 
 func TestFindClosestDumps(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -105,7 +100,7 @@ func TestFindClosestDumps(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
 		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
 		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
@@ -154,10 +149,7 @@ func TestFindClosestDumps(t *testing.T) {
 }
 
 func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -173,7 +165,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
 		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
 		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
@@ -216,10 +208,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 }
 
 func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -232,7 +221,7 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
 		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
 		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
@@ -271,10 +260,7 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 }
 
 func TestFindClosestDumpsDistinctRoots(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -287,7 +273,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
@@ -323,10 +309,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 }
 
 func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -362,7 +345,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
 		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
 		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
@@ -405,10 +388,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 }
 
 func TestFindClosestDumpsIndexerName(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -427,7 +407,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
 		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
 		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
@@ -484,10 +464,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 }
 
 func TestFindClosestDumpsIntersectingPath(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -499,7 +476,7 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
@@ -530,10 +507,7 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 }
 
 func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -550,7 +524,7 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	currentGraph := gitserver.ParseCommitGraph([]string{
+	currentGraph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
 		strings.Join([]string{makeCommit(5), makeCommit(1)}, " "),
 		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
@@ -581,7 +555,7 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	insertLinks(t, db, 50, links)
 
 	// Test
-	graphFragment := gitserver.ParseCommitGraph([]string{
+	graphFragment := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(7), makeCommit(4), makeCommit(6)}, " "),
 		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
 		strings.Join([]string{makeCommit(6)}, " "),
@@ -602,7 +576,7 @@ type FindClosestDumpsTestCase struct {
 	file                string
 	rootMustEnclosePath bool
 	indexer             string
-	graph               *gitserver.CommitGraph
+	graph               *gitdomain.CommitGraph
 	graphFragmentOnly   bool
 	anyOfIDs            []int
 	allOfIDs            []int
@@ -700,13 +674,11 @@ func testPresence(needle int, haystack []int) bool {
 }
 
 func TestDeleteOverlappingDumps(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db, Upload{
+	insertUploads(t, sqlDB, Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",
@@ -727,13 +699,11 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db, Upload{
+	insertUploads(t, sqlDB, Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",
@@ -766,13 +736,11 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db, Upload{
+	insertUploads(t, sqlDB, Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",

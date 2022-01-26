@@ -4,18 +4,7 @@ import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-    BehaviorSubject,
-    combineLatest,
-    merge,
-    EMPTY,
-    from,
-    fromEvent,
-    of,
-    ReplaySubject,
-    Subject,
-    Subscription,
-} from 'rxjs'
+import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
     concatMap,
@@ -31,8 +20,14 @@ import {
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
-import { createHoverifier, findPositionsFromEvents, HoveredToken } from '@sourcegraph/codeintellify'
-import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
+import {
+    getCodeElementsInRange,
+    HoveredToken,
+    locateTarget,
+    findPositionsFromEvents,
+    createHoverifier,
+} from '@sourcegraph/codeintellify'
+import { asError, isErrorLike, isDefined } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -49,8 +44,8 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import { observeResize } from '@sourcegraph/shared/src/util/dom'
+import { property } from '@sourcegraph/shared/src/util/types'
 import {
     AbsoluteRepoFile,
     FileSpec,
@@ -67,14 +62,14 @@ import {
     addLineRangeQueryParameter,
     formatSearchParameters,
 } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { observeResize } from '../../util/dom'
 import { HoverThresholdProps } from '../RepoContainer'
 
+import styles from './Blob.module.scss'
 import { LineDecorator } from './LineDecorator'
 
 /**
@@ -109,8 +104,8 @@ const domFunctions = {
     getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
         // If the target is part of the line decoration attachment, return null.
         if (
-            target.classList.contains('line-decoration-attachment') ||
-            target.classList.contains('line-decoration-attachment__contents')
+            target.hasAttribute('data-line-decoration-attachment') ||
+            target.hasAttribute('data-line-decoration-attachment-content')
         ) {
             return null
         }
@@ -244,15 +239,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         }
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
-    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
-    const nextCloseButtonClick = useCallback((click: MouseEvent) => closeButtonClicks.next(click), [closeButtonClicks])
-
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
     const hoverifier = useMemo(
         () =>
             createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-                closeButtonClicks,
                 hoverOverlayElements,
                 hoverOverlayRerenders: rerenders.pipe(
                     withLatestFrom(hoverOverlayElements, blobElements),
@@ -274,7 +265,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         { extensionsController }
                     ),
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-                pinningEnabled: true,
             }),
         [
             // None of these dependencies are likely to change
@@ -283,7 +273,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             hoverOverlayElements,
             blobElements,
             rerenders,
-            closeButtonClicks,
         ]
     )
 
@@ -325,12 +314,16 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             query = toPositionOrRangeQueryParameter({ position })
                         }
 
-                        props.history.push({
-                            ...location,
-                            search: formatSearchParameters(
-                                addLineRangeQueryParameter(new URLSearchParams(location.search), query)
-                            ),
-                        })
+                        if (position && !('character' in position)) {
+                            // Only change the URL when clicking on blank space on the line (not on
+                            // characters). Otherwise, this would interfere with go to definition.
+                            props.history.push({
+                                ...location,
+                                search: formatSearchParameters(
+                                    addLineRangeQueryParameter(new URLSearchParams(location.search), query)
+                                ),
+                            })
+                        }
                     }),
                     mapTo(undefined)
                 ),
@@ -338,12 +331,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     )
 
+    // Trigger line highlighting after React has finished putting new lines into the DOM via
+    // `dangerouslySetInnerHTML`.
+    useEffect(() => codeViewElements.next(codeViewReference.current))
+
     // Line highlighting when position in hash changes
     useObservable(
         useMemo(
             () =>
-                locationPositions.pipe(
-                    withLatestFrom(codeViewElements.pipe(filter(isDefined))),
+                combineLatest([locationPositions, codeViewElements.pipe(filter(isDefined))]).pipe(
                     tap(([position, codeView]) => {
                         const codeCells = getCodeElementsInRange({
                             codeView,
@@ -598,9 +594,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     return (
         <>
-            <div className={classNames('blob', props.className)} ref={nextBlobElement}>
+            <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
                 <code
-                    className={classNames('blob__code test-blob', props.wrapCode && 'blob__code--wrapped')}
+                    className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
                     dangerouslySetInnerHTML={{
                         __html: blobInfo.html,
@@ -610,8 +606,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
+                        nav={url => props.history.push(url)}
+                        hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
-                        onCloseButtonClick={nextCloseButtonClick}
                         extensionsController={extensionsController}
                     />
                 )}
@@ -638,7 +635,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 extensionsController={extensionsController}
                 uri={toURIWithPath(blobInfo)}
                 location={location}
-                className="blob-status-bar__body"
+                className={styles.blobStatusBarBody}
                 statusBarRef={nextStatusBarElement}
                 hideWhileInitializing={true}
             />

@@ -4,6 +4,7 @@ package authz
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -57,8 +58,9 @@ type ExternalUserPermissions struct {
 	ExcludeContains []extsvc.RepoID
 
 	// SubRepoPermissions denotes sub-repository content access control rules where
-	// relevant.
-	SubRepoPermissions map[extsvc.RepoID]SubRepoPermissions
+	// relevant. If no corresponding entry for an Exacts repo exists in SubRepoPermissions,
+	// it can be safely assumed that access to the entire repo is available.
+	SubRepoPermissions map[extsvc.RepoID]*SubRepoPermissions
 }
 
 // FetchPermsOptions declares options when performing permissions sync.
@@ -116,6 +118,10 @@ type Provider interface {
 	// to decide whether to discard.
 	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts FetchPermsOptions) ([]extsvc.AccountID, error)
 
+	// FetchUserPermsByToken is similar to FetchUserPerms but only requires a token
+	// in order to communicate with the code host.
+	FetchUserPermsByToken(ctx context.Context, token string, opts FetchPermsOptions) (*ExternalUserPermissions, error)
+
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
 	ServiceType() string
 
@@ -130,4 +136,32 @@ type Provider interface {
 	// Validate checks the configuration and credentials of the authz provider and returns any
 	// problems.
 	Validate() (problems []string)
+}
+
+// ErrUnauthenticated indicates an unauthenticated request.
+type ErrUnauthenticated struct{}
+
+func (e ErrUnauthenticated) Error() string {
+	return "request is unauthenticated"
+}
+
+func (e ErrUnauthenticated) Unauthenticated() bool { return true }
+
+// ErrUnimplemented indicates sync is unimplemented and its data should not be used.
+//
+// When returning this error, provide a pointer.
+type ErrUnimplemented struct {
+	// Feature indicates the unimplemented functionality.
+	Feature string
+}
+
+func (e ErrUnimplemented) Error() string {
+	return fmt.Sprintf("%s is unimplemented", e.Feature)
+}
+
+func (e ErrUnimplemented) Unimplemented() bool { return true }
+
+func (e ErrUnimplemented) Is(err error) bool {
+	_, ok := err.(*ErrUnimplemented)
+	return ok
 }

@@ -1,4 +1,5 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
@@ -6,26 +7,28 @@ import { Toggle } from './Toggle'
 
 describe('Toggle', () => {
     test('value is false', () => {
-        expect(mount(<Toggle value={false} />)).toMatchSnapshot()
+        expect(render(<Toggle value={false} />).asFragment()).toMatchSnapshot()
     })
 
     test('value is true', () => {
-        expect(mount(<Toggle value={true} />)).toMatchSnapshot()
+        expect(render(<Toggle value={true} />).asFragment()).toMatchSnapshot()
     })
 
     test('disabled', () => {
         const onToggle = sinon.spy(() => undefined)
-        const component = mount(<Toggle onToggle={onToggle} disabled={true} />)
+        const { asFragment } = render(<Toggle onToggle={onToggle} disabled={true} data-testid="toggle" />)
 
-        component.find('.toggle').simulate('click')
+        userEvent.click(screen.getByTestId('toggle'))
         sinon.assert.notCalled(onToggle)
-        expect(component).toMatchSnapshot()
+        expect(asFragment()).toMatchSnapshot()
     })
 
-    test('className', () => expect(mount(<Toggle className="c" />)).toMatchSnapshot())
+    test('className', () => expect(render(<Toggle className="c" />).asFragment()).toMatchSnapshot())
 
     test('aria', () =>
         expect(
-            mount(<Toggle aria-describedby="test-id-1" aria-labelledby="test-id-2" aria-label="test toggle" />)
+            render(
+                <Toggle aria-describedby="test-id-1" aria-labelledby="test-id-2" aria-label="test toggle" />
+            ).asFragment()
         ).toMatchSnapshot())
 })

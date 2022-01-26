@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
@@ -27,6 +27,7 @@ export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaH
 export const OrgHeader: React.FunctionComponent<Props> = ({
     batchChangesEnabled,
     batchChangesExecutionEnabled,
+    batchChangesWebhookLogsEnabled,
     org,
     navItems,
     match,
@@ -63,6 +64,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                     condition({
                                         batchChangesEnabled,
                                         batchChangesExecutionEnabled,
+                                        batchChangesWebhookLogsEnabled,
                                         org,
                                         isSourcegraphDotCom,
                                     }) && (
@@ -88,9 +90,14 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                         {org.viewerPendingInvitation?.respondURL && (
                             <div className="pb-1">
                                 <small className="mr-2">Join organization:</small>
-                                <Link to={org.viewerPendingInvitation.respondURL} className="btn btn-success btn-sm">
+                                <Button
+                                    to={org.viewerPendingInvitation.respondURL}
+                                    variant="success"
+                                    size="sm"
+                                    as={Link}
+                                >
                                     View invitation
-                                </Link>
+                                </Button>
                             </div>
                         )}
                     </div>

@@ -5,19 +5,19 @@ import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
-import { Settings } from '../../schema/settings.schema'
-import { lazyComponent } from '../../util/lazyComponent'
+import { CodeInsightsContextProps } from '../../insights/types'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from './core/backend/code-insights-gql-backend'
-import { CodeInsightsSettingsCascadeBackend } from './core/backend/code-insights-setting-cascade-backend'
+import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsSettingsCascadeBackend } from './core/backend/setting-based-api/code-insights-setting-cascade-backend'
 import { BetaConfirmationModal } from './modals/BetaConfirmationModal'
 import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
 import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
@@ -34,7 +34,11 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
  * Because we need to pass all required prop from main Sourcegraph.tsx component to
  * sub-components withing app tree.
  */
-export interface InsightsRouterProps extends SettingsCascadeProps<Settings>, PlatformContextProps, TelemetryProps {
+export interface InsightsRouterProps
+    extends CodeInsightsContextProps,
+        SettingsCascadeProps<Settings>,
+        PlatformContextProps,
+        TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -46,20 +50,19 @@ export interface InsightsRouterProps extends SettingsCascadeProps<Settings>, Pla
  * Main Insight routing component. Main entry point to code insights UI.
  */
 export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props => {
-    const { platformContext, settingsCascade, telemetryService, authenticatedUser } = props
+    const { isCodeInsightsGqlApiEnabled, platformContext, settingsCascade, telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
     const apolloClient = useApolloClient()
 
-    const api = useMemo(() => {
-        // Disabled by default condition
-        const isNewGqlApiEnabled =
-            !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi
-
-        return isNewGqlApiEnabled
-            ? new CodeInsightsGqlBackend(apolloClient)
-            : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [platformContext, settingsCascade, apolloClient])
+    const gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
+    const api = useMemo(
+        () =>
+            isCodeInsightsGqlApiEnabled
+                ? gqlApi
+                : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext),
+        [isCodeInsightsGqlApiEnabled, gqlApi, settingsCascade, platformContext]
+    )
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>

@@ -11,6 +11,7 @@ site_monitoring.go @bobheadxi
 
 # Batch changes
 batches.go @eseliger
+batches.go @courier-new
 
 # Insights
 insights.go @sourcegraph/code-insights-backend

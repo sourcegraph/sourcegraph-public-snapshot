@@ -7,10 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-func CanIndexJavaRepo(gitserver GitClient, paths []string) bool {
-	return javaBuildTool(paths) != ""
-}
-
 func InferJavaIndexJobs(gitserver GitClient, paths []string) (indexes []config.IndexJob) {
 	if buildTool := javaBuildTool(paths); buildTool != "" {
 		indexes = append(indexes, config.IndexJob{

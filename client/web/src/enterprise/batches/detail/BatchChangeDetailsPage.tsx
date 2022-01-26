@@ -2,11 +2,12 @@ import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { useQuery } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
-import { ErrorMessage } from '@sourcegraph/web/src/components/alerts'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { PageHeader, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
@@ -18,13 +19,7 @@ import {
 } from '../../../graphql-operations'
 import { Description } from '../Description'
 
-import {
-    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-    deleteBatchChange as _deleteBatchChange,
-    queryAllChangesetIDs as _queryAllChangesetIDs,
-    BATCH_CHANGE_BY_NAMESPACE,
-} from './backend'
+import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs } from './BatchChangeDetailsTabs'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
@@ -34,8 +29,9 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
+import { WebhookAlert } from './WebhookAlert'
 
-export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
+export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, SettingsCascadeProps<Settings> {
     /** The namespace ID. */
     namespaceID: Scalars['ID']
     /** The batch change name. */
@@ -82,7 +78,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     if (loading && !data) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
@@ -103,9 +99,9 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             {/* If we received an error after we already had data, we keep the
                 data on the page but also surface the error with an alert. */}
             {error && (
-                <div className="alert alert-danger">
+                <Alert variant="danger">
                     <ErrorMessage error={error.message} />
-                </div>
+                </Alert>
             )}
             <PageHeader
                 path={[
@@ -119,7 +115,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 byline={
                     <BatchChangeInfoByline
                         createdAt={batchChange.createdAt}
-                        initialApplier={batchChange.initialApplier}
+                        creator={batchChange.creator}
                         lastAppliedAt={batchChange.lastAppliedAt}
                         lastApplier={batchChange.lastApplier}
                     />
@@ -131,6 +127,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                         deleteBatchChange={deleteBatchChange}
                         batchChangeNamespaceURL={batchChange.namespace.url}
                         history={history}
+                        settingsCascade={props.settingsCascade}
                     />
                 }
                 className="test-batch-change-details-page mb-3"
@@ -144,6 +141,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <ChangesetsArchivedNotice history={history} location={location} />
+            <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}

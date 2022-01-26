@@ -3,6 +3,8 @@ package run
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -16,21 +18,10 @@ type SearchInputs struct {
 	OriginalQuery string     // the raw string of the original search query
 	PatternType   query.SearchType
 	UserSettings  *schema.Settings
+	Features      featureflag.FlagSet
 
 	// DefaultLimit is the default limit to use if not specified in query.
 	DefaultLimit int
-}
-
-// Job is an interface shared by all search backends. Calling Run on a job
-// object runs a search. The relation with SearchInputs and Jobs is that
-// SearchInputs are static values, parsed and validated, to produce Jobs. Jobs
-// express semantic behavior at runtime across different backends and system
-// architecture. The third argument accepts resolved repositories (which may or
-// may not be required, depending on the job. E.g., a global search job does not
-// require upfront repository resolution).
-type Job interface {
-	Run(context.Context, streaming.Sender, []*search.RepositoryRevisions) error
-	Name() string
 }
 
 // MaxResults computes the limit for the query.
@@ -48,4 +39,14 @@ func (inputs SearchInputs) MaxResults() int {
 	}
 
 	return search.DefaultMaxSearchResults
+}
+
+// Job is an interface shared by all individual search operations in the
+// backend (e.g., text vs commit vs symbol search are represented as different
+// jobs) as well as combinations over those searches (run a set in parallel,
+// timeout). Calling Run on a job object runs a search.
+//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/search/run -i Job -o job_mock_test.go
+type Job interface {
+	Run(context.Context, database.DB, streaming.Sender) error
+	Name() string
 }

@@ -3,6 +3,8 @@ import React, { useMemo } from 'react'
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
+import { useObservable } from '@sourcegraph/wildcard'
+
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { ContributionOptions } from '../api/extension/extensionHostApi'
 import { ContributableMenu } from '../api/protocol'
@@ -10,7 +12,6 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { useObservable } from '../util/useObservable'
 
 import { ActionItem, ActionItemAction } from './ActionItem'
 

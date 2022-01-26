@@ -2,16 +2,15 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
+import styles from '../../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields } from '../../types'
-import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
 import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
 import { useInsightCreationForm } from './hooks/use-insight-creation-form/use-insight-creation-form'
-import styles from './SearchInsightCreationContent.module.scss'
 
 export interface SearchInsightCreationContentProps {
     /** This component might be used in edit or creation insight case. */
@@ -68,19 +67,15 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         repositories.input.ref.current?.focus()
         visibility.input.onChange('personal')
         series.input.onChange([createDefaultEditSeries({ edit: true })])
-        stepValue.input.onChange('2')
+        stepValue.input.onChange('1')
         step.input.onChange('months')
     }
-
-    const validEditSeries = editSeries.filter(series => series.valid)
-    const repositoriesList = getSanitizedRepositories(repositories.input.value)
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
         repositories.meta.validState === 'VALID' &&
-        repositoriesList.length > 0 &&
-        (series.meta.validState === 'VALID' || validEditSeries.length) &&
+        (series.meta.validState === 'VALID' || editSeries.some(series => series.valid)) &&
         stepValue.meta.validState === 'VALID' &&
         // For all repos mode we are not able to show the live preview chart
         !allReposMode.input.value

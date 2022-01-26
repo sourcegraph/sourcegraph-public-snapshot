@@ -17,7 +17,9 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -26,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -85,6 +88,9 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						URL:            "https://github.com/sourcegraph/sourcegraph",
 						StargazerCount: 2220,
 						ForkCount:      164,
+						// We're hitting github.com here, so visibility will be empty irrespective
+						// of repository type. This is a GitHub enterprise only feature.
+						Visibility: "",
 					},
 				}
 
@@ -125,6 +131,114 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			}
 
 			repo, err := githubSrc.GetRepo(context.Background(), tc.nameWithOwner)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, repo)
+			}
+		})
+	}
+}
+
+func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
+	testCases := []struct {
+		name          string
+		nameWithOwner string
+		assert        func(*testing.T, *types.Repo)
+		err           string
+	}{
+		{
+			name:          "internal repo in github enterprise",
+			nameWithOwner: "admiring-austin-120/fluffy-enigma",
+			assert: func(t *testing.T, have *types.Repo) {
+				t.Helper()
+
+				want := &types.Repo{
+					Name:        "ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
+					Description: "Internal repo used in tests in sourcegraph code.",
+					URI:         "ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
+					Stars:       0,
+					Private:     true,
+					ExternalRepo: api.ExternalRepoSpec{
+						ID:          "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
+						ServiceType: "github",
+						ServiceID:   "https://ghe.sgdev.org/",
+					},
+					Sources: map[string]*types.SourceInfo{
+						"extsvc:github:0": {
+							ID:       "extsvc:github:0",
+							CloneURL: "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
+						},
+					},
+					Metadata: &github.Repository{
+						ID:             "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
+						DatabaseID:     442285,
+						NameWithOwner:  "admiring-austin-120/fluffy-enigma",
+						Description:    "Internal repo used in tests in sourcegraph code.",
+						URL:            "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
+						StargazerCount: 0,
+						ForkCount:      0,
+						IsPrivate:      true,
+						Visibility:     github.VisibilityInternal,
+					},
+				}
+
+				if !reflect.DeepEqual(have, want) {
+					t.Errorf("response: %s", cmp.Diff(have, want))
+				}
+			},
+			err: "<nil>",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GITHUB-ENTERPRISE/" + tc.name
+
+		t.Run(tc.name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						EnableGithubInternalRepoVisibility: true,
+					},
+				},
+			})
+
+			rcache.SetupForTest(t)
+			fixtureName := "githubenterprise-getrepo"
+			gheToken := os.Getenv("GHE_TOKEN")
+			fmt.Println(gheToken)
+
+			if update(fixtureName) && gheToken == "" {
+				t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
+			}
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &types.ExternalService{
+				Kind: extsvc.KindGitHub,
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://ghe.sgdev.org",
+					Token: gheToken,
+				}),
+			}
+
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			githubSrc, err := NewGithubSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repo, err := githubSrc.GetRepo(context.Background(), tc.nameWithOwner)
+			if err != nil {
+				t.Fatalf("GetRepo failed: %v", err)
+			}
+
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -219,7 +333,7 @@ func TestMatchOrg(t *testing.T) {
 }
 
 func TestGithubSource_ListRepos(t *testing.T) {
-	assertAllReposListed := func(want []string) types.ReposAssertion {
+	assertAllReposListed := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
 
@@ -235,7 +349,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		assert types.ReposAssertion
+		assert typestest.ReposAssertion
 		mw     httpcli.Middleware
 		conf   *schema.GitHubConnection
 		err    string

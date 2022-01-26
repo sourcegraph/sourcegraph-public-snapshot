@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type DBCommitStore struct {
@@ -19,11 +19,11 @@ type DBCommitStore struct {
 }
 
 type CommitStore interface {
-	Save(ctx context.Context, id api.RepoID, commit *gitapi.Commit) error
+	Save(ctx context.Context, id api.RepoID, commit *gitdomain.Commit) error
 	Get(ctx context.Context, id api.RepoID, start time.Time, end time.Time) ([]CommitStamp, error)
 	GetMetadata(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error)
 	UpsertMetadataStamp(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error)
-	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitapi.Commit) error
+	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit) error
 }
 
 func NewCommitStore(db dbutil.DB) *DBCommitStore {
@@ -41,7 +41,7 @@ func (c *DBCommitStore) Transact(ctx context.Context) (*DBCommitStore, error) {
 	return &DBCommitStore{Store: txBase}, err
 }
 
-func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *gitapi.Commit) error {
+func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *gitdomain.Commit) error {
 	commitID := commit.ID
 	if err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, dbutil.CommitBytea(commitID), commit.Committer.Date)); err != nil {
 		return errors.Errorf("error saving commit for repo_id: %v commit_id %v: %w", id, commitID, err)
@@ -50,7 +50,7 @@ func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *gitapi.
 	return nil
 }
 
-func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*gitapi.Commit) (err error) {
+func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit) (err error) {
 	tx, err := c.Transact(ctx)
 	if err != nil {
 		return err

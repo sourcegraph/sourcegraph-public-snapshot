@@ -11,6 +11,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -29,6 +30,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
+
+// ErrNameNotUnique is returned by CreateEmptyBatchChange if the combination of name and
+// namespace provided are already used by another batch change.
+var ErrNameNotUnique = errors.New("a batch change with this name already exists in this namespace")
 
 // New returns a Service.
 func New(store *store.Store) *Service {
@@ -62,6 +67,8 @@ type operations struct {
 	executeBatchSpec                     *observation.Operation
 	cancelBatchSpec                      *observation.Operation
 	replaceBatchSpecInput                *observation.Operation
+	retryBatchSpecWorkspaces             *observation.Operation
+	retryBatchSpecExecution              *observation.Operation
 	createChangesetSpec                  *observation.Operation
 	getBatchChangeMatchingBatchSpec      *observation.Operation
 	getNewestBatchSpec                   *observation.Operation
@@ -88,7 +95,7 @@ var (
 // TODO: We should create one per observationContext.
 func newOperations(observationContext *observation.Context) *operations {
 	operationsOnce.Do(func() {
-		m := metrics.NewOperationMetrics(
+		m := metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"batches_service",
 			metrics.WithLabels("op"),
@@ -110,6 +117,8 @@ func newOperations(observationContext *observation.Context) *operations {
 			executeBatchSpec:                     op("ExecuteBatchSpec"),
 			cancelBatchSpec:                      op("CancelBatchSpec"),
 			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
+			retryBatchSpecWorkspaces:             op("RetryBatchSpecWorkspaces"),
+			retryBatchSpecExecution:              op("RetryBatchSpecExecution"),
 			createChangesetSpec:                  op("CreateChangesetSpec"),
 			getBatchChangeMatchingBatchSpec:      op("GetBatchChangeMatchingBatchSpec"),
 			getNewestBatchSpec:                   op("GetNewestBatchSpec"),
@@ -137,6 +146,86 @@ func (s *Service) WithStore(store *store.Store) *Service {
 	return &Service{store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
 }
 
+type CreateEmptyBatchChangeOpts struct {
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	Name string
+}
+
+// CreateEmptyBatchChange creates a new batch change with an empty batch spec. It enforces
+// namespace permissions of the caller and validates that the combination of name +
+// namespace is unique.
+func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct and parse the batch spec YAML of just the provided name to validate the
+	// pattern of the name is okay
+	rawSpec, err := yaml.Marshal(struct {
+		Name string `yaml:"name"`
+	}{Name: opts.Name})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling name")
+	}
+	// TODO: Should name require a minimum length?
+	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("no authenticated actor in context")
+	}
+
+	batchSpec := &btypes.BatchSpec{
+		RawSpec:         string(rawSpec),
+		Spec:            spec,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID,
+		CreatedFromRaw:  true,
+	}
+
+	// The combination of name + namespace must be unique
+	// TODO: Should name be case-insensitive unique? i.e. should "foo" and "Foo"
+	// be considered unique?
+	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
+	if err != nil {
+		return nil, err
+	}
+	if batchChange != nil {
+		return nil, ErrNameNotUnique
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
+		return nil, err
+	}
+
+	batchChange = &btypes.BatchChange{
+		Name:            opts.Name,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		BatchSpecID:     batchSpec.ID,
+		CreatorID:       actor.UID,
+	}
+	if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
+		return nil, err
+	}
+
+	return batchChange, nil
+}
+
 type CreateBatchSpecOpts struct {
 	RawSpec string `json:"raw_spec"`
 
@@ -153,7 +242,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}})
 	defer endObservation(1, observation.Args{})
 
-	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec, true)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -212,12 +301,12 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 		return nil, err
 	}
 
-	for _, changesetSpec := range cs {
-		changesetSpec.BatchSpecID = spec.ID
-
-		if err := tx.UpdateChangesetSpec(ctx, changesetSpec); err != nil {
-			return nil, err
-		}
+	csIDs := make([]int64, 0, len(cs))
+	for _, c := range cs {
+		csIDs = append(csIDs, c.ID)
+	}
+	if err := tx.UpdateChangesetSpecBatchSpecID(ctx, csIDs, spec.ID); err != nil {
+		return nil, err
 	}
 
 	return spec, nil
@@ -231,6 +320,7 @@ type CreateBatchSpecFromRawOpts struct {
 
 	AllowIgnored     bool
 	AllowUnsupported bool
+	NoCache          bool
 }
 
 // CreateBatchSpecFromRaw creates the BatchSpec.
@@ -241,7 +331,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	}})
 	defer endObservation(1, observation.Args{})
 
-	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec, false)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -266,6 +356,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		spec:             spec,
 		allowIgnored:     opts.AllowIgnored,
 		allowUnsupported: opts.AllowUnsupported,
+		noCache:          opts.NoCache,
 	})
 }
 
@@ -273,71 +364,20 @@ type createBatchSpecForExecutionOpts struct {
 	spec             *btypes.BatchSpec
 	allowUnsupported bool
 	allowIgnored     bool
+	noCache          bool
 }
 
 // createBatchSpecForExecution persists the given BatchSpec in the given
 // transaction, possibly creating ChangesetSpecs if the spec contains
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
-	reposStore := tx.Repos()
-
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
+	opts.spec.NoCache = opts.noCache
 
 	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
 		return err
-	}
-
-	if len(opts.spec.Spec.ImportChangesets) != 0 {
-		var repoNames []string
-		for _, ic := range opts.spec.Spec.ImportChangesets {
-			repoNames = append(repoNames, ic.Repository)
-		}
-
-		// 🚨 SECURITY: We use database.Repos.List to get the ID and also to check
-		// whether the user has access to the repository or not.
-		//
-		// Further down, when iterating over
-		repos, err := reposStore.List(ctx, database.ReposListOptions{Names: repoNames})
-		if err != nil {
-			return err
-		}
-
-		repoNameIDs := make(map[api.RepoName]api.RepoID, len(repos))
-		for _, r := range repos {
-			repoNameIDs[r.Name] = r.ID
-		}
-
-		// If there are "importChangesets" statements in the spec we evaluate
-		// them now and create ChangesetSpecs for them.
-		for _, ic := range opts.spec.Spec.ImportChangesets {
-			for _, id := range ic.ExternalIDs {
-				repoID, ok := repoNameIDs[api.RepoName(ic.Repository)]
-				if !ok {
-					return errors.Newf("repository %s not found", ic.Repository)
-				}
-
-				extID, err := batcheslib.ParseChangesetSpecExternalID(id)
-				if err != nil {
-					return err
-				}
-
-				changesetSpec := &btypes.ChangesetSpec{
-					UserID: opts.spec.UserID,
-					RepoID: repoID,
-					Spec: &batcheslib.ChangesetSpec{
-						BaseRepository: string(graphqlbackend.MarshalRepositoryID(repoID)),
-						ExternalID:     extID,
-					},
-					BatchSpecID: opts.spec.ID,
-				}
-
-				if err = tx.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-					return err
-				}
-			}
-		}
 	}
 
 	// Return spec and enqueue resolution
@@ -491,6 +531,7 @@ type ReplaceBatchSpecInputOpts struct {
 	RawSpec          string
 	AllowIgnored     bool
 	AllowUnsupported bool
+	NoCache          bool
 }
 
 // ReplaceBatchSpecInput creates BatchSpecWorkspaceExecutionJobs for every created
@@ -503,7 +544,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	defer endObservation(1, observation.Args{})
 
 	// Before we hit the database, validate the new spec.
-	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec, false)
+	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -527,15 +568,10 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Delete ChangesetSpecs that are associated with BatchSpec.
-	err = tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
-	if err != nil {
-		return nil, err
-	}
-
 	// Delete the previous batch spec, which should delete
 	// - batch_spec_resolution_jobs
 	// - batch_spec_workspaces
+	// - changeset_specs
 	// associated with it
 	if err := tx.DeleteBatchSpec(ctx, batchSpec.ID); err != nil {
 		return nil, err
@@ -552,6 +588,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		spec:             newSpec,
 		allowUnsupported: opts.AllowUnsupported,
 		allowIgnored:     opts.AllowIgnored,
+		noCache:          opts.NoCache,
 	})
 }
 
@@ -603,6 +640,7 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 	ctx, endObservation := s.operations.getBatchChangeMatchingBatchSpec.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	// TODO: Should name be case-insensitive? i.e. are "foo" and "Foo" the same?
 	opts := store.GetBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -680,7 +718,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 
 	// 🚨 SECURITY: Only the Author of the batch change can move it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -720,7 +758,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return batchChange, nil
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return nil, err
 	}
 
@@ -762,7 +800,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return err
 	}
 
@@ -800,7 +838,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	)
 
 	for _, c := range batchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), c.InitialApplierID)
+		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -851,7 +889,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 	)
 
 	for _, c := range attachedBatchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), c.InitialApplierID)
+		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -880,13 +918,14 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 // access to the namespace org.
 // If both values are zero, an error is returned.
 func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) (err error) {
-	ctx, endObservation := s.operations.checkNamespaceAccess.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	return s.checkNamespaceAccessWithDB(ctx, s.store.DatabaseDB(), namespaceUserID, namespaceOrgID)
+}
 
+func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) (err error) {
 	if namespaceOrgID != 0 {
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, s.store.DB(), namespaceOrgID)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, database.NewDB(db), namespaceOrgID)
 	} else if namespaceUserID != 0 {
-		return backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), namespaceUserID)
+		return backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), namespaceUserID)
 	} else {
 		return ErrNoNamespace
 	}
@@ -991,7 +1030,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	// 🚨 SECURITY: Only the author of the batch change can create jobs.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
 		return bulkGroupID, err
 	}
 
@@ -1141,4 +1180,221 @@ func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.Bat
 	}
 
 	return btypes.ComputeBatchSpecState(spec, stats), nil
+}
+
+// RetryBatchSpecWorkspaces retries the BatchSpecWorkspaceExecutionJobs
+// attached to the given BatchSpecWorkspaces.
+// It only deletes changeset_specs created by workspaces. The imported changeset_specs
+// will not be altered.
+func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []int64) (err error) {
+	ctx, endObservation := s.operations.retryBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	if len(workspaceIDs) == 0 {
+		return errors.New("no workspaces specified")
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Load workspaces
+	workspaces, _, err := tx.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{IDs: workspaceIDs})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec workspaces")
+	}
+
+	var batchSpecID int64 = -1
+	var changesetSpecIDs []int64
+
+	for _, w := range workspaces {
+		// Check that batch spec is the same
+		if batchSpecID != -1 && w.BatchSpecID != batchSpecID {
+			return errors.New("workspaces do not belong to the same batch spec")
+		}
+
+		batchSpecID = w.BatchSpecID
+		changesetSpecIDs = append(changesetSpecIDs, w.ChangesetSpecIDs...)
+	}
+
+	// Make sure the user has access to retry it.
+	batchSpec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: batchSpecID})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec")
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.checkNamespaceAccessWithDB(ctx, tx.DatabaseDB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return errors.Wrap(err, "checking whether user has access")
+	}
+
+	// Check that batch spec is not applied
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpecID})
+	if err != nil && err != store.ErrNoResults {
+		return errors.Wrap(err, "checking whether batch spec has been applied")
+	}
+	if err == nil && !batchChange.IsDraft() {
+		return errors.New("batch spec already applied")
+	}
+
+	// Load jobs and check their state
+	jobs, err := tx.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+		BatchSpecWorkspaceIDs: workspaceIDs,
+	})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec workspace execution jobs")
+	}
+
+	var errs *multierror.Error
+	jobIDs := make([]int64, len(jobs))
+
+	for i, j := range jobs {
+		if !j.State.Retryable() {
+			errs = multierror.Append(errs, errors.Newf("job %d not retryable", j.ID))
+		}
+		jobIDs[i] = j.ID
+	}
+
+	if err := errs.ErrorOrNil(); err != nil {
+		return err
+	}
+
+	// Delete the old execution jobs.
+	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
+		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
+	}
+
+	// Delete the changeset specs they have created.
+	if len(changesetSpecIDs) > 0 {
+		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecIDs}); err != nil {
+			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
+		}
+	}
+
+	// Create new jobs
+	if err := tx.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, workspaceIDs); err != nil {
+		return errors.Wrap(err, "creating new batch spec workspace execution jobs")
+	}
+
+	return nil
+}
+
+// ErrRetryNonFinal is returned by RetryBatchSpecExecution if the batch spec is
+// not in a final state.
+var ErrRetryNonFinal = errors.New("batch spec execution has not finished; retry not possible")
+
+type RetryBatchSpecExecutionOpts struct {
+	BatchSpecRandID string
+
+	IncludeCompleted bool
+}
+
+// RetryBatchSpecExecution retries all BatchSpecWorkspaceExecutionJobs
+// attached to the given BatchSpec.
+// It only deletes changeset_specs created by workspaces. The imported changeset_specs
+// will not be altered.
+func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSpecExecutionOpts) (err error) {
+	ctx, endObservation := s.operations.retryBatchSpecExecution.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Make sure the user has access to retry it.
+	batchSpec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec")
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.checkNamespaceAccessWithDB(ctx, tx.DatabaseDB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return errors.Wrap(err, "checking whether user has access")
+	}
+
+	// Check that batch spec is in final state
+	state, err := computeBatchSpecState(ctx, tx, batchSpec)
+	if err != nil {
+		return errors.Wrap(err, "computing state of batch spec")
+	}
+
+	if !state.Finished() {
+		return ErrRetryNonFinal
+	}
+
+	// Check that batch spec is not applied
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpec.ID})
+	if err != nil && err != store.ErrNoResults {
+		return errors.Wrap(err, "checking whether batch spec has been applied")
+	}
+	if err == nil && !batchChange.IsDraft() {
+		return errors.New("batch spec already applied")
+	}
+
+	// Load workspaces
+	workspaces, _, err := tx.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec workspaces")
+	}
+
+	workspaceIDs := make([]int64, 0, len(workspaces))
+	workspacesByID := map[int64]*btypes.BatchSpecWorkspace{}
+	for _, w := range workspaces {
+		workspaceIDs = append(workspaceIDs, w.ID)
+		workspacesByID[w.ID] = w
+	}
+
+	// Load jobs and check their state
+	jobs, err := tx.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+		BatchSpecWorkspaceIDs: workspaceIDs,
+	})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec workspace execution jobs")
+	}
+
+	var (
+		jobsToDelete           []int64
+		changesetSpecsToDelete []int64
+		workspacesToRetry      []int64
+	)
+
+	for _, j := range jobs {
+		if !opts.IncludeCompleted && j.State == btypes.BatchSpecWorkspaceExecutionJobStateCompleted {
+			continue
+		}
+
+		jobsToDelete = append(jobsToDelete, j.ID)
+
+		w, ok := workspacesByID[j.BatchSpecWorkspaceID]
+		if !ok {
+			continue
+		}
+		workspacesToRetry = append(workspacesToRetry, w.ID)
+		changesetSpecsToDelete = append(changesetSpecsToDelete, w.ChangesetSpecIDs...)
+	}
+
+	// Delete the old execution jobs.
+	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobsToDelete); err != nil {
+		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
+	}
+
+	// Delete the changeset specs they have created.
+	if len(changesetSpecsToDelete) > 0 {
+		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecsToDelete}); err != nil {
+			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
+		}
+	}
+
+	// Create new jobs
+	if err := tx.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, workspacesToRetry); err != nil {
+		return errors.Wrap(err, "creating new batch spec workspace execution jobs")
+	}
+
+	return nil
 }

@@ -10,6 +10,8 @@ export interface SourcegraphIconButtonProps
     label?: string
     /** aria-label attribute */
     ariaLabel?: string
+    /** data-testid attribute */
+    dataTestId?: string
 }
 
 export const SourcegraphIconButton: React.FunctionComponent<SourcegraphIconButtonProps> = ({
@@ -22,6 +24,7 @@ export const SourcegraphIconButton: React.FunctionComponent<SourcegraphIconButto
     rel,
     target,
     title,
+    dataTestId,
 }) => (
     <a
         href={href}
@@ -31,6 +34,7 @@ export const SourcegraphIconButton: React.FunctionComponent<SourcegraphIconButto
         title={title}
         aria-label={ariaLabel}
         onClick={onClick}
+        data-testid={dataTestId}
     >
         <SourcegraphIcon className={iconClassName} /> {label}
     </a>

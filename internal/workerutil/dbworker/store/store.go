@@ -419,7 +419,7 @@ var columnsUpdatedByDequeue = []string{
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ workerutil.Record, _ bool, err error) {
-	ctx, traceLog, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if s.InTransaction() {
@@ -469,7 +469,7 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	if !exists {
 		return nil, false, nil
 	}
-	traceLog(log.Int("recordID", record.RecordID()))
+	trace.Log(log.Int("recordID", record.RecordID()))
 
 	return record, true, nil
 }
@@ -568,7 +568,35 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
 	knownIDs, err = basestore.ScanInts(s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now())))
-	return knownIDs, err
+	if err != nil {
+		return nil, err
+	}
+
+	if len(knownIDs) != len(ids) {
+	outer:
+		for _, recordID := range ids {
+			for _, test := range knownIDs {
+				if test == recordID {
+					continue outer
+				}
+			}
+
+			debug, debugErr := s.fetchDebugInformationForJob(ctx, recordID)
+			if debugErr != nil {
+				log15.Error("failed to fetch debug information for job",
+					"recordID", recordID,
+					"err", debugErr,
+				)
+			}
+			log15.Error("heartbeat lost a job",
+				"recordID", recordID,
+				"debug", debug,
+				"options.workerHostname", options.WorkerHostname,
+			)
+		}
+	}
+
+	return knownIDs, nil
 }
 
 const updateCandidateQuery = `
@@ -641,6 +669,19 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 		return entryID, err
 	}
 	if !ok {
+		debug, debugErr := s.fetchDebugInformationForJob(ctx, id)
+		if debugErr != nil {
+			log15.Error("failed to fetch debug information for job",
+				"recordID", id,
+				"err", debugErr,
+			)
+		}
+		log15.Error("updateExecutionLogEntry failed and didn't match rows",
+			"recordID", id,
+			"debug", debug,
+			"options.workerHostname", options.WorkerHostname,
+			"options.state", options.State,
+		)
 		return entryID, ErrExecutionLogEntryNotUpdated
 	}
 	return entryID, nil
@@ -682,8 +723,23 @@ func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID i
 		return err
 	}
 	if !ok {
+		debug, debugErr := s.fetchDebugInformationForJob(ctx, recordID)
+		if debugErr != nil {
+			log15.Error("failed to fetch debug information for job",
+				"recordID", recordID,
+				"err", debugErr,
+			)
+		}
+		log15.Error("updateExecutionLogEntry failed and didn't match rows",
+			"recordID", recordID,
+			"debug", debug,
+			"options.workerHostname", options.WorkerHostname,
+			"options.state", options.State,
+		)
+
 		return ErrExecutionLogEntryNotUpdated
 	}
+
 	return nil
 }
 
@@ -795,7 +851,7 @@ const defaultResetFailureMessage = "job processor died while handling this messa
 // identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 // respectively.
 func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error) {
-	ctx, traceLog, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	now := s.now()
@@ -815,7 +871,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	traceLog(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
+	trace.Log(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
 	resetFailureMessage := s.options.ResetFailureMessage
 	if resetFailureMessage == "" {
@@ -837,7 +893,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	traceLog(log.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
+	trace.Log(log.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
 
 	return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, nil
 }
@@ -908,6 +964,32 @@ func (s *store) formatQuery(query string, args ...interface{}) *sqlf.Query {
 
 func (s *store) now() time.Time {
 	return s.options.clock.Now().UTC()
+}
+
+const fetchDebugInformationForJob = `
+-- source: internal/workerutil/store.go:UpdateExecutionLogEntry
+SELECT
+	row_to_json(%s)
+FROM
+	%s
+WHERE
+	{id} = %s
+`
+
+func (s *store) fetchDebugInformationForJob(ctx context.Context, recordID int) (debug string, err error) {
+	debug, ok, err := basestore.ScanFirstNullString(s.Query(ctx, s.formatQuery(
+		fetchDebugInformationForJob,
+		quote(s.options.TableName),
+		quote(s.options.TableName),
+		recordID,
+	)))
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", errors.Newf("fetching debug information for record %d didn't return rows")
+	}
+	return debug, nil
 }
 
 // quote wraps the given string in a *sqlf.Query so that it is not passed to the database

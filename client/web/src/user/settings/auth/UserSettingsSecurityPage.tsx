@@ -2,17 +2,15 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { ErrorLike, asError } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { Container, PageHeader, LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     UserAreaUserFields,
@@ -188,25 +186,29 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 <PageTitle title="Account security" />
 
                 {this.props.authenticatedUser.id !== this.props.user.id && (
-                    <div className="alert alert-danger">
+                    <Alert variant="danger">
                         Only the user may change their password. Site admins may{' '}
                         <Link to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
                             reset a user's password
                         </Link>
                         .
-                    </div>
+                    </Alert>
                 )}
 
                 {this.state.accounts.lastRemoved && (
-                    <div className="alert alert-warning" role="alert">
+                    <Alert role="alert" variant="warning">
                         Sign in connection for {this.state.accounts.lastRemoved} removed. Please set a new password for
                         your account.
-                    </div>
+                    </Alert>
                 )}
 
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
-                {this.state.saved && <div className="alert alert-success mb-3">Password changed!</div>}
+                {this.state.saved && (
+                    <Alert className="mb-3" variant="success">
+                        Password changed!
+                    </Alert>
+                )}
 
                 <PageHeader
                     headingElement="h2"
@@ -218,7 +220,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 {/* external accounts not fetched yet */}
                 {!this.state.accounts.fetched && this.state.error && (
                     <div className="d-flex justify-content-center mt-4">
-                        <LoadingSpinner className="icon-inline" />
+                        <LoadingSpinner />
                     </div>
                 )}
 
@@ -295,16 +297,17 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         autoComplete="new-password"
                                     />
                                 </div>
-                                <button
-                                    className="btn btn-primary user-settings-password-page__button"
+                                <Button
+                                    className="user-settings-password-page__button"
                                     type="submit"
                                     disabled={this.state.loading}
+                                    variant="primary"
                                 >
                                     {this.shouldShowOldPasswordInput() ? 'Update password' : 'Set password'}
-                                </button>
+                                </Button>
                                 {this.state.loading && (
                                     <div className="icon-inline">
-                                        <LoadingSpinner className="icon-inline" />
+                                        <LoadingSpinner />
                                     </div>
                                 )}
                             </Form>

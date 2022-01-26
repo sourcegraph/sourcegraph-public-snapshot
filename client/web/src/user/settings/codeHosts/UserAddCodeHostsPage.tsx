@@ -1,14 +1,12 @@
 import React, { useCallback, useState, useEffect } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
+import { keyExistsIn } from '@sourcegraph/shared/src/util/types'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
@@ -20,6 +18,7 @@ import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
+import { CodeHostListItem } from './CodeHostListItem'
 
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
@@ -147,21 +146,21 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
-            <div className="alert alert-info mb-4" role="alert" key="update-github">
+            <Alert className="mb-4" role="alert" key="update-github" variant="info">
                 Update your GitHub code host connection to search private code with Sourcegraph.
-            </div>
+            </Alert>
         ) : null
 
     const getGitLabUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
-            <div className="alert alert-info mb-4" role="alert" key="update-gitlab">
+            <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
                 Update your GitLab code host connection to search private code with Sourcegraph.
-            </div>
+            </Alert>
         ) : null
 
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
-            <div className="alert alert-success my-3" role="alert" key="add-repos">
+            <Alert className="my-3" role="alert" key="add-repos" variant="success">
                 <h4 className="align-middle mb-1">Connected with {services.join(', ')}</h4>
                 <p className="align-middle mb-0">
                     Next,{' '}
@@ -174,7 +173,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     </Link>{' '}
                     to search with Sourcegraph.
                 </p>
-            </div>
+            </Alert>
         ) : null
 
     interface serviceProblem {
@@ -238,24 +237,24 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
-        <div className="alert alert-warning my-3" key={service.id}>
-            <h4 className="align-middle mb-1">Can't connect with {service.displayName}</h4>
+        <Alert className="my-3" key={service.id} variant="warning">
+            <h4 className="align-middle mb-1">Can’t connect with {service.displayName}</h4>
             <p className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
                 {owner.type === 'org' ? (
-                    <button
-                        type="button"
-                        className="btn btn-link font-weight-normal shadow-none p-0 border-0"
+                    <Button
+                        className="font-weight-normal shadow-none p-0 border-0"
                         onClick={toggleUpdateModal}
+                        variant="link"
                     >
                         updating the code host connection
-                    </button>
+                    </Button>
                 ) : (
                     <span className="align-middle">reconnecting the code host connection</span>
                 )}{' '}
                 <span className="align-middle">with {service.displayName} to restore access.</span>
             </p>
-        </div>
+        </Alert>
     )
 
     // auth providers by service type
@@ -313,7 +312,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     <ul className="list-group">
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                             authProvidersByKind[kind] ? (
-                                <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
+                                <CodeHostListItem key={id}>
                                     <CodeHostItem
                                         owner={owner}
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
@@ -329,14 +328,14 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
                                     />
-                                </li>
+                                </CodeHostListItem>
                             ) : null
                         )}
                     </ul>
                 </Container>
             ) : (
                 <div className="d-flex justify-content-center">
-                    <LoadingSpinner className="icon-inline" />
+                    <LoadingSpinner />
                 </div>
             )}
 

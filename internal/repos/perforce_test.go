@@ -12,11 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPerforceSource_ListRepos(t *testing.T) {
-	assertAllReposListed := func(want []string) types.ReposAssertion {
+	assertAllReposListed := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
 
@@ -32,7 +33,7 @@ func TestPerforceSource_ListRepos(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		assert types.ReposAssertion
+		assert typestest.ReposAssertion
 		conf   *schema.PerforceConnection
 		err    string
 	}{

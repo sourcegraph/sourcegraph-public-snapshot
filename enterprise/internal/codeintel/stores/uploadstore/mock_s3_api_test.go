@@ -96,6 +96,58 @@ func NewMockS3API() *MockS3API {
 	}
 }
 
+// NewStrictMockS3API creates a new mock of the s3API interface. All methods
+// panic on invocation, unless overwritten.
+func NewStrictMockS3API() *MockS3API {
+	return &MockS3API{
+		AbortMultipartUploadFunc: &S3APIAbortMultipartUploadFunc{
+			defaultHook: func(context.Context, *s3.AbortMultipartUploadInput) (*s3.AbortMultipartUploadOutput, error) {
+				panic("unexpected invocation of MockS3API.AbortMultipartUpload")
+			},
+		},
+		CompleteMultipartUploadFunc: &S3APICompleteMultipartUploadFunc{
+			defaultHook: func(context.Context, *s3.CompleteMultipartUploadInput) (*s3.CompleteMultipartUploadOutput, error) {
+				panic("unexpected invocation of MockS3API.CompleteMultipartUpload")
+			},
+		},
+		CreateBucketFunc: &S3APICreateBucketFunc{
+			defaultHook: func(context.Context, *s3.CreateBucketInput) (*s3.CreateBucketOutput, error) {
+				panic("unexpected invocation of MockS3API.CreateBucket")
+			},
+		},
+		CreateMultipartUploadFunc: &S3APICreateMultipartUploadFunc{
+			defaultHook: func(context.Context, *s3.CreateMultipartUploadInput) (*s3.CreateMultipartUploadOutput, error) {
+				panic("unexpected invocation of MockS3API.CreateMultipartUpload")
+			},
+		},
+		DeleteObjectFunc: &S3APIDeleteObjectFunc{
+			defaultHook: func(context.Context, *s3.DeleteObjectInput) (*s3.DeleteObjectOutput, error) {
+				panic("unexpected invocation of MockS3API.DeleteObject")
+			},
+		},
+		GetObjectFunc: &S3APIGetObjectFunc{
+			defaultHook: func(context.Context, *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
+				panic("unexpected invocation of MockS3API.GetObject")
+			},
+		},
+		HeadObjectFunc: &S3APIHeadObjectFunc{
+			defaultHook: func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
+				panic("unexpected invocation of MockS3API.HeadObject")
+			},
+		},
+		PutBucketLifecycleConfigurationFunc: &S3APIPutBucketLifecycleConfigurationFunc{
+			defaultHook: func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
+				panic("unexpected invocation of MockS3API.PutBucketLifecycleConfiguration")
+			},
+		},
+		UploadPartCopyFunc: &S3APIUploadPartCopyFunc{
+			defaultHook: func(context.Context, *s3.UploadPartCopyInput) (*s3.UploadPartCopyOutput, error) {
+				panic("unexpected invocation of MockS3API.UploadPartCopy")
+			},
+		},
+	}
+}
+
 // surrogateMockS3API is a copy of the s3API interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore).
 // It is redefined here as it is unexported in the source package.
@@ -1144,6 +1196,18 @@ func NewMockS3Uploader() *MockS3Uploader {
 		UploadFunc: &S3UploaderUploadFunc{
 			defaultHook: func(context.Context, *s3.PutObjectInput) error {
 				return nil
+			},
+		},
+	}
+}
+
+// NewStrictMockS3Uploader creates a new mock of the s3Uploader interface.
+// All methods panic on invocation, unless overwritten.
+func NewStrictMockS3Uploader() *MockS3Uploader {
+	return &MockS3Uploader{
+		UploadFunc: &S3UploaderUploadFunc{
+			defaultHook: func(context.Context, *s3.PutObjectInput) error {
+				panic("unexpected invocation of MockS3Uploader.Upload")
 			},
 		},
 	}

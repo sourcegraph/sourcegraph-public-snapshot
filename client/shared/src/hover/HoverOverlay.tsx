@@ -1,18 +1,18 @@
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { CSSProperties } from 'react'
+
+import { isErrorLike } from '@sourcegraph/common'
+import { Card } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { ThemeProps } from '../theme'
-import { isErrorLike } from '../util/errors'
 import { sanitizeClass } from '../util/strings'
 
-import { toNativeEvent } from './helpers'
 import hoverOverlayStyle from './HoverOverlay.module.scss'
-import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName } from './HoverOverlay.types'
+import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName, GetAlertVariant } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
 import style from './HoverOverlayContents.module.scss'
@@ -21,15 +21,11 @@ import { useLogTelemetryEvent } from './useLogTelemetryEvent'
 
 const LOADING = 'loading' as const
 
-const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: React.MouseEvent<HTMLElement>) =>
-    handler(toNativeEvent(event))
-
 export type { HoverContext }
 
 export interface HoverOverlayClassProps {
     /** An optional class name to apply to the outermost element of the HoverOverlay */
     className?: string
-    closeButtonClassName?: string
 
     iconClassName?: string
     badgeClassName?: string
@@ -39,7 +35,15 @@ export interface HoverOverlayClassProps {
 
     contentClassName?: string
 
+    /**
+     * Allows providing any custom className to style the notifications as desired.
+     */
     getAlertClassName?: GetAlertClassName
+
+    /**
+     * Allows providing a specific variant style for use in branded Sourcegraph applications.
+     */
+    getAlertVariant?: GetAlertVariant
 }
 
 export interface HoverOverlayProps
@@ -52,9 +56,9 @@ export interface HoverOverlayProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
-    /** Called when the close button is clicked */
-    onCloseButtonClick?: (event: MouseEvent) => void
-    isBranded?: boolean
+
+    /** Show Sourcegraph logo alongside prompt */
+    useBrandedLogo?: boolean
 }
 
 const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']): CSSProperties =>
@@ -79,11 +83,9 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         platformContext,
         telemetryService,
         extensionsController,
-        showCloseButton,
         location,
 
         className,
-        closeButtonClassName,
         iconClassName,
         badgeClassName,
         actionItemClassName,
@@ -91,10 +93,10 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         contentClassName,
 
         getAlertClassName,
+        getAlertVariant,
         onAlertDismissed,
-        onCloseButtonClick,
 
-        isBranded,
+        useBrandedLogo,
     } = props
 
     useLogTelemetryEvent(props)
@@ -104,7 +106,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
     }
 
     return (
-        <div
+        <Card
             // needed for dynamic styling
             data-testid="hover-overlay"
             // eslint-disable-next-line react/forbid-dom-props
@@ -116,28 +118,15 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 data-testid="hover-overlay-contents"
                 className={classNames(
                     style.hoverOverlayContents,
-                    hoverOrError === LOADING && style.hoverOverlayContentsLoading,
-                    showCloseButton && style.hoverOverlayContentsWithCloseButton
+                    hoverOrError === LOADING && style.hoverOverlayContentsLoading
                 )}
             >
-                {showCloseButton && (
-                    <button
-                        type="button"
-                        onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
-                        className={classNames(
-                            hoverOverlayStyle.closeButton,
-                            closeButtonClassName,
-                            hoverOrError === LOADING && hoverOverlayStyle.closeButtonLoading
-                        )}
-                    >
-                        <CloseIcon className={iconClassName} />
-                    </button>
-                )}
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}
                     badgeClassName={badgeClassName}
                     errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
+                    errorAlertVariant={getAlertVariant?.(NotificationType.Error)}
                     contentClassName={contentClassName}
                 />
             </div>
@@ -150,6 +139,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                         hoverAlerts={hoverOrError.alerts}
                         iconClassName={iconClassName}
                         getAlertClassName={getAlertClassName}
+                        getAlertVariant={getAlertVariant}
                         onAlertDismissed={onAlertDismissed}
                     />
                 )}
@@ -183,9 +173,9 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                             ))}
                         </div>
 
-                        {isBranded && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
+                        {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
                     </div>
                 )}
-        </div>
+        </Card>
     )
 }

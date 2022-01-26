@@ -7,7 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -19,7 +19,7 @@ func InitMetricsConfig() *Config {
 	return res.(*Config)
 }
 
-var initMetricsConfig = shared.NewMemoizedConstructor(func() (interface{}, error) {
+var initMetricsConfig = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	return &Config{}, nil
 })
 

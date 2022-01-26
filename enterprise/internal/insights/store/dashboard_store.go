@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 )
 
 type DBDashboardStore struct {
@@ -32,8 +34,8 @@ func (s *DBDashboardStore) Handle() *basestore.TransactableHandle { return s.Sto
 
 // With creates a new DBDashboardStore with the given basestore. Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
-func (s *DBDashboardStore) With(other *DBDashboardStore) *DBDashboardStore {
-	return &DBDashboardStore{Store: s.Store.With(other.Store), Now: other.Now}
+func (s *DBDashboardStore) With(other basestore.ShareableStore) *DBDashboardStore {
+	return &DBDashboardStore{Store: s.Store.With(other), Now: s.Now}
 }
 
 func (s *DBDashboardStore) Transact(ctx context.Context) (*DBDashboardStore, error) {
@@ -64,7 +66,7 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 		preds = append(preds, sqlf.Sprintf("db.id > %s", args.After))
 	}
 
-	preds = append(preds, dashboardPermissionsQuery(args))
+	preds = append(preds, sqlf.Sprintf("db.id in (%s)", visibleDashboardsQuery(args.UserID, args.OrgID)))
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
 	}
@@ -87,24 +89,26 @@ func (s *DBDashboardStore) DeleteDashboard(ctx context.Context, id int64) error 
 	return nil
 }
 
-func dashboardPermissionsQuery(args DashboardQueryArgs) *sqlf.Query {
+// visibleDashboardsQuery generates the SQL query for filtering dashboards based on granted permissions.
+// This returns a query that will generate a set of dashboard.id that the provided context can see.
+func visibleDashboardsQuery(userIDs, orgIDs []int) *sqlf.Query {
 	permsPreds := make([]*sqlf.Query, 0, 2)
-	if len(args.OrgID) > 0 {
-		elems := make([]*sqlf.Query, 0, len(args.OrgID))
-		for _, id := range args.OrgID {
+	if len(orgIDs) > 0 {
+		elems := make([]*sqlf.Query, 0, len(orgIDs))
+		for _, id := range orgIDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
-		permsPreds = append(permsPreds, sqlf.Sprintf("dg.org_id IN (%s)", sqlf.Join(elems, ",")))
+		permsPreds = append(permsPreds, sqlf.Sprintf("org_id IN (%s)", sqlf.Join(elems, ",")))
 	}
-	if len(args.UserID) > 0 {
-		elems := make([]*sqlf.Query, 0, len(args.UserID))
-		for _, id := range args.UserID {
+	if len(userIDs) > 0 {
+		elems := make([]*sqlf.Query, 0, len(userIDs))
+		for _, id := range userIDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
-		permsPreds = append(permsPreds, sqlf.Sprintf("dg.user_id IN (%s)", sqlf.Join(elems, ",")))
+		permsPreds = append(permsPreds, sqlf.Sprintf("user_id IN (%s)", sqlf.Join(elems, ",")))
 	}
-	permsPreds = append(permsPreds, sqlf.Sprintf("dg.global is true"))
-	return sqlf.Sprintf("(%s)", sqlf.Join(permsPreds, "OR"))
+	permsPreds = append(permsPreds, sqlf.Sprintf("global is true"))
+	return sqlf.Sprintf("SELECT dashboard_id FROM dashboard_grants WHERE %s", sqlf.Join(permsPreds, "OR"))
 }
 
 func scanDashboard(rows *sql.Rows, queryErr error) (_ []*types.Dashboard, err error) {
@@ -251,7 +255,14 @@ func (s *DBDashboardStore) AddViewsToDashboard(ctx context.Context, dashboardId 
 	} else if len(viewIds) == 0 {
 		return nil
 	}
-	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, dashboardId, pq.Array(viewIds))
+
+	// Create rows for an inline table which is used to preserve the ordering of the viewIds.
+	orderings := make([]*sqlf.Query, 0, 1)
+	for i, viewId := range viewIds {
+		orderings = append(orderings, sqlf.Sprintf("(%s, %s)", viewId, fmt.Sprintf("%d", i)))
+	}
+
+	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, dashboardId, sqlf.Join(orderings, ","), pq.Array(viewIds))
 	err := s.Exec(ctx, q)
 	if err != nil {
 		return err
@@ -282,10 +293,10 @@ func (s *DBDashboardStore) GetDashboardGrants(ctx context.Context, dashboardId i
 	return scanDashboardGrants(s.Query(ctx, sqlf.Sprintf(getDashboardGrantsSql, dashboardId)))
 }
 
-func (s *DBDashboardStore) HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error) {
-	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, dashboardId, dashboardPermissionsQuery(DashboardQueryArgs{UserID: userIds, OrgID: orgIds}))
+func (s *DBDashboardStore) HasDashboardPermission(ctx context.Context, dashboardIds []int, userIds []int, orgIds []int) (bool, error) {
+	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, pq.Array(dashboardIds), visibleDashboardsQuery(userIds, orgIds))
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
-	return count != 0, err
+	return count == 0, err
 }
 
 func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId int, grants []DashboardGrant) error {
@@ -321,11 +332,14 @@ const insertDashboardInsightViewConnectionsByViewIds = `
 INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
+		JOIN
+			( VALUES %s) as ids (id, ordering)
+		ON ids.id = insight_view.unique_id
     WHERE unique_id = ANY(%s)
-)
-ON CONFLICT DO NOTHING;
-`
+	ORDER BY ids.ordering
+) ON CONFLICT DO NOTHING;
 
+`
 const updateDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:UpdateDashboard
 UPDATE dashboard SET title = %s WHERE id = %s;
@@ -345,7 +359,7 @@ WHERE dashboard_id = %s
 `
 
 const getViewFromDashboardByViewId = `
--- source: enterprise/internal/insights/store/insight_store.go:GetViewFromDashboardByViewId
+-- source: enterprise/internal/insights/store/dashboard_store.go:GetViewFromDashboardByViewId
 SELECT COUNT(*)
 FROM dashboard_insight_view div
 	INNER JOIN insight_view iv ON div.insight_view_id = iv.id
@@ -353,18 +367,20 @@ WHERE div.dashboard_id = %s AND iv.unique_id = %s
 `
 
 const getDashboardGrantsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
+-- source: enterprise/internal/insights/store/dashboard_store.go:GetDashboardGrants
 SELECT * FROM dashboard_grants where dashboard_id = %s
 `
 
 const getDashboardGrantsByPermissionsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
-SELECT COUNT(*) FROM dashboard_grants as dg
-WHERE dg.dashboard_id = %s AND %s
+-- source: enterprise/internal/insights/store/dashboard_store.go:HasDashboardPermission
+SELECT count(*)
+FROM dashboard
+WHERE id = ANY (%s)
+AND id NOT IN (%s);
 `
 
 const addDashboardGrantsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
+-- source: enterprise/internal/insights/store/dashboard_store.go:AddDashboardGrants
 INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global)
 VALUES %s;
 `
@@ -374,5 +390,31 @@ type DashboardStore interface {
 	CreateDashboard(ctx context.Context, args CreateDashboardArgs) (_ *types.Dashboard, err error)
 	UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ *types.Dashboard, err error)
 	DeleteDashboard(ctx context.Context, id int64) error
-	HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error)
+	HasDashboardPermission(ctx context.Context, dashboardId []int, userIds []int, orgIds []int) (bool, error)
 }
+
+// This is only used for the oob migration. Can be removed when that is deprecated.
+func (s *DBDashboardStore) DashboardExists(ctx context.Context, dashboard insights.SettingDashboard) (bool, error) {
+	var grantsQuery *sqlf.Query
+	if dashboard.UserID != nil {
+		grantsQuery = sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
+	} else if dashboard.OrgID != nil {
+		grantsQuery = sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
+	} else {
+		grantsQuery = sqlf.Sprintf("dg.global IS TRUE")
+	}
+
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(dashboardExistsSql, dashboard.Title, grantsQuery)))
+	if err != nil {
+		return false, err
+	}
+
+	return count != 0, nil
+}
+
+const dashboardExistsSql = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:DashboardExists
+SELECT COUNT(*) from dashboard
+JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
+WHERE dashboard.title = %s AND %s;
+`

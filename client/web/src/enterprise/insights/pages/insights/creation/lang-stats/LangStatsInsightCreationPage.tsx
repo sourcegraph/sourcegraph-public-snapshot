@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
@@ -41,7 +41,7 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
      * @param event - creation event with subject id and updated settings content
      * info.
      */
-    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<void>
+    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<unknown>
 
     /**
      * Whenever insight was created and all operations after creation were completed.
@@ -80,7 +80,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 telemetryService.log(
-                    'Insight Addition',
+                    'InsightAddition',
                     { insightType: 'codeStatsInsights' },
                     { insightType: 'codeStatsInsights' }
                 )

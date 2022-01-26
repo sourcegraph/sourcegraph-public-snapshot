@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-
 	"testing"
 	"time"
 
@@ -34,7 +33,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -70,7 +69,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -114,7 +113,7 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -161,7 +160,7 @@ func TestWorkerConcurrent(t *testing.T) {
 				WorkerHostname: "test",
 				NumHandlers:    numHandlers,
 				Interval:       time.Second,
-				Metrics:        NewMetrics(&observation.TestContext, "", nil),
+				Metrics:        NewMetrics(&observation.TestContext, ""),
 			}
 
 			for i := 0; i < NumTestRecords; i++ {
@@ -250,7 +249,7 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -280,7 +279,7 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 		WorkerHostname: "test",
 		NumHandlers:    1,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(TestRecord{ID: 42}, true, nil)
@@ -356,7 +355,7 @@ func TestWorkerDequeueHeartbeat(t *testing.T) {
 		NumHandlers:       1,
 		HeartbeatInterval: heartbeatInterval,
 		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, "", nil),
+		Metrics:           NewMetrics(&observation.TestContext, ""),
 	}
 
 	dequeued := make(chan struct{})
@@ -403,7 +402,7 @@ func TestWorkerNumTotalJobs(t *testing.T) {
 		NumHandlers:    1,
 		NumTotalJobs:   5,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	store.DequeueFunc.SetDefaultReturn(TestRecord{ID: 42}, true, nil)
@@ -431,7 +430,7 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 		NumTotalJobs:   50,
 		MaxActiveTime:  time.Second * 5,
 		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, "", nil),
+		Metrics:        NewMetrics(&observation.TestContext, ""),
 	}
 
 	called := make(chan struct{})
@@ -504,7 +503,7 @@ func TestWorkerCancel(t *testing.T) {
 		NumHandlers:       1,
 		HeartbeatInterval: time.Second,
 		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, "", nil),
+		Metrics:           NewMetrics(&observation.TestContext, ""),
 	}
 
 	dequeued := make(chan struct{})

@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -146,7 +145,7 @@ func (r *computeResultResolver) ToComputeText() (*computeTextResolver, bool) {
 	return res, ok
 }
 
-func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContext, repository *RepositoryResolver) *computeMatchContextResolver {
+func toComputeMatchContextResolver(mc *compute.MatchContext, repository *RepositoryResolver, path, commit string) *computeMatchContextResolver {
 	var computeMatches []*computeMatchResolver
 	for _, m := range mc.Matches {
 		mCopy := m
@@ -154,43 +153,55 @@ func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContex
 	}
 	return &computeMatchContextResolver{
 		repository: repository,
-		commit:     string(fm.CommitID),
-		path:       fm.Path,
+		commit:     commit,
+		path:       path,
 		matches:    computeMatches,
 	}
 }
 
-func toComputeTextResolver(fm *result.FileMatch, result *compute.Text, repository *RepositoryResolver) *computeTextResolver {
+func toComputeTextResolver(result *compute.Text, repository *RepositoryResolver, path, commit string) *computeTextResolver {
 	return &computeTextResolver{
 		repository: repository,
-		commit:     string(fm.CommitID),
-		path:       fm.Path,
+		commit:     commit,
+		path:       path,
 		t:          result,
 	}
 }
 
-func toComputeResultResolver(fm *result.FileMatch, result compute.Result, repoResolver *RepositoryResolver) *computeResultResolver {
+func toComputeResultResolver(result compute.Result, repoResolver *RepositoryResolver, path, commit string) *computeResultResolver {
 	switch r := result.(type) {
 	case *compute.MatchContext:
-		return &computeResultResolver{result: toComputeMatchContextResolver(fm, r, repoResolver)}
+		return &computeResultResolver{result: toComputeMatchContextResolver(r, repoResolver, path, commit)}
 	case *compute.Text:
-		return &computeResultResolver{result: toComputeTextResolver(fm, r, repoResolver)}
+		return &computeResultResolver{result: toComputeTextResolver(r, repoResolver, path, commit)}
 	default:
 		panic(fmt.Sprintf("unsupported compute result %T", r))
 	}
 }
 
-func toResultResolverList(ctx context.Context, cmd compute.Command, matches []result.Match, db dbutil.DB) ([]*computeResultResolver, error) {
+func pathAndCommitFromResult(m result.Match) (string, string) {
+	switch v := m.(type) {
+	case *result.FileMatch:
+		return v.Path, string(v.CommitID)
+	case *result.CommitMatch:
+		return "", string(v.Commit.ID)
+	case *result.RepoMatch:
+		return "", v.Rev
+	}
+	return "", ""
+}
+
+func toResultResolverList(ctx context.Context, cmd compute.Command, matches []result.Match, db database.DB) ([]*computeResultResolver, error) {
 	type repoKey struct {
-		Name types.RepoName
+		Name types.MinimalRepo
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
+	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(database.NewDB(db), repoName.ToRepo())
+		resolver := NewRepositoryResolver(db, repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
@@ -198,21 +209,21 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 
 	results := make([]*computeResultResolver, 0, len(matches))
 	for _, m := range matches {
-		if fm, ok := m.(*result.FileMatch); ok {
-			result, err := cmd.Run(ctx, fm)
-			if err != nil {
-				return nil, err
-			}
-			repoResolver := getRepoResolver(fm.Repo, "")
-			results = append(results, toComputeResultResolver(fm, result, repoResolver))
+		computeResult, err := cmd.Run(ctx, m)
+		if err != nil {
+			return nil, err
 		}
+		repoResolver := getRepoResolver(m.RepoName(), "")
+		path, commit := pathAndCommitFromResult(m)
+		result := toComputeResultResolver(computeResult, repoResolver, path, commit)
+		results = append(results, result)
 	}
 	return results, nil
 }
 
 // NewComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
-func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
+func NewComputeImplementer(ctx context.Context, db database.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
 	computeQuery, err := compute.Parse(args.Query)
 	if err != nil {
 		return nil, err
@@ -222,7 +233,7 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 	if err != nil {
 		return nil, err
 	}
-	log15.Info("compute", "search", searchQuery)
+	log15.Debug("compute", "search", searchQuery)
 
 	patternType := "regexp"
 	job, err := NewSearchImplementer(ctx, db, &SearchArgs{Query: searchQuery, PatternType: &patternType})

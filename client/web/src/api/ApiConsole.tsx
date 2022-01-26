@@ -1,14 +1,13 @@
 import * as _graphiqlModule from 'graphiql' // type only
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { LoadingSpinner, Button, Alert, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -131,7 +130,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
                 <PageTitle title="API console" />
                 {this.state.graphiqlOrError === undefined ? (
                     <span className={styles.loader}>
-                        <LoadingSpinner className="icon-inline" /> Loading…
+                        <LoadingSpinner /> Loading…
                     </span>
                 ) : isErrorLike(this.state.graphiqlOrError) ? (
                     <ErrorAlert prefix="Error loading API console" error={this.state.graphiqlOrError} />
@@ -174,14 +173,14 @@ export class ApiConsole extends React.PureComponent<Props, State> {
                                 label="Prettify"
                             />
                             <GraphiQL.Button onClick={this.handleToggleHistory} title="Show History" label="History" />
-                            <Link className="btn btn-link" to="/help/api/graphql">
+                            <Button to="/help/api/graphql" variant="link" as={Link}>
                                 Docs
-                            </Link>
-                            <div className="alert alert-warning py-1 mb-0 ml-2 text-nowrap">
+                            </Button>
+                            <Alert variant="warning" className="py-1 mb-0 ml-2 text-nowrap">
                                 <small>
                                     The API console uses <strong>real production data.</strong>
                                 </small>
-                            </div>
+                            </Alert>
                         </div>
                     </GraphiQL.Toolbar>
                 </GraphiQL>

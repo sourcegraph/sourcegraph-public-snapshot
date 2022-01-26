@@ -5,16 +5,13 @@ import (
 	"crypto/subtle"
 	"database/sql"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 )
 
 // UserEmail represents a row in the `user_emails` table.
@@ -48,66 +45,67 @@ func (err userEmailNotFoundError) NotFound() bool {
 	return true
 }
 
-// UserEmailsStore provides access to the `user_emails` table.
-type UserEmailsStore struct {
-	*basestore.Store
+type UserEmailsStore interface {
+	Add(ctx context.Context, userID int32, email string, verificationCode *string) error
+	Done(error) error
+	Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error)
+	GetInitialSiteAdminInfo(ctx context.Context) (email string, tosAccepted bool, err error)
+	GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error)
+	GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error)
+	GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error)
+	ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error)
+	Remove(ctx context.Context, userID int32, email string) error
+	SetLastVerification(ctx context.Context, userID int32, email, code string) error
+	SetPrimaryEmail(ctx context.Context, userID int32, email string) error
+	SetVerified(ctx context.Context, userID int32, email string, verified bool) error
+	Transact(ctx context.Context) (UserEmailsStore, error)
+	Verify(ctx context.Context, userID int32, email, code string) (bool, error)
+	With(other basestore.ShareableStore) UserEmailsStore
+	basestore.ShareableStore
+}
 
-	once sync.Once
+// userEmailsStore provides access to the `user_emails` table.
+type userEmailsStore struct {
+	*basestore.Store
 }
 
 // UserEmails instantiates and returns a new UserEmailsStore with prepared statements.
-func UserEmails(db dbutil.DB) *UserEmailsStore {
-	return &UserEmailsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func UserEmails(db dbutil.DB) UserEmailsStore {
+	return &userEmailsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // UserEmailsWith instantiates and returns a new UserEmailsStore using the other store handle.
-func UserEmailsWith(other basestore.ShareableStore) *UserEmailsStore {
-	return &UserEmailsStore{Store: basestore.NewWithHandle(other.Handle())}
+func UserEmailsWith(other basestore.ShareableStore) UserEmailsStore {
+	return &userEmailsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *UserEmailsStore) With(other basestore.ShareableStore) *UserEmailsStore {
-	return &UserEmailsStore{Store: s.Store.With(other)}
+func (s *userEmailsStore) With(other basestore.ShareableStore) UserEmailsStore {
+	return &userEmailsStore{Store: s.Store.With(other)}
 }
 
-func (s *UserEmailsStore) Transact(ctx context.Context) (*UserEmailsStore, error) {
+func (s *userEmailsStore) Transact(ctx context.Context) (UserEmailsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &UserEmailsStore{Store: txBase}, err
+	return &userEmailsStore{Store: txBase}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *UserEmailsStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
-// GetInitialSiteAdminEmail returns a best guess of the email of the initial Sourcegraph installer/site admin.
-// Because the initial site admin's email isn't marked, this returns the email of the active site admin with
-// the lowest user ID.
+// GetInitialSiteAdminInfo returns a best guess of the email and terms of service acceptance of the initial
+// Sourcegraph installer/site admin. Because the initial site admin's email isn't marked, this returns the
+// info of the active site admin with the lowest user ID.
 //
 // If the site has not yet been initialized, returns an empty string.
-func (s *UserEmailsStore) GetInitialSiteAdminEmail(ctx context.Context) (email string, err error) {
-	if init, err := globalstatedb.SiteInitialized(ctx); err != nil || !init {
-		return "", err
+func (s *userEmailsStore) GetInitialSiteAdminInfo(ctx context.Context) (email string, tosAccepted bool, err error) {
+	if init, err := GlobalStateWith(s).SiteInitialized(ctx); err != nil || !init {
+		return "", false, err
 	}
-	s.ensureStore()
-	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email); err != nil {
-		return "", errors.New("initial site admin email not found")
+	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, tos_accepted FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email, &tosAccepted); err != nil {
+		return "", false, errors.New("initial site admin email not found")
 	}
-	return email, nil
+	return email, tosAccepted, nil
 }
 
 // GetPrimaryEmail gets the oldest email associated with the user, preferring a verified email to an
 // unverified email.
-func (s *UserEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
-	if Mocks.UserEmails.GetPrimaryEmail != nil {
-		return Mocks.UserEmails.GetPrimaryEmail(ctx, id)
-	}
-	s.ensureStore()
+func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND is_primary",
 		id,
 	).Scan(&email, &verified); err != nil {
@@ -119,11 +117,7 @@ func (s *UserEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 // SetPrimaryEmail sets the primary email for a user.
 // The address must be verified.
 // All other addresses for the user will be set as not primary.
-func (s *UserEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
-	if Mocks.UserEmails.SetPrimaryEmail != nil {
-		return Mocks.UserEmails.SetPrimaryEmail(ctx, userID, email)
-	}
-	s.ensureStore()
+func (s *userEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -158,12 +152,7 @@ func (s *UserEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, ema
 }
 
 // Get gets information about the user's associated email address.
-func (s *UserEmailsStore) Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error) {
-	if Mocks.UserEmails.Get != nil {
-		return Mocks.UserEmails.Get(userID, email)
-	}
-	s.ensureStore()
-
+func (s *userEmailsStore) Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error) {
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
 		userID, email,
 	).Scan(&emailCanonicalCase, &verified); err != nil {
@@ -173,16 +162,14 @@ func (s *UserEmailsStore) Get(ctx context.Context, userID int32, email string) (
 }
 
 // Add adds new user email. When added, it is always unverified.
-func (s *UserEmailsStore) Add(ctx context.Context, userID int32, email string, verificationCode *string) error {
-	s.ensureStore()
+func (s *userEmailsStore) Add(ctx context.Context, userID int32, email string, verificationCode *string) error {
 	_, err := s.Handle().DB().ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES($1, $2, $3)", userID, email, verificationCode)
 	return err
 }
 
 // Remove removes a user email. It returns an error if there is no such email associated with the user or the email
 // is the user's primary address
-func (s *UserEmailsStore) Remove(ctx context.Context, userID int32, email string) error {
-	s.ensureStore()
+func (s *userEmailsStore) Remove(ctx context.Context, userID int32, email string) error {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -210,11 +197,7 @@ func (s *UserEmailsStore) Remove(ctx context.Context, userID int32, email string
 // Verify verifies the user's email address given the email verification code. If the code is not
 // correct (not the one originally used when creating the user or adding the user email), then it
 // returns false.
-func (s *UserEmailsStore) Verify(ctx context.Context, userID int32, email, code string) (bool, error) {
-	if Mocks.UserEmails.Verify != nil {
-		return Mocks.UserEmails.Verify(ctx, userID, email, code)
-	}
-	s.ensureStore()
+func (s *userEmailsStore) Verify(ctx context.Context, userID int32, email, code string) (bool, error) {
 	var dbCode sql.NullString
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1 AND email=$2", userID, email).Scan(&dbCode); err != nil {
 		return false, err
@@ -235,12 +218,7 @@ func (s *UserEmailsStore) Verify(ctx context.Context, userID int32, email, code 
 
 // SetVerified bypasses the normal email verification code process and manually sets the verified
 // status for an email.
-func (s *UserEmailsStore) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
-	if Mocks.UserEmails.SetVerified != nil {
-		return Mocks.UserEmails.SetVerified(ctx, userID, email, verified)
-	}
-	s.ensureStore()
-
+func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
 	var res sql.Result
 	var err error
 	if verified {
@@ -264,11 +242,7 @@ func (s *UserEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 }
 
 // SetLastVerification sets the "last_verification_sent_at" column to now() and updates the verification code for given email of the user.
-func (s *UserEmailsStore) SetLastVerification(ctx context.Context, userID int32, email, code string) error {
-	if Mocks.UserEmails.SetLastVerification != nil {
-		return Mocks.UserEmails.SetLastVerification(ctx, userID, email, code)
-	}
-	s.ensureStore()
+func (s *userEmailsStore) SetLastVerification(ctx context.Context, userID int32, email, code string) error {
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=now(), verification_code = $3 WHERE user_id=$1 AND email=$2", userID, email, code)
 	if err != nil {
 		return err
@@ -285,11 +259,7 @@ func (s *UserEmailsStore) SetLastVerification(ctx context.Context, userID int32,
 
 // GetLatestVerificationSentEmail returns the email with the lastest time of "last_verification_sent_at" column,
 // it excludes rows with "last_verification_sent_at IS NULL".
-func (s *UserEmailsStore) GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error) {
-	if Mocks.UserEmails.GetLatestVerificationSentEmail != nil {
-		return Mocks.UserEmails.GetLatestVerificationSentEmail(ctx, email)
-	}
-
+func (s *userEmailsStore) GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error) {
 	q := sqlf.Sprintf(`
 WHERE email=%s AND last_verification_sent_at IS NOT NULL
 ORDER BY last_verification_sent_at DESC
@@ -306,11 +276,7 @@ LIMIT 1
 
 // GetVerifiedEmails returns a list of verified emails from the candidate list. Some emails are excluded
 // from the results list because of unverified or simply don't exist.
-func (s *UserEmailsStore) GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error) {
-	if Mocks.UserEmails.GetVerifiedEmails != nil {
-		return Mocks.UserEmails.GetVerifiedEmails(ctx, emails...)
-	}
-
+func (s *userEmailsStore) GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error) {
 	if len(emails) == 0 {
 		return []*UserEmail{}, nil
 	}
@@ -332,11 +298,7 @@ type UserEmailsListOptions struct {
 }
 
 // ListByUser returns a list of emails that are associated to the given user.
-func (s *UserEmailsStore) ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error) {
-	if Mocks.UserEmails.ListByUser != nil {
-		return Mocks.UserEmails.ListByUser(ctx, opt)
-	}
-
+func (s *userEmailsStore) ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error) {
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("user_id=%s", opt.UserID),
 	}
@@ -349,8 +311,7 @@ func (s *UserEmailsStore) ListByUser(ctx context.Context, opt UserEmailsListOpti
 }
 
 // getBySQL returns user emails matching the SQL query, if any exist.
-func (s *UserEmailsStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
-	s.ensureStore()
+func (s *userEmailsStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
 	rows, err := s.Handle().DB().QueryContext(ctx,
 		`SELECT user_emails.user_id, user_emails.email, user_emails.created_at, user_emails.verification_code,
 				user_emails.verified_at, user_emails.last_verification_sent_at, user_emails.is_primary FROM user_emails `+query, args...)

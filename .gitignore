@@ -1,11 +1,9 @@
-/vagrant_ansible_inventory_default
-.vagrant
-
 # Vim
 *.swp
 
 # JetBrains/IntelliJ
 .idea
+.graphqlconfig
 
 # Emacs
 *~
@@ -106,8 +104,8 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-client/shared/src/graphql/schema.ts
-client/web/src/schema/*
+client/shared/src/schema.ts
+client/shared/src/schema/*
 puppeteer/
 package-lock.json
 /dist
@@ -157,3 +155,6 @@ sitemap_query.db
 
 # Trivy security vulnerability reports
 *-security-report.html
+
+# CI annotations lock
+.annotate.lock

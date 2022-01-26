@@ -68,7 +68,7 @@ fmt.Sprintf(
 Here we didn't have to do any special thinking about matching contents that
 spread over multiple lines. The `...` syntax by default matches across newlines.
 Structural search supports various balanced syntax like `()`, `[]`, and `{}` in
-a language-aware way. This allows to match large, logical blocks or expressions
+a language-aware way. This allows it to match large, logical blocks or expressions
 without the limitations of typical line-based regular expression patterns.
 
 ## Syntax reference

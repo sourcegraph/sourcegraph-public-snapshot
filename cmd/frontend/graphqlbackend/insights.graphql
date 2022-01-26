@@ -190,7 +190,17 @@ extend type Query {
     """
     Return dashboards visible to the authenticated user.
     """
-    insightsDashboards(first: Int, after: String): InsightsDashboardConnection!
+    insightsDashboards(first: Int, after: String, id: ID): InsightsDashboardConnection!
+
+    """
+    Return all insight views visible to the authenticated user.
+    """
+    insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
+
+    """
+    Generate an ephemeral time series for a Search based code insight, generally for the purposes of live preview.
+    """
+    searchInsightLivePreview(input: SearchInsightLivePreviewInput!): [SearchInsightLivePreviewSeries!]!
 }
 
 extend type Mutation {
@@ -252,7 +262,7 @@ type InsightsDashboard implements Node {
     """
     The list of associated insights to the dashboard.
     """
-    views: InsightViewConnection
+    views(first: Int, after: ID): InsightViewConnection
 
     """
     The permission grants assossiated with the dashboard.
@@ -558,6 +568,11 @@ input LineChartSearchInsightInput {
     The options for this line chart.
     """
     options: LineChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
 }
 
 """
@@ -609,6 +624,10 @@ Input for a line chart search insight data series.
 """
 input LineChartSearchInsightDataSeriesInput {
     """
+    Unique ID for the series. Omit this field if it's a new series.
+    """
+    seriesId: String
+    """
     The query string.
     """
     query: String!
@@ -624,6 +643,11 @@ input LineChartSearchInsightDataSeriesInput {
     The scope of time.
     """
     timeScope: TimeScopeInput!
+
+    """
+    Whether or not to generate the timeseries results from the query capture groups. Defaults to false if not provided.
+    """
+    generatedFromCaptureGroups: Boolean
 }
 
 """
@@ -648,6 +672,7 @@ input PieChartSearchInsightInput {
     The query string.
     """
     query: String!
+
     """
     The scope of repositories.
     """
@@ -656,7 +681,32 @@ input PieChartSearchInsightInput {
     """
     Options for this pie chart.
     """
-    options: PieChartOptionsInput!
+    presentationOptions: PieChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
+}
+
+"""
+Input for updating a pie chart search insight
+"""
+input UpdatePieChartSearchInsightInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+
+    """
+    Options for this pie chart.
+    """
+    presentationOptions: PieChartOptionsInput!
 }
 
 """
@@ -666,7 +716,8 @@ input PieChartOptionsInput {
     """
     The title for the pie chart.
     """
-    title: String
+    title: String!
+
     """
     The threshold for which groups fall into the "other category". Only categories with a percentage greater than
     this value will be separately rendered.
@@ -689,12 +740,26 @@ extend type Mutation {
     Create a line chart backed by search insights.
     """
     createLineChartSearchInsight(input: LineChartSearchInsightInput!): InsightViewPayload!
-    #    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
+
+    """
+    Create a pie chart backed by search insights.
+    """
+    createPieChartSearchInsight(input: PieChartSearchInsightInput!): InsightViewPayload!
 
     """
     Update a line chart backed by search insights.
     """
     updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Update a pie chart backed by search insights.
+    """
+    updatePieChartSearchInsight(id: ID!, input: UpdatePieChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Delete an insight view given the graphql ID.
+    """
+    deleteInsightView(id: ID!): EmptyResponse!
 }
 
 """
@@ -740,8 +805,7 @@ union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
 """
 Defines presentation options for the insight.
 """
-union InsightPresentation = LineChartInsightViewPresentation
-#    | PieChartInsightViewPresentation
+union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
 
 """
 Defines a scope of time for which the insight data is generated.
@@ -793,6 +857,17 @@ type SearchInsightDataSeriesDefinition {
     The scope of time for which the insight data is generated.
     """
     timeScope: InsightTimeScope!
+
+    """
+    Whether or not the the time series are derived from the captured groups of the search results.
+    """
+    generatedFromCaptureGroups: Boolean!
+
+    """
+    Whether or not the series has been pre-calculated, or still needs to be resolved. This field is largely only used
+    for the code insights webapp, and should be considered unstable (planned to be deprecated in a future release).
+    """
+    isCalculated: Boolean!
 }
 
 """
@@ -856,4 +931,48 @@ type InsightViewFilters {
     A regex string for which to exclude repositories from a filter.
     """
     excludeRepoRegex: String
+}
+
+"""
+Required input to generate a time series for a search insight using live preview.
+"""
+input SearchInsightLivePreviewInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The desired label for the series. Will be overwritten when series are dynamically generated.
+    """
+    label: String!
+
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+    """
+    The scope of time.
+    """
+    timeScope: TimeScopeInput!
+
+    """
+    Whether or not to generate the timeseries results from the query capture groups.
+    """
+    generatedFromCaptureGroups: Boolean!
+}
+
+"""
+Input object for a live preview search based code insight.
+"""
+type SearchInsightLivePreviewSeries {
+    """
+    The data points for the time series.
+    """
+    points: [InsightDataPoint!]!
+
+    """
+    The label for the data series.
+    """
+    label: String!
 }

@@ -79,7 +79,7 @@ src api -query 'query ViewerSettings { viewerSettings { final } }' | jq -r '.dat
 
 #### Traces
 
-[Jaeger](http://localhost:5080/admin/observability/tracing) traces should be supplied if there is a noticeable performance issue in receiving code intelligence results in the SPA. Depending on the type of user operation that is slow, we will need traces for different request types.
+[Jaeger](https://docs.sourcegraph.com/admin/observability/tracing) traces should be supplied if there is a noticeable performance issue in receiving code intelligence results in the SPA. Depending on the type of user operation that is slow, we will need traces for different request types.
 
 | Send traces for _____ requests... | when latency _____ is high...                                       |
 | --------------------------------- | ------------------------------------------------------------------- |

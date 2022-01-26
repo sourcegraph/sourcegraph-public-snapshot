@@ -10,28 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// OID is a Git OID (40-char hex-encoded).
-type OID [20]byte
-
-func (oid OID) String() string { return hex.EncodeToString(oid[:]) }
-
-// ObjectType is a valid Git object type (commit, tag, tree, and blob).
-type ObjectType string
-
-// Standard Git object types.
-const (
-	ObjectTypeCommit ObjectType = "commit"
-	ObjectTypeTag    ObjectType = "tag"
-	ObjectTypeTree   ObjectType = "tree"
-	ObjectTypeBlob   ObjectType = "blob"
-)
-
-// GitObject represents a GitObject
-type GitObject struct {
-	ID   OID
-	Type ObjectType
-}
-
 type GetObjectFunc func(ctx context.Context, repo api.RepoName, objectName string) (*GitObject, error)
 
 // GetObjectService will get an information about a git object
@@ -102,22 +80,4 @@ func decodeOID(sha string) (OID, error) {
 	var oid OID
 	copy(oid[:], oidBytes)
 	return oid, nil
-}
-
-// IsAbsoluteRevision checks if the revision is a git OID SHA string.
-//
-// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
-// isn't a ref. Git allows 40-char hexadecimal strings to be references.
-func IsAbsoluteRevision(s string) bool {
-	if len(s) != 40 {
-		return false
-	}
-	for _, r := range s {
-		if !(('0' <= r && r <= '9') ||
-			('a' <= r && r <= 'f') ||
-			('A' <= r && r <= 'F')) {
-			return false
-		}
-	}
-	return true
 }

@@ -3,15 +3,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
 import {
     FilteredConnectionFilter,
@@ -20,8 +16,18 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    ProductStatusBadge,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Alert,
+    Link,
+} from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     SiteAdminRepositoryFields,
@@ -39,14 +45,18 @@ import {
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { Owner } from '../cloud-ga'
+import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
+import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
+import styles from './SettingsRepositoriesPage.module.scss'
 
 interface Props
     extends TelemetryProps,
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
     owner: Owner
     routingPrefix: string
+    authenticatedUser: AuthenticatedUser
 }
 
 type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
@@ -59,6 +69,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
+    authenticatedUser,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
@@ -279,7 +290,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     }
 
     const getSearchContextBanner = (orgName: string): JSX.Element => (
-        <div className="alert alert-success my-3" role="alert" key="add-repos">
+        <Alert className="my-3" role="alert" key="add-repos" variant="success">
             <h4 className="align-middle mb-1">Added repositories</h4>
             <p className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
@@ -291,24 +302,32 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 </code>
                 .
             </p>
-        </div>
+        </Alert>
     )
 
     return (
-        <div className="user-settings-repos">
+        <UserSettingReposContainer>
             <SelfHostedCtaLink
-                className="user-settings-repos__self-hosted-cta"
+                className={styles.selfHostedCta}
                 telemetryService={telemetryService}
                 page="settings/repositories"
             />
             {status === 'scheduled' && (
-                <div className="alert alert-info">
+                <Alert variant="info">
                     <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories may not be
                     up-to-date and will refresh once sync is finished.
-                </div>
+                </Alert>
             )}
             {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
+            {!isUserOwner && externalServices && authenticatedUser && owner.name && (
+                <OrgUserNeedsCodeHost
+                    user={authenticatedUser}
+                    orgExternalServices={externalServices}
+                    orgDisplayName={owner.name}
+                />
+            )}
+
             <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"
@@ -317,7 +336,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         text: (
                             <div className="d-flex">
                                 {isUserOwner ? 'Your repositories' : 'Repositories'}{' '}
-                                <Badge status="beta" className="ml-2" useLink={true} />
+                                <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
                             </div>
                         ),
                     },
@@ -331,37 +350,41 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 actions={
                     <span>
                         {hasRepos ? (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
                                 Manage repositories
-                            </Link>
+                            </Button>
                         ) : isUserOwner ? (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
                                 <AddIcon className="icon-inline" /> Add repositories
-                            </Link>
+                            </Button>
                         ) : externalServices && externalServices.length !== 0 ? (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
                                 <AddIcon className="icon-inline" /> Add repositories
-                            </Link>
+                            </Button>
                         ) : (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/code-hosts`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
                                 <AddIcon className="icon-inline" /> Connect code hosts
-                            </Link>
+                            </Button>
                         )}
                     </span>
                 }
@@ -371,7 +394,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 <h3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</h3>
             ) : !externalServices ? (
                 <div className="d-flex justify-content-center mt-4">
-                    <LoadingSpinner className="icon-inline" />
+                    <LoadingSpinner />
                 </div>
             ) : hasRepos ? (
                 <RepositoriesList
@@ -383,6 +406,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             ) : (
                 NoAddedReposBanner
             )}
-        </div>
+        </UserSettingReposContainer>
     )
 }

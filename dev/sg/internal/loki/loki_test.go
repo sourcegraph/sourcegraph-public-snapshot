@@ -18,6 +18,20 @@ func TestNewStreamFromJobLogs(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "parse empty content",
+			args: args{
+				log: ``,
+			},
+			want: [][2]string{},
+		},
+		{
+			name: "parse invalid line",
+			args: args{
+				log: `~~~ Preparing working directory`,
+			},
+			wantErr: true,
+		},
+		{
 			name: "parse line",
 			args: args{
 				log: `_bk;t=1633575941106~~~ Preparing working directory`,
@@ -67,6 +81,10 @@ remote: Counting objects:   8% (2/25)_bk;t=1633575947202`,
 				t.Errorf("NewStreamFromJobLogs() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			if tt.wantErr {
+				return
+			}
+
 			if diff := cmp.Diff(tt.want, got.Values); diff != "" {
 				t.Fatalf("(-want +got):\n%s", diff)
 			}

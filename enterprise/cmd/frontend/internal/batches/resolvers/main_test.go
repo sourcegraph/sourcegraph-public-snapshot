@@ -19,13 +19,12 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -118,7 +117,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
-func newGitHubExternalService(t *testing.T, store *database.ExternalServiceStore) *types.ExternalService {
+func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -174,11 +173,11 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitapi.Commit, error) {
+	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
 		if _, ok := byRev[id]; !ok {
 			t.Fatalf("GetCommit received unexpected ID: %s", id)
 		}
-		return &gitapi.Commit{ID: id}, nil
+		return &gitdomain.Commit{ID: id}, nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }
@@ -226,7 +225,7 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.C
 	}
 }
 
-func pruneUserCredentials(t *testing.T, db dbutil.DB, key encryption.Key) {
+func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
 	t.Helper()
 	creds, _, err := database.UserCredentials(db, key).List(context.Background(), database.UserCredentialsListOpts{})
 	if err != nil {

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
 func TestParseIncludePattern(t *testing.T) {
@@ -87,9 +88,12 @@ func TestParseIncludePattern(t *testing.T) {
 			like:  []string{`%sourcegraph%`},
 			exact: []string{"github.com/foo/bar"},
 			pattern: []*sqlf.Query{
-				sqlf.Sprintf(`(name IN (%s) OR lower(name) LIKE %s)`, "github.com/foo/bar", "%sourcegraph%"),
+				sqlf.Sprintf(`(name = ANY (%s) OR lower(name) LIKE %s)`, "%!s(*pq.StringArray=&[github.com/foo/bar])", "%sourcegraph%"),
 			},
 		},
+
+		// Recognize perl character class shorthand syntax.
+		`\s`: {regexp: `\s`},
 	}
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)
@@ -105,7 +109,7 @@ func TestParseIncludePattern(t *testing.T) {
 		if regexp != want.regexp {
 			t.Errorf("got regexp %q, want %q for %s", regexp, want.regexp, pattern)
 		}
-		if qs, err := parsePattern(pattern); err != nil {
+		if qs, err := parsePattern(pattern, false); err != nil {
 			t.Fatal(pattern, err)
 		} else {
 			if testing.Verbose() {
@@ -126,7 +130,7 @@ func TestParseIncludePattern(t *testing.T) {
 
 func queriesToString(qs []*sqlf.Query) string {
 	q := sqlf.Join(qs, "AND")
-	return fmt.Sprintf("%s %v", q.Query(sqlf.PostgresBindVar), q.Args())
+	return fmt.Sprintf("%s %s", q.Query(sqlf.PostgresBindVar), q.Args())
 }
 
 func TestRepos_Count(t *testing.T) {
@@ -345,15 +349,15 @@ func TestRepos_Create(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	svcs := types.MakeExternalServices()
+	svcs := typestest.MakeExternalServices()
 	if err := ExternalServices(db).Upsert(ctx, svcs...); err != nil {
 		t.Fatalf("Upsert error: %s", err)
 	}
 
-	msvcs := types.ExternalServicesToMap(svcs)
+	msvcs := typestest.ExternalServicesToMap(svcs)
 
-	repo1 := types.MakeGithubRepo(msvcs[extsvc.KindGitHub], msvcs[extsvc.KindBitbucketServer])
-	repo2 := types.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
+	repo1 := typestest.MakeGithubRepo(msvcs[extsvc.KindGitHub], msvcs[extsvc.KindBitbucketServer])
+	repo2 := typestest.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
 
 	t.Run("no repos should not fail", func(t *testing.T) {
 		if err := Repos(db).Create(ctx); err != nil {
@@ -362,7 +366,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 
 	t.Run("many repos", func(t *testing.T) {
-		want := types.GenerateRepos(7, repo1, repo2)
+		want := typestest.GenerateRepos(7, repo1, repo2)
 
 		if err := Repos(db).Create(ctx, want...); err != nil {
 			t.Fatalf("Create error: %s", err)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -28,9 +28,7 @@ const (
 var secretsStore *secrets.Store
 
 var (
-	BuildCommit string = "dev"
-
-	out *output.Output = stdout.Out
+	BuildCommit = "dev"
 
 	// globalConf is the global config. If a command needs to access it, it *must* call
 	// `parseConf` before.
@@ -61,23 +59,33 @@ var (
 			ciCommand,
 			installCommand,
 			versionCommand,
+			secretCommand,
+			setupCommand,
+			opsCommand,
+			checkCommand,
+			dbCommand,
 		},
 	}
 )
 
+// setMaxOpenFiles will bump the maximum opened files count.
+// It's harmless since the limit only persists for the lifetime of the process and it's quick too.
 func setMaxOpenFiles() error {
 	const maxOpenFiles = 10000
 
 	var rLimit syscall.Rlimit
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
-		return err
+		return errors.Wrap(err, "getrlimit failed")
 	}
 
 	if rLimit.Cur < maxOpenFiles {
 		rLimit.Cur = maxOpenFiles
 
 		// This may not succeed, see https://github.com/golang/go/issues/30401
-		return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+		err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+		if err != nil {
+			return errors.Wrap(err, "setrlimit failed")
+		}
 	}
 
 	return nil
@@ -127,51 +135,7 @@ func loadSecrets() error {
 	return err
 }
 
-// Migrate the old secret file to the new format.
-func migrateSecrets() error {
-	homePath, err := root.GetSGHomePath()
-	if err != nil {
-		return err
-	}
-	newfile := filepath.Join(homePath, defaultSecretsFile)
-	oldfile := filepath.Join(homePath, ".sg.token.json")
-	if _, err := os.Stat(newfile); os.IsNotExist(err) {
-		// new secrets file is not present
-		if _, err := os.Stat(oldfile); err == nil {
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "New version has breaking changes, attempting to migrate automatically"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "Previous secret format found, migrating ..."))
-			// but the old one is
-			b, err := os.ReadFile(oldfile)
-			if err != nil {
-				return err
-			}
-			s, err := secrets.LoadFile(newfile)
-			if err != nil {
-				return err
-			}
-			err = s.PutAndSave("rfc", json.RawMessage(b))
-			if err != nil {
-				return err
-			}
-			err = os.Rename(oldfile, oldfile+".backup")
-			if err != nil {
-				return err
-			}
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "Done! A backup has been created: %s", oldfile+".backup"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "New secrets file: %s", newfile))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
-		}
-	}
-	return nil
-}
-
 func main() {
-	// TODO(@jhchabran) drop this on Nov 15th.
-	if err := migrateSecrets(); err != nil {
-		fmt.Printf("failed to migrate secrets: %s\n", err)
-	}
-
 	if err := loadSecrets(); err != nil {
 		fmt.Printf("failed to open secrets: %s\n", err)
 	}
@@ -182,8 +146,12 @@ func main() {
 	}
 
 	checkSgVersion()
+	if *verboseFlag {
+		stdout.Out.SetVerbose()
+	}
 
-	// We always try to set this, since we often want to watch files, start commands, etc.
+	// We always try to set this, since we
+	// often want to watch files, start commands, etc...
 	if err := setMaxOpenFiles(); err != nil {
 		fmt.Printf("failed to set max open files: %s\n", err)
 		os.Exit(1)

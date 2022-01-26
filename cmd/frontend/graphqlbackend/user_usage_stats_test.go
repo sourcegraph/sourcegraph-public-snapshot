@@ -9,17 +9,22 @@ import (
 )
 
 func TestUser_UsageStatistics(t *testing.T) {
-	resetMocks()
-	database.Mocks.Users.MockGetByID_Return(t, &types.User{ID: 1, Username: "alice"}, nil)
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
 	usagestatsdeprecated.MockGetByUserID = func(userID int32) (*types.UserUsageStatistics, error) {
 		return &types.UserUsageStatistics{
 			SearchQueries: 2,
 		}, nil
 	}
 	defer func() { usagestatsdeprecated.MockGetByUserID = nil }()
+
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					node(id: "VXNlcjox") {

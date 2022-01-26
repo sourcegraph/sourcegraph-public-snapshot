@@ -11,9 +11,12 @@
 - [How to troubleshoot a Sourcegraph extension](troubleshoot-sg-extension.md)
 - [How to troubleshoot a repository that is not being updated](repo-not-updated.md)
 - [How to configure submodules](submodule-configuration.md)
-- [How to remove users with GraphQL API](remove-user-api.md)
+- [How to remove users or edit users with the GraphQL API](mutate-user-api.md)
 - [How to setup HTTPS connection with Ingress controller on your Kubernetes instance](setup-https.md)
 - [How to rebuild corrupt Postgres indexes after upgrading to 3.30 or 3.30.1](rebuild-corrupt-postgres-indexes.md)
 - [How to determine cause for Precise-code-intel-worker in CrashLoopBackOff status](precise-code-intel-worker-crashloopbackoff.md)
+- [How to troubleshoot a failure to update repositories when new repositories are added](update_repo_failure.md)
 - [How to run postgres queries in your Sourcegraph instance](run-psql.md)
 - [How to remove a repository from Sourcegraph](remove-repo.md)
+- [How to address common monorepo problems](monorepo-issues.md)
+

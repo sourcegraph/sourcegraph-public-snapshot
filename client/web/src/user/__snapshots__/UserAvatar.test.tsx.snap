@@ -1,18 +1,22 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`UserAvatar no avatar URL 1`] = `
-<div
-  className="userAvatar"
->
-  t
-</div>
+<DocumentFragment>
+  <div
+    class="userAvatar"
+  >
+    t
+  </div>
+</DocumentFragment>
 `;
 
 exports[`UserAvatar with avatar URL 1`] = `
-<img
-  alt=""
-  className="userAvatar"
-  role="presentation"
-  src="u"
-/>
+<DocumentFragment>
+  <img
+    alt=""
+    class="userAvatar"
+    role="presentation"
+    src="u"
+  />
+</DocumentFragment>
 `;

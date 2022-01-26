@@ -6,7 +6,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { ToggleBig } from '@sourcegraph/branded/src/components/ToggleBig'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useEventObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -163,7 +163,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
         className,
         value: optimisticEnabled,
         title: userCannotToggle || !subject ? undefined : optimisticEnabled ? 'Click to disable' : 'Click to enable',
-        dataTest: `extension-toggle-${extensionID}`,
+        ['data-testid']: `extension-toggle-${extensionID}`,
         disabled: userCannotToggle || !subject,
     }
 

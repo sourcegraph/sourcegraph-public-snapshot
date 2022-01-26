@@ -757,14 +757,21 @@ declare module 'sourcegraph' {
         priority: number
 
         /**
-         * Display the results of the location provider (with the given ID) in this panel below the
-         * {@link PanelView#contents}.
+         * Display the results of the location provider (with the given ID) in
+         * this panel below the {@link PanelView#contents}. If
+         * maxLocationResults is set, then only maxLocationResults will be shown
+         * in the panel.
          *
          * Experimental. Subject to change or removal without notice.
          *
          * @internal
          */
-        component: { locationProvider: string } | null
+        component: { locationProvider: string; maxLocationResults?: number } | null
+
+        /**
+         * A selector that defines the documents this panel is applicable to.
+         */
+        selector: DocumentSelector | null
     }
 
     export type ChartContent = LineChartContent<any, string> | BarChartContent<any, string> | PieChartContent<any>
@@ -803,7 +810,7 @@ declare module 'sourcegraph' {
          * The link URLs for each data point.
          * A link URL should take the user to more details about the specific data point.
          */
-        linkURLs?: string[]
+        linkURLs?: Record<string | number, string> | string[]
 
         /** The CSS color of the line. */
         stroke?: string

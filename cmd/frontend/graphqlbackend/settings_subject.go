@@ -39,15 +39,17 @@ func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, erro
 		return &settingsSubject{site: s}, nil
 
 	case *UserResolver:
-		// 🚨 SECURITY: On Cloud, only the user can access their own settings.
+		// 🚨 SECURITY: Only the authenticated user can view their settings on
+		// Sourcegraph.com.
 		if envvar.SourcegraphDotComMode() {
 			if err := backend.CheckSameUser(ctx, s.user.ID); err != nil {
 				return nil, err
 			}
-		}
-		// 🚨 SECURITY: Only the user and site admins are allowed to view the user's settings.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, s.db, s.user.ID); err != nil {
-			return nil, err
+		} else {
+			// 🚨 SECURITY: Only the user and site admins are allowed to view the user's settings.
+			if err := backend.CheckSiteAdminOrSameUser(ctx, s.db, s.user.ID); err != nil {
+				return nil, err
+			}
 		}
 		return &settingsSubject{user: s}, nil
 

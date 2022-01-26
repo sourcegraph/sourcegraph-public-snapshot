@@ -27,7 +27,7 @@ import (
 
 var (
 	observationContext *observation.Context
-	operationMetrics   *metrics.OperationMetrics
+	operationMetrics   *metrics.REDMetrics
 	once               sync.Once
 )
 
@@ -60,7 +60,7 @@ func (s *JVMPackagesSource) SetDB(db dbutil.DB) {
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
-		operationMetrics = dbstore.NewOperationsMetrics(observationContext)
+		operationMetrics = dbstore.NewREDMetrics(observationContext)
 	})
 	s.dbStore = dbstore.NewWithDB(db, observationContext, operationMetrics)
 }
@@ -75,6 +75,9 @@ func newJVMPackagesSource(svc *types.ExternalService, c *schema.JVMPackagesConne
 
 // ListRepos returns all Maven artifacts accessible to all connections
 // configured in Sourcegraph via the external services configuration.
+//
+// [FIXME: deduplicate-listed-repos] The current implementation will return
+// multiple repos with the same URL if there are different versions of it.
 func (s *JVMPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listDependentRepos(ctx, results)
 }
@@ -137,7 +140,7 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 				if errors.Is(err, context.DeadlineExceeded) {
 					timedOut++
 				} else {
-					log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.CoursierSyntax())
+					log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.PackageManagerSyntax())
 				}
 				continue
 			}

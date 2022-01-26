@@ -1,8 +1,10 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
     appendLineRangeQueryParameter,
     isLegacyFragment,
@@ -12,10 +14,11 @@ import {
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
-import { Settings } from '../schema/settings.schema'
-import { lazyComponent } from '../util/lazyComponent'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
+import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
+import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
@@ -49,7 +52,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec+',
         render: context => (
-            <div className="repo-revision-container">
+            <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCommitPage {...context} />
                 </RepositoryGitDataContainer>
@@ -60,7 +63,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     location={context.location}
                     telemetryService={context.telemetryService}
                 />
-            </div>
+            </RepoRevisionWrapper>
         ),
     },
     {
@@ -82,7 +85,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/compare/:spec*',
         render: context => (
-            <div className="repo-revision-container">
+            <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
@@ -93,7 +96,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     location={context.location}
                     telemetryService={context.telemetryService}
                 />
-            </div>
+            </RepoRevisionWrapper>
         ),
     },
     {
@@ -125,13 +128,11 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             repo,
             resolvedRev: { commitID, defaultBranch },
             match,
-            patternType,
-            setPatternType,
-            caseSensitive,
-            setCaseSensitivity,
             globbing,
+            featureFlags,
             ...context
-        }: RepoRevisionContainerContext &
+        }: FeatureFlagProps &
+            RepoRevisionContainerContext &
             RouteComponentProps<{
                 objectType: 'blob' | 'tree' | undefined
                 filePath: string | undefined
@@ -149,6 +150,9 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
 
             const mode = getModeFromPath(filePath)
+
+            const showOnboardingTour =
+                context.isSourcegraphDotCom && !context.authenticatedUser && featureFlags.get('getting-started-tour')
 
             // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
             const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)
@@ -181,10 +185,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             const repoRevisionProps = {
                 commitID,
                 filePath,
-                patternType,
-                setPatternType,
-                caseSensitive,
-                setCaseSensitivity,
                 globbing,
             }
 
@@ -198,11 +198,13 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                         className="repo-revision-container__sidebar"
                         isDir={objectType === 'tree'}
                         defaultBranch={defaultBranch || 'HEAD'}
+                        showOnboardingTour={showOnboardingTour}
                     />
                     {!hideRepoRevisionContent && (
                         // Add `.blob-status-bar__container` because this is the
                         // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
-                        <div className="repo-revision-container__content blob-status-bar__container">
+                        <BlobStatusBarContainer>
+                            {showOnboardingTour && <div className="onboarding-tour-info-marker mr-3 mb-3" />}
                             <ErrorBoundary location={context.location}>
                                 {objectType === 'blob' ? (
                                     <BlobPage
@@ -220,7 +222,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                                     <TreePage {...context} {...repoRevisionProps} repo={repo} />
                                 )}
                             </ErrorBoundary>
-                        </div>
+                        </BlobStatusBarContainer>
                     )}
                     <ActionItemsBar
                         useActionItemsBar={context.useActionItemsBar}

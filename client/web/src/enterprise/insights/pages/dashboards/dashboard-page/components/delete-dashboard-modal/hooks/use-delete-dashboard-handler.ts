@@ -1,12 +1,12 @@
 import { useContext, useState } from 'react'
 
-import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, asError } from '@sourcegraph/common'
 
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { SettingsBasedInsightDashboard } from '../../../../../../core/types'
+import { CustomInsightDashboard } from '../../../../../../core/types'
 
 export interface UseDeleteDashboardHandlerProps {
-    dashboard: SettingsBasedInsightDashboard
+    dashboard: CustomInsightDashboard
     onSuccess: () => void
 }
 
@@ -28,13 +28,12 @@ export function useDeleteDashboardHandler(props: UseDeleteDashboardHandlerProps)
         setLoadingOrError(true)
 
         try {
-            if (!dashboard.settingsKey || !dashboard.owner) {
-                throw new Error('TODO: implement deleteDashboard for GraphQl API')
-            }
-
+            // if settingsKey or owner are missing then we are using the
+            // new graphql api. these are not needed
             await deleteDashboard({
-                dashboardSettingKey: dashboard.settingsKey,
-                dashboardOwnerId: dashboard.owner.id,
+                dashboardSettingKey: dashboard.settingsKey || '',
+                dashboardOwnerId: dashboard.owner?.id || '',
+                id: dashboard.id,
             }).toPromise()
 
             setLoadingOrError(false)

@@ -1,8 +1,10 @@
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
+import { Button } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -10,7 +12,8 @@ import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql
 import { Owner } from '../cloud-ga'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
-import { hints } from './modalHints'
+import styles from './CodeHostItem.module.scss'
+import { scopes } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
@@ -79,7 +82,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     ownerID={owner.id}
                     serviceKind={kind}
                     serviceName={name}
-                    hintFragment={hints[kind]}
+                    hintFragment={scopes[kind]}
                     onDidAdd={onDidAdd}
                     onDidCancel={toggleAddConnectionModal}
                     onDidError={onDidError}
@@ -104,7 +107,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     serviceName={service.displayName}
                     orgName={owner.name || 'organization'}
                     kind={kind}
-                    hintFragment={hints[kind]}
+                    hintFragment={scopes[kind]}
                     onDidCancel={toggleUpdateModal}
                     onDidUpdate={onDidUpsert}
                     onDidError={onDidError}
@@ -116,7 +119,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : service?.id ? (
                     <CheckCircleIcon className="icon-inline mb-0 mr-2 text-success" />
                 ) : (
-                    <CircleDashedIcon className="icon-inline mb-0 mr-2 user-code-hosts-page__icon--dashed" />
+                    <CircleDashedIcon className={classNames('icon-inline mb-0 mr-2', styles.iconDashed)} />
                 )}
                 <Icon className="mb-0 mr-1" />
             </div>
@@ -136,9 +139,9 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             alwaysShowLabel={true}
                         />
                     ) : (
-                        <button type="button" className="btn btn-primary" onClick={connectAction}>
+                        <Button onClick={connectAction} variant="primary">
                             Connect
-                        </button>
+                        </Button>
                     )
                 ) : (
                     (isTokenUpdateRequired || !isUserOwner) &&
@@ -152,27 +155,26 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             alwaysShowLabel={true}
                         />
                     ) : (
-                        <button
-                            type="button"
+                        <Button
                             className={`btn ${
                                 !isUserOwner ? 'btn-link p-0 shadow-none font-weight-normal' : 'btn-merged'
                             }`}
                             onClick={updateAction}
                         >
                             Update
-                        </button>
+                        </Button>
                     ))
                 )}
 
                 {/* always show remove button when the service exists */}
                 {service?.id && (
-                    <button
-                        type="button"
-                        className="btn btn-link text-danger font-weight-normal shadow-none px-0 ml-3"
+                    <Button
+                        className="text-danger font-weight-normal shadow-none px-0 ml-3"
                         onClick={toggleRemoveConnectionModal}
+                        variant="link"
                     >
                         Remove
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
@@ -32,10 +33,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"VERSION":                            c.Version,
 
 		// Additional flags
-		"GO111MODULE":                      "on",
-		"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
-		"FORCE_COLOR":                      "3",
-		"ENTERPRISE":                       "1",
+		"GO111MODULE": "on",
+		"FORCE_COLOR": "3",
+		"ENTERPRISE":  "1",
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
@@ -47,6 +47,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_COMMIT_SHA": os.Getenv("BUILDKITE_COMMIT"),
 		// $ in commit messages must be escaped to not attempt interpolation which will fail.
 		"CI_COMMIT_MESSAGE": strings.ReplaceAll(os.Getenv("BUILDKITE_MESSAGE"), "$", "$$"),
+
+		// HoneyComb dataset that stores build traces.
+		"CI_BUILDEVENT_DATASET": "buildkite",
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
@@ -91,6 +94,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		})
 	}
 
+	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
+	const minimumUpgradeableVersion = "3.36.0"
+
 	// Set up operations that add steps to a pipeline.
 	var ops operations.Set
 
@@ -104,8 +110,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Append(triggerAsync(buildOptions))
 		}
-
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case BackendIntegrationTests:
 		ops.Append(
@@ -113,7 +118,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -139,7 +144,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case ImagePatch:
 		// only build candidate image for the specified image in the branch name
-		// see https://about.sourcegraph.com/handbook/engineering/deployments/testing#building-docker-images-for-a-specific-branch
+		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
 		patchImage := c.Branch[20:]
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
@@ -151,10 +156,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Trivy security scans
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
+		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 		// Publish images after everything is done
 		ops.Append(wait,
-			publishFinalDockerImage(c, patchImage, false))
+			publishFinalDockerImage(c, patchImage))
 
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
@@ -162,7 +167,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet([]operations.Operation{
 			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
 			wait,
-			publishFinalDockerImage(c, app, false),
+			publishFinalDockerImage(c, app),
 		})
 
 	case CandidatesNoTest:
@@ -195,9 +200,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
-		if c.RunType.Is(MainDryRun, MainBranch) {
+		if c.RunType.Is(MainDryRun, MainBranch, ReleaseBranch) {
 			ops.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
 				ops.Append(buildExecutorDockerMirror(c.Version))
 			}
 		}
@@ -205,10 +210,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Core tests
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 		}))
-
-		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-		const minimumUpgradeableVersion = "3.32.0"
 
 		// Various integration tests
 		ops.Append(
@@ -216,6 +219,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			codeIntelQA(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
+			// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
+			// clusterQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
 
 		// All operations before this point are required
@@ -223,28 +228,50 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
+			ops.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
-		if c.RunType.Is(MainBranch) {
+		if c.RunType.Is(MainBranch, ReleaseBranch) {
 			ops.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
 				ops.Append(publishExecutorDockerMirror(c.Version))
 			}
 		}
-
-		// Propagate changes elsewhere
-		if c.RunType.Is(MainBranch) {
-			ops.Append(
-				wait, // wait for all steps to pass
-				triggerUpdaterPipeline)
-		}
 	}
+
+	ops.Append(
+		wait,                    // wait for all steps to pass
+		uploadBuildeventTrace(), // upload the final buildevent trace if the build succeeded.
+	)
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
 	ops.Apply(pipeline)
+
+	// Validate generated pipeline has unique keys
+	if err := ensureUniqueKeys(pipeline); err != nil {
+		return nil, err
+	}
+
 	return pipeline, nil
+}
+
+func ensureUniqueKeys(pipeline *bk.Pipeline) error {
+	occurences := map[string]int{}
+	for _, step := range pipeline.Steps {
+		if s, ok := step.(*buildkite.Step); ok {
+			if s.Key == "" {
+				return fmt.Errorf("empty key on step with label %q", s.Label)
+			}
+			occurences[s.Key] += 1
+		}
+	}
+	for k, count := range occurences {
+		if count > 1 {
+			return fmt.Errorf("non unique key on step with key %q", k)
+		}
+	}
+	return nil
 }

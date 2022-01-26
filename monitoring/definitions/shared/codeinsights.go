@@ -6,7 +6,7 @@ import (
 
 var CodeInsights codeInsights
 
-var namespace string = "codeinsights"
+var namespace = "codeinsights"
 
 // codeInsights provides `CodeInsights` implementations.
 type codeInsights struct{}

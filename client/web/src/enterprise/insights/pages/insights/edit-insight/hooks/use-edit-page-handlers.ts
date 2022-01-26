@@ -1,8 +1,8 @@
 import { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { asError } from '@sourcegraph/common'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
@@ -29,7 +29,7 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
     const history = useHistory()
 
     const { dashboardId } = useQueryParameters(['dashboardId'])
-    const dashboard = useObservable(useMemo(() => getDashboardById(dashboardId), [getDashboardById, dashboardId]))
+    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
 
     const handleSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
         if (!originalInsight) {
@@ -42,7 +42,7 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
                 newInsight,
             }).toPromise()
 
-            eventLogger.log('Insight Edit', { insightType: newInsight.type }, { insightType: newInsight.type })
+            eventLogger.log('InsightEdit', { insightType: newInsight.type }, { insightType: newInsight.type })
 
             if (!dashboard || isVirtualDashboard(dashboard)) {
                 // Navigate user to the dashboard page with new created dashboard
@@ -52,7 +52,8 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
             }
 
             if (!dashboard.owner) {
-                throw new Error('TODO: support GraphQL API')
+                history.push(`/insights/dashboards/${dashboard.id}`)
+                return
             }
 
             // If insight's visible area has been changed explicit redirect to new

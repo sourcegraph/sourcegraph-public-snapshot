@@ -4,26 +4,29 @@ import { upperFirst } from 'lodash'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import {
+    Container,
+    ProductStatusBadge,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Link,
+    Alert,
+} from '@sourcegraph/wildcard'
 
-import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
-import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
+import { FeedbackPrompt } from '../../nav/Feedback'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
@@ -36,7 +39,9 @@ import styles from './RepositoryDocumentationPage.module.scss'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
+    <Alert className="m-2" variant="danger">
+        Error: {upperFirst(error.message)}
+    </Alert>
 )
 
 const PageNotFound: React.FunctionComponent = () => (
@@ -193,27 +198,35 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     }
                 />
             ) : null}
-            {loading ? <LoadingSpinner className="icon-inline m-1" /> : null}
+            {loading ? <LoadingSpinner className="m-1" /> : null}
             {error && error.message === 'page not found' ? <PageNotFound /> : null}
             {error && (error.message === 'no LSIF data' || error.message === 'no LSIF documentation') ? (
                 <div className={styles.container}>
                     <div className={styles.containerContent}>
                         <div className="d-flex float-right">
-                            <a
+                            <Button
                                 // eslint-disable-next-line react/jsx-no-target-blank
                                 target="_blank"
                                 rel="noopener"
                                 href="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                className="mr-1 btn btn-sm text-decoration-none btn-link btn-outline-secondary"
+                                className="mr-1 text-decoration-none btn-link"
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                                as="a"
                             >
                                 Learn more
-                            </a>
+                            </Button>
                             <FeedbackPrompt routes={routes} />
                         </div>
                         <h1>
                             <BookOpenBlankVariantIcon className="icon-inline mr-1" />
                             API docs
-                            <Badge status="experimental" className="text-uppercase ml-2" useLink={true} />
+                            <ProductStatusBadge
+                                status="experimental"
+                                className="text-uppercase ml-2"
+                                linkToDocs={true}
+                            />
                         </h1>
                         <p>API documentation generated for all your code</p>
                         <Container>

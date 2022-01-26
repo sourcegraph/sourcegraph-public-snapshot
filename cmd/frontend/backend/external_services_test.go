@@ -6,14 +6,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestCheckExternalServiceAccess(t *testing.T) {
 	ctx := testContext()
 	nonAuthContext := actor.WithActor(ctx, &actor.Actor{UID: 0})
-	db := new(dbtesting.MockDB)
 
 	mockSiteAdmin := func(isSiteAdmin bool) *types.User {
 		return &types.User{ID: 1, SiteAdmin: isSiteAdmin}
@@ -103,16 +101,15 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-				return test.mockCurrentUser, nil
-			}
-			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-				return test.mockOrgMember, nil
-			}
-			defer func() {
-				database.Mocks.Users = database.MockUsers{}
-				database.Mocks.OrgMembers = database.MockOrgMembers{}
-			}()
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(test.mockCurrentUser, nil)
+
+			orgMembers := database.NewMockOrgMemberStore()
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(test.mockOrgMember, nil)
+
+			db := database.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
 			result := CheckExternalServiceAccess(test.ctx, db, test.namespaceUserID, test.namespaceOrgID)
 

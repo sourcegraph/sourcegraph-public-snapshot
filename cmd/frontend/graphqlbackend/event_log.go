@@ -4,13 +4,12 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type userEventLogResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	event *types.Event
 }
 

@@ -8,10 +8,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -83,6 +83,7 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 		return err
 	}
 	if exitCode != 0 {
+		// If is context cancelation, forward the ctx.Err().
 		if err := ctx.Err(); err != nil {
 			return err
 		}
@@ -144,12 +145,10 @@ func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout, s
 // we shell out to, such a docker.
 var forwardedHostEnvVars = []string{"HOME", "PATH", "USER"}
 
-func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *sync.WaitGroup {
-	wg := &sync.WaitGroup{}
+func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *errgroup.Group {
+	eg := &errgroup.Group{}
 
-	readIntoBuf := func(prefix string, r io.Reader) {
-		defer wg.Done()
-
+	readIntoBuf := func(prefix string, r io.Reader) error {
 		scanner := bufio.NewScanner(r)
 		// Allocate an initial buffer of 4k.
 		buf := make([]byte, 4*1024)
@@ -159,26 +158,33 @@ func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *sync.
 		for scanner.Scan() {
 			fmt.Fprintf(logWriter, "%s: %s\n", prefix, scanner.Text())
 		}
+		return scanner.Err()
 	}
 
-	wg.Add(2)
-	go readIntoBuf("stdout", stdout)
-	go readIntoBuf("stderr", stderr)
+	eg.Go(func() error {
+		return readIntoBuf("stdout", stdout)
+	})
+	eg.Go(func() error {
+		return readIntoBuf("stderr", stderr)
+	})
 
-	return wg
+	return eg
 }
 
-// monitorCommand starts the given command and waits for the given wait group to complete.
+// monitorCommand starts the given command and waits for the given errgroup to complete.
 // This function returns a non-nil error only if there was a system issue - commands that
 // run but fail due to a non-zero exit code will return a nil error and the exit code.
-func monitorCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *sync.WaitGroup) (int, error) {
+func monitorCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgroup.Group) (int, error) {
 	if err := cmd.Start(); err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "starting command")
 	}
 
 	select {
 	case <-ctx.Done():
-	case <-watchWaitGroup(pipeReaderWaitGroup):
+	case err := <-watchErrGroup(pipeReaderWaitGroup):
+		if err != nil {
+			return 0, errors.Wrap(err, "reading process pipes")
+		}
 	}
 
 	if err := cmd.Wait(); err != nil {
@@ -186,15 +192,19 @@ func monitorCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *syn
 		if errors.As(err, &e) {
 			return e.ExitCode(), nil
 		}
+
+		log15.Error("Non exit-error returned from command", "err", err)
+		return 0, errors.Wrap(err, "waiting for command")
 	}
 
+	// All good, command ran successfully.
 	return 0, nil
 }
 
-func watchWaitGroup(wg *sync.WaitGroup) <-chan struct{} {
-	ch := make(chan struct{})
+func watchErrGroup(eg *errgroup.Group) <-chan error {
+	ch := make(chan error)
 	go func() {
-		wg.Wait()
+		ch <- eg.Wait()
 		close(ch)
 	}()
 

@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import { Button, Card } from '@sourcegraph/wildcard'
+
 import styles from './CtaBanner.module.scss'
 
 interface Props {
@@ -28,21 +30,23 @@ export const CtaBanner: React.FunctionComponent<Props> = ({
     googleAnalytics,
     onClick,
 }) => (
-    <div className={classNames('shadow d-flex flex-row card py-4 pr-4 pl-3', styles.ctaBanner, className)}>
+    <Card className={classNames('shadow d-flex flex-row py-4 pr-4 pl-3', styles.ctaBanner, className)}>
         <div className="mr-4 d-flex flex-column align-items-center">{icon}</div>
         <div>
             <HeadingX>{title}</HeadingX>
             <p className={bodyTextClassName}>{bodyText}</p>
-            <a
+            <Button
                 href={href}
                 // eslint-disable-next-line react/jsx-no-target-blank
                 target="_blank"
                 rel="noreferrer"
                 onClick={onClick}
-                className={classNames('btn btn-primary', { 'ga-cta-install-now': googleAnalytics })}
+                className={classNames({ 'ga-cta-install-now': googleAnalytics })}
+                variant="primary"
+                as="a"
             >
                 {linkText}
-            </a>
+            </Button>
         </div>
-    </div>
+    </Card>
 )

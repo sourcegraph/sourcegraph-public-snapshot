@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,7 +21,7 @@ var (
 
 // GetArchive generates and returns a usage statistics ZIP archive containing the CSV
 // files defined in RFC 145, or an error in case of failure.
-func GetArchive(ctx context.Context, db dbutil.DB) ([]byte, error) {
+func GetArchive(ctx context.Context, db database.DB) ([]byte, error) {
 	counts, err := database.EventLogs(db).UsersUsageCounts(ctx)
 	if err != nil {
 		return nil, err
@@ -109,7 +108,7 @@ func GetArchive(ctx context.Context, db dbutil.DB) ([]byte, error) {
 var MockGetByUserID func(userID int32) (*types.UserUsageStatistics, error)
 
 // GetByUserID returns a single user's UserUsageStatistics.
-func GetByUserID(ctx context.Context, db dbutil.DB, userID int32) (*types.UserUsageStatistics, error) {
+func GetByUserID(ctx context.Context, db database.DB, userID int32) (*types.UserUsageStatistics, error) {
 	if MockGetByUserID != nil {
 		return MockGetByUserID(userID)
 	}
@@ -150,27 +149,27 @@ func GetByUserID(ctx context.Context, db dbutil.DB, userID int32) (*types.UserUs
 }
 
 // GetUsersActiveTodayCount returns a count of users that have been active today.
-func GetUsersActiveTodayCount(ctx context.Context, db dbutil.DB) (int, error) {
+func GetUsersActiveTodayCount(ctx context.Context, db database.DB) (int, error) {
 	now := timeNow().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	return database.EventLogs(db).CountUniqueUsersAll(ctx, today, today.AddDate(0, 0, 1))
 }
 
 // ListRegisteredUsersToday returns a list of the registered users that were active today.
-func ListRegisteredUsersToday(ctx context.Context, db dbutil.DB) ([]int32, error) {
+func ListRegisteredUsersToday(ctx context.Context, db database.DB) ([]int32, error) {
 	now := timeNow().UTC()
 	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	return database.EventLogs(db).ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 1))
 }
 
 // ListRegisteredUsersThisWeek returns a list of the registered users that were active this week.
-func ListRegisteredUsersThisWeek(ctx context.Context, db dbutil.DB) ([]int32, error) {
+func ListRegisteredUsersThisWeek(ctx context.Context, db database.DB) ([]int32, error) {
 	start := timeutil.StartOfWeek(timeNow().UTC(), 0)
 	return database.EventLogs(db).ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 7))
 }
 
 // ListRegisteredUsersThisMonth returns a list of the registered users that were active this month.
-func ListRegisteredUsersThisMonth(ctx context.Context, db dbutil.DB) ([]int32, error) {
+func ListRegisteredUsersThisMonth(ctx context.Context, db database.DB) ([]int32, error) {
 	now := timeNow().UTC()
 	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 	return database.EventLogs(db).ListUniqueUsersAll(ctx, start, start.AddDate(0, 1, 0))
@@ -186,7 +185,7 @@ type SiteUsageStatisticsOptions struct {
 }
 
 // GetSiteUsageStatistics returns the current site's SiteActivity.
-func GetSiteUsageStatistics(ctx context.Context, db dbutil.DB, opt *SiteUsageStatisticsOptions) (*types.SiteUsageStatistics, error) {
+func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageStatisticsOptions) (*types.SiteUsageStatistics, error) {
 	var (
 		dayPeriods   = defaultDays
 		weekPeriods  = defaultWeeks
@@ -225,7 +224,7 @@ func GetSiteUsageStatistics(ctx context.Context, db dbutil.DB, opt *SiteUsageSta
 }
 
 // activeUsers returns counts of active users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
-func activeUsers(ctx context.Context, db dbutil.DB, periodType database.PeriodType, periods int) ([]*types.SiteActivityPeriod, error) {
+func activeUsers(ctx context.Context, db database.DB, periodType database.PeriodType, periods int) ([]*types.SiteActivityPeriod, error) {
 	if periods == 0 {
 		return []*types.SiteActivityPeriod{}, nil
 	}

@@ -4,10 +4,10 @@ import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { replaceRevisionInURL } from '../../util/url'
+import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 /**
@@ -66,26 +66,28 @@ export class GoToPermalinkAction extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink
-                    className="btn repo-header__file-action"
+                <RepoHeaderActionButtonLink
+                    className="btn"
+                    file={true}
                     to={this.permalinkURL}
                     onSelect={this.onClick.bind(this)}
                 >
                     <LinkIcon className="icon-inline" />
                     <span>Permalink (with full Git commit SHA)</span>
-                </ButtonLink>
+                </RepoHeaderActionButtonLink>
             )
         }
 
         return (
-            <ButtonLink
+            <RepoHeaderActionButtonLink
+                className="btn btn-icon"
+                file={false}
                 to={this.permalinkURL}
-                data-tooltip="Permalink (with full Git commit SHA)"
                 onSelect={this.onClick.bind(this)}
-                className="btn btn-icon repo-header__action"
+                data-tooltip="Permalink (with full Git commit SHA)"
             >
                 <LinkIcon className="icon-inline" />
-            </ButtonLink>
+            </RepoHeaderActionButtonLink>
         )
     }
 

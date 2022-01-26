@@ -593,6 +593,59 @@ Tracks the range of schema_versions for each upload in the lsif_data_documents t
 
 **min_schema_version**: A lower-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`.
 
+# Table "public.lsif_data_implementations"
+```
+     Column     |  Type   | Collation | Nullable | Default 
+----------------+---------+-----------+----------+---------
+ dump_id        | integer |           | not null | 
+ scheme         | text    |           | not null | 
+ identifier     | text    |           | not null | 
+ data           | bytea   |           |          | 
+ schema_version | integer |           | not null | 
+ num_locations  | integer |           | not null | 
+Indexes:
+    "lsif_data_implementations_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
+    "lsif_data_implementations_dump_id_schema_version" btree (dump_id, schema_version)
+Triggers:
+    lsif_data_implementations_schema_versions_insert AFTER INSERT ON lsif_data_implementations REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_implementations_schema_versions_insert()
+
+```
+
+Associates (document, range) pairs with the implementation monikers attached to the range.
+
+**data**: A gob-encoded payload conforming to an array of [LocationData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L106:6) types.
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+
+**identifier**: The moniker identifier.
+
+**num_locations**: The number of locations stored in the data field.
+
+**schema_version**: The schema version of this row - used to determine presence and encoding of data.
+
+**scheme**: The moniker scheme.
+
+# Table "public.lsif_data_implementations_schema_versions"
+```
+       Column       |  Type   | Collation | Nullable | Default 
+--------------------+---------+-----------+----------+---------
+ dump_id            | integer |           | not null | 
+ min_schema_version | integer |           |          | 
+ max_schema_version | integer |           |          | 
+Indexes:
+    "lsif_data_implementations_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
+    "lsif_data_implementations_schema_versions_dump_id_schema_versio" btree (dump_id, min_schema_version, max_schema_version)
+
+```
+
+Tracks the range of schema_versions for each upload in the lsif_data_implementations table.
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table.
+
+**max_schema_version**: An upper-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`.
+
+**min_schema_version**: A lower-bound on the `lsif_data_implementations.schema_version` where `lsif_data_implementations.dump_id = dump_id`.
+
 # Table "public.lsif_data_metadata"
 ```
       Column       |  Type   | Collation | Nullable | Default 
@@ -682,3 +735,21 @@ Associates result set identifiers with the (document path, range identifier) pai
 **dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
 
 **idx**: The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks).
+
+# Table "public.migration_logs"
+```
+            Column             |           Type           | Collation | Nullable |                  Default                   
+-------------------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                            | integer                  |           | not null | nextval('migration_logs_id_seq'::regclass)
+ migration_logs_schema_version | integer                  |           | not null | 
+ schema                        | text                     |           | not null | 
+ version                       | integer                  |           | not null | 
+ up                            | boolean                  |           | not null | 
+ started_at                    | timestamp with time zone |           | not null | 
+ finished_at                   | timestamp with time zone |           |          | 
+ success                       | boolean                  |           |          | 
+ error_message                 | text                     |           |          | 
+Indexes:
+    "migration_logs_pkey" PRIMARY KEY, btree (id)
+
+```

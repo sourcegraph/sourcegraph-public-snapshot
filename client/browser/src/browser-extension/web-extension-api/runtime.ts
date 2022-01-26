@@ -21,4 +21,5 @@ export const background: BackgroundPageApi = {
     requestGraphQL: messageSender('requestGraphQL'),
     notifyPrivateCloudError: messageSender('notifyPrivateCloudError'),
     checkPrivateCloudError: messageSender('checkPrivateCloudError'),
+    fetchCache: messageSender('fetchCache'),
 }

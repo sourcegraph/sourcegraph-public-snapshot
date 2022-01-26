@@ -28,7 +28,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         unpublished: 4,
     },
     createdAt: subDays(now, 5).toISOString(),
-    initialApplier: {
+    creator: {
         url: '/users/alice',
         username: 'alice',
     },
@@ -49,8 +49,14 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
+        id: 'specID1',
         originalInput: 'name: awesome-batch-changes\ndescription: somestring',
         supersedingBatchSpec: null,
+        codeHostsWithoutWebhooks: {
+            nodes: [],
+            pageInfo: { hasNextPage: false },
+            totalCount: 0,
+        },
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',
@@ -221,6 +227,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                 externalURL: {
                     url: 'http://test.test/123',
                 },
+                forkNamespace: null,
                 labels: [
                     {
                         __typename: 'ChangesetLabel',
@@ -248,8 +255,10 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                     type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
             {
@@ -264,6 +273,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                 },
                 externalID: null,
                 externalURL: null,
+                forkNamespace: null,
                 labels: [],
                 repository: {
                     id: 'repoid',
@@ -284,8 +294,10 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                     type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
         ],

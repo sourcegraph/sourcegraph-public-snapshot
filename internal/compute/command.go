@@ -8,7 +8,8 @@ import (
 
 type Command interface {
 	command()
-	Run(context.Context, *result.FileMatch) (Result, error)
+	Run(context.Context, result.Match) (Result, error)
+	ToSearchPattern() string
 	String() string
 }
 

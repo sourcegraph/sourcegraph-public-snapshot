@@ -6,10 +6,13 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { of, combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
-import * as GQL from '../graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+
+import * as GQL from '../schema'
 import { highlightNode } from '../util/dom'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
+
+import styles from './CodeExcerpt.module.scss'
 
 export interface FetchFileParameters {
     repoName: string
@@ -125,10 +128,11 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                 offset={this.visibilitySensorOffset}
             >
                 <code
+                    data-testid="code-excerpt"
                     className={classNames(
-                        'code-excerpt',
+                        styles.codeExcerpt,
                         this.props.className,
-                        isErrorLike(this.state.blobLinesOrError) && 'code-excerpt-error'
+                        isErrorLike(this.state.blobLinesOrError) && styles.codeExcerptError
                     )}
                 >
                     {this.state.blobLinesOrError && !isErrorLike(this.state.blobLinesOrError) && (
@@ -138,7 +142,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                         />
                     )}
                     {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
-                        <div className="code-excerpt-alert">
+                        <div className={styles.codeExcerptAlert}>
                             <AlertCircleIcon className="icon-inline mr-2" />
                             {this.state.blobLinesOrError.message}
                         </div>

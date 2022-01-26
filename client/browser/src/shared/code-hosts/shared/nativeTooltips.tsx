@@ -13,20 +13,21 @@ import {
 } from 'rxjs/operators'
 import type { HoverAlert } from 'sourcegraph'
 
+import { ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined, isNot } from '@sourcegraph/shared/src/util/types'
+import { isNot } from '@sourcegraph/shared/src/util/types'
 
 import { MutationRecordLike } from '../../util/dom'
 
 import { CodeHost } from './codeHost'
+import styles from './nativeTooltips.module.scss'
 import { trackViews } from './views'
 
-const NATIVE_TOOLTIP_HIDDEN = 'native-tooltip--hidden'
+const NATIVE_TOOLTIP_HIDDEN = styles.nativeTooltipHidden
 const NATIVE_TOOLTIP_TYPE = 'nativeTooltips'
 
 /**
@@ -72,7 +73,9 @@ export function handleNativeTooltips(
                     .subscribe(([enabled, hasPrivateCloudError]) => {
                         // If we can't provide the user hovers because it's private code, don't hide native tooltips.
                         // Otherwise we would have to show the user two alerts at the same time.
-                        element.classList.toggle(NATIVE_TOOLTIP_HIDDEN, !enabled && !hasPrivateCloudError)
+                        const isTooltipHidden = !enabled && !hasPrivateCloudError
+                        element.dataset.nativeTooltipHidden = String(isTooltipHidden)
+                        element.classList.toggle(NATIVE_TOOLTIP_HIDDEN, isTooltipHidden)
                     })
             )
         }),

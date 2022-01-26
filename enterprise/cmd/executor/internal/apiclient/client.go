@@ -27,9 +27,6 @@ type Options struct {
 	// ExecutorName is a unique identifier for the requesting executor.
 	ExecutorName string
 
-	// ExecutorHostname is the hostname of the system it is running on.
-	ExecutorHostname string
-
 	// PathPrefix is the path prefix added to all requests.
 	PathPrefix string
 
@@ -38,14 +35,17 @@ type Options struct {
 
 	// BaseClientOptions are the underlying HTTP client options.
 	BaseClientOptions BaseClientOptions
+
+	// TelemetryOptions captures additional parameters sent in heartbeat requests.
+	TelemetryOptions TelemetryOptions
 }
 
 type EndpointOptions struct {
 	// URL is the target request URL.
 	URL string
 
-	// Password is the basic-auth password to include with all requests.
-	Password string
+	// Token is the authorization token to include with all requests (via Authorization header).
+	Token string
 }
 
 func New(options Options, observationContext *observation.Context) *Client {
@@ -63,8 +63,7 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/dequeue", queueName), executor.DequeueRequest{
-		ExecutorName:     c.options.ExecutorName,
-		ExecutorHostname: c.options.ExecutorHostname,
+		ExecutorName: c.options.ExecutorName,
 	})
 	if err != nil {
 		return false, err
@@ -206,6 +205,14 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
+
+		OS:              c.options.TelemetryOptions.OS,
+		Architecture:    c.options.TelemetryOptions.Architecture,
+		DockerVersion:   c.options.TelemetryOptions.DockerVersion,
+		ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
+		GitVersion:      c.options.TelemetryOptions.GitVersion,
+		IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
+		SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
 	})
 	if err != nil {
 		return nil, err
@@ -218,10 +225,11 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	return knownIDs, nil
 }
 
+const SchemeExecutorToken = "token-executor"
+
 func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Request, error) {
-	u, err := makeURL(
+	u, err := makeRelativeURL(
 		c.options.EndpointOptions.URL,
-		c.options.EndpointOptions.Password,
 		c.options.PathPrefix,
 		path,
 	)
@@ -229,17 +237,13 @@ func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Re
 		return nil, err
 	}
 
-	return MakeJSONRequest(method, u, payload)
-}
-
-func makeURL(base, password string, path ...string) (*url.URL, error) {
-	u, err := makeRelativeURL(base, path...)
+	r, err := MakeJSONRequest(method, u, payload)
 	if err != nil {
 		return nil, err
 	}
 
-	u.User = url.UserPassword("sourcegraph", password)
-	return u, nil
+	r.Header.Add("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, c.options.EndpointOptions.Token))
+	return r, nil
 }
 
 func makeRelativeURL(base string, path ...string) (*url.URL, error) {

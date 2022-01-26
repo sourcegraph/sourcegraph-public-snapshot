@@ -8,36 +8,41 @@ import (
 	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
 
 func TestRepository_Commit(t *testing.T) {
-	resetMocks()
-	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != "abc" {
-			t.Error("wrong arguments to ResolveRev")
-		}
+		assert.Equal(t, api.RepoID(2), repo.ID)
+		assert.Equal(t, "abc", rev)
 		return exampleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitapi.Commit{ID: exampleCommitSHA1})
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
+	defer func() {
+		backend.Mocks = backend.MockServices{}
+	}()
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
@@ -90,9 +95,9 @@ func TestRepositoryHydration(t *testing.T) {
 	t.Run("hydrated without errors", func(t *testing.T) {
 		minimalRepo, hydratedRepo := makeRepos()
 
-		rs := dbmock.NewMockRepoStore()
+		rs := database.NewMockRepoStore()
 		rs.GetFunc.SetDefaultReturn(hydratedRepo, nil)
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
 		repoResolver := NewRepositoryResolver(db, minimalRepo)
@@ -105,9 +110,9 @@ func TestRepositoryHydration(t *testing.T) {
 
 		dbErr := errors.New("cannot load repo")
 
-		rs := dbmock.NewMockRepoStore()
+		rs := database.NewMockRepoStore()
 		rs.GetFunc.SetDefaultReturn(nil, dbErr)
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
 		repoResolver := NewRepositoryResolver(db, minimalRepo)

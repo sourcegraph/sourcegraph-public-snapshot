@@ -59,6 +59,12 @@ function install_docker() {
   systemctl restart --now docker
 }
 
+## Install NVMe cli
+function install_nvme() {
+  apt-get update -y
+  apt-get install -y nvme-cli
+}
+
 ## Run docker registry as a pull-through cache
 ## Reference: https://docs.docker.com/registry/recipes/mirror/
 function setup_pull_through_docker_cache() {
@@ -91,9 +97,32 @@ health:
 proxy:
   remoteurl: https://registry-1.docker.io
 EOF
+  # TODO: This only monitors the docker client, not the container itself.
+  cat <<EOF >/etc/systemd/system/docker_registry.service
+[Unit]
+Description=Docker Registry
+After=docker.service
+Requires=docker.service
 
-  # Run registry as a persistent daemon container.
-  docker run -d --restart=always -p 5000:5000 -p 5001:5001 -v ${DOCKER_REGISTRY_CONFIG_FILE}:/etc/docker/registry/config.yml --name registry registry:2
+[Service]
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=-/usr/bin/docker stop %n
+ExecStartPre=-/usr/bin/docker rm %n
+ExecStart=/usr/bin/docker run \
+  --rm \
+  -p 5000:5000 \
+  -p 5001:5001 \
+  -v ${DOCKER_REGISTRY_CONFIG_FILE}:/etc/docker/registry/config.yml \
+  -v /mnt/registry:/var/lib/registry \
+  --name %n \
+  registry:2
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  systemctl daemon-reload
 }
 
 function install_node_exporter() {
@@ -124,7 +153,8 @@ ExecStart=/usr/local/bin/node_exporter \
   --collector.netstat \
   --collector.softnet \
   --collector.pressure \
-  --collector.vmstat
+  --collector.vmstat \
+  --collector.vmstat.fields '^(oom_kill|pgpg|pswp|pg.*fault|pgscan|pgsteal).*'
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -169,6 +199,10 @@ EOF
   systemctl enable exporter_exporter
 }
 
+function preload_registry_image() {
+  docker pull registry:2
+}
+
 function cleanup() {
   apt-get -y autoremove
   apt-get clean
@@ -184,6 +218,8 @@ else
   install_cloudwatch_agent
 fi
 install_docker
+install_nvme
+preload_registry_image
 
 # Services
 setup_pull_through_docker_cache

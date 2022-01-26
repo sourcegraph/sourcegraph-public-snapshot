@@ -84,6 +84,7 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 		ctx,
 		s.Handle().DB(),
 		"batch_spec_workspace_execution_jobs",
+		batch.MaxNumPostgresParameters,
 		[]string{"batch_spec_workspace_id", "created_at", "updated_at"},
 		"",
 		[]string{

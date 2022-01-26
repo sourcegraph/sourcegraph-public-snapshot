@@ -75,8 +75,9 @@ type BatchChange struct {
 	ID                      string
 	Name                    string
 	Description             string
+	State                   btypes.BatchChangeState
 	SpecCreator             *User
-	InitialApplier          *User
+	Creator                 *User
 	LastApplier             *User
 	LastAppliedAt           string
 	ViewerCanAdminister     bool
@@ -90,6 +91,7 @@ type BatchChange struct {
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
 	BulkOperations          BulkOperationConnection
+	BatchSpecs              BatchSpecConnection
 }
 
 type BatchChangeConnection struct {
@@ -136,6 +138,7 @@ type Changeset struct {
 	State              string
 	ExternalID         string
 	ExternalURL        ExternalURL
+	ForkNamespace      string
 	ReviewState        string
 	CheckState         string
 	Events             ChangesetEventConnection
@@ -223,6 +226,13 @@ type BatchSpec struct {
 	StartedAt      graphqlbackend.DateTime
 	FinishedAt     graphqlbackend.DateTime
 	FailureMessage string
+	ViewerCanRetry bool
+}
+
+type BatchSpecConnection struct {
+	Nodes      []BatchSpec
+	TotalCount int
+	PageInfo   PageInfo
 }
 
 type BatchSpecWorkspaceResolution struct {

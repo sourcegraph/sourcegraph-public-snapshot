@@ -1,11 +1,11 @@
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useState, useCallback, useMemo, memo } from 'react'
-import { Link } from 'react-router-dom'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     ExtensionHeaderColor,
     ExtensionManifest,
@@ -13,9 +13,8 @@ import {
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
+import { useTimeoutManager, Link, CardBody, Card, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -182,12 +181,12 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     const iconClassName = classNames(styles.icon, featured && styles.iconFeatured)
 
     return (
-        <div
-            className={classNames('card position-relative flex-1', styles.extensionCard, {
+        <Card
+            className={classNames('position-relative flex-1', styles.extensionCard, {
                 [classNames('p-0 m-0', styles.extensionCardEnabled)]: change === 'enabled',
             })}
         >
-            <div className="card-body p-0 extension-card__body d-flex flex-column position-relative">
+            <CardBody className="p-0 extension-card__body d-flex flex-column position-relative">
                 {/* Section 1: Icon w/ background */}
                 <div
                     className={classNames(
@@ -285,15 +284,15 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         </div>
                     )}
                 </div>
-            </div>
+            </CardBody>
 
             {/* Visual feedback: alert when optimistic update fails */}
             {optimisticFailure && (
-                <div className={classNames('alert alert-danger px-2 py-1', styles.alert)}>
+                <Alert className={classNames('px-2 py-1', styles.alert)} variant="danger">
                     <span className="font-weight-medium">Error:</span> {actionableErrorMessage(optimisticFailure.error)}
-                </div>
+                </Alert>
             )}
-        </div>
+        </Card>
     )
 },
 areEqual)

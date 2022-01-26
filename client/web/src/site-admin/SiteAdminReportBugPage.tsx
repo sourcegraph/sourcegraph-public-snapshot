@@ -2,11 +2,10 @@ import { mapValues, values } from 'lodash'
 import React, { useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
@@ -15,7 +14,9 @@ import githubSchemaJSON from '../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../schema/gitolite.schema.json'
 import jvmPackagesSchemaJSON from '../../../../schema/jvm-packages.schema.json'
+import npmPackagesSchemaJSON from '../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../schema/other_external_service.schema.json'
+import pagureSchemaJSON from '../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../schema/phabricator.schema.json'
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
@@ -42,9 +43,11 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     GITLAB: gitlabSchemaJSON,
     GITOLITE: gitoliteSchemaJSON,
     JVMPACKAGES: jvmPackagesSchemaJSON,
+    NPMPACKAGES: npmPackagesSchemaJSON,
     OTHER: otherExternalServiceSchemaJSON,
     PERFORCE: perforceSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,
+    PAGURE: pagureSchemaJSON,
 }
 
 const allConfigSchema = {
@@ -119,14 +122,14 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
                 </a>{' '}
                 instead.
             </p>
-            <div className="card-header alert alert-warning">
+            <Alert variant="warning">
                 <div>
                     Please redact any secrets before sharing, whether on the public issue tracker or with
                     support@sourcegraph.com.
                 </div>
-            </div>
+            </Alert>
             {allConfig === undefined || monitoringStats === undefined ? (
-                <LoadingSpinner className="icon-inline mt-2" />
+                <LoadingSpinner className="mt-2" />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
                     value={JSON.stringify(

@@ -3,7 +3,6 @@ import React from 'react'
 import { Subscription } from 'rxjs'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
@@ -21,7 +20,13 @@ export class GlobalContributions extends React.Component<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        registerHighlightContributions() // no way to unregister these
+        // Lazy-load `highlight/contributions.ts` to make main application bundle ~25kb Gzip smaller.
+        import('@sourcegraph/shared/src/highlight/contributions')
+            .then(({ registerHighlightContributions }) => registerHighlightContributions()) // no way to unregister these
+            .catch(error => {
+                throw error // Throw error to the <ErrorBoundary />
+            })
+
         this.subscriptions.add(
             registerHoverContributions({ ...this.props, locationAssign: location.assign.bind(location) })
         )

@@ -17,14 +17,14 @@ services:
     ports:
       - 5432:5432
     environment:
-      - POSTGRES_PASSWORD=${PGUSER:-sourcegraph}
-      - POSTGRES_USER=${PGPASSWORD:-sourcegraph}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-sourcegraph}
+      - POSTGRES_USER=${POSTGRES_USER:-sourcegraph}
       - POSTGRES_DB=${PGDATABASE:-sourcegraph}
       - "POSTGRES_INITDB_ARGS= --encoding=UTF8 "
     volumes:
       # Match PGDATA in Dockerfile
       # https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Edocker-images/postgres.*/Dockerfile+PGDATA
-      - ${PGDATA_DIR:-postgres_data}:/data/pgdata-12
+      - ${PGDATA_DIR:-postgres_12_data}:/data/pgdata-12
 volumes:
   redis_data:
-  postgres_data:
+  postgres_12_data:

@@ -9,23 +9,22 @@ import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Button, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { SearchPatternType } from '../../graphql-operations'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../CtaIcons'
-import styles from '../FeatureTour.module.scss'
+import featureTourStyles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
 import {
     getTourOptions,
@@ -36,11 +35,13 @@ import {
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
+import { CreateSearchContextButton } from './components/CreateSearchContextButton'
+import styles from './SearchResultsInfoBar.module.scss'
 
 function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
     return (onClose: () => void): HTMLElement => {
         const container = document.createElement('div')
-        container.className = styles.featureTourStep
+        container.className = featureTourStyles.featureTourStep
         container.innerHTML = `
             <div>
                 <strong>New</strong>: Create a code monitor to get notified about new search results for a query.
@@ -66,9 +67,8 @@ export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
-        Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
-        CodeMonitoringProps {
+        SearchPatternTypeProps,
+        Pick<CaseSensitivityProps, 'caseSensitive'> {
     history: H.History
     /** The currently authenticated user or null */
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
@@ -77,6 +77,7 @@ export interface SearchResultsInfoBarProps
      * Whether the code insights feature flag is enabled.
      */
     enableCodeInsights?: boolean
+    enableCodeMonitoring: boolean
 
     /** The search query and if any results were found */
     query?: string
@@ -131,7 +132,7 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
 const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
     props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
         <small
-            className="search-results-info-bar__notice"
+            className={styles.notice}
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
@@ -186,6 +187,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const showActionButtonExperimentalVersion = !props.authenticatedUser
 
+    const searchContextButton = useMemo(
+        () => <CreateSearchContextButton query={props.query} authenticatedUser={props.authenticatedUser} />,
+        [props.authenticatedUser, props.query]
+    )
+
     const codeInsightsButton = useMemo(
         () => (
             <CreateCodeInsightButton
@@ -207,7 +213,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         const toURL = `/code-monitoring/new?${searchParameters.toString()}`
         return (
             <li
-                className="nav-item mr-2"
+                className={classNames('mr-2', styles.navItem)}
                 data-tooltip={
                     props.authenticatedUser && !canCreateMonitorFromQuery
                         ? 'Code monitors only support type:diff or type:commit searches.'
@@ -251,7 +257,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const saveSearchButton = useMemo(
         () => (
-            <li className="nav-item mr-2">
+            <li className={classNames('mr-2', styles.navItem)}>
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
                     onNonExperimentalLinkClick={props.onSaveQueryClick}
@@ -292,24 +298,26 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     }
 
     return (
-        <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
-            <div className="search-results-info-bar__row">
-                <button
-                    type="button"
-                    className={classNames('btn btn-sm btn-outline-secondary d-flex d-lg-none', showFilters && 'active')}
+        <div className={classNames(props.className, styles.searchResultsInfoBar)} data-testid="results-info-bar">
+            <div className={styles.row}>
+                <Button
+                    className={classNames('d-flex d-lg-none', showFilters && 'active')}
                     aria-pressed={showFilters}
                     onClick={onShowFiltersClicked}
+                    outline={true}
+                    variant="secondary"
+                    size="sm"
                 >
                     <MenuIcon className="icon-inline mr-1" />
                     Filters
                     {showFilters ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
-                </button>
+                </Button>
 
                 {props.stats}
 
                 <QuotesInterpretedLiterallyNotice {...props} />
 
-                <div className="search-results-info-bar__expander" />
+                <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
                     <ActionsContainer
@@ -332,30 +340,36 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         )}
                     </ActionsContainer>
 
-                    {(codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
-                        <li className="search-results-info-bar__divider" aria-hidden="true" />
+                    {(searchContextButton || codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
+                        <li className={styles.divider} aria-hidden="true" />
                     )}
 
+                    {searchContextButton}
                     {codeInsightsButton}
                     {createCodeMonitorButton}
                     {saveSearchButton}
 
                     {props.resultsFound && (
                         <>
-                            <li className="search-results-info-bar__divider" aria-hidden="true" />
-                            <li className="nav-item">
-                                <button
-                                    type="button"
+                            <li className={styles.divider} aria-hidden="true" />
+                            <li className={classNames(styles.navItem)}>
+                                <Button
                                     onClick={props.onExpandAllResultsToggle}
-                                    className="btn btn-sm btn-outline-secondary text-decoration-none"
+                                    className="text-decoration-none"
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                                    aria-label={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                                    aria-live="polite"
+                                    data-testid="search-result-expand-btn"
+                                    outline={true}
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     {props.allExpanded ? (
                                         <ArrowCollapseUpIcon className="icon-inline mr-0" />
                                     ) : (
                                         <ArrowExpandDownIcon className="icon-inline mr-0" />
                                     )}
-                                </button>
+                                </Button>
                             </li>
                         </>
                     )}

@@ -5,35 +5,39 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 var ErrNotAuthenticated = errors.New("not authenticated")
 
-// CheckOrgAccessOrSiteAdmin returns an error if the user is NEITHER (1) a site
-// admin NOR (2) a member of the organization with the specified ID.
+// CheckOrgAccessOrSiteAdmin returns an error if:
+// (1) if we are on Cloud instance and the user is not a member of the organization
+// (2) if we are NOT on Cloud and
+//    (a) the user is not a member of the organization
+//    (b) the user is not a site admin
 //
-// It is used when an action on a user can be performed by site admins and the
-// organization's members, but nobody else.
-func CheckOrgAccessOrSiteAdmin(ctx context.Context, db dbutil.DB, orgID int32) error {
-	return checkOrgAccess(ctx, db, orgID, true)
+// It is used when an action on an org can only be performed by the
+// organization's members, (or site-admins - not on Cloud).
+func CheckOrgAccessOrSiteAdmin(ctx context.Context, db database.DB, orgID int32) error {
+	allowAdmin := !envvar.SourcegraphDotComMode()
+	return checkOrgAccess(ctx, db, orgID, allowAdmin)
 }
 
 // CheckOrgAccess returns an error if the user is not a member of the
 // organization with the specified ID.
 //
-// It is used when an action on a user can be performed by the organization's
+// It is used when an action on an org can be performed by the organization's
 // members, but nobody else.
-func CheckOrgAccess(ctx context.Context, db dbutil.DB, orgID int32) error {
+func CheckOrgAccess(ctx context.Context, db database.DB, orgID int32) error {
 	return checkOrgAccess(ctx, db, orgID, false)
 }
 
 // checkOrgAccess is a helper method used above which allows optionally allowing
 // site admins to access all organisations.
-func checkOrgAccess(ctx context.Context, db dbutil.DB, orgID int32, allowAdmin bool) error {
+func checkOrgAccess(ctx context.Context, db database.DB, orgID int32, allowAdmin bool) error {
 	if actor.FromContext(ctx).IsInternal() {
 		return nil
 	}
@@ -52,8 +56,8 @@ func checkOrgAccess(ctx context.Context, db dbutil.DB, orgID int32, allowAdmin b
 
 var ErrNotAnOrgMember = errors.New("current user is not an org member")
 
-func checkUserIsOrgMember(ctx context.Context, db dbutil.DB, userID, orgID int32) error {
-	resp, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, orgID, userID)
+func checkUserIsOrgMember(ctx context.Context, db database.DB, userID, orgID int32) error {
+	resp, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, orgID, userID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return ErrNotAnOrgMember

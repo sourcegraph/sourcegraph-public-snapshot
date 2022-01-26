@@ -1,12 +1,12 @@
 import { URL } from 'url'
 
+import { isDefined } from '@sourcegraph/common'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import {
     createSharedIntegrationTestContext,
     IntegrationTestContext,
     IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { BrowserGraphQlOperations } from '../graphql-operations'
 
@@ -30,7 +30,7 @@ export const createBrowserIntegrationTestContext = async ({
     sharedTestContext.overrideGraphQL(commonBrowserGraphQlResults)
 
     // The Chrome extension id is unstable in CI, so find it at runtime.
-    const targets = await driver.browser.targets()
+    const targets = driver.browser.targets()
     const host = targets
         .map(target => {
             try {

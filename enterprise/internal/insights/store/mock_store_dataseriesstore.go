@@ -64,6 +64,38 @@ func NewMockDataSeriesStore() *MockDataSeriesStore {
 	}
 }
 
+// NewStrictMockDataSeriesStore creates a new mock of the DataSeriesStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockDataSeriesStore() *MockDataSeriesStore {
+	return &MockDataSeriesStore{
+		GetDataSeriesFunc: &DataSeriesStoreGetDataSeriesFunc{
+			defaultHook: func(context.Context, GetDataSeriesArgs) ([]types.InsightSeries, error) {
+				panic("unexpected invocation of MockDataSeriesStore.GetDataSeries")
+			},
+		},
+		SetSeriesEnabledFunc: &DataSeriesStoreSetSeriesEnabledFunc{
+			defaultHook: func(context.Context, string, bool) error {
+				panic("unexpected invocation of MockDataSeriesStore.SetSeriesEnabled")
+			},
+		},
+		StampBackfillFunc: &DataSeriesStoreStampBackfillFunc{
+			defaultHook: func(context.Context, types.InsightSeries) (types.InsightSeries, error) {
+				panic("unexpected invocation of MockDataSeriesStore.StampBackfill")
+			},
+		},
+		StampRecordingFunc: &DataSeriesStoreStampRecordingFunc{
+			defaultHook: func(context.Context, types.InsightSeries) (types.InsightSeries, error) {
+				panic("unexpected invocation of MockDataSeriesStore.StampRecording")
+			},
+		},
+		StampSnapshotFunc: &DataSeriesStoreStampSnapshotFunc{
+			defaultHook: func(context.Context, types.InsightSeries) (types.InsightSeries, error) {
+				panic("unexpected invocation of MockDataSeriesStore.StampSnapshot")
+			},
+		},
+	}
+}
+
 // NewMockDataSeriesStoreFrom creates a new mock of the MockDataSeriesStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

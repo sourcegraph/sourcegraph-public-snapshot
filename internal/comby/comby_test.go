@@ -1,19 +1,21 @@
 package comby
 
 import (
+	"archive/zip"
 	"bufio"
 	"bytes"
 	"context"
+	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/hexops/autogold"
-	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
 )
 
 func TestMatchesUnmarshalling(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -31,11 +33,7 @@ func main() {
 `,
 	}
 
-	zipPath, cleanup, err := storetest.TempZipFromFiles(files)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	zipPath := tempZipFromFiles(t, files)
 
 	cases := []struct {
 		args Args
@@ -53,7 +51,7 @@ func main() {
 	}
 
 	for _, test := range cases {
-		m, _ := Matches(ctx, test.args)
+		m, err := Matches(ctx, test.args)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -67,7 +65,7 @@ func main() {
 
 func TestMatchesInZip(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -89,11 +87,7 @@ func main() {
 `,
 	}
 
-	zipPath, cleanup, err := storetest.TempZipFromFiles(files)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	zipPath := tempZipFromFiles(t, files)
 
 	cases := []struct {
 		args Args
@@ -129,7 +123,7 @@ func main() {
 
 func Test_stdin(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -159,7 +153,7 @@ func Test_stdin(t *testing.T) {
 
 func TestReplacements(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -170,11 +164,7 @@ func TestReplacements(t *testing.T) {
 		"main.go": `package tuesday`,
 	}
 
-	zipPath, cleanup, err := storetest.TempZipFromFiles(files)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	zipPath := tempZipFromFiles(t, files)
 
 	cases := []struct {
 		args Args
@@ -194,7 +184,7 @@ func TestReplacements(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		r, _ := Replacements(ctx, test.args)
+		r, err := Replacements(ctx, test.args)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -204,4 +194,35 @@ func TestReplacements(t *testing.T) {
 			continue
 		}
 	}
+}
+
+func tempZipFromFiles(t *testing.T, files map[string]string) string {
+	t.Helper()
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+
+	for name, content := range files {
+		w, err := zw.CreateHeader(&zip.FileHeader{
+			Name:   name,
+			Method: zip.Store,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := io.WriteString(w, content); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	path := filepath.Join(t.TempDir(), "test.zip")
+	if err := os.WriteFile(path, buf.Bytes(), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	return path
 }

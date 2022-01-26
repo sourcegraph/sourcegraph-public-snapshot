@@ -7,7 +7,6 @@ package router
 import (
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 )
 
@@ -38,18 +37,17 @@ const (
 
 	LatestPing = "pings.latest"
 
+	SetupGitHubAppCloud = "setup.github.app.cloud"
+
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
 
-	GDDORefs = "gddo.refs"
-	Editor   = "editor"
+	Editor = "editor"
 
 	Debug        = "debug"
 	DebugHeaders = "debug.headers"
 
 	GopherconLiveBlog = "gophercon.live.blog"
-
-	GoSymbolURL = "go-symbol-url"
 
 	UI = "ui"
 )
@@ -84,7 +82,6 @@ func newRouter() *mux.Router {
 
 	base.Path("/-/static/extension/{RegistryExtensionReleaseFilename}").Methods("GET").Name(RegistryExtensionBundle)
 
-	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 	base.Path("/-/editor").Methods("GET").Name(Editor)
 
 	base.Path("/-/debug/headers").Methods("GET").Name(DebugHeaders)
@@ -99,9 +96,7 @@ func newRouter() *mux.Router {
 
 	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
 
-	if envvar.SourcegraphDotComMode() {
-		base.PathPrefix("/go/").Methods("GET").Name(GoSymbolURL)
-	}
+	base.Path("/setup/github/app/cloud").Methods("GET").Name(SetupGitHubAppCloud)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

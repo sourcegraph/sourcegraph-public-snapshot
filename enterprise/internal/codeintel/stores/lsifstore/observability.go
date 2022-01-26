@@ -21,8 +21,11 @@ type operations struct {
 	documentationPathIDToID         *observation.Operation
 	documentationPathInfo           *observation.Operation
 	documentationReferences         *observation.Operation
+	documentationSearchRepoNameIDs  *observation.Operation
+	documentationSearch             *observation.Operation
 	exists                          *observation.Operation
 	hover                           *observation.Operation
+	implementations                 *observation.Operation
 	monikerResults                  *observation.Operation
 	monikersByPosition              *observation.Operation
 	packageInformation              *observation.Operation
@@ -36,6 +39,7 @@ type operations struct {
 	writeDocumentationSearch        *observation.Operation
 	writeDocumentationSearchPrework *observation.Operation
 	writeDocuments                  *observation.Operation
+	writeImplementations            *observation.Operation
 	writeMeta                       *observation.Operation
 	writeReferences                 *observation.Operation
 	writeResultChunks               *observation.Operation
@@ -45,7 +49,7 @@ type operations struct {
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_lsifstore",
 		metrics.WithLabels("op"),
@@ -83,8 +87,11 @@ func newOperations(observationContext *observation.Context) *operations {
 		documentationPathIDToID:         op("DocumentationPathIDToID"),
 		documentationPathInfo:           op("DocumentationPathInfo"),
 		documentationReferences:         op("DocumentationReferences"),
+		documentationSearchRepoNameIDs:  op("DocumentationSearchRepoNameIDs"),
+		documentationSearch:             op("DocumentationSearch"),
 		exists:                          op("Exists"),
 		hover:                           op("Hover"),
+		implementations:                 op("Implementations"),
 		monikerResults:                  op("MonikerResults"),
 		monikersByPosition:              op("MonikersByPosition"),
 		packageInformation:              op("PackageInformation"),
@@ -98,6 +105,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		writeDocumentationSearch:        op("WriteDocumentationSearch"),
 		writeDocumentationSearchPrework: op("WriteDocumentationSearchPrework"),
 		writeDocuments:                  op("WriteDocuments"),
+		writeImplementations:            op("WriteImplementations"),
 		writeMeta:                       op("WriteMeta"),
 		writeReferences:                 op("WriteReferences"),
 		writeResultChunks:               op("WriteResultChunks"),

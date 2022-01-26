@@ -7,15 +7,16 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 import React, { useEffect, useState } from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
 
 const onClose = action('onClose')
-const onRejection = action('onRejection')
-const onClickInstall = action('onClickInstall')
+const onReject = action('onReject')
+const onInstall = action('onInstall')
 
 const { add } = storiesOf('web/repo/actions/InstallBrowserExtensionPopover', module).addDecorator(story => (
     <div className="container mt-3">{story()}</div>
@@ -34,18 +35,18 @@ add('GitHub', () => (
             }, [])
             return (
                 <>
-                    <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                    <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
                         <GithubIcon className="icon-inline" />
-                    </button>
+                    </Button>
                     <InstallBrowserExtensionPopover
                         url=""
                         serviceKind={serviceKind}
                         onClose={onClose}
-                        onRejection={onRejection}
-                        onClickInstall={onClickInstall}
+                        onReject={onReject}
+                        onInstall={onInstall}
                         targetID={targetID}
                         isOpen={open}
-                        toggle={noop}
+                        onToggle={noop}
                     />
                 </>
             )
@@ -68,18 +69,18 @@ add(
                 }, [])
                 return (
                     <>
-                        <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                        <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
                             <GitlabIcon className="icon-inline" />
-                        </button>
+                        </Button>
                         <InstallBrowserExtensionPopover
                             url=""
                             serviceKind={serviceKind}
                             onClose={onClose}
-                            onRejection={onRejection}
-                            onClickInstall={onClickInstall}
+                            onReject={onReject}
+                            onInstall={onInstall}
                             targetID={targetID}
                             isOpen={open}
-                            toggle={noop}
+                            onToggle={noop}
                         />
                     </>
                 )
@@ -106,18 +107,18 @@ add(
                 }, [])
                 return (
                     <>
-                        <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                        <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
                             <PhabricatorIcon className="icon-inline" />
-                        </button>
+                        </Button>
                         <InstallBrowserExtensionPopover
                             url=""
                             serviceKind={serviceKind}
                             onClose={onClose}
-                            onRejection={onRejection}
-                            onClickInstall={onClickInstall}
+                            onReject={onReject}
+                            onInstall={onInstall}
                             targetID={targetID}
                             isOpen={open}
-                            toggle={noop}
+                            onToggle={noop}
                         />
                     </>
                 )
@@ -144,19 +145,19 @@ add(
                 }, [])
                 return (
                     <>
-                        <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                        <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
                             <BitbucketIcon className="icon-inline" />
-                        </button>
+                        </Button>
 
                         <InstallBrowserExtensionPopover
                             url=""
                             serviceKind={serviceKind}
                             onClose={onClose}
-                            onRejection={onRejection}
-                            onClickInstall={onClickInstall}
+                            onReject={onReject}
+                            onInstall={onInstall}
                             targetID={targetID}
                             isOpen={open}
-                            toggle={noop}
+                            onToggle={noop}
                         />
                     </>
                 )

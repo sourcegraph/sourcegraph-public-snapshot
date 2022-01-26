@@ -389,25 +389,27 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
-// RepoName represents a source code repository name and its ID.
-type RepoName struct {
-	ID   api.RepoID
-	Name api.RepoName
+// MinimalRepo represents a source code repository name, its ID and number of stars.
+type MinimalRepo struct {
+	ID    api.RepoID
+	Name  api.RepoName
+	Stars int
 }
 
-func (r *RepoName) ToRepo() *Repo {
+func (r *MinimalRepo) ToRepo() *Repo {
 	return &Repo{
-		ID:   r.ID,
-		Name: r.Name,
+		ID:    r.ID,
+		Name:  r.Name,
+		Stars: r.Stars,
 	}
 }
 
-// RepoNames is an utility type with convenience methods for operating on lists of repo names
-type RepoNames []RepoName
+// MinimalRepos is an utility type with convenience methods for operating on lists of repo names
+type MinimalRepos []MinimalRepo
 
-func (rs RepoNames) Len() int           { return len(rs) }
-func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
-func (rs RepoNames) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
+func (rs MinimalRepos) Len() int           { return len(rs) }
+func (rs MinimalRepos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
+func (rs MinimalRepos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 type CodeHostRepository struct {
 	Name       string
@@ -452,8 +454,6 @@ type GitserverRepo struct {
 	// Usually represented by a gitserver hostname
 	ShardID     string
 	CloneStatus CloneStatus
-	// The last external service used to sync or clone this repo
-	LastExternalService int64
 	// The last error that occurred or empty if the last action was successful
 	LastError string
 	// The last time fetch was called.
@@ -476,8 +476,9 @@ type ExternalService struct {
 	NextSyncAt      time.Time
 	NamespaceUserID int32
 	NamespaceOrgID  int32
-	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool // Whether this external service is our default public service on Cloud
+	Unrestricted    bool  // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault    bool  // Whether this external service is our default public service on Cloud
+	HasWebhooks     *bool // Whether this external service has webhooks configured; calculated from Config
 }
 
 // ExternalServiceSyncJob represents an sync job for an external service
@@ -501,6 +502,9 @@ func (e *ExternalService) URN() string {
 
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
+
+// IsSiteOwned returns true if the external service is owned by the site.
+func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0 }
 
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
@@ -656,6 +660,7 @@ type User struct {
 	BuiltinAuth           bool
 	Tags                  []string
 	InvalidatedSessionsAt time.Time
+	TosAccepted           bool
 }
 
 type Org struct {
@@ -672,6 +677,11 @@ type OrgMembership struct {
 	UserID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type OrgStats struct {
+	OrgID             int32
+	CodeHostRepoCount int32
 }
 
 type PhabricatorRepo struct {
@@ -1117,6 +1127,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyAggregatedUsage          []AggregatedPingStats
 	InsightTimeIntervals           []InsightTimeIntervalPing
 	InsightOrgVisible              []OrgVisibleInsightPing
+	InsightTotalCounts             InsightTotalCounts
 }
 
 // Usage statistics for a type of code insight
@@ -1147,6 +1158,28 @@ type InsightTimeIntervalPing struct {
 type OrgVisibleInsightPing struct {
 	Type       string
 	TotalCount int
+}
+
+type InsightViewsCountPing struct {
+	ViewType   string
+	TotalCount int
+}
+
+type InsightSeriesCountPing struct {
+	GenerationType string
+	TotalCount     int
+}
+
+type InsightViewSeriesCountPing struct {
+	GenerationType string
+	ViewType       string
+	TotalCount     int
+}
+
+type InsightTotalCounts struct {
+	ViewCounts       []InsightViewsCountPing
+	SeriesCounts     []InsightSeriesCountPing
+	ViewSeriesCounts []InsightViewSeriesCountPing
 }
 
 type CodeMonitoringUsageStatistics struct {
@@ -1200,8 +1233,12 @@ type SearchContext struct {
 
 	// NamespaceUserName is the name of the user if NamespaceUserID is present.
 	NamespaceUserName string
-	// NamespaceUserName is the name of the org if NamespaceOrgID is present.
+	// NamespaceOrgName is the name of the org if NamespaceOrgID is present.
 	NamespaceOrgName string
+
+	// Query is the Sourcegraph query that defines this search context
+	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
+	Query string
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
@@ -1209,6 +1246,6 @@ type SearchContext struct {
 // converted when needed. We could use search.RepositoryRevisions directly instead, but it
 // introduces an import cycle with `internal/vcs/git` package when used in `internal/database/search_contexts.go`.
 type SearchContextRepositoryRevisions struct {
-	Repo      RepoName
+	Repo      MinimalRepo
 	Revisions []string
 }

@@ -1,16 +1,16 @@
-import Dialog from '@reach/dialog'
 import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { SearchPatternTypeProps } from '@sourcegraph/search'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { PatternTypeProps } from '../search'
 
 import styles from './SavedSearchModal.module.scss'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends SearchPatternTypeProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -27,6 +27,8 @@ interface State {
     saveLocation: UserOrOrg
     organization?: string
 }
+
+const MODAL_LABEL_ID = 'saved-search-modal-id'
 
 export class SavedSearchModal extends React.Component<Props, State> {
     constructor(props: Props) {
@@ -49,9 +51,14 @@ export class SavedSearchModal extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             this.props.authenticatedUser && (
-                <Dialog className={styles.savedSearchModalForm} onDismiss={this.props.onDidCancel}>
+                <Modal
+                    aria-labelledby={MODAL_LABEL_ID}
+                    className={styles.savedSearchModalForm}
+                    onDismiss={this.props.onDidCancel}
+                    data-testid="saved-search-modal"
+                >
                     <Form onSubmit={this.onSubmit} className="test-saved-search-modal">
-                        <h3>Save search query to: </h3>
+                        <h3 id={MODAL_LABEL_ID}>Save search query to: </h3>
                         <div className="form-group">
                             <select
                                 onChange={this.onLocationChange}
@@ -82,15 +89,16 @@ export class SavedSearchModal extends React.Component<Props, State> {
                                     </select>
                                 )}
                         </div>
-                        <button
+                        <Button
                             type="submit"
                             disabled={this.state.saveLocation === UserOrOrg.Org && !this.state.organization}
-                            className={classNames(styles.button, 'btn btn-primary test-saved-search-modal-save-button')}
+                            className={classNames(styles.button, 'test-saved-search-modal-save-button')}
+                            variant="primary"
                         >
                             Save query
-                        </button>
+                        </Button>
                     </Form>
-                </Dialog>
+                </Modal>
             )
         )
     }

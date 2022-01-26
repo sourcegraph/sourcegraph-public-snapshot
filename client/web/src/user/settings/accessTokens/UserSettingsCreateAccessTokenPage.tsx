@@ -4,18 +4,15 @@ import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
@@ -191,24 +188,23 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                     </div>
                 </Container>
                 <div className="mb-3">
-                    <button
+                    <Button
                         type="submit"
                         disabled={creationOrError === 'loading'}
-                        className="btn btn-primary test-create-access-token-submit"
+                        className="test-create-access-token-submit"
+                        variant="primary"
                     >
-                        {creationOrError === 'loading' ? (
-                            <LoadingSpinner className="icon-inline" />
-                        ) : (
-                            <AddIcon className="icon-inline" />
-                        )}{' '}
+                        {creationOrError === 'loading' ? <LoadingSpinner /> : <AddIcon className="icon-inline" />}{' '}
                         Generate token
-                    </button>
-                    <Link
-                        className="btn btn-secondary ml-2 test-create-access-token-cancel"
+                    </Button>
+                    <Button
+                        className="ml-2 test-create-access-token-cancel"
                         to={match.url.replace(/\/new$/, '')}
+                        variant="secondary"
+                        as={Link}
                     >
                         Cancel
-                    </Link>
+                    </Button>
                 </div>
             </Form>
 

@@ -2,35 +2,41 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
 import React from 'react'
-import { NEVER, Observable, of } from 'rxjs'
+import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
-import { ThemePreference } from '../theme'
+import { useExperimentalFeatures } from '../stores'
+import { ThemePreference } from '../stores/themeState'
 
 import { cncf } from './cncf'
 import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
 import { temporal } from './Temporal'
 
-const { add } = storiesOf('web/CommunitySearchContextPage', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
-    },
-    chromatic: { viewports: [769, 1200] },
-})
+const { add } = storiesOf('web/CommunitySearchContextPage', module)
+    .addParameters({
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
+        },
+        chromatic: { viewports: [769, 1200] },
+    })
+    .addDecorator(Story => {
+        useExperimentalFeatures.setState({ showSearchContext: true, showSearchContextManagement: false })
+        return <Story />
+    })
 
 const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
@@ -40,6 +46,7 @@ const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
     forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
+    requestGraphQL: () => EMPTY,
 }
 
 const authUser: AuthenticatedUser = {
@@ -62,6 +69,7 @@ const authUser: AuthenticatedUser = {
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
+    tosAccepted: true,
 }
 
 const repositories: ISearchContextRepositoryRevisions[] = [
@@ -93,6 +101,7 @@ const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
         public: true,
         autoDefined: false,
         description: 'Repositories on Sourcegraph',
+        query: '',
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
@@ -112,9 +121,7 @@ const commonProps = () =>
         setCaseSensitivity: action('setCaseSensitivity'),
         activation: undefined,
         isSourcegraphDotCom: true,
-        showSearchContext: true,
         searchContextsEnabled: true,
-        showSearchContextManagement: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
         defaultSearchContextSpec: '',

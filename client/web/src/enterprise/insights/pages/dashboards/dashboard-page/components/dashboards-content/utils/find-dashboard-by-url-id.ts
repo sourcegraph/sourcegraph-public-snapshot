@@ -1,5 +1,5 @@
 import { InsightDashboard, isVirtualDashboard } from '../../../../../../core/types'
-import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
+import { isCustomInsightDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
 
 /**
  * Returns dashboard configurations by URL query param - dashboardID.
@@ -13,16 +13,13 @@ export function findDashboardByUrlId(
 ): InsightDashboard | undefined {
     return dashboards.find(dashboard => {
         if (isVirtualDashboard(dashboard)) {
-            return (
-                dashboard.id === dashboardID.toLowerCase() || dashboard.type.toLowerCase() === dashboardID.toLowerCase()
-            )
+            return dashboard.id === dashboardID.toLowerCase()
         }
 
         return (
             dashboard.id === dashboardID ||
             dashboard.title.toLowerCase() === dashboardID?.toLowerCase() ||
-            (isSettingsBasedInsightsDashboard(dashboard) &&
-                dashboard.settingsKey?.toLowerCase() === dashboardID?.toLowerCase())
+            (isCustomInsightDashboard(dashboard) && dashboard.settingsKey?.toLowerCase() === dashboardID?.toLowerCase())
         )
     })
 }

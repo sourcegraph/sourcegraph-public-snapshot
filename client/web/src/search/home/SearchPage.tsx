@@ -2,31 +2,27 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useEffect } from 'react'
 
+import { SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
-    HomePanelsProps,
-    ParsedSearchQueryProps,
-    SearchContextInputProps,
-} from '..'
+import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
-import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { Settings } from '../../schema/settings.schema'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
 import { LoggedOutHomepage } from './LoggedOutHomepage'
+import styles from './SearchPage.module.scss'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
@@ -35,15 +31,13 @@ export interface SearchPageProps
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        PatternTypeProps,
-        CaseSensitivityProps,
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings'>,
+        PlatformContextProps<
+            'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'
+        >,
         SearchContextInputProps,
-        OnboardingTourProps,
         HomePanelsProps,
         CodeInsightsProps,
         FeatureFlagProps {
@@ -62,23 +56,29 @@ export interface SearchPageProps
  */
 export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const { extensionViews: ExtensionViewsSection } = props
+    const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
+    const onboardingTourEnabled = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
+    const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL) !== ''
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
     return (
-        <div className="search-page d-flex flex-column align-items-center px-3">
-            <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} variant="logo" />
+        <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
+            <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
                 <div className="text-muted text-center font-italic mt-3">
                     Search your code and 2M+ open source repositories
                 </div>
             )}
             <div
-                className={classNames('search-page__search-container', {
-                    'search-page__search-container--with-content-below':
-                        props.isSourcegraphDotCom || props.showEnterpriseHomePanels,
+                className={classNames(styles.searchContainer, {
+                    [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
                 })}
             >
-                <SearchPageInput {...props} source="home" />
+                <SearchPageInput
+                    {...props}
+                    showOnboardingTour={onboardingTourEnabled && !hasSearchQuery}
+                    source="home"
+                />
                 <ExtensionViewsSection
                     className="mt-5"
                     telemetryService={props.telemetryService}
@@ -91,7 +91,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
             <div className="flex-grow-1">
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
 
-                {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
+                {showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
             </div>
 
             <SearchPageFooter {...props} />

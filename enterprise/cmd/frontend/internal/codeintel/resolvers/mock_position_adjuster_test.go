@@ -48,6 +48,28 @@ func NewMockPositionAdjuster() *MockPositionAdjuster {
 	}
 }
 
+// NewStrictMockPositionAdjuster creates a new mock of the PositionAdjuster
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockPositionAdjuster() *MockPositionAdjuster {
+	return &MockPositionAdjuster{
+		AdjustPathFunc: &PositionAdjusterAdjustPathFunc{
+			defaultHook: func(context.Context, string, string, bool) (string, bool, error) {
+				panic("unexpected invocation of MockPositionAdjuster.AdjustPath")
+			},
+		},
+		AdjustPositionFunc: &PositionAdjusterAdjustPositionFunc{
+			defaultHook: func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error) {
+				panic("unexpected invocation of MockPositionAdjuster.AdjustPosition")
+			},
+		},
+		AdjustRangeFunc: &PositionAdjusterAdjustRangeFunc{
+			defaultHook: func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error) {
+				panic("unexpected invocation of MockPositionAdjuster.AdjustRange")
+			},
+		},
+	}
+}
+
 // NewMockPositionAdjusterFrom creates a new mock of the
 // MockPositionAdjuster interface. All methods delegate to the given
 // implementation, unless overwritten.

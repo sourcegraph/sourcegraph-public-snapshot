@@ -8,10 +8,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -32,9 +34,11 @@ type batchSpecWorkspaceResolver struct {
 	workspace *btypes.BatchSpecWorkspace
 	execution *btypes.BatchSpecWorkspaceExecutionJob
 
-	repoOnce sync.Once
-	repo     *graphqlbackend.RepositoryResolver
-	repoErr  error
+	preloadedRepo *types.Repo
+
+	repoResolverOnce sync.Once
+	repoResolver     *graphqlbackend.RepositoryResolver
+	repoResolverErr  error
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceResolver = &batchSpecWorkspaceResolver{}
@@ -43,21 +47,29 @@ func (r *batchSpecWorkspaceResolver) ID() graphql.ID {
 	return marshalBatchSpecWorkspaceID(r.workspace.ID)
 }
 
-func (r *batchSpecWorkspaceResolver) computeRepo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	r.repoOnce.Do(func() {
+func (r *batchSpecWorkspaceResolver) computeRepoResolver(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	r.repoResolverOnce.Do(func() {
 		var repo *types.Repo
-		repo, r.repoErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
-		r.repo = graphqlbackend.NewRepositoryResolver(database.NewDB(r.store.DB()), repo)
+		if r.preloadedRepo != nil {
+			repo = r.preloadedRepo
+		} else {
+			repo, r.repoResolverErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
+			if r.repoResolverErr != nil {
+				return
+			}
+		}
+
+		r.repoResolver = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), repo)
 	})
-	return r.repo, r.repoErr
+	return r.repoResolver, r.repoResolverErr
 }
 
 func (r *batchSpecWorkspaceResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	return r.computeRepo(ctx)
+	return r.computeRepoResolver(ctx)
 }
 
 func (r *batchSpecWorkspaceResolver) Branch(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	repo, err := r.computeRepo(ctx)
+	repo, err := r.computeRepoResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +100,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 		}
 	}
 
-	repo, err := r.computeRepo(ctx)
+	repoResolver, err := r.computeRepoResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +117,37 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 			}
 		}
 
-		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit})
+		// Mark all steps as skipped when a cached result was found.
+		if r.CachedResultFound() {
+			si.Skipped = true
+		}
+
+		// Mark all steps as skipped when a workspace is skipped.
+		if r.workspace.Skipped {
+			si.Skipped = true
+		}
+
+		// If we have marked the step as to-be-skipped, we have to translate
+		// that here into the workspace step info.
+		if r.workspace.StepSkipped(idx) {
+			si.Skipped = true
+		}
+
+		resolver := &batchSpecWorkspaceStepResolver{
+			index:    idx,
+			step:     step,
+			stepInfo: si,
+			store:    r.store,
+			repo:     repoResolver,
+			baseRev:  r.workspace.Commit,
+		}
+
+		// See if we have a cache result for this step.
+		if cachedResult, ok := r.workspace.StepCacheResult(idx + 1); ok {
+			resolver.cachedResult = cachedResult.Value
+		}
+
+		resolvers = append(resolvers, resolver)
 	}
 
 	return resolvers, nil
@@ -148,8 +190,7 @@ func (r *batchSpecWorkspaceResolver) Unsupported() bool {
 }
 
 func (r *batchSpecWorkspaceResolver) CachedResultFound() bool {
-	// TODO(ssbc): not implemented
-	return false
+	return r.workspace.CachedResultFound
 }
 
 func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceStagesResolver {
@@ -209,6 +250,9 @@ func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
 }
 
 func (r *batchSpecWorkspaceResolver) State() string {
+	if r.CachedResultFound() {
+		return "COMPLETED"
+	}
 	if r.workspace.Skipped {
 		return "SKIPPED"
 	}
@@ -219,7 +263,7 @@ func (r *batchSpecWorkspaceResolver) State() string {
 }
 
 func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]graphqlbackend.ChangesetSpecResolver, error) {
-	if r.workspace.Skipped {
+	if r.workspace.Skipped && !r.CachedResultFound() {
 		return nil, nil
 	}
 
@@ -231,15 +275,51 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 	if err != nil {
 		return nil, err
 	}
-	repos, err := r.store.Repos().GetReposSetByIDs(ctx, specs.RepoIDs()...)
-	if err != nil {
-		return nil, err
+	var repos map[api.RepoID]*types.Repo
+	repoIDs := specs.RepoIDs()
+	if len(repoIDs) > 0 {
+		repos, err = r.store.Repos().GetReposSetByIDs(ctx, specs.RepoIDs()...)
+		if err != nil {
+			return nil, err
+		}
 	}
 	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(specs))
 	for _, spec := range specs {
 		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, repos[spec.RepoID], spec))
 	}
 	return &resolvers, nil
+}
+
+func (r *batchSpecWorkspaceResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	// TODO: Cache this computation.
+	resolvers, err := r.ChangesetSpecs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resolvers == nil || len(*resolvers) == 0 {
+		return nil, nil
+	}
+	var totalDiff graphqlbackend.DiffStat
+	for _, r := range *resolvers {
+		// If changeset is not visible to user, skip it.
+		v, ok := r.ToVisibleChangesetSpec()
+		if !ok {
+			continue
+		}
+		desc, err := v.Description(ctx)
+		if err != nil {
+			return nil, err
+		}
+		// We only need to count "branch" changeset specs.
+		d, ok := desc.ToGitBranchChangesetDescription()
+		if !ok {
+			continue
+		}
+		if diff := d.DiffStat(); diff != nil {
+			totalDiff.AddDiffStat(diff)
+		}
+	}
+	return &totalDiff, nil
 }
 
 func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
@@ -252,6 +332,26 @@ func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
 
 	i32 := int32(r.execution.PlaceInQueue)
 	return &i32
+}
+
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.ExecutorResolver, error) {
+	if r.execution == nil {
+		return nil, nil
+	}
+
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		if err != backend.ErrMustBeSiteAdmin {
+			return nil, err
+		}
+		return nil, nil
+	}
+
+	executor, err := gql.New(r.store.DatabaseDB()).ExecutorByHostname(ctx, r.execution.WorkerHostname)
+	if err != nil {
+		return nil, err
+	}
+
+	return executor, nil
 }
 
 type batchSpecWorkspaceStagesResolver struct {
@@ -267,7 +367,7 @@ func (r *batchSpecWorkspaceStagesResolver) Setup() []graphqlbackend.ExecutionLog
 
 func (r *batchSpecWorkspaceStagesResolver) SrcExec() graphqlbackend.ExecutionLogEntryResolver {
 	if entry, ok := findExecutionLogEntry(r.execution, "step.src.0"); ok {
-		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DB(), entry)
+		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
 	}
 
 	return nil
@@ -283,7 +383,7 @@ func (r *batchSpecWorkspaceStagesResolver) executionLogEntryResolversWithPrefix(
 		if !strings.HasPrefix(entry.Key, prefix) {
 			continue
 		}
-		r := graphqlbackend.NewExecutionLogEntryResolver(r.store.DB(), entry)
+		r := graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
 		resolvers = append(resolvers, r)
 	}
 

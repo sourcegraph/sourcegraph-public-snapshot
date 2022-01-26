@@ -4,17 +4,15 @@ import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
 import React, { RefObject, useEffect, useMemo, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { AnchorLink } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { AnchorLink, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 
-import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationSingleSymbolURL, toDocumentationURL } from '../../util/url'
@@ -171,7 +169,11 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                             TODO(apidocs): add support for indicating time the API docs were updated
                             <span className="ml-2">Last updated 2 days ago</span>
                         */}
-                                    <Badge status="experimental" className="text-uppercase ml-2" useLink={true} />
+                                    <ProductStatusBadge
+                                        status="experimental"
+                                        className="text-uppercase ml-2"
+                                        linkToDocs={true}
+                                    />
                                 </div>
                                 <hr />
                                 {onlyPathID && depth === 0 && (

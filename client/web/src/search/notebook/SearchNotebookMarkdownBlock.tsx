@@ -6,8 +6,8 @@ import * as Monaco from 'monaco-editor'
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
@@ -19,7 +19,7 @@ import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBloc
 
 import { BlockProps, MarkdownBlock } from '.'
 
-interface SearchNotebookMarkdownBlockProps extends BlockProps, Omit<MarkdownBlock, 'type'>, ThemeProps {
+interface SearchNotebookMarkdownBlockProps extends BlockProps, MarkdownBlock, ThemeProps {
     isMacPlatform: boolean
 }
 
@@ -47,7 +47,13 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         [onRunBlock, setIsEditing]
     )
 
-    const { isInputFocused } = useMonacoBlockInput({ editor, id, ...props, onSelectBlock, onRunBlock: runBlock })
+    const { isInputFocused } = useMonacoBlockInput({
+        editor,
+        id,
+        ...props,
+        onSelectBlock,
+        onRunBlock: runBlock,
+    })
 
     const onDoubleClick = useCallback(() => {
         if (isReadOnly) {
@@ -61,8 +67,11 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
 
     // setTimeout turns on editing mode in a separate run-loop which prevents adding a newline at the start of the input
     const onEnterBlock = useCallback(() => {
+        if (isReadOnly) {
+            return
+        }
         setTimeout(() => setIsEditing(true), 0)
-    }, [setIsEditing])
+    }, [isReadOnly, setIsEditing])
 
     const { onSelect } = useBlockSelection({
         id,
@@ -133,7 +142,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                     ref={blockElement}
                 >
                     <div className={styles.output} data-testid="output">
-                        <Markdown dangerousInnerHTML={output ?? ''} />
+                        <Markdown className={styles.markdown} dangerousInnerHTML={output ?? ''} />
                     </div>
                 </div>
                 {blockMenu}

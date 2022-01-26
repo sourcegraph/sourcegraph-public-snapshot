@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -10,48 +11,42 @@ import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
     isCloneInProgressErrorLike,
     isRepoNotFoundErrorLike,
     isRepoSeeOtherErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
-import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { IS_CHROME } from '../marketing/util'
-import { Settings } from '../schema/settings.schema'
-import {
-    CaseSensitivityProps,
-    PatternTypeProps,
-    SearchContextProps,
-    searchQueryForRepoRevision,
-    SearchStreamingProps,
-} from '../search'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
-import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
+import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
+import { useNavbarQueryState } from '../stores'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -59,6 +54,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
+import styles from './RepoContainer.module.scss'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -81,16 +77,15 @@ export interface RepoContainerContext
         HoverThresholdProps,
         TelemetryProps,
         ActivationProps,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        FeatureFlagProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -103,9 +98,9 @@ export interface RepoContainerContext
 
     globbing: boolean
 
-    showSearchNotebook: boolean
-
     isMacPlatform: boolean
+
+    isSourcegraphDotCom: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -124,16 +119,15 @@ interface RepoContainerProps
         ActivationProps,
         ThemeProps,
         ExtensionAlertProps,
-        PatternTypeProps,
-        CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        FeatureFlagProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -142,8 +136,8 @@ interface RepoContainerProps
     authenticatedUser: AuthenticatedUser | null
     history: H.History
     globbing: boolean
-    showSearchNotebook: boolean
     isMacPlatform: boolean
+    isSourcegraphDotCom: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
@@ -238,24 +232,30 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 element: (
                     <>
                         <div className="d-inline-flex btn-group">
-                            <Link
+                            <Button
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
                                         ? resolvedRevisionOrError.rootTreeURL
                                         : repoOrError.url
                                 }
-                                className="btn btn-sm btn-outline-secondary text-nowrap test-repo-header-repo-link"
+                                className="text-nowrap test-repo-header-repo-link"
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                                as={Link}
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
-                            </Link>
-                            <button
-                                type="button"
+                            </Button>
+                            <Button
                                 id="repo-popover"
-                                className="btn btn-sm btn-outline-secondary repo-container__repo-change"
+                                className={styles.repoChange}
                                 aria-label="Change repository"
+                                outline={true}
+                                variant="secondary"
+                                size="sm"
                             >
                                 <ChevronDownIcon className="icon-inline" />
-                            </button>
+                            </Button>
                         </div>
                         <UncontrolledPopover
                             placement="bottom-start"
@@ -265,12 +265,15 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             fade={false}
                             popperClassName="border-0"
                         >
-                            <RepositoriesPopover currentRepo={repoOrError.id} />
+                            <RepositoriesPopover
+                                currentRepo={repoOrError.id}
+                                telemetryService={props.telemetryService}
+                            />
                         </UncontrolledPopover>
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError])
+        }, [repoOrError, resolvedRevisionOrError, props.telemetryService])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision
@@ -409,7 +412,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }
 
     return (
-        <div className="repo-container test-repo-container w-100 d-flex flex-column">
+        <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
             {(showExtensionAlert || showFirefoxAddonAlert) && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}

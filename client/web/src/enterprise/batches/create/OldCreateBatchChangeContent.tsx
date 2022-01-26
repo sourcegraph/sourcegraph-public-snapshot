@@ -2,14 +2,14 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 
-import combySample from './examples/comby.batch.yaml'
-import helloWorldSample from './examples/empty.batch.yaml'
-import goImportsSample from './examples/go-imports.batch.yaml'
-import minimalSample from './examples/minimal.batch.yaml'
+import combySample from './library/comby.batch.yaml'
+import goImportsSample from './library/go-imports.batch.yaml'
+import helloWorldSample from './library/hello-world.batch.yaml'
+import minimalSample from './library/minimal.batch.yaml'
 
 // SampleTabHeader is superseded by ExampleTabs and can be removed when SSBC is rolled out
 // at the same time as this exported component from this file is removed
@@ -28,13 +28,12 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
         [setSelectedSample, sample]
     )
     return (
-        <button
-            type="button"
+        <Button
             onClick={onClick}
-            className={classNames('btn text-left sidebar__link--inactive d-flex w-100', active && 'btn-primary')}
+            className={classNames('text-left sidebar__link--inactive d-flex w-100', active && 'btn-primary')}
         >
             {sample.name}
-        </button>
+        </Button>
     )
 }
 
