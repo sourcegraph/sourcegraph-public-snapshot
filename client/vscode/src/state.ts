@@ -5,6 +5,8 @@ import { SearchQueryState } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 
+import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
+
 // State management in the Sourcegraph VS Code extension
 // -----
 // This extension runs code in 4 (and counting) different execution contexts.
@@ -90,16 +92,19 @@ interface CommonContext {
     // In common context and not just `search-results` to retain during `idle` or `remote-browsing` states.
     searchResults: AggregateStreamingSearchResults | null
 
-    // TODO: search context (and persist.)
+    selectedSearchContextSpec: string | undefined
 }
 
-const INITIAL_STATE: VSCEState = {
-    status: 'search-home',
-    context: {
-        authenticatedUser: null,
-        submittedSearchQueryState: null,
-        searchResults: null,
-    },
+function createInitialState({ localStorageService }: { localStorageService: LocalStorageService }): VSCEState {
+    return {
+        status: 'search-home',
+        context: {
+            authenticatedUser: null,
+            submittedSearchQueryState: null,
+            searchResults: null,
+            selectedSearchContextSpec: localStorageService.getValue(SELECTED_SEARCH_CONTEXT_SPEC_KEY) || undefined,
+        },
+    }
 }
 
 // Temporary placeholder events. We will replace these with the actual events as we implement the webviews.
@@ -113,6 +118,7 @@ type SearchEvent =
           submittedSearchQueryState: NonNullable<CommonContext['submittedSearchQueryState']>
       }
     | { type: 'received_search_results'; searchResults: AggregateStreamingSearchResults }
+    | { type: 'set_selected_search_context_spec'; spec: string } // TODO see how this handles instance change
 
 type TabsEvent =
     | { type: 'search_panel_unfocused' }
@@ -124,8 +130,12 @@ interface SettingsEvent {
     type: 'sourcegraph_url_change'
 }
 
-export function createVSCEStateMachine(): VSCEStateMachine {
-    const states = new BehaviorSubject<VSCEState>(INITIAL_STATE)
+export function createVSCEStateMachine({
+    localStorageService,
+}: {
+    localStorageService: LocalStorageService
+}): VSCEStateMachine {
+    const states = new BehaviorSubject<VSCEState>(createInitialState({ localStorageService }))
 
     function reducer(state: VSCEState, event: VSCEEvent): VSCEState {
         // End state.
@@ -138,9 +148,20 @@ export function createVSCEStateMachine(): VSCEStateMachine {
             return {
                 status: 'context-invalidated',
                 context: {
-                    ...INITIAL_STATE.context,
+                    ...createInitialState({ localStorageService }).context,
                 },
             }
+        }
+        if (event.type === 'set_selected_search_context_spec') {
+            return {
+                ...state,
+                context: {
+                    ...state.context,
+                    selectedSearchContextSpec: event.spec,
+                },
+            } as VSCEState
+            // Type assertion is safe since existing context should be assignable to the existing state.
+            // debt: refactor switch statement to elegantly handle this event safely.
         }
 
         switch (state.status) {
