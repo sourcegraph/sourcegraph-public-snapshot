@@ -251,18 +251,25 @@ To execute the database migrations independently, run the following commands:
     You should see output similar to:
 
     ```text
-    sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Checked current version" schema=frontend version=1528395959 dirty=false
-    sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Upgrading schema" schema=frontend
-    sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395960
-    sourcegraph-migrator exited with code 0
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=frontend
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395965
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395966
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395967
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395968
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=codeintel
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=codeinsights
+    migrator | t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=codeinsights migrationID=1000000025
+    migrator exited with code 0
     ```
 
-    Please note the last migration version that is applied.
+If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Otherwise, you are now safe to upgrade Sourcegraph.
 
-
-1. Repeat the three `psql` commands from the first step to verify the migration versions and that none of the databases are flagged as dirty. The versions reported should match the last output version from the `migrator` container.
-
-Once migrations are complete, you are now safe to upgrade Sourcegraph.
 
 #### Migrating Without Code Insights
 If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the standard migration process will fail. Follow these steps to execute migrations to the `frontend` and `codeintel` databases:
@@ -331,7 +338,7 @@ If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `
         up -db codeintel
     ```
 
-1. Re-run the two `psql` commands from the first step and note the results. All databases should return `f` for dirty and the `version` should match the `version` output in the logs by the `migrator` containers. If this is not the case, email <mailto:support@sourcegraph.com> for assistance.
+If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Otherwise, you are now safe to upgrade Sourcegraph.
 
 
 ## Monitoring

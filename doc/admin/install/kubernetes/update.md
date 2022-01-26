@@ -104,10 +104,9 @@ To execute the database migrations independently, run the following commands in 
 
     # This will output the current migration version for the codeinsights db
     kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath="{.items[0].metadata.name}") -- psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
-
     ```
 
-1. Start the migrations:
+1. Start the migrations (run these commands from the root of your `deploy-sourcegraph` fork):
 
     > NOTE: This script makes the assumption that the environment has all three databases enabled. If the configuration flag `DISABLE_CODE_INSIGHTS` is set and the `codeinsights-db` is unavailable, the `migrator` container will fail. Please see the [Migrating Without Code Insights](#migrating-without-code-insights) section below for more info.
     
@@ -138,20 +137,23 @@ To execute the database migrations independently, run the following commands in 
 
     The log output of the `migrator` container should look similar to:
     ```
-    t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
-    
-    t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
-    
-    t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-    
-    t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
-    
-    t=2022-01-14T23:47:47+0000 lvl=info msg="Upgrading schema" schema=codeinsights
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=frontend
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395965
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395966
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395967
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395968
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=codeintel
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Upgrading schema" schema=codeinsights
+    t=2022-01-26T03:14:35+0000 lvl=info msg="Running up migration" schema=codeinsights migrationID=1000000025
     ```
 
-1. Repeat the three `psql` commands from the first step to verify the migration versions and that none of the databases are flagged as `dirty`. The versions reported should match the last output version from the migrator container.
-
-If you see an error message or any of the databases have been flagged as dirty, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Your database may not have been migrated correctly. Otherwise, you are now safe to upgrade Sourcegraph.
+If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](../../../admin/how-to/dirty_database.md). A dirty database will not affect your ability to use Sourcegraph however it will need to be resolved to upgrade further. If you are unable to resolve the issues, contact support at <mailto:support@sourcegraph.com> for further assistance and provide the output of the three `psql` commands. Otherwise, you are now safe to upgrade Sourcegraph.
 
 ### Migrating Without Code Insights
 If the `DISABLE_CODE_INSIGHTS=true` feature flag is set in Sourcegraph and the `codeinsights-db` is unavailable to the `migrator` container, the migration process will fail. To work around this, the `configure/migrator/migrator.Job.yaml` file will need to be updated. Please make the following changes to your fork of `deploy-sourcegraph`'s `migrator.Job.yaml` file.
