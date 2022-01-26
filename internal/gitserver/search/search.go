@@ -48,24 +48,24 @@ var (
 		parentHashes,
 	}
 
+	// commitSeparator is a special sequence of bytes we use to separate each commit, zero bytes surrounding "SEP".
+	// This is required since the number of zero byte separators per commit changes depending on the number of
+	// files modified in the commit.
+	commitSeparator = []byte("\x00SEP\x00")
+
+	// Note that we begin each commit with a special string constant. This allows us
+	// to easily separate each commit since the number of parts in each commit varies
+	// depending on the number of files modified.
 	logArgs = []string{
 		"log",
 		"--decorate=full",
 		"-z",
 		"--no-merges",
-		"--format=format:" + strings.Join(commitFields, "%x00") + "%x00",
+		"--format=format:" + "%x00SEP%x00" + strings.Join(commitFields, "%x00") + "%x00",
 	}
 
 	sep = []byte{0x0}
 )
-
-func partsPerCommit(includeModifiedFiles bool) int {
-	n := len(commitFields)
-	if includeModifiedFiles {
-		return n + 1
-	}
-	return n
-}
 
 type job struct {
 	batch      []*RawCommit
@@ -273,7 +273,7 @@ type RawCommit struct {
 	CommitterDate  []byte
 	Message        []byte
 	ParentHashes   []byte
-	ModifiedFiles  []byte
+	ModifiedFiles  [][]byte
 }
 
 type CommitScanner struct {
@@ -290,36 +290,38 @@ func NewCommitScanner(r io.Reader, includeModifiedFiles bool) *CommitScanner {
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 1024), 1<<22)
 
-	ppc := partsPerCommit(includeModifiedFiles)
-
 	// Split by commit
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if len(data) == 0 { // should only happen when atEOF
 			return 0, nil, nil
 		}
 
-		// See if we have enough null bytes to constitute a full commit
-		// Look for one more than the number of parts because each message ends with a null byte too
-		sepCount := bytes.Count(data, sep)
-		if sepCount < ppc+1 {
-			if atEOF {
-				if sepCount == ppc {
-					return len(data), data, nil
-				}
-				return 0, nil, errors.Errorf("incomplete line")
-			}
+		// Ensure that we always have the pattern SEP + data + SEP, even if we are at the
+		// end of out input.
+		if atEOF && !bytes.HasSuffix(data, commitSeparator) {
+			data = append(data, commitSeparator...)
+		}
+
+		if !bytes.HasPrefix(data, commitSeparator) {
+			// Each commit should always start with our separator
+			return 0, nil, errors.Errorf("expected commit separator")
+		}
+
+		// We expect at least two separators, if not, we need to read more data.
+		if bytes.Count(data, commitSeparator) < 2 {
 			return 0, nil, nil
 		}
 
-		// If we do, expand token to the end of that commit
-		for i := 0; i < ppc; i++ {
-			idx := bytes.IndexByte(data[len(token):], 0x0)
-			if idx == -1 {
-				panic("we already counted enough bytes in data")
-			}
-			token = data[:len(token)+idx+1]
+		// We know our data begins with our separator, so we can drop it
+		data = data[len(commitSeparator):]
+		// Find the next separator and read to there
+		idx := bytes.Index(data, commitSeparator)
+		if idx == -1 {
+			return 0, nil, errors.Errorf("commit separator not found")
 		}
-		return len(token) + 1, token, nil
+		token = data[:idx]
+
+		return len(token) + len(commitSeparator), token, nil
 	})
 
 	return &CommitScanner{
@@ -337,10 +339,8 @@ func (c *CommitScanner) Scan() bool {
 	buf := make([]byte, len(c.scanner.Bytes()))
 	copy(buf, c.scanner.Bytes())
 
-	ppc := partsPerCommit(c.includeModifiedFiles)
-
-	parts := bytes.SplitN(buf, sep, ppc+1)
-	if len(parts) < ppc+1 {
+	parts := bytes.Split(buf, sep)
+	if len(parts) < len(commitFields) {
 		c.err = errors.Errorf("invalid commit log entry: %q", parts)
 		return false
 	}
@@ -358,8 +358,9 @@ func (c *CommitScanner) Scan() bool {
 		Message:        bytes.TrimSpace(parts[9]),
 		ParentHashes:   parts[10],
 	}
+
 	if c.includeModifiedFiles {
-		c.next.ModifiedFiles = parts[11]
+		c.next.ModifiedFiles = parts[11:]
 	}
 
 	return true
