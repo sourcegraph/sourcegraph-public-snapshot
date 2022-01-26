@@ -6,8 +6,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
-import { StreamingSearchResultsList, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import { useQueryIntelligence, useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
+import {
+    StreamingSearchResultsList,
+    StreamingSearchResultsListProps,
+    useQueryIntelligence,
+    useQueryDiagnostics,
+} from '@sourcegraph/search-ui'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

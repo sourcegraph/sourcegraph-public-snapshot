@@ -12,8 +12,7 @@ import { catchError, delay, filter, map, startWith, switchMap, tap, withLatestFr
 
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { asError, isDefined, isErrorLike, property } from '@sourcegraph/common'
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import { useQueryIntelligence } from '@sourcegraph/search/src/useQueryIntelligence'
+import { StreamingSearchResultsListProps, useQueryIntelligence } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'

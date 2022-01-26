@@ -20,7 +20,6 @@ export * from './backend'
 export * from './searchQueryState'
 export * from './helpers'
 export * from './graphql-operations'
-export * from './useQueryIntelligence'
 export * from './helpers/queryExample'
 
 export interface SearchPatternTypeProps {
