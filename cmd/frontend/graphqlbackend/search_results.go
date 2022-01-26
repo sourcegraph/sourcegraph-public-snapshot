@@ -1831,11 +1831,27 @@ func subRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCheck
 			Results: e.Results[:0],
 			Stats:   e.Stats,
 		}
-		for _, r := range e.Results {
-			key := r.Key()
+		for _, m := range e.Results {
+			var repo api.RepoName
+			var matchedPath string
+
+			switch mm := m.(type) {
+			case *result.FileMatch:
+				repo = mm.Repo.Name
+				matchedPath = mm.Path
+			case *result.CommitMatch:
+				// TODO: Do commit filtering once we're returning modified file paths in CommitMatch
+				filtered.Results = append(filtered.Results, m)
+				continue
+			case *result.RepoMatch:
+				// Repo filtering is taking care of by our usual repo filtering logic
+				filtered.Results = append(filtered.Results, m)
+				continue
+			}
+
 			content := authz.RepoContent{
-				Repo: key.Repo,
-				Path: key.Path,
+				Repo: repo,
+				Path: matchedPath,
 			}
 			perms, err := authz.ActorPermissions(ctx, checker, a, content)
 			if err != nil {
@@ -1843,13 +1859,14 @@ func subRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCheck
 				continue
 			}
 			if perms.Include(authz.Read) {
-				filtered.Results = append(filtered.Results, r)
+				filtered.Results = append(filtered.Results, m)
 			}
 		}
+
 		if errs.Len() == 0 {
 			return filtered, nil
 		}
-		// We don't want to return sensitive authz information or exluded paths to the
+		// We don't want to return sensitive authz information or excluded paths to the
 		// user so we'll return generic error and log something more specific.
 		log15.Warn("Applying sub-repo permissions to search results", "error", errs)
 		return filtered, errors.New("subRepoFilterFunc")
