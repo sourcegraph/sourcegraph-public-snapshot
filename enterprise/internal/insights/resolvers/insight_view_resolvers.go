@@ -261,7 +261,7 @@ func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]grap
 	return resolvers, nil
 }
 
-func (i *insightViewResolver) ReferenceCount(ctx context.Context) (int32, error) {
+func (i *insightViewResolver) DashboardReferenceCount(ctx context.Context) (int32, error) {
 	referenceCount, err := i.insightStore.GetReferenceCount(ctx, i.view.ViewID)
 	if err != nil {
 		return 0, err

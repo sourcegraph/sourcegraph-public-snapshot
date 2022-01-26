@@ -799,7 +799,7 @@ type InsightView implements Node {
     """
     The total number of dashboards on which this insight is referenced. The count is global and disregards permissions.
     """
-    referenceCount: Int!
+    dashboardReferenceCount: Int!
 }
 
 """
