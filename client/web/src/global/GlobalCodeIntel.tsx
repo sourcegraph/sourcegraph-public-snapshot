@@ -7,6 +7,7 @@ import { UncontrolledPopover } from 'reactstrap'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import {
     RepoSpec,
     RevisionSpec,
@@ -26,14 +27,24 @@ const SHOW_COOL_CODEINTEL = localStorage.getItem('coolCodeIntel') !== null
 
 export const GlobalCodeIntel: React.FunctionComponent<{
     hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-}> = props =>
-    SHOW_COOL_CODEINTEL ? (
+    showPanel: boolean
+}> = props => {
+    if (!SHOW_COOL_CODEINTEL) {
+        return null
+    }
+
+    if (props.showPanel) {
+        return <CoolCodeIntelResizablePanel {...props} />
+    }
+
+    return (
         <ul className={classNames('nav', styles.globalCodeintel)}>
             <li className="nav-item">
                 <CoolCodeIntelPopover {...props} />
             </li>
         </ul>
-    ) : null
+    )
+}
 
 /** A button that toggles the visibility of the ExtensionDevTools element in a popover. */
 export const CoolCodeIntelPopover = React.memo<{
@@ -103,42 +114,31 @@ interface CoolCodeIntelToolsTab {
 
 export const TokenPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
     <>
-        <div className="card-header">Token under cursor</div>
-        <div className="card-body border-bottom">
-            {props.hoveredToken ? (
-                <code>
-                    Line: {props.hoveredToken.line}
-                    {'\n'}
-                    Character: {props.hoveredToken.character}
-                    {'\n'}
-                    Repo: {props.hoveredToken.repoName}
-                    {'\n'}
-                    Commit: {props.hoveredToken.commitID}
-                    {'\n'}
-                    Path: {props.hoveredToken.filePath}
-                    {'\n'}
-                </code>
-            ) : (
-                <p>
-                    <i>No token</i>
-                </p>
-            )}
-        </div>
+        {props.hoveredToken ? (
+            <code>
+                Line: {props.hoveredToken.line}
+                {'\n'}
+                Character: {props.hoveredToken.character}
+                {'\n'}
+                Repo: {props.hoveredToken.repoName}
+                {'\n'}
+                Commit: {props.hoveredToken.commitID}
+                {'\n'}
+                Path: {props.hoveredToken.filePath}
+                {'\n'}
+            </code>
+        ) : (
+            <p>
+                <i>No token</i>
+            </p>
+        )}
     </>
 )
 
 export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
-    <>
-        {/* <div className="card-header">
-            References{' '}
-            <small>
-                Check out this <i>intelligence</i>
-            </small>
-        </div> */}
-        <div className={styles.coolCodeIntelReferences}>
-            {props.hoveredToken && <ReferencesList hoveredToken={props.hoveredToken} />}
-        </div>
-    </>
+    <div className={styles.coolCodeIntelReferences}>
+        {props.hoveredToken && <ReferencesList hoveredToken={props.hoveredToken} />}
+    </div>
 )
 
 interface Reference {
@@ -188,10 +188,6 @@ export const ReferencesList: React.FunctionComponent<{
             // Cache this data but always re-request it in the background when we revisit
             // this page to pick up newer changes.
             fetchPolicy: 'cache-and-network',
-            // pollInterval: 5000,
-            // For subsequent requests while this page is open, make additional network
-            // requests; this is necessary for `refetch` to actually use the network. (see
-            // https://github.com/apollographql/apollo-client/issues/5515)
             nextFetchPolicy: 'network-only',
         }
     )
@@ -262,3 +258,48 @@ const TABS: CoolCodeIntelToolsTab[] = [
     { id: 'token', label: 'Token', component: TokenPanel },
     { id: 'references', label: 'References', component: ReferencesPanel },
 ]
+
+interface CoolCodeIntelPanelProps {
+    // fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+}
+
+export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
+    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
+    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+
+    return (
+        <Tabs className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
+            <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.header)}>
+                <TabList>
+                    <div className="d-flex w-100">
+                        {TABS.map(({ label, id }) => (
+                            <Tab key={id}>
+                                <span className="tablist-wrapper--tab-label" role="none">
+                                    {label}
+                                </span>
+                            </Tab>
+                        ))}
+                    </div>
+                </TabList>
+            </div>
+            <TabPanels className={styles.tabs}>
+                {TABS.map(tab => (
+                    <TabPanel key={tab.id} className={styles.tabsContent} data-testid="panel-tabs-content">
+                        <tab.component hoveredToken={props.hoveredToken} />
+                    </TabPanel>
+                ))}
+            </TabPanels>
+        </Tabs>
+    )
+})
+
+export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelPanelProps> = props => (
+    <Resizable
+        className={styles.resizablePanel}
+        handlePosition="top"
+        defaultSize={350}
+        storageKey="panel-size"
+        element={<CoolCodeIntelPanel {...props} />}
+    />
+)
