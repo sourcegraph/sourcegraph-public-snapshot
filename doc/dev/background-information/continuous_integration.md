@@ -85,7 +85,7 @@ To enable this, we [address flakes as they arise](#flakes) and mitigate the impa
 
 #### Flakes
 
-A *flake* is defined as a testor script that is unreliable or non-deterministic, i.e. it exhibits both a passing and a failing result with the same code. In other words: something that sometimes fails, but if you retry it enough times, it passes, *eventually*.
+A *flake* is defined as a test or script that is unreliable or non-deterministic, i.e. it exhibits both a passing and a failing result with the same code. In other words: something that sometimes fails, but if you retry it enough times, it passes, *eventually*.
 
 Tests are not the only thing that are flaky - flakes can also encompass [sporadic infrastructure issues](#flaky-infrastructure) and [unreliable steps](#flaky-steps).
 
@@ -100,7 +100,7 @@ Typical reasons why a test may be flaky:
 - Unreliable test infrastructure (such as CI)
 - Reliance on third-party services that are inconsistent
 
-If a flaky test is discovered, immediately use language specific functionality to skip a test and open a PR to disable the test:
+If a flaky test is discovered, immediately use language-specific functionality to skip a test and open a PR to disable the test:
 
 - Go: [`testing.T.Skip`](https://pkg.go.dev/testing#hdr-Skipping)
 - Typescript: [`.skip()`](https://mochajs.org/#inclusive-tests)
