@@ -1,12 +1,12 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { UncontrolledPopover } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { useQuery } from '@sourcegraph/http-client'
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import {
     RepoSpec,
@@ -15,8 +15,9 @@ import {
     ResolvedRevisionSpec,
     toPositionOrRangeQueryParameter,
     appendLineRangeQueryParameter,
+    appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
-import { Button, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables, Maybe } from '../graphql-operations'
 
@@ -146,6 +147,7 @@ interface Reference {
     resource: {
         __typename?: 'GitBlob' | undefined
         path: string
+        content: string
         repository: {
             __typename?: 'Repository' | undefined
             name: string
@@ -170,9 +172,16 @@ interface Reference {
     }>
 }
 
+interface ReferenceGroup {
+    path: string
+    references: Reference[]
+}
+
 export const ReferencesList: React.FunctionComponent<{
     hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 }> = props => {
+    const [activeReference, setActiveReference] = useState('')
+
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
         FETCH_REFERENCES_QUERY,
         {
@@ -218,38 +227,85 @@ export const ReferencesList: React.FunctionComponent<{
         const path = `/${reference.resource.repository.name}/-/blob/${reference.resource.path}`
 
         if (reference.range !== null) {
-            return appendLineRangeQueryParameter(
-                path,
-                toPositionOrRangeQueryParameter({
-                    range: {
-                        start: { line: reference.range.start.line + 1, character: reference.range.start.character + 1 },
-                        end: { line: reference.range.end.line + 1, character: reference.range.end.character + 1 },
-                    },
-                })
+            return appendSubtreeQueryParameter(
+                appendLineRangeQueryParameter(
+                    path,
+                    toPositionOrRangeQueryParameter({
+                        range: {
+                            // ATTENTION: Another off-by-one chaos in the making here
+                            start: {
+                                line: reference.range.start.line + 1,
+                                character: reference.range.start.character + 1,
+                            },
+                            end: { line: reference.range.end.line + 1, character: reference.range.end.character + 1 },
+                        },
+                    })
+                )
             )
         }
         return path
     }
 
+    const byFile: Record<string, Reference[]> = {}
+    for (const reference of references) {
+        if (byFile[reference.resource.path] === undefined) {
+            byFile[reference.resource.path] = []
+        }
+        byFile[reference.resource.path].push(reference)
+    }
+
+    const referenceGroups: ReferenceGroup[] = []
+    Object.keys(byFile).map(path => referenceGroups.push({ path, references: byFile[path] }))
+
+    const getLineContent = (reference: Reference): string => {
+        const lines = reference.resource.content.split(/\r?\n/)
+        const range = reference.range
+        if (range !== null) {
+            return lines[range.start?.line]
+        }
+        return ''
+    }
+
     return (
         <>
-            <ul className="list-unstyled">
-                {references?.map(reference => {
-                    const fileURL = buildFileURL(reference)
-                    return (
-                        <li key={fileURL}>
-                            <RepoFileLink
-                                repoURL={`/${reference.resource.repository.name}`}
-                                repoName={reference.resource.repository.name}
-                                filePath={`${reference.resource.path} [Line ${
-                                    reference.range?.start.line || 'undefined'
-                                }]`}
-                                fileURL={fileURL}
-                            />
-                        </li>
-                    )
-                })}
-            </ul>
+            {referenceGroups.map(group => {
+                const [fileBase, fileName] = splitPath(group.path)
+
+                return (
+                    <div key={group.path}>
+                        <p className="mb-0 card-header">
+                            <Link to={`/${group.references[0].resource.repository.name}`}>
+                                {displayRepoName(group.references[0].resource.repository.name)}
+                            </Link>{' '}
+                            ›{' '}
+                            <Link to={`/${group.references[0].resource.repository.name}/-/blob/${group.path}`}>
+                                {fileBase ? `${fileBase}/` : null}
+                                <strong>{fileName}</strong>
+                            </Link>{' '}
+                            ({group.references.length} references)
+                        </p>
+                        <ul className="list-unstyled card-body ml-2">
+                            {group.references.map(reference => {
+                                const fileURL = buildFileURL(reference)
+                                const className = activeReference === fileURL ? styles.coolCodeIntelReferenceActive : ''
+
+                                return (
+                                    <li key={fileURL} className={classNames('border-0 rounded-0', className)}>
+                                        <div>
+                                            <Link onClick={_event => setActiveReference(fileURL)} to={fileURL}>
+                                                {' L'}
+                                                {reference.range?.start?.line}
+                                                {': '}
+                                            </Link>
+                                            <code>{getLineContent(reference)}</code>
+                                        </div>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </div>
+                )
+            })}
         </>
     )
 }
@@ -260,7 +316,6 @@ const TABS: CoolCodeIntelToolsTab[] = [
 ]
 
 interface CoolCodeIntelPanelProps {
-    // fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 }
 
