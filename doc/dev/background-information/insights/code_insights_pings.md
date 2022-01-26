@@ -7,7 +7,7 @@ We keep this docs page up to date because pings are a vital component of our pro
 ## Terminology
 
 - **FE event** - log events that we send by calling standard telemetry service on the frontend. These pings live only in the `event_logs` table. These typically represent user actions, such as hovers.
-- **BE ping** - pings that our BE sends to ping store by checking/selecting data from database tables. Our backend sends these pings when something has been updated in the database tables that the ping depends on. 
+- **BE ping** - pings that our BE sends to the ping store by checking/selecting data from database tables. Our backend periodically sends these pings to the `event_logs` table. These typically represent absolute counts across the entire instance. 
 
 ## Metrics
 
