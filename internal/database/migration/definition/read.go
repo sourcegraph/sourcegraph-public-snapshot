@@ -40,9 +40,7 @@ func ReadDefinitions(fs fs.FS) (*Definitions, error) {
 		return nil, err
 	}
 
-	return &Definitions{
-		definitions: migrationDefinitions,
-	}, nil
+	return newDefinitions(migrationDefinitions), nil
 }
 
 func readSQLFilenames(fs fs.FS) ([]string, error) {
