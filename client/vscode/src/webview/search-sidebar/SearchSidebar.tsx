@@ -183,7 +183,9 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         setValidating(false)
     }
 
-    // There's no ACTIVE search panel
+    if (validating) {
+        return <LoadingSpinner />
+    }
     // We need to add API to query all open search panels
     // If no open, show button + CTA to open search panel (links to sign up etc.)
     if (
@@ -196,21 +198,28 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         localFileHistory !== undefined
     ) {
         if (!activeSearchPanel) {
-            return validAccessToken || localRecentSearches.length > 0 ? (
+            return (
                 <>
-                    <HistorySidebar
-                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                        platformContext={platformContext}
-                        theme={theme}
-                        validAccessToken={validAccessToken}
-                        authenticatedUser={authenticatedUser}
-                        patternType={patternType}
-                        caseSensitive={caseSensitive}
-                        useQueryState={useQueryState}
-                        localRecentSearches={localRecentSearches}
-                        localFileHistory={localFileHistory}
-                    />
-                    {!validAccessToken && (
+                    {validAccessToken || localRecentSearches.length > 0 ? (
+                        <HistorySidebar
+                            sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                            platformContext={platformContext}
+                            theme={theme}
+                            validAccessToken={validAccessToken}
+                            authenticatedUser={authenticatedUser}
+                            patternType={patternType}
+                            caseSensitive={caseSensitive}
+                            useQueryState={useQueryState}
+                            localRecentSearches={localRecentSearches}
+                            localFileHistory={localFileHistory}
+                        />
+                    ) : (
+                        <OpenSearchPanelCta
+                            sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                            onDesktop={onDesktop}
+                        />
+                    )}
+                    {!hasAccessToken && (
                         <SidebarAuthCheck
                             sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                             hasAccessToken={hasAccessToken}
@@ -219,20 +228,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                             validAccessToken={validAccessToken}
                         />
                     )}
-                </>
-            ) : (
-                <>
-                    <OpenSearchPanelCta
-                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                        onDesktop={onDesktop}
-                    />
-                    <SidebarAuthCheck
-                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                        hasAccessToken={hasAccessToken}
-                        telemetryService={platformContext.telemetryService}
-                        onSubmitAccessToken={onSubmitAccessToken}
-                        validAccessToken={validAccessToken}
-                    />
                 </>
             )
         }

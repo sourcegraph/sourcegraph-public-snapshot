@@ -6,6 +6,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { getFullQuery } from '@sourcegraph/branded/src/search/input/toggles/Toggles'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
@@ -23,8 +24,6 @@ import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbi
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import {
-    EventLogsDataResult,
-    logUserSearchEventVariables,
     EventSource,
     CurrentAuthStateResult,
     CurrentAuthStateVariables,
@@ -32,6 +31,8 @@ import {
     SearchVariables,
     TreeEntriesResult,
     TreeEntriesVariables,
+    EventLogsDataResult,
+    logUserSearchEventVariables,
 } from '../../graphql-operations'
 import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
@@ -49,6 +50,7 @@ import { useQueryState } from '.'
 interface SearchPageProps extends WebviewPageProps {}
 
 export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, sourcegraphVSCodeExtensionAPI }) => {
+    const themeProperty = theme === 'theme-light' ? 'light' : 'dark'
     const [loading, setLoading] = useState(false)
     // Search Query States
     const searchActions = useQueryState(({ actions }) => actions)
@@ -71,7 +73,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     const [entries, setEntries] = useState<Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url' | 'path'>[] | undefined>(
         undefined
     )
-
     const sourcegraphSettings =
         useObservable(
             useMemo(() => wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.getSettings()), [
@@ -191,15 +192,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                     setValidAccessToken(false)
                     setAuthenticatedUser(null)
                 })
-            // Get Recent Search History from Local Storage
-            sourcegraphVSCodeExtensionAPI
-                .getLocalSearchHistory()
-                .then(response => {
-                    setLocalRecentSearches(response.searches)
-                })
-                .catch(() => {
-                    // TODO error handling
-                })
         }
         if (lastSelectedSearchContext === undefined) {
             sourcegraphVSCodeExtensionAPI
@@ -226,9 +218,77 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 // TODO error handling
                 .catch(error => console.log(error))
         }
-
-        const subscriptions = new Subscription()
-
+        setLoading(false)
+    }, [
+        sourcegraphVSCodeExtensionAPI,
+        selectedSearchContextSpec,
+        searchActions,
+        platformContext,
+        lastSelectedSearchContext,
+        localRecentSearches,
+        fileVariables,
+        instanceHostname,
+        validAccessToken,
+        openRepoFileTree,
+        authenticatedUser,
+    ])
+    // Handle Search History from VS Code Local Storage
+    useEffect(() => {
+        setLoading(true)
+        // Get local search history
+        if (localRecentSearches !== undefined) {
+            // only save 20 searches locally
+            if (fullQuery && localRecentSearches.length < 21) {
+                // query to add to search history
+                const newSearchHistory = {
+                    lastQuery: queryToRun.query,
+                    lastSelectedSearchContextSpec: selectedSearchContextSpec || '',
+                    lastCaseSensitive: caseSensitive,
+                    lastPatternType: patternType,
+                    lastFullQuery: fullQuery,
+                }
+                // we will not save it if current search query is the same as the last one
+                if (localRecentSearches[localRecentSearches.length - 1]?.lastFullQuery !== fullQuery) {
+                    let currentLocalSearchHistory = localRecentSearches
+                    // Limiting Local Search History to 20
+                    // We only display 15 in homepage
+                    if (localRecentSearches.length > 19) {
+                        currentLocalSearchHistory = localRecentSearches.slice(-19)
+                    }
+                    const newRecentSearches = [...currentLocalSearchHistory, newSearchHistory]
+                    sourcegraphVSCodeExtensionAPI
+                        .setLocalRecentSearch(newRecentSearches)
+                        .then(() => setLocalRecentSearches(newRecentSearches))
+                        .catch(error => {
+                            console.error(error)
+                        })
+                }
+            }
+        } else {
+            // Get Recent Search History from Local Storage
+            sourcegraphVSCodeExtensionAPI
+                .getLocalSearchHistory()
+                .then(response => {
+                    setLocalRecentSearches(response.searches)
+                })
+                .catch(() => {
+                    // TODO error handling
+                })
+        }
+        setLoading(false)
+    }, [
+        sourcegraphVSCodeExtensionAPI,
+        localRecentSearches,
+        validAccessToken,
+        fullQuery,
+        queryToRun.query,
+        selectedSearchContextSpec,
+        caseSensitive,
+        patternType,
+    ])
+    // Create File Tree if user clicks on Repo search result
+    useEffect(() => {
+        setLoading(true)
         // create file tree
         if (openRepoFileTree && fileVariables) {
             ;(async () => {
@@ -245,8 +305,22 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             })().catch(error => console.error(error))
         }
 
+        setLoading(false)
+    }, [fullQuery, fileVariables, openRepoFileTree, platformContext])
+    // When a query is run, set active panel to true, setFullQuery for result page,
+    // add new search to User event for signed in users
+    useEffect(() => {
+        setLoading(true)
+        // Check for Access Token to display sign up CTA at start up
+        const subscriptions = new Subscription()
         if (queryToRun.query) {
-            setLoading(true)
+            // Set active panel to true in extension to show the correct sidebar view
+            sourcegraphVSCodeExtensionAPI
+                .hasActivePanel()
+                .then(response => {
+                    console.log('Search Performed', response)
+                }) // TODO error handling
+                .catch(error => console.log(error))
             // Set Full Query for Results Page
             const currentFullQuery = getFullQuery(
                 queryToRun.query,
@@ -259,70 +333,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             if (selectedSearchContextSpec) {
                 queryString = appendContextFilter(queryString, selectedSearchContextSpec)
             }
-            // Log Search to User Event Logs to sync Search History
-            if (validAccessToken) {
-                ;(async () => {
-                    const userEventVariables = {
-                        name: 'SearchResultsQueried',
-                        userCookieID: '',
-                        source: EventSource.CODEHOSTINTEGRATION,
-                        url: `https://${instanceHostname}/search?q=${encodeURIComponent(
-                            queryString
-                        )}&patternType=${patternType}`,
-                        argument: `{\"code_search\": {\"query_data\": {\"empty\": false, \"query\": {}, \"combined\": ${JSON.stringify(
-                            String(
-                                selectedSearchContextSpec
-                                    ? appendContextFilter(queryString, selectedSearchContextSpec)
-                                    : queryString
-                            )
-                        )}}}}`,
-                    }
-                    const userEventLog = await platformContext
-                        .requestGraphQL<EventLogsDataResult, logUserSearchEventVariables>({
-                            request: logEventsQuery,
-                            variables: userEventVariables,
-                            mightContainPrivateInfo: true,
-                        })
-                        .toPromise()
-                    if (userEventLog.data) {
-                        console.log('Search Synced')
-                    }
-                })().catch(error => console.error(error))
-            }
-            // only save 20 searches locally
-            if (fullQuery && localRecentSearches !== undefined && localRecentSearches.length < 21) {
-                // query to add to search history
-                const newSearchHistory = {
-                    lastQuery: queryToRun.query,
-                    lastSelectedSearchContextSpec: selectedSearchContextSpec || '',
-                    lastCaseSensitive: caseSensitive,
-                    lastPatternType: patternType,
-                    lastFullQuery: fullQuery,
-                }
-                if (localRecentSearches[localRecentSearches.length - 1]?.lastFullQuery !== fullQuery) {
-                    let currentLocalSearchHistory = localRecentSearches
-                    // Local Search History is limited to 20
-                    if (localRecentSearches.length > 19) {
-                        currentLocalSearchHistory = localRecentSearches.slice(-19)
-                    }
-                    const newRecentSearches = [...currentLocalSearchHistory, newSearchHistory]
-                    setLocalRecentSearches(newRecentSearches)
-                    sourcegraphVSCodeExtensionAPI
-                        .setLocalRecentSearch(newRecentSearches)
-                        .then(response => {
-                            console.log('Added to search history', response)
-                        }) // TODO error handling
-                        .catch(error => console.log(error))
-                }
-            }
-
-            sourcegraphVSCodeExtensionAPI
-                .hasActivePanel()
-                .then(response => {
-                    console.log('Search Performed', response)
-                }) // TODO error handling
-                .catch(error => console.log(error))
-
             const subscription = platformContext
                 .requestGraphQL<SearchResult, SearchVariables>({
                     request: searchQuery,
@@ -353,13 +363,71 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         instanceHostname,
         validAccessToken,
         openRepoFileTree,
-        authenticatedUser,
     ])
-    const themeProperty = theme === 'theme-light' ? 'light' : 'dark'
+    // Log Search to User Event Logs to sync Search History
+    useEffect(() => {
+        if (queryToRun.query && validAccessToken && fullQuery) {
+            setLoading(true)
+            ;(async () => {
+                const queryString = `${queryToRun.query}${caseSensitive ? ' case:yes' : ''}`
+                const eventArgument = JSON.stringify({
+                    code_search: {
+                        query_data: {
+                            empty: false,
+                            query: {},
+                            combined: selectedSearchContextSpec
+                                ? appendContextFilter(queryString, selectedSearchContextSpec)
+                                : queryString,
+                        },
+                    },
+                })
+                const userEventVariables = {
+                    name: 'SearchResultsQueried',
+                    userCookieID: '',
+                    source: EventSource.CODEHOSTINTEGRATION,
+                    url: `https://${instanceHostname}/search?q=${encodeURIComponent(
+                        queryString
+                    )}&patternType=${patternType}`,
+                    argument: eventArgument,
+                }
+                const userEventLog = await platformContext
+                    .requestGraphQL<EventLogsDataResult, logUserSearchEventVariables>({
+                        request: logEventsQuery,
+                        variables: userEventVariables,
+                        mightContainPrivateInfo: true,
+                    })
+                    .toPromise()
+                if (userEventLog.data) {
+                    console.log('Search Synced')
+                }
+            })().catch(error => console.error(error))
+        }
+        setLoading(false)
+    }, [
+        queryToRun,
+        selectedSearchContextSpec,
+        fullQuery,
+        validAccessToken,
+        caseSensitive,
+        instanceHostname,
+        patternType,
+        platformContext,
+    ])
+
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
     return (
-        <div>
-            {!queryToRun.query ? (
-                <div className={classNames('d-flex flex-column align-items-center px-4', styles.searchPage)}>
+        <div
+            className={
+                !queryToRun.query
+                    ? classNames('d-flex flex-column align-items-center px-4', styles.searchPage)
+                    : classNames('d-flex flex-column align-items-center')
+            }
+        >
+            {!queryToRun.query && (
+                <>
                     <div className={classNames('d-flex justify-content-end w-100 p-3')}>
                         <button
                             type="button"
@@ -382,151 +450,99 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                         alt="Sourcegraph logo"
                     />
                     <div className={classNames(styles.logoText)}>Search your code and 2M+ open source repositories</div>
-                    <div
-                        className={classNames(
-                            'flex-grow-0',
-                            styles.searchContainer,
-                            styles.searchContainerWithContentBelow
-                        )}
-                    >
-                        {!loading && (
-                            <Form className="d-flex my-2" onSubmit={onSubmit}>
-                                {/* TODO temporary settings provider w/ mock in memory storage */}
-                                <SearchBox
-                                    isSourcegraphDotCom={true}
-                                    // Platform context props
-                                    platformContext={platformContext}
-                                    telemetryService={platformContext.telemetryService}
-                                    // Search context props
-                                    searchContextsEnabled={true}
-                                    showSearchContext={true}
-                                    showSearchContextManagement={true}
-                                    hasUserAddedExternalServices={false}
-                                    hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
-                                    defaultSearchContextSpec={DEFAULT_SEARCH_CONTEXT_SPEC}
-                                    // TODO store search context in vs code settings?
-                                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                                    selectedSearchContextSpec={selectedSearchContextSpec}
-                                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                                    fetchSearchContexts={fetchSearchContexts}
-                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                    // Case sensitivity props
-                                    caseSensitive={caseSensitive}
-                                    setCaseSensitivity={searchActions.setCaseSensitivity}
-                                    // Pattern type props
-                                    patternType={patternType}
-                                    setPatternType={searchActions.setPatternType}
-                                    // Misc.
-                                    isLightTheme={theme === 'theme-light'}
-                                    authenticatedUser={authenticatedUser} // Used for search context CTA, which we won't show here.
-                                    queryState={queryState}
-                                    onChange={searchActions.setQuery}
-                                    onSubmit={onSubmit}
-                                    autoFocus={true}
-                                    fetchSuggestions={fetchSuggestions}
-                                    settingsCascade={sourcegraphSettings}
-                                    globbing={globbing}
-                                    // TODO(tj): instead of cssvar, can pipe in font settings from extension
-                                    // to be able to pass it to Monaco!
-                                    className={classNames(styles.withEditorFont, 'flex-shrink-past-contents')}
-                                />
-                            </Form>
-                        )}
-                        <div className="flex-grow-1">
-                            <HomePanels
-                                telemetryService={platformContext.telemetryService}
-                                isLightTheme={theme === 'theme-light'}
-                                setQuery={searchActions.setQuery}
-                            />
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <>
-                    <Form className="d-flex my-2" onSubmit={onSubmit}>
-                        {/* TODO temporary settings provider w/ mock in memory storage */}
-                        <SearchBox
-                            isSourcegraphDotCom={true}
-                            // Platform context props
-                            platformContext={platformContext}
-                            telemetryService={platformContext.telemetryService}
-                            // Search context props
-                            searchContextsEnabled={true}
-                            showSearchContext={true}
-                            showSearchContextManagement={true}
-                            hasUserAddedExternalServices={false}
-                            hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
-                            defaultSearchContextSpec={DEFAULT_SEARCH_CONTEXT_SPEC}
-                            // TODO store search context in vs code settings?
-                            setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                            selectedSearchContextSpec={selectedSearchContextSpec}
-                            fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                            fetchSearchContexts={fetchSearchContexts}
-                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                            // Case sensitivity props
-                            caseSensitive={caseSensitive}
-                            setCaseSensitivity={searchActions.setCaseSensitivity}
-                            // Pattern type props
-                            patternType={patternType}
-                            setPatternType={searchActions.setPatternType}
-                            // Misc.
-                            isLightTheme={theme === 'theme-light'}
-                            authenticatedUser={authenticatedUser} // Used for search context CTA, which we won't show here.
-                            queryState={queryState}
-                            onChange={searchActions.setQuery}
-                            onSubmit={onSubmit}
-                            autoFocus={true}
-                            fetchSuggestions={fetchSuggestions}
-                            settingsCascade={sourcegraphSettings}
-                            globbing={globbing}
-                            // TODO(tj): instead of cssvar, can pipe in font settings from extension
-                            // to be able to pass it to Monaco!
-                            className={classNames(styles.withEditorFont, 'flex-grow-1 flex-shrink-past-contents')}
-                        />
-                    </Form>
-                    {loading ? (
-                        <p>Loading...</p>
-                    ) : (
-                        // Display Sign up banner if no access token is detected (assuming they do not have a Sourcegraph account)
-                        <div className={classNames(styles.streamingSearchResultsContainer)}>
-                            {!authenticatedUser && platformContext.telemetryService && (
-                                <SearchPageCta
-                                    icon={<SearchBetaIcon />}
-                                    ctaTitle="Sign up to add your public and private repositories and access other features"
-                                    ctaDescription="Do all the things editors can’t: search multiple repos & commit history, monitor, save searches and more."
-                                    buttonText="Create a free account"
-                                    onClickAction={onSignUpClick}
-                                />
-                            )}
-                            {/* TODO: This is a temporary repo file viewer */}
-                            {openRepoFileTree && fileVariables && entries !== undefined && (
-                                <RepoPage
-                                    platformContext={platformContext}
-                                    theme={theme}
-                                    getFiles={getFiles}
-                                    entries={entries}
-                                    instanceHostname={instanceHostname}
-                                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                                    selectedRepoName={fileVariables.repoName}
-                                    backToSearchResultPage={backToSearchResults}
-                                />
-                            )}
-                            {fullQuery && !openRepoFileTree && (
-                                <SearchResults
-                                    platformContext={platformContext}
-                                    theme={theme}
-                                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                                    settings={sourcegraphSettings}
-                                    instanceHostname={instanceHostname}
-                                    fullQuery={fullQuery}
-                                    getFiles={getFiles}
-                                    authenticatedUser={authenticatedUser}
-                                />
-                            )}
-                        </div>
-                    )}
                 </>
             )}
+            <div className={classNames('flex-grow-0', styles.searchContainer, styles.searchContainerWithContentBelow)}>
+                <Form className="d-flex my-2" onSubmit={onSubmit}>
+                    {/* TODO temporary settings provider w/ mock in memory storage */}
+                    <SearchBox
+                        isSourcegraphDotCom={true}
+                        // Platform context props
+                        platformContext={platformContext}
+                        telemetryService={platformContext.telemetryService}
+                        // Search context props
+                        searchContextsEnabled={true}
+                        showSearchContext={true}
+                        showSearchContextManagement={true}
+                        hasUserAddedExternalServices={false}
+                        hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
+                        defaultSearchContextSpec={DEFAULT_SEARCH_CONTEXT_SPEC}
+                        // TODO store search context in vs code settings?
+                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                        selectedSearchContextSpec={selectedSearchContextSpec}
+                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                        fetchSearchContexts={fetchSearchContexts}
+                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                        // Case sensitivity props
+                        caseSensitive={caseSensitive}
+                        setCaseSensitivity={searchActions.setCaseSensitivity}
+                        // Pattern type props
+                        patternType={patternType}
+                        setPatternType={searchActions.setPatternType}
+                        // Misc.
+                        isLightTheme={theme === 'theme-light'}
+                        authenticatedUser={authenticatedUser} // Used for search context CTA, which we won't show here.
+                        queryState={queryState}
+                        onChange={searchActions.setQuery}
+                        onSubmit={onSubmit}
+                        autoFocus={true}
+                        fetchSuggestions={fetchSuggestions}
+                        settingsCascade={sourcegraphSettings}
+                        globbing={globbing}
+                        // TODO(tj): instead of cssvar, can pipe in font settings from extension
+                        // to be able to pass it to Monaco!
+                        className={classNames(styles.withEditorFont, 'flex-shrink-past-contents')}
+                    />
+                </Form>
+                {!queryToRun.query && (
+                    <div className="flex-grow-1">
+                        <HomePanels
+                            telemetryService={platformContext.telemetryService}
+                            isLightTheme={theme === 'theme-light'}
+                            setQuery={searchActions.setQuery}
+                        />
+                    </div>
+                )}
+                {queryToRun.query && fullQuery && (
+                    <div className={classNames(styles.streamingSearchResultsContainer)}>
+                        {/* Display Sign up banner if no access token is detected (assuming they do not have a Sourcegraph account)  */}
+                        {!authenticatedUser && platformContext.telemetryService && (
+                            <SearchPageCta
+                                icon={<SearchBetaIcon />}
+                                ctaTitle="Sign up to add your public and private repositories and access other features"
+                                ctaDescription="Do all the things editors can’t: search multiple repos & commit history, monitor, save searches and more."
+                                buttonText="Create a free account"
+                                onClickAction={onSignUpClick}
+                            />
+                        )}
+                        {/* TODO: This is a temporary repo file viewer */}
+                        {openRepoFileTree && fileVariables && entries && (
+                            <RepoPage
+                                platformContext={platformContext}
+                                theme={theme}
+                                getFiles={getFiles}
+                                entries={entries}
+                                instanceHostname={instanceHostname}
+                                sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                                selectedRepoName={fileVariables.repoName}
+                                backToSearchResultPage={backToSearchResults}
+                            />
+                        )}
+                        {fullQuery && !openRepoFileTree && (
+                            <SearchResults
+                                platformContext={platformContext}
+                                theme={theme}
+                                sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                                settings={sourcegraphSettings}
+                                instanceHostname={instanceHostname}
+                                fullQuery={fullQuery}
+                                getFiles={getFiles}
+                                authenticatedUser={authenticatedUser}
+                            />
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

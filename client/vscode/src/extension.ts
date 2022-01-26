@@ -20,6 +20,7 @@ import { searchSelection } from './commands/searchSelection'
 import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
 import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
+import { EventLogsDataResult, EventSource, logUserSearchEventVariables } from './graphql-operations'
 import { log } from './log'
 import { updateAccessTokenSetting } from './settings/accessTokenSetting'
 import { updateCorsSetting } from './settings/endpointSetting'
@@ -29,8 +30,8 @@ import {
     initializeSearchPanelWebview,
     initializeSearchSidebarWebview,
 } from './webview/initialize'
+import { logEventsQuery } from './webview/search-panel/queries'
 import { createSearchSidebarMediator } from './webview/search-sidebar/mediator'
-
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // Initialize the global application manager
     const storageManager = new LocalStorageService(context.workspaceState)
@@ -87,6 +88,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 const sgUri = fs.sourcegraphUri(vsceUri).uri
                 const fileHistorySet = new Set(currentFileHistory).add(sgUri)
                 await storageManager.setFileHistory([...fileHistorySet].slice(-9))
+                // Log User Event
+                if (userSettings.validated) {
+                    const preString = JSON.stringify({
+                        filePath: fs.sourcegraphUri(vsceUri).path,
+                        repoName: fs.sourcegraphUri(vsceUri).repositoryName.split('@')[0],
+                    })
+                    const userEventVariables = {
+                        name: 'ViewBlob',
+                        userCookieID: '',
+                        source: EventSource.CODEHOSTINTEGRATION,
+                        url: `${sgUri.replace('sourcegraph://', 'https://')}`,
+                        argument: preString,
+                    }
+                    await requestGraphQLFromVSCode<EventLogsDataResult, logUserSearchEventVariables>(
+                        logEventsQuery,
+                        userEventVariables
+                    )
+                }
             }
         })
     )
@@ -128,7 +147,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                 webviewPanel.onDidDispose(async () => {
                     sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
                     currentActiveWebviewPanel = undefined
-                    // Set showFileTree and activeSearchPanel to false
+                    // Set showFileTree, onRepoResultPage, and activeSearchPanel to false
+                    await vscode.commands.executeCommand('setContext', 'sourcegraph.onRepoResultPage', false)
                     await vscode.commands.executeCommand('setContext', 'sourcegraph.activeSearchPanel', false)
                     await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', false)
                     // Close sidebar when user closes the search panel by displaying their explorer instead
@@ -138,6 +158,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         })
     )
 
+    // Bring Search Sidebar to View
     await vscode.commands.executeCommand('sourcegraph.searchSidebar.focus')
 
     context.subscriptions.push(
@@ -309,6 +330,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.selectionSearchWeb', async () => {
             await searchSelection()
+        })
+    )
+
+    // Clone Remote Git Repos Locally
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.gitClone', async () => {
+            const editor = vscode.window.activeTextEditor
+            if (!editor) {
+                throw new Error('No active editor')
+            }
+            const uri = editor.document.uri.path
+            const gitUrl = `https:/${uri.split('@')[0]}.git`
+            const vsCodeCloneUrl = `vscode://vscode.git/clone?url=${gitUrl}`
+            await vscode.env.openExternal(vscode.Uri.parse(vsCodeCloneUrl))
+            // vscode://vscode.git/clone?url=${gitUrl}
         })
     )
 

@@ -45,6 +45,8 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
                 this.didChangeTreeData.fire(undefined)
                 await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', true)
                 await this.didFocus(this.activeUri)
+            } else {
+                await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', false)
             }
         })
         treeView.onDidExpandElement(event => {

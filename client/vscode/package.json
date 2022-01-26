@@ -2,7 +2,7 @@
   "private": true,
   "name": "sourcegraph-preview",
   "displayName": "Sourcegraph - preview",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Sourcegraph for VS Code",
   "publisher": "kandalatj",
   "sideEffects": false,
@@ -66,6 +66,12 @@
         "command": "sourcegraph.selectionSearchWeb",
         "category": "Sourcegraph",
         "title": "Search Selection in Sourcegraph Web"
+      },
+      {
+        "command": "sourcegraph.gitClone",
+        "category": "Sourcegraph",
+        "title": "Clone Remote Repo",
+        "icon": "$(cloud-download)"
       }
     ],
     "viewsContainers": {
@@ -104,7 +110,7 @@
     "viewsWelcome": [
       {
         "view": "sourcegraph.files",
-        "contents": "No open files."
+        "contents": "Loading Sourcegraph Remote File Tree..."
       }
     ],
     "configuration": {
@@ -198,6 +204,18 @@
           "command": "sourcegraph.openInBrowser",
           "when": "view == sourcegraph.files && viewItem == selected",
           "group": "inline"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "sourcegraph.openInBrowser",
+          "when": "sourcegraph.canFocusActiveDocument",
+          "group": "navigation"
+        },
+        {
+          "command": "sourcegraph.gitClone",
+          "when": "sourcegraph.canFocusActiveDocument",
+          "group": "navigation"
         }
       ]
     }

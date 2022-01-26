@@ -5,10 +5,10 @@ import React, { useEffect, useState } from 'react'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { EventLogsDataResult, EventLogsDataVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { EventLogResult } from '@sourcegraph/shared/src/search/backend'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { EventLogsDataResult } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 import { eventsQuery } from '../search-panel/queries'
 
@@ -30,7 +30,6 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
     localFileHistory,
     sourcegraphVSCodeExtensionAPI,
     authenticatedUser,
-    telemetryService,
     platformContext,
 }) => {
     const itemsToLoad = 15
@@ -94,15 +93,9 @@ export const RecentFile: React.FunctionComponent<RecentFileProps> = ({
                                     <Link
                                         data-testid="recent-files-item"
                                         to="/"
-                                        onClick={() =>
-                                            authenticatedUser
-                                                ? sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
-                                                      query: `repo:^${recentFile.repoName}$ file:^${recentFile.filePath}`,
-                                                  })
-                                                : sourcegraphVSCodeExtensionAPI.openFile(recentFile.url)
-                                        }
+                                        onClick={() => sourcegraphVSCodeExtensionAPI.openFile(recentFile.url)}
                                     >
-                                        {recentFile.repoName} › {recentFile.filePath}
+                                        {recentFile.repoName.split('@')[0]} › {recentFile.filePath}
                                     </Link>
                                 </small>
                             </div>
@@ -135,9 +128,8 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
                 repoName &&
                 !recentFiles.some(file => file.repoName === repoName && file.filePath === filePath) // Don't show the same file twice
             ) {
-                const parsedUrl = new URL(node.url)
                 recentFiles.push({
-                    url: parsedUrl.pathname.replace('https://', 'sourcegraph://') + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
+                    url: node.url.replace('https://', 'sourcegraph://'), // So that clicking on link would open the file directly
                     repoName,
                     filePath,
                     timestamp: node.timestamp,
