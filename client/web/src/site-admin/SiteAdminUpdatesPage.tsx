@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
@@ -7,7 +6,7 @@ import React, { useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 
@@ -41,18 +40,20 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
             {updateCheck && (updateCheck.pending || updateCheck.checkedAt) && (
                 <div>
                     {updateCheck.pending && (
-                        <div className={classNames('alert alert-primary', styles.alert)}>
+                        <Alert className={styles.alert} variant="primary">
                             <LoadingSpinner /> Checking for updates... (reload in a few seconds)
-                        </div>
+                        </Alert>
                     )}
                     {!updateCheck.errorMessage &&
                         (updateCheck.updateVersionAvailable ? (
-                            <div className={classNames('alert alert-success', styles.alert)}>
+                            <Alert className={styles.alert} variant="success">
                                 <CloudDownloadIcon className="icon-inline" /> Update available:{' '}
                                 <a href="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</a>
-                            </div>
+                            </Alert>
                         ) : (
-                            <div className={classNames('alert alert-success', styles.alert)}>Up to date.</div>
+                            <Alert className={styles.alert} variant="success">
+                                Up to date.
+                            </Alert>
                         ))}
                     {updateCheck.errorMessage && (
                         <ErrorAlert
@@ -65,9 +66,9 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
             )}
 
             {!autoUpdateCheckingEnabled && (
-                <div className={classNames('alert alert-warning', styles.alert)}>
+                <Alert className={styles.alert} variant="warning">
                     Automatic update checking is disabled.
-                </div>
+                </Alert>
             )}
 
             <p className="site-admin-updates_page__info">

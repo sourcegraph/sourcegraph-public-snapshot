@@ -27,7 +27,7 @@ exports[`NewProductSubscriptionPaymentSection downgrade to existing subscription
         </li>
       </ul>
       <div
-        class="alert alert-danger mb-2"
+        class="mb-2"
       >
         Self-service downgrades are not yet supported. 
         <a

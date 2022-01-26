@@ -5,7 +5,7 @@ import { Link, LinkProps } from '../Link/Link'
 
 import styles from './AlertLink.module.scss'
 
-interface AlertLinkProps extends LinkProps {}
+export interface AlertLinkProps extends LinkProps {}
 
 export const AlertLink: React.FunctionComponent<AlertLinkProps> = ({ to, children, className, ...attributes }) => (
     <Link to={to} className={classNames(styles.alertLink, className)} {...attributes}>

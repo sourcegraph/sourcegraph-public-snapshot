@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
@@ -120,7 +120,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     </>
                 }
             >
-                <div className="card card-body p-3">
+                <Card className="p-3">
                     <FormInput
                         title="Search query"
                         required={true}
@@ -159,7 +159,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                             automatically generated data series
                         </a>
                     </small>
-                </div>
+                </Card>
             </FormGroup>
 
             <hr className="my-4 w-100" />

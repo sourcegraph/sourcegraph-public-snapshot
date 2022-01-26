@@ -1,39 +1,34 @@
 import classNames from 'classnames'
 import React, { useState, useCallback, useEffect } from 'react'
 import { Observable } from 'rxjs'
-import { delay, startWith, tap, mergeMap, catchError } from 'rxjs/operators'
+import { tap, catchError, startWith, mergeMap, delay } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useEventObservable, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { MonitorEmailPriority } from '../../../../graphql-operations'
-import { triggerTestEmailAction } from '../../backend'
-import { MonitorAction } from '../FormActionArea'
+import { triggerTestEmailAction as _triggerTestEmailAction } from '../../backend'
+import { ActionProps } from '../FormActionArea'
 import styles from '../FormActionArea.module.scss'
 
 import { ActionEditor } from './ActionEditor'
 
 const LOADING = 'LOADING' as const
 
-interface EmailActionProps {
-    action?: MonitorAction
-    setAction: (action?: MonitorAction) => void
-    actionCompleted: boolean
-    setActionCompleted: (actionCompleted: boolean) => void
-    disabled: boolean
+export interface EmailActionProps extends ActionProps {
     authenticatedUser: AuthenticatedUser
-    description: string
+    triggerTestEmailAction: typeof _triggerTestEmailAction
 }
 
 export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
     action,
     setAction,
-    actionCompleted,
-    setActionCompleted,
     disabled,
     authenticatedUser,
-    description,
+    monitorName,
+    triggerTestEmailAction,
+    _testStartOpen,
 }) => {
     const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(action ? action.enabled : true)
 
@@ -50,10 +45,9 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
         [action?.id, authenticatedUser.id, setAction]
     )
 
-    const completeForm: React.FormEventHandler = useCallback(
+    const onSubmit: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
-            setActionCompleted(true)
             if (!action) {
                 // We are creating a new monitor if there are no actions yet.
                 // The ID can be empty here, since we'll generate a new ID when we send the creation request.
@@ -65,13 +59,12 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                 })
             }
         },
-        [action, authenticatedUser.id, setAction, setActionCompleted]
+        [action, authenticatedUser.id, setAction]
     )
 
-    const clearForm: React.FormEventHandler = useCallback(() => {
+    const onDelete: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
-        setActionCompleted(false)
-    }, [setAction, setActionCompleted])
+    }, [setAction])
 
     const [isTestEmailSent, setIsTestEmailSent] = useState(false)
     const [triggerTestEmailActionRequest, triggerTestEmailResult] = useEventObservable(
@@ -81,7 +74,7 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                     mergeMap(() =>
                         triggerTestEmailAction({
                             namespace: authenticatedUser.id,
-                            description,
+                            description: monitorName,
                             email: {
                                 enabled: true,
                                 priority: MonitorEmailPriority.NORMAL,
@@ -100,15 +93,15 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                         )
                     )
                 ),
-            [authenticatedUser, description]
+            [authenticatedUser.id, monitorName, triggerTestEmailAction]
         )
     )
 
     useEffect(() => {
-        if (isTestEmailSent && !description) {
+        if (isTestEmailSent && !monitorName) {
             setIsTestEmailSent(false)
         }
-    }, [isTestEmailSent, description])
+    }, [isTestEmailSent, monitorName])
 
     const sendTestEmailButtonText =
         triggerTestEmailResult === LOADING
@@ -116,22 +109,25 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
             : isTestEmailSent
             ? 'Test email sent!'
             : 'Send test email'
-    const isSendTestEmailButtonDisabled = triggerTestEmailResult === LOADING || isTestEmailSent || !description
+    const isSendTestEmailButtonDisabled = triggerTestEmailResult === LOADING || isTestEmailSent || !monitorName
 
     return (
         <ActionEditor
             title="Send email notifications"
+            label="Send email notifications"
             subtitle="Deliver email notifications to specified recipients."
+            idName="email"
             disabled={disabled}
-            completed={actionCompleted}
+            completed={!!action}
             completedSubtitle={authenticatedUser.email}
             actionEnabled={emailNotificationEnabled}
             toggleActionEnabled={toggleEmailNotificationEnabled}
-            onSubmit={completeForm}
+            onSubmit={onSubmit}
             canDelete={!!action}
-            onDelete={clearForm}
+            onDelete={onDelete}
+            _testStartOpen={_testStartOpen}
         >
-            <div className="form-group mt-4 test-action-form" data-testid="action-form">
+            <div className="form-group mt-4 test-action-form-email" data-testid="action-form-email">
                 <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
                 <input
                     id="code-monitoring-form-actions-recipients"
@@ -155,21 +151,30 @@ export const EmailAction: React.FunctionComponent<EmailActionProps> = ({
                     disabled={isSendTestEmailButtonDisabled}
                     onClick={triggerTestEmailActionRequest}
                     size="sm"
+                    data-testid="send-test-email"
                 >
                     {sendTestEmailButtonText}
                 </Button>
                 {isTestEmailSent && triggerTestEmailResult !== LOADING && (
-                    <Button className="p-0" onClick={triggerTestEmailActionRequest} variant="link" size="sm">
+                    <Button
+                        className="p-0"
+                        onClick={triggerTestEmailActionRequest}
+                        variant="link"
+                        size="sm"
+                        data-testid="send-test-email-again"
+                    >
                         Send again
                     </Button>
                 )}
-                {!description && (
+                {!monitorName && (
                     <div className={classNames('mt-2', styles.testActionError)}>
                         Please provide a name for the code monitor before sending a test
                     </div>
                 )}
                 {isErrorLike(triggerTestEmailResult) && (
-                    <div className={classNames('mt-2', styles.testActionError)}>{triggerTestEmailResult.message}</div>
+                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-email-error">
+                        {triggerTestEmailResult.message}
+                    </div>
                 )}
             </div>
         </ActionEditor>

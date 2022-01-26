@@ -139,7 +139,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
 		},
-		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: git.FirstEverCommit}).gitFirstEverCommit,
+		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: gitFirstEverCommit}).gitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return git.Commits(ctx, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
@@ -560,4 +560,8 @@ func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, repoN
 	}
 	c.cache[repoName] = entry
 	return entry, nil
+}
+
+func gitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
+	return git.FirstEverCommit(ctx, repoName, authz.DefaultSubRepoPermsChecker)
 }

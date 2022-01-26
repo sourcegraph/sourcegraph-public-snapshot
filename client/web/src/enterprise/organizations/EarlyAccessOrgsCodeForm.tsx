@@ -3,7 +3,7 @@ import React, { FunctionComponent, useCallback, useState } from 'react'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useLazyQuery, useMutation } from '@sourcegraph/http-client'
 import { IFeatureFlagOverride } from '@sourcegraph/shared/src/schema'
-import { Input } from '@sourcegraph/wildcard'
+import { Input, Alert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
 import { Maybe, OrganizationVariables } from '../../graphql-operations'
@@ -123,9 +123,15 @@ export const EarlyAccessOrgsCodeForm: FunctionComponent<any> = () => {
                 />
             </div>
 
-            {error && <div className="mt-3 alert alert-danger">{error.message}</div>}
+            {error && (
+                <Alert className="mt-3" variant="danger">
+                    {error.message}
+                </Alert>
+            )}
             {data?.createFeatureFlagOverride && (
-                <div className="mt-3 mb-0 alert alert-success">Feature flag override created.</div>
+                <Alert className="mt-3 mb-0" variant="success">
+                    Feature flag override created.
+                </Alert>
             )}
         </Form>
     )

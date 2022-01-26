@@ -16,7 +16,7 @@ import {
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
 } from '@sourcegraph/web/src/components/FilteredConnection'
-import { Badge, useObservable, Link } from '@sourcegraph/wildcard'
+import { Badge, useObservable, Link, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -170,7 +170,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     )}
                 >
                     {autoDefinedSearchContexts?.map(context => (
-                        <div key={context.spec} className="card p-3">
+                        <Card key={context.spec} className="p-3">
                             <div>
                                 <Link to={`/contexts/${context.spec}`}>
                                     <strong>{context.spec}</strong>
@@ -185,7 +185,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                                 </Badge>
                             </div>
                             <div className="text-muted mt-1">{context.description}</div>
-                        </div>
+                        </Card>
                     ))}
                 </div>
             )}
