@@ -1760,17 +1760,6 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		testRepoCorrupter(ctx, tmp)
 	}
 
-	removeBadRefs(ctx, tmp)
-
-	if err := setHEAD(ctx, tmp, syncer, repo, remoteURL); err != nil {
-		log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
-		return errors.Wrap(err, "failed to ensure HEAD exists")
-	}
-
-	if err := setRepositoryType(tmp, syncer.Type()); err != nil {
-		return errors.Wrap(err, `git config set "sourcegraph.type"`)
-	}
-
 	// Update the last-changed stamp.
 	if err := setLastChanged(tmp); err != nil {
 		return errors.Wrapf(err, "failed to update last changed time")
@@ -1781,6 +1770,15 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return err
 	}
 
+	if err := setHEAD(ctx, tmp, syncer, repo, remoteURL); err != nil {
+		log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
+		return errors.Wrap(err, "failed to ensure HEAD exists")
+	}
+
+	if err := setRepositoryType(tmp, syncer.Type()); err != nil {
+		return errors.Wrap(err, `git config set "sourcegraph.type"`)
+	}
+
 	if overwrite {
 		// remove the current repo by putting it into our temporary directory
 		err := renameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
@@ -1788,6 +1786,8 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 			return errors.Wrapf(err, "failed to remove old clone")
 		}
 	}
+
+	removeBadRefs(ctx, tmp)
 
 	if err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm); err != nil {
 		return err
