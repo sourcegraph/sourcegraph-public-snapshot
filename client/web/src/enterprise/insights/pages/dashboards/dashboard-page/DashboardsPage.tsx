@@ -74,8 +74,21 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                     className="mb-3"
                 />
 
-                <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
+                <DashboardPageContent telemetryService={telemetryService} dashboardID={dashboardID} />
             </Page>
         </div>
     )
+}
+
+export const DashboardPageContent: React.FunctionComponent<DashboardsPageProps> = props => {
+    const { dashboardID, telemetryService } = props
+    const { url } = useRouteMatch()
+
+    if (!dashboardID) {
+        // In case if url doesn't have a dashboard id we should fallback on
+        // built-in "All insights" dashboard
+        return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
+    }
+
+    return <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
 }
