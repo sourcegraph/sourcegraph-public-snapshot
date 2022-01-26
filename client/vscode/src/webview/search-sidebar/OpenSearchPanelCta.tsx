@@ -10,7 +10,7 @@ interface OpenSearchPanelCtaProps extends Pick<WebviewPageProps, 'sourcegraphVSC
 }
 
 export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps> = ({ onDesktop }) => (
-    <div className={classNames('d-flex flex-column align-items-left justify-content-center')}>
+    <div className={classNames(styles.cta)}>
         <p className={classNames(styles.ctaTitle)}>Welcome!</p>
         <div className={classNames(styles.ctaContainer)}>
             <p className={classNames(styles.ctaParagraph)}>
@@ -21,9 +21,9 @@ export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps
                 Developers at some of the world's best software companies use Sourcegraph to onboard to new code bases,
                 find examples, research errors, and resolve incidents.
             </p>
-            <div className={classNames(styles.ctaParagraph)}>
+            <div className={classNames(styles.ctaParagraph, 'mb-0')}>
                 <p className={classNames('my-0', styles.text)}>Learn more:</p>
-                <p>
+                <p className="mb-0">
                     <a href="http://sourcegraph.com/" className={classNames('my-0', styles.text)}>
                         Sourcegraph.com
                     </a>
@@ -40,7 +40,8 @@ export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps
         {!onDesktop && (
             <div className={classNames(styles.ctaParagraph)}>
                 <p className={classNames(styles.ctaWarningText)}>
-                    IMPORTANT: Please setup Access Token and CORS to use Sourcegraph Private Instance on VS Code Web.
+                    IMPORTANT: You may need to add Access Token and CORS to connect to Sourcegraph Private Instance on
+                    VS Code Web.
                 </p>
             </div>
         )}

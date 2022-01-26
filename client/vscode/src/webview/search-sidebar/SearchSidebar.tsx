@@ -101,6 +101,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         setHasAccessToken,
         activeSearchPanel,
         authenticatedUser,
+        localRecentSearches,
         validAccessToken,
     ])
     const useQueryState: UseStore<SearchQueryState> = useMemo(() => {
@@ -187,6 +188,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
     // If no open, show button + CTA to open search panel (links to sign up etc.)
     if (
         !validating &&
+        activeSearchPanel !== undefined &&
         onDesktop !== undefined &&
         hasAccessToken !== undefined &&
         authenticatedUser !== undefined &&
@@ -208,6 +210,15 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                         localRecentSearches={localRecentSearches}
                         localFileHistory={localFileHistory}
                     />
+                    {!validAccessToken && (
+                        <SidebarAuthCheck
+                            sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                            hasAccessToken={hasAccessToken}
+                            telemetryService={platformContext.telemetryService}
+                            onSubmitAccessToken={onSubmitAccessToken}
+                            validAccessToken={validAccessToken}
+                        />
+                    )}
                 </>
             ) : (
                 <>

@@ -4,6 +4,10 @@ import { Memento } from 'vscode'
 
 import { LocalRecentSeachProps, LocalSearchHistoryProps } from './src/webview/contract'
 
+// Currently storing:
+// 15 Recent Search History: sg-searches
+// 15 Recent Open Files: sg-files
+// Last selected context: sg-selected-context
 export class LocalStorageService {
     constructor(private storage: Memento) {}
 
@@ -14,6 +18,17 @@ export class LocalStorageService {
     public async setValue(key: string, value: string): Promise<boolean> {
         try {
             await this.storage.update(key, value)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    public async resetSgHistory(): Promise<boolean> {
+        try {
+            await this.storage.update('sg-search-history-test', [])
+            await this.storage.update('sg-files-history-test', [])
+            await this.storage.update('sg-last-selected-context', '')
             return true
         } catch {
             return false

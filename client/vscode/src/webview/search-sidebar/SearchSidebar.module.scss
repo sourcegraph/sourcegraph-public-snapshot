@@ -79,9 +79,16 @@
     text-transform: uppercase;
     font-weight: 600;
     font-size: var(--vscode-editor-font-size) !important;
-    color: var(--vscode-textPreformat-foreground);
     margin-top: 0;
     margin-bottom: 0.25rem;
+}
+
+.cta {
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    justify-content: center;
+    margin-bottom: 2.5rem;
 }
 
 .cta-container {
@@ -93,7 +100,7 @@
 }
 
 .cta-paragraph {
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 .cta-warning-text {
@@ -129,6 +136,10 @@
     &:focus {
         border-color: var(--vscode-inputOption-activeBorder);
     }
+}
+
+.cta-button-wrapper-with-context-below {
+    margin-bottom: 0.5rem;
 }
 
 .cta-button {

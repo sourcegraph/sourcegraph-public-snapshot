@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import React, { useEffect, useState } from 'react'
 import { UseStore } from 'zustand'
 
@@ -81,7 +80,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                         sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                     />
                 )}
-                {validAccessToken && savedSearch && (
+                {validAccessToken && savedSearch && savedSearch.length > 0 && (
                     <SaveSearches
                         savedSearches={savedSearch}
                         telemetryService={platformContext.telemetryService}
@@ -114,29 +113,6 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                     theme={theme}
                 />
-                {!validAccessToken && (
-                    <div className={styles.sidebarSection}>
-                        <h5 className="flex-grow-1 btn-outline-secondary my-2">Search Your Private Code</h5>
-                        <div className={classNames('p-1', styles.sidebarSectionCta)}>
-                            <div className={classNames('p-1', styles.sidebarSectionListItem)}>
-                                <p className={classNames('mt-1 mb-2 text')}>
-                                    Create an account to enhance search across your private repositories: search
-                                    multiple repos & commit history, monitor, save searches, and more.
-                                </p>
-                            </div>
-                            <div className={classNames('p-1 m-0', styles.sidebarSectionListItem)}>
-                                <button
-                                    type="submit"
-                                    className={classNames(
-                                        'btn btn-sm btn-primary btn-link w-100 border-0 font-weight-normal'
-                                    )}
-                                >
-                                    <span className="py-1">Create an account</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         )
     }

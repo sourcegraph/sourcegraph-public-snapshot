@@ -49,7 +49,11 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
             className={styles.thumbnailButton}
             onClick={() => sourcegraphVSCodeExtensionAPI.openLink(src)}
         >
-            <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
+            <img
+                src={`${assetsRoot}/${thumbnail.src}`}
+                alt={thumbnail.alt}
+                className={classNames(styles.thumbnailImage, 'rounded border opacity-75')}
+            />
             <div className={styles.playIconWrapper}>
                 <PlayIcon />
             </div>

@@ -73,7 +73,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         treeDataProvider: files,
         showCollapseAll: true,
     })
-
     files.setTreeView(filesTreeView)
     context.subscriptions.push(filesTreeView)
     context.subscriptions.push(
@@ -118,7 +117,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                     initializedPanelIDs,
                 })
                 currentActiveWebviewPanel = webviewPanel
-
                 webviewPanel.onDidChangeViewState(async () => {
                     if (webviewPanel.visible) {
                         await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', false)
@@ -266,8 +264,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         // Get Cors from Setting
         updateCorsUri: (uri: string) => updateCorsSetting(uri),
         // Get last selected search context from Setting
-        getLastSelectedSearchContext: () => storageManager.getValue('sg-last-selected-context'),
-        updateLastSelectedSearchContext: (spec: string) => storageManager.setValue('sg-last-selected-context', spec),
+        getLastSelectedSearchContext: () => storageManager.getValue('sg-selected-context-test'),
+        updateLastSelectedSearchContext: (spec: string) => storageManager.setValue('sg-selected-context-test', spec),
         // Get last selected search context from Setting
         getLocalRecentSearch: () => allLocalSearchHistory.searches,
         setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => storageManager.setLocalRecentSearch(searches),

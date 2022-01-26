@@ -82,12 +82,13 @@ export const HomePanels: React.FunctionComponent<HomePanelsProps> = props => (
                 <div className={styles.thumbnailWrapper}>
                     <div className={classNames(styles.title, styles.searchExamplesTitle, 'mb-2')}>Watch and learn</div>
                     <div className={styles.thumbnail}>
+                        {/* TODO: UPLOAD PREVIEW IMAGE TO SG TO USE SG AS ACCESSROOT */}
                         <ModalVideo
                             id="three-ways-to-search-title"
                             title="Three ways to search"
-                            src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
+                            src="https://youtu.be/w6pz4GPL80g"
                             thumbnail={{
-                                src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
+                                src: 'DtL9ZJs/vsce-watch-and-learn.png',
                                 alt: 'Watch and learn video thumbnail',
                             }}
                             onToggle={isOpen =>
@@ -95,7 +96,8 @@ export const HomePanels: React.FunctionComponent<HomePanelsProps> = props => (
                                     isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
                                 )
                             }
-                            assetsRoot="https://sourcegraph.com/.assets/"
+                            // assetsRoot="https://sourcegraph.com/.assets/"
+                            assetsRoot="https://i.ibb.co/"
                         />
                     </div>
                 </div>

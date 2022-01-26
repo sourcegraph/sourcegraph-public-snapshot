@@ -23,6 +23,9 @@ import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbi
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import {
+    EventLogsDataResult,
+    logUserSearchEventVariables,
+    EventSource,
     CurrentAuthStateResult,
     CurrentAuthStateVariables,
     SearchResult,
@@ -36,7 +39,7 @@ import { WebviewPageProps } from '../platform/context'
 import { HomePanels } from './HomePanels'
 import { SearchBetaIcon } from './icons'
 import styles from './index.module.scss'
-import { currentAuthStateQuery, searchQuery, treeEntriesQuery } from './queries'
+import { currentAuthStateQuery, logEventsQuery, searchQuery, treeEntriesQuery } from './queries'
 import { RepoPage } from './RepoPage'
 import { convertGQLSearchToSearchMatches, SearchResults } from './SearchResults'
 import { DEFAULT_SEARCH_CONTEXT_SPEC } from './state'
@@ -83,7 +86,6 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         async (event?: React.FormEvent): Promise<void> => {
             event?.preventDefault()
             await sourcegraphVSCodeExtensionAPI.onRepoResultPage(false)
-
             // close file tree when a new search has been performed
             await sourcegraphVSCodeExtensionAPI.displayFileTree(false)
             setOpenRepoFileTree(false)
@@ -203,19 +205,23 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             sourcegraphVSCodeExtensionAPI
                 .getLastSelectedSearchContext()
                 .then(spec => {
-                    setLastSelectedSearchContext(spec)
-                    getAvailableSearchContextSpecOrDefault({
-                        spec,
-                        defaultSpec: DEFAULT_SEARCH_CONTEXT_SPEC,
-                        platformContext,
-                    })
-                        .toPromise()
-                        .then(availableSearchContextSpecOrDefault => {
-                            searchActions.setSelectedSearchContextSpec(availableSearchContextSpecOrDefault)
+                    if (spec) {
+                        setLastSelectedSearchContext(spec)
+                        getAvailableSearchContextSpecOrDefault({
+                            spec,
+                            defaultSpec: DEFAULT_SEARCH_CONTEXT_SPEC,
+                            platformContext,
                         })
-                        .catch(() => {
-                            // TODO error handling
-                        })
+                            .toPromise()
+                            .then(availableSearchContextSpecOrDefault => {
+                                searchActions.setSelectedSearchContextSpec(availableSearchContextSpecOrDefault)
+                            })
+                            .catch(() => {
+                                // TODO error handling
+                            })
+                    } else {
+                        setLastSelectedSearchContext(DEFAULT_SEARCH_CONTEXT_SPEC)
+                    }
                 })
                 // TODO error handling
                 .catch(error => console.log(error))
@@ -241,7 +247,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
 
         if (queryToRun.query) {
             setLoading(true)
-
+            // Set Full Query for Results Page
             const currentFullQuery = getFullQuery(
                 queryToRun.query,
                 selectedSearchContextSpec || '',
@@ -249,11 +255,39 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 patternType
             )
             setFullQuery(currentFullQuery)
-
             let queryString = `${queryToRun.query}${caseSensitive ? ' case:yes' : ''}`
-
             if (selectedSearchContextSpec) {
                 queryString = appendContextFilter(queryString, selectedSearchContextSpec)
+            }
+            // Log Search to User Event Logs to sync Search History
+            if (validAccessToken) {
+                ;(async () => {
+                    const userEventVariables = {
+                        name: 'SearchResultsQueried',
+                        userCookieID: '',
+                        source: EventSource.CODEHOSTINTEGRATION,
+                        url: `https://${instanceHostname}/search?q=${encodeURIComponent(
+                            queryString
+                        )}&patternType=${patternType}`,
+                        argument: `{\"code_search\": {\"query_data\": {\"empty\": false, \"query\": {}, \"combined\": ${JSON.stringify(
+                            String(
+                                selectedSearchContextSpec
+                                    ? appendContextFilter(queryString, selectedSearchContextSpec)
+                                    : queryString
+                            )
+                        )}}}}`,
+                    }
+                    const userEventLog = await platformContext
+                        .requestGraphQL<EventLogsDataResult, logUserSearchEventVariables>({
+                            request: logEventsQuery,
+                            variables: userEventVariables,
+                            mightContainPrivateInfo: true,
+                        })
+                        .toPromise()
+                    if (userEventLog.data) {
+                        console.log('Search Synced')
+                    }
+                })().catch(error => console.error(error))
             }
             // only save 20 searches locally
             if (fullQuery && localRecentSearches !== undefined && localRecentSearches.length < 21) {

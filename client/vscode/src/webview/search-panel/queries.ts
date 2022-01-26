@@ -257,3 +257,11 @@ export const savedSearchQuery = gql`
         slackWebhookURL
     }
 `
+
+export const logEventsQuery = gql`
+    mutation logEvent($name: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String) {
+        logEvent(event: $name, userCookieID: $userCookieID, url: $url, source: $source, argument: $argument) {
+            alwaysNil
+        }
+    }
+`

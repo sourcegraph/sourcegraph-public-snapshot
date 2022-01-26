@@ -59,7 +59,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
     )
 
     return (
-        <div className={classNames('d-flex flex-column align-items-left justify-content-center')}>
+        <div className={classNames(styles.cta)}>
             <p className={classNames(styles.ctaTitle)}>Search Your Private Code</p>
             {validating && <LoadingSpinner />}
             {!validating && !hasAccessToken && (
@@ -70,13 +70,15 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                 Create an account to enhance search across your private repositories: search multiple
                                 repos & commit history, monitor, save searches, and more.
                             </p>
-                            <button
-                                type="submit"
-                                onClick={onSignUpClick}
-                                className={classNames('btn btn-sm font-weight-normal my-1', styles.ctaButton)}
-                            >
-                                Create an account
-                            </button>
+                            <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                                <button
+                                    type="submit"
+                                    onClick={onSignUpClick}
+                                    className={classNames('btn btn-sm font-weight-normal my-1', styles.ctaButton)}
+                                >
+                                    Create an account
+                                </button>
+                            </p>
                             <p className={classNames(styles.ctaParagraph)}>
                                 <a
                                     href="sourcegraph://signup"
@@ -105,7 +107,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                     </a>{' '}
                                     for a video guide on how to create an access token.
                                 </p>
-                                <p className={classNames(styles.ctaParagraph)}>
+                                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                                     <input
                                         className={classNames('input form-control', styles.ctaInput)}
                                         // className="input form-control my-1"
@@ -116,13 +118,14 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                         placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
                                     />
                                 </p>
-                                <button
-                                    type="submit"
-                                    className={classNames('btn btn-sm font-weight-normal my-1', styles.ctaButton)}
-                                >
-                                    Enter Access Token
-                                </button>
-
+                                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                                    <button
+                                        type="submit"
+                                        className={classNames('btn btn-sm font-weight-normal my-1', styles.ctaButton)}
+                                    >
+                                        Enter Access Token
+                                    </button>
+                                </p>
                                 <p className={classNames(styles.ctaParagraph)}>
                                     <a
                                         href={signUpUrl}
@@ -150,7 +153,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                     </a>{' '}
                                     for a video guide on how to create an access token.
                                 </p>
-                                <p className={classNames(styles.ctaParagraph)}>
+                                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                                     <input
                                         className={classNames('input form-control', styles.ctaInput)}
                                         // className="input form-control my-1"
@@ -161,12 +164,14 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                         placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
                                     />
                                 </p>
-                                <button
-                                    type="submit"
-                                    className={classNames('btn btn-sm font-weight-normal my-1', styles.ctaButton)}
-                                >
-                                    Update Access Token
-                                </button>
+                                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                                    <button
+                                        type="submit"
+                                        className={classNames('btn btn-sm font-weight-normal my-1', styles.ctaButton)}
+                                    >
+                                        Update Access Token
+                                    </button>
+                                </p>
                                 <a
                                     href={signInUrl}
                                     className={classNames('btn btn-lg btn-block', styles.ctaErrorContainer)}
