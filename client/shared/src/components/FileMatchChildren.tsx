@@ -66,7 +66,7 @@ function isTextSelectionEvent(event: MouseEvent<HTMLElement>): boolean {
         // CTRL+click would select the table cell. Since users don't know that we
         // use tables, the most likely wanted to open the search results in a new
         // tab instead though.
-        if (event.ctrlKey && selection.anchorNode?.nodeName === 'TR') {
+        if ((event.ctrlKey || event.metaKey) && selection.anchorNode?.nodeName === 'TR') {
             // Ugly side effect: We don't want the table cell to be highlighted.
             // The focus style that Firefox uses doesn't seem to be affected by
             // CSS so instead we clear the selection.
