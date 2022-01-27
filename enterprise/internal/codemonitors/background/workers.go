@@ -169,11 +169,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
-	var numResults int
-	if results != nil {
-		numResults = len(results.Data.Search.Results.Results)
-	}
-	if numResults > 0 {
+	if len(results.Results) > 0 {
 		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
 			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
@@ -185,8 +181,9 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+
 	// Log the actual query we ran and whether we got any new results.
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, numResults)
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, results.Results)
 	if err != nil {
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
@@ -371,8 +368,8 @@ func newQueryWithAfterFilter(q *edb.QueryTrigger) string {
 	return strings.Join([]string{q.QueryString, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
 }
 
-func latestResultTime(previousLastResult *time.Time, v *gqlSearchResponse, searchErr error) time.Time {
-	if searchErr != nil || len(v.Data.Search.Results.Results) == 0 {
+func latestResultTime(previousLastResult *time.Time, v *searchResults, searchErr error) time.Time {
+	if searchErr != nil || len(v.Results) == 0 {
 		// Error performing the search, or there were no results. Assume the
 		// previous info's result time.
 		if previousLastResult != nil {
@@ -382,7 +379,7 @@ func latestResultTime(previousLastResult *time.Time, v *gqlSearchResponse, searc
 	}
 
 	// Results are ordered chronologically, so first result is the latest.
-	t, err := extractTime(v.Data.Search.Results.Results[0])
+	t, err := extractTime(v.Results[0])
 	if err != nil {
 		// Error already logged by extractTime.
 		return time.Now()
