@@ -41,14 +41,14 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
         args =>
             userID
                 ? queryUserBatchChangesCodeHosts({
-                      user: userID,
-                      first: args.first ?? null,
-                      after: args.after ?? null,
-                  })
+                    user: userID,
+                    first: args.first ?? null,
+                    after: args.after ?? null,
+                })
                 : queryGlobalBatchChangesCodeHosts({
-                      first: args.first ?? null,
-                      after: args.after ?? null,
-                  }),
+                    first: args.first ?? null,
+                    after: args.after ?? null,
+                }),
         [queryUserBatchChangesCodeHosts, queryGlobalBatchChangesCodeHosts, userID]
     )
     return (
@@ -75,7 +75,7 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
             <p className="mb-0">
                 Code host not present? Site admins can add a code host in{' '}
                 <Link
-                    to="https://docs.sourcegraph.com/admin/external_service"
+                    to="/help/admin/external_service"
                     target="_blank"
                     rel="noopener noreferrer"
                 >

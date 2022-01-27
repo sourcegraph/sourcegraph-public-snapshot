@@ -62,7 +62,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                         <div>
                             <h4>
                                 <Link
-                                    to="https://docs.sourcegraph.com/batch_changes/tutorials/search_and_replace_specific_terms"
+                                    to="/help/batch_changes/tutorials/search_and_replace_specific_terms"
                                     rel="noopener"
                                 >
                                     Finding and replacing exclusionary terms
@@ -83,7 +83,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                         <div>
                             <h4>
                                 <Link
-                                    to="https://docs.sourcegraph.com/batch_changes/tutorials/updating_go_import_statements"
+                                    to="/help/batch_changes/tutorials/updating_go_import_statements"
                                     rel="noopener"
                                 >
                                     Refactoring with language aware search
@@ -103,7 +103,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
             </div>
             <div className="col-12 mb-4 text-right">
                 <p>
-                    <Link to="https://docs.sourcegraph.com/batch_changes/tutorials" rel="noopener">
+                    <Link to="/help/batch_changes/tutorials" rel="noopener">
                         More tutorials
                     </Link>
                 </p>
@@ -116,7 +116,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                     <strong>Quickstart</strong>
                 </p>
                 <p>Create your first Sourcegraph batch change in 10 minutes or less.</p>
-                <Link to="https://docs.sourcegraph.com/batch_changes/quickstart" rel="noopener">
+                <Link to="/help/batch_changes/quickstart" rel="noopener">
                     Batch Changes quickstart
                 </Link>
             </div>
@@ -127,24 +127,24 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                 <p>
                     Learn about the batch spec{' '}
                     <Link
-                        to="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
+                        to="/help/batch_changes/references/batch_spec_yaml_reference"
                         rel="noopener"
                     >
                         YAML reference
                     </Link>
                     , its powerful{' '}
-                    <Link to="https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating">
+                    <Link to="/help/batch_changes/references/batch_spec_templating">
                         templating language
                     </Link>
                     ,{' '}
                     <Link
-                        to="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes"
+                        to="/help/batch_changes/explanations/permissions_in_batch_changes"
                         rel="noopener"
                     >
                         permissions
                     </Link>{' '}
                     and more in the{' '}
-                    <Link to="https://docs.sourcegraph.com/batch_changes" rel="noopener">
+                    <Link to="/help/batch_changes" rel="noopener">
                         Batch Changes documentation
                     </Link>
                     .

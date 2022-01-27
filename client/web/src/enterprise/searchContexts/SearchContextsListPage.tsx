@@ -15,10 +15,10 @@ import { SearchContextsListTab } from './SearchContextsListTab'
 
 export interface SearchContextsListPageProps
     extends Pick<
-            SearchContextProps,
-            'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
-        >,
-        PlatformContextProps<'requestGraphQL'> {
+    SearchContextProps,
+    'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
+    >,
+    PlatformContextProps<'requestGraphQL'> {
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
@@ -86,7 +86,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         <span className="text-muted">
                             Search code you care about with search contexts.{' '}
                             <Link
-                                to="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
+                                to="/help/code_search/explanations/features#search-contexts"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

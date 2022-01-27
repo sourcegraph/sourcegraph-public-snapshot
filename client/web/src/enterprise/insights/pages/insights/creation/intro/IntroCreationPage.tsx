@@ -20,7 +20,7 @@ import {
 } from './cards/InsightCards'
 import styles from './IntroCreationPage.module.scss'
 
-interface IntroCreationPageProps extends TelemetryProps {}
+interface IntroCreationPageProps extends TelemetryProps { }
 
 /** Displays intro page for insights creation UI. */
 export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> = props => {
@@ -64,7 +64,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                 description={
                     <>
                         Insights analyze your code based on any search query.{' '}
-                        <Link to="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                        <Link to="/help/code_insights" target="_blank" rel="noopener">
                             Learn more
                         </Link>
                     </>
@@ -90,7 +90,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                 <div className={styles.info}>
                     Not sure which insight type to choose? Learn more about the{' '}
                     <Link
-                        to="https://docs.sourcegraph.com/code_insights/references/common_use_cases"
+                        to="/help/code_insights/references/common_use_cases"
                         target="_blank"
                         rel="noopener"
                     >

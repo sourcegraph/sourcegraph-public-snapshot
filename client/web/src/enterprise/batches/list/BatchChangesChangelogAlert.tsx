@@ -17,7 +17,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 <ul className="mb-0 pl-3">
                     <li>
                         <Link
-                            to="https://docs.sourcegraph.com/admin/config/batch_changes#forks"
+                            to="/help/admin/config/batch_changes#forks"
                             rel="noopener"
                             target="_blank"
                         >

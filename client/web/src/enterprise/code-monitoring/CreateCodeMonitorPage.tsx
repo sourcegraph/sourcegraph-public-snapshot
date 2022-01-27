@@ -72,7 +72,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                            to="/help/code_monitoring/how-tos/starting_points"
                             target="_blank"
                             rel="noopener"
                         >

@@ -25,10 +25,10 @@ import { SearchContextForm } from './SearchContextForm'
 
 export interface CreateSearchContextPageProps
     extends RouteComponentProps,
-        ThemeProps,
-        TelemetryProps,
-        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
-        PlatformContextProps<'requestGraphQL'> {
+    ThemeProps,
+    TelemetryProps,
+    Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
+    PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
@@ -73,7 +73,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                                 A search context represents a group of repositories at specified branches or revisions
                                 that will be targeted by search queries.{' '}
                                 <Link
-                                    to="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
+                                    to="/help/code_search/explanations/features#search-contexts"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >

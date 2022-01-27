@@ -125,7 +125,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                                 Craft searches that will monitor your code and trigger actions such as email
                                 notifications.
                             </p>
-                            <Link to="https://docs.sourcegraph.com/code_monitoring" className="link">
+                            <Link to="/help/code_monitoring" className="link">
                                 Code monitoring documentation
                             </Link>
                         </div>
@@ -138,7 +138,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                                 consistency concerns.
                             </p>
                             <Link
-                                to="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                                to="/help/code_monitoring/how-tos/starting_points"
                                 className="link"
                             >
                                 Explore starting points

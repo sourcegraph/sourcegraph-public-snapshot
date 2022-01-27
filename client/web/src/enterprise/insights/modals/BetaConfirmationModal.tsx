@@ -72,7 +72,7 @@ export const BetaConfirmationModalContent: React.FunctionComponent<BetaConfirmat
                 <p>
                     We're still polishing Code Insights and you might find bugs while we’re in beta. Please{' '}
                     <Link
-                        to="https://docs.sourcegraph.com/code_insights#code-insights-beta"
+                        to="/help/code_insights#code-insights-beta"
                         target="_blank"
                         rel="noopener"
                     >
