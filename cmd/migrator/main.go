@@ -12,6 +12,7 @@ import (
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -39,12 +40,7 @@ func main() {
 }
 
 func mainErr(ctx context.Context, args []string) error {
-	run, err := createRunFunc()
-	if err != nil {
-		return err
-	}
-
-	command := cliutil.Flags(appName, run, out)
+	command := cliutil.Flags(appName, newRunFunc(), out)
 
 	if err := command.Parse(args); err != nil {
 		return err
@@ -53,7 +49,7 @@ func mainErr(ctx context.Context, args []string) error {
 	return command.Run(ctx)
 }
 
-func createRunFunc() (cliutil.RunFunc, error) {
+func newRunFunc() cliutil.RunFunc {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -61,14 +57,16 @@ func createRunFunc() (cliutil.RunFunc, error) {
 	}
 	operations := store.NewOperations(observationContext)
 
-	dsns, err := postgresdsn.DSNsBySchema()
-	if err != nil {
-		return nil, err
-	}
+	return func(ctx context.Context, options runner.Options) error {
+		dsns, err := postgresdsn.DSNsBySchema(options.SchemaNames)
+		if err != nil {
+			return err
+		}
 
-	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return store.NewWithDB(db, migrationsTable, operations)
-	}
+		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+			return store.NewWithDB(db, migrationsTable, operations)
+		}
 
-	return connections.RunnerFromDSNs(dsns, appName, storeFactory).Run, nil
+		return connections.RunnerFromDSNs(dsns, appName, storeFactory).Run(ctx, options)
+	}
 }

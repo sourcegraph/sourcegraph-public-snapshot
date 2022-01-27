@@ -19,6 +19,31 @@ func TestTypeScriptPatterns(t *testing.T) {
 	})
 }
 
+func TestInferTypeScriptIndexJobsMissingTsConfig(t *testing.T) {
+	testCases := []struct {
+		paths   []string
+		command string
+	}{
+		{[]string{"package.json"}, "npm install --ignore-scripts"},
+		{[]string{"yarn.lock", "package.json"}, "yarn --ignore-engines --ignore-scripts"},
+	}
+
+	for _, testCase := range testCases {
+		expectedIndexJobs := []config.IndexJob{
+			{
+				Steps:       []config.DockerStep{{Image: "sourcegraph/lsif-node:autoindex", Commands: []string{testCase.command}}},
+				Root:        "",
+				Indexer:     lsifTscImage,
+				IndexerArgs: []string{"lsif-tsc", "-p", ".", "--inferTSConfig"},
+				Outfile:     "",
+			},
+		}
+		if diff := cmp.Diff(expectedIndexJobs, InferTypeScriptIndexJobs(NewMockGitClient(), testCase.paths)); diff != "" {
+			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
+		}
+	}
+}
+
 func TestInferTypeScriptIndexJobsTsConfigRoot(t *testing.T) {
 	paths := []string{
 		"tsconfig.json",

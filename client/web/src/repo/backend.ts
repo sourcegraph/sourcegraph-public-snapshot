@@ -190,7 +190,6 @@ export const fetchHighlightedFileLineRanges = memoizeObservable(
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 isDirectory
-                                richHTML
                                 highlight(disableTimeout: $disableTimeout) {
                                     aborted
                                     lineRanges(ranges: $ranges)

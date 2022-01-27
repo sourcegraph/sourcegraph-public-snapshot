@@ -31,13 +31,6 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as'> &
          */
         pressed?: boolean
 
-        /**
-         * The component's CSS class name
-         *
-         * @default "nav-link"
-         */
-        className?: string
-
         disabledClassName?: string
 
         ['data-content']?: string
@@ -59,7 +52,7 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as'> &
 export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = React.forwardRef(
     (
         {
-            className = 'nav-link',
+            className,
             to,
             target,
             rel,

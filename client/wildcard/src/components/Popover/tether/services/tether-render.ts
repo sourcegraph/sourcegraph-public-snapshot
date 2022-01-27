@@ -46,23 +46,22 @@ export function render(tether: Tether, eventTarget: HTMLElement | null, preserve
     setTransform(tether.marker ?? null, state.markerAngle, state.markerOffset)
 
     if (!positions.points.has(eventTarget as Element)) {
-        const bounds = state.elementBounds ?? state.constrainedElement
-        const elementMaxWidth = Math.min(bounds.width, state.constrainedElement.width)
+        if (state.elementBounds) {
+            const { width, height } = state.elementBounds
 
-        // Bound width of the floating element
-        setStyle(tether.element, 'max-width', `${elementMaxWidth}px`)
+            // Bound width of the floating element
+            setStyle(tether.element, 'max-width', `${width}px`)
 
-        const nextElement = tether.element.getBoundingClientRect()
+            const nextElement = tether.element.getBoundingClientRect()
 
-        // If height has been changed by bounding max-width it might change the whole
-        // position calculation. In this case we need to run render algorithm again
-        // to take into account a new width of the floating element.
-        if (layout.element.height !== nextElement.height) {
-            render(tether, eventTarget, true)
-        } else {
-            const elementMaxHeight = Math.min(bounds.height, state.constrainedElement.height)
-
-            setStyle(tether.element, 'max-height', `${elementMaxHeight}px`)
+            // If height has been changed by bounding max-width it might change the whole
+            // position calculation. In this case we need to run render algorithm again
+            // to take into account a new width of the floating element.
+            if (layout.element.height !== nextElement.height) {
+                render(tether, eventTarget, true)
+            } else {
+                setStyle(tether.element, 'max-height', `${height}px`)
+            }
         }
 
         // Restore containers scroll positions

@@ -74,3 +74,17 @@ export enum Position {
     bottom = 'bottom',
     bottomEnd = 'bottomEnd',
 }
+
+export enum Strategy {
+    /**
+     * This strategy renders the element outside of DOM hierarchy in the designated
+     * container in the body element and calculate position for fixed element.
+     */
+    Fixed = 'fixed',
+
+    /**
+     * Absolute strategy renders element right next to the target element and calculate
+     * position based on the nearest container with position relative.
+     */
+    Absolute = 'absolute',
+}

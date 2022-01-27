@@ -78,9 +78,6 @@ func runJobs(ctx context.Context, jobs []*searchRepos) error {
 
 // streamStructuralSearch runs structural search jobs and streams the results.
 func streamStructuralSearch(ctx context.Context, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) (err error) {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
-	defer cleanup()
-
 	jobs := []*searchRepos{}
 	for _, repoSet := range repos {
 		searcherArgs := &search.SearcherParameters{
