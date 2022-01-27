@@ -284,7 +284,7 @@ export const SourcegraphURLForm: React.FunctionComponent<SourcegraphURLFormProps
     const handleInputChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             if (!event.target.value.startsWith('https://')) {
-                event.target.value = 'https://'
+                event.target.value = `https://${event.target.value}`
             }
             nextUrlFieldChange(event)
         },
