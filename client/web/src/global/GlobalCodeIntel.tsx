@@ -1,4 +1,3 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
@@ -18,19 +17,22 @@ import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
-import { Link, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
+import { Tab, TabList, TabPanel, TabPanels, Tabs, Link, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables, Maybe } from '../graphql-operations'
+import { BlobProps } from '../repo/blob/Blob'
 
 import styles from './GlobalCodeIntel.module.scss'
 import { FETCH_REFERENCES_QUERY } from './GlobalCodeIntelQueries'
 
 const SHOW_COOL_CODEINTEL = localStorage.getItem('coolCodeIntel') !== null
 
-export const GlobalCodeIntel: React.FunctionComponent<{
-    hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-    showPanel: boolean
-}> = props => {
+export const GlobalCodeIntel: React.FunctionComponent<
+    {
+        hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+        showPanel: boolean
+    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
+> = props => {
     if (!SHOW_COOL_CODEINTEL) {
         return null
     }
@@ -42,7 +44,7 @@ export const GlobalCodeIntel: React.FunctionComponent<{
     return null
 }
 
-export interface CoolCodeIntelPopoverTabProps {
+export interface CoolCodeIntelPopoverTabProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'> {
     hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 }
 
@@ -80,10 +82,10 @@ export const TokenPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> =
 )
 
 export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
-    <div>{props.hoveredToken && <ReferencesList hoveredToken={props.hoveredToken} />}</div>
+    <div>{props.hoveredToken && <ReferencesList hoveredToken={props.hoveredToken} {...props} />}</div>
 )
 
-interface Reference {
+interface Location {
     __typename?: 'Location' | undefined
     resource: {
         __typename?: 'GitBlob' | undefined
@@ -113,20 +115,22 @@ interface Reference {
     }>
 }
 
-interface RepoReferenceGroup {
+interface RepoLocationGroup {
     repoName: string
-    referenceGroups: ReferenceGroup[]
+    referenceGroups: LocationGroup[]
 }
 
-interface ReferenceGroup {
+interface LocationGroup {
     repoName: string
     path: string
-    references: Reference[]
+    references: Location[]
 }
 
-export const ReferencesList: React.FunctionComponent<{
-    hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-}> = props => {
+export const ReferencesList: React.FunctionComponent<
+    {
+        hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
+> = props => {
     const [activeReference, setActiveReference] = useState('')
 
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
@@ -163,67 +167,101 @@ export const ReferencesList: React.FunctionComponent<{
     }
 
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.repository?.commit?.blob?.lsif?.references) {
+    if (!data || !data.repository?.commit?.blob?.lsif) {
         return <>Nothing found</>
     }
 
-    // TODO: can't we get the "displaying X out of Y references" data?
     const references = data.repository.commit?.blob?.lsif?.references.nodes
+    const definitions = data.repository.commit?.blob?.lsif?.definitions.nodes
+    const hover = data.repository.commit?.blob?.lsif?.hover
 
-    const buildFileURL = (reference: Reference): string => {
-        const path = `/${reference.resource.repository.name}/-/blob/${reference.resource.path}`
+    return (
+        <div>
+            <h3 className="card-header">Doc</h3>
+            {hover && <div className="card-body" dangerouslySetInnerHTML={{ __html: hover.markdown.html }} />}
+            <h3 className="card-header">Definitions</h3>
+            {definitions.length > 0 ? (
+                <LocationsList
+                    locations={definitions}
+                    activeReference={activeReference}
+                    setActiveReference={setActiveReference}
+                />
+            ) : (
+                <span>Nothing found</span>
+            )}
+            <h3 className="card-header">References</h3>
+            {references.length > 0 ? (
+                <LocationsList
+                    locations={references}
+                    activeReference={activeReference}
+                    setActiveReference={setActiveReference}
+                />
+            ) : (
+                <span>Nothing found</span>
+            )}
+        </div>
+    )
+}
 
-        if (reference.range !== null) {
-            return appendSubtreeQueryParameter(
-                appendLineRangeQueryParameter(
-                    path,
-                    toPositionOrRangeQueryParameter({
-                        range: {
-                            // ATTENTION: Another off-by-one chaos in the making here
-                            start: {
-                                line: reference.range.start.line + 1,
-                                character: reference.range.start.character + 1,
-                            },
-                            end: { line: reference.range.end.line + 1, character: reference.range.end.character + 1 },
+const buildFileURL = (location: Location): string => {
+    const path = `/${location.resource.repository.name}/-/blob/${location.resource.path}`
+
+    if (location.range !== null) {
+        return appendSubtreeQueryParameter(
+            appendLineRangeQueryParameter(
+                path,
+                toPositionOrRangeQueryParameter({
+                    range: {
+                        // ATTENTION: Another off-by-one chaos in the making here
+                        start: {
+                            line: location.range.start.line + 1,
+                            character: location.range.start.character + 1,
                         },
-                    })
-                )
+                        end: { line: location.range.end.line + 1, character: location.range.end.character + 1 },
+                    },
+                })
             )
+        )
+    }
+    return path
+}
+
+const LocationsList: React.FunctionComponent<{
+    locations: Location[]
+    activeReference: string
+    setActiveReference: (reference: string) => void
+}> = ({ locations, activeReference, setActiveReference }) => {
+    const byFile: Record<string, Location[]> = {}
+    for (const location of locations) {
+        if (byFile[location.resource.path] === undefined) {
+            byFile[location.resource.path] = []
         }
-        return path
+        byFile[location.resource.path].push(location)
     }
 
-    const byFile: Record<string, Reference[]> = {}
-    for (const reference of references) {
-        if (byFile[reference.resource.path] === undefined) {
-            byFile[reference.resource.path] = []
-        }
-        byFile[reference.resource.path].push(reference)
-    }
-
-    const referenceGroups: ReferenceGroup[] = []
+    const locationGroups: LocationGroup[] = []
     Object.keys(byFile).map(path => {
         const references = byFile[path]
         const repoName = references[0].resource.repository.name
-        referenceGroups.push({ path, references, repoName })
+        locationGroups.push({ path, references, repoName })
     })
 
-    const byRepo: Record<string, ReferenceGroup[]> = {}
-    for (const group of referenceGroups) {
+    const byRepo: Record<string, LocationGroup[]> = {}
+    for (const group of locationGroups) {
         if (byRepo[group.repoName] === undefined) {
             byRepo[group.repoName] = []
         }
         byRepo[group.repoName].push(group)
     }
-    const repoReferenceGroups: RepoReferenceGroup[] = []
+    const repoLocationGroups: RepoLocationGroup[] = []
     Object.keys(byRepo).map(repoName => {
         const referenceGroups = byRepo[repoName]
-        repoReferenceGroups.push({ repoName, referenceGroups })
+        repoLocationGroups.push({ repoName, referenceGroups })
     })
 
-    const getLineContent = (reference: Reference): string => {
-        const lines = reference.resource.content.split(/\r?\n/)
-        const range = reference.range
+    const getLineContent = (location: Location): string => {
+        const lines = location.resource.content.split(/\r?\n/)
+        const range = location.range
         if (range !== null) {
             return lines[range.start?.line]
         }
@@ -232,7 +270,7 @@ export const ReferencesList: React.FunctionComponent<{
 
     return (
         <>
-            {repoReferenceGroups.map(repoReferenceGroup => (
+            {repoLocationGroups.map(repoReferenceGroup => (
                 <RepoReferenceGroup
                     key={repoReferenceGroup.repoName}
                     repoReferenceGroup={repoReferenceGroup}
@@ -247,11 +285,11 @@ export const ReferencesList: React.FunctionComponent<{
 }
 
 const RepoReferenceGroup: React.FunctionComponent<{
-    repoReferenceGroup: RepoReferenceGroup
+    repoReferenceGroup: RepoLocationGroup
     activeReference: string
     setActiveReference: (refeference: string) => void
-    getLineContent: (reference: Reference) => string
-    buildFileURL: (reference: Reference) => string
+    getLineContent: (reference: Location) => string
+    buildFileURL: (reference: Location) => string
 }> = ({ repoReferenceGroup, setActiveReference, getLineContent, buildFileURL, activeReference }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
@@ -262,7 +300,7 @@ const RepoReferenceGroup: React.FunctionComponent<{
                 aria-expanded={isOpen}
                 type="button"
                 onClick={handleOpen}
-                className="bg-transparent border-0 d-flex justify-content-start w-100"
+                className="bg-transparent border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
             >
                 {isOpen ? (
                     <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
@@ -275,7 +313,7 @@ const RepoReferenceGroup: React.FunctionComponent<{
                 </span>
             </button>
 
-            <Collapse id={repoReferenceGroup.repoName} isOpen={isOpen} className="border-top">
+            <Collapse id={repoReferenceGroup.repoName} isOpen={isOpen}>
                 {repoReferenceGroup.referenceGroups.map(group => (
                     <ReferenceGroup
                         key={group.path + group.repoName}
@@ -292,11 +330,11 @@ const RepoReferenceGroup: React.FunctionComponent<{
 }
 
 const ReferenceGroup: React.FunctionComponent<{
-    group: ReferenceGroup
+    group: LocationGroup
     activeReference: string
     setActiveReference: (refeference: string) => void
-    getLineContent: (reference: Reference) => string
-    buildFileURL: (reference: Reference) => string
+    getLineContent: (reference: Location) => string
+    buildFileURL: (reference: Location) => string
 }> = ({ group, setActiveReference, getLineContent, buildFileURL, activeReference }) => {
     const [fileBase, fileName] = splitPath(group.path)
 
@@ -309,7 +347,7 @@ const ReferenceGroup: React.FunctionComponent<{
                 aria-expanded={isOpen}
                 type="button"
                 onClick={handleOpen}
-                className="bg-transparent border-0 d-flex justify-content-start w-100"
+                className="bg-transparent border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
             >
                 {isOpen ? (
                     <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
@@ -319,11 +357,11 @@ const ReferenceGroup: React.FunctionComponent<{
 
                 <span>
                     {fileBase ? `${fileBase}/` : null}
-                    <strong>{fileName}</strong> ({group.references.length} references)
+                    {fileName} ({group.references.length} references)
                 </span>
             </button>
 
-            <Collapse id={group.repoName + group.path} isOpen={isOpen} className="border-top">
+            <Collapse id={group.repoName + group.path} isOpen={isOpen}>
                 <ul className="list-unstyled pl-3 py-1 mb-0">
                     {group.references.map(reference => {
                         const fileURL = buildFileURL(reference)
@@ -332,11 +370,15 @@ const ReferenceGroup: React.FunctionComponent<{
                         return (
                             <li key={fileURL} className={classNames('border-0 rounded-0', className)}>
                                 <div>
-                                    <Link onClick={() => setActiveReference(fileURL)} to={fileURL}>
+                                    <Link
+                                        onClick={() => setActiveReference(fileURL)}
+                                        to={fileURL}
+                                        className={styles.referenceLink}
+                                    >
                                         {reference.range?.start?.line}
                                         {': '}
+                                        <code>{getLineContent(reference)}</code>
                                     </Link>
-                                    <code>{getLineContent(reference)}</code>
                                 </div>
                             </li>
                         )
@@ -347,65 +389,12 @@ const ReferenceGroup: React.FunctionComponent<{
     )
 }
 
-export const Definition: React.FunctionComponent<{
-    hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-}> = props => {
-    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
-        FETCH_REFERENCES_QUERY,
-        {
-            variables: {
-                repository: props.hoveredToken.repoName,
-                commit: props.hoveredToken.commitID,
-                path: props.hoveredToken.filePath,
-                // ATTENTION: Off by one ahead!!!!
-                line: props.hoveredToken.line - 1,
-                character: props.hoveredToken.character - 1,
-                after: null,
-            },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            nextFetchPolicy: 'network-only',
-        }
-    )
-
-    // If we're loading and haven't received any data yet
-    if (loading && !data) {
-        return (
-            <>
-                <LoadingSpinner className="mx-auto my-4" />
-            </>
-        )
-    }
-
-    // If we received an error before we had received any data
-    if (error && !data) {
-        throw new Error(error.message)
-    }
-
-    // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.repository?.commit?.blob?.lsif?.references) {
-        return <>Nothing found</>
-    }
-
-    return (
-        <>
-            <strong>Definition!!!!</strong>
-        </>
-    )
-}
-
-export const DefinitionPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
-    <div>{props.hoveredToken && <Definition hoveredToken={props.hoveredToken} />}</div>
-)
-
 const TABS: CoolCodeIntelToolsTab[] = [
     { id: 'token', label: 'Token', component: TokenPanel },
-    { id: 'definition', label: 'Definition', component: DefinitionPanel },
     { id: 'references', label: 'References', component: ReferencesPanel },
 ]
 
-interface CoolCodeIntelPanelProps {
+interface CoolCodeIntelPanelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'> {
     hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 }
 
@@ -414,7 +403,7 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
     return (
-        <Tabs className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
+        <Tabs size="medium" className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
             <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.header)}>
                 <TabList>
                     <div className="d-flex w-100">
@@ -430,8 +419,8 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
             </div>
             <TabPanels>
                 {TABS.map(tab => (
-                    <TabPanel key={tab.id} className={styles.tabsContent} data-testid="panel-tabs-content">
-                        <tab.component hoveredToken={props.hoveredToken} />
+                    <TabPanel key={tab.id} data-testid="panel-tabs-content">
+                        <tab.component {...props} />
                     </TabPanel>
                 ))}
             </TabPanels>
