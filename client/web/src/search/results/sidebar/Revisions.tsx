@@ -140,14 +140,14 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
 
 export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
     ({ repoName, onFilterClick, query, _initialTab }) => {
-        const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
+        const [persistedTabIndex, setPersistedTabIndex] = useTemporarySetting('search.sidebar.revisions.tab')
         const onRevisionFilterClick = (value: string): void =>
             onFilterClick([
                 { type: 'updateOrAppendFilter', field: FilterType.rev, value },
                 { type: 'appendFilter', field: FilterType.repo, value: `^${repoName}$`, unique: true },
             ])
         return (
-            <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
+            <Tabs defaultIndex={_initialTab ?? persistedTabIndex ?? 0} onChange={setPersistedTabIndex}>
                 <TabList>
                     <Tab index={TabIndex.BRANCHES}>Branches</Tab>
                     <Tab index={TabIndex.TAGS}>Tags</Tab>

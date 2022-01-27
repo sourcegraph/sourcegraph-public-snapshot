@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
@@ -268,9 +268,7 @@ const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
  */
 
 export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = props => {
-    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
-
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+    const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
         eventLogger.logViewEvent('SiteAdminSurveyResponses')
@@ -290,7 +288,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<Props> = prop
 
             <h3>Responses</h3>
 
-            <Tabs defaultIndex={tabIndex} onChange={handleTabsChange}>
+            <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                 <TabList>
                     <Tab>Chronological feed</Tab>
                     <Tab>Sort by user</Tab>

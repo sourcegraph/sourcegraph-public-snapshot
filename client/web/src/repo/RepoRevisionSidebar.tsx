@@ -36,7 +36,7 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
 export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
-    const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
+    const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
@@ -45,7 +45,6 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
 
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
     const handleSidebarToggle = useCallback(
         (value: boolean) => {
             props.telemetryService.log('FileTreeViewClicked', {
@@ -88,8 +87,9 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     )}
                     <Tabs
                         className="w-100 h-100 test-repo-revision-sidebar pr-3"
-                        defaultIndex={tabIndex}
-                        onChange={handleTabsChange}
+                        defaultIndex={persistedTabIndex}
+                        onChange={setPersistedTabIndex}
+                        lazy={true}
                     >
                         <div className="tablist-wrapper d-flex flex-1">
                             <TabList>
@@ -110,37 +110,37 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                 <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
                             </Button>
                         </div>
-                        <div aria-hidden={true} className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
+                        <div
+                            aria-hidden={true}
+                            className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
+                            tabIndex={-1}
+                        >
                             <TabPanels>
                                 <TabPanel>
-                                    {tabIndex === 0 && (
-                                        <Tree
-                                            key="files"
-                                            repoName={props.repoName}
-                                            revision={props.revision}
-                                            commitID={props.commitID}
-                                            history={props.history}
-                                            location={props.location}
-                                            scrollRootSelector=".explorer"
-                                            activePath={props.filePath}
-                                            activePathIsDir={props.isDir}
-                                            sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                            extensionsController={props.extensionsController}
-                                            isLightTheme={props.isLightTheme}
-                                            telemetryService={props.telemetryService}
-                                        />
-                                    )}
+                                    <Tree
+                                        key="files"
+                                        repoName={props.repoName}
+                                        revision={props.revision}
+                                        commitID={props.commitID}
+                                        history={props.history}
+                                        location={props.location}
+                                        scrollRootSelector=".explorer"
+                                        activePath={props.filePath}
+                                        activePathIsDir={props.isDir}
+                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                        extensionsController={props.extensionsController}
+                                        isLightTheme={props.isLightTheme}
+                                        telemetryService={props.telemetryService}
+                                    />
                                 </TabPanel>
                                 <TabPanel>
-                                    {tabIndex === 1 && (
-                                        <RepoRevisionSidebarSymbols
-                                            key="symbols"
-                                            repoID={props.repoID}
-                                            revision={props.revision}
-                                            activePath={props.filePath}
-                                            onHandleSymbolClick={handleSymbolClick}
-                                        />
-                                    )}
+                                    <RepoRevisionSidebarSymbols
+                                        key="symbols"
+                                        repoID={props.repoID}
+                                        revision={props.revision}
+                                        activePath={props.filePath}
+                                        onHandleSymbolClick={handleSymbolClick}
+                                    />
                                 </TabPanel>
                             </TabPanels>
                         </div>

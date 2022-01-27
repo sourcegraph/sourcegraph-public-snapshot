@@ -470,7 +470,7 @@ export interface SearchReferenceProps extends TelemetryProps, Pick<SearchQuerySt
 
 const SearchReference = React.memo(
     (props: SearchReferenceProps): ReactElement => {
-        const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
+        const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
         const { setQueryState, telemetryService } = props
         const filter = props.filter.trim()
@@ -531,7 +531,7 @@ const SearchReference = React.memo(
                 {hasFilter ? (
                     filterList
                 ) : (
-                    <Tabs index={selectedTab} onChange={setSelectedTab}>
+                    <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                         <TabList>
                             <Tab>Common</Tab>
                             <Tab>All filters</Tab>
