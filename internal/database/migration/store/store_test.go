@@ -426,7 +426,7 @@ func TestIndexStatus(t *testing.T) {
 	group, groupCtx := errgroup.WithContext(ctx)
 	defer cancel()
 
-	whileEmpty := func(conn dbutil.DB, query string) error {
+	whileEmpty := func(ctx context.Context, conn dbutil.DB, query string) error {
 		for {
 			rows, err := conn.QueryContext(ctx, query)
 			if err != nil {
@@ -481,7 +481,7 @@ func TestIndexStatus(t *testing.T) {
 	// try to create index concurrently; blocked by session B waiting on session A
 	group.Go(func() error {
 		// Wait until we can see Session B's lock before attempting to create index
-		if err := whileEmpty(connC, "SELECT 1 FROM pg_locks WHERE locktype = 'advisory' AND NOT granted"); err != nil {
+		if err := whileEmpty(groupCtx, connC, "SELECT 1 FROM pg_locks WHERE locktype = 'advisory' AND NOT granted"); err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
 
@@ -490,7 +490,7 @@ func TestIndexStatus(t *testing.T) {
 	})
 
 	// Wait until we can see Session C's lock before querying index status
-	if err := whileEmpty(db, "SELECT 1 FROM pg_locks WHERE locktype = 'relation' AND mode = 'ShareUpdateExclusiveLock'"); err != nil {
+	if err := whileEmpty(ctx, db, "SELECT 1 FROM pg_locks WHERE locktype = 'relation' AND mode = 'ShareUpdateExclusiveLock'"); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
