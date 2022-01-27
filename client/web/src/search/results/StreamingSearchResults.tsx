@@ -26,6 +26,7 @@ import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
+import { OnboardingTourInfo } from '../../onboarding-tour/OnboardingTourInfo'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
@@ -223,6 +224,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const submittedSearchesCount = getSubmittedSearchesCount()
     const isValidSignUpCtaCadence = submittedSearchesCount < 5 || submittedSearchesCount % 5 === 0
     const showSignUpCta = !authenticatedUser && resultsFound && isValidSignUpCtaCadence
+    const showOnboardingTour =
+        props.isSourcegraphDotCom && !props.authenticatedUser && props.featureFlags.get('getting-started-tour')
 
     // Log view event when signup CTA is shown
     useEffect(() => {
@@ -250,9 +253,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 filters={results?.filters}
                 getRevisions={getRevisions}
                 prefixContent={
-                    props.isSourcegraphDotCom &&
-                    !props.authenticatedUser &&
-                    props.featureFlags.get('getting-started-tour') ? (
+                    showOnboardingTour ? (
                         <OnboardingTour className="mb-1" telemetryService={props.telemetryService} />
                     ) : undefined
                 }
@@ -291,6 +292,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             />
 
             <div className={styles.streamingSearchResultsContainer}>
+                {showOnboardingTour && <OnboardingTourInfo className="mt-2 mr-3 mb-3" />}
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}
