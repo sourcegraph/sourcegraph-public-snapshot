@@ -2,8 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/cockroachdb/errors"
@@ -18,146 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func TestSearchPatternForSuggestion(t *testing.T) {
-	cases := []struct {
-		Name  string
-		Alert searchAlert
-		Want  string
-	}{
-		{
-			Name: "with_regex_suggestion",
-			Alert: searchAlert{
-				alert: &search.Alert{
-					Title:       "An alert for regex",
-					Description: "An alert for regex",
-					ProposedQueries: []*search.ProposedQuery{
-						search.NewProposedQuery(
-							"Some query description",
-							"repo:github.com/sourcegraph/sourcegraph",
-							query.SearchTypeRegex,
-						),
-					},
-				},
-			},
-			Want: "repo:github.com/sourcegraph/sourcegraph patternType:regexp",
-		},
-		{
-			Name: "with_structural_suggestion",
-			Alert: searchAlert{
-				alert: &search.Alert{
-					Title:       "An alert for structural",
-					Description: "An alert for structural",
-					ProposedQueries: []*search.ProposedQuery{
-						search.NewProposedQuery(
-							"Some query description",
-							"repo:github.com/sourcegraph/sourcegraph",
-							query.SearchTypeStructural,
-						),
-					},
-				},
-			},
-			Want: "repo:github.com/sourcegraph/sourcegraph patternType:structural",
-		},
-	}
-
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			got := tt.Alert.ProposedQueries()
-			if !reflect.DeepEqual((*got)[0].Query(), tt.Want) {
-				t.Errorf("got: %s, want: %s", (*got)[0].Query(), tt.Want)
-			}
-		})
-	}
-}
-
-func TestAddQueryRegexpField(t *testing.T) {
-	tests := []struct {
-		query      string
-		addField   string
-		addPattern string
-		want       string
-	}{
-		{
-			query:      "",
-			addField:   "repo",
-			addPattern: "p",
-			want:       "repo:p",
-		},
-		{
-			query:      "foo",
-			addField:   "repo",
-			addPattern: "p",
-			want:       "repo:p foo",
-		},
-		{
-			query:      "foo repo:p",
-			addField:   "repo",
-			addPattern: "p",
-			want:       "repo:p foo",
-		},
-		{
-			query:      "foo repo:q",
-			addField:   "repo",
-			addPattern: "p",
-			want:       "repo:q repo:p foo",
-		},
-		{
-			query:      "foo repo:p",
-			addField:   "repo",
-			addPattern: "pp",
-			want:       "repo:pp foo",
-		},
-		{
-			query:      "foo repo:p",
-			addField:   "repo",
-			addPattern: "^p",
-			want:       "repo:^p foo",
-		},
-		{
-			query:      "foo repo:p",
-			addField:   "repo",
-			addPattern: "p$",
-			want:       "repo:p$ foo",
-		},
-		{
-			query:      "foo repo:^p",
-			addField:   "repo",
-			addPattern: "^pq",
-			want:       "repo:^pq foo",
-		},
-		{
-			query:      "foo repo:p$",
-			addField:   "repo",
-			addPattern: "qp$",
-			want:       "repo:qp$ foo",
-		},
-		{
-			query:      "foo repo:^p",
-			addField:   "repo",
-			addPattern: "x$",
-			want:       "repo:^p repo:x$ foo",
-		},
-		{
-			query:      "foo repo:p|q",
-			addField:   "repo",
-			addPattern: "pq",
-			want:       "repo:p|q repo:pq foo",
-		},
-	}
-	for _, test := range tests {
-		t.Run(fmt.Sprintf("%s, add %s:%s", test.query, test.addField, test.addPattern), func(t *testing.T) {
-			q, err := query.ParseLiteral(test.query)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got := query.AddRegexpField(q, test.addField, test.addPattern)
-			if got != test.want {
-				t.Errorf("got %q, want %q", got, test.want)
-			}
-		})
-	}
-}
 
 func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	cases := []struct {
@@ -223,26 +81,6 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.Title(), test.wantAlertTitle)
 		}
 
-	}
-}
-
-func TestCapFirst(t *testing.T) {
-	tests := []struct {
-		name string
-		in   string
-		want string
-	}{
-		{name: "empty", in: "", want: ""},
-		{name: "a", in: "a", want: "A"},
-		{name: "ab", in: "ab", want: "Ab"},
-		{name: "хлеб", in: "хлеб", want: "Хлеб"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := capFirst(tt.in); got != tt.want {
-				t.Errorf("makeTitle() = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }
 
