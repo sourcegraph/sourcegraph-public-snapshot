@@ -1,11 +1,10 @@
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, ButtonProps } from '@sourcegraph/wildcard'
 
 import styles from './InputTooltip.module.scss'
 
-export interface InputTooltipProps
-    extends React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> {
+export interface InputTooltipProps extends ButtonProps {
     tooltip: string
 }
 

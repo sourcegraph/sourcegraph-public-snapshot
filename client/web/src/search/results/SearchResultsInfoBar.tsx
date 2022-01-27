@@ -13,12 +13,11 @@ import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/searc
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -112,7 +111,7 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
         return <ButtonDropdownCta {...props} />
     }
     return (
-        <Button
+        <ButtonLink
             className={classNames('text-decoration-none', props.className)}
             to={props.nonExperimentalLinkTo}
             onSelect={props.onNonExperimentalLinkClick}
@@ -120,10 +119,9 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
             variant="secondary"
             outline={true}
             size="sm"
-            as={ButtonLink}
         >
             {props.button}
-        </Button>
+        </ButtonLink>
     )
 }
 

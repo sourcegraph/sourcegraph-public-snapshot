@@ -1,9 +1,8 @@
 import React from 'react'
 
 import { SearchPatternTypeProps } from '@sourcegraph/search'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
-import { Button } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../../auth'
 import { CodeInsightsIcon } from '../../../insights/Icons'
 
@@ -36,17 +35,10 @@ export const CreateCodeInsightButton: React.FunctionComponent<CreateCodeInsightB
 
     return (
         <li data-tooltip="Create Insight based on this search query" data-delay={10000} className="nav-item mr-2">
-            <Button
-                to={toURL}
-                className="text-decoration-none"
-                variant="secondary"
-                outline={true}
-                size="sm"
-                as={ButtonLink}
-            >
+            <ButtonLink to={toURL} className="text-decoration-none" variant="secondary" outline={true} size="sm">
                 <CodeInsightsIcon className="icon-inline mr-1" />
                 Create Insight
-            </Button>
+            </ButtonLink>
         </li>
     )
 }

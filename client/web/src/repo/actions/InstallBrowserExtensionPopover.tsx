@@ -5,9 +5,8 @@ import React, { useMemo } from 'react'
 import FocusLock from 'react-focus-lock'
 import { Popover } from 'reactstrap'
 
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
-import { Button } from '@sourcegraph/wildcard'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../auth/icons'
 
@@ -86,31 +85,29 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                         </div>
 
                         <div className="d-flex justify-content-end">
-                            <Button
+                            <ButtonLink
                                 className="mr-2"
                                 onSelect={onReject}
                                 to={url}
                                 {...linkProps}
                                 variant="secondary"
                                 outline={true}
-                                as={ButtonLink}
                             >
                                 No, thanks
-                            </Button>
+                            </ButtonLink>
 
-                            <Button
+                            <ButtonLink
                                 className="mr-2"
                                 onSelect={onClose}
                                 to={url}
                                 {...linkProps}
                                 variant="secondary"
                                 outline={true}
-                                as={ButtonLink}
                             >
                                 Remind me later
-                            </Button>
+                            </ButtonLink>
 
-                            <Button
+                            <ButtonLink
                                 className="mr-2"
                                 onSelect={onInstall}
                                 to="/help/integration/browser_extension"
@@ -119,7 +116,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                                 as={ButtonLink}
                             >
                                 Install browser extension
-                            </Button>
+                            </ButtonLink>
                         </div>
                     </div>
                 </FocusLock>
