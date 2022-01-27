@@ -32,7 +32,8 @@ func TestCTAMetricsUsageStatistics(t *testing.T) {
 			(1, 'InstallBrowserExtensionCTAShown', '{"page": "file"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			(2, 'InstallBrowserExtensionCTAClicked', '{"page": "file"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			(3, 'InstallBrowserExtensionCTAShown', '{"page": "search"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'InstallBrowserExtensionCTAClicked', '{"page": "search"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(4, 'InstallBrowserExtensionCTAShown', '{"page": "search"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(5, 'InstallBrowserExtensionCTAClicked', '{"page": "search"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 
 			-- Previous month event logs
 			(5, 'InstallBrowserExtensionCTAShown', '{"page": "file"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 month'),
@@ -50,10 +51,14 @@ func TestCTAMetricsUsageStatistics(t *testing.T) {
 	}
 
 	want := &types.CTAMetrics{
-		BextCtaShownCountOnFilePage:     1,
-		BextCtaClickedCountOnFilePage:   1,
-		BextCtaShownCountOnSearchPage:   1,
-		BextCtaClickedCountOnSearchPage: 1,
+		UserCountWhoSawBextCtaOnFilePage:       1,
+		UserCountWhoClickedBextCtaOnFilePage:   1,
+		UserCountWhoSawBextCtaOnSearchPage:     1,
+		UserCountWhoClickedBextCtaOnSearchPage: 1,
+		BextCtaDisplaysOnFilePage:              1,
+		BextCtaClicksOnFilePage:                1,
+		BextCtaDisplaysOnSearchPage:            2,
+		BextCtaClicksOnSearchPage:              1,
 	}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)

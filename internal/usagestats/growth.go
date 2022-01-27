@@ -10,6 +10,7 @@ import (
 )
 
 func GetGrowthStatistics(ctx context.Context, db database.DB) (*types.GrowthStatistics, error) {
+	// TODO: Fix query
 	const q = `
 -- source: internal/usagestats/growth.go:GetGrowthStatistics
 WITH all_usage_by_user_and_month AS (
@@ -79,6 +80,7 @@ func GetCTAMetrics(ctx context.Context, db database.DB) (*types.CTAMetrics, erro
  -- source: internal/usagestats/growth.go:GetCTAMetrics
  WITH data_by_month AS (
      SELECT name,
+            user_id,
             DATE_TRUNC('month', timestamp) AS month,
             argument->>'page' AS page
        FROM event_logs
@@ -86,39 +88,75 @@ func GetCTAMetrics(ctx context.Context, db database.DB) (*types.CTAMetrics, erro
         AND argument->>'page' IN ('file', 'search')
         AND DATE_TRUNC('month', timestamp) = DATE_TRUNC('month', $1::timestamp)
  )
+ WITH data_by_month_and_user AS (
+     SELECT name,
+            user_id,
+            DATE_TRUNC('month', timestamp) AS month,
+            argument->>'page' AS page
+       FROM event_logs
+      WHERE name IN ('InstallBrowserExtensionCTAShown', 'InstallBrowserExtensionCTAClicked' )
+        AND argument->>'page' IN ('file', 'search')
+        AND DATE_TRUNC('month', timestamp) = DATE_TRUNC('month', $1::timestamp)
+      GROUP BY user_id
+ )
  SELECT COUNT(*) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAShown'
-                    AND page = 'file') AS bext_cta_shown_count_on_file_page,
+                    AND page = 'file') AS user_count_who_saw_bext_cta_on_file_page,
         COUNT(*) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAClicked'
-                    AND page = 'file') AS bext_cta_clicked_count_on_file_page,
+                    AND page = 'file') AS user_count_who_clicked_bext_cta_on_file_page,
         COUNT(*) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAShown'
-                    AND page = 'search') AS bext_cta_shown_count_on_search_page,
+                    AND page = 'search') AS user_count_who_saw_bext_cta_on_search_page,
         COUNT(*) FILTER (
                   WHERE name = 'InstallBrowserExtensionCTAClicked'
-                    AND page = 'search') AS bext_cta_clicked_count_on_search_page
+                    AND page = 'search') AS user_count_who_clicked_bext_cta_on_search_page
+   FROM data_by_month_and_user,
+        COUNT(*) FILTER (
+                  WHERE name = 'InstallBrowserExtensionCTAShown'
+                    AND page = 'file') AS bext_cta_displays_on_file_page,
+        COUNT(*) FILTER (
+                  WHERE name = 'InstallBrowserExtensionCTAClicked'
+                    AND page = 'file') AS bext_cta_clicks_on_file_page,
+        COUNT(*) FILTER (
+                  WHERE name = 'InstallBrowserExtensionCTAShown'
+                    AND page = 'search') AS bext_cta_displays_on_search_page,
+        COUNT(*) FILTER (
+                  WHERE name = 'InstallBrowserExtensionCTAClicked'
+                    AND page = 'search') AS bext_cta_clicks_on_search_page
    FROM data_by_month
 `
 	var (
-		bextCtaShownCountOnFilePage     int32
-		bextCtaClickedCountOnFilePage   int32
-		bextCtaShownCountOnSearchPage   int32
-		bextCtaClickedCountOnSearchPage int32
+		userCountWhoSawBextCtaOnFilePage       int32
+		userCountWhoClickedBextCtaOnFilePage   int32
+		userCountWhoSawBextCtaOnSearchPage     int32
+		userCountWhoClickedBextCtaOnSearchPage int32
+		bextCtaDisplaysOnFilePage              int32
+		bextCtaClicksOnFilePage                int32
+		bextCtaDisplaysOnSearchPage            int32
+		bextCtaClicksOnSearchPage              int32
 	)
 	if err := db.QueryRowContext(ctx, query, timeNow()).Scan(
-		&bextCtaShownCountOnFilePage,
-		&bextCtaClickedCountOnFilePage,
-		&bextCtaShownCountOnSearchPage,
-		&bextCtaClickedCountOnSearchPage,
+		&userCountWhoSawBextCtaOnFilePage,
+		&userCountWhoClickedBextCtaOnFilePage,
+		&userCountWhoSawBextCtaOnSearchPage,
+		&userCountWhoClickedBextCtaOnSearchPage,
+		&bextCtaDisplaysOnFilePage,
+		&bextCtaClicksOnFilePage,
+		&bextCtaDisplaysOnSearchPage,
+		&bextCtaClicksOnSearchPage,
 	); err != nil {
 		return nil, err
 	}
 
 	return &types.CTAMetrics{
-		BextCtaShownCountOnFilePage:     bextCtaShownCountOnFilePage,
-		BextCtaClickedCountOnFilePage:   bextCtaClickedCountOnFilePage,
-		BextCtaShownCountOnSearchPage:   bextCtaShownCountOnSearchPage,
-		BextCtaClickedCountOnSearchPage: bextCtaClickedCountOnSearchPage,
+		UserCountWhoSawBextCtaOnFilePage:       userCountWhoSawBextCtaOnFilePage,
+		UserCountWhoClickedBextCtaOnFilePage:   userCountWhoClickedBextCtaOnFilePage,
+		UserCountWhoSawBextCtaOnSearchPage:     userCountWhoSawBextCtaOnSearchPage,
+		UserCountWhoClickedBextCtaOnSearchPage: userCountWhoClickedBextCtaOnSearchPage,
+		BextCtaDisplaysOnFilePage:              bextCtaDisplaysOnFilePage,
+		BextCtaClicksOnFilePage:                bextCtaClicksOnFilePage,
+		BextCtaDisplaysOnSearchPage:            bextCtaDisplaysOnSearchPage,
+		BextCtaClicksOnSearchPage:              bextCtaClicksOnSearchPage,
 	}, nil
 }

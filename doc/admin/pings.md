@@ -110,6 +110,10 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of clicks on the code monitor email search link
 
 - CTA metrics
+  - Total number of users who viewed the "install browser extension" CTA on the file page
+  - Total number of users who clicked the "install browser extension" CTA on the file page
+  - Total number of users who viewed the "install browser extension" CTA on the search page
+  - Total number of users who clicked the "install browser extension" CTA on the search page
   - Total number of views of the "install browser extension" CTA on the file page
   - Total number of clicks on the "install browser extension" CTA on the file page
   - Total number of views of the "install browser extension" CTA on the search page

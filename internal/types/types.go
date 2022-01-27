@@ -1038,10 +1038,14 @@ type GrowthStatistics struct {
 // CTAMetrics represents the total number of CTAs displayed and clicked
 // on the "search result" and "file" pages over the current month.
 type CTAMetrics struct {
-	BextCtaShownCountOnFilePage     int32
-	BextCtaClickedCountOnFilePage   int32
-	BextCtaShownCountOnSearchPage   int32
-	BextCtaClickedCountOnSearchPage int32
+	UserCountWhoSawBextCtaOnFilePage       int32
+	UserCountWhoClickedBextCtaOnFilePage   int32
+	UserCountWhoSawBextCtaOnSearchPage     int32
+	UserCountWhoClickedBextCtaOnSearchPage int32
+	BextCtaDisplaysOnFilePage              int32
+	BextCtaClicksOnFilePage                int32
+	BextCtaDisplaysOnSearchPage            int32
+	BextCtaClicksOnSearchPage              int32
 }
 
 // SavedSearches represents the total number of saved searches, users
