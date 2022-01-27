@@ -268,10 +268,7 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.runMigrationQuery(ctx, definition.ID, up, f)
-}
-
-func (s *Store) runMigrationQuery(ctx context.Context, definitionVersion int, up bool, f func() error) (err error) {
+	definitionVersion := definition.ID
 	targetVersion := definitionVersion
 	expectedCurrentVersion := definitionVersion - 1
 	if !up {
