@@ -7,6 +7,7 @@ import { HoveredToken } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
@@ -27,7 +28,9 @@ export const WebHoverOverlay: React.FunctionComponent<
         HoverThresholdProps & {
             hoveredTokenElement?: HTMLElement
             nav?: (url: string) => void
-            onHoverToken: (hoveredToken: HoveredToken) => void
+            onHoverToken: (
+                hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+            ) => void
         }
 > = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])

@@ -300,6 +300,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <GlobalDebug {...props} />
             <GlobalCodeIntel
                 {...props}
+                {...themeProps}
+                onHoverToken={onHoverToken}
                 hoveredToken={hoveredToken}
                 showPanel={true}
             />

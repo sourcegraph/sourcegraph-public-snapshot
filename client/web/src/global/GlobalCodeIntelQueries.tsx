@@ -39,6 +39,35 @@ export const FETCH_REFERENCES_QUERY = gql`
                                 endCursor
                             }
                         }
+                        definitions(line: $line, character: $character) {
+                            nodes {
+                                resource {
+                                    path
+                                    content
+                                    repository {
+                                        name
+                                    }
+                                    commit {
+                                        oid
+                                    }
+                                }
+                                range {
+                                    start {
+                                        line
+                                        character
+                                    }
+                                    end {
+                                        line
+                                        character
+                                    }
+                                }
+                            }
+                        }
+                        hover(line: $line, character: $character) {
+                            markdown {
+                                html
+                            }
+                        }
                     }
                 }
             }

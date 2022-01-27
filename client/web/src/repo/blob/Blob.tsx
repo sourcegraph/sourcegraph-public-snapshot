@@ -77,7 +77,7 @@ import { LineDecorator } from './LineDecorator'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-interface BlobProps
+export interface BlobProps
     extends SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
@@ -90,7 +90,7 @@ interface BlobProps
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
     blobInfo: BlobInfo
-    onHoverToken: (hoveredToken: HoveredToken) => void
+    onHoverToken: (hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec) => void
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
