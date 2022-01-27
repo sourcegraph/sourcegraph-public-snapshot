@@ -32,7 +32,7 @@ The dashboard visibility levels have no impact on the data in the insight itself
 
 This means that two organization users with different repo read permission sets might see different values for the same insights on the same dashboards, if it contains results from a repository only one user can view.
 
-If you change a private-visible dashboard so that the dashboard is now visible to an organization, then the organization can now see all insights on the dashboard, though the result counts will still be filtered to count from only repos that the individual organization member can view. 
+If you change a private-visible dashboard so that the dashboard is now visible to an organization (or globally), then the organization (or entire instance) can now see all insights on the dashboard, though the result counts will still be filtered to count from only repos that the individual organization member can view. 
 
 ### Insights can be on multiple dashboards
 
