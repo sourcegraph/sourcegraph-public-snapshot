@@ -2,10 +2,10 @@ import classNames from 'classnames'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useState } from 'react'
-import { NavLink, useRouteMatch } from 'react-router-dom'
+import { useRouteMatch } from 'react-router-dom'
 import { Collapse } from 'reactstrap'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
 
@@ -30,13 +30,7 @@ export const SidebarNavItem: React.FunctionComponent<{
     }
 
     return (
-        <Button
-            to={to}
-            exact={exact}
-            className={buttonClassNames}
-            variant={routeMatch?.isExact ? 'primary' : undefined}
-            as={NavLink}
-        >
+        <Button to={to} className={buttonClassNames} variant={routeMatch?.isExact ? 'primary' : undefined} as={Link}>
             {children}
         </Button>
     )

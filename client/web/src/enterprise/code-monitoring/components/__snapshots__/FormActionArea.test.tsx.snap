@@ -124,7 +124,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
   <small
     class="text-muted"
   >
-    What other actions would you like to take?
+    What other actions would you like to take? 
     <a
       href="mailto:feedback@sourcegraph.com"
       rel="noopener"

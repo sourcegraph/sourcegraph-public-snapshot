@@ -2,6 +2,7 @@ import isAbsoluteUrl from 'is-absolute-url'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
+import { ForwardReferenceComponent } from '../../../types'
 import { AnchorLink, AnchorLinkProps } from '../AnchorLink'
 
 /**
@@ -9,15 +10,13 @@ import { AnchorLink, AnchorLinkProps } from '../AnchorLink'
  * absolute URL to <Link> will create an (almost certainly invalid) URL where the absolute URL is resolved to the
  * current URL, such as https://example.com/a/b/https://example.com/c/d.
  */
-export const RouterLink: React.FunctionComponent<AnchorLinkProps> = React.forwardRef(
-    ({ to, children, ...rest }: AnchorLinkProps, reference) => (
-        <AnchorLink
-            to={to}
-            as={typeof to === 'string' && isAbsoluteUrl(to) ? undefined : Link}
-            {...rest}
-            ref={reference}
-        >
-            {children}
-        </AnchorLink>
-    )
-)
+export const RouterLink = React.forwardRef(({ to, children, ...rest }, reference) => (
+    <AnchorLink
+        to={to}
+        as={typeof to === 'string' && isAbsoluteUrl(to) ? undefined : (Link as Link<unknown>)}
+        {...rest}
+        ref={reference}
+    >
+        {children}
+    </AnchorLink>
+)) as ForwardReferenceComponent<Link, AnchorLinkProps>

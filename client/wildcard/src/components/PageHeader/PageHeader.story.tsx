@@ -58,7 +58,7 @@ export const ComplexHeader: Story = () => (
         description="Enter the description for your section here. This is useful on list and create pages."
         actions={
             <div className="d-flex">
-                <Button as={Link} to="/page" variant="primary" className="mr-2">
+                <Button as={Link} to="/page" variant="secondary" className="mr-2">
                     Secondary
                 </Button>
                 <Button as={Link} to="/page" variant="primary" className="text-nowrap">

@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { PropsWithChildren } from 'react'
+import React from 'react'
 import { DropdownToggle, DropdownToggleProps } from 'reactstrap'
 
 import { ButtonLink, ButtonLinkProps } from '@sourcegraph/shared/src/components/LinkOrButton'
@@ -27,11 +27,7 @@ export const RepoHeaderActionButtonLink: React.FunctionComponent<RepoHeaderButto
     file,
     ...rest
 }) => (
-    <Button<typeof ButtonLink, PropsWithChildren<ButtonLinkProps>>
-        as={ButtonLink}
-        className={classNames(file ? styles.fileAction : styles.action, className)}
-        {...rest}
-    >
+    <Button as={ButtonLink} className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
         {children}
     </Button>
 )
@@ -41,11 +37,7 @@ export const RepoHeaderActionDropdownToggle: React.FunctionComponent<DropdownTog
     className,
     ...rest
 }) => (
-    <Button<typeof DropdownToggle, DropdownToggleProps>
-        as={DropdownToggle}
-        className={classNames('btn-icon', styles.action, className)}
-        {...rest}
-    >
+    <Button as={DropdownToggle} className={classNames('btn-icon', styles.action, className)} {...rest}>
         {children}
     </Button>
 )
@@ -56,11 +48,7 @@ export const RepoHeaderActionAnchor: React.FunctionComponent<RepoHeaderActionAnc
     file,
     ...rest
 }) => (
-    <Button<'a', RepoHeaderActionAnchorProps>
-        as="a"
-        className={classNames(file ? styles.fileAction : styles.action, className)}
-        {...rest}
-    >
+    <Button as="a" className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
         {children}
     </Button>
 )
