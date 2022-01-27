@@ -118,19 +118,44 @@ func TestTryLock(t *testing.T) {
 	store := testStore(db)
 	ctx := context.Background()
 
-	t.Run("sanity test", func(t *testing.T) {
-		acquired, close, err := store.TryLock(ctx)
-		if err != nil {
-			t.Fatalf("unexpected error acquiring lock: %s", err)
-		}
-		if !acquired {
-			t.Fatalf("expected lock to be acquired")
-		}
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		t.Fatalf("failed to open new connection: %s", err)
+	}
+	t.Cleanup(func() { conn.Close() })
 
-		if err := close(nil); err != nil {
-			t.Fatalf("unexpected error releasing lock: %s", err)
-		}
-	})
+	// Acquire lock in distinct session
+	if _, err := conn.ExecContext(ctx, `SELECT pg_advisory_lock($1, 0)`, store.lockKey()); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// TryLock should fail
+	if acquired, _, err := store.TryLock(ctx); err != nil {
+		t.Fatalf("unexpected error acquiring lock: %s", err)
+	} else if acquired {
+		t.Fatalf("expected lock to be held by another session")
+	}
+
+	// Drop lock
+	if _, err := conn.ExecContext(ctx, `SELECT pg_advisory_unlock($1, 0)`, store.lockKey()); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// TryLock should succeed
+	acquired, unlock, err := store.TryLock(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error acquiring lock: %s", err)
+	} else if !acquired {
+		t.Fatalf("expected lock to be acquired")
+	}
+
+	if err := unlock(nil); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	// Check idempotency
+	if err := unlock(nil); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
 }
 
 func TestUp(t *testing.T) {
