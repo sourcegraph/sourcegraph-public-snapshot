@@ -247,7 +247,7 @@ func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_
 }
 
 const indexStatusQuery = `
--- source: internal/database/migration/store/store.go:IndeStatus
+-- source: internal/database/migration/store/store.go:IndexStatus
 SELECT
 	pi.indisvalid,
 	pi.indisready,
