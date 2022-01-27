@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -537,6 +538,23 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 			p.groupsCache.invalidateGroup(&group)
 		}
 		groups = append(groups, repoAffiliatedGroup{cachedGroup: group, adminsOnly: adminsOnly})
+	}
+
+	// The visibility field on a repo is only returned if this feature flag is set. As a result
+	// there's no point in making an extra API call if this feature flag is not set explicitly.
+	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
+		var r *github.Repository
+		r, err = p.client.GetRepository(ctx, owner, name)
+		if err != nil {
+			// Maybe the repo doesn't belong to this org? Or Another error occurred in trying to get the
+			// repo. Either way, we are not going to syncGroup for this repo.
+			return
+		}
+
+		if org != nil && r.Visibility == github.VisibilityInternal {
+			syncGroup(owner, "", false)
+			return
+		}
 	}
 
 	allOrgMembersCanRead := canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
