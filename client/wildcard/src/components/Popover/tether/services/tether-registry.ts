@@ -27,7 +27,7 @@ export function createTether(tether: Tether): TetherInstanceAPI {
     document.addEventListener('keyDown', eventHandler, true)
     document.addEventListener('input', eventHandler, true)
 
-    // Synthetic run without target for the initial tooltip positioning render
+    // Synthetic runs without target for the initial tooltip positioning render
     requestAnimationFrame(() => {
         render(tether, null)
     })

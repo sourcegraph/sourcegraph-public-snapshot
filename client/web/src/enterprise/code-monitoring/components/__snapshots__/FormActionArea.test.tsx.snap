@@ -26,8 +26,8 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       Deliver email notifications to specified recipients.
     </span>
     <div
-      class="form-group mt-4 test-action-form"
-      data-testid="action-form"
+      class="form-group mt-4 test-action-form-email"
+      data-testid="action-form-email"
     >
       <label
         for="code-monitoring-form-actions-recipients"
@@ -40,7 +40,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         id="code-monitoring-form-actions-recipients"
         required=""
         type="text"
-        value="alice@alice.com (you)"
+        value="user@me.com (you)"
       />
       <small
         class="text-muted"
@@ -53,6 +53,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     >
       <button
         class="btn btn-sm mr-2 btn-secondary"
+        data-testid="send-test-email"
         disabled=""
         type="button"
       >
@@ -70,8 +71,9 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       <div>
         <button
           aria-checked="true"
-          aria-labelledby="code-monitoring-form-actions-enable-toggle"
+          aria-labelledby="code-monitoring-email-form-actions-enable-toggle"
           class="toggle mr-2 inlineCenter"
+          data-testid="enable-action-toggle-expanded-email"
           role="switch"
           title="Enabled"
           type="button"
@@ -86,7 +88,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         </button>
       </div>
       <span
-        id="code-monitoring-form-actions-enable-toggle"
+        id="code-monitoring-email-form-actions-enable-toggle"
       >
         Enabled
       </span>
@@ -96,19 +98,27 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     >
       <div>
         <button
-          class="btn btn-secondary mr-1 test-submit-action"
-          data-testid="submit-action"
-          type="submit"
+          class="btn btn-secondary mr-1 test-submit-action-email"
+          data-testid="submit-action-email"
+          type="button"
         >
           Continue
         </button>
         <button
           class="btn btn-outline-secondary"
+          data-testid="cancel-action-email"
           type="button"
         >
           Cancel
         </button>
       </div>
+      <button
+        class="btn btn-outline-danger"
+        data-testid="delete-action-email"
+        type="button"
+      >
+        Delete
+      </button>
     </div>
   </div>
   <small

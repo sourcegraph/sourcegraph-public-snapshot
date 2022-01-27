@@ -187,7 +187,16 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 
 	var indexes []config.IndexJob
 	for _, recognizer := range inference.Recognizers {
-		indexes = append(indexes, recognizer.InferIndexJobs(gitclient, paths)...)
+		recognizedPaths := []string{}
+		pattern := inference.OrPattern(recognizer.Patterns())
+		for _, path := range paths {
+			if pattern.MatchString(path) {
+				recognizedPaths = append(recognizedPaths, path)
+			}
+		}
+		if len(recognizedPaths) > 0 {
+			indexes = append(indexes, recognizer.InferIndexJobs(gitclient, recognizedPaths)...)
+		}
 	}
 
 	if len(indexes) > s.config.MaximumIndexJobsPerInferredConfiguration {

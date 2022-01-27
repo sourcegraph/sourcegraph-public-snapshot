@@ -374,7 +374,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser -s run build"),
-		bk.Cmd("yarn release:chrome"))
+		bk.Cmd("yarn --cwd client/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
@@ -403,14 +403,6 @@ func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 			bk.Build(buildOptions),
 		)
 	}
-}
-
-func triggerUpdaterPipeline(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":github: :date: :k8s: Trigger k8s updates if current commit is tip of 'main'",
-		bk.Cmd(".buildkite/updater/trigger-if-tip-of-main.sh"),
-		bk.Concurrency(1),
-		bk.ConcurrencyGroup("sourcegraph/sourcegraph-k8s-update-trigger"),
-	)
 }
 
 func codeIntelQA(candidateTag string) operations.Operation {

@@ -15,6 +15,7 @@ import {
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { OnboardingTourInfo } from '../onboarding-tour/OnboardingTourInfo'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
@@ -204,7 +205,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                         // Add `.blob-status-bar__container` because this is the
                         // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
                         <BlobStatusBarContainer>
-                            {showOnboardingTour && <div className="onboarding-tour-info-marker mr-3 mb-3" />}
+                            {showOnboardingTour && <OnboardingTourInfo className="mr-3 mb-3" />}
                             <ErrorBoundary location={context.location}>
                                 {objectType === 'blob' ? (
                                     <BlobPage
