@@ -254,10 +254,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
-
-	// TODO
-	pipeline.AddStep("fail build", bk.Cmd("exit 1"))
-
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline has unique keys
@@ -266,12 +262,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Add a notify block
-	pipeline.AddSlackNotify("U013BPG5GHK")
 	if c.RunType.Is(MainBranch) {
+		ctx := context.Background()
 		ghc := github.NewClient(http.DefaultClient)
-		slc := slack.New("")
+		slc := slack.New(c.Notify.SlackToken)
 		teammates := team.NewTeammateResolver(ghc, slc)
-		_, _ = teammates.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", c.Commit)
+		tm, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", c.Commit)
+		if err != nil {
+			pipeline.AddSlackNotify(c.Notify.Channel, "", fmt.Errorf("failed to get Slack user: %w", err))
+		} else {
+			pipeline.AddSlackNotify(c.Notify.Channel, tm.SlackID, nil)
+		}
 	}
 
 	return pipeline, nil

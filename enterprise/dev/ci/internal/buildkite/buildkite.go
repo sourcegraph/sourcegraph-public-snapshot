@@ -187,12 +187,18 @@ type slackChannelsNotification struct {
 	Message  string   `json:"message"`
 }
 
-func (p *Pipeline) AddSlackNotify(username string) {
+func (p *Pipeline) AddSlackNotify(channel string, mentionUserID string, err error) {
+	n := slackChannelsNotification{
+		Channels: []string{channel},
+	}
+
+	if mentionUserID != "" {
+		n.Message = fmt.Sprintf("cc <@%s>", mentionUserID)
+	} else if err != nil {
+		n.Message = err.Error()
+	}
 	p.Notify = append(p.Notify, slackNotifier{
-		Slack: slackChannelsNotification{
-			Channels: []string{"#dev-experience-internal"},
-			Message:  fmt.Sprintf("<@%s>", username),
-		},
+		Slack: n,
 	})
 }
 

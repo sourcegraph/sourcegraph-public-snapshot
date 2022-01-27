@@ -39,6 +39,14 @@ type Config struct {
 
 	// MessageFlags contains flags parsed from commit messages.
 	MessageFlags MessageFlags
+
+	// Notify declares configuration required to generate notifications.
+	Notify SlackNotification
+}
+
+type SlackNotification struct {
+	Channel    string
+	SlackToken string
 }
 
 // NewConfig computes configuration for the pipeline generator based on Buildkite environment
@@ -116,6 +124,12 @@ func NewConfig(now time.Time) Config {
 
 		// get flags from commit message
 		MessageFlags: parseMessageFlags(os.Getenv("BUILDKITE_MESSAGE")),
+
+		Notify: SlackNotification{
+			// An integration must exist
+			Channel:    "#buildkite-main",
+			SlackToken: os.Getenv("SLACK_INTEGRATION_TOKEN"),
+		},
 	}
 }
 
