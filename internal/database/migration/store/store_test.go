@@ -2,11 +2,14 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -423,6 +426,159 @@ func TestDown(t *testing.T) {
 
 		assertLogs(t, ctx, store, nil)
 	})
+}
+
+func TestIndexStatus(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	if _, err := db.ExecContext(ctx, "CREATE TABLE tbl (id text, name text);"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// Index does not (yet) exist
+	if _, ok, err := store.IndexStatus(ctx, "tbl", "idx"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	} else if ok {
+		t.Fatalf("unexpected index status")
+	}
+
+	// Wrap context in a small timeout; we do tight for-loops here to determine
+	// when we can continue on to/unblock the next operation, but none of the
+	// steps should take any significant time.
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	group, groupCtx := errgroup.WithContext(ctx)
+	defer cancel()
+
+	whileEmpty := func(ctx context.Context, conn dbutil.DB, query string) error {
+		for {
+			rows, err := conn.QueryContext(ctx, query)
+			if err != nil {
+				return err
+			}
+
+			lockVisible := rows.Next()
+
+			if err := basestore.CloseRows(rows, nil); err != nil {
+				return err
+			}
+
+			if lockVisible {
+				return nil
+			}
+		}
+	}
+
+	// Create separate connections to precise control contention of resources
+	// so we can examine what this method returns while an index is being created.
+
+	conns := make([]*sql.Conn, 3)
+	for i := 0; i < 3; i++ {
+		conn, err := db.Conn(ctx)
+		if err != nil {
+			t.Fatalf("failed to open new connection: %s", err)
+		}
+		t.Cleanup(func() { conn.Close() })
+
+		conns[i] = conn
+	}
+	connA, connB, connC := conns[0], conns[1], conns[2]
+
+	lockQuery := `SELECT pg_advisory_lock(10, 10)`
+	unlockQuery := `SELECT pg_advisory_unlock(10, 10)`
+	createIndexQuery := `CREATE INDEX CONCURRENTLY idx ON tbl(id)`
+
+	// Session A
+	// Successfully take and hold advisory lock
+	if _, err := connA.ExecContext(ctx, lockQuery); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// Session B
+	// Try to take advisory lock; blocked by Session A
+	group.Go(func() error {
+		_, err := connB.ExecContext(groupCtx, lockQuery)
+		return err
+	})
+
+	// Session C
+	// try to create index concurrently; blocked by session B waiting on session A
+	group.Go(func() error {
+		// Wait until we can see Session B's lock before attempting to create index
+		if err := whileEmpty(groupCtx, connC, "SELECT 1 FROM pg_locks WHERE locktype = 'advisory' AND NOT granted"); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		_, err := connC.ExecContext(groupCtx, createIndexQuery)
+		return err
+	})
+
+	// Wait until we can see Session C's lock before querying index status
+	if err := whileEmpty(ctx, db, "SELECT 1 FROM pg_locks WHERE locktype = 'relation' AND mode = 'ShareUpdateExclusiveLock'"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// "waiting for old snapshots" will be the phase that is blocked by the concurrent
+	// sessions holding advisory locks. We may happen to hit one of the earlier phases
+	// if we're quick enough, so we'll keep polling progress until we hit the target.
+	blockingPhase := "waiting for old snapshots"
+	nonblockingPhasePrefixes := make([]string, 0, len(CreateIndexConcurrentlyPhases))
+	for _, prefix := range CreateIndexConcurrentlyPhases {
+		if prefix == blockingPhase {
+			break
+		}
+
+		nonblockingPhasePrefixes = append(nonblockingPhasePrefixes, prefix)
+	}
+	compareWithPrefix := func(value, prefix string) bool {
+		return value == prefix || strings.HasPrefix(value, prefix+":")
+	}
+
+retryLoop:
+	for {
+		if status, ok, err := store.IndexStatus(ctx, "tbl", "idx"); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		} else if !ok {
+			t.Fatalf("expected index status")
+		} else if status.Phase == nil {
+			t.Fatalf("unexpected phase. want=%q have=nil", blockingPhase)
+		} else if *status.Phase == blockingPhase {
+			break
+		} else {
+			for _, prefix := range nonblockingPhasePrefixes {
+				if compareWithPrefix(*status.Phase, prefix) {
+					continue retryLoop
+				}
+			}
+
+			t.Fatalf("unexpected phase. want=%q have=%q", blockingPhase, *status.Phase)
+		}
+	}
+
+	// Session A
+	// Unlock, unblocking both Session B and Session C
+	if _, err := connA.ExecContext(ctx, unlockQuery); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// Wait for index creation to complete
+	if err := group.Wait(); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if status, ok, err := store.IndexStatus(ctx, "tbl", "idx"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	} else if !ok {
+		t.Fatalf("expected index status")
+	} else {
+		if !status.IsValid {
+			t.Fatalf("unexpected isvalid. want=%v have=%v", true, status.IsValid)
+		}
+		if status.Phase != nil {
+			t.Fatalf("unexpected phase. want=%v have=%v", nil, status.Phase)
+		}
+	}
 }
 
 func testStore(db dbutil.DB) *Store {
