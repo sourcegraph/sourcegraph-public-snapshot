@@ -148,8 +148,9 @@ func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, 
 	return 0, false, false, nil
 }
 
-// Versions returns three sets of versions that completely describes the current. The sets
-// describe, respectively, all applied, pending, and failed migrations.
+// Versions returns three sets of migration versions that, together, describe the current schema
+// state. These states describe, respectively, the identifieers of all applied, pending, and failed
+// migrations.
 //
 // A failed migration requires administrator attention. A pending migration may currently be
 // in-progress, or may indicate that a migration was attempted but failed part way through.
