@@ -293,15 +293,6 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total number of clicks on the code monitor email search link</li>
                     </ul>
                 </li>
-                <li>
-                    CTA metrics
-                    <ul>
-                        <li>Total number of views of the "install browser extension" CTA on the file page</li>
-                        <li>Total number of clicks on the "install browser extension" CTA on the file page</li>
-                        <li>Total number of views of the "install browser extension" CTA on the search page</li>
-                        <li>Total number of clicks on the "install browser extension" CTA on the search page</li>
-                    </ul>
-                </li>
             </ul>
             {updatesDisabled ? (
                 <p>All telemetry is disabled.</p>

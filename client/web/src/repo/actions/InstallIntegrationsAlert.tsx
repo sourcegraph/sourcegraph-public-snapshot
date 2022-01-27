@@ -42,8 +42,10 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
             displayCTABasedOnCadence &&
             !hasDismissedExtensionAlert &&
             hoverCount >= HOVER_THRESHOLD,
-        // Intentionally use useMemo() here without a dependency on hoverCount to only show the alert on the next reload,
-        // to not cause an annoying layout shift from displaying the alert.
+        /**
+         * Intentionally use useMemo() here without a dependency on hoverCount to only show the alert on the next reload,
+         * to not cause an annoying layout shift from displaying the alert.
+         */
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [hasDismissedExtensionAlert, isBrowserExtensionInstalled]
     )
