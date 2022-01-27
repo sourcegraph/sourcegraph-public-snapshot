@@ -1017,7 +1017,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+				return NewSearchAlertResolver(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)).wrapResults(), nil
 			default:
 			}
 
@@ -1046,7 +1046,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertForCappedAndExpression().wrapResults(), nil
+			return NewSearchAlertResolver(search.AlertForCappedAndExpression()).wrapResults(), nil
 		}
 	}
 	result.Stats.IsLimitHit = !exhausted
@@ -1535,7 +1535,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 		if rr == nil || !rr.Stats.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
-			return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+			return NewSearchAlertResolver(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)).wrapResults(), nil
 		} else {
 			err = nil
 		}

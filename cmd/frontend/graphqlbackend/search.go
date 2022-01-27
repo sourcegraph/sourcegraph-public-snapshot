@@ -89,7 +89,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		query.With(searchContextsQueryEnabled, substituteContextsStep),
 	)
 	if err != nil {
-		return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
+		return NewSearchAlertResolver(search.AlertForQuery(args.Query, err)).wrapSearchImplementer(db), nil
 	}
 	tr.LazyPrintf("parsing done")
 
