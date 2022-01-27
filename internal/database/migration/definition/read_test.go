@@ -72,6 +72,10 @@ func TestReadDefinitions(t *testing.T) {
 	t.Run("unexpected-parent", func(t *testing.T) {
 		testReadDefinitionsError(t, "unexpected-parent", "cycle")
 	})
+
+	t.Run("concurrent index creation down", func(t *testing.T) {
+		testReadDefinitionsError(t, "concurrent-down", "did not expect down migration to contain concurrent creation of an index")
+	})
 }
 
 func testReadDefinitionsError(t *testing.T, name, expectedError string) {
