@@ -1,10 +1,12 @@
 import { Meta } from '@storybook/react'
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { RevisionsPopover } from './RevisionsPopover'
 import { MOCK_PROPS, MOCK_REQUESTS } from './RevisionsPopover.mocks'
+
+import { LAST_TAB_STORAGE_KEY } from '.'
 
 const Story: Meta = {
     title: 'web/RevisionsPopover',
@@ -35,4 +37,19 @@ const Story: Meta = {
 
 export default Story
 
-export const RevisionsPopoverExample = () => <RevisionsPopover {...MOCK_PROPS} />
+interface RevisionsPopoverStoryProps {
+    initialTabIndex: number
+}
+
+const RevisionsPopoverStory: React.FunctionComponent<RevisionsPopoverStoryProps> = ({ initialTabIndex }) => {
+    // Ensure we have prepared the correct tab index before we render
+    useMemo(() => {
+        localStorage.setItem(LAST_TAB_STORAGE_KEY, initialTabIndex.toString())
+    }, [initialTabIndex])
+
+    return <RevisionsPopover {...MOCK_PROPS} />
+}
+
+export const RevisionsPopoverBranches = () => <RevisionsPopoverStory initialTabIndex={0} />
+export const RevisionsPopoverTags = () => <RevisionsPopoverStory initialTabIndex={1} />
+export const RevisionsPopoverCommits = () => <RevisionsPopoverStory initialTabIndex={2} />
