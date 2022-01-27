@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -57,8 +57,17 @@ export interface SearchPageProps
 export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const { extensionViews: ExtensionViewsSection } = props
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
-    const onboardingTourEnabled = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
-    const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL) !== ''
+
+    const isExperimentalOnboardingTourEnabled = useExperimentalFeatures(
+        features => features.showOnboardingTour ?? false
+    )
+    const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL !== '')
+    const isSearchOnboardingFeatureDisabled = props.featureFlags.get('disable-search-onboarding-tour')
+    const showOnboardingTour = useMemo(
+        () => isExperimentalOnboardingTourEnabled && !hasSearchQuery && !isSearchOnboardingFeatureDisabled,
+        [hasSearchQuery, isSearchOnboardingFeatureDisabled, isExperimentalOnboardingTourEnabled]
+    )
+
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
     return (
@@ -74,11 +83,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                     [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
                 })}
             >
-                <SearchPageInput
-                    {...props}
-                    showOnboardingTour={onboardingTourEnabled && !hasSearchQuery}
-                    source="home"
-                />
+                <SearchPageInput {...props} showOnboardingTour={showOnboardingTour} source="home" />
                 <ExtensionViewsSection
                     className="mt-5"
                     telemetryService={props.telemetryService}

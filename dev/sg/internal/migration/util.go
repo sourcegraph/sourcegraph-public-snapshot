@@ -9,8 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
-// makeMigrationFilenames makes a pair of (absolute) paths to migration files with the
-// given migration index.
+// makeMigrationFilenames makes a pair of (absolute) paths to migration files with the given migration index.
 func makeMigrationFilenames(database db.Database, migrationIndex int) (up, down, metadata string, _ error) {
 	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {

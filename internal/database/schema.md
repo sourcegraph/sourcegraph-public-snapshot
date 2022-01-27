@@ -1635,6 +1635,8 @@ Referenced by:
  response_type     | boolean                  |           |          | 
  revoked_at        | timestamp with time zone |           |          | 
  deleted_at        | timestamp with time zone |           |          | 
+ recipient_email   | citext                   |           |          | 
+ expires_at        | timestamp with time zone |           |          | 
 Indexes:
     "org_invitations_pkey" PRIMARY KEY, btree (id)
     "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL

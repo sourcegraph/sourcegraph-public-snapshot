@@ -44,6 +44,10 @@ func (o *Options) SetDefaults() {
 	}
 }
 
+// how many entries to keep track of per repo when deciding if we have seen a
+// commit before.
+const recentRootTreesMaxEntries = 1000
+
 // Combine opens the git repository at path and transforms commits from all
 // non-origin remotes into commits onto HEAD.
 func Combine(path string, opt Options) error {
@@ -56,7 +60,9 @@ func Combine(path string, opt Options) error {
 		return err
 	}
 
-	parentHash, initialRootTree, err := getHeadTree(r)
+	parentHash := getHeadHash(r)
+
+	recentRootTrees, err := getRecentRootTrees(r, recentRootTreesMaxEntries)
 	if err != nil {
 		return err
 	}
@@ -107,10 +113,7 @@ func Combine(path string, opt Options) error {
 			return err
 		}
 
-		until, ok := initialRootTree[remote]
-		if ok {
-			rootTree[remote] = until
-		}
+		seen := recentRootTrees[remote]
 
 		for i := 0; i < opt.Limit; i++ {
 			commit, err := iter.Next()
@@ -120,7 +123,8 @@ func Combine(path string, opt Options) error {
 				return err
 			}
 
-			if commit.TreeHash == until {
+			if seen.Contains(commit.TreeHash) {
+				rootTree[remote] = commit.TreeHash
 				break
 			}
 
@@ -200,29 +204,72 @@ func Combine(path string, opt Options) error {
 	return nil
 }
 
-func getHeadTree(r *git.Repository) (plumbing.Hash, map[string]plumbing.Hash, error) {
+// getHeadHash returns the hash for HEAD. If that fails plumbing.ZeroHash is
+// returned.
+func getHeadHash(r *git.Repository) plumbing.Hash {
 	head, err := r.Head()
 	if err != nil {
-		return plumbing.ZeroHash, map[string]plumbing.Hash{}, nil
+		return plumbing.ZeroHash
 	}
+	return head.Hash()
+}
 
-	commit, err := r.CommitObject(head.Hash())
+type hashSet map[plumbing.Hash]struct{}
+
+func (h hashSet) Add(k plumbing.Hash) {
+	h[k] = struct{}{}
+}
+
+func (h hashSet) Contains(k plumbing.Hash) bool {
+	if h == nil {
+		return false
+	}
+	_, ok := h[k]
+	return ok
+}
+
+func getRecentRootTrees(r *git.Repository, maxEntries int) (map[string]hashSet, error) {
+	dirs := map[string]hashSet{}
+
+	// Ensure HEAD exists so we fallback to empty behaviour on empty branch
+	// instead of error.
+	_, err := r.Head()
 	if err != nil {
-		return plumbing.ZeroHash, nil, err
+		return dirs, nil
 	}
 
-	tree, err := commit.Tree()
+	iter, err := r.Log(&git.LogOptions{})
 	if err != nil {
-		return plumbing.ZeroHash, nil, err
+		return nil, err
 	}
 
-	dirs := map[string]plumbing.Hash{}
-	for _, entry := range tree.Entries {
-		if entry.Mode == filemode.Dir {
-			dirs[entry.Name] = entry.Hash
+	for i := 0; i < maxEntries; i++ {
+		commit, err := iter.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		tree, err := commit.Tree()
+		if err != nil {
+			return nil, err
+		}
+
+		for _, entry := range tree.Entries {
+			if entry.Mode == filemode.Dir {
+				seen, ok := dirs[entry.Name]
+				if !ok {
+					seen = make(hashSet)
+					dirs[entry.Name] = seen
+				}
+				seen.Add(entry.Hash)
+			}
 		}
 	}
-	return commit.Hash, dirs, nil
+
+	return dirs, nil
 }
 
 func readmeObject(storer storer.EncodedObjectStorer) (plumbing.Hash, error) {
