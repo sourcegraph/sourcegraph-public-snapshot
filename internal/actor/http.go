@@ -43,7 +43,7 @@ var (
 	metricOutgoingActors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_actors_outgoing_requests",
 		Help: "Total number of actors set on outgoing requests by actor type.",
-	}, []string{"actor_type"})
+	}, []string{"actor_type", "path"})
 )
 
 // HTTPTransport is a roundtripper that sets actors within request context as headers on
@@ -64,21 +64,22 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	actor := FromContext(req.Context())
+	path := req.URL.Path
 	switch {
 	// Indicate this is an internal user
 	case actor.IsInternal():
 		req.Header.Set(headerKeyActorUID, headerValueInternalActor)
-		metricOutgoingActors.WithLabelValues(metricActorTypeInternal).Inc()
+		metricOutgoingActors.WithLabelValues(metricActorTypeInternal, path).Inc()
 
 	// Indicate this is an authenticated user
 	case actor.IsAuthenticated():
 		req.Header.Set(headerKeyActorUID, actor.UIDString())
-		metricOutgoingActors.WithLabelValues(metricActorTypeUser).Inc()
+		metricOutgoingActors.WithLabelValues(metricActorTypeUser, path).Inc()
 
 	// Indicate no actor is associated with request
 	default:
 		req.Header.Set(headerKeyActorUID, headerValueNoActor)
-		metricOutgoingActors.WithLabelValues(metricActorTypeNone).Inc()
+		metricOutgoingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 	}
 
 	return t.RoundTripper.RoundTrip(req)
