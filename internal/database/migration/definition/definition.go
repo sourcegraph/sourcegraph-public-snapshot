@@ -38,6 +38,13 @@ func newDefinitions(migrationDefinitions []Definition) *Definitions {
 	}
 }
 
+// All returns the set of all definitions ordered such that each migration occurs
+// only after all of its parents. The returned slice is not a copy, so it is not
+// meant to be mutated.
+func (ds *Definitions) All() []Definition {
+	return ds.definitions
+}
+
 func (ds *Definitions) Count() int {
 	return len(ds.definitions)
 }
