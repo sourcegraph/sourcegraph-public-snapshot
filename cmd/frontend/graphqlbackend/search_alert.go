@@ -93,9 +93,11 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 		description:    fmt.Sprintf("We weren't able to find any results in %s.", usedTime.Round(time.Second)),
 		proposedQueries: []*searchQueryDescription{
 			{
-				description: "query with longer timeout",
-				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitField(q, query.FieldTimeout)),
-				patternType: r.PatternType,
+				search.NewProposedQuery(
+					"query with longer timeout",
+					fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitField(q, query.FieldTimeout)),
+					r.PatternType,
+				),
 			},
 		},
 	}
@@ -133,11 +135,15 @@ func (o *alertObserver) alertForNoResolvedRepos(ctx context.Context, q query.Q) 
 	}
 	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
 		withoutContextFilter := query.OmitField(q, query.FieldContext)
-		proposedQueries := []*searchQueryDescription{{
-			description: "search in the global context",
-			query:       fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
-			patternType: o.PatternType,
-		}}
+		proposedQueries := []*searchQueryDescription{
+			{
+				search.NewProposedQuery(
+					"search in the global context",
+					fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
+					o.PatternType,
+				),
+			},
+		}
 
 		return &searchAlert{
 			prometheusType:  "no_resolved_repos__context_none_in_common",
@@ -172,9 +178,11 @@ func (o *alertObserver) alertForNoResolvedRepos(ctx context.Context, q query.Q) 
 		}
 		if o.reposExist(ctx, tryIncludeForks) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: "include forked repositories in your query.",
-				query:       o.OriginalQuery + " fork:yes",
-				patternType: o.PatternType,
+				search.NewProposedQuery(
+					"include forked repositories in your query.",
+					o.OriginalQuery+" fork:yes",
+					o.PatternType,
+				),
 			})
 		}
 	}
@@ -189,9 +197,11 @@ func (o *alertObserver) alertForNoResolvedRepos(ctx context.Context, q query.Q) 
 		}
 		if o.reposExist(ctx, tryIncludeArchived) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: "include archived repositories in your query.",
-				query:       o.OriginalQuery + " archived:yes",
-				patternType: o.PatternType,
+				search.NewProposedQuery(
+					"include archived repositories in your query.",
+					o.OriginalQuery+" archived:yes",
+					o.PatternType,
+				),
 			})
 		}
 	}
@@ -226,11 +236,15 @@ func alertForStructuralSearchNotSet(queryString string) *searchAlert {
 		prometheusType: "structural_search_not_set",
 		title:          "No results",
 		description:    "It looks like you may have meant to run a structural search, but it is not toggled.",
-		proposedQueries: []*searchQueryDescription{{
-			description: "Activate structural search",
-			query:       queryString,
-			patternType: query.SearchTypeStructural,
-		}},
+		proposedQueries: []*searchQueryDescription{
+			{
+				search.NewProposedQuery(
+					"Activate structural search",
+					queryString,
+					query.SearchTypeStructural,
+				),
+			},
+		},
 	}
 }
 

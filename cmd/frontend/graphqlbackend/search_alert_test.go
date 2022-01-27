@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -31,9 +32,11 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 				description: "An alert for regex",
 				proposedQueries: []*searchQueryDescription{
 					{
-						description: "Some query description",
-						query:       "repo:github.com/sourcegraph/sourcegraph",
-						patternType: query.SearchTypeRegex,
+						search.NewProposedQuery(
+							"Some query description",
+							"repo:github.com/sourcegraph/sourcegraph",
+							query.SearchTypeRegex,
+						),
 					},
 				},
 			},
@@ -46,9 +49,11 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 				description: "An alert for structural",
 				proposedQueries: []*searchQueryDescription{
 					{
-						description: "Some query description",
-						query:       "repo:github.com/sourcegraph/sourcegraph",
-						patternType: query.SearchTypeStructural,
+						search.NewProposedQuery(
+							"Some query description",
+							"repo:github.com/sourcegraph/sourcegraph",
+							query.SearchTypeStructural,
+						),
 					},
 				},
 			},
@@ -60,7 +65,7 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			got := tt.Alert.ProposedQueries()
 			if !reflect.DeepEqual((*got)[0].Query(), tt.Want) {
-				t.Errorf("got: %s, want: %s", (*got)[0].query, tt.Want)
+				t.Errorf("got: %s, want: %s", (*got)[0].Query(), tt.Want)
 			}
 		})
 	}
@@ -249,9 +254,11 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		prometheusType: "no_resolved_repos__context_none_in_common",
 		title:          "No repositories found for your query within the context @user",
 		proposedQueries: []*searchQueryDescription{{
-			description: "search in the global context",
-			query:       "context:global repo:r1 foo",
-			patternType: query.SearchTypeRegex,
+			search.NewProposedQuery(
+				"search in the global context",
+				"context:global repo:r1 foo",
+				query.SearchTypeRegex,
+			),
 		}},
 	}
 
