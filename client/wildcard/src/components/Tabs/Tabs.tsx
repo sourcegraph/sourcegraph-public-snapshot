@@ -9,6 +9,7 @@ import {
     TabProps as ReachTabProps,
     Tabs as ReachTabs,
     TabsProps as ReachTabsProps,
+    useTabsContext,
 } from '@reach/tabs'
 import { As, PropsWithAs } from '@reach/utils'
 import classNames from 'classnames'
@@ -17,6 +18,8 @@ import React from 'react'
 import { TabPanelIndexContext, TabsSettingsContext, useTabsSettings } from './context'
 import styles from './Tabs.module.scss'
 import { useShouldPanelRender } from './useShouldPanelRender'
+
+export { useTabsContext }
 
 export interface TabsSettings {
     /**
