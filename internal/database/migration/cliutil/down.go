@@ -30,9 +30,13 @@ func Down(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 		}
 
 		return run(ctx, runner.Options{
-			Up:              false,
-			TargetMigration: *downTargetFlag,
-			SchemaNames:     []string{*downDatabaseNameFlag},
+			Operations: []runner.MigrationOperation{
+				{
+					SchemaName:      *downDatabaseNameFlag,
+					Up:              false,
+					TargetMigration: *downTargetFlag,
+				},
+			},
 		})
 	}
 
