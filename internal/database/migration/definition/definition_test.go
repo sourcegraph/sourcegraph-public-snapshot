@@ -4,24 +4,25 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 )
 
 func TestDefinitionGetByID(t *testing.T) {
-	definitions := newDefinitions([]Definition{
-		{ID: 1, UpFilename: "1.up.sql"},
-		{ID: 2, UpFilename: "2.up.sql"},
-		{ID: 3, UpFilename: "3.up.sql"},
-		{ID: 4, UpFilename: "4.up.sql"},
-		{ID: 5, UpFilename: "5.up.sql"},
-	})
+	definitions := []Definition{
+		{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+		{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+		{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{2}},
+		{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{3}},
+		{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{4}},
+	}
 
-	definition, ok := definitions.GetByID(3)
+	definition, ok := newDefinitions(definitions).GetByID(3)
 	if !ok {
 		t.Fatalf("expected definition")
 	}
 
-	if definition.UpFilename != "3.up.sql" {
-		t.Fatalf("unexpected up filename. want=%q have=%q", "3.up.sql", definition.UpFilename)
+	if diff := cmp.Diff(definitions[2], definition, queryComparer); diff != "" {
+		t.Errorf("unexpected definition (-want, +got):\n%s", diff)
 	}
 }
 
