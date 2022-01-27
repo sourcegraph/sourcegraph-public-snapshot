@@ -1,5 +1,6 @@
 .link {
     display: flex;
+    flex-basis: 100%;
 }
 
 .message {
@@ -7,5 +8,4 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
-    padding: 0 0.5rem 0;
 }
