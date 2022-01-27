@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
@@ -15,9 +16,7 @@ export const CodeMonitorSignUpLink: React.FunctionComponent<{
     return (
         <Button
             onClick={onClick}
-            href={`https://about.sourcegraph.com/get-started?returnTo=${encodeURIComponent(
-                '/code-monitoring/new'
-            )}&src=Monitor`}
+            href={buildGetStartedURL('code-monitoring', '/code-monitoring/new')}
             className={className}
             variant="primary"
             as="a"

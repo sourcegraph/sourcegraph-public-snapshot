@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
@@ -258,7 +259,7 @@ const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMy
         <div className="d-flex justify-content-center align-items-center flex-column p-3">
             <Link
                 onClick={onClick}
-                to={`https://about.sourcegraph.com/get-started?returnTo=${encodeURIComponent('/notebooks')}`}
+                to={buildGetStartedURL('search-notebooks', '/notebooks')}
                 className="btn btn-primary"
             >
                 {cta}

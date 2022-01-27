@@ -25,6 +25,7 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { ProductStatusBadge, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -310,12 +311,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     >
                                         Log in
                                     </Button>
-                                    <Button
-                                        className={styles.signUp}
-                                        href="https://about.sourcegraph.com/get-started"
-                                        size="sm"
-                                        as="a"
-                                    >
+                                    <Button className={styles.signUp} href={buildGetStartedURL('nav')} size="sm" as="a">
                                         Get started
                                     </Button>
                                 </div>

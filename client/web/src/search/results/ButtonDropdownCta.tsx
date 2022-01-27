@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
 import { CloudSignUpSource } from '../../auth/CloudSignUpPage'
@@ -78,9 +79,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                     </div>
                 </div>
                 <Button
-                    href={`https://about.sourcegraph.com/get-started?src=${source}&returnTo=${encodeURIComponent(
-                        returnTo
-                    )}`}
+                    href={buildGetStartedURL('search-dropdown-cta', returnTo)}
                     onClick={onClick}
                     variant="primary"
                     as="a"

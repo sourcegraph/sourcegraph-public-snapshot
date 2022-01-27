@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
 import { OnboardingTourLanguage, useOnboardingTourState } from '../stores/onboardingTourState'
@@ -101,7 +102,7 @@ const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryServic
             <div className="d-flex flex-column">
                 <Button
                     className="align-self-start mb-2"
-                    href="https://about.sourcegraph.com/get-started"
+                    href={buildGetStartedURL('onboarding-tour')}
                     onClick={onGetStarted}
                     variant="primary"
                     as="a"
