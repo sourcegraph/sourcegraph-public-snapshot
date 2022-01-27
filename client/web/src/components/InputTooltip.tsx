@@ -4,7 +4,9 @@ import { Button, ButtonProps } from '@sourcegraph/wildcard'
 
 import styles from './InputTooltip.module.scss'
 
-export interface InputTooltipProps extends ButtonProps {
+type ButtonAndInputElementProps = Omit<ButtonProps, 'type'> & React.InputHTMLAttributes<HTMLInputElement>
+
+export interface InputTooltipProps extends ButtonAndInputElementProps {
     tooltip: string
 }
 
@@ -15,9 +17,9 @@ export interface InputTooltipProps extends ButtonProps {
  *
  * All other props are passed to the `input` element.
  */
-export const InputTooltip: React.FunctionComponent<InputTooltipProps> = ({ disabled, tooltip, ...props }) => (
+export const InputTooltip: React.FunctionComponent<InputTooltipProps> = ({ disabled, tooltip, type, ...props }) => (
     <div className={styles.container}>
         {disabled ? <div className={styles.disabledTooltip} data-tooltip={tooltip} /> : null}
-        <Button as="input" disabled={disabled} data-tooltip={disabled ? undefined : tooltip} {...props} />
+        <Button as="input" disabled={disabled} data-tooltip={disabled ? undefined : tooltip} type={type} {...props} />
     </div>
 )

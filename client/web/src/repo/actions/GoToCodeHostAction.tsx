@@ -131,7 +131,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     }, [closePopover, hijackLink, isPopoverOpen, showPopover])
 
     const onClick = useCallback(
-        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+        (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
             eventLogger.log('GoToCodeHostClicked')
 
             if (isPopoverOpen) {

@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import React from 'react'
-import { DropdownToggle } from 'reactstrap'
+import { DropdownToggle, DropdownToggleProps } from 'reactstrap'
 
 import { ButtonLink, ButtonLinkProps, Button, ButtonProps } from '@sourcegraph/wildcard'
 
@@ -24,7 +24,7 @@ export const RepoHeaderActionButtonLink: React.FunctionComponent<RepoHeaderButto
     </ButtonLink>
 )
 
-export const RepoHeaderActionDropdownToggle: React.FunctionComponent<ButtonProps> = ({
+export const RepoHeaderActionDropdownToggle: React.FunctionComponent<ButtonProps & DropdownToggleProps> = ({
     children,
     className,
     ...rest

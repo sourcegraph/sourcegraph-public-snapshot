@@ -26,9 +26,9 @@ export interface ForwardReferenceComponent<
         props: As extends ''
             ? { as: keyof JSX.IntrinsicElements }
             : As extends React.ComponentType<infer P>
-            ? Merge<P, OwnProps & { as: As }>
+            ? Merge<OwnProps, P & { as: As }>
             : As extends keyof JSX.IntrinsicElements
-            ? Merge<JSX.IntrinsicElements[As], OwnProps & { as: As }>
+            ? Merge<OwnProps, JSX.IntrinsicElements[As] & { as: As }>
             : never
     ): React.ReactElement | null
 }
