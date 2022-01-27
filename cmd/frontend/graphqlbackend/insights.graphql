@@ -795,6 +795,11 @@ type InsightView implements Node {
     Information on how each data series was generated
     """
     dataSeriesDefinitions: [InsightDataSeriesDefinition!]!
+
+    """
+    The total number of dashboards on which this insight is referenced. The count is global and disregards permissions.
+    """
+    dashboardReferenceCount: Int!
 }
 
 """
