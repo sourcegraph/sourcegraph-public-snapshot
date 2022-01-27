@@ -27,7 +27,7 @@ import { NamespaceProps } from '../../namespaces'
 import { RouteDescriptor } from '../../util/contributions'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
-import { OrgInvitationPage } from './OrgInvitationPage'
+import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
 
 function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
@@ -240,8 +240,8 @@ export class OrgArea extends React.Component<Props> {
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
-            // The OrgInvitationPage is displayed without the OrgHeader because it is modal-like.
-            return <OrgInvitationPage {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
+            // The OrgInvitationPageLegacy is displayed without the OrgHeader because it is modal-like.
+            return <OrgInvitationPageLegacy {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
         }
 
         return (

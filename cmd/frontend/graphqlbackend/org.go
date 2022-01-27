@@ -76,7 +76,13 @@ func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolve
 	if envvar.SourcegraphDotComMode() {
 		err := backend.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
-			return nil, errors.Newf("org not found: %d", orgID)
+			// allow invited user to view org details
+			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+				_, err := database.OrgInvitations(db).GetPending(ctx, orgID, a.UID)
+				if err != nil {
+					return nil, errors.Newf("org not found: %d", orgID)
+				}
+			}
 		}
 	}
 	org, err := db.Orgs().GetByID(ctx, orgID)

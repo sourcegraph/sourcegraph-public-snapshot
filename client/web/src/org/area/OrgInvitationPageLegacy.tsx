@@ -44,7 +44,7 @@ interface State {
 /**
  * Displays the organization invitation for the current user, if any.
  */
-export const OrgInvitationPage = withAuthenticatedUser(
+export const OrgInvitationPageLegacy = withAuthenticatedUser(
     class OrgInvitationPage extends React.PureComponent<Props, State> {
         public state: State = {}
 
