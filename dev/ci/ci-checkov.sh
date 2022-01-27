@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Set this to fail on the install 
+# Set this to fail on the install
 set -euxo pipefail
 
 # Install and run the plugin for checkov
