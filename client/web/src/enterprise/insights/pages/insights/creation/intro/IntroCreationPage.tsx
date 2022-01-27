@@ -20,7 +20,7 @@ import {
 } from './cards/InsightCards'
 import styles from './IntroCreationPage.module.scss'
 
-interface IntroCreationPageProps extends TelemetryProps { }
+interface IntroCreationPageProps extends TelemetryProps {}
 
 /** Displays intro page for insights creation UI. */
 export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> = props => {

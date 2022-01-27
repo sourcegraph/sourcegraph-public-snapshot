@@ -63,9 +63,9 @@ const authProviderFragment = gql`
     }
 `
 
-interface Props extends RouteComponentProps<{}> { }
+interface Props extends RouteComponentProps<{}> {}
 
-class FilteredAuthProviderConnection extends FilteredConnection<GQL.IAuthProvider> { }
+class FilteredAuthProviderConnection extends FilteredConnection<GQL.IAuthProvider> {}
 
 /**
  * A page displaying the auth providers in site configuration.

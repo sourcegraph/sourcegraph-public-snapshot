@@ -25,10 +25,10 @@ import { SearchContextForm } from './SearchContextForm'
 
 export interface CreateSearchContextPageProps
     extends RouteComponentProps,
-    ThemeProps,
-    TelemetryProps,
-    Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
-    PlatformContextProps<'requestGraphQL'> {
+        ThemeProps,
+        TelemetryProps,
+        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
