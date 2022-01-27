@@ -4,7 +4,6 @@ import { finalize, tap } from 'rxjs/operators'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
-import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { useLocalStorage, AlertProps } from '@sourcegraph/wildcard'
@@ -57,9 +56,9 @@ export const WebHoverOverlay: React.FunctionComponent<
         if (hoverHasValue) {
             onHoverShown?.()
         }
-        if (hoveredToken) {
-            onHoverToken(hoveredToken)
-        }
+        // if (hoveredToken) {
+        //     onHoverToken(hoveredToken)
+        // }
     }, [
         hoveredToken,
         // hoveredToken?.filePath,
@@ -73,25 +72,26 @@ export const WebHoverOverlay: React.FunctionComponent<
     useEffect(() => {
         const token = props.hoveredTokenElement
 
-        const definitionAction =
-            Array.isArray(props.actionsOrError) &&
-            props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
+        // const definitionAction =
+        //     Array.isArray(props.actionsOrError) &&
+        //     props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
 
-        const referenceAction =
-            Array.isArray(props.actionsOrError) &&
-            props.actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
+        // const referenceAction =
+        //     Array.isArray(props.actionsOrError) &&
+        //     props.actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
 
-        const action = definitionAction || referenceAction
-        if (!action) {
-            return undefined
-        }
-        const url = urlForClientCommandOpen(action.action, props.location.hash)
+        // const action = definitionAction || referenceAction
+        // if (!action) {
+        //     return undefined
+        // }
+        // const url = urlForClientCommandOpen(action.action, props.location.hash)
 
-        if (!token || !url || !props.nav) {
+        // if (!token || !url || !props.nav) {
+        if (!token || !hoveredToken) {
             return
         }
 
-        const nav = props.nav
+        // const nav = props.nav
 
         const oldCursor = token.style.cursor
         token.style.cursor = 'pointer'
@@ -104,9 +104,11 @@ export const WebHoverOverlay: React.FunctionComponent<
                         return
                     }
 
-                    const actionType = action === definitionAction ? 'definition' : 'reference'
-                    props.telemetryService.log(`${actionType}HoverOverlay.click`)
-                    nav(url)
+                    // const actionType = action === definitionAction ? 'definition' : 'reference'
+                    // props.telemetryService.log(`${actionType}HoverOverlay.click`)
+                    // nav(url)
+
+                    onHoverToken(hoveredToken)
                 }),
                 finalize(() => (token.style.cursor = oldCursor))
             )
@@ -121,6 +123,7 @@ export const WebHoverOverlay: React.FunctionComponent<
         props.telemetryService,
         props.onHoverToken,
         hoveredToken,
+        onHoverToken,
     ])
 
     return (
