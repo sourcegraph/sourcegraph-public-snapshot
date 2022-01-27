@@ -18,17 +18,8 @@ import (
 )
 
 func ReadDefinitions(fs fs.FS) (*Definitions, error) {
-	filenames, err := readSQLFilenames(fs)
+	migrationDefinitions, err := readDefinitions(fs)
 	if err != nil {
-		return nil, err
-	}
-
-	migrationDefinitions, err := buildDefinitionStencils(filenames)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := hydrateDefinitions(fs, migrationDefinitions); err != nil {
 		return nil, err
 	}
 
@@ -51,6 +42,98 @@ type instructionalError struct {
 
 func (e instructionalError) Error() string {
 	return fmt.Sprintf("%s: %s\n\n%s\n", e.class, e.description, e.instructions)
+}
+
+func readDefinitions(fs fs.FS) ([]Definition, error) {
+	root, err := http.FS(fs).Open("/")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = root.Close() }()
+
+	migrations, err := root.Readdir(0)
+	if err != nil {
+		return nil, err
+	}
+
+	versions := make([]int, 0, len(migrations))
+	for _, file := range migrations {
+		if version, err := strconv.Atoi(file.Name()); err == nil {
+			versions = append(versions, version)
+		}
+	}
+	sort.Ints(versions)
+
+	definitions := make([]Definition, 0, len(versions))
+	for _, version := range versions {
+		definition, err := readDefinition(fs, version)
+		if err != nil {
+			return nil, errors.Wrapf(err, "malformed migration definition %d", version)
+		}
+
+		definitions = append(definitions, definition)
+	}
+
+	return definitions, nil
+}
+
+func readDefinition(fs fs.FS, version int) (Definition, error) {
+	upFilename := fmt.Sprintf("%d/up.sql", version)
+	downFilename := fmt.Sprintf("%d/down.sql", version)
+	metadataFilename := fmt.Sprintf("%d/metadata.yaml", version)
+
+	upQuery, _, err := readQueryFromFile(fs, upFilename)
+	if err != nil {
+		return Definition{}, err
+	}
+
+	downQuery, _, err := readQueryFromFile(fs, downFilename)
+	if err != nil {
+		return Definition{}, err
+	}
+
+	if _, ok := parseIndexMetadata(downQuery.Query(sqlf.PostgresBindVar)); ok {
+		return Definition{}, instructionalError{
+			class:       "malformed concurrent index creation",
+			description: "did not expect down migration to contain concurrent creation of an index",
+			instructions: strings.Join([]string{
+				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
+				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
+			}, " "),
+		}
+	}
+
+	return hydrateMetadataFromFile(fs, metadataFilename, Definition{
+		ID:        version,
+		UpQuery:   upQuery,
+		DownQuery: downQuery,
+	})
+}
+
+// hydrateMetadataFromFile populates the given definition with metdata parsed
+// from the given file. The mutated definition is returned.
+func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (_ Definition, _ error) {
+	file, err := fs.Open(filepath)
+	if err != nil {
+		return Definition{}, err
+	}
+	defer file.Close()
+
+	contents, err := io.ReadAll(file)
+	if err != nil {
+		return Definition{}, err
+	}
+
+	var payload struct {
+		Name   string `yaml:"name"`
+		Parent int    `yaml:"parent"`
+	}
+	if err := yaml.Unmarshal(contents, &payload); err != nil {
+		return Definition{}, err
+	}
+
+	definition.Metadata.Parent = payload.Parent
+	return definition, nil
 }
 
 func readSQLFilenames(fs fs.FS) ([]string, error) {
@@ -283,6 +366,15 @@ func reorderDefinitions(migrationDefinitions []Definition) error {
 	migrationDefinitionMap := make(map[int]Definition, len(migrationDefinitions))
 	for _, migrationDefinition := range migrationDefinitions {
 		migrationDefinitionMap[migrationDefinition.ID] = migrationDefinition
+	}
+
+	for _, migrationDefinition := range migrationDefinitions {
+		parent := migrationDefinition.Metadata.Parent
+		if parent != 0 {
+			if _, ok := migrationDefinitionMap[parent]; !ok {
+				return unknownMigrationError(parent, &migrationDefinition.ID)
+			}
+		}
 	}
 
 	// Find topological order of migrations

@@ -1,6 +1,7 @@
 package definition
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/cockroachdb/errors"
@@ -131,4 +132,12 @@ func (ds *Definitions) DownFrom(id, n int) ([]Definition, error) {
 	}
 
 	return slice, nil
+}
+
+func unknownMigrationError(id int, source *int) error {
+	if source == nil {
+		return fmt.Errorf("unknown migration %d", id)
+	}
+
+	return fmt.Errorf("unknown migration %d referenced from migration %d", id, *source)
 }
