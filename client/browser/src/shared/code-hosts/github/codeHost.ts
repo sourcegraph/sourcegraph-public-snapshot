@@ -407,6 +407,27 @@ export const isPrivateRepository = (
         })
 }
 
+export interface GithubCodeHost extends CodeHost {
+    /**
+     * Configuration for built-in search input enhancement
+     */
+    searchEnhancement: {
+        /** Search input element resolver */
+        searchViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Search result element resolver */
+        resultViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Callback to trigger on input element change */
+        onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
+    }
+
+    /**
+     * TODO: description
+     */
+    searchPageEnhancement: {}
+}
+
+export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => 'searchEnhancement' in codeHost
+
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',

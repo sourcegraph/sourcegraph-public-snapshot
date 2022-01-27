@@ -99,7 +99,7 @@ import { observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
-import { githubCodeHost } from '../github/codeHost'
+import { githubCodeHost, isGithubCodeHost } from '../github/codeHost'
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
@@ -220,6 +220,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         /** Callback to trigger on input element change */
         onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
     }
+
+    /**
+     * TODO: description
+     */
+    searchPageEnhancement?: {}
 
     /**
      * Resolve {@link ContentView}s from the DOM.
@@ -823,8 +828,25 @@ export async function handleCodeHost({
             (await codeHost.getContext?.())?.privateRepository
         )
 
-    if (codeHost.searchEnhancement) {
+    if (isGithubCodeHost(codeHost)) {
         subscriptions.add(initializeSearchEnhancement(codeHost.searchEnhancement, sourcegraphURL, mutations))
+
+        // TODO: handle not found case
+        const CONTAINER_SELECTOR =
+            '#repo-content-pjax-container > div > div.col-12.col-md-9.float-left.px-2.pt-3.pt-md-0.codesearch-results > div'
+        // =====
+        // TODO: Track URL/location change
+        // TODO: Get place/selector to inject a search button
+        const url = new URL(window.location.href)
+        const query = url.searchParams.get('q')
+        const type = url.searchParams.get('type')
+        console.log({ query, type })
+        const link = document.createElement('a')
+        link.setAttribute('href', `https://sourcegraph.com/search?q=${query}`)
+        link.textContent = 'Search in Sourcegraph'
+        const container = document.querySelector(CONTAINER_SELECTOR)
+        container?.prepend(link)
+        // TODO: Parse URL query + type and update button URL
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
