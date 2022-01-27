@@ -224,7 +224,7 @@ export const NamespaceBatchChangeListPage: React.FunctionComponent<NamespaceBatc
     )
 }
 
-interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'location' | 'canCreate'> { }
+interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'location' | 'canCreate'> {}
 
 const BatchChangeListEmptyElement: React.FunctionComponent<BatchChangeListEmptyElementProps> = ({
     canCreate,
