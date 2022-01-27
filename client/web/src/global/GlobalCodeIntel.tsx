@@ -302,34 +302,30 @@ const ReferenceGroup: React.FunctionComponent<{
 
     return (
         <>
-            <p className="mb-0">
-                <button
-                    aria-expanded={isOpen}
-                    type="button"
-                    onClick={handleOpen}
-                    className="border-0 d-flex justify-content-between w-100"
-                >
-                    <span>
-                        <Link to={`/${group.references[0].resource.repository.name}`}>
-                            {displayRepoName(group.references[0].resource.repository.name)}
-                        </Link>{' '}
-                        ›{' '}
-                        <Link to={`/${group.references[0].resource.repository.name}/-/blob/${group.path}`}>
-                            {fileBase ? `${fileBase}/` : null}
-                            <strong>{fileName}</strong>
-                        </Link>{' '}
-                        ({group.references.length} references)
-                    </span>
-                    {isOpen ? (
-                        <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
-                    ) : (
-                        <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
-                    )}
-                </button>
-            </p>
+            <button
+                aria-expanded={isOpen}
+                type="button"
+                onClick={handleOpen}
+                className="border-0 d-flex justify-content-start w-100"
+            >
+                {isOpen ? (
+                    <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
+                ) : (
+                    <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
+                )}
+
+                <span>
+                    <Link to={`/${group.repoName}`}>{displayRepoName(group.repoName)}</Link> ›{' '}
+                    <Link to={`/${group.repoName}/-/blob/${group.path}`}>
+                        {fileBase ? `${fileBase}/` : null}
+                        <strong>{fileName}</strong>
+                    </Link>{' '}
+                    ({group.references.length} references)
+                </span>
+            </button>
 
             <Collapse id={group.repoName + group.path} isOpen={isOpen} className="border-top">
-                <ul className="list-unstyled card-body ml-2">
+                <ul className="list-unstyled pl-3 py-1 mb-0">
                     {group.references.map(reference => {
                         const fileURL = buildFileURL(reference)
                         const className = activeReference === fileURL ? styles.coolCodeIntelReferenceActive : ''
@@ -381,7 +377,7 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
                     </div>
                 </TabList>
             </div>
-            <TabPanels className={styles.tabs}>
+            <TabPanels>
                 {TABS.map(tab => (
                     <TabPanel key={tab.id} className={styles.tabsContent} data-testid="panel-tabs-content">
                         <tab.component hoveredToken={props.hoveredToken} />
