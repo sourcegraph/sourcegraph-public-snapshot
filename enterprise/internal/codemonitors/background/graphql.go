@@ -92,6 +92,12 @@ const gqlSearchQuery = `query CodeMonitorSearch(
 							}
 							date
 						}
+						committer {
+							person {
+								displayName
+							}
+							date
+						}
 						message
 					}
 				}
@@ -163,5 +169,5 @@ func gqlURL(queryName string) (string, error) {
 func extractTime(result cmtypes.CommitSearchResult) (time.Time, error) {
 	// This relies on the date format that our API returns. It was previously broken
 	// and should be checked first in case date extraction stops working.
-	return time.Parse(time.RFC3339, result.Commit.Author.Date)
+	return time.Parse(time.RFC3339, result.Commit.Committer.Date)
 }
