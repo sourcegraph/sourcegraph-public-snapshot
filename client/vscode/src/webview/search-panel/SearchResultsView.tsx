@@ -47,6 +47,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     const [showSavedSearchForm, setShowSavedSearchForm] = useState(false)
 
     // Update local query state on e.g. sidebar events.
+    // TODO: create an API shared with SearchHomeView.
     useEffect(() => {
         setUserQueryState(context.submittedSearchQueryState.queryState)
     }, [context.submittedSearchQueryState.queryState])
@@ -79,6 +80,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     // Submit new search on change
     const setPatternType = useCallback(
         (patternType: SearchPatternType) => {
+            console.log({ patternType })
             onSubmit({ patternType })
         },
         [onSubmit]
@@ -159,7 +161,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                 <SearchBox
                     caseSensitive={context.submittedSearchQueryState?.searchCaseSensitivity}
                     setCaseSensitivity={setCaseSensitivity}
-                    patternType={SearchPatternType.literal}
+                    patternType={context.submittedSearchQueryState?.searchPatternType}
                     setPatternType={setPatternType}
                     isSourcegraphDotCom={isSourcegraphDotCom}
                     hasUserAddedExternalServices={false}
@@ -188,7 +190,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                 />
             </div>
 
-            {!authenticatedUser && context.searchResults && (
+            {!authenticatedUser && (
                 <SearchPageCta
                     icon={<SearchBetaIcon />}
                     ctaTitle="Sign up to add your public and private repositories and access other features"
@@ -225,6 +227,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     fullQuery={fullQuery}
                     onComplete={() => setShowSavedSearchForm(false)}
                     platformContext={platformContext}
+                    instanceURL={instanceURL}
                 />
             )}
 

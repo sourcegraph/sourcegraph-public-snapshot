@@ -16,7 +16,7 @@ import styles from './SavedSearchForm.module.scss'
 
 // Debt: this is a fork of the web <SearchResultsInfobar>.
 
-export interface SavedSearchFormProps {
+export interface SavedSearchFormProps extends Pick<WebviewPageProps, 'instanceURL'> {
     authenticatedUser: AuthenticatedUser | null
     defaultValues?: Partial<SavedSearchFields>
     title?: string
@@ -68,7 +68,7 @@ const createSavedSearchQuery = gql`
 
 export interface SavedSearchCreateFormProps
     extends Omit<SavedSearchFormProps, 'loading' | 'error' | 'onSubmit'>,
-        Pick<WebviewPageProps, 'platformContext'> {
+        Pick<WebviewPageProps, 'platformContext' | 'instanceURL'> {
     authenticatedUser: AuthenticatedUser
     onComplete: () => void
 }
@@ -286,7 +286,7 @@ const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = props => 
                         </ProductStatusBadge>
                         <span>
                             Watch for changes to your code and trigger email notifications, webhooks, and more with{' '}
-                            <Link to="/code-monitoring">code monitoring →</Link>
+                            <Link to={`${props.instanceURL}/code-monitoring`}>code monitoring →</Link>
                         </span>
                     </Container>
                 )}
