@@ -1,41 +1,78 @@
 import * as Comlink from 'comlink'
 import React, { useMemo } from 'react'
 import { render } from 'react-dom'
-import { of } from 'rxjs'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
-import { AnchorLink, setLinkComponent, useObservable } from '@sourcegraph/wildcard'
+import { AnchorLink, LoadingSpinner, setLinkComponent, useObservable } from '@sourcegraph/wildcard'
 
-import { ExtensionCoreAPI, SearchSidebarAPI } from '../../contract'
+import { ExtensionCoreAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
+import { createPlatformContext, WebviewPageProps } from '../platform/context'
+import { adaptToEditorTheme } from '../theme'
+
+import { createSearchSidebarAPI } from './api'
+import { AuthSidebarView } from './AuthSidebarView'
+import { ContextInvalidatedSidebarView } from './ContextInvalidatedSidebarView'
 
 // TODO: load extension host
 
 const vsCodeApi = window.acquireVsCodeApi()
 
-const searchSidebarAPI: SearchSidebarAPI = {
-    ping: () => {
-        console.log('ping called')
-        return proxySubscribable(of('pong'))
-    },
-    addTextDocumentIfNotExists: () => {
-        console.log('addTextDocumentIfNotExists called')
-    },
-}
-
 const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 
+const searchSidebarAPI = createSearchSidebarAPI()
 Comlink.expose(searchSidebarAPI, expose)
-
 export const extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI> = Comlink.wrap(proxy)
+
+const platformContext = createPlatformContext(extensionCoreAPI)
 
 setLinkComponent(AnchorLink)
 
-const Main: React.FC = () => {
-    console.log('rendering webview')
+const themes = adaptToEditorTheme()
 
+const Main: React.FC = () => {
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
+
+    const authenticatedUser = useObservable(
+        useMemo(() => wrapRemoteObservable(extensionCoreAPI.getAuthenticatedUser()), [])
+    )
+
+    const instanceURL = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.getInstanceURL()), []))
+
+    const theme = useObservable(themes)
+
+    // If any of the remote values have yet to load.
+    const initialized =
+        state !== undefined && authenticatedUser !== undefined && instanceURL !== undefined && theme !== undefined
+
+    if (!initialized) {
+        return <LoadingSpinner />
+    }
+
+    const webviewPageProps: WebviewPageProps = {
+        extensionCoreAPI,
+        platformContext,
+        theme,
+        instanceURL,
+    }
+
+    if (state.status === 'context-invalidated') {
+        return <ContextInvalidatedSidebarView {...webviewPageProps} />
+    }
+
+    // TODO: should we hide the access token form permanently if an unauthenticated user
+    // has performed a search before? Or just for this session?
+    if (state.status === 'search-home' && !authenticatedUser) {
+        return <AuthSidebarView {...webviewPageProps} />
+    }
+
+    if (state.status === 'remote-browsing') {
+        // TODO files sidebar
+    }
+
+    if (state.status === 'idle') {
+        // Search sidebar?
+    }
 
     return (
         <div>

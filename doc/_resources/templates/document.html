@@ -58,7 +58,7 @@
 {{end}}
 
 {{define "head"}}
-	{{if (or (not .Content) .ContentVersion)}}<meta name="robots" content="noindex">{{end}}
+	{{if (or (contains .Content.Path "insights") (or (not .Content) .ContentVersion))}}<meta name="robots" content="noindex">{{end}}
 {{end}}
 
 {{define "content"}}

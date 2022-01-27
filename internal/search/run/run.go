@@ -2,12 +2,11 @@ package run
 
 import (
 	"context"
-	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -25,37 +24,6 @@ type SearchInputs struct {
 	DefaultLimit int
 }
 
-// Job is an interface shared by all individual search operations in the backend
-// (e.g., text vs commit vs symbol search are represented as different jobs).
-// Calling Run on a job object runs a search. The third argument accepts resolved repositories (which may or may
-// not be required, depending on the job. E.g., a global search job does not
-// require upfront repository resolution).
-type Job interface {
-	Run(context.Context, streaming.Sender, searchrepos.Pager) error
-	Name() string
-
-	// Required sets whether the results of this job are required. If true,
-	// we must wait for its routines to complete. If false, the job is
-	// optional, expressing that we may cancel the job. We typically run a
-	// set of required and optional jobs concurrently, and cancel optional
-	// jobs once we've guaranteed some required results, or after a timeout.
-	Required() bool
-}
-
-// Routine represents all inputs to run multiple search operations (i.e.,
-// multiple Jobs) in a single search routine. In other words, it executes all
-// jobs that may be implemented by different search engines (Zoekt vs Searcher)
-// or return different result types (text vs. symbols). The relation with
-// SearchInputs and Routine is that SearchInputs are static values, parsed and
-// validated, to produce one or more Routines. Routines express the complete
-// information to execute the runtime semantics for particular search
-// operations.
-type Routine struct {
-	Jobs        []Job
-	RepoOptions search.RepoOptions
-	Timeout     time.Duration
-}
-
 // MaxResults computes the limit for the query.
 func (inputs SearchInputs) MaxResults() int {
 	if inputs.Query == nil {
@@ -71,4 +39,14 @@ func (inputs SearchInputs) MaxResults() int {
 	}
 
 	return search.DefaultMaxSearchResults
+}
+
+// Job is an interface shared by all individual search operations in the
+// backend (e.g., text vs commit vs symbol search are represented as different
+// jobs) as well as combinations over those searches (run a set in parallel,
+// timeout). Calling Run on a job object runs a search.
+//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/search/run -i Job -o job_mock_test.go
+type Job interface {
+	Run(context.Context, database.DB, streaming.Sender) error
+	Name() string
 }

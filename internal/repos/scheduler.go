@@ -202,10 +202,10 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
-					log15.Warn("runUpdateLoop: error requesting repo update", "uri", repo.Name, "err", err)
+					log15.Error("runUpdateLoop: error requesting repo update", "uri", repo.Name, "err", err)
 				} else if resp != nil && resp.Error != "" {
 					schedError.WithLabelValues("repoUpdateResponse").Inc()
-					log15.Warn("runUpdateLoop: error updating repo", "uri", repo.Name, "err", resp.Error)
+					log15.Error("runUpdateLoop: error updating repo", "uri", repo.Name, "err", resp.Error)
 				}
 				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
 					s.schedule.updateInterval(repo, interval)
@@ -789,10 +789,12 @@ func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 			update.Interval = interval
 		}
 
-		// Add a jitter of 5% on either side of the interval to avoid
-		// repos getting updated at the same time.
-		delta := int64(update.Interval) / 20
-		update.Interval = update.Interval + time.Duration(s.randGenerator.Int63n(2*delta)-delta)
+		if conf.ExperimentalFeatures().EnableRepoUpdateIntervalJitter {
+			// Add a jitter of 5% on either side of the interval to avoid
+			// repos getting updated at the same time.
+			delta := int64(update.Interval) / 20
+			update.Interval = update.Interval + time.Duration(s.randGenerator.Int63n(2*delta)-delta)
+		}
 
 		update.Due = timeNow().Add(update.Interval)
 		log15.Debug("updated repo", "repo", repo.Name, "due", update.Due.Sub(timeNow()))
@@ -864,6 +866,8 @@ func (s *schedule) reset() {
 		s.timer.Stop()
 		s.timer = nil
 	}
+
+	log15.Debug("schedKnownRepos reset")
 	schedKnownRepos.Set(0)
 }
 

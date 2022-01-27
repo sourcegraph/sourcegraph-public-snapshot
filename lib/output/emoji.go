@@ -10,6 +10,8 @@ const (
 	EmojiAsterisk         = "✱"
 	EmojiWarningSign      = "⚠️"
 	EmojiFingerPointRight = "👉"
+	EmojiHourglass        = "⌛"
+	EmojiShrug            = "🤷"
 	EmojiOk               = "👌"
 	EmojiQuestionMark     = "❔"
 )

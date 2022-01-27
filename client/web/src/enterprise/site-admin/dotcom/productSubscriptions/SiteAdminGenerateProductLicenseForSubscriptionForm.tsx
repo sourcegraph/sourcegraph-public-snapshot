@@ -10,7 +10,7 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable } from '@sourcegraph/wildcard'
+import { Alert, Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
@@ -125,12 +125,15 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
         <div className="site-admin-generate-product-license-for-subscription-form">
             {creation && !isErrorLike(creation) && creation !== LOADING ? (
                 <div className="border rounded border-success mb-5">
-                    <div className="border-top-0 border-left-0 border-right-0 rounded-0 alert alert-success mb-0 d-flex align-items-center justify-content-between px-3 py-2">
+                    <Alert
+                        variant="success"
+                        className="border-top-0 border-left-0 border-right-0 rounded-0 mb-0 d-flex align-items-center justify-content-between px-3 py-2"
+                    >
                         <span>Generated product license.</span>
                         <Button onClick={dismissAlert} autoFocus={true} variant="primary">
                             Dismiss
                         </Button>
-                    </div>
+                    </Alert>
                 </div>
             ) : (
                 <Form onSubmit={onSubmit}>

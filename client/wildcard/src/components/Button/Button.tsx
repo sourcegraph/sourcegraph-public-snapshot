@@ -21,13 +21,6 @@ export interface ButtonProps
      * Modifies the button style to have a transparent/light background and a more pronounced outline.
      */
     outline?: boolean
-    /**
-     * Used to change the element that is rendered.
-     * Useful if needing to style a link as a button, or in certain cases where a different element is required.
-     * Always be mindful of potentially accessibiliy pitfalls when using this!
-     * Note: This component assumes `HTMLButtonElement` types, providing a different component here will change the potential types that can be passed to this component.
-     */
-    as?: React.ElementType
 }
 
 /**

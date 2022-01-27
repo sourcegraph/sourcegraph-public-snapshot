@@ -211,7 +211,6 @@ describe('Search Notebook', () => {
 
         // Edit and run new markdown block
         await driver.page.click(newMarkdownBlockSelector)
-        await driver.page.click('[data-testid="Edit"]')
         await driver.replaceText({
             selector: `${newMarkdownBlockSelector} .monaco-editor`,
             newText: 'Replaced text',

@@ -17,7 +17,7 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button } from '@sourcegraph/wildcard'
+import { Link, Button, Card } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -26,6 +26,7 @@ import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
+import { OnboardingTourInfo } from '../../onboarding-tour/OnboardingTourInfo'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
@@ -223,6 +224,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const submittedSearchesCount = getSubmittedSearchesCount()
     const isValidSignUpCtaCadence = submittedSearchesCount < 5 || submittedSearchesCount % 5 === 0
     const showSignUpCta = !authenticatedUser && resultsFound && isValidSignUpCtaCadence
+    const showOnboardingTour =
+        props.isSourcegraphDotCom && !props.authenticatedUser && props.featureFlags.get('getting-started-tour')
 
     // Log view event when signup CTA is shown
     useEffect(() => {
@@ -250,9 +253,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 filters={results?.filters}
                 getRevisions={getRevisions}
                 prefixContent={
-                    props.isSourcegraphDotCom &&
-                    !props.authenticatedUser &&
-                    props.featureFlags.get('getting-started-tour') ? (
+                    showOnboardingTour ? (
                         <OnboardingTour className="mb-1" telemetryService={props.telemetryService} />
                     ) : undefined
                 }
@@ -291,6 +292,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             />
 
             <div className={styles.streamingSearchResultsContainer}>
+                {showOnboardingTour && <OnboardingTourInfo className="mt-2 mr-3 mb-3" />}
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}
@@ -308,7 +310,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {showSignUpCta && (
-                    <div className="card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
+                    <Card className="my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
                         <div className="mr-md-3">
                             <SearchBetaIcon />
                         </div>
@@ -331,7 +333,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         >
                             Create a free account
                         </Button>
-                    </div>
+                    </Card>
                 )}
 
                 <StreamingSearchResultsList

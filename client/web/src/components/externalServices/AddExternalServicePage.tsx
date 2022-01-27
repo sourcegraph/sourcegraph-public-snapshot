@@ -6,6 +6,7 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { Alert } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -110,10 +111,10 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
                             to={`${routingPrefix}/external-services/${createdExternalService.id}`}
                         />
                     </div>
-                    <div className="alert alert-warning">
+                    <Alert variant="warning">
                         <h4>Warning</h4>
                         <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
-                    </div>
+                    </Alert>
                 </div>
             ) : (
                 <div>

@@ -856,26 +856,29 @@ func Test_toSearchInputs(t *testing.T) {
 				PatternType:  query.SearchTypeLiteral,
 			},
 		}
-		routine, _ := resolver.toSearchRoutine(q)
-		var jobNames []string
-		for _, j := range routine.Jobs {
-			jobNames = append(jobNames, j.Name())
-		}
-		return strings.Join(jobNames, ",")
+		job, _ := resolver.toSearchJob(q)
+		return job.Name()
 	}
 
 	// Job generation for global vs non-global search
-	autogold.Want("user search context", "RepoSubsetText,Repo").Equal(t, test(`foo context:@userA`, query.ParseLiteral))
-	autogold.Want("universal (AKA global) search context", "RepoUniverseText,Repo").Equal(t, test(`foo context:global`, query.ParseLiteral))
-	autogold.Want("universal (AKA global) search", "RepoUniverseText,Repo").Equal(t, test(`foo`, query.ParseLiteral))
-	autogold.Want("nonglobal repo", "RepoSubsetText,Repo").Equal(t, test(`foo repo:sourcegraph/sourcegraph`, query.ParseLiteral))
-	autogold.Want("nonglobal repo contains", "RepoSubsetText,Repo").Equal(t, test(`foo repo:contains(bar)`, query.ParseLiteral))
+	autogold.Want("user search context", "LimitJob{TimeoutJob{ParallelJob{RepoSubsetText, Repo, ComputeExcludedRepos}}}").Equal(t, test(`foo context:@userA`, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search context", "LimitJob{TimeoutJob{ParallelJob{RepoUniverseText, Repo, ComputeExcludedRepos}}}").Equal(t, test(`foo context:global`, query.ParseLiteral))
+	autogold.Want("universal (AKA global) search", "LimitJob{TimeoutJob{ParallelJob{RepoUniverseText, Repo, ComputeExcludedRepos}}}").Equal(t, test(`foo`, query.ParseLiteral))
+	autogold.Want("nonglobal repo", "LimitJob{TimeoutJob{ParallelJob{RepoSubsetText, Repo, ComputeExcludedRepos}}}").Equal(t, test(`foo repo:sourcegraph/sourcegraph`, query.ParseLiteral))
+	autogold.Want("nonglobal repo contains", "LimitJob{TimeoutJob{ParallelJob{RepoSubsetText, Repo, ComputeExcludedRepos}}}").Equal(t, test(`foo repo:contains(bar)`, query.ParseLiteral))
 
 	// Job generation support for implied `type:repo` queries.
-	autogold.Want("supported Repo job", "RepoUniverseText,Repo").Equal(t, test("ok ok", query.ParseRegexp))
-	autogold.Want("supportedRepo job literal", "RepoUniverseText,Repo").Equal(t, test("ok @thing", query.ParseLiteral))
-	autogold.Want("unsupported Repo job prefix", "RepoUniverseText").Equal(t, test("@nope", query.ParseRegexp))
-	autogold.Want("unsupported Repo job regexp", "RepoUniverseText").Equal(t, test("foo @bar", query.ParseRegexp))
+	autogold.Want("supported Repo job", "LimitJob{TimeoutJob{ParallelJob{RepoUniverseText, Repo, ComputeExcludedRepos}}}").Equal(t, test("ok ok", query.ParseRegexp))
+	autogold.Want("supportedRepo job literal", "LimitJob{TimeoutJob{ParallelJob{RepoUniverseText, Repo, ComputeExcludedRepos}}}").Equal(t, test("ok @thing", query.ParseLiteral))
+	autogold.Want("unsupported Repo job prefix", "LimitJob{TimeoutJob{ParallelJob{RepoUniverseText, ComputeExcludedRepos}}}").Equal(t, test("@nope", query.ParseRegexp))
+	autogold.Want("unsupported Repo job regexp", "LimitJob{TimeoutJob{ParallelJob{RepoUniverseText, ComputeExcludedRepos}}}").Equal(t, test("foo @bar", query.ParseRegexp))
+
+	// Job generation for other types of search
+	autogold.Want("symbol", "LimitJob{TimeoutJob{ParallelJob{RepoUniverseSymbol, ComputeExcludedRepos}}}").Equal(t, test("type:symbol test", query.ParseRegexp))
+	autogold.Want("commit", "LimitJob{TimeoutJob{ParallelJob{Commit, ComputeExcludedRepos}}}").Equal(t, test("type:commit test", query.ParseRegexp))
+	autogold.Want("diff", "LimitJob{TimeoutJob{ParallelJob{Diff, ComputeExcludedRepos}}}").Equal(t, test("type:diff test", query.ParseRegexp))
+	autogold.Want("file or commit", "LimitJob{TimeoutJob{JobWithOptional{Required: ParallelJob{RepoUniverseText, ComputeExcludedRepos}, Optional: Commit}}}").Equal(t, test("type:file type:commit test", query.ParseRegexp))
+	autogold.Want("many types", "LimitJob{TimeoutJob{JobWithOptional{Required: ParallelJob{RepoSubsetText, Repo, ComputeExcludedRepos}, Optional: ParallelJob{RepoSubsetSymbol, Commit}}}}").Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", query.ParseRegexp))
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {

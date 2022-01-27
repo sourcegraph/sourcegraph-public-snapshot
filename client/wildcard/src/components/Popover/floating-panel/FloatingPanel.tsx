@@ -1,10 +1,10 @@
 import classNames from 'classnames'
-import React, { forwardRef, useLayoutEffect, useRef, useState, PropsWithChildren } from 'react'
+import React, { forwardRef, PropsWithChildren, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
 import { ForwardReferenceComponent } from '../../../types'
-import { createTether, Flipping, Overlapping, Position, Tether } from '../tether'
+import { createTether, Flipping, Overlapping, Position, Strategy, Tether } from '../tether'
 
 import styles from './FloatingPanel.module.scss'
 
@@ -39,6 +39,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         pin = null,
         constrainToScrollParents = true,
         overflowToScrollParents = true,
+        strategy = Strategy.Fixed,
         windowPadding,
         constraintPadding,
         constraint,
@@ -48,11 +49,15 @@ export const FloatingPanel = forwardRef((props, reference) => {
     const containerReference = useRef(document.createElement('div'))
     const [tooltipElement, setTooltipElement] = useState<HTMLDivElement | null>(null)
     const [tooltipTailElement, setTooltipTailElement] = useState<HTMLDivElement | null>(null)
-
     const tooltipReferenceCallback = useCallbackRef<HTMLDivElement>(null, setTooltipElement)
+    const references = useMergeRefs([tooltipReferenceCallback, reference])
 
     // Add a container element right after the body tag
     useLayoutEffect(() => {
+        if (strategy === Strategy.Absolute) {
+            return
+        }
+
         const element = containerReference.current
 
         document.body.append(element)
@@ -60,7 +65,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         return () => {
             element.remove()
         }
-    }, [containerReference])
+    }, [containerReference, strategy])
 
     useLayoutEffect(() => {
         if (!tooltipElement) {
@@ -76,6 +81,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
             windowPadding,
             constraintPadding,
             position,
+            strategy,
             overlapping,
             constrainToScrollParents,
             overflowToScrollParents,
@@ -92,17 +98,34 @@ export const FloatingPanel = forwardRef((props, reference) => {
         constraintPadding,
         pin,
         position,
+        strategy,
         overlapping,
         constrainToScrollParents,
         overflowToScrollParents,
         flipping,
     ])
 
+    if (strategy === Strategy.Absolute) {
+        return (
+            <>
+                <Component
+                    {...otherProps}
+                    ref={references}
+                    className={classNames(styles.floatingPanel, styles.floatingPanelAbsolute, otherProps.className)}
+                >
+                    {props.children}
+                </Component>
+
+                {tail && <div className={classNames(styles.tail, styles.tailAbsolute)} ref={setTooltipTailElement} />}
+            </>
+        )
+    }
+
     return createPortal(
         <>
             <Component
                 {...otherProps}
-                ref={useMergeRefs([tooltipReferenceCallback, reference])}
+                ref={references}
                 className={classNames(styles.floatingPanel, otherProps.className)}
             >
                 {props.children}

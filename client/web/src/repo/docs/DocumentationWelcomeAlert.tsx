@@ -3,6 +3,7 @@ import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
+import { CardBody, Card } from '@sourcegraph/wildcard'
 
 import styles from './DocumentationWelcomeAlert.module.scss'
 
@@ -11,8 +12,8 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
         className={classNames('mt-3', styles.documentationWelcomeAlert)}
         partialStorageKey="apidocs-welcome"
     >
-        <div className="card">
-            <div className="card-body p-3">
+        <Card>
+            <CardBody>
                 <h1>
                     <BookOpenBlankVariantIcon className="icon-inline mr-2" />
                     API docs, for your code
@@ -31,7 +32,7 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
                         </a>
                     </li>
                 </ul>
-            </div>
-        </div>
+            </CardBody>
+        </Card>
     </DismissibleAlert>
 )
