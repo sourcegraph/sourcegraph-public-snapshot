@@ -36,8 +36,8 @@ import { NewBatchChangeButton } from './NewBatchChangeButton'
 
 export interface BatchChangeListPageProps
     extends TelemetryProps,
-    Pick<RouteComponentProps, 'location'>,
-    SettingsCascadeProps<Settings> {
+        Pick<RouteComponentProps, 'location'>,
+        SettingsCascadeProps<Settings> {
     canCreate: boolean
     headingElement: 'h1' | 'h2'
     displayNamespace?: boolean
