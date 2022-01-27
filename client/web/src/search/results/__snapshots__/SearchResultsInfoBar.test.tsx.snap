@@ -584,6 +584,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         >
           <a
             class="btn btn-outline-secondary btn-sm text-decoration-none create-code-monitor-button disabled"
+            disabled=""
             href=""
             role="button"
             tabindex="-1"
