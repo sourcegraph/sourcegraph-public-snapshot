@@ -142,18 +142,19 @@ func TestTryLock(t *testing.T) {
 	}
 
 	// TryLock should succeed
-	if acquired, unlock, err := store.TryLock(ctx); err != nil {
+	acquired, unlock, err := store.TryLock(ctx)
+	if err != nil {
 		t.Fatalf("unexpected error acquiring lock: %s", err)
 	} else if !acquired {
 		t.Fatalf("expected lock to be acquired")
-	} else {
-		if err := unlock(nil); err != nil {
-			t.Fatalf("unexpected error: %s", err)
-		}
-		// Check idempotency
-		if err := unlock(nil); err != nil {
-			t.Fatalf("unexpected error: %s", err)
-		}
+	}
+
+	if err := unlock(nil); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	// Check idempotency
+	if err := unlock(nil); err != nil {
+		t.Fatalf("unexpected error: %s", err)
 	}
 }
 
