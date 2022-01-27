@@ -6,6 +6,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {
@@ -110,15 +112,7 @@ func (r *Runner) runSchemaUp(ctx context.Context, operation MigrationOperation, 
 		return err
 	}
 
-	for _, definition := range definitions {
-		log15.Info("Running up migration", "schema", schemaContext.schema.Name, "migrationID", definition.ID)
-
-		if err := schemaContext.store.Up(ctx, definition); err != nil {
-			return errors.Wrapf(err, "failed upgrade migration %d", definition.ID)
-		}
-	}
-
-	return nil
+	return r.applyMigrations(ctx, operation, schemaContext, definitions)
 }
 
 func (r *Runner) runSchemaDown(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) error {
@@ -133,12 +127,50 @@ func (r *Runner) runSchemaDown(ctx context.Context, operation MigrationOperation
 		return err
 	}
 
-	for _, definition := range definitions {
-		log15.Info("Running down migration", "schema", schemaContext.schema.Name, "migrationID", definition.ID)
+	return r.applyMigrations(ctx, operation, schemaContext, definitions)
+}
 
-		if err := schemaContext.store.Down(ctx, definition); err != nil {
-			return errors.Wrapf(err, "failed downgrade migration %d", definition.ID)
+func (r *Runner) applyMigrations(ctx context.Context, operation MigrationOperation, schemaContext schemaContext, definitions []definition.Definition) error {
+	log15.Info(
+		"Applying migrations",
+		"schema", schemaContext.schema.Name,
+		"up", operation.Up,
+		"count", len(definitions),
+	)
+
+	for _, definition := range definitions {
+		if err := r.applyMigration(ctx, schemaContext, operation, definition); err != nil {
+			return err
 		}
+	}
+
+	return nil
+}
+
+// applyMigration applies the given migration in the direction indicated by the given operation.
+func (r *Runner) applyMigration(
+	ctx context.Context,
+	schemaContext schemaContext,
+	operation MigrationOperation,
+	definition definition.Definition,
+) error {
+	log15.Info(
+		"Applying migration",
+		"schema", schemaContext.schema.Name,
+		"migrationID", definition.ID,
+		"up", operation.Up,
+	)
+
+	direction := schemaContext.store.Up
+	if !operation.Up {
+		direction = schemaContext.store.Down
+	}
+
+	applyMigration := func() error {
+		return direction(ctx, definition)
+	}
+	if err := schemaContext.store.WithMigrationLog(ctx, definition, operation.Up, applyMigration); err != nil {
+		return errors.Wrapf(err, "failed to apply migration %d", definition.ID)
 	}
 
 	return nil

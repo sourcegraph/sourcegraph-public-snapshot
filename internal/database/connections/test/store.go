@@ -53,6 +53,10 @@ func (s *memoryStore) Down(ctx context.Context, migration definition.Definition)
 	return s.exec(ctx, migration, migration.DownQuery)
 }
 
+func (s *memoryStore) WithMigrationLog(_ context.Context, _ definition.Definition, _ bool, f func() error) error {
+	return f()
+}
+
 func (s *memoryStore) exec(ctx context.Context, migration definition.Definition, query *sqlf.Query) error {
 	_, err := s.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	s.version, s.dirty, s.versionSet = migration.ID, s.dirty || err != nil, true

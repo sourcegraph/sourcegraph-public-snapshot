@@ -52,13 +52,12 @@ func testStoreWithVersion(version int, dirty bool) *MockStore {
 	store := NewMockStore()
 	store.TransactFunc.SetDefaultReturn(store, nil)
 	store.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	store.VersionFunc.SetDefaultHook(func(ctx context.Context) (int, bool, bool, error) { return version, dirty, true, nil })
 	store.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
 	store.TryLockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
 	store.UpFunc.SetDefaultHook(migrationHook)
 	store.DownFunc.SetDefaultHook(migrationHook)
-	store.VersionFunc.SetDefaultHook(func(ctx context.Context) (int, bool, bool, error) {
-		return version, dirty, true, nil
-	})
+	store.WithMigrationLogFunc.SetDefaultHook(func(_ context.Context, _ definition.Definition, _ bool, f func() error) error { return f() })
 
 	return store
 }
