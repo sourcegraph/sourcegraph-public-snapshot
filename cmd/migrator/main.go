@@ -64,7 +64,7 @@ func newRunFunc() cliutil.RunFunc {
 		}
 
 		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-			return store.NewWithDB(db, migrationsTable, operations)
+			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
 		}
 
 		return connections.RunnerFromDSNs(dsns, appName, storeFactory).Run(ctx, options)

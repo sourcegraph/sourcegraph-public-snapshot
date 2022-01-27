@@ -15,8 +15,10 @@ import {
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { OnboardingTourInfo } from '../onboarding-tour/OnboardingTourInfo'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
+import { InstallIntegrationsAlert } from './actions/InstallIntegrationsAlert'
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
@@ -130,6 +132,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             match,
             globbing,
             featureFlags,
+            onExtensionAlertDismissed,
             ...context
         }: FeatureFlagProps &
             RepoRevisionContainerContext &
@@ -141,7 +144,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             // See https://github.com/sourcegraph/sourcegraph/issues/4408
             // and https://github.com/ReactTraining/history/issues/505
             const filePath = decodeURIComponent(match.params.filePath || '') // empty string is root
-
             // Redirect tree and blob routes pointing to the root to the repo page
             if (match.params.objectType && filePath.replace(/\/+$/g, '') === '') {
                 return <Redirect to={toRepoURL({ repoName: repo.name, revision: context.revision })} />
@@ -188,6 +190,10 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 globbing,
             }
 
+            const codeHostIntegrationMessaging: 'native-integration' | 'browser-extension' =
+                (!isErrorLike(context.settingsCascade.final) &&
+                    context.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+                'browser-extension'
             return (
                 <>
                     <RepoRevisionSidebar
@@ -204,20 +210,28 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                         // Add `.blob-status-bar__container` because this is the
                         // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
                         <BlobStatusBarContainer>
-                            {showOnboardingTour && <div className="onboarding-tour-info-marker mr-3 mb-3" />}
+                            {showOnboardingTour && <OnboardingTourInfo className="mr-3 mb-3" />}
                             <ErrorBoundary location={context.location}>
                                 {objectType === 'blob' ? (
-                                    <BlobPage
-                                        {...context}
-                                        {...repoRevisionProps}
-                                        repoID={repo.id}
-                                        repoName={repo.name}
-                                        repoUrl={repo.url}
-                                        mode={mode}
-                                        repoHeaderContributionsLifecycleProps={
-                                            context.repoHeaderContributionsLifecycleProps
-                                        }
-                                    />
+                                    <>
+                                        <InstallIntegrationsAlert
+                                            codeHostIntegrationMessaging={codeHostIntegrationMessaging}
+                                            externalURLs={repo.externalURLs}
+                                            className=""
+                                            onExtensionAlertDismissed={onExtensionAlertDismissed}
+                                        />
+                                        <BlobPage
+                                            {...context}
+                                            {...repoRevisionProps}
+                                            repoID={repo.id}
+                                            repoName={repo.name}
+                                            repoUrl={repo.url}
+                                            mode={mode}
+                                            repoHeaderContributionsLifecycleProps={
+                                                context.repoHeaderContributionsLifecycleProps
+                                            }
+                                        />
+                                    </>
                                 ) : (
                                     <TreePage {...context} {...repoRevisionProps} repo={repo} />
                                 )}

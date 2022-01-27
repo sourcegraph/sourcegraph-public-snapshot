@@ -2,5 +2,5 @@ package testdata
 
 import "embed"
 
-//go:embed well-formed/*.sql query-error/*.sql
+//go:embed **/*
 var Content embed.FS

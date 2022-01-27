@@ -91,7 +91,9 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 <Badge title={node.oid} as="code">
                     {node.abbreviatedOID}
                 </Badge>
-                <small className={styles.message}>{node.subject.slice(0, 200)}</small>
+                <small title={node.author.date} className={styles.message}>
+                    {node.subject.slice(0, 200)}
+                </small>
             </ConnectionPopoverNodeLink>
         </ConnectionPopoverNode>
     )
