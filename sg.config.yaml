@@ -317,7 +317,7 @@ commands:
     install: yarn --no-progress
     env:
       WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://sourcegraph.com
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-http-prod:
     cmd: yarn workspace @sourcegraph/web serve:prod
