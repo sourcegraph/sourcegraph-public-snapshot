@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useState } from 'react'
-import { Collapse, UncontrolledPopover } from 'reactstrap'
+import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { useQuery } from '@sourcegraph/http-client'
@@ -18,7 +18,7 @@ import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables, Maybe } from '../graphql-operations'
 
@@ -39,65 +39,7 @@ export const GlobalCodeIntel: React.FunctionComponent<{
         return <CoolCodeIntelResizablePanel {...props} />
     }
 
-    return (
-        <ul className={classNames('nav', styles.globalCodeintel)}>
-            <li className="nav-item">
-                <CoolCodeIntelPopover {...props} />
-            </li>
-        </ul>
-    )
-}
-
-/** A button that toggles the visibility of the ExtensionDevTools element in a popover. */
-export const CoolCodeIntelPopover = React.memo<{
-    hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-}>(props => (
-    <>
-        <Button id="cool-code-intel-popover" className="text-decoration-none px-2" variant="link">
-            <span className="text-muted">Cool Code Intel</span> <MenuUpIcon className="icon-inline" />
-        </Button>
-        <UncontrolledPopover
-            placement="bottom-start"
-            target="cool-code-intel-popover"
-            hideArrow={true}
-            popperClassName="border-0 rounded-0"
-        >
-            <CoolCodeIntel {...props} />
-        </UncontrolledPopover>
-    </>
-))
-
-const CoolCodeIntel: React.FunctionComponent<{
-    hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-}> = props => {
-    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-
-    return (
-        <Tabs
-            defaultIndex={tabIndex}
-            className={classNames('card border-0 rounded-0', styles.coolCodeIntelTabs)}
-            onChange={handleTabsChange}
-        >
-            <div className="tablist-wrapper w-100 align-items-center">
-                <TabList>
-                    {TABS.map(({ label, id }) => (
-                        <Tab className="d-flex flex-1 justify-content-around" key={id} data-tab-content={id}>
-                            {label}
-                        </Tab>
-                    ))}
-                </TabList>
-            </div>
-
-            <TabPanels>
-                {TABS.map(tab => (
-                    <TabPanel key={tab.id}>
-                        <tab.component hoveredToken={props.hoveredToken} />
-                    </TabPanel>
-                ))}
-            </TabPanels>
-        </Tabs>
-    )
+    return null
 }
 
 export interface CoolCodeIntelPopoverTabProps {
@@ -106,7 +48,7 @@ export interface CoolCodeIntelPopoverTabProps {
 
 const LAST_TAB_STORAGE_KEY = 'CoolCodeIntel.lastTab'
 
-type CoolCodeIntelTabID = 'references' | 'token'
+type CoolCodeIntelTabID = 'references' | 'token' | 'definition'
 
 interface CoolCodeIntelToolsTab {
     id: CoolCodeIntelTabID
@@ -390,7 +332,7 @@ const ReferenceGroup: React.FunctionComponent<{
                         return (
                             <li key={fileURL} className={classNames('border-0 rounded-0', className)}>
                                 <div>
-                                    <Link onClick={_event => setActiveReference(fileURL)} to={fileURL}>
+                                    <Link onClick={() => setActiveReference(fileURL)} to={fileURL}>
                                         {reference.range?.start?.line}
                                         {': '}
                                     </Link>
@@ -405,8 +347,61 @@ const ReferenceGroup: React.FunctionComponent<{
     )
 }
 
+export const Definition: React.FunctionComponent<{
+    hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+}> = props => {
+    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
+        FETCH_REFERENCES_QUERY,
+        {
+            variables: {
+                repository: props.hoveredToken.repoName,
+                commit: props.hoveredToken.commitID,
+                path: props.hoveredToken.filePath,
+                // ATTENTION: Off by one ahead!!!!
+                line: props.hoveredToken.line - 1,
+                character: props.hoveredToken.character - 1,
+                after: null,
+            },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            nextFetchPolicy: 'network-only',
+        }
+    )
+
+    // If we're loading and haven't received any data yet
+    if (loading && !data) {
+        return (
+            <>
+                <LoadingSpinner className="mx-auto my-4" />
+            </>
+        )
+    }
+
+    // If we received an error before we had received any data
+    if (error && !data) {
+        throw new Error(error.message)
+    }
+
+    // If there weren't any errors and we just didn't receive any data
+    if (!data || !data.repository?.commit?.blob?.lsif?.references) {
+        return <>Nothing found</>
+    }
+
+    return (
+        <>
+            <strong>Definition!!!!</strong>
+        </>
+    )
+}
+
+export const DefinitionPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
+    <div>{props.hoveredToken && <Definition hoveredToken={props.hoveredToken} />}</div>
+)
+
 const TABS: CoolCodeIntelToolsTab[] = [
     { id: 'token', label: 'Token', component: TokenPanel },
+    { id: 'definition', label: 'Definition', component: DefinitionPanel },
     { id: 'references', label: 'References', component: ReferencesPanel },
 ]
 
