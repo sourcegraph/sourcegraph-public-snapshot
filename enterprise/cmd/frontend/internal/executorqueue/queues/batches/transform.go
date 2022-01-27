@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
 type BatchesStore interface {
@@ -58,23 +59,24 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 	}
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
-		Spec: batchSpec.Spec,
-		Workspace: batcheslib.Workspace{
-			Repository: batcheslib.WorkspaceRepo{
-				ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-				Name: string(repo.Name),
-			},
-			Branch: batcheslib.WorkspaceBranch{
-				Name:   workspace.Branch,
-				Target: batcheslib.Commit{OID: workspace.Commit},
-			},
-			Path:               workspace.Path,
-			OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-			// TODO: We can further optimize here later and tell src-cli to
-			// not run those steps so there is no discrepancy between the backend
-			// and src-cli calculating the if conditions.
-			Steps:             workspace.Steps,
-			SearchResultPaths: workspace.FileMatches,
+		Repository: batcheslib.WorkspaceRepo{
+			ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+			Name: string(repo.Name),
+		},
+		Branch: batcheslib.WorkspaceBranch{
+			Name:   workspace.Branch,
+			Target: batcheslib.Commit{OID: workspace.Commit},
+		},
+		Path:               workspace.Path,
+		OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
+		// TODO: We can further optimize here later and tell src-cli to
+		// not run those steps so there is no discrepancy between the backend
+		// and src-cli calculating the if conditions.
+		Steps:             batchSpec.Spec.Steps,
+		SearchResultPaths: workspace.FileMatches,
+		BatchChangeAttributes: template.BatchChangeAttributes{
+			Name:        batchSpec.Spec.Name,
+			Description: batchSpec.Spec.Description,
 		},
 	}
 
