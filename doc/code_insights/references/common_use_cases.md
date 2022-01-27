@@ -141,9 +141,9 @@ lang:java @deprecated archived:no fork:no
 **How many repos have CODEOWNERS files** 
 ```sgquery
 \\ how many do:
-file:CODEOWNERS select:repo archived:no fork:no
+repohasfile:CODEOWNERS select:repo archived:no fork:no
 \\ how many don't:
--file:CODEOWNERS select:repo archived:no fork:no
+-repohasfile:CODEOWNERS select:repo archived:no fork:no
 ```
 
 ## Security vulnerabilities

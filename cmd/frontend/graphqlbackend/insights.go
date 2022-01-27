@@ -173,6 +173,7 @@ type InsightViewResolver interface {
 	DataSeries(ctx context.Context) ([]InsightSeriesResolver, error)
 	Presentation(ctx context.Context) (InsightPresentation, error)
 	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
+	DashboardReferenceCount(ctx context.Context) (int32, error)
 }
 
 type InsightDataSeriesDefinition interface {

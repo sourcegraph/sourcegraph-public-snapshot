@@ -38,7 +38,7 @@ add('default with suggestions', () => (
                 onBlur={noop}
                 isMacPlatform={false}
                 suggestions={['client/web/file1.tsx', 'client/web/file2.tsx', 'client/web/file3.tsx']}
-                testTriggerSuggestions={true}
+                focusInput={true}
             />
         )}
     </WebStory>

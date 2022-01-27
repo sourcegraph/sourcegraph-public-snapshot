@@ -58,6 +58,18 @@ export namespace lib.codeintel.lsif_typed {
         TagAttribute = 31,
         TagDelimiter = 32
     }
+    export enum Severity {
+        UnspecifiedSeverity = 0,
+        Error = 1,
+        Warning = 2,
+        Information = 3,
+        Hint = 4
+    }
+    export enum DiagnosticTag {
+        UnspecifiedDiagnosticTag = 0,
+        Unnecessary = 1,
+        Deprecated = 2
+    }
     export class Index extends pb_1.Message {
         constructor(data?: any[] | {
             metadata?: Metadata;
@@ -1131,9 +1143,10 @@ export namespace lib.codeintel.lsif_typed {
             symbol_roles?: number;
             override_documentation?: string[];
             syntax_kind?: SyntaxKind;
+            diagnostics?: Diagnostic[];
         }) {
             super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [1, 4], []);
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [1, 4, 6], []);
             if (!Array.isArray(data) && typeof data == "object") {
                 if ("range" in data && data.range != undefined) {
                     this.range = data.range;
@@ -1149,6 +1162,9 @@ export namespace lib.codeintel.lsif_typed {
                 }
                 if ("syntax_kind" in data && data.syntax_kind != undefined) {
                     this.syntax_kind = data.syntax_kind;
+                }
+                if ("diagnostics" in data && data.diagnostics != undefined) {
+                    this.diagnostics = data.diagnostics;
                 }
             }
         }
@@ -1182,12 +1198,19 @@ export namespace lib.codeintel.lsif_typed {
         set syntax_kind(value: SyntaxKind) {
             pb_1.Message.setField(this, 5, value);
         }
+        get diagnostics() {
+            return pb_1.Message.getRepeatedWrapperField(this, Diagnostic, 6) as Diagnostic[];
+        }
+        set diagnostics(value: Diagnostic[]) {
+            pb_1.Message.setRepeatedWrapperField(this, 6, value);
+        }
         static fromObject(data: {
             range?: number[];
             symbol?: string;
             symbol_roles?: number;
             override_documentation?: string[];
             syntax_kind?: SyntaxKind;
+            diagnostics?: ReturnType<typeof Diagnostic.prototype.toObject>[];
         }) {
             const message = new Occurrence({});
             if (data.range != null) {
@@ -1205,6 +1228,9 @@ export namespace lib.codeintel.lsif_typed {
             if (data.syntax_kind != null) {
                 message.syntax_kind = data.syntax_kind;
             }
+            if (data.diagnostics != null) {
+                message.diagnostics = data.diagnostics.map(item => Diagnostic.fromObject(item));
+            }
             return message;
         }
         toObject() {
@@ -1214,6 +1240,7 @@ export namespace lib.codeintel.lsif_typed {
                 symbol_roles?: number;
                 override_documentation?: string[];
                 syntax_kind?: SyntaxKind;
+                diagnostics?: ReturnType<typeof Diagnostic.prototype.toObject>[];
             } = {};
             if (this.range != null) {
                 data.range = this.range;
@@ -1229,6 +1256,9 @@ export namespace lib.codeintel.lsif_typed {
             }
             if (this.syntax_kind != null) {
                 data.syntax_kind = this.syntax_kind;
+            }
+            if (this.diagnostics != null) {
+                data.diagnostics = this.diagnostics.map((item: Diagnostic) => item.toObject());
             }
             return data;
         }
@@ -1246,6 +1276,8 @@ export namespace lib.codeintel.lsif_typed {
                 writer.writeRepeatedString(4, this.override_documentation);
             if (this.syntax_kind !== undefined)
                 writer.writeEnum(5, this.syntax_kind);
+            if (this.diagnostics !== undefined)
+                writer.writeRepeatedMessage(6, this.diagnostics, (item: Diagnostic) => item.serialize(writer));
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -1270,6 +1302,9 @@ export namespace lib.codeintel.lsif_typed {
                     case 5:
                         message.syntax_kind = reader.readEnum();
                         break;
+                    case 6:
+                        reader.readMessage(message.diagnostics, () => pb_1.Message.addToRepeatedWrapperField(message, 6, Diagnostic.deserialize(reader), Diagnostic));
+                        break;
                     default: reader.skipField();
                 }
             }
@@ -1280,6 +1315,164 @@ export namespace lib.codeintel.lsif_typed {
         }
         static deserializeBinary(bytes: Uint8Array): Occurrence {
             return Occurrence.deserialize(bytes);
+        }
+    }
+    export class Diagnostic extends pb_1.Message {
+        constructor(data?: any[] | {
+            severity?: Severity;
+            code?: string;
+            message?: string;
+            source?: string;
+            tags?: DiagnosticTag[];
+        }) {
+            super();
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [5], []);
+            if (!Array.isArray(data) && typeof data == "object") {
+                if ("severity" in data && data.severity != undefined) {
+                    this.severity = data.severity;
+                }
+                if ("code" in data && data.code != undefined) {
+                    this.code = data.code;
+                }
+                if ("message" in data && data.message != undefined) {
+                    this.message = data.message;
+                }
+                if ("source" in data && data.source != undefined) {
+                    this.source = data.source;
+                }
+                if ("tags" in data && data.tags != undefined) {
+                    this.tags = data.tags;
+                }
+            }
+        }
+        get severity() {
+            return pb_1.Message.getField(this, 1) as Severity;
+        }
+        set severity(value: Severity) {
+            pb_1.Message.setField(this, 1, value);
+        }
+        get code() {
+            return pb_1.Message.getField(this, 2) as string;
+        }
+        set code(value: string) {
+            pb_1.Message.setField(this, 2, value);
+        }
+        get message() {
+            return pb_1.Message.getField(this, 3) as string;
+        }
+        set message(value: string) {
+            pb_1.Message.setField(this, 3, value);
+        }
+        get source() {
+            return pb_1.Message.getField(this, 4) as string;
+        }
+        set source(value: string) {
+            pb_1.Message.setField(this, 4, value);
+        }
+        get tags() {
+            return pb_1.Message.getField(this, 5) as DiagnosticTag[];
+        }
+        set tags(value: DiagnosticTag[]) {
+            pb_1.Message.setField(this, 5, value);
+        }
+        static fromObject(data: {
+            severity?: Severity;
+            code?: string;
+            message?: string;
+            source?: string;
+            tags?: DiagnosticTag[];
+        }) {
+            const message = new Diagnostic({});
+            if (data.severity != null) {
+                message.severity = data.severity;
+            }
+            if (data.code != null) {
+                message.code = data.code;
+            }
+            if (data.message != null) {
+                message.message = data.message;
+            }
+            if (data.source != null) {
+                message.source = data.source;
+            }
+            if (data.tags != null) {
+                message.tags = data.tags;
+            }
+            return message;
+        }
+        toObject() {
+            const data: {
+                severity?: Severity;
+                code?: string;
+                message?: string;
+                source?: string;
+                tags?: DiagnosticTag[];
+            } = {};
+            if (this.severity != null) {
+                data.severity = this.severity;
+            }
+            if (this.code != null) {
+                data.code = this.code;
+            }
+            if (this.message != null) {
+                data.message = this.message;
+            }
+            if (this.source != null) {
+                data.source = this.source;
+            }
+            if (this.tags != null) {
+                data.tags = this.tags;
+            }
+            return data;
+        }
+        serialize(): Uint8Array;
+        serialize(w: pb_1.BinaryWriter): void;
+        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+            const writer = w || new pb_1.BinaryWriter();
+            if (this.severity !== undefined)
+                writer.writeEnum(1, this.severity);
+            if (typeof this.code === "string" && this.code.length)
+                writer.writeString(2, this.code);
+            if (typeof this.message === "string" && this.message.length)
+                writer.writeString(3, this.message);
+            if (typeof this.source === "string" && this.source.length)
+                writer.writeString(4, this.source);
+            if (this.tags !== undefined)
+                writer.writePackedEnum(5, this.tags);
+            if (!w)
+                return writer.getResultBuffer();
+        }
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Diagnostic {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Diagnostic();
+            while (reader.nextField()) {
+                if (reader.isEndGroup())
+                    break;
+                switch (reader.getFieldNumber()) {
+                    case 1:
+                        message.severity = reader.readEnum();
+                        break;
+                    case 2:
+                        message.code = reader.readString();
+                        break;
+                    case 3:
+                        message.message = reader.readString();
+                        break;
+                    case 4:
+                        message.source = reader.readString();
+                        break;
+                    case 5:
+                        message.tags = reader.readPackedEnum();
+                        break;
+                    default: reader.skipField();
+                }
+            }
+            return message;
+        }
+        serializeBinary(): Uint8Array {
+            return this.serialize();
+        }
+        static deserializeBinary(bytes: Uint8Array): Diagnostic {
+            return Diagnostic.deserialize(bytes);
         }
     }
 }
