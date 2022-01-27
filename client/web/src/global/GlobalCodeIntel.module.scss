@@ -16,6 +16,7 @@
 .cool-code-intel-reference {
     code {
         overflow: hidden;
+        color: var(--body-color);
     }
 
     &--active {
@@ -23,6 +24,10 @@
         color: var(--primary);
         font-weight: bold;
     }
+}
+
+.reference-link {
+    color: inherit;
 }
 
 .resizable-panel {
