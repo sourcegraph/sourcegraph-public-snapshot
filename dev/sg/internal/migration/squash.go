@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -44,8 +45,8 @@ func Squash(database db.Database, commit string) error {
 		return err
 	}
 
-	out.Write("")
-	block := out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
+	stdout.Out.Write("")
+	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
 	defer block.Close()
 
 	for _, filename := range filenames {
@@ -117,7 +118,7 @@ func generateSquashedMigrations(database db.Database, migrationIndex int) (up, d
 // runMigrationsGoto runs the `migrate` utility to migrate up or down to the given
 // migration index.
 func runMigrationsGoto(database db.Database, migrationIndex int, postgresDSN string) (err error) {
-	pending := out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
+	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
 			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrated PostgreSQL schema"))
@@ -148,7 +149,7 @@ func runMigrate(database db.Database, postgresDSN string, args ...string) (strin
 // This method returns a teardown function that filters the error value of the calling
 // function, as well as any immediate synchronous error.
 func runPostgresContainer(databaseName string) (_ func(err error) error, err error) {
-	pending := out.Pending(output.Line("", output.StylePending, "Starting PostgreSQL 12 in a container..."))
+	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Starting PostgreSQL 12 in a container..."))
 	defer func() {
 		if err == nil {
 			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Started PostgreSQL in a container"))
@@ -202,7 +203,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 // generateSquashedUpMigration returns the contents of an up migration file containing the
 // current contents of the given database.
 func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ string, err error) {
-	pending := out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
+	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
 	defer func() {
 		if err == nil {
 			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Dumped current database"))
