@@ -26,7 +26,7 @@ In order to ensure we are true to our [philosphy](#philosophy), we have various 
 This includes, but is not limited to:
 
 - Image vulnerability scanning
-- Infrascture as code static analyses
+- Infrastructure as code static analyses
 - Unit, integration and end-to-end tests as outlined in the [testing-pyrmid](#testing-pyramid)
 
 Our goal is to ensure that our product and code work, and that all reasonable effort has been taken to reduce the risk of a security-related incident associated to Sourcegraph.
