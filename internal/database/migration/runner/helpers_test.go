@@ -50,6 +50,8 @@ func testStoreWithVersion(version int, dirty bool) *MockStore {
 	}
 
 	store := NewMockStore()
+	store.TransactFunc.SetDefaultReturn(store, nil)
+	store.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	store.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
 	store.TryLockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
 	store.UpFunc.SetDefaultHook(migrationHook)

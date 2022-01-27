@@ -25,6 +25,14 @@ func newMemoryStore(db *sql.DB) runner.Store {
 	}
 }
 
+func (s *memoryStore) Transact(ctx context.Context) (runner.Store, error) {
+	return s, nil
+}
+
+func (s *memoryStore) Done(err error) error {
+	return err
+}
+
 func (s *memoryStore) Version(ctx context.Context) (int, bool, bool, error) {
 	return s.version, s.dirty, s.versionSet, nil
 }
