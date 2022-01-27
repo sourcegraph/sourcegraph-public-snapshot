@@ -22,13 +22,13 @@ export interface ForwardReferenceComponent<
      * We explicitly avoid `React.ElementType` and manually narrow the prop types
      * so that events are typed when using JSX.IntrinsicElements.
      */
-    <As = IntrinsicElementString, OwnPropsOverwrite = OwnProps>(
+    <As = IntrinsicElementString>(
         props: As extends ''
             ? { as: keyof JSX.IntrinsicElements }
             : As extends React.ComponentType<infer P>
-            ? Merge<P, OwnPropsOverwrite & { as: As }>
+            ? Merge<P, OwnProps & { as: As }>
             : As extends keyof JSX.IntrinsicElements
-            ? Merge<JSX.IntrinsicElements[As], OwnPropsOverwrite & { as: As }>
+            ? Merge<JSX.IntrinsicElements[As], OwnProps & { as: As }>
             : never
     ): React.ReactElement | null
 }

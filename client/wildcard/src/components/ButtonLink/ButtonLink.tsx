@@ -6,6 +6,7 @@ import { Key } from 'ts-key-enum'
 
 import { isDefined } from '@sourcegraph/common'
 
+import { ForwardReferenceComponent } from '../../types'
 import { Button, ButtonProps } from '../Button'
 import { RouterLink, AnchorLink } from '../Link'
 
@@ -49,7 +50,7 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as'> &
  *
  * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = React.forwardRef(
+export const ButtonLink = React.forwardRef(
     (
         {
             className,
@@ -125,4 +126,4 @@ export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = React.forwar
             </Button>
         )
     }
-)
+) as ForwardReferenceComponent<typeof AnchorLink, ButtonLinkProps>

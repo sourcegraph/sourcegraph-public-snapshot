@@ -1,9 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
-import { DropdownToggle, DropdownToggleProps } from 'reactstrap'
+import { DropdownToggle } from 'reactstrap'
 
-import { ButtonLink, ButtonLinkProps } from '@sourcegraph/shared/src/components/LinkOrButton'
-import { Button } from '@sourcegraph/wildcard'
+import { ButtonLink, ButtonLinkProps, Button, ButtonProps } from '@sourcegraph/wildcard'
 
 import styles from './RepoHeaderActions.module.scss'
 
@@ -14,25 +13,18 @@ type RepoHeaderButtonLinkProps = ButtonLinkProps & {
     file?: boolean
 }
 
-export type RepoHeaderActionAnchorProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-    /**
-     * to determine if this anchor is for file or not
-     */
-    file?: boolean
-}
-
 export const RepoHeaderActionButtonLink: React.FunctionComponent<RepoHeaderButtonLinkProps> = ({
     children,
     className,
     file,
     ...rest
 }) => (
-    <Button as={ButtonLink} className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
+    <ButtonLink className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
         {children}
-    </Button>
+    </ButtonLink>
 )
 
-export const RepoHeaderActionDropdownToggle: React.FunctionComponent<DropdownToggleProps> = ({
+export const RepoHeaderActionDropdownToggle: React.FunctionComponent<ButtonProps> = ({
     children,
     className,
     ...rest
@@ -42,13 +34,20 @@ export const RepoHeaderActionDropdownToggle: React.FunctionComponent<DropdownTog
     </Button>
 )
 
+export type RepoHeaderActionAnchorProps = ButtonLinkProps & {
+    /**
+     * to determine if this anchor is for file or not
+     */
+    file?: boolean
+}
+
 export const RepoHeaderActionAnchor: React.FunctionComponent<RepoHeaderActionAnchorProps> = ({
     children,
     className,
     file,
     ...rest
 }) => (
-    <Button as="a" className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
+    <ButtonLink className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
         {children}
-    </Button>
+    </ButtonLink>
 )
