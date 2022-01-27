@@ -25,7 +25,7 @@ type Store struct {
 
 // IndexStatus describes the state of an index. Is{Valid,Ready,Live} is taken
 // from the `pg_index` system table. If the index is currently being created,
-// then the remaining reference `fields will be populated describing the index
+// then the remaining reference fields will be populated describing the index
 // creation progress.
 type IndexStatus struct {
 	IsValid      bool
