@@ -19,6 +19,10 @@
 }
 
 .cool-code-intel-reference {
+    code {
+        overflow: hidden;
+    }
+
     &--active {
         background-color: var(--secondary-2);
         color: var(--primary);
@@ -56,14 +60,11 @@
     color: var(--icon-color);
 }
 
-.tabs {
-    padding: 0.25rem 1rem;
-}
-
 .tabs-content {
     flex: 1;
 }
 
 .chevron {
+    margin-top: 0.2em;
     color: var(--icon-color);
 }
