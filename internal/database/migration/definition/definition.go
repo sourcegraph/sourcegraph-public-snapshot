@@ -1,6 +1,7 @@
 package definition
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/cockroachdb/errors"
@@ -197,6 +198,135 @@ func intersect(a []int, bs ...[]int) []int {
 	return intersection
 }
 
+// Up returns the set of definitions that need to be applied (in order) such that
+// the given target identifiers would become additional "leaves" of the applied
+// migration definitions.
+func (ds *Definitions) Up(appliedIDs, targetIDs []int) ([]Definition, error) {
+	// Gather the set of ancestors of the migrations with the target identifiers
+	definitions, err := ds.traverse(targetIDs, func(definition Definition) []int {
+		return definition.Parents
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	appliedMap := make(map[int]struct{}, len(appliedIDs))
+	for _, id := range appliedIDs {
+		appliedMap[id] = struct{}{}
+	}
+
+	filtered := definitions[:0]
+	for _, definition := range definitions {
+		if _, ok := appliedMap[definition.ID]; ok {
+			continue
+		}
+
+		// Exclude any already-applied definition, which are included in the
+		// set returned by definitions. We maintain the topological order implicit
+		// in the slice as we're returning migrations to be applied in sequence.
+		filtered = append(filtered, definition)
+	}
+
+	return filtered, nil
+}
+
+// Down returns the set of definitions that need to be unapplied (in order) such that
+// the given target identifiers would become the new set of "leaves" of the applied
+// migration definitions.
+func (ds *Definitions) Down(appliedIDs, targetIDs []int) ([]Definition, error) {
+	// Gather the set of descendants of the migrations with the target identifiers
+	childrenMap := children(ds.definitions)
+	definitions, err := ds.traverse(targetIDs, func(definition Definition) []int {
+		return childrenMap[definition.ID]
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	targetMap := make(map[int]struct{}, len(targetIDs))
+	for _, id := range targetIDs {
+		targetMap[id] = struct{}{}
+	}
+	appliedMap := make(map[int]struct{}, len(appliedIDs))
+	for _, id := range appliedIDs {
+		appliedMap[id] = struct{}{}
+	}
+
+	filtered := definitions[:0]
+	for _, definition := range definitions {
+		if _, ok := targetMap[definition.ID]; ok {
+			continue
+		}
+		if _, ok := appliedMap[definition.ID]; !ok {
+			continue
+		}
+
+		// Exclude the targets themselves as well as any non-applied definition. We
+		// are returning the set of migrations to _undo_, which should not include
+		// the target schema version.
+		filtered = append(filtered, definition)
+	}
+
+	// Reverse the slice in-place. We want to undo them in the opposite order from
+	// which they were applied.
+	for i, j := 0, len(filtered)-1; i < j; i, j = i+1, j-1 {
+		filtered[i], filtered[j] = filtered[j], filtered[i]
+	}
+
+	return filtered, nil
+}
+
+// traverse returns an ordered slice of definitions that are reachable from the given
+// target identifiers through the edges defined by the given next function. Any definition
+// that is reachable in this traversal will be included in the resulting slice, which has
+// the same topological ordering guarantees as the underlying `ds.definitions` slice.
+func (ds *Definitions) traverse(targetIDs []int, next func(definition Definition) []int) ([]Definition, error) {
+	type node struct {
+		id     int
+		parent *int
+	}
+
+	frontier := make([]node, 0, len(targetIDs))
+	for _, id := range targetIDs {
+		frontier = append(frontier, node{id: id})
+	}
+
+	visited := map[int]struct{}{}
+
+	for len(frontier) > 0 {
+		newFrontier := make([]node, 0, 4)
+		for _, n := range frontier {
+			if _, ok := visited[n.id]; ok {
+				continue
+			}
+			visited[n.id] = struct{}{}
+
+			definition, ok := ds.GetByID(n.id)
+			if !ok {
+				// note: should be unreachable by construction
+				return nil, unknownMigrationError(n.id, n.parent)
+			}
+
+			for _, id := range next(definition) {
+				newFrontier = append(newFrontier, node{id, &n.id})
+			}
+		}
+
+		frontier = newFrontier
+	}
+
+	filtered := make([]Definition, 0, len(visited))
+	for _, definition := range ds.definitions {
+		if _, ok := visited[definition.ID]; !ok {
+			continue
+		}
+
+		filtered = append(filtered, definition)
+	}
+
+	return filtered, nil
+}
+
 func (ds *Definitions) UpTo(id, target int) ([]Definition, error) {
 	if target == 0 {
 		return ds.UpFrom(id, 0)
@@ -273,4 +403,12 @@ func (ds *Definitions) DownFrom(id, n int) ([]Definition, error) {
 	}
 
 	return slice, nil
+}
+
+func unknownMigrationError(id int, source *int) error {
+	if source == nil {
+		return fmt.Errorf("unknown migration %d", id)
+	}
+
+	return fmt.Errorf("unknown migration %d referenced from migration %d", id, *source)
 }

@@ -180,6 +180,93 @@ func TestLeafDominator(t *testing.T) {
 	})
 }
 
+func TestUp(t *testing.T) {
+	definitions := []Definition{
+		{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+		{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+		{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{2}},
+		{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{2}},
+		{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{3, 4}},
+		{ID: 6, UpQuery: sqlf.Sprintf(`SELECT 6;`), Parents: []int{5}},
+		{ID: 7, UpQuery: sqlf.Sprintf(`SELECT 7;`), Parents: []int{5}},
+		{ID: 8, UpQuery: sqlf.Sprintf(`SELECT 8;`), Parents: []int{5, 6}},
+		{ID: 9, UpQuery: sqlf.Sprintf(`SELECT 9;`), Parents: []int{5, 8}},
+		{ID: 10, UpQuery: sqlf.Sprintf(`SELECT 10;`), Parents: []int{7, 9}},
+	}
+
+	for _, testCase := range []struct {
+		name                string
+		appliedIDs          []int
+		targetIDs           []int
+		expectedDefinitions []Definition
+	}{
+		{"empty", nil, nil, []Definition{}},
+		{"empty to leaf", nil, []int{10}, definitions},
+		{"empty to internal node", nil, []int{7}, append(append([]Definition(nil), definitions[0:5]...), definitions[6])},
+		{"already applied", []int{1, 2, 3, 4, 5, 6, 8}, []int{8}, []Definition{}},
+		{"partially applied", []int{1, 4, 5, 8}, []int{8}, append(append([]Definition(nil), definitions[1:3]...), definitions[5])},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			definitions, err := newDefinitions(definitions).Up(testCase.appliedIDs, testCase.targetIDs)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if diff := cmp.Diff(testCase.expectedDefinitions, definitions, queryComparer); diff != "" {
+				t.Errorf("unexpected definitions (-want, +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestDown(t *testing.T) {
+	definitions := []Definition{
+		{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+		{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+		{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{2}},
+		{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{2}},
+		{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{3, 4}},
+		{ID: 6, UpQuery: sqlf.Sprintf(`SELECT 6;`), Parents: []int{5}},
+		{ID: 7, UpQuery: sqlf.Sprintf(`SELECT 7;`), Parents: []int{5}},
+		{ID: 8, UpQuery: sqlf.Sprintf(`SELECT 8;`), Parents: []int{5, 6}},
+		{ID: 9, UpQuery: sqlf.Sprintf(`SELECT 9;`), Parents: []int{5, 8}},
+		{ID: 10, UpQuery: sqlf.Sprintf(`SELECT 10;`), Parents: []int{7, 9}},
+	}
+
+	reverse := func(definitions []Definition) []Definition {
+		reversed := make([]Definition, 0, len(definitions))
+		for i := len(definitions) - 1; i >= 0; i-- {
+			reversed = append(reversed, definitions[i])
+		}
+
+		return reversed
+	}
+
+	for _, testCase := range []struct {
+		name                string
+		appliedIDs          []int
+		targetIDs           []int
+		expectedDefinitions []Definition
+	}{
+		{"empty", nil, nil, []Definition{}},
+		{"unapply dominator", []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, []int{5}, reverse(definitions[5:])},
+		{"unapply non-dominator (1)", []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, []int{6}, reverse(definitions[7:])},
+		{"unapply non-dominator (2)", []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, []int{7}, reverse(definitions[9:])},
+		{"partial unapplied", []int{1, 2, 3, 4, 5, 6, 7, 10}, []int{5}, reverse(append(append([]Definition(nil), definitions[5:7]...), definitions[9]))},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			definitions, err := newDefinitions(definitions).Down(testCase.appliedIDs, testCase.targetIDs)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if diff := cmp.Diff(testCase.expectedDefinitions, definitions, queryComparer); diff != "" {
+				t.Errorf("unexpected definitions (-want, +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestUpTo(t *testing.T) {
 	definitions := newDefinitions([]Definition{
 		{ID: 11, UpFilename: "11.up.sql"},
