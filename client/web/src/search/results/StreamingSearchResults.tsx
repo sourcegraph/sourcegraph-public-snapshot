@@ -333,7 +333,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             variant="primary"
                             as="a"
                         >
-                            Get started searching your public and private repositorie
+                            Get started
                         </Button>
                     </Card>
                 )}
