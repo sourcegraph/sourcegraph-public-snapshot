@@ -26,23 +26,3 @@
     width: 30%;
     max-width: 700px;
 }
-
-.name-input {
-    max-width: 300px;
-}
-
-.settings-container {
-    align-self: center;
-    display: flex;
-    flex-direction: column;
-    width: 60%;
-    max-width: 1000px;
-    margin-top: 1rem;
-}
-
-.header {
-    align-self: flex-start;
-    width: 100%;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-}

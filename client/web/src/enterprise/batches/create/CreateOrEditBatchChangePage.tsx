@@ -2,10 +2,13 @@ import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
 import { compact, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import LockIcon from 'mdi-react/LockIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
@@ -18,6 +21,7 @@ import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { PageHeader, Button, Container, Input, LoadingSpinner, FeedbackBadge } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { PageTitle } from '../../../components/PageTitle'
 import {
     BatchChangeFields,
     EditBatchChangeFields,
@@ -130,6 +134,12 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     )
 
     const [nameInput, setNameInput] = useState('')
+    const [nameValid, setNameValid] = useState<boolean>()
+
+    const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        setNameInput(event.target.value)
+        setNameValid(/^[\w.-]+$/.test(event.target.value))
+    }, [])
 
     const history = useHistory()
     const handleCancel = (): void => history.goBack()
@@ -143,70 +153,102 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     }
 
     return (
-        <BatchChangePage namespace={selectedNamespace} title="Create batch change">
-            <div className={styles.settingsContainer}>
-                <h4>Batch spec settings</h4>
-                <Container>
-                    {error && <ErrorAlert error={error} />}
-                    <NamespaceSelector
-                        namespaces={namespaces}
-                        selectedNamespace={selectedNamespace.id}
-                        onSelect={setSelectedNamespace}
-                    />
-                    <Input
-                        className={styles.nameInput}
-                        label="Batch change name"
-                        value={nameInput}
-                        onChange={event => setNameInput(event.target.value)}
-                        onKeyPress={event => {
-                            if (event.key === 'Enter') {
-                                handleCreate()
-                            }
-                        }}
-                    />
-                </Container>
-                <div className="mt-3 align-self-end">
-                    <Button variant="secondary" outline={true} className="mr-2" onClick={handleCancel}>
-                        Cancel
-                    </Button>
-                    <Button variant="primary" onClick={handleCreate} disabled={loading}>
-                        Create
-                    </Button>
-                </div>
+        <div className="container">
+            <div className="container col-8 my-4">
+                <PageTitle title="Create new batch change" />
+                <PageHeader
+                    path={[{ icon: BatchChangesIcon, to: '.' }, { text: 'Create batch change' }]}
+                    className="flex-1 pb-2"
+                    description="Run custom code over hundreds of repositories and manage the resulting changesets."
+                    annotation={
+                        <FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />
+                    }
+                />
+                <Form className="my-4 pb-5" onSubmit={handleCreate}>
+                    <Container className="mb-4">
+                        {error && <ErrorAlert error={error} />}
+                        <NamespaceSelector
+                            namespaces={namespaces}
+                            selectedNamespace={selectedNamespace.id}
+                            onSelect={setSelectedNamespace}
+                            disabled={!!namespaceID}
+                        />
+                        <Input
+                            label="Batch change name"
+                            value={nameInput}
+                            onChange={onNameChange}
+                            pattern="^[\\w.-]+$"
+                            required={true}
+                            status={nameValid === undefined ? undefined : nameValid ? 'valid' : 'error'}
+                        />
+                        <small className="text-muted">
+                            Give it a short, descriptive name to reference the batch change on Sourcegraph. Do not
+                            include confidential information.{' '}
+                            <span className={classNames(nameValid === false && 'text-danger')}>
+                                Only regular characters, _ and - are allowed.
+                            </span>
+                        </small>
+                        <hr className="my-3" />
+                        <h3 className="text-muted">
+                            Visibility <InfoCircleOutlineIcon className="icon-inline" data-tooltip="Upcoming feature" />
+                        </h3>
+                        <div className="form-group text-muted mb-1">
+                            <label>
+                                <input
+                                    type="radio"
+                                    name="visibility"
+                                    value="public"
+                                    className="mr-2"
+                                    checked={true}
+                                    disabled={true}
+                                />
+                                Public
+                            </label>
+                        </div>
+                        <div className="form-group text-muted mb-0">
+                            <label className="mb-0">
+                                <input
+                                    type="radio"
+                                    name="visibility"
+                                    value="private"
+                                    className="mr-2"
+                                    disabled={true}
+                                />
+                                Private <LockIcon className="text-warning icon-inline" />
+                            </label>
+                        </div>
+                    </Container>
+                    <div>
+                        <Button
+                            variant="primary"
+                            type="submit"
+                            onClick={handleCreate}
+                            disabled={loading || nameInput === '' || !nameValid}
+                            className="mr-2"
+                        >
+                            Create batch change
+                        </Button>
+                        <Button variant="secondary" type="button" outline={true} onClick={handleCancel}>
+                            Cancel
+                        </Button>
+                    </div>
+                </Form>
             </div>
-        </BatchChangePage>
+        </div>
     )
 }
 
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
 
-interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
+interface EditPageProps extends ThemeProps {
     batchChange: EditBatchChangeFields
     refetchBatchChange: () => Promise<ApolloQueryResult<GetBatchChangeToEditResult>>
 }
 
-const EditPage: React.FunctionComponent<EditPageProps> = ({
-    batchChange,
-    refetchBatchChange,
-    isLightTheme,
-    settingsCascade,
-}) => {
+const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetchBatchChange, isLightTheme }) => {
     // Get the latest batch spec for the batch change.
     const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
         batchChange
-    )
-
-    // TODO: Only needed when edit name/namespace form is open
-    // Get the namespaces this user has access to.
-    const { namespaces: _namespaces, defaultSelectedNamespace } = useNamespaces(
-        settingsCascade,
-        batchChange.namespace.id
-    )
-
-    // TODO: Only needed when edit name/namespace form is open
-    // The namespace selected for creating the new batch spec under.
-    const [selectedNamespace, _setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
-        defaultSelectedNamespace
     )
 
     const [noCache, setNoCache] = useState<boolean>(false)
@@ -344,7 +386,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
 
     return (
         <BatchChangePage
-            namespace={selectedNamespace}
+            namespace={batchChange.namespace}
             title={batchChange.name}
             description={batchChange.description}
             actionButtons={buttons}
@@ -451,7 +493,11 @@ const BatchChangePage: React.FunctionComponent<BatchChangePageProps> = ({
                 }
                 annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
             />
-            <div className="d-flex flex-column flex-0 align-items-center justify-content-center">{actionButtons}</div>
+            {actionButtons && (
+                <div className="d-flex flex-column flex-0 align-items-center justify-content-center">
+                    {actionButtons}
+                </div>
+            )}
         </div>
         {children}
     </div>
