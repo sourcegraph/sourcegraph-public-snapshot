@@ -23,26 +23,31 @@ const action: ActionProps['action'] = {
     enabled: true,
 }
 
-add('disabled', () => <WebStory>{() => <WebhookAction {...defaultProps} disabled={true} />}</WebStory>)
-
-add('closed, not populated', () => <WebStory>{() => <WebhookAction {...defaultProps} />}</WebStory>)
-
-add('open, not populated', () => <WebStory>{() => <WebhookAction {...defaultProps} _testStartOpen={true} />}</WebStory>)
-
-add('closed, populated, enabled', () => (
-    <WebStory>{() => <WebhookAction {...defaultProps} action={action} />}</WebStory>
-))
-
-add('open, populated, enabled', () => (
-    <WebStory>{() => <WebhookAction {...defaultProps} _testStartOpen={true} action={action} />}</WebStory>
-))
-
-add('closed, populated, disabled', () => (
-    <WebStory>{() => <WebhookAction {...defaultProps} action={{ ...action, enabled: false }} />}</WebStory>
-))
-
-add('open, populated, disabled', () => (
+add('WebhookAction', () => (
     <WebStory>
-        {() => <WebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />}
+        {() => (
+            <>
+                <h2>Action card disabled</h2>
+                <WebhookAction {...defaultProps} disabled={true} />
+
+                <h2>Closed, not populated</h2>
+                <WebhookAction {...defaultProps} />
+
+                <h2>Open, not populated</h2>
+                <WebhookAction {...defaultProps} _testStartOpen={true} />
+
+                <h2>Closed, populated, enabled</h2>
+                <WebhookAction {...defaultProps} action={action} />
+
+                <h2>Open, populated, enabled</h2>
+                <WebhookAction {...defaultProps} _testStartOpen={true} action={action} />
+
+                <h2>Closed, populated, disabled</h2>
+                <WebhookAction {...defaultProps} action={{ ...action, enabled: false }} />
+
+                <h2>Open, populated, disabled</h2>
+                <WebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />
+            </>
+        )}
     </WebStory>
 ))
