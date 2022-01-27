@@ -11,7 +11,9 @@ export const WebhookAction: React.FunctionComponent<{}> = () => (
                 Call a webhook <ProductStatusBadge className="ml-1" status="experimental" />{' '}
             </div>
         }
+        label="Call a webhook"
         subtitle="Calls the specified URL with a JSON payload."
+        idName="webhook"
         disabled={false}
         completed={false}
         completedSubtitle="Action completed"

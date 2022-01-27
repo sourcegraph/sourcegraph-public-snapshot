@@ -73,6 +73,7 @@ describe('Code monitoring', () => {
                                 actions: {
                                     nodes: [
                                         {
+                                            __typename: 'MonitorEmail',
                                             enabled: true,
                                             id: 'Q29kZU1vbml0b3JBY3Rpb25FbWFpbDoy',
                                             recipients: {
@@ -116,10 +117,10 @@ describe('Code monitoring', () => {
 
             await driver.page.type('.test-name-input', 'test monitor')
 
-            await driver.page.waitForSelector('.test-action-button')
+            await driver.page.waitForSelector('.test-action-button-email')
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.test-action-button')!.disabled
+                    () => document.querySelector<HTMLButtonElement>('.test-action-button-email')!.disabled
                 ),
                 true,
                 'Expected action button to be disabled'
@@ -148,10 +149,10 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-name-input')
             await driver.page.type('.test-name-input', 'test monitor')
 
-            await driver.page.waitForSelector('.test-action-button')
+            await driver.page.waitForSelector('.test-action-button-email')
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.test-action-button')!.disabled
+                    () => document.querySelector<HTMLButtonElement>('.test-action-button-email')!.disabled
                 ),
                 true,
                 'Expected action button to be disabled'
@@ -167,17 +168,17 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-submit-trigger')
             await driver.page.click('.test-submit-trigger')
 
-            await driver.page.waitForSelector('.test-action-button')
+            await driver.page.waitForSelector('.test-action-button-email')
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.test-action-button')!.disabled
+                    () => document.querySelector<HTMLButtonElement>('.test-action-button-email')!.disabled
                 ),
                 false,
                 'Expected action button to be enabled'
             )
 
-            await driver.page.click('.test-action-button')
-            await driver.page.waitForSelector('.test-action-form')
+            await driver.page.click('.test-action-button-email')
+            await driver.page.waitForSelector('.test-action-form-email')
         })
 
         it('disables submitting the code monitor area until trigger and action are complete', async () => {
@@ -204,11 +205,11 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-submit-trigger')
             await driver.page.click('.test-submit-trigger')
 
-            await driver.page.waitForSelector('.test-action-button')
-            await driver.page.click('.test-action-button')
-            await driver.page.waitForSelector('.test-action-form')
-            await driver.page.waitForSelector('.test-submit-action')
-            await driver.page.click('.test-submit-action')
+            await driver.page.waitForSelector('.test-action-button-email')
+            await driver.page.click('.test-action-button-email')
+            await driver.page.waitForSelector('.test-action-form-email')
+            await driver.page.waitForSelector('.test-submit-action-email')
+            await driver.page.click('.test-submit-action-email')
 
             assert.strictEqual(
                 await driver.page.evaluate(

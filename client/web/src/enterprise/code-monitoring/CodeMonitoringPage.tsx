@@ -160,7 +160,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
 
                     {showList && (
                         <CodeMonitorList
-                            settingsCascade={settingsCascade}
                             authenticatedUser={authenticatedUser}
                             fetchUserCodeMonitors={fetchUserCodeMonitors}
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}

@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome & Firefox v22.1.25.1535, Safari v1.10
+
 - Add extra field to log browser extension version [#issues/27845](https://github.com/sourcegraph/sourcegraph/issues/27845), [pull/27902](https://github.com/sourcegraph/sourcegraph/pull/27902)
 - Implement Sourcegraph URL dropdown for ease of URL switching [#issues/29030](https://github.com/sourcegraph/sourcegraph/issues/29030), [#pull/29471](https://github.com/sourcegraph/sourcegraph/pull/29471)
   - Fix incorrect event log URL detection. Allow event logs for non-private repositories. [#issues/25778](https://github.com/sourcegraph/sourcegraph/issues/25778)

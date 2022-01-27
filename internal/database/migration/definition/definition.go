@@ -20,8 +20,26 @@ type Metadata struct {
 	Parent int `yaml:"parent"`
 }
 
+type IndexMetadata struct {
+	TableName string
+	IndexName string
+}
+
 type Definitions struct {
-	definitions []Definition
+	definitions    []Definition
+	definitionsMap map[int]Definition
+}
+
+func newDefinitions(migrationDefinitions []Definition) *Definitions {
+	definitionsMap := make(map[int]Definition, len(migrationDefinitions))
+	for _, migrationDefinition := range migrationDefinitions {
+		definitionsMap[migrationDefinition.ID] = migrationDefinition
+	}
+
+	return &Definitions{
+		definitions:    migrationDefinitions,
+		definitionsMap: definitionsMap,
+	}
 }
 
 func (ds *Definitions) Count() int {
@@ -33,13 +51,8 @@ func (ds *Definitions) First() int {
 }
 
 func (ds *Definitions) GetByID(id int) (Definition, bool) {
-	for _, definition := range ds.definitions {
-		if definition.ID == id {
-			return definition, true
-		}
-	}
-
-	return Definition{}, false
+	definition, ok := ds.definitionsMap[id]
+	return definition, ok
 }
 
 func (ds *Definitions) UpTo(id, target int) ([]Definition, error) {

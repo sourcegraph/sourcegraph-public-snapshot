@@ -25,9 +25,18 @@ func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
 		}
 	}()
 
+	schemaNames := schemaNames(schemas)
+
+	operations := make([]runner.MigrationOperation, 0, len(schemaNames))
+	for _, schemaName := range schemaNames {
+		operations = append(operations, runner.MigrationOperation{
+			SchemaName: schemaName,
+			Up:         true,
+		})
+	}
+
 	options := runner.Options{
-		Up:          true,
-		SchemaNames: schemaNames(schemas),
+		Operations: operations,
 	}
 	if err := runner.NewRunner(newStoreFactoryMap(db, schemas)).Run(context.Background(), options); err != nil {
 		return nil, err

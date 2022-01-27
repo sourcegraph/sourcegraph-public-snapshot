@@ -6,6 +6,7 @@ import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { IMonitorEmail, IMonitorSlackWebhook } from '@sourcegraph/shared/src/schema'
 import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -50,7 +51,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
         description: '',
         enabled: true,
         trigger: { id: '', query: '' },
-        actions: { nodes: [{ id: '', enabled: true, recipients: { nodes: [{ id: authenticatedUser.id }] } }] },
+        actions: { nodes: [] },
     })
 
     const codeMonitorOrError = useObservable(
@@ -81,20 +82,39 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                     },
                 },
                 { id: codeMonitor.trigger.id, update: { query: codeMonitor.trigger.query } },
-                codeMonitor.actions.nodes.map(action => ({
-                    email:
-                        action.__typename === 'MonitorEmail'
-                            ? {
-                                  id: action.id || null, // Convert empty string to null so action is created
-                                  update: {
-                                      enabled: action.enabled,
-                                      priority: MonitorEmailPriority.NORMAL,
-                                      recipients: [authenticatedUser.id],
-                                      header: '',
-                                  },
-                              }
-                            : undefined,
-                }))
+                codeMonitor.actions.nodes
+                    // We currently only support email and Slack webhook actions, remove any others.
+                    .filter(
+                        (action): action is IMonitorEmail | IMonitorSlackWebhook =>
+                            action.__typename === 'MonitorEmail' || action.__typename === 'MonitorSlackWebhook'
+                    )
+                    .map(action => {
+                        // Convert empty IDs to null so action is created
+                        switch (action.__typename) {
+                            case 'MonitorEmail':
+                                return {
+                                    email: {
+                                        id: action.id || null,
+                                        update: {
+                                            enabled: action.enabled,
+                                            priority: MonitorEmailPriority.NORMAL,
+                                            recipients: [authenticatedUser.id],
+                                            header: '',
+                                        },
+                                    },
+                                }
+                            case 'MonitorSlackWebhook':
+                                return {
+                                    slackWebhook: {
+                                        id: action.id || null,
+                                        update: {
+                                            enabled: action.enabled,
+                                            url: action.url,
+                                        },
+                                    },
+                                }
+                        }
+                    })
             ),
         [authenticatedUser.id, match.params.id, updateCodeMonitor]
     )

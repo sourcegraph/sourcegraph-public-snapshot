@@ -67,9 +67,9 @@ describe('CreateCodeMonitorPage', () => {
 
         userEvent.click(screen.getByTestId('submit-trigger'))
 
-        userEvent.click(screen.getByTestId('form-action-toggle-email-notification'))
+        userEvent.click(screen.getByTestId('form-action-toggle-email'))
 
-        userEvent.click(screen.getByTestId('submit-action'))
+        userEvent.click(screen.getByTestId('submit-action-email'))
 
         act(() => {
             clock.tick(600)
@@ -106,8 +106,8 @@ describe('CreateCodeMonitorPage', () => {
         // Pressing enter still does not call createCodeMonitor
         sinon.assert.notCalled(props.createCodeMonitor)
 
-        userEvent.click(screen.getByTestId('form-action-toggle-email-notification'))
-        userEvent.click(screen.getByTestId('submit-action'))
+        userEvent.click(screen.getByTestId('form-action-toggle-email'))
+        userEvent.click(screen.getByTestId('submit-action-email'))
 
         act(() => {
             clock.tick(600)
@@ -121,7 +121,7 @@ describe('CreateCodeMonitorPage', () => {
 
     test('Actions area button is disabled while trigger is incomplete', () => {
         renderWithRouter(<CreateCodeMonitorPage {...props} />)
-        const actionButton = screen.getByTestId('form-action-toggle-email-notification')
+        const actionButton = screen.getByTestId('form-action-toggle-email')
         expect(actionButton).toHaveClass('disabled')
     })
 })

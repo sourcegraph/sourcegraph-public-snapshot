@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
+import { triggerTestEmailAction } from '../backend'
 
 import { EmailAction } from './actions/EmailAction'
 import { SlackWebhookAction } from './actions/SlackWebhookAction'
@@ -15,7 +16,17 @@ export interface ActionAreaProps {
     disabled: boolean
     authenticatedUser: AuthenticatedUser
     onActionsChange: (action: CodeMonitorFields['actions']) => void
-    description: string
+    monitorName: string
+}
+
+export interface ActionProps {
+    action?: MonitorAction
+    setAction: (action?: MonitorAction) => void
+    disabled: boolean
+    monitorName: string
+
+    // For testing purposes only
+    _testStartOpen?: boolean
 }
 
 export type MonitorAction = CodeMonitorFields['actions']['nodes'][number]
@@ -31,27 +42,31 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
     disabled,
     authenticatedUser,
     onActionsChange,
-    description,
+    monitorName,
 }) => {
     const [emailAction, setEmailAction] = useState<MonitorAction | undefined>(
         actions.nodes.find(action => action.__typename === 'MonitorEmail')
     )
-    const [emailActionCompleted, setEmailActionCompleted] = useState(!!emailAction && actionsCompleted)
 
-    // Form is completed only if all set actions are completed and all incomplete actions are unset,
-    // and there is at least one completed action.
-    // (Currently there is only one action, but more will be added.)
+    const [slackWebhookAction, setSlackWebhookAction] = useState<MonitorAction | undefined>(
+        actions.nodes.find(action => action.__typename === 'MonitorSlackWebhook')
+    )
+
+    // Form is completed if there is at least one action
     useEffect(() => {
-        setActionsCompleted(!!emailAction && emailActionCompleted)
-    }, [emailAction, emailActionCompleted, setActionsCompleted])
+        setActionsCompleted(!!emailAction || !!slackWebhookAction)
+    }, [emailAction, setActionsCompleted, slackWebhookAction])
 
     useEffect(() => {
         const actions: CodeMonitorFields['actions'] = { nodes: [] }
         if (emailAction) {
             actions.nodes.push(emailAction)
         }
+        if (slackWebhookAction) {
+            actions.nodes.push(slackWebhookAction)
+        }
         onActionsChange(actions)
-    }, [emailAction, onActionsChange])
+    }, [emailAction, onActionsChange, slackWebhookAction])
 
     const showWebhooks = useExperimentalFeatures(features => features.codeMonitoringWebHooks)
 
@@ -63,17 +78,21 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 disabled={disabled}
                 action={emailAction}
                 setAction={setEmailAction}
-                actionCompleted={emailActionCompleted}
-                setActionCompleted={setEmailActionCompleted}
                 authenticatedUser={authenticatedUser}
-                description={description}
+                monitorName={monitorName}
+                triggerTestEmailAction={triggerTestEmailAction}
             />
-            {showWebhooks && (
-                <>
-                    <SlackWebhookAction />
-                    <WebhookAction />
-                </>
+
+            {(showWebhooks || slackWebhookAction) && (
+                <SlackWebhookAction
+                    disabled={disabled}
+                    action={slackWebhookAction}
+                    setAction={setSlackWebhookAction}
+                    monitorName={monitorName}
+                />
             )}
+
+            {showWebhooks && <WebhookAction />}
 
             <small className="text-muted">
                 What other actions would you like to take?{' '}
