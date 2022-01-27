@@ -1128,7 +1128,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 	var alert *searchAlert
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].priority > alerts[j].priority
+			return alerts[i].alert.Priority > alerts[j].alert.Priority
 		})
 		alert = alerts[0]
 	}
@@ -1212,7 +1212,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	var status, alertType string
 	status = DetermineStatusForLogs(srr, err)
 	if srr != nil && srr.SearchResults.Alert != nil {
-		alertType = srr.SearchResults.Alert.PrometheusType()
+		alertType = srr.SearchResults.Alert.alert.PrometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
@@ -1441,7 +1441,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 	var alert *searchAlert
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].priority > alerts[j].priority
+			return alerts[i].alert.Priority > alerts[j].alert.Priority
 		})
 		alert = alerts[0]
 	}
