@@ -20,11 +20,11 @@ type DBCommitStore struct {
 }
 
 type CommitStore interface {
-	Save(ctx context.Context, id api.RepoID, commit *gitdomain.Commit) error
+	Save(ctx context.Context, id api.RepoID, commit *gitdomain.Commit, debugInfo string) error
 	Get(ctx context.Context, id api.RepoID, start time.Time, end time.Time) ([]CommitStamp, error)
 	GetMetadata(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error)
 	UpsertMetadataStamp(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error)
-	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit) error
+	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, debugInfo string) error
 }
 
 func NewCommitStore(db dbutil.DB) *DBCommitStore {
@@ -42,9 +42,9 @@ func (c *DBCommitStore) Transact(ctx context.Context) (*DBCommitStore, error) {
 	return &DBCommitStore{Store: txBase}, err
 }
 
-func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *gitdomain.Commit) error {
+func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *gitdomain.Commit, debugInfo string) error {
 	commitID := commit.ID
-	debugMsg := fmt.Sprintf("author:%s|msgSub:%s|msgBody:%s|commitTime:%s|authorTime:%s", commit.Author.Name, commit.Message.Subject(), commit.Message.Body(), commit.Committer.Date, commit.Author.Date)
+	debugMsg := fmt.Sprintf("author:%s|msgSub:%s|msgBody:%s|commitTime:%s|authorTime:%s|debugInfo:%s", commit.Author.Name, commit.Message.Subject(), commit.Message.Body(), commit.Committer.Date, commit.Author.Date, debugInfo)
 	if err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, dbutil.CommitBytea(commitID), commit.Committer.Date, debugMsg)); err != nil {
 		return errors.Errorf("error saving commit for repo_id: %v commit_id %v: %w", id, commitID, err)
 	}
@@ -52,7 +52,7 @@ func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *gitdoma
 	return nil
 }
 
-func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit) (err error) {
+func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, debugInfo string) (err error) {
 	tx, err := c.Transact(ctx)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commit
 	defer func() { err = tx.Store.Done(err) }()
 
 	for _, commit := range commits {
-		if err = tx.Save(ctx, id, commit); err != nil {
+		if err = tx.Save(ctx, id, commit, debugInfo); err != nil {
 			return err
 		}
 	}
