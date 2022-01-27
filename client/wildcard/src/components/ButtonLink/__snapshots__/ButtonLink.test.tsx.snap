@@ -8,7 +8,9 @@ exports[`<ButtonLink /> renders correctly \`disabled\` 1`] = `
     href=""
     role="button"
     tabindex="-1"
-  />
+  >
+    Button link
+  </a>
 </DocumentFragment>
 `;
 
@@ -21,7 +23,9 @@ exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
     data-tooltip="SourceGraph.com"
     href="https://sourcegraph.com"
     tabindex="0"
-  />
+  >
+    Button link
+  </a>
 </DocumentFragment>
 `;
 
@@ -31,7 +35,9 @@ exports[`<ButtonLink /> renders correctly btn classes 1`] = `
     class="btn btn-secondary btn-lg"
     href="http://example.com"
     tabindex="0"
-  />
+  >
+    Button link
+  </a>
 </DocumentFragment>
 `;
 
@@ -42,6 +48,8 @@ exports[`<ButtonLink /> renders correctly empty \`to\` 1`] = `
     href=""
     role="button"
     tabindex="0"
-  />
+  >
+    Button link
+  </a>
 </DocumentFragment>
 `;

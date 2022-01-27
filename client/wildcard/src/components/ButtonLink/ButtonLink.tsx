@@ -113,10 +113,16 @@ export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = React.forwar
                     onAuxClick={handleClick}
                     role="button"
                     {...rest}
-                />
+                >
+                    {children}
+                </Button>
             )
         }
 
-        return <Button {...commonProps} as={RouterLink} to={to} {...rest} />
+        return (
+            <Button {...commonProps} as={RouterLink} to={to} {...rest}>
+                {children}
+            </Button>
+        )
     }
 )
