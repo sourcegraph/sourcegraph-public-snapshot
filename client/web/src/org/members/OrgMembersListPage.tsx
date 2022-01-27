@@ -1,17 +1,35 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, isErrorLike } from '@sourcegraph/common'
 import { Container, PageHeader, Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { updateOrganization } from '../backend'
 import { InviteMemberModal } from './InviteMemberModal'
+import { gql, useQuery } from '@apollo/client'
+import { OrganizationMembersResult, OrganizationMembersVariables } from '../../graphql-operations'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate'> {}
+
+const ORG_MEMBERS_QUERY = gql`
+    query OrganizationMembers($id: ID!) {
+        node(id: $id) {
+            ... on Org {
+                viewerCanAdminister
+                members {
+                    nodes {
+                        id
+                        username
+                        displayName
+                        avatarURL
+                    }
+                    totalCount
+                }
+            }
+        }
+    }
+`
 
 /**
  * The organization members list page.
@@ -21,54 +39,23 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, onOrga
         eventLogger.logViewEvent('OrgSettingsProfile')
     }, [org.id])
 
+    const { data, loading, error } = useQuery<OrganizationMembersResult, OrganizationMembersVariables>(
+        ORG_MEMBERS_QUERY,
+        {
+            variables: { id: org.id },
+        }
+    )
+
     const [modalInvite, setModalInvite] = React.useState(false)
 
-    // const [displayName, setDisplayName] = useState<string>(org.displayName ?? '')
-    // const onDisplayNameFieldChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-    //     setDisplayName(event.target.value)
-    // }, [])
-    // const [isLoading, setIsLoading] = useState<boolean | Error>(false)
-    // const [updated, setIsUpdated] = useState<boolean>(false)
-    // const [updateResetTimer, setUpdateResetTimer] = useState<NodeJS.Timer>()
-
-    // useEffect(
-    //     () => () => {
-    //         if (updateResetTimer) {
-    //             clearTimeout(updateResetTimer)
-    //         }
-    //     },
-    //     [updateResetTimer]
-    // )
-
-    // const onSubmit = useCallback<React.FormEventHandler>(
-    //     async event => {
-    //         event.preventDefault()
-    //         setIsLoading(true)
-    //         try {
-    //             await updateOrganization(org.id, displayName)
-    //             onOrganizationUpdate()
-    //             // Reenable submit button, flash "updated" text
-    //             setIsLoading(false)
-    //             setIsUpdated(true)
-    //             setUpdateResetTimer(
-    //                 setTimeout(() => {
-    //                     // Hide "updated" text again after 1s
-    //                     setIsUpdated(false)
-    //                 }, 1000)
-    //             )
-    //         } catch (error) {
-    //             setIsLoading(asError(error))
-    //         }
-    //     },
-    //     [displayName, onOrganizationUpdate, org.id]
-    // )
-    const onInviteClick = () => {
+    const onInviteClick = useCallback(() => {
         setModalInvite(true)
-    }
+    }, [setModalInvite])
 
-    const onCloseIviteModal = () => {
+    const onCloseIviteModal = useCallback(() => {
         setModalInvite(false)
-    }
+    }, [setModalInvite])
+
     return (
         <>
             <div className="org-members-page">
@@ -80,7 +67,16 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, onOrga
                     </Button>
                 </div>
 
-                <Container>list of members here</Container>
+                <Container>
+                    {loading && <LoadingSpinner />}
+                    {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
+                    {error && (
+                        <ErrorAlert
+                            className="mt-2"
+                            error={`Error loading ${org.name} members. Please, try refreshing the page.`}
+                        />
+                    )}
+                </Container>
             </div>
             {modalInvite && <InviteMemberModal onClose={onCloseIviteModal} orgName={org.name} />}
         </>
