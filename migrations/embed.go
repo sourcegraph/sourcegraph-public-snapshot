@@ -2,5 +2,5 @@ package migrations
 
 import "embed"
 
-//go:embed frontend/*.sql codeintel/*.sql codeinsights/*.sql
+//go:embed **/*
 var QueryDefinitions embed.FS
