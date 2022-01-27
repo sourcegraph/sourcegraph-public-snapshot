@@ -3,6 +3,7 @@ package compression
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -160,7 +161,7 @@ func (i *CommitIndexer) index(name string, id api.RepoID) (err error) {
 	}
 
 	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits))
-	err = i.commitStore.InsertCommits(ctx, repoId, commits)
+	err = i.commitStore.InsertCommits(ctx, repoId, commits, fmt.Sprintf("|repoName:%s|repoId:%d", repoName, repoId))
 	if err != nil {
 		return errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
 	}

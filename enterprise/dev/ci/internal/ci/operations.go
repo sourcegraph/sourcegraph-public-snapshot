@@ -95,6 +95,10 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		ops.Append(addDocs)
 	}
 
+	if runAll || changedFiles.AffectsTerraformFiles() {
+		ops.Append(addTerraformLint)
+	}
+
 	return &ops
 }
 
@@ -102,6 +106,13 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
 		bk.Cmd("./dev/check/docsite.sh"))
+}
+
+// Adds the terraform scanner step.  This executes very quickly ~6s
+func addTerraformLint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lock: security - checkov",
+		bk.Cmd("dev/ci/ci-checkov.sh"),
+		bk.SoftFail(222))
 }
 
 // Adds the static check test step.

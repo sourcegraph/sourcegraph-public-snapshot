@@ -26,63 +26,84 @@ const nMuslCommand = "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/downloa
 
 var tscSegmentBlockList = append([]string{"node_modules"}, segmentBlockList...)
 
+func inferSingleTypeScriptIndexJob(
+	gitclient GitClient, pathMap pathMap, tsConfigPath string, shouldInferConfig bool,
+) *config.IndexJob {
+	if !containsNoSegments(tsConfigPath, tscSegmentBlockList...) {
+		return nil
+	}
+	isYarn := checkLernaFile(gitclient, tsConfigPath, pathMap)
+	var dockerSteps []config.DockerStep
+	for _, dir := range ancestorDirs(tsConfigPath) {
+		if !pathMap.contains(dir, "package.json") {
+			continue
+		}
+
+		ignoreScripts := ""
+		if shouldInferConfig {
+			ignoreScripts = " --ignore-scripts"
+		}
+		var commands []string
+		if isYarn || pathMap.contains(dir, "yarn.lock") {
+			commands = append(commands, "yarn --ignore-engines"+ignoreScripts)
+		} else {
+			commands = append(commands, "npm install"+ignoreScripts)
+		}
+
+		dockerSteps = append(dockerSteps, config.DockerStep{
+			Root:     dir,
+			Image:    lsifTscImage,
+			Commands: commands,
+		})
+	}
+
+	var localSteps []string
+	if checkCanDeriveNodeVersion(gitclient, tsConfigPath, pathMap) {
+		for i, step := range dockerSteps {
+			step.Commands = append([]string{nMuslCommand}, step.Commands...)
+			dockerSteps[i] = step
+		}
+
+		localSteps = append(localSteps, nMuslCommand)
+	}
+
+	n := len(dockerSteps)
+	for i := 0; i < n/2; i++ {
+		dockerSteps[i], dockerSteps[n-i-1] = dockerSteps[n-i-1], dockerSteps[i]
+	}
+
+	indexerArgs := []string{"lsif-tsc", "-p", "."}
+	if shouldInferConfig {
+		indexerArgs = append(indexerArgs, "--inferTSConfig")
+	}
+
+	return &config.IndexJob{
+		Steps:       dockerSteps,
+		LocalSteps:  localSteps,
+		Root:        dirWithoutDot(tsConfigPath),
+		Indexer:     lsifTscImage,
+		IndexerArgs: indexerArgs,
+		Outfile:     "",
+	}
+}
+
 func InferTypeScriptIndexJobs(gitclient GitClient, paths []string) (indexes []config.IndexJob) {
 	pathMap := newPathMap(paths)
 
 	tsConfigEntry, tsConfigPresent := pathMap["tsconfig.json"]
 	if !tsConfigPresent {
-		return indexes
+		indexJob := inferSingleTypeScriptIndexJob(gitclient, pathMap, "tsconfig.json", true)
+		if indexJob != nil {
+			return []config.IndexJob{*indexJob}
+		}
+		return []config.IndexJob{}
 	}
 
 	for _, tsConfigIndex := range tsConfigEntry.indexes {
-		path := paths[tsConfigIndex]
-		if !containsNoSegments(path, tscSegmentBlockList...) {
-			continue
+		indexJob := inferSingleTypeScriptIndexJob(gitclient, pathMap, paths[tsConfigIndex], false)
+		if indexJob != nil {
+			indexes = append(indexes, *indexJob)
 		}
-		isYarn := checkLernaFile(gitclient, path, pathMap)
-		var dockerSteps []config.DockerStep
-		for _, dir := range ancestorDirs(path) {
-			if !pathMap.contains(dir, "package.json") {
-				continue
-			}
-
-			var commands []string
-			if isYarn || pathMap.contains(dir, "yarn.lock") {
-				commands = append(commands, "yarn --ignore-engines")
-			} else {
-				commands = append(commands, "npm install")
-			}
-
-			dockerSteps = append(dockerSteps, config.DockerStep{
-				Root:     dir,
-				Image:    lsifTscImage,
-				Commands: commands,
-			})
-		}
-
-		var localSteps []string
-		if checkCanDeriveNodeVersion(gitclient, path, pathMap) {
-			for i, step := range dockerSteps {
-				step.Commands = append([]string{nMuslCommand}, step.Commands...)
-				dockerSteps[i] = step
-			}
-
-			localSteps = append(localSteps, nMuslCommand)
-		}
-
-		n := len(dockerSteps)
-		for i := 0; i < n/2; i++ {
-			dockerSteps[i], dockerSteps[n-i-1] = dockerSteps[n-i-1], dockerSteps[i]
-		}
-
-		indexes = append(indexes, config.IndexJob{
-			Steps:       dockerSteps,
-			LocalSteps:  localSteps,
-			Root:        dirWithoutDot(path),
-			Indexer:     lsifTscImage,
-			IndexerArgs: []string{"lsif-tsc", "-p", "."},
-			Outfile:     "",
-		})
 	}
 
 	return indexes

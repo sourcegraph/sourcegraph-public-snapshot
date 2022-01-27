@@ -49,6 +49,11 @@ const config = {
             importNames: ['animationFrameScheduler'],
             message: 'Code using animationFrameScheduler breaks in Firefox when using Sentry.',
           },
+          {
+            name: 'react-router-dom',
+            importNames: ['Link'],
+            message: "Use the Link component from the @sourcegraph/wildcard package instead of react-router-dom's Link",
+          },
         ],
         patterns: [
           {

@@ -67,7 +67,7 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
-import { FeatureFlagsAgent } from './featureFlags/FeatureFlagsAgent'
+import { OverrideFeatureFlagsAgent } from './featureFlags/OverrideFeatureFlagsAgent'
 import { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -398,7 +398,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
                                         <ScrollManager history={history}>
                                             <Router history={history} key={0}>
-                                                <FeatureFlagsAgent />
+                                                <OverrideFeatureFlagsAgent />
                                                 <Route
                                                     path="/"
                                                     render={routeComponentProps => (

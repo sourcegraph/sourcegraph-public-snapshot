@@ -127,6 +127,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     suggestionsIcon={<SourceRepositoryIcon className="mr-1" size="1rem" />}
                     isValid={isRepositoryNameValid}
                     isMacPlatform={isMacPlatform}
+                    focusInput={repositoryName.length === 0}
                     dataTestId="file-block-repository-name-input"
                 />
                 <div className={styles.separator} />

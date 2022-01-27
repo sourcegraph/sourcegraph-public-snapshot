@@ -261,6 +261,14 @@ func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]grap
 	return resolvers, nil
 }
 
+func (i *insightViewResolver) DashboardReferenceCount(ctx context.Context) (int32, error) {
+	referenceCount, err := i.insightStore.GetReferenceCount(ctx, i.view.ViewID)
+	if err != nil {
+		return 0, err
+	}
+	return int32(referenceCount), nil
+}
+
 type searchInsightDataSeriesDefinitionResolver struct {
 	series *types.InsightViewSeries
 }

@@ -196,13 +196,19 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 	}
 
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext))
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
+	}
+
+	operations := make([]runner.MigrationOperation, 0, len(schemaNames))
+	for _, schemaName := range schemaNames {
+		operations = append(operations, runner.MigrationOperation{
+			SchemaName: schemaName,
+			Up:         true,
+		})
 	}
 
 	options := runner.Options{
-		Up:              true,
-		TargetMigration: 0,
-		SchemaNames:     schemaNames,
+		Operations: operations,
 	}
 
 	return connections.RunnerFromDSNs(dsnMap, "sg", storeFactory).Run(ctx, options)

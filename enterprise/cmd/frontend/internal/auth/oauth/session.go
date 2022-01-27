@@ -89,7 +89,6 @@ func SessionIssuer(db database.DB, s SessionIssuerHelper, sessionKey string) htt
 			}
 			return c.Value
 		}
-
 		anonymousId, _ := cookie.AnonymousUID(r)
 		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
 		if err != nil {

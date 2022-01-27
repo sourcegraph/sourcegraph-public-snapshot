@@ -3,7 +3,7 @@ import React from 'react'
 import { DropdownToggle, DropdownToggleProps } from 'reactstrap'
 
 import { ButtonLink, ButtonLinkProps } from '@sourcegraph/shared/src/components/LinkOrButton'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, LinkProps } from '@sourcegraph/wildcard'
 
 import styles from './RepoHeaderActions.module.scss'
 
@@ -14,7 +14,7 @@ type RepoHeaderButtonLinkProps = ButtonLinkProps & {
     file?: boolean
 }
 
-type RepoHeaderActionAnchorProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+interface RepoHeaderActionAnchorProps extends LinkProps {
     /**
      * to determine if this anchor is for file or not
      */
@@ -46,14 +46,9 @@ export const RepoHeaderActionAnchor: React.FunctionComponent<RepoHeaderActionAnc
     children,
     className,
     file,
-    href,
     ...rest
 }) => (
-    <Link
-        to={href !== undefined ? href : ''}
-        className={classNames(file ? styles.fileAction : styles.action, className)}
-        {...rest}
-    >
+    <Link className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
         {children}
     </Link>
 )
