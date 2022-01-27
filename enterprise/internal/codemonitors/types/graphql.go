@@ -25,7 +25,7 @@ func (c *CommitSearchResults) UnmarshalJSON(b []byte) error {
 		}
 
 		switch t.Typename {
-		case "CommitSearchResults", "":
+		case "CommitSearchResult", "":
 		default:
 			return errors.Errorf("expected result type %q, got %q", "CommitSearchResult", t.Typename)
 		}
