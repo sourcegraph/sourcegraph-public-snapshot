@@ -68,7 +68,8 @@ type JSContext struct {
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
-	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
+	SourcegraphDotComMode bool   `json:"sourcegraphDotComMode"`
+	GitHubAppCloudSlug    string `json:"githubAppCloudSlug"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -141,6 +142,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
+	var githubAppCloudSlug string
+	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
+		githubAppCloudSlug = siteConfig.Dotcom.GithubAppCloud.Slug
+	}
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -167,6 +173,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		GitHubAppCloudSlug:    githubAppCloudSlug,
 
 		BillingPublishableKey: BillingPublishableKey,
 

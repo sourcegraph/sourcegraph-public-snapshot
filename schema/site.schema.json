@@ -1097,6 +1097,10 @@
           "description": "The config options for Sourcegraph Cloud GitHub App.",
           "type": "object",
           "properties": {
+            "slug": {
+              "description": "The slug of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
             "appID": {
               "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
               "type": "string"
