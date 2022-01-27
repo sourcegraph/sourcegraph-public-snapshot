@@ -77,6 +77,35 @@ func (ds *Definitions) Leaves() []Definition {
 	return leaves
 }
 
+// Filter returns a new definitions object that contains the intersection of the
+// receiver's definitions and the given identifiers. This operation is designed to
+// cut complete branches of migrations from the tree (for use in squash operations).
+// Therefore, it is an error for any of the remaining migrations to reference a
+// parent that was not included in the target set of migrations.
+func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
+	idMap := map[int]struct{}{}
+	for _, id := range ids {
+		idMap[id] = struct{}{}
+	}
+
+	filtered := make([]Definition, 0, len(ds.definitions)-len(ids))
+	for _, definition := range ds.definitions {
+		if _, ok := idMap[definition.ID]; ok {
+			filtered = append(filtered, definition)
+		}
+	}
+
+	for _, definition := range filtered {
+		for _, parent := range definition.Parents {
+			if _, ok := idMap[parent]; !ok {
+				return nil, fmt.Errorf("illegal filter: migration %d (included) references parent migration %d (excluded)", definition.ID, parent)
+			}
+		}
+	}
+
+	return newDefinitions(filtered), nil
+}
+
 func (ds *Definitions) UpTo(id, target int) ([]Definition, error) {
 	if target == 0 {
 		return ds.UpFrom(id, 0)

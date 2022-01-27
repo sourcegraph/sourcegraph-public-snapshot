@@ -1,6 +1,7 @@
 package definition
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -46,6 +47,68 @@ func TestLeaves(t *testing.T) {
 	if diff := cmp.Diff(expectedLeaves, newDefinitions(definitions).Leaves(), queryComparer); diff != "" {
 		t.Errorf("unexpected leaves (-want, +got):\n%s", diff)
 	}
+}
+
+func TestFilter(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		definitions := []Definition{
+			{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+			{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+			{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{2}},
+			{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{2}},
+			{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{3}},
+			{ID: 6, UpQuery: sqlf.Sprintf(`SELECT 6;`), Parents: []int{4}},
+		}
+
+		filtered, err := newDefinitions(definitions).Filter([]int{})
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if count := len(filtered.All()); count != 0 {
+			t.Fatalf("unexpected count. want=%d have=%d", 0, count)
+		}
+	})
+
+	t.Run("prefix", func(t *testing.T) {
+		definitions := []Definition{
+			{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+			{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+			{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{2}},
+			{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{2}},
+			{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{3}},
+			{ID: 6, UpQuery: sqlf.Sprintf(`SELECT 6;`), Parents: []int{4}},
+		}
+
+		filtered, err := newDefinitions(definitions).Filter([]int{1, 2, 4})
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		expectedDefinitions := []Definition{
+			definitions[0],
+			definitions[1],
+			definitions[3],
+		}
+		if diff := cmp.Diff(expectedDefinitions, filtered.All(), queryComparer); diff != "" {
+			t.Errorf("unexpected definitions (-want, +got):\n%s", diff)
+		}
+	})
+
+	t.Run("incomplete subtree", func(t *testing.T) {
+		definitions := []Definition{
+			{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+			{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+			{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{2}},
+			{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{2}},
+			{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{3}},
+			{ID: 6, UpQuery: sqlf.Sprintf(`SELECT 6;`), Parents: []int{4}},
+		}
+
+		expectedErrorMessage := "migration 5 (included) references parent migration 3 (excluded)"
+		if _, err := newDefinitions(definitions).Filter([]int{1, 2, 5}); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
+			t.Fatalf("unexpected error: want=%q have=%q", expectedErrorMessage, err)
+		}
+	})
 }
 
 func TestUpTo(t *testing.T) {
