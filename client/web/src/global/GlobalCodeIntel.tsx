@@ -138,9 +138,7 @@ export const TokenPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> =
 )
 
 export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
-    <div className={styles.coolCodeIntelReferences}>
-        {props.hoveredToken && <ReferencesList hoveredToken={props.hoveredToken} />}
-    </div>
+    <div>{props.hoveredToken && <ReferencesList hoveredToken={props.hoveredToken} />}</div>
 )
 
 interface Reference {
@@ -171,6 +169,11 @@ interface Reference {
             character: number
         }
     }>
+}
+
+interface RepoReferenceGroup {
+    repoName: string
+    referenceGroups: ReferenceGroup[]
 }
 
 interface ReferenceGroup {
@@ -263,6 +266,19 @@ export const ReferencesList: React.FunctionComponent<{
         referenceGroups.push({ path, references, repoName })
     })
 
+    const byRepo: Record<string, ReferenceGroup[]> = {}
+    for (const group of referenceGroups) {
+        if (byRepo[group.repoName] === undefined) {
+            byRepo[group.repoName] = []
+        }
+        byRepo[group.repoName].push(group)
+    }
+    const repoReferenceGroups: RepoReferenceGroup[] = []
+    Object.keys(byRepo).map(repoName => {
+        const referenceGroups = byRepo[repoName]
+        repoReferenceGroups.push({ repoName, referenceGroups })
+    })
+
     const getLineContent = (reference: Reference): string => {
         const lines = reference.resource.content.split(/\r?\n/)
         const range = reference.range
@@ -274,16 +290,61 @@ export const ReferencesList: React.FunctionComponent<{
 
     return (
         <>
-            {referenceGroups.map(group => (
-                <ReferenceGroup
-                    key={group.path + group.repoName}
-                    group={group}
+            {repoReferenceGroups.map(repoReferenceGroup => (
+                <RepoReferenceGroup
+                    key={repoReferenceGroup.repoName}
+                    repoReferenceGroup={repoReferenceGroup}
                     activeReference={activeReference}
                     setActiveReference={setActiveReference}
                     getLineContent={getLineContent}
                     buildFileURL={buildFileURL}
                 />
             ))}
+        </>
+    )
+}
+
+const RepoReferenceGroup: React.FunctionComponent<{
+    repoReferenceGroup: RepoReferenceGroup
+    activeReference: string
+    setActiveReference: (refeference: string) => void
+    getLineContent: (reference: Reference) => string
+    buildFileURL: (reference: Reference) => string
+}> = ({ repoReferenceGroup, setActiveReference, getLineContent, buildFileURL, activeReference }) => {
+    const [isOpen, setOpen] = useState<boolean>(true)
+    const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
+
+    return (
+        <>
+            <button
+                aria-expanded={isOpen}
+                type="button"
+                onClick={handleOpen}
+                className="bg-transparent border-0 d-flex justify-content-start w-100"
+            >
+                {isOpen ? (
+                    <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
+                ) : (
+                    <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
+                )}
+
+                <span>
+                    <Link to={`/${repoReferenceGroup.repoName}`}>{displayRepoName(repoReferenceGroup.repoName)}</Link>
+                </span>
+            </button>
+
+            <Collapse id={repoReferenceGroup.repoName} isOpen={isOpen} className="border-top">
+                {repoReferenceGroup.referenceGroups.map(group => (
+                    <ReferenceGroup
+                        key={group.path + group.repoName}
+                        group={group}
+                        activeReference={activeReference}
+                        setActiveReference={setActiveReference}
+                        getLineContent={getLineContent}
+                        buildFileURL={buildFileURL}
+                    />
+                ))}
+            </Collapse>
         </>
     )
 }
@@ -301,12 +362,12 @@ const ReferenceGroup: React.FunctionComponent<{
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
 
     return (
-        <>
+        <div className="ml-2">
             <button
                 aria-expanded={isOpen}
                 type="button"
                 onClick={handleOpen}
-                className="border-0 d-flex justify-content-start w-100"
+                className="bg-transparent border-0 d-flex justify-content-start w-100"
             >
                 {isOpen ? (
                     <MenuUpIcon className={classNames('icon-inline', styles.chevron)} />
@@ -315,12 +376,8 @@ const ReferenceGroup: React.FunctionComponent<{
                 )}
 
                 <span>
-                    <Link to={`/${group.repoName}`}>{displayRepoName(group.repoName)}</Link> ›{' '}
-                    <Link to={`/${group.repoName}/-/blob/${group.path}`}>
-                        {fileBase ? `${fileBase}/` : null}
-                        <strong>{fileName}</strong>
-                    </Link>{' '}
-                    ({group.references.length} references)
+                    {fileBase ? `${fileBase}/` : null}
+                    <strong>{fileName}</strong> ({group.references.length} references)
                 </span>
             </button>
 
@@ -334,7 +391,6 @@ const ReferenceGroup: React.FunctionComponent<{
                             <li key={fileURL} className={classNames('border-0 rounded-0', className)}>
                                 <div>
                                     <Link onClick={_event => setActiveReference(fileURL)} to={fileURL}>
-                                        {' L'}
                                         {reference.range?.start?.line}
                                         {': '}
                                     </Link>
@@ -345,7 +401,7 @@ const ReferenceGroup: React.FunctionComponent<{
                     })}
                 </ul>
             </Collapse>
-        </>
+        </div>
     )
 }
 

@@ -13,11 +13,6 @@
     max-height: 27vh;
 }
 
-.cool-code-intel-references {
-    // max-height: 20vw;
-    // overflow: auto;
-}
-
 .cool-code-intel-reference {
     code {
         overflow: hidden;
@@ -26,6 +21,7 @@
     &--active {
         background-color: var(--secondary-2);
         color: var(--primary);
+        font-weight: bold;
     }
 }
 
