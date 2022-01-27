@@ -1,4 +1,3 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -24,7 +23,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { match } from '../../../../shared/src/api/client/types/textDocument'
 import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
