@@ -53,7 +53,7 @@ interface RevisionsPopoverTab {
     type?: GitRefType
 }
 
-const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
+export const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
 const TABS: RevisionsPopoverTab[] = [
     { id: 'branches', label: 'Branches', noun: 'branch', pluralNoun: 'branches', type: GitRefType.GIT_BRANCH },
