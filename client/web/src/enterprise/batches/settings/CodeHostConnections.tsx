@@ -41,10 +41,10 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
         args =>
             userID
                 ? queryUserBatchChangesCodeHosts({
-                    user: userID,
-                    first: args.first ?? null,
-                    after: args.after ?? null,
-                })
+                      user: userID,
+                      first: args.first ?? null,
+                      after: args.after ?? null,
+                  })
                 : queryGlobalBatchChangesCodeHosts({
                     first: args.first ?? null,
                     after: args.after ?? null,
