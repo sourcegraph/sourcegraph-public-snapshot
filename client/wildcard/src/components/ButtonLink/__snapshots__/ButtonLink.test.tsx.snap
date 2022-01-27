@@ -3,7 +3,7 @@
 exports[`<ButtonLink /> renders correctly \`disabled\` 1`] = `
 <DocumentFragment>
   <a
-    class="btn btn-secondary btn-lg nav-link disabled"
+    class="btn btn-secondary btn-lg disabled"
     disabled=""
     href=""
     role="button"
@@ -16,7 +16,7 @@ exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
 <DocumentFragment>
   <a
     aria-label="SourceGraph.com"
-    class="btn btn-secondary btn-lg nav-link"
+    class="btn btn-secondary btn-lg"
     data-pressed="true"
     data-tooltip="SourceGraph.com"
     href="https://sourcegraph.com"
@@ -28,7 +28,7 @@ exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
 exports[`<ButtonLink /> renders correctly btn classes 1`] = `
 <DocumentFragment>
   <a
-    class="btn btn-secondary btn-lg nav-link"
+    class="btn btn-secondary btn-lg"
     href="http://example.com"
     tabindex="0"
   />
@@ -38,7 +38,7 @@ exports[`<ButtonLink /> renders correctly btn classes 1`] = `
 exports[`<ButtonLink /> renders correctly empty \`to\` 1`] = `
 <DocumentFragment>
   <a
-    class="btn btn-secondary btn-lg nav-link"
+    class="btn btn-secondary btn-lg"
     href=""
     role="button"
     tabindex="0"
