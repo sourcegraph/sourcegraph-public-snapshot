@@ -111,6 +111,75 @@ func TestFilter(t *testing.T) {
 	})
 }
 
+func TestLeafDominator(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		if _, ok := newDefinitions([]Definition{}).LeafDominator(); ok {
+			t.Fatalf("unexpected definition")
+		}
+	})
+
+	t.Run("single leaf", func(t *testing.T) {
+		definitions := []Definition{
+			{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+			{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+			{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{2}},
+			{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{1}},
+			{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{4}},
+			{ID: 6, UpQuery: sqlf.Sprintf(`SELECT 6;`), Parents: []int{3, 5}},
+		}
+
+		definition, ok := newDefinitions(definitions).LeafDominator()
+		if !ok {
+			t.Fatalf("expected a definition")
+		}
+
+		if diff := cmp.Diff(definitions[5], definition, queryComparer); diff != "" {
+			t.Errorf("unexpected leave dominataor (-want, +got):\n%s", diff)
+		}
+	})
+
+	t.Run("multiple leaves (simple)", func(t *testing.T) {
+		definitions := []Definition{
+			{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+			{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+			{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{2}},
+			{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{3}},
+			{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{3}},
+		}
+
+		definition, ok := newDefinitions(definitions).LeafDominator()
+		if !ok {
+			t.Fatalf("expected a definition")
+		}
+
+		if diff := cmp.Diff(definitions[2], definition, queryComparer); diff != "" {
+			t.Errorf("unexpected leave dominataor (-want, +got):\n%s", diff)
+		}
+	})
+
+	t.Run("multiple leaves (complex)", func(t *testing.T) {
+		definitions := []Definition{
+			{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+			{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+			{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{1}},
+			{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{2, 3}},
+			{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{4}},
+			{ID: 6, UpQuery: sqlf.Sprintf(`SELECT 6;`), Parents: []int{4}},
+			{ID: 7, UpQuery: sqlf.Sprintf(`SELECT 7;`), Parents: []int{5}},
+			{ID: 8, UpQuery: sqlf.Sprintf(`SELECT 8;`), Parents: []int{7}},
+		}
+
+		definition, ok := newDefinitions(definitions).LeafDominator()
+		if !ok {
+			t.Fatalf("expected a definition")
+		}
+
+		if diff := cmp.Diff(definitions[3], definition, queryComparer); diff != "" {
+			t.Errorf("unexpected leave dominataor (-want, +got):\n%s", diff)
+		}
+	})
+}
+
 func TestUpTo(t *testing.T) {
 	definitions := newDefinitions([]Definition{
 		{ID: 11, UpFilename: "11.up.sql"},

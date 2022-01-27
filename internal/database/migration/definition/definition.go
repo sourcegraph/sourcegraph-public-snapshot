@@ -106,6 +106,97 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 	return newDefinitions(filtered), nil
 }
 
+// LeafDominator returns the unique migration definition that dominates the set
+// of leaf migrations. If no such migration exists, a false-valued flag is returned.
+//
+// Note that if there is a single leaf, this function returns that leaf. If there
+// exist multiple leaves, then this function returns the nearest common ancestor (nca)
+// of all leaves. This gives us a nice clean single-entry, single-exit graph prefix
+// that can be squashed into a single migration.
+//
+//              +-- ... --+           +-- [ leaf 1 ]
+//              |         |           |
+//    [ root ] -+         +- [ nca ] -+
+//              |         |           |
+//              +-- ... --+           +-- [ leaf 2 ]
+func (ds *Definitions) LeafDominator() (Definition, bool) {
+	leaves := ds.Leaves()
+	if len(leaves) == 0 {
+		return Definition{}, false
+	}
+
+	dominators := ds.dominators()
+
+	ids := make([][]int, 0, len(leaves))
+	for _, leaf := range leaves {
+		ids = append(ids, dominators[leaf.ID])
+	}
+
+	same := intersect(ids[0], ids[1:]...)
+	if len(same) == 0 {
+		return Definition{}, false
+	}
+
+	// Choose deepest common dominating migration
+	return ds.GetByID(same[0])
+}
+
+// dominators solves the following dataflow equation for each migration definition.
+//
+// dom(n) = { n } union (intersect dom(p) over { p | preds(n) })
+//
+// This function returns a map from migration identifiers to the set of identifiers
+// of dominating migrations. Because migrations are acyclic, we can solve this equation
+// with a single pass over the graph rather than needing to iterate until fixed point.
+//
+// Note that due to traversal order, the set of dominators will be inversely ordered by
+// depth.
+func (ds *Definitions) dominators() map[int][]int {
+	dominators := map[int][]int{}
+	for _, definition := range ds.definitions {
+		ds := []int{definition.ID}
+
+		if len(definition.Parents) != 0 {
+			a := dominators[definition.Parents[0]]
+			bs := make([][]int, 0, len(definition.Parents))
+			for _, parent := range definition.Parents[1:] {
+				bs = append(bs, dominators[parent])
+			}
+
+			ds = append(ds, intersect(a, bs...)...)
+		}
+
+		dominators[definition.ID] = ds
+	}
+
+	return dominators
+}
+
+// intersect returns the intersection of all given sets. The elements of the output slice will
+// have the same order as the first input slice.
+func intersect(a []int, bs ...[]int) []int {
+	intersection := make([]int, len(a))
+	copy(intersection, a)
+
+	for _, b := range bs {
+		bMap := make(map[int]struct{}, len(b))
+		for _, v := range b {
+			bMap[v] = struct{}{}
+		}
+
+		filtered := intersection[:0]
+		for _, v := range intersection {
+			if _, ok := bMap[v]; ok {
+				filtered = append(filtered, v)
+			}
+		}
+
+		intersection = filtered
+	}
+
+	return intersection
+}
+
 func (ds *Definitions) UpTo(id, target int) ([]Definition, error) {
 	if target == 0 {
 		return ds.UpFrom(id, 0)
