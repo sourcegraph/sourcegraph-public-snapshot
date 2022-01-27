@@ -68,7 +68,7 @@ var (
 
 func runMigration(ctx context.Context, options runner.Options) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext))
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
 
 	return connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(schemas.SchemaNames), "sg", storeFactory).Run(ctx, options)

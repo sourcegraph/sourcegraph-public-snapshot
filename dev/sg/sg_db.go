@@ -196,7 +196,7 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 	}
 
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext))
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
 
 	options := runner.Options{
