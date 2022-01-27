@@ -20,6 +20,12 @@ export interface InputTooltipProps extends ButtonAndInputElementProps {
 export const InputTooltip: React.FunctionComponent<InputTooltipProps> = ({ disabled, tooltip, type, ...props }) => (
     <div className={styles.container}>
         {disabled ? <div className={styles.disabledTooltip} data-tooltip={tooltip} /> : null}
-        <Button as="input" disabled={disabled} data-tooltip={disabled ? undefined : tooltip} type={type} {...props} />
+        <Button
+            as="input"
+            disabled={disabled}
+            data-tooltip={disabled ? undefined : tooltip}
+            type={type as ButtonProps['type']}
+            {...props}
+        />
     </div>
 )
