@@ -28,10 +28,10 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 		{
 			Name: "with_regex_suggestion",
 			Alert: searchAlert{
-				title:       "An alert for regex",
-				description: "An alert for regex",
-				proposedQueries: []*searchQueryDescription{
-					{
+				alert: &search.Alert{
+					Title:       "An alert for regex",
+					Description: "An alert for regex",
+					ProposedQueries: []*search.ProposedQuery{
 						search.NewProposedQuery(
 							"Some query description",
 							"repo:github.com/sourcegraph/sourcegraph",
@@ -45,10 +45,10 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 		{
 			Name: "with_structural_suggestion",
 			Alert: searchAlert{
-				title:       "An alert for structural",
-				description: "An alert for structural",
-				proposedQueries: []*searchQueryDescription{
-					{
+				alert: &search.Alert{
+					Title:       "An alert for structural",
+					Description: "An alert for structural",
+					ProposedQueries: []*search.ProposedQuery{
 						search.NewProposedQuery(
 							"Some query description",
 							"repo:github.com/sourcegraph/sourcegraph",
@@ -184,7 +184,7 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 
 	for _, test := range cases {
 		alert, _ := (&alertObserver{}).errorToAlert(context.Background(), test.multiErr)
-		haveAlertDescription := alert.description
+		haveAlertDescription := *alert.Description()
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
 		}
@@ -219,8 +219,8 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 		}
 		haveAlert, _ := (&alertObserver{}).errorToAlert(context.Background(), multiErr)
 
-		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
-			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
+		if haveAlert != nil && haveAlert.Title() != test.wantAlertTitle {
+			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.Title(), test.wantAlertTitle)
 		}
 
 	}
@@ -251,15 +251,17 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 
 	searchQuery := "context:@user repo:r1 foo"
 	wantAlert := &searchAlert{
-		prometheusType: "no_resolved_repos__context_none_in_common",
-		title:          "No repositories found for your query within the context @user",
-		proposedQueries: []*searchQueryDescription{{
-			search.NewProposedQuery(
-				"search in the global context",
-				"context:global repo:r1 foo",
-				query.SearchTypeRegex,
-			),
-		}},
+		alert: &search.Alert{
+			PrometheusType: "no_resolved_repos__context_none_in_common",
+			Title:          "No repositories found for your query within the context @user",
+			ProposedQueries: []*search.ProposedQuery{
+				search.NewProposedQuery(
+					"search in the global context",
+					"context:global repo:r1 foo",
+					query.SearchTypeRegex,
+				),
+			},
+		},
 	}
 
 	q, err := query.ParseLiteral(searchQuery)
