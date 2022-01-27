@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -82,12 +81,12 @@ func readDefinition(fs fs.FS, version int) (Definition, error) {
 	downFilename := fmt.Sprintf("%d/down.sql", version)
 	metadataFilename := fmt.Sprintf("%d/metadata.yaml", version)
 
-	upQuery, _, err := readQueryFromFile(fs, upFilename)
+	upQuery, err := readQueryFromFile(fs, upFilename)
 	if err != nil {
 		return Definition{}, err
 	}
 
-	downQuery, _, err := readQueryFromFile(fs, downFilename)
+	downQuery, err := readQueryFromFile(fs, downFilename)
 	if err != nil {
 		return Definition{}, err
 	}
@@ -136,208 +135,24 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 	return definition, nil
 }
 
-func readSQLFilenames(fs fs.FS) ([]string, error) {
-	root, err := http.FS(fs).Open("/")
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = root.Close() }()
-
-	files, err := root.Readdir(0)
-	if err != nil {
-		return nil, err
-	}
-
-	filenames := make([]string, 0, len(files))
-	for _, file := range files {
-		filenames = append(filenames, file.Name())
-	}
-	sort.Strings(filenames)
-
-	return filenames, nil
-}
-
-var pattern = lazyregexp.New(`^(\d+)_[^.]+\.(up|down)\.sql$`)
-
-func buildDefinitionStencils(filenames []string) ([]Definition, error) {
-	definitionMap := make(map[int]Definition, len(filenames))
-
-	// Iterate through the set of filenames looking for things that have the shape
-	// of a migration query file. Group these by identifier and match the up and down
-	// direction query definitions together.
-
-	for _, filename := range filenames {
-		match := pattern.FindStringSubmatch(filename)
-		if len(match) == 0 {
-			continue
-		}
-
-		id, _ := strconv.Atoi(match[1])
-		definition := definitionMap[id]
-
-		if match[2] == "up" {
-			// Check for duplicates before overwriting
-			if definition.UpFilename != "" {
-				return nil, fmt.Errorf("duplicate upgrade query for migration definition %d: %s and %s", id, definition.UpFilename, filename)
-			}
-
-			definitionMap[id] = Definition{
-				UpFilename:   filename,
-				DownFilename: definition.DownFilename,
-			}
-		} else {
-			// Check for duplicates before overwriting
-			if definition.DownFilename != "" {
-				return nil, fmt.Errorf("duplicate downgrade query for migration definition %d: %s and %s", id, definition.DownFilename, filename)
-			}
-
-			definitionMap[id] = Definition{
-				UpFilename:   definitionMap[id].UpFilename,
-				DownFilename: filename,
-			}
-		}
-	}
-
-	// Check for migrations with only direction defined
-	// Assign identifiers directly to migration definition values
-
-	for id, definition := range definitionMap {
-		if definition.UpFilename == "" {
-			return nil, fmt.Errorf("upgrade query for migration definition %d not found", id)
-		}
-		if definition.DownFilename == "" {
-			return nil, fmt.Errorf("downgrade query for migration definition %d not found", id)
-		}
-
-		definitionMap[id] = Definition{
-			ID:           id,
-			UpFilename:   definition.UpFilename,
-			DownFilename: definition.DownFilename,
-		}
-	}
-
-	// Flatten the definition map into ordered list
-	definitions := make([]Definition, 0, len(definitionMap))
-	for _, definition := range definitionMap {
-		definitions = append(definitions, definition)
-	}
-	sort.Slice(definitions, func(i, j int) bool {
-		return definitions[i].ID < definitions[j].ID
-	})
-
-	// Check for gaps in ids
-	for i, definition := range definitions {
-		if i > 0 && definition.ID != definitions[i-1].ID+1 {
-			return nil, fmt.Errorf("migration identifiers jump from %d to %d", definitions[i-1].ID, definition.ID)
-		}
-	}
-
-	return definitions, nil
-}
-
-func hydrateDefinitions(fs fs.FS, definitions []Definition) (err error) {
-	for i, definition := range definitions {
-		upQuery, metadata, err := readQueryFromFile(fs, definition.UpFilename)
-		if err != nil {
-			return err
-		}
-
-		downQuery, _, err := readQueryFromFile(fs, definition.DownFilename)
-		if err != nil {
-			return err
-		}
-
-		if _, ok := parseIndexMetadata(downQuery.Query(sqlf.PostgresBindVar)); ok {
-			return instructionalError{
-				class:       "malformed concurrent index creation",
-				description: "did not expect down migration to contain concurrent creation of an index",
-				instructions: strings.Join([]string{
-					"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
-					"Downgrades indicate an instance stability error which generally requires a maintenance window.",
-				}, " "),
-			}
-		}
-
-		definitions[i] = Definition{
-			ID:           definition.ID,
-			Metadata:     metadata,
-			UpFilename:   definition.UpFilename,
-			UpQuery:      upQuery,
-			DownFilename: definition.DownFilename,
-			DownQuery:    downQuery,
-		}
-	}
-
-	return nil
-}
-
 // readQueryFromFile returns the parsed query and extracted metadata read from
 // the given file.
-func readQueryFromFile(fs fs.FS, filepath string) (_ *sqlf.Query, metadata Metadata, _ error) {
+func readQueryFromFile(fs fs.FS, filepath string) (_ *sqlf.Query, _ error) {
 	file, err := fs.Open(filepath)
 	if err != nil {
-		return nil, metadata, err
+		return nil, err
 	}
 	defer file.Close()
 
 	contents, err := io.ReadAll(file)
 	if err != nil {
-		return nil, metadata, err
-	}
-
-	query, metadata, err := extractMetadata(string(contents))
-	if err != nil {
-		return nil, metadata, errors.Wrap(err, "failed to extract metadata")
+		return nil, err
 	}
 
 	// Stringify -> SQL-ify the contents of the file. We first replace any
 	// SQL placeholder values with an escaped version so that the sqlf.Sprintf
 	// call does not try to interpolate the text with variables we don't have.
-	return sqlf.Sprintf(strings.ReplaceAll(query, "%", "%%")), metadata, nil
-}
-
-var (
-	metadataFence   = `-- +++`
-	metadataPattern = lazyregexp.New(`[\s\S]*` + regexp.QuoteMeta(metadataFence) + `([.\s\S]+)` + regexp.QuoteMeta(metadataFence))
-)
-
-// extractMetadata splits the given migration file contents into query and optional metadata.
-// Metadata can be supplied alongside a query by attaching a SQL comment at the top of the file
-// with the following shape:
-//
-// -- +++
-// -- key: value
-// -- allowed: here
-// -- because: this
-// -- is: interpreted
-// -- as: yaml
-// -- +++
-// -- anything remaining is returned as part of the SQL query.
-//
-// Note that thee SQL query itself can have additional comments; metadata need only be at the top
-// of the file for extraction.
-func extractMetadata(contents string) (_ string, metadata Metadata, _ error) {
-	match := metadataPattern.FindStringSubmatch(contents)
-
-	if len(match) > 0 {
-		if err := yaml.Unmarshal([]byte(extractCommentPrefix(match[1])), &metadata); err != nil {
-			return "", metadata, err
-		}
-
-		return strings.TrimSpace(contents[len(match[0]):]), metadata, nil
-	}
-
-	return contents, metadata, nil
-}
-
-// extractCommentPrefix removes the `-- ` on each line of the given multiline string.
-func extractCommentPrefix(match string) string {
-	lines := strings.Split(match, "\n")
-	for i := range lines {
-		lines[i] = strings.TrimPrefix(lines[i], "-- ")
-	}
-
-	return strings.Join(lines, "\n")
+	return sqlf.Sprintf(strings.ReplaceAll(string(contents), "%", "%%")), nil
 }
 
 var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
