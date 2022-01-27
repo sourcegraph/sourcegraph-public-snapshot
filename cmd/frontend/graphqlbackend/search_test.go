@@ -330,20 +330,6 @@ func TestExactlyOneRepo(t *testing.T) {
 	}
 }
 
-func TestQuoteSuggestions(t *testing.T) {
-	t.Run("regex error", func(t *testing.T) {
-		raw := "*"
-		_, err := query.Pipeline(query.InitRegexp(raw))
-		if err == nil {
-			t.Fatalf("error returned from query.ParseRegexp(%q) is nil", raw)
-		}
-		alert := alertForQuery(raw, err)
-		if !strings.Contains(*alert.Description(), "regexp") {
-			t.Errorf("description is '%s', want it to contain 'regexp'", *alert.Description())
-		}
-	})
-}
-
 func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int32) *result.FileMatch {
 	var lines []*result.LineMatch
 	for _, n := range lineNumbers {
