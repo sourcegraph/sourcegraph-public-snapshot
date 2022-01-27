@@ -4,13 +4,13 @@
     flex-direction: column;
     height: 100%;
     overflow: auto;
+    position: relative;
 }
 
 .container {
     background: var(--gray-03);
     height: 100%;
     overflow: auto;
-    position: relative;
     border: 1px solid #000000;
 
     &--as-sub-root {
@@ -57,6 +57,7 @@
 
     &--tooltip-like {
         min-width: auto;
+        max-width: 30rem;
         padding: 0.5rem;
     }
 

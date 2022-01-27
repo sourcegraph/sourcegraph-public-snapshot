@@ -27,7 +27,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Removed `experimentalFeature.showCodeMonitoringTestEmailButton`. Test emails can still be sent by editing the code monitor and expanding the "Send email notification" section. [#29953](https://github.com/sourcegraph/sourcegraph/pull/29953)
+
+## 3.36.2
+
+### Removed
+
+- The TOS consent screen which would appear for all users upon signing into Sourcegraph. We had some internal miscommunication on this onboarding flow and it didn’t turn out the way we intended, this effectively reverts that change. ![#30192](https://github.com/sourcegraph/sourcegraph/issues/30192)
 
 ## 3.36.1
 
@@ -57,6 +63,7 @@ All notable changes to Sourcegraph are documented in this file.
 - When displaying the content of symbolic links in the repository tree view, we will show the relative path to the link's target instead of the target's content. This behavior is consistent with how we display symbolic links in search results. [#29687](https://github.com/sourcegraph/sourcegraph/pull/29687)
 - A new janitor job, "sg maintenance" was added to gitserver. The new job replaces "garbage collect" with the goal to optimize the performance of git operations for large repositories. You can choose to enable "garbage collect" again by setting the environment variables "SRC_ENABLE_GC_AUTO" to "true" and "SRC_ENABLE_SG_MAINTENANCE" to "false" for gitserver. Note that you must not enable both options at the same time. [#28224](https://github.com/sourcegraph/sourcegraph/pull/28224).
 - Search results across repositories are now ordered by repository rank by default. By default the rank is the number of stars a repository has. An administrator can inflate the rank of a repository via `experimentalFeatures.ranking.repoScores`. If you notice increased latency in results, you can disable this feature by setting `experimentalFeatures.ranking.maxReorderQueueSize` to 0. [#29856](https://github.com/sourcegraph/sourcegraph/pull/29856)
+- Search results within the same file are now ordered by relevance instead of line number. To order by line number, update the setting `experimentalFeatures.clientSearchResultRanking: "by-line-number"`. [#29046](https://github.com/sourcegraph/sourcegraph/pull/29046)
 
 ### Fixed
 

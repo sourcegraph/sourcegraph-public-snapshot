@@ -207,3 +207,20 @@ enum Flipping {
   needed (not enough space with current position)
 - **_overflowToScrollParents_** (optional) - If it's true then it hides tooltip when target isn't visible due scroll containers
 - **_constrainToScrollParents_** (optional) - If it's true then it fits popover element' position and sizes into target scroll containers.
+- **_strategy_** (optional) - Setups position strategy (Fixed or Absolute) to render the popover element.
+
+```ts
+enum Strategy {
+  /**
+   * Fixed strategy renders popover element outside of DOM hierarchy in the designated
+   * container in the body element
+   */
+  Fixed,
+
+  /**
+   * Absolute strategy renders popover element next to the target element and
+   * calculate its position based on the nearest container with position relative.
+   */
+  Absolute,
+}
+```

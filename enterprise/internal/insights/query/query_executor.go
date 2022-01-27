@@ -53,7 +53,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := git.FirstEverCommit(ctx, api.RepoName(repository))
+		firstCommit, err := git.FirstEverCommit(ctx, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return nil, errors.Wrapf(err, "FirstEverCommit")
 		}

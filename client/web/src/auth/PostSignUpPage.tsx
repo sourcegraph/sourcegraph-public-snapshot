@@ -8,7 +8,7 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
-import { Link } from '@sourcegraph/wildcard'
+import { Alert, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
@@ -137,10 +137,10 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                         <div className="pb-1 d-flex flex-column align-items-center w-100">
                             <div className={styles.container}>
                                 {hasErrors && (
-                                    <div className="alert alert-danger mb-4" role="alert">
+                                    <Alert className="mb-4" role="alert" variant="danger">
                                         Sorry, something went wrong. Try refreshing the page or{' '}
                                         <Link to={PageRoutes.Search}>skip to code search</Link>.
-                                    </div>
+                                    </Alert>
                                 )}
                                 <h2>Get started with Sourcegraph</h2>
                                 <p className="text-muted pb-3">

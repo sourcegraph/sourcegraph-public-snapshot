@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import { Alert } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../auth/accessToken'
 import { CopyableText } from '../../components/CopyableText'
@@ -23,14 +24,14 @@ export const AccessTokenCreatedAlert: React.FunctionComponent<AccessTokenCreated
 }) => {
     const isSudoToken = token.scopes.includes(AccessTokenScopes.SiteAdminSudo)
     return (
-        <div className={classNames('access-token-created-alert alert alert-success', className)}>
+        <Alert className={classNames('access-token-created-alert', className)} variant="success">
             <p>Copy the new access token now. You won't be able to see it again.</p>
             <CopyableText className="test-access-token" text={tokenSecret} size={48} />
             <h5 className="mt-4 mb-2">
                 <strong>Example usage</strong>
             </h5>
             <CodeSnippet code={curlExampleCommand(tokenSecret, isSudoToken)} className="mb-0" language="bash" />
-        </div>
+        </Alert>
     )
 }
 

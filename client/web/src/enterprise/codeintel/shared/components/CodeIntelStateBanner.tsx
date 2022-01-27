@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
+
+import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 import { LSIFIndexState, LSIFUploadState } from '../../../../graphql-operations'
 
@@ -11,7 +12,7 @@ export interface CodeIntelStateBannerProps {
     state: LSIFUploadState | LSIFIndexState
     placeInQueue?: number | null
     failure?: string | null
-    className?: string
+    variant?: AlertProps['variant']
 }
 
 export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> = ({
@@ -20,9 +21,9 @@ export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> 
     state,
     placeInQueue,
     failure,
-    className = 'alert-primary',
+    variant = 'primary',
 }) => (
-    <div className={classNames('alert', className)}>
+    <Alert variant={variant}>
         <span>
             <CodeIntelStateDescription
                 state={state}
@@ -32,5 +33,5 @@ export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> 
                 pluralTypeName={pluralTypeName}
             />
         </span>
-    </div>
+    </Alert>
 )

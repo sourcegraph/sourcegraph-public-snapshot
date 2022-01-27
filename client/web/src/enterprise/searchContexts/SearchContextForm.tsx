@@ -19,7 +19,7 @@ import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourceg
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Container, Button, RadioButton, TextArea, useEventObservable } from '@sourcegraph/wildcard'
+import { Container, Button, RadioButton, TextArea, useEventObservable, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { getExperimentalFeatures } from '../../stores'
@@ -459,9 +459,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 )}
             </div>
             {isErrorLike(searchContextOrError) && (
-                <div className="alert alert-danger mt-2">
+                <Alert className="mt-2" variant="danger">
                     Failed to create search context: {searchContextOrError.message}
-                </div>
+                </Alert>
             )}
             <AwayPrompt
                 header="Discard unsaved changes?"

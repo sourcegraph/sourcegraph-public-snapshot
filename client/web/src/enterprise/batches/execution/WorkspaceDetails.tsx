@@ -27,6 +27,8 @@ import {
     Tabs,
     Button,
     Link,
+    CardBody,
+    Card,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../components/Collapsible'
@@ -245,11 +247,11 @@ const ChangesetSpecNode: React.FunctionComponent<
     // TODO: This should not happen. When the workspace is visibile, the changeset spec should be visible as well.
     if (node.__typename === 'HiddenChangesetSpec') {
         return (
-            <div className="card">
-                <div className="card-body">
+            <Card>
+                <CardBody>
                     <h4>Changeset in a hidden repo</h4>
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         )
     }
 
@@ -284,8 +286,8 @@ const ChangesetSpecNode: React.FunctionComponent<
             titleClassName="flex-grow-1"
             defaultExpanded={1 === 1}
         >
-            <div className={classNames('card mt-2', styles.resultCard)}>
-                <div className="card-body">
+            <Card className={classNames('mt-2', styles.resultCard)}>
+                <CardBody>
                     <h3>Changeset template</h3>
                     <h4>{node.description.title}</h4>
                     <p className="mb-0">{node.description.body}</p>
@@ -305,8 +307,8 @@ const ChangesetSpecNode: React.FunctionComponent<
                             queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         />
                     </Collapsible>
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         </Collapsible>
     )
 }
@@ -382,8 +384,8 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                 </div>
             }
         >
-            <div className={classNames('card mt-2', styles.stepCard)}>
-                <div className="card-body">
+            <Card className={classNames('mt-2', styles.stepCard)}>
+                <CardBody>
                     {!step.skipped && (
                         <Tabs size="small" behavior="forceRender">
                             <TabList>
@@ -466,8 +468,8 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                             </strong>
                         </p>
                     )}
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         </Collapsible>
     )
 }
