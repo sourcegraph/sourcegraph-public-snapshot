@@ -1,14 +1,16 @@
-import { cleanup, within, fireEvent, act } from '@testing-library/react'
+import * as ReactTestingLibrary from '@testing-library/react'
 import React from 'react'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { RevisionsPopover, RevisionsPopoverProps } from './RevisionsPopover'
+import { revisionPopoverUserActions } from './RevisionsPopover.actions'
 import { MOCK_PROPS, MOCK_REQUESTS } from './RevisionsPopover.mocks'
 
 describe('RevisionsPopover', () => {
     let renderResult: RenderWithRouterResult
+    const { cleanup, within, fireEvent, act } = ReactTestingLibrary
 
     const fetchMoreNodes = async (currentTab: HTMLElement) => {
         fireEvent.click(within(currentTab).getByText('Show more'))
@@ -33,9 +35,8 @@ describe('RevisionsPopover', () => {
         beforeEach(async () => {
             renderResult = renderPopover()
 
-            fireEvent.click(renderResult.getByText('Branches'))
-            await waitForNextApolloResponse()
-
+            const { selectBranchTab } = revisionPopoverUserActions(renderResult.container)
+            await selectBranchTab()
             branchesTab = renderResult.getByRole('tabpanel', { name: 'Branches' })
         })
 
@@ -91,8 +92,8 @@ describe('RevisionsPopover', () => {
                 cleanup()
                 renderResult = renderPopover({ showSpeculativeResults: true })
 
-                fireEvent.click(renderResult.getByText('Branches'))
-                await waitForNextApolloResponse()
+                const { selectBranchTab } = revisionPopoverUserActions(renderResult.container)
+                await selectBranchTab()
 
                 branchesTab = renderResult.getByRole('tabpanel', { name: 'Branches' })
             })
@@ -121,8 +122,8 @@ describe('RevisionsPopover', () => {
         beforeEach(async () => {
             renderResult = renderPopover()
 
-            fireEvent.click(renderResult.getByText('Tags'))
-            await waitForNextApolloResponse()
+            const { selectTagTab } = revisionPopoverUserActions(renderResult.container)
+            await selectTagTab()
 
             tagsTab = renderResult.getByRole('tabpanel', { name: 'Tags' })
         })
@@ -166,8 +167,8 @@ describe('RevisionsPopover', () => {
         beforeEach(async () => {
             renderResult = renderPopover()
 
-            fireEvent.click(renderResult.getByText('Commits'))
-            await waitForNextApolloResponse()
+            const { selectCommitTab } = revisionPopoverUserActions(renderResult.container)
+            await selectCommitTab()
 
             commitsTab = renderResult.getByRole('tabpanel', { name: 'Commits' })
         })
@@ -206,8 +207,8 @@ describe('RevisionsPopover', () => {
                 cleanup()
                 renderResult = renderPopover({ currentRev: 'non-existent-revision' })
 
-                fireEvent.click(renderResult.getByText('Commits'))
-                await waitForNextApolloResponse()
+                const { selectCommitTab } = revisionPopoverUserActions(renderResult.container)
+                await selectCommitTab()
 
                 commitsTab = renderResult.getByRole('tabpanel', { name: 'Commits' })
             })

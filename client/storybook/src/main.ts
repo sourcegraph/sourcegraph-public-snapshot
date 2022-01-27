@@ -73,6 +73,7 @@ const config = {
         'storybook-dark-mode',
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
+        '@storybook/addon-interactions',
     ],
 
     core: {
