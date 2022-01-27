@@ -322,11 +322,12 @@ func (s *Store) createMigrationLog(ctx context.Context, up bool, expectedCurrent
 		if currentVersion != expectedCurrentVersion {
 			return 0, assertionFailure("expected schema to have version %d, but has version %d\n", expectedCurrentVersion, currentVersion)
 		}
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
+			return 0, err
+		}
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
-		return 0, err
-	}
 	if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s (version, dirty) VALUES (%s, true)`, quote(s.schemaName), targetVersion)); err != nil {
 		return 0, err
 	}
