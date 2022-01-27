@@ -8,32 +8,33 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
-type Options struct {
-	Up              bool
-	TargetMigration int
-	SchemaNames     []string
-
-	// Parallel controls whether we run schema migrations concurrently or not. By default,
-	// we run schema migrations sequentially. This is to ensure that in testing, where the
-	// same database can be targetted by multiple schemas, we do not hit errors that occur
-	// when trying to install Postgres extensions concurrently (which do not seem txn-safe).
-	Parallel bool
-}
-
 func (r *Runner) Run(ctx context.Context, options Options) error {
+	schemaNames := make([]string, 0, len(options.Operations))
+	for _, operation := range options.Operations {
+		schemaNames = append(schemaNames, operation.SchemaName)
+	}
+
+	operationMap := make(map[string]MigrationOperation, len(options.Operations))
+	for _, operation := range options.Operations {
+		operationMap[operation.SchemaName] = operation
+	}
+	if len(operationMap) != len(options.Operations) {
+		return fmt.Errorf("multiple operations defined on the same schema")
+	}
+
 	numRoutines := 1
 	if options.Parallel {
-		numRoutines = len(options.SchemaNames)
+		numRoutines = len(schemaNames)
 	}
 	semaphore := make(chan struct{}, numRoutines)
 
-	return r.forEachSchema(ctx, options.SchemaNames, func(ctx context.Context, schemaName string, schemaContext schemaContext) error {
+	return r.forEachSchema(ctx, schemaNames, func(ctx context.Context, schemaName string, schemaContext schemaContext) error {
 		// Block until we can write into this channel. This ensures that we only have at most
 		// the same number of active goroutines as we have slots int he channel's buffer.
 		semaphore <- struct{}{}
 		defer func() { <-semaphore }()
 
-		if err := r.runSchema(ctx, options, schemaContext); err != nil {
+		if err := r.runSchema(ctx, operationMap[schemaName], schemaContext); err != nil {
 			return errors.Wrapf(err, "failed to run migration for schema %q", schemaName)
 		}
 
@@ -41,11 +42,11 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 	})
 }
 
-func (r *Runner) runSchema(ctx context.Context, options Options, schemaContext schemaContext) (err error) {
+func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) (err error) {
 	// Determine if we are upgrading to the latest schema. There are some properties around
 	// contention which we want to accept on normal "upgrade to latest" behavior, but want to
 	// alert on when a user is downgrading or upgrading to a specific version.
-	upgradingToLatest := options.Up && options.TargetMigration == 0
+	upgradingToLatest := operation.Up && operation.TargetMigration == 0
 
 	if !upgradingToLatest {
 		// If the database is dirty, then either the last attempted migration had failed,
@@ -95,16 +96,16 @@ func (r *Runner) runSchema(ctx context.Context, options Options, schemaContext s
 		return errDirtyDatabase
 	}
 
-	if options.Up {
-		return r.runSchemaUp(ctx, options, schemaContext)
+	if operation.Up {
+		return r.runSchemaUp(ctx, operation, schemaContext)
 	}
-	return r.runSchemaDown(ctx, options, schemaContext)
+	return r.runSchemaDown(ctx, operation, schemaContext)
 }
 
-func (r *Runner) runSchemaUp(ctx context.Context, options Options, schemaContext schemaContext) (err error) {
+func (r *Runner) runSchemaUp(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) (err error) {
 	log15.Info("Upgrading schema", "schema", schemaContext.schema.Name)
 
-	definitions, err := schemaContext.schema.Definitions.UpTo(schemaContext.schemaVersion.version, options.TargetMigration)
+	definitions, err := schemaContext.schema.Definitions.UpTo(schemaContext.schemaVersion.version, operation.TargetMigration)
 	if err != nil {
 		return err
 	}
@@ -120,14 +121,14 @@ func (r *Runner) runSchemaUp(ctx context.Context, options Options, schemaContext
 	return nil
 }
 
-func (r *Runner) runSchemaDown(ctx context.Context, options Options, schemaContext schemaContext) error {
+func (r *Runner) runSchemaDown(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) error {
 	log15.Info("Downgrading schema", "schema", schemaContext.schema.Name)
 
-	if options.TargetMigration == 0 {
-		options.TargetMigration = schemaContext.schemaVersion.version - 1
+	if operation.TargetMigration == 0 {
+		operation.TargetMigration = schemaContext.schemaVersion.version - 1
 	}
 
-	definitions, err := schemaContext.schema.Definitions.DownTo(schemaContext.schemaVersion.version, options.TargetMigration)
+	definitions, err := schemaContext.schema.Definitions.DownTo(schemaContext.schemaVersion.version, operation.TargetMigration)
 	if err != nil {
 		return err
 	}

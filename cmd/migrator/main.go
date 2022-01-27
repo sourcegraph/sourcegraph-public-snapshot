@@ -58,7 +58,17 @@ func newRunFunc() cliutil.RunFunc {
 	operations := store.NewOperations(observationContext)
 
 	return func(ctx context.Context, options runner.Options) error {
-		dsns, err := postgresdsn.DSNsBySchema(options.SchemaNames)
+		schemaNameMap := make(map[string]struct{})
+		for _, operation := range options.Operations {
+			schemaNameMap[operation.SchemaName] = struct{}{}
+		}
+
+		schemaNames := make([]string, 0, len(schemaNameMap))
+		for schemaName := range schemaNameMap {
+			schemaNames = append(schemaNames, schemaName)
+		}
+
+		dsns, err := postgresdsn.DSNsBySchema(schemaNames)
 		if err != nil {
 			return err
 		}

@@ -37,10 +37,17 @@ func Up(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 			databaseNames = append(databaseNames, *upDatabaseNameFlag)
 		}
 
+		operations := []runner.MigrationOperation{}
+		for _, databaseName := range databaseNames {
+			operations = append(operations, runner.MigrationOperation{
+				SchemaName:      databaseName,
+				Up:              true,
+				TargetMigration: *upTargetFlag,
+			})
+		}
+
 		return run(ctx, runner.Options{
-			Up:              true,
-			TargetMigration: *upTargetFlag,
-			SchemaNames:     databaseNames,
+			Operations: operations,
 		})
 	}
 
