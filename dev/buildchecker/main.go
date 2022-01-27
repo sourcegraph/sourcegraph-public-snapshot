@@ -17,7 +17,7 @@ import (
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/dev/internal/team"
+	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
 // Flags denotes shared Buildchecker flags.

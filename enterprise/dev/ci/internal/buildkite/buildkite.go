@@ -18,8 +18,9 @@ import (
 )
 
 type Pipeline struct {
-	Env   map[string]string `json:"env,omitempty"`
-	Steps []interface{}     `json:"steps"`
+	Env    map[string]string `json:"env,omitempty"`
+	Steps  []interface{}     `json:"steps"`
+	Notify []slackNotifier   `json:"notify,omitempty"`
 }
 
 type BuildOptions struct {
@@ -175,6 +176,24 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 		step.GenerateKey()
 	}
 	p.Steps = append(p.Steps, step)
+}
+
+type slackNotifier struct {
+	Slack slackChannelsNotification `json:"slack"`
+}
+
+type slackChannelsNotification struct {
+	Channels []string `json:"channels"`
+	Message  string   `json:"message"`
+}
+
+func (p *Pipeline) AddSlackNotify(username string) {
+	p.Notify = append(p.Notify, slackNotifier{
+		Slack: slackChannelsNotification{
+			Channels: []string{"#dev-experience-internal"},
+			Message:  fmt.Sprintf("<@%s>", username),
+		},
+	})
 }
 
 func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {

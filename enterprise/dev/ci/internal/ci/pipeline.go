@@ -3,12 +3,18 @@
 package ci
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/google/go-github/v41/github"
+	"github.com/slack-go/slack"
+
+	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -248,11 +254,24 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
+
+	// TODO
+	pipeline.AddStep("fail build", bk.Cmd("exit 1"))
+
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline has unique keys
 	if err := ensureUniqueKeys(pipeline); err != nil {
 		return nil, err
+	}
+
+	// Add a notify block
+	pipeline.AddSlackNotify("U013BPG5GHK")
+	if c.RunType.Is(MainBranch) {
+		ghc := github.NewClient(http.DefaultClient)
+		slc := slack.New("")
+		teammates := team.NewTeammateResolver(ghc, slc)
+		_, _ = teammates.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", c.Commit)
 	}
 
 	return pipeline, nil
