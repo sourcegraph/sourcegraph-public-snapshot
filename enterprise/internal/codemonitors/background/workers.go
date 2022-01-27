@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -21,7 +22,7 @@ const (
 	eventRetentionInDays int = 7
 )
 
-func newTriggerQueryRunner(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_trigger_jobs_worker",
 		NumHandlers:       1,
@@ -29,7 +30,7 @@ func newTriggerQueryRunner(ctx context.Context, s edb.CodeMonitorStore, metrics 
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(s), &queryRunner{s}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
 	return worker
 }
 
@@ -104,7 +105,7 @@ func newActionJobResetter(ctx context.Context, s edb.CodeMonitorStore, metrics c
 	return dbworker.NewResetter(workerStore, options)
 }
 
-func createDBWorkerStoreForTriggerJobs(s edb.CodeMonitorStore) dbworkerstore.Store {
+func createDBWorkerStoreForTriggerJobs(s basestore.ShareableStore) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:              "code_monitors_trigger_jobs_worker_store",
 		TableName:         "cm_trigger_jobs",
@@ -131,7 +132,7 @@ func createDBWorkerStoreForActionJobs(s edb.CodeMonitorStore) dbworkerstore.Stor
 }
 
 type queryRunner struct {
-	edb.CodeMonitorStore
+	db edb.EnterpriseDB
 }
 
 func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -146,7 +147,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		return errors.Errorf("unexpected record type %T", record)
 	}
 
-	s, err := r.CodeMonitorStore.Transact(ctx)
+	s, err := r.db.CodeMonitors().Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -169,6 +170,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+
 	if len(results.Results) > 0 {
 		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
