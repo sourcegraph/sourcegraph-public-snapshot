@@ -26,6 +26,28 @@ func TestDefinitionGetByID(t *testing.T) {
 	}
 }
 
+func TestLeaves(t *testing.T) {
+	definitions := []Definition{
+		{ID: 1, UpQuery: sqlf.Sprintf(`SELECT 1;`)},
+		{ID: 2, UpQuery: sqlf.Sprintf(`SELECT 2;`), Parents: []int{1}},
+		{ID: 3, UpQuery: sqlf.Sprintf(`SELECT 3;`), Parents: []int{2}},
+		{ID: 4, UpQuery: sqlf.Sprintf(`SELECT 4;`), Parents: []int{2}},
+		{ID: 5, UpQuery: sqlf.Sprintf(`SELECT 5;`), Parents: []int{3, 4}},
+		{ID: 6, UpQuery: sqlf.Sprintf(`SELECT 6;`), Parents: []int{5}},
+		{ID: 7, UpQuery: sqlf.Sprintf(`SELECT 7;`), Parents: []int{5}},
+		{ID: 8, UpQuery: sqlf.Sprintf(`SELECT 8;`), Parents: []int{5, 6}},
+		{ID: 9, UpQuery: sqlf.Sprintf(`SELECT 9;`), Parents: []int{5, 8}},
+	}
+
+	expectedLeaves := []Definition{
+		definitions[6],
+		definitions[8],
+	}
+	if diff := cmp.Diff(expectedLeaves, newDefinitions(definitions).Leaves(), queryComparer); diff != "" {
+		t.Errorf("unexpected leaves (-want, +got):\n%s", diff)
+	}
+}
+
 func TestUpTo(t *testing.T) {
 	definitions := newDefinitions([]Definition{
 		{ID: 11, UpFilename: "11.up.sql"},

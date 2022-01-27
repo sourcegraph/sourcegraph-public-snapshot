@@ -58,6 +58,25 @@ func (ds *Definitions) GetByID(id int) (Definition, bool) {
 	return definition, ok
 }
 
+// Root returns the definition with no parents.
+func (ds *Definitions) Root() Definition {
+	return ds.definitions[0]
+}
+
+// Leaves returns the definitions with no children.
+func (ds *Definitions) Leaves() []Definition {
+	childrenMap := children(ds.definitions)
+
+	leaves := make([]Definition, 0, 4)
+	for _, definition := range ds.definitions {
+		if len(childrenMap[definition.ID]) == 0 {
+			leaves = append(leaves, definition)
+		}
+	}
+
+	return leaves
+}
+
 func (ds *Definitions) UpTo(id, target int) ([]Definition, error) {
 	if target == 0 {
 		return ds.UpFrom(id, 0)
