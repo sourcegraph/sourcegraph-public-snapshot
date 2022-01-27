@@ -15,6 +15,7 @@ type Operations struct {
 	tryLock           *observation.Operation
 	up                *observation.Operation
 	version           *observation.Operation
+	withMigrationLog  *observation.Operation
 }
 
 func NewOperations(observationContext *observation.Context) *Operations {
@@ -41,5 +42,6 @@ func NewOperations(observationContext *observation.Context) *Operations {
 		tryLock:           op("TryLock"),
 		up:                op("Up"),
 		version:           op("Version"),
+		withMigrationLog:  op("WithMigrationLog"),
 	}
 }

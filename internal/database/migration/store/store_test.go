@@ -161,7 +161,7 @@ func TestTryLock(t *testing.T) {
 	}
 }
 
-func TestUp(t *testing.T) {
+func TestWrappedUp(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
@@ -174,7 +174,7 @@ func TestUp(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		if err := store.Up(ctx, definition.Definition{
+		definition := definition.Definition{
 			ID: 16,
 			UpQuery: sqlf.Sprintf(`
 				CREATE TABLE test_trees (
@@ -189,7 +189,11 @@ func TestUp(t *testing.T) {
 					('birch', 'narrow', 'regular', 'flaky'),
 					('pine', 'needle', 'pine cone', 'soft');
 			`),
-		}); err != nil {
+		}
+		f := func() error {
+			return store.Up(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, true, f); err != nil {
 			t.Fatalf("unexpected error running migration: %s", err)
 		}
 
@@ -218,12 +222,16 @@ func TestUp(t *testing.T) {
 	t.Run("unexpected version", func(t *testing.T) {
 		expectedErrorMessage := "expected schema to have version 17, but has version 16"
 
-		if err := store.Up(ctx, definition.Definition{
+		definition := definition.Definition{
 			ID: 18,
 			UpQuery: sqlf.Sprintf(`
 				-- Does not actually run
 			`),
-		}); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
+		}
+		f := func() error {
+			return store.Up(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, true, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 
@@ -238,7 +246,7 @@ func TestUp(t *testing.T) {
 	t.Run("query failure", func(t *testing.T) {
 		expectedErrorMessage := "SQL Error"
 
-		if err := store.Up(ctx, definition.Definition{
+		definition := definition.Definition{
 			ID: 17,
 			UpQuery: sqlf.Sprintf(`
 				-- Note: table already exists
@@ -249,7 +257,11 @@ func TestUp(t *testing.T) {
 					bark_type text
 				);
 			`),
-		}); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
+		}
+		f := func() error {
+			return store.Up(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, true, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 
@@ -272,12 +284,16 @@ func TestUp(t *testing.T) {
 	t.Run("dirty", func(t *testing.T) {
 		expectedErrorMessage := "dirty database"
 
-		if err := store.Up(ctx, definition.Definition{
+		definition := definition.Definition{
 			ID: 17,
 			UpQuery: sqlf.Sprintf(`
 				-- Does not actually run
 			`),
-		}); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
+		}
+		f := func() error {
+			return store.Up(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, true, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 
@@ -290,7 +306,7 @@ func TestUp(t *testing.T) {
 	})
 }
 
-func TestDown(t *testing.T) {
+func TestWrappedDown(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
@@ -328,12 +344,16 @@ func TestDown(t *testing.T) {
 	}
 
 	t.Run("success", func(t *testing.T) {
-		if err := store.Down(ctx, definition.Definition{
+		definition := definition.Definition{
 			ID: 14,
 			DownQuery: sqlf.Sprintf(`
 				DROP TABLE test_trees;
 			`),
-		}); err != nil {
+		}
+		f := func() error {
+			return store.Down(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, false, f); err != nil {
 			t.Fatalf("unexpected error running migration: %s", err)
 		}
 
@@ -361,12 +381,16 @@ func TestDown(t *testing.T) {
 	t.Run("unexpected version", func(t *testing.T) {
 		expectedErrorMessage := "expected schema to have version 12, but has version 13"
 
-		if err := store.Down(ctx, definition.Definition{
+		definition := definition.Definition{
 			ID: 12,
 			DownQuery: sqlf.Sprintf(`
 				-- Does not actually run
 			`),
-		}); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
+		}
+		f := func() error {
+			return store.Down(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, false, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 
@@ -381,13 +405,17 @@ func TestDown(t *testing.T) {
 	t.Run("query failure", func(t *testing.T) {
 		expectedErrorMessage := "SQL Error"
 
-		if err := store.Down(ctx, definition.Definition{
+		definition := definition.Definition{
 			ID: 13,
 			DownQuery: sqlf.Sprintf(`
 				-- Note: table does not exist
 				DROP TABLE TABLE test_trees;
 			`),
-		}); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
+		}
+		f := func() error {
+			return store.Down(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, false, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 
@@ -410,12 +438,16 @@ func TestDown(t *testing.T) {
 	t.Run("dirty", func(t *testing.T) {
 		expectedErrorMessage := "dirty database"
 
-		if err := store.Down(ctx, definition.Definition{
+		definition := definition.Definition{
 			ID: 12,
 			DownQuery: sqlf.Sprintf(`
 				-- Does not actually run
 			`),
-		}); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
+		}
+		f := func() error {
+			return store.Down(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, false, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 

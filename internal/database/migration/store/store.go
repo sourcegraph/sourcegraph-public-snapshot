@@ -215,26 +215,20 @@ func (s *Store) lockKey() int32 {
 	return locker.StringKey(fmt.Sprintf("%s:migrations", s.migrationsTable))
 }
 
+// Up runs the given definition's up query.
 func (s *Store) Up(ctx context.Context, definition definition.Definition) (err error) {
 	ctx, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.runMigrationQuery(ctx, definition.ID, true, definition.UpQuery); err != nil {
-		return err
-	}
-
-	return nil
+	return s.Exec(ctx, definition.UpQuery)
 }
 
+// Down runs the given definition's down query.
 func (s *Store) Down(ctx context.Context, definition definition.Definition) (err error) {
 	ctx, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.runMigrationQuery(ctx, definition.ID, false, definition.DownQuery); err != nil {
-		return err
-	}
-
-	return nil
+	return s.Exec(ctx, definition.DownQuery)
 }
 
 // IndexStatus returns an object describing the current validity status and creation progress of the
@@ -267,7 +261,14 @@ WHERE
 	ai.indexrelname = %s
 `
 
-func (s *Store) runMigrationQuery(ctx context.Context, definitionVersion int, up bool, query *sqlf.Query) (err error) {
+// WithMigrationLog runs the given function while writing its progress to a migration log associated
+// with the given definition. All users are assumed to run either `s.Up` or `s.Down` as part of the
+// given function, among any other behaviors that are necessary to perform in the _critical section_.
+func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) (err error) {
+	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	definitionVersion := definition.ID
 	targetVersion := definitionVersion
 	expectedCurrentVersion := definitionVersion - 1
 	if !up {
@@ -291,7 +292,7 @@ func (s *Store) runMigrationQuery(ctx context.Context, definitionVersion int, up
 		}
 	}()
 
-	if err := s.Exec(ctx, query); err != nil {
+	if err := f(); err != nil {
 		return err
 	}
 
