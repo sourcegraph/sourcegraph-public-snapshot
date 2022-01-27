@@ -1,27 +1,41 @@
-# Using executors to compute Batch Changes server-side
+# Server-side Batch Changes
 
-<aside class="experimental">This feature is experimental</aside>
+<aside class="experimental">This feature is experimental.</aside>
 
 By default, Batch Changes uses a command line interface in your local environment to [compute diffs](how_src_executes_a_batch_spec.md) and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
 
-Instead of computing Batch Changes locally using `src-cli`, it's possible to offload this task to [executors](../../admin/deploy_executors.md). Executors are also required to enable Code Intelligence [auto-indexing](../../code_intelligence/explanations/auto_indexing.md).
+Instead of computing Batch Changes locally using `src-cli`, this feature allows to offload this task to the server side using Sourcegraph [executors](../../admin/deploy_executors.md). Executors are also required to enable Code Intelligence [auto-indexing](../../code_intelligence/explanations/auto_indexing.md).
 
-If enabled, server-side Batch Changes computing allows to:
+Server-side Batch Changes computing allows to:
 
 - run large-scale batch changes that would be impractical to compute locally
 - speed up batch change creation time by distributing batch change computing over several executors
 - reduce the setup time required to onboard new users to Batch Changes
 - get a GUI-only experience if you want to
 
+## Setup
+
+This is a one-time process. Once a site-admin of the Sourcegraph instance set up executors and enabled server-side Batch Changes,
+all users of the Sourcegraph installation can get started with no additional setup required.
+
+Make sure that
+
+- [Executors are deployed and are online](../../admin/deploy_executors.md).
+- The feature flag `experimentalFeatures.batchChangesExecution` is [set to `enabled` in the site-config](../../admin/config/site_config.md).
+
+## Explanations
+
+- [Getting started with server-side Batch Changes](server_side_getting_started.md)
+- [Debugging in server-side Batch Changes](server_side_debugging.md)
+
 ## Limitations
 
 This feature is experimental. In particular, it comes with the following limitations, that we plan to resolve before GA.
 
-- Server-side Batch Changes is only available for self-hosted deployments. It is not available on Sourcegraph Cloud and on managed instances.
-- Only site admins can run batch changes server-side.
-- The server side batch changes UI is minimal and will change a lot before the GA release.
+- Server-side Batch Changes is only available for self-hosted and managed deployments. It is not available on Sourcegraph Cloud.
+- The server side batch changes UX is work in progress and will change a lot before the GA release.
 - Documentation is minimal and will change a lot before the GA release.
-- Batch change execution is not optimized.
+- Batch change execution is not heavily optimized.
 - Executors can only be deployed using Terraform (AWS or GCP) or using pre-built binaries (see [deploying executors](../../admin/deploy_executors.md)).
 
 Server-side Batch Changes has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.
@@ -44,7 +58,7 @@ No. Executors have been designed for the Sourcegraph instance to offload resourc
 
 ### I have several machines configured as executors, and they don't have the same specs (eg. memory). Can I submit some batch changes specifically to a given machine?
 
-No, all executors are equal in the eyes of Sourcegraph. We suggest using only one type of machine.
+No, for now all executors are equal in the eyes of Sourcegraph. We suggest using only one type of machine.
 
 ### What happens if the execution of a step fails?
 
