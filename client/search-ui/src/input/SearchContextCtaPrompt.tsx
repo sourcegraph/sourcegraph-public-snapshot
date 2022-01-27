@@ -37,7 +37,7 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
         ? hasUserAddedExternalServices
             ? `/users/${authenticatedUser.username}/settings/repositories`
             : `/users/${authenticatedUser.username}/settings/code-hosts`
-        : ''
+        : null
 
     const onClick = (): void => {
         const authenticatedActionKind = hasUserAddedExternalServices ? 'AddRepositories' : 'ConnectCodeHost'
@@ -58,7 +58,7 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             </div>
             <div className="text-muted">{copyText}</div>
 
-            {authenticatedUser ? (
+            {authenticatedUser && linkTo !== null ? (
                 <Button
                     className={styles.searchContextCtaPromptButton}
                     to={linkTo}
