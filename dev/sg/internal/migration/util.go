@@ -12,17 +12,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
-// makeMigrationFilenames makes a pair of (absolute) paths to migration files with the
-// given migration index and name.
-func makeMigrationFilenames(database db.Database, migrationIndex int, migrationName string) (up string, down string, _ error) {
+// makeMigrationFilenames makes a pair of (absolute) paths to migration files with the given migration index.
+func makeMigrationFilenames(database db.Database, migrationIndex int) (up, down, metadata string, _ error) {
 	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	upPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s.up.sql", migrationIndex, migrationName))
-	downPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s.down.sql", migrationIndex, migrationName))
-	return upPath, downPath, nil
+	upPath := filepath.Join(baseDir, fmt.Sprintf("%d/up.sql", migrationIndex))
+	downPath := filepath.Join(baseDir, fmt.Sprintf("%d/down.sql", migrationIndex))
+	metadataPath := filepath.Join(baseDir, fmt.Sprintf("%d/metadata.yaml", migrationIndex))
+	return upPath, downPath, metadataPath, nil
 }
 
 // parseMigrationIndex parse a filename and returns the migration index if the filename
@@ -80,4 +80,28 @@ func migrationDirectoryForDatabase(database db.Database) (string, error) {
 	}
 
 	return filepath.Join(repoRoot, "migrations", database.Name), nil
+}
+
+// writeMigrationFiles writes the contents of migrationFileTemplate to the given filepaths.
+func writeMigrationFiles(contents map[string]string) (err error) {
+	defer func() {
+		if err != nil {
+			for path := range contents {
+				// undo any changes to the fs on error
+				_ = os.Remove(path)
+			}
+		}
+	}()
+
+	for path, contents := range contents {
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			return err
+		}
+
+		if err := os.WriteFile(path, []byte(contents), os.FileMode(0644)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

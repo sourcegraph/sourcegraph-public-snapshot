@@ -2,18 +2,17 @@ package migration
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 )
 
-const upMigrationFileTemplate = `-- +++
--- parent: %d
--- +++
+const metadataFileTemplate = `name: %s
+parent: %d
+`
 
-BEGIN;
+const upMigrationFileTemplate = `BEGIN;
 
 -- Perform migration here.
 --
@@ -37,56 +36,36 @@ COMMIT;
 // Add creates a new up/down migration file pair for the given database and
 // returns the names of the new files. If there was an error, the filesystem should remain
 // unmodified.
-func Add(database db.Database, migrationName string) (up, down string, _ error) {
+func Add(database db.Database, migrationName string) (up, down, metadata string, _ error) {
 	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	// TODO: We can probably convert to migrations and use getMaxMigrationID
 	names, err := readFilenamesNamesInDirectory(baseDir)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	lastMigrationIndex, ok := parseLastMigrationIndex(names)
 	if !ok {
-		return "", "", errors.New("no previous migrations exist")
+		return "", "", "", errors.New("no previous migrations exist")
 	}
 
-	upPath, downPath, err := makeMigrationFilenames(database, lastMigrationIndex+1, migrationName)
+	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, lastMigrationIndex+1)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	contents := map[string]string{
-		upPath:   fmt.Sprintf(upMigrationFileTemplate, lastMigrationIndex),
-		downPath: downMigrationFileTemplate,
+		upPath:       upMigrationFileTemplate,
+		downPath:     downMigrationFileTemplate,
+		metadataPath: fmt.Sprintf(metadataFileTemplate, migrationName, lastMigrationIndex),
 	}
-
 	if err := writeMigrationFiles(contents); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	return upPath, downPath, nil
-}
-
-// writeMigrationFiles writes the contents of migrationFileTemplate to the given filepaths.
-func writeMigrationFiles(contents map[string]string) (err error) {
-	defer func() {
-		if err != nil {
-			for path := range contents {
-				// undo any changes to the fs on error
-				_ = os.Remove(path)
-			}
-		}
-	}()
-
-	for path, contents := range contents {
-		if err := os.WriteFile(path, []byte(contents), os.FileMode(0644)); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return upPath, downPath, metadataPath, nil
 }
