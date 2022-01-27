@@ -38,12 +38,12 @@ var (
 	metricIncomingActors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_actors_incoming_requests",
 		Help: "Total number of actors set from incoming requests by actor type.",
-	}, []string{"actor_type"})
+	}, []string{"actor_type", "path"})
 
 	metricOutgoingActors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_actors_outgoing_requests",
 		Help: "Total number of actors set on outgoing requests by actor type.",
-	}, []string{"actor_type"})
+	}, []string{"actor_type", "path"})
 )
 
 // HTTPTransport is a roundtripper that sets actors within request context as headers on
@@ -64,21 +64,22 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	actor := FromContext(req.Context())
+	path := req.URL.Path
 	switch {
 	// Indicate this is an internal user
 	case actor.IsInternal():
 		req.Header.Set(headerKeyActorUID, headerValueInternalActor)
-		metricOutgoingActors.WithLabelValues(metricActorTypeInternal).Inc()
+		metricOutgoingActors.WithLabelValues(metricActorTypeInternal, path).Inc()
 
 	// Indicate this is an authenticated user
 	case actor.IsAuthenticated():
 		req.Header.Set(headerKeyActorUID, actor.UIDString())
-		metricOutgoingActors.WithLabelValues(metricActorTypeUser).Inc()
+		metricOutgoingActors.WithLabelValues(metricActorTypeUser, path).Inc()
 
 	// Indicate no actor is associated with request
 	default:
 		req.Header.Set(headerKeyActorUID, headerValueNoActor)
-		metricOutgoingActors.WithLabelValues(metricActorTypeNone).Inc()
+		metricOutgoingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 	}
 
 	return t.RoundTripper.RoundTrip(req)
@@ -94,6 +95,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 func HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
+		path := req.URL.Path
 		uidStr := req.Header.Get(headerKeyActorUID)
 		switch uidStr {
 		// Request associated with internal actor - add internal actor to context
@@ -103,11 +105,11 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 		// access in some cases.
 		case headerValueInternalActor:
 			ctx = WithInternalActor(ctx)
-			metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
+			metricIncomingActors.WithLabelValues(metricActorTypeInternal, path).Inc()
 
 		// Request not associated with any actor
 		case "", headerValueNoActor:
-			metricIncomingActors.WithLabelValues(metricActorTypeNone).Inc()
+			metricIncomingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 
 		// Request associated with authenticated user - add user actor to context
 		default:
@@ -116,7 +118,7 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 				log15.Warn("invalid user ID in request",
 					"error", err,
 					"uid", uidStr)
-				metricIncomingActors.WithLabelValues(metricActorTypeInvalid).Inc()
+				metricIncomingActors.WithLabelValues(metricActorTypeInvalid, path).Inc()
 
 				// Do not proceed with request
 				rw.WriteHeader(http.StatusForbidden)
@@ -127,7 +129,7 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 			// Valid user, add to context
 			actor := FromUser(int32(uid))
 			ctx = WithActor(ctx, actor)
-			metricIncomingActors.WithLabelValues(metricActorTypeUser).Inc()
+			metricIncomingActors.WithLabelValues(metricActorTypeUser, path).Inc()
 		}
 
 		next.ServeHTTP(rw, req.WithContext(ctx))
