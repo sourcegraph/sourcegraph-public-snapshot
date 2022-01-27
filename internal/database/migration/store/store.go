@@ -44,7 +44,7 @@ type IndexStatus struct {
 // a CREATE INDEX CONCURRENTLY operation. The phase of an ongoing operation can
 // found in the system view `view pg_stat_progress_create_index` (since PG 12).
 //
-// If the phase value found in the system view may not mattch these values exactly
+// If the phase value found in the system view may not match these values exactly
 // and may only indicate a prefix. The phase may have more specific information
 // following the initial phase description. Do not compare phase values exactly.
 //
