@@ -20,6 +20,11 @@ type Metadata struct {
 	Parent int `yaml:"parent"`
 }
 
+type IndexMetadata struct {
+	TableName string
+	IndexName string
+}
+
 type Definitions struct {
 	definitions    []Definition
 	definitionsMap map[int]Definition

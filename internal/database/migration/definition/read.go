@@ -43,6 +43,16 @@ func ReadDefinitions(fs fs.FS) (*Definitions, error) {
 	return newDefinitions(migrationDefinitions), nil
 }
 
+type instructionalError struct {
+	class        string
+	description  string
+	instructions string
+}
+
+func (e instructionalError) Error() string {
+	return fmt.Sprintf("%s: %s\n\n%s\n", e.class, e.description, e.instructions)
+}
+
 func readSQLFilenames(fs fs.FS) ([]string, error) {
 	root, err := http.FS(fs).Open("/")
 	if err != nil {
@@ -154,6 +164,17 @@ func hydrateDefinitions(fs fs.FS, definitions []Definition) (err error) {
 			return err
 		}
 
+		if _, ok := parseIndexMetadata(downQuery.Query(sqlf.PostgresBindVar)); ok {
+			return instructionalError{
+				class:       "malformed concurrent index creation",
+				description: "did not expect down migration to contain concurrent creation of an index",
+				instructions: strings.Join([]string{
+					"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
+					"Downgrades indicate an instance stability error which generally requires a maintenance window.",
+				}, " "),
+			}
+		}
+
 		definitions[i] = Definition{
 			ID:           definition.ID,
 			Metadata:     metadata,
@@ -234,6 +255,20 @@ func extractCommentPrefix(match string) string {
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
+
+func parseIndexMetadata(queryText string) (*IndexMetadata, bool) {
+	matches := createIndexConcurrentlyPattern.FindStringSubmatch(queryText)
+	if len(matches) == 0 {
+		return nil, false
+	}
+
+	return &IndexMetadata{
+		TableName: matches[2],
+		IndexName: matches[1],
+	}, true
 }
 
 // reorderDefinitions will re-order the given migration definitions in-place so that
