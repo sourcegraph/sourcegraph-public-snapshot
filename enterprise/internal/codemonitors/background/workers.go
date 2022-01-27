@@ -12,6 +12,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -162,6 +163,13 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+
+	flags, err := r.db.FeatureFlags().GetUserFlags(ctx, m.UserID)
+	if err != nil {
+		return errors.Wrap(err, "fetch feature flags for user")
+	}
+
+	hasRepoAware := featureflag.FlagSet(flags).GetBoolOr("cc-repo-aware-code-monitors", false)
 
 	newQuery := newQueryWithAfterFilter(q)
 
