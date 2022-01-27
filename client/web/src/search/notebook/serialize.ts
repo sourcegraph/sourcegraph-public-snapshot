@@ -35,7 +35,7 @@ export function serializeBlockInput(block: BlockInput, sourcegraphURL: string): 
     }
 }
 
-function parseFileBlockInput(input: string): FileBlockInput {
+export function parseFileBlockInput(input: string): FileBlockInput {
     try {
         const { repoName, rawRevision, filePath, position, range } = parseBrowserRepoURL(input)
 

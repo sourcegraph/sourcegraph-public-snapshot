@@ -12,7 +12,8 @@
 }
 
 .revision-input:not(:focus):not(:active),
-.line-range-input:not(:focus):not(:active) {
+.line-range-input:not(:focus):not(:active),
+.file-url-input:not(:focus):not(:active) {
     border: 1px solid var(--border-color);
 }
 

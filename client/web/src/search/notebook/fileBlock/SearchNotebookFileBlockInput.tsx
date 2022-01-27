@@ -66,6 +66,8 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [inputReference])
 
+    useEffect(() => setInputValue(value), [value])
+
     const popoverReference = useRef<HTMLDivElement>(null)
     const onKeyDown = (event: React.KeyboardEvent): void => {
         // Reach Combobox does not automatically scroll the popover when moving the selected item with a keyboard.

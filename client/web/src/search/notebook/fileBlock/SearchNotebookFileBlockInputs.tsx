@@ -1,6 +1,7 @@
+import classNames from 'classnames'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -9,7 +10,7 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '..'
-import { parseLineRange } from '../serialize'
+import { parseFileBlockInput, parseLineRange } from '../serialize'
 
 import { SearchNotebookFileBlockInput } from './SearchNotebookFileBlockInput'
 import styles from './SearchNotebookFileBlockInputs.module.scss'
@@ -111,6 +112,20 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
         )
     )
 
+    const [isValidFileURL, setIsValidFileURL] = useState<boolean | undefined>(undefined)
+    const onFileURLChange = useCallback(
+        (value: string) => {
+            const parsedFileInput = parseFileBlockInput(value)
+            if (parsedFileInput.repositoryName.length === 0 || parsedFileInput.filePath.length === 0) {
+                setIsValidFileURL(false)
+                return
+            }
+            setIsValidFileURL(true)
+            setFileInput(parsedFileInput)
+        },
+        [setFileInput, setIsValidFileURL]
+    )
+
     return (
         <div className={styles.fileBlockInputs}>
             <label htmlFor={`file-location-input-${id}`}>File location</label>
@@ -146,7 +161,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     dataTestId="file-block-file-path-input"
                 />
             </div>
-            <div className="d-flex mt-3">
+            <div className={classNames('d-flex', (showRevisionInput || showLineRangeInput) && 'mt-3')}>
                 {showRevisionInput && (
                     <div className="w-50 mr-2">
                         <label htmlFor={`file-revision-input-${id}`}>Revision</label>
@@ -187,6 +202,26 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                         />
                     </div>
                 )}
+            </div>
+            <div className="mt-3">
+                <label htmlFor={`file-url-input-${id}`}>
+                    <small className="text-muted">Paste a Sourcegraph file URL to auto-fill the inputs above</small>
+                </label>
+                <input
+                    id={`file-url-input-${id}`}
+                    type="url"
+                    className={classNames(
+                        styles.fileUrlInput,
+                        'form-control',
+                        isValidFileURL === true && 'is-valid',
+                        isValidFileURL === false && 'is-invalid'
+                    )}
+                    onChange={event => onFileURLChange(event.target.value)}
+                    onFocus={onInputFocus}
+                    onBlur={onInputBlur}
+                    placeholder="https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/client/search/src/index.ts?L30-32"
+                    data-testid="file-block-url-input"
+                />
             </div>
         </div>
     )

@@ -73,9 +73,18 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
     const [showLineRangeInput, setShowLineRangeInput] = useState(!!input.lineRange)
 
     const setFileInput = useCallback(
-        (newInput: Partial<FileBlockInput>) =>
-            onBlockInputChange(id, { type: 'file', input: { ...input, ...newInput } }),
-        [id, input, onBlockInputChange]
+        (newInput: Partial<FileBlockInput>) => {
+            onBlockInputChange(id, { type: 'file', input: { ...input, ...newInput } })
+            // We need to show the revision and line range inputs if they are populated from the parsed file URL.
+            if (typeof newInput.revision !== 'undefined' && newInput.revision.trim().length > 0) {
+                setShowRevisionInput(true)
+            }
+            if (newInput.lineRange) {
+                setLineRangeInput(serializeLineRange(newInput.lineRange))
+                setShowLineRangeInput(true)
+            }
+        },
+        [id, input, onBlockInputChange, setShowRevisionInput, setShowLineRangeInput]
     )
 
     const { isRepositoryNameValid, isFilePathValid, isRevisionValid, isLineRangeValid } = useFileBlockInputValidation(
