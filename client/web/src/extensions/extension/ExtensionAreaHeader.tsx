@@ -113,7 +113,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         <Alert className={classNames('mb-0 py-1', styles.alert)} variant="info">
                                             An account is required to create and configure extensions.{' '}
                                             <AlertLink to="https://about.sourcegraph.com/get-started">
-                                                Register now!
+                                                Get started!
                                             </AlertLink>
                                         </Alert>
                                     )}

@@ -359,7 +359,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 <Alert className="my-4" variant="info">
                                     <span>An account is required to create, enable and disable extensions. </span>
                                     <AlertLink to="https://about.sourcegraph.com/get-started?returnTo=/extensions">
-                                        Register now!
+                                        Get started!
                                     </AlertLink>
                                 </Alert>
                             )}
