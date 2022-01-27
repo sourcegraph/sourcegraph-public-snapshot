@@ -171,12 +171,19 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 
 	hasRepoAware := featureflag.FlagSet(flags).GetBoolOr("cc-repo-aware-code-monitors", false)
 
-	newQuery := newQueryWithAfterFilter(q)
-
-	// Search.
-	results, err := search(ctx, newQuery, m.UserID)
+	var (
+		results  *searchResults
+		newQuery string
+	)
+	if hasRepoAware {
+		newQuery = q.QueryString
+		results, err = search(ctx, newQuery, m.UserID, &m.ID)
+	} else {
+		newQuery = newQueryWithAfterFilter(q)
+		results, err = search(ctx, newQuery, m.UserID, nil)
+	}
 	if err != nil {
-		return err
+		return errors.Wrap(err, "run search")
 	}
 
 	if len(results.Results) > 0 {
