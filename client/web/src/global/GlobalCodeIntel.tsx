@@ -6,8 +6,10 @@ import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { useQuery } from '@sourcegraph/http-client'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import {
     RepoSpec,
     RevisionSpec,
@@ -19,7 +21,7 @@ import {
 } from '@sourcegraph/shared/src/util/url'
 import { Tab, TabList, TabPanel, TabPanels, Tabs, Link, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables, Maybe } from '../graphql-operations'
+import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables } from '../graphql-operations'
 import { BlobProps } from '../repo/blob/Blob'
 
 import styles from './GlobalCodeIntel.module.scss'
@@ -86,33 +88,29 @@ export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabPro
 )
 
 interface Location {
-    __typename?: 'Location' | undefined
     resource: {
-        __typename?: 'GitBlob' | undefined
         path: string
         content: string
         repository: {
-            __typename?: 'Repository' | undefined
             name: string
         }
         commit: {
-            __typename?: 'GitCommit' | undefined
             oid: string
         }
     }
-    range: Maybe<{
-        __typename?: 'Range' | undefined
+    range?: {
         start: {
-            __typename?: 'Position' | undefined
             line: number
             character: number
         }
         end: {
-            __typename?: 'Position' | undefined
             line: number
             character: number
         }
-    }>
+    }
+
+    url: string
+    lines: string[]
 }
 
 interface RepoLocationGroup {
@@ -123,7 +121,7 @@ interface RepoLocationGroup {
 interface LocationGroup {
     repoName: string
     path: string
-    references: Location[]
+    locations: Location[]
 }
 
 export const ReferencesList: React.FunctionComponent<
@@ -131,7 +129,7 @@ export const ReferencesList: React.FunctionComponent<
         hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
 > = props => {
-    const [activeReference, setActiveReference] = useState('')
+    const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
 
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
         FETCH_REFERENCES_QUERY,
@@ -174,32 +172,79 @@ export const ReferencesList: React.FunctionComponent<
         return <>Nothing found</>
     }
 
-    const references = data.repository.commit?.blob?.lsif?.references.nodes
-    const definitions = data.repository.commit?.blob?.lsif?.definitions.nodes
+    const references: Location[] = []
+    for (const node of data.repository.commit?.blob?.lsif?.references.nodes) {
+        const location: Location = {
+            resource: {
+                repository: { name: node.resource.repository.name },
+                content: node.resource.content,
+                path: node.resource.path,
+                commit: node.resource.commit,
+            },
+            url: '',
+            lines: [],
+        }
+        if (node.range !== null) {
+            location.range = node.range
+        }
+        location.url = buildFileURL(location)
+        location.lines = location.resource.content.split(/\r?\n/)
+        references.push(location)
+    }
+
+    const definitions: Location[] = []
+    for (const node of data.repository.commit?.blob?.lsif?.definitions.nodes) {
+        const location: Location = {
+            resource: {
+                repository: { name: node.resource.repository.name },
+                content: node.resource.content,
+                path: node.resource.path,
+                commit: node.resource.commit,
+            },
+            url: '',
+            lines: [],
+        }
+        if (node.range !== null) {
+            location.range = node.range
+        }
+        location.url = buildFileURL(location)
+        location.lines = location.resource.content.split(/\r?\n/)
+        definitions.push(location)
+    }
+
     const hover = data.repository.commit?.blob?.lsif?.hover
 
     return (
         <div>
-            {hover && <div className="card-body mb-0" dangerouslySetInnerHTML={{ __html: hover.markdown.html }} />}
+            {hover && (
+                <Markdown
+                    className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
+                    dangerousInnerHTML={renderMarkdown(hover.markdown.text)}
+                />
+            )}
             <h4 className="card-header py-1">Definitions</h4>
             {definitions.length > 0 ? (
                 <LocationsList
                     locations={definitions}
-                    activeReference={activeReference}
-                    setActiveReference={setActiveReference}
+                    activeLocation={activeLocation}
+                    setActiveLocation={setActiveLocation}
                 />
             ) : (
-                <span>Nothing found</span>
+                <p className="text-muted pl-2">
+                    <i>No definitions found</i>
+                </p>
             )}
             <h4 className="card-header py-1">References</h4>
             {references.length > 0 ? (
                 <LocationsList
                     locations={references}
-                    activeReference={activeReference}
-                    setActiveReference={setActiveReference}
+                    activeLocation={activeLocation}
+                    setActiveLocation={setActiveLocation}
                 />
             ) : (
-                <span>Nothing found</span>
+                <p className="text-muted pl-2">
+                    <i>No references found</i>
+                </p>
             )}
         </div>
     )
@@ -207,8 +252,9 @@ export const ReferencesList: React.FunctionComponent<
 
 const buildFileURL = (location: Location): string => {
     const path = `/${location.resource.repository.name}/-/blob/${location.resource.path}`
+    const range = location.range
 
-    if (location.range !== null) {
+    if (range !== undefined) {
         return appendSubtreeQueryParameter(
             appendLineRangeQueryParameter(
                 path,
@@ -216,10 +262,10 @@ const buildFileURL = (location: Location): string => {
                     range: {
                         // ATTENTION: Another off-by-one chaos in the making here
                         start: {
-                            line: location.range.start.line + 1,
-                            character: location.range.start.character + 1,
+                            line: range.start.line + 1,
+                            character: range.start.character + 1,
                         },
-                        end: { line: location.range.end.line + 1, character: location.range.end.character + 1 },
+                        end: { line: range.end.line + 1, character: range.end.character + 1 },
                     },
                 })
             )
@@ -230,9 +276,9 @@ const buildFileURL = (location: Location): string => {
 
 const LocationsList: React.FunctionComponent<{
     locations: Location[]
-    activeReference: string
-    setActiveReference: (reference: string) => void
-}> = ({ locations, activeReference, setActiveReference }) => {
+    activeLocation?: Location
+    setActiveLocation: (reference: Location | undefined) => void
+}> = ({ locations, activeLocation, setActiveLocation }) => {
     const byFile: Record<string, Location[]> = {}
     for (const location of locations) {
         if (byFile[location.resource.path] === undefined) {
@@ -245,7 +291,7 @@ const LocationsList: React.FunctionComponent<{
     Object.keys(byFile).map(path => {
         const references = byFile[path]
         const repoName = references[0].resource.repository.name
-        locationGroups.push({ path, references, repoName })
+        locationGroups.push({ path, locations: references, repoName })
     })
 
     const byRepo: Record<string, LocationGroup[]> = {}
@@ -262,10 +308,9 @@ const LocationsList: React.FunctionComponent<{
     })
 
     const getLineContent = (location: Location): string => {
-        const lines = location.resource.content.split(/\r?\n/)
         const range = location.range
-        if (range !== null) {
-            return lines[range.start?.line].trim()
+        if (range !== undefined) {
+            return location.lines[range.start?.line].trim()
         }
         return ''
     }
@@ -276,8 +321,8 @@ const LocationsList: React.FunctionComponent<{
                 <RepoReferenceGroup
                     key={repoReferenceGroup.repoName}
                     repoReferenceGroup={repoReferenceGroup}
-                    activeReference={activeReference}
-                    setActiveReference={setActiveReference}
+                    activeLocation={activeLocation}
+                    setActiveLocation={setActiveLocation}
                     getLineContent={getLineContent}
                     buildFileURL={buildFileURL}
                 />
@@ -288,11 +333,11 @@ const LocationsList: React.FunctionComponent<{
 
 const RepoReferenceGroup: React.FunctionComponent<{
     repoReferenceGroup: RepoLocationGroup
-    activeReference: string
-    setActiveReference: (refeference: string) => void
-    getLineContent: (reference: Location) => string
-    buildFileURL: (reference: Location) => string
-}> = ({ repoReferenceGroup, setActiveReference, getLineContent, buildFileURL, activeReference }) => {
+    activeLocation?: Location
+    setActiveLocation: (reference: Location | undefined) => void
+    getLineContent: (location: Location) => string
+    buildFileURL: (location: Location) => string
+}> = ({ repoReferenceGroup, setActiveLocation, getLineContent, buildFileURL, activeLocation }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
 
@@ -320,8 +365,8 @@ const RepoReferenceGroup: React.FunctionComponent<{
                     <ReferenceGroup
                         key={group.path + group.repoName}
                         group={group}
-                        activeReference={activeReference}
-                        setActiveReference={setActiveReference}
+                        activeLocation={activeLocation}
+                        setActiveLocation={setActiveLocation}
                         getLineContent={getLineContent}
                         buildFileURL={buildFileURL}
                     />
@@ -333,11 +378,11 @@ const RepoReferenceGroup: React.FunctionComponent<{
 
 const ReferenceGroup: React.FunctionComponent<{
     group: LocationGroup
-    activeReference: string
-    setActiveReference: (refeference: string) => void
+    activeLocation?: Location
+    setActiveLocation: (reference: Location | undefined) => void
     getLineContent: (reference: Location) => string
     buildFileURL: (reference: Location) => string
-}> = ({ group, setActiveReference, getLineContent, buildFileURL, activeReference }) => {
+}> = ({ group, setActiveLocation: setActiveLocation, getLineContent, buildFileURL, activeLocation }) => {
     const [fileBase, fileName] = splitPath(group.path)
 
     const [isOpen, setOpen] = useState<boolean>(true)
@@ -359,21 +404,22 @@ const ReferenceGroup: React.FunctionComponent<{
 
                 <span className={styles.coolCodeIntelReferenceFilename}>
                     {fileBase ? `${fileBase}/` : null}
-                    {fileName} ({group.references.length} references)
+                    {fileName} ({group.locations.length} references)
                 </span>
             </button>
 
             <Collapse id={group.repoName + group.path} isOpen={isOpen} className="ml-2">
                 <ul className="list-unstyled pl-3 py-1 mb-0">
-                    {group.references.map(reference => {
+                    {group.locations.map(reference => {
                         const fileURL = buildFileURL(reference)
-                        const className = activeReference === fileURL ? styles.coolCodeIntelReferenceActive : ''
+                        const className =
+                            activeLocation && activeLocation.url === fileURL ? styles.coolCodeIntelReferenceActive : ''
 
                         return (
                             <li key={fileURL} className={classNames('border-0 rounded-0', className)}>
                                 <div>
                                     <Link
-                                        onClick={() => setActiveReference(fileURL)}
+                                        onClick={() => setActiveLocation(reference)}
                                         to={fileURL}
                                         className={styles.referenceLink}
                                     >
