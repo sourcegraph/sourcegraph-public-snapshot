@@ -4,10 +4,7 @@
     margin: calc(1rem - 1px) 0;
 
     &-link {
-        &:hover {
-            text-decoration: none;
-            color: var(--link-color);
-        }
+        color: var(--link-color);
     }
 
     &--button {

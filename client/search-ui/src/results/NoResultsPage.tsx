@@ -49,18 +49,20 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                 {showSearchContext && (
                     <>
                         <div className={classNames(searchBoxStyle.searchBoxContextDropdown, styles.fakeSearchContext)}>
-                            <div
+                            <Button
+                                as="div"
+                                variant="link"
                                 className={classNames(
                                     styles.fakeSearchContextButton,
                                     searchContextDropDownStyles.button,
-                                    'btn btn-link text-monospace dropdown-toggle'
+                                    'text-monospace dropdown-toggle'
                                 )}
                             >
                                 <code className={searchContextDropDownStyles.buttonContent}>
                                     <span className="search-filter-keyword">context:</span>
                                     global
                                 </code>
-                            </div>
+                            </Button>
                         </div>
                         <div className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)} />
                     </>

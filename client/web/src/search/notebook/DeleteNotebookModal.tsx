@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, useEventObservable, Modal, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useEventObservable, Modal, Button, Alert } from '@sourcegraph/wildcard'
 
 import { deleteNotebook as _deleteNotebook } from './backend'
 
@@ -55,12 +55,12 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> =
             </p>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
-                    <button type="button" className="btn btn-outline-secondary mr-2" onClick={toggleDeleteModal}>
+                    <Button className="mr-2" onClick={toggleDeleteModal} variant="secondary" outline={true}>
                         Cancel
-                    </button>
-                    <button type="button" className="btn btn-danger" onClick={onDelete}>
+                    </Button>
+                    <Button onClick={onDelete} variant="danger">
                         Yes, delete the notebook
-                    </button>
+                    </Button>
                     {isErrorLike(deleteCompletedOrError) && (
                         <Alert className="mt-2" variant="danger">
                             Error deleting notebook: {deleteCompletedOrError.message}

@@ -1,44 +1,31 @@
 import classNames from 'classnames'
-import { kebabCase, omit } from 'lodash'
 import React from 'react'
 import { NavLink, NavLinkProps } from 'react-router-dom'
 
-import { Link, LinkProps } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
-interface Props extends LinkProps, Pick<NavLinkProps, 'activeClassName'> {
+interface LinkWithIconProps extends NavLinkProps {
     text: string
-}
-
-interface PropsWithIcon extends Props {
     icon: React.ComponentType<{ className?: string }>
-}
-
-interface PropsWithIconPlaceholder extends Props {
-    hasIconPlaceholder: true
 }
 
 /**
  * A link displaying an icon along with text.
- *
  */
-export const LinkWithIcon: React.FunctionComponent<PropsWithIcon | PropsWithIconPlaceholder> = props => {
-    const { to, text, className = '', activeClassName, ...restProps } = props
-    const LinkComponent = activeClassName ? NavLink : Link
-
-    // use `svg` element as a placeholder when `hasIconPlaceholder` is true
-    const Icon = 'hasIconPlaceholder' in props ? 'svg' : props.icon
-
-    const linkProps = {
-        to,
-        className: classNames('d-flex', 'align-items-center', className),
-        ...(activeClassName && { activeClassName }),
-        ...omit(restProps, ['hasIconPlaceholder', 'icon']),
-    }
+export const LinkWithIcon: React.FunctionComponent<LinkWithIconProps> = props => {
+    const { to, exact, text, className, activeClassName, icon: Icon } = props
 
     return (
-        <LinkComponent {...linkProps} data-testid={kebabCase(text)}>
+        <Button
+            as={NavLink}
+            to={to}
+            exact={exact}
+            className={classNames('d-flex', 'align-items-center', className)}
+            activeClassName={activeClassName}
+            variant="link"
+        >
             <Icon className="icon-inline mr-1" />
             <span className="inline-block">{text}</span>
-        </LinkComponent>
+        </Button>
     )
 }
