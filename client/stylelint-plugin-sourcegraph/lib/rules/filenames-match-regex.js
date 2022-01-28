@@ -19,7 +19,7 @@ module.exports = stylelint.createPlugin(ruleName, function (primaryOption, secon
 
     if (!matchRegex) {
       stylelint.utils.report({
-        message: `Filename ${name} does not match the regex expression.`,
+        message: `Filename ${name} does not match the regular expression.`,
         ruleName,
         node: postcssRoot.first,
         result: postcssResult,
