@@ -147,7 +147,7 @@ type SearchResultsResolver struct {
 type SearchResults struct {
 	Matches result.Matches
 	Stats   streaming.Stats
-	Alert   *searchAlertResolver
+	Alert   *search.Alert
 }
 
 // Results are the results found by the search. It respects the limits set. To
@@ -213,7 +213,9 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	return strconv.Itoa(int(count))
 }
 
-func (sr *SearchResultsResolver) Alert() *searchAlertResolver { return sr.SearchResults.Alert }
+func (sr *SearchResultsResolver) Alert() *searchAlertResolver {
+	return NewSearchAlertResolver(sr.SearchResults.Alert)
+}
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 	return int32(sr.elapsed.Milliseconds())
@@ -1018,7 +1020,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return NewSearchAlertResolver(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)).wrapResults(), nil
+				return alertToSearchResults(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)), nil
 			default:
 			}
 
@@ -1047,7 +1049,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return NewSearchAlertResolver(search.AlertForCappedAndExpression()).wrapResults(), nil
+			return alertToSearchResults(search.AlertForCappedAndExpression()), nil
 		}
 	}
 	result.Stats.IsLimitHit = !exhausted
@@ -1071,7 +1073,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 	var (
 		mu     sync.Mutex
 		stats  streaming.Stats
-		alerts []*searchAlertResolver
+		alerts []*search.Alert
 		dedup  = result.NewDeduper()
 		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
 		// this concurrency limit should probably be informed by a user's rate limit quota
@@ -1126,10 +1128,10 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 		return nil, err
 	}
 
-	var alert *searchAlertResolver
+	var alert *search.Alert
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].alert.Priority > alerts[j].alert.Priority
+			return alerts[i].Priority > alerts[j].Priority
 		})
 		alert = alerts[0]
 	}
@@ -1213,7 +1215,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	var status, alertType string
 	status = DetermineStatusForLogs(srr, err)
 	if srr != nil && srr.SearchResults.Alert != nil {
-		alertType = srr.SearchResults.Alert.alert.PrometheusType
+		alertType = srr.SearchResults.Alert.PrometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
@@ -1331,7 +1333,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 	var (
 		mu     sync.Mutex
 		stats  streaming.Stats
-		alerts []*searchAlertResolver
+		alerts []*search.Alert
 		dedup  = result.NewDeduper()
 		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
 		// this concurrency limit should probably be informed by a user's rate limit quota
@@ -1439,10 +1441,10 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		sortResults(matches)
 	}
 
-	var alert *searchAlertResolver
+	var alert *search.Alert
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].alert.Priority > alerts[j].alert.Priority
+			return alerts[i].Priority > alerts[j].Priority
 		})
 		alert = alerts[0]
 	}
@@ -1536,7 +1538,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 		if rr == nil || !rr.Stats.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
-			return NewSearchAlertResolver(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)).wrapResults(), nil
+			return alertToSearchResults(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)), nil
 		} else {
 			err = nil
 		}
@@ -1835,14 +1837,12 @@ func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregato
 	}
 	alert, err := ao.Done(&common)
 
-	searchAlert := NewSearchAlertResolver(alert)
-
 	sortResults(matches)
 
 	return &SearchResults{
 		Matches: matches,
 		Stats:   common,
-		Alert:   searchAlert,
+		Alert:   alert,
 	}, err
 }
 

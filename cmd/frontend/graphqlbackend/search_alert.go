@@ -43,8 +43,8 @@ func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescription {
 	return &proposedQueries
 }
 
-func (a searchAlertResolver) wrapResults() *SearchResults {
-	return &SearchResults{Alert: &a}
+func alertToSearchResults(alert *search.Alert) *SearchResults {
+	return &SearchResults{Alert: alert}
 }
 
 func (a searchAlertResolver) wrapSearchImplementer(db database.DB) *alertSearchImplementer {
@@ -62,7 +62,7 @@ type alertSearchImplementer struct {
 }
 
 func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver, error) {
-	return &SearchResultsResolver{db: a.db, SearchResults: a.alert.wrapResults()}, nil
+	return &SearchResultsResolver{db: a.db, SearchResults: alertToSearchResults(a.alert.alert)}, nil
 }
 
 func (alertSearchImplementer) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
