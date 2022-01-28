@@ -1,6 +1,6 @@
 .card {
     border-radius: 4px;
-    /* stylelint-disable-next-line declaration-property-unit-whitelist */
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     margin: calc(1rem - 1px) 0;
 
     &-link {
@@ -17,7 +17,7 @@
         border: 1px solid var(--border-color);
 
         &:hover:not(:global(.disabled)):not(:disabled) {
-            /* stylelint-disable-next-line declaration-property-unit-whitelist */
+            /* stylelint-disable-next-line declaration-property-unit-allowed-list */
             padding: calc(1rem - 1px);
             border: 2px solid var(--border-active-color);
             cursor: pointer;
