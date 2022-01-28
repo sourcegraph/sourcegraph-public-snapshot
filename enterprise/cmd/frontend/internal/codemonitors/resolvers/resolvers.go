@@ -358,6 +358,7 @@ func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlback
 }
 
 func (r *Resolver) CodeMonitorSearch(ctx context.Context, args *graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error) {
+	args.Version = "V2"
 	return graphqlbackend.NewSearchImplementer(ctx, r.db, args)
 }
 

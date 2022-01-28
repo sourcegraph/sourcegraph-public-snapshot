@@ -4,11 +4,6 @@ extend type Query {
     """
     codeMonitorSearch(
         """
-        The version of the search syntax being used.
-        All new clients should use the latest version.
-        """
-        version: SearchVersion = V2
-        """
         PatternType controls the search pattern type, if and only if it is not specified in the query string using
         the patternType: field.
         """
