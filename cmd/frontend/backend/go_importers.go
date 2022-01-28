@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 
@@ -64,7 +64,7 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 
 	q.Query = countGoImportersGraphQLQuery
 	q.Variables = map[string]interface{}{
-		"query": fmt.Sprintf(`f:go\.mod ^\s+%s\S*\s+v.* count:all visibility:public timeout:20s`, regexp.QuoteMeta(string(repo))),
+		"query": countGoImportersSearchQuery(repo),
 	}
 
 	body, err := json.Marshal(q)
@@ -121,6 +121,18 @@ func gqlURL(queryName string) (string, error) {
 	u.Path = "/.internal/graphql"
 	u.RawQuery = queryName
 	return u.String(), nil
+}
+
+func countGoImportersSearchQuery(repo api.RepoName) string {
+	return strings.Join([]string{
+		`type:file`,
+		`f:go\.mod`,
+		`patterntype:regexp`,
+		`content:^\s+` + regexp.QuoteMeta(string(repo)) + `\S*\s+v\S`,
+		`count:all`,
+		`visibility:public`,
+		`timeout:20s`,
+	}, " ")
 }
 
 const countGoImportersGraphQLQuery = `
