@@ -23,6 +23,10 @@ import (
 func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([]*invitableCollaboratorResolver, error) {
 	// SECURITY: This API should only be exposed for user-added external services, not for example by
 	// site-wide (CloudDefault) external services (the API also makes zero sense in that context.)
+	//
+	// IMPORTANT: This API is allowed for org external services. You may not have access to every repo
+	// within an org external service, and so if we expose too much information here it could be an
+	// ACL vulnerability. Since we only expose name+email+avatar URL, this is fine to do.
 	if r.externalService.IsSiteOwned() {
 		return nil, errors.New("InvitableCollaborators may only be used on user-added external services.")
 	}
