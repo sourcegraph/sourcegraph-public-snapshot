@@ -48,7 +48,6 @@ func NewConfig(now time.Time) Config {
 		commit = os.Getenv("BUILDKITE_COMMIT")
 		branch = os.Getenv("BUILDKITE_BRANCH")
 		tag    = os.Getenv("BUILDKITE_TAG")
-
 		// evaluates what type of pipeline run this is
 		runType = computeRunType(tag, branch)
 		// defaults to 0
