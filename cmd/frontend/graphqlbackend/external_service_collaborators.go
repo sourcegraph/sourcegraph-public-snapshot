@@ -10,6 +10,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -28,10 +29,12 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	if !ok {
 		return nil, errors.Wrap(err, "contributors API only supported with GitHub")
 	}
-	githubUrl, err := url.Parse(githubCfg.Url)
+	baseURL, err := url.Parse(githubCfg.Url)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse external service URL")
 	}
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
+	githubUrl, _ := github.APIRoot(baseURL)
 	client := github.NewV4Client(githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
 
 	// We'll only look in 20 repos. We limit ourselves here to prevent having our github token run
