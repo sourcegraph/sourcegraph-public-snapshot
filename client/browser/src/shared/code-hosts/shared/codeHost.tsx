@@ -1516,7 +1516,7 @@ function initializeGithubSearchPageEnhancement(
                         map(event => (event.target instanceof HTMLInputElement ? event.target.value.trim() : '')),
                         distinct()
                     )
-                    // TODO: observable is unsubscribed
+                    // TODO: ensure observable is unsubscribed
                     .subscribe(searchInputValue => {
                         link.setAttribute('href', biuldSourcegraphURL(searchInputValue))
                     })
