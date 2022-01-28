@@ -473,7 +473,7 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	type fields struct {
 		results             []result.Match
 		searchResultsCommon streaming.Stats
-		alert               *searchAlert
+		alert               *searchAlertResolver
 	}
 	tests := []struct {
 		name   string
