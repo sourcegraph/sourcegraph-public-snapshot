@@ -33,7 +33,6 @@ import {
     retryWhen,
     mapTo,
     take,
-    distinct,
 } from 'rxjs/operators'
 import { HoverAlert } from 'sourcegraph'
 
@@ -814,9 +813,7 @@ export async function handleCodeHost({
 
     if (isGithubCodeHost(codeHost)) {
         subscriptions.add(initializeGithubSearchInputEnhancement(codeHost.searchEnhancement, sourcegraphURL, mutations))
-        subscriptions.add(
-            initializeGithubSearchPageEnhancement(codeHost.searchPageEnhancement, sourcegraphURL, mutations)
-        )
+        subscriptions.add(codeHost.enhanceSearchPage(sourcegraphURL))
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
@@ -1449,86 +1446,6 @@ function initializeGithubSearchInputEnhancement(
     return combineLatest([searchView, resultView])
         .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
         .subscribe(onChange)
-}
-
-function initializeGithubSearchPageEnhancement(
-    searchPageEnhancement: NonNullable<GithubCodeHost['searchPageEnhancement']>,
-    sourcegraphURL: string,
-    mutations: Observable<MutationRecordLike[]>
-): Subscription | void {
-    const githubURL = new URL(window.location.href)
-
-    if (!githubURL.pathname.startsWith('/search')) {
-        return
-    }
-
-    // advanced search page
-    if (githubURL.pathname === '/search/advanced') {
-        // TODO: consider accessing input fields using 'form#search_form' selector
-        // render advanced search page enhancement
-        return
-    }
-
-    // search results page
-    const urlSearchQuery = githubURL.searchParams.get('q')
-    if (urlSearchQuery) {
-        // render search results page enhancement
-        const resultsContainer = document.querySelector('.codesearch-results')
-
-        // TODO: handle not found case
-        if (resultsContainer) {
-            const biuldSourcegraphURL = (searchTerm: string): string => {
-                const queryParameters = searchTerm.split(' ')
-
-                const githubResultType = githubURL.searchParams.get('type')
-                let sourcegraphResultType = ''
-                if (!githubResultType || githubResultType === 'repositories') {
-                    sourcegraphResultType = 'repo'
-                } else if (githubResultType === 'commits') {
-                    sourcegraphResultType = 'commit'
-                }
-
-                if (sourcegraphResultType) {
-                    queryParameters.push(`type:${sourcegraphResultType}`)
-                }
-
-                // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be corretly parsed by sourcegraph search page.
-                // TODO: investigate possible risks search params direct assignment may introduce.
-                return `${new URL('/search', sourcegraphURL).href}?q=${queryParameters.join('+')}`
-            }
-
-            // create link to sourcegraph search page
-            const link = document.createElement('a')
-            link.setAttribute('href', biuldSourcegraphURL(urlSearchQuery))
-            link.setAttribute('target', '_blank')
-            link.setAttribute('rel', 'noopener noreferrer')
-            link.textContent = 'Search in Sourcegraph'
-
-            // render link
-            resultsContainer?.prepend(link)
-
-            // track search input changes and update sourcegraph link href
-            const headerSearchInput = document.querySelector('.header-search-input')
-
-            if (headerSearchInput) {
-                fromEvent(headerSearchInput, 'blur')
-                    .pipe(
-                        map(event => (event.target instanceof HTMLInputElement ? event.target.value.trim() : '')),
-                        distinct()
-                    )
-                    // TODO: ensure observable is unsubscribed
-                    .subscribe(searchInputValue => {
-                        link.setAttribute('href', biuldSourcegraphURL(searchInputValue))
-                    })
-            }
-        }
-
-        return
-    }
-
-    // simple search page
-
-    // render simple search page enhancements and return
 }
 
 export function injectCodeIntelligenceToCodeHost(
