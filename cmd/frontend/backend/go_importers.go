@@ -23,8 +23,7 @@ import (
 var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)
 
 var (
-	countGoImportersHTTPClient = httpcli.ExternalDoer
-	goImportersCountCache      = rcache.NewWithTTL("go-importers-count", 14400) // 4 hours
+	goImportersCountCache = rcache.NewWithTTL("go-importers-count", 14400) // 4 hours
 )
 
 // CountGoImporters returns the number of Go importers for the repository's Go subpackages. This is
@@ -124,9 +123,16 @@ func gqlURL(queryName string) (string, error) {
 }
 
 func countGoImportersSearchQuery(repo api.RepoName) string {
+	// Walk-through of the regular expression:
+	// - ^\s+ to not match the repo inside replace blocks which have a $repo => $replacement $version format.
+	// - \S* to match sub-packages or packages at different versions (e.g. github.com/tsenart/vegeta/v12)
+	// - \s+ to match spaces between repo name and version identifier
+	// - v\S to match beginning of version identifier
+	//
+	// See: https://sourcegraph.com/search?q=context:global+type:file+f:%28%5E%7C/%29go%5C.mod%24+content:%5E%5Cs%2Bgithub%5C.com/tsenart/vegeta%5CS*%5Cs%2Bv%5CS+visibility:public+count:all&patternType=regexp
 	return strings.Join([]string{
 		`type:file`,
-		`f:go\.mod`,
+		`f:(^|/)go\.mod$`,
 		`patterntype:regexp`,
 		`content:^\s+` + regexp.QuoteMeta(string(repo)) + `\S*\s+v\S`,
 		`count:all`,
