@@ -168,7 +168,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		batch = make([]*RawCommit, 0, batchSize)
 	}
 
-	scanner := NewCommitScanner(stdoutReader, cs.IncludeModifiedFiles)
+	scanner := NewCommitScanner(stdoutReader)
 	for scanner.Scan() {
 		if ctx.Err() != nil {
 			return nil
@@ -279,16 +279,15 @@ type RawCommit struct {
 }
 
 type CommitScanner struct {
-	scanner              *bufio.Scanner
-	next                 *RawCommit
-	err                  error
-	includeModifiedFiles bool
+	scanner *bufio.Scanner
+	next    *RawCommit
+	err     error
 }
 
 // NewCommitScanner creates a scanner that does a shallow parse of the stdout of git log.
 // Like the bufio.Scanner() API, call Scan() to ingest the next result, which will return
 // false if it hits an error or EOF, then call NextRawCommit() to get the scanned commit.
-func NewCommitScanner(r io.Reader, includeModifiedFiles bool) *CommitScanner {
+func NewCommitScanner(r io.Reader) *CommitScanner {
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 1024), 1<<22)
 
@@ -321,8 +320,7 @@ func NewCommitScanner(r io.Reader, includeModifiedFiles bool) *CommitScanner {
 	})
 
 	return &CommitScanner{
-		scanner:              scanner,
-		includeModifiedFiles: includeModifiedFiles,
+		scanner: scanner,
 	}
 }
 
@@ -353,10 +351,7 @@ func (c *CommitScanner) Scan() bool {
 		CommitterDate:  parts[8],
 		Message:        bytes.TrimSpace(parts[9]),
 		ParentHashes:   parts[10],
-	}
-
-	if c.includeModifiedFiles {
-		c.next.ModifiedFiles = parts[11:]
+		ModifiedFiles:  parts[11:],
 	}
 
 	return true

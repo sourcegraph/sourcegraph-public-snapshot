@@ -215,9 +215,8 @@ func TestSearch(t *testing.T) {
 
 func TestCommitScanner(t *testing.T) {
 	cases := []struct {
-		input                []byte
-		expected             []*RawCommit
-		includeModifiedFiles bool
+		input    []byte
+		expected []*RawCommit
 	}{
 		{
 			input: []byte(
@@ -237,7 +236,7 @@ func TestCommitScanner(t *testing.T) {
 					CommitterDate:  []byte("1632251505"),
 					Message:        []byte("fix import"),
 					ParentHashes:   []byte("5230097b75dcbb2c214618dd171da4053aff18a6"),
-					ModifiedFiles:  nil,
+					ModifiedFiles:  [][]byte{{}, {}},
 				},
 				{
 					Hash:           []byte("5230097b75dcbb2c214618dd171da4053aff18a6"),
@@ -251,10 +250,9 @@ func TestCommitScanner(t *testing.T) {
 					CommitterDate:  []byte("1632248499"),
 					Message:        []byte("only set matches if they exist"),
 					ParentHashes:   []byte(""),
-					ModifiedFiles:  nil,
+					ModifiedFiles:  [][]byte{{}},
 				},
 			},
-			includeModifiedFiles: false,
 		},
 		{
 			input: []byte(
@@ -297,13 +295,12 @@ func TestCommitScanner(t *testing.T) {
 					},
 				},
 			},
-			includeModifiedFiles: true,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
-			scanner := NewCommitScanner(bytes.NewReader(tc.input), tc.includeModifiedFiles)
+			scanner := NewCommitScanner(bytes.NewReader(tc.input))
 			var output []*RawCommit
 			for scanner.Scan() {
 				output = append(output, scanner.NextRawCommit())
