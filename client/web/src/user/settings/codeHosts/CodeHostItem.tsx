@@ -53,10 +53,9 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     useGitHubApp,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
-    const toggleAddConnectionModal = useCallback(
-        () => setIsAddConnectionModalOpen(!isAddConnectionModalOpen),
-        [isAddConnectionModalOpen]
-    )
+    const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
+        isAddConnectionModalOpen,
+    ])
 
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
