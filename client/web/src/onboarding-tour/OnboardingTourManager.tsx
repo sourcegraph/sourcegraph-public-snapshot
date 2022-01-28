@@ -1,9 +1,10 @@
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
-import { Link, useHistory } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
 import { OnboardingTourLanguage, useOnboardingTourState } from '../stores/onboardingTourState'
@@ -88,12 +89,8 @@ const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryServic
     const logTourEvent = useLogTourEvent(telemetryService)
     const restart = useOnboardingTourState(useCallback(state => state.restart, []))
 
-    const onSignUp = useCallback(() => {
-        logTourEvent('TourSignUpClicked')
-    }, [logTourEvent])
-
-    const onInstall = useCallback(() => {
-        logTourEvent('TourInstallLocallyClicked')
+    const onGetStarted = useCallback(() => {
+        logTourEvent('TourGetStartedClicked')
     }, [logTourEvent])
 
     return (
@@ -103,19 +100,14 @@ const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryServic
                 on your private code.
             </p>
             <div className="d-flex flex-column">
-                <Button className="align-self-start mb-2" to="/sign-up" onClick={onSignUp} variant="primary" as={Link}>
-                    Sign up for Cloud
-                </Button>
                 <Button
-                    className="shadow-none align-self-start pl-0 mb-2"
-                    href="https://docs.sourcegraph.com/admin/install?utm_campaign=inproduct-tour&utm_medium=direct_traffic&utm_source=inproduct-tour&utm_term=null&utm_content=complete"
-                    onClick={onInstall}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    variant="link"
+                    className="align-self-start mb-2"
+                    href={buildGetStartedURL('onboarding-tour')}
+                    onClick={onGetStarted}
+                    variant="primary"
                     as="a"
                 >
-                    Install Sourcegraph locally
+                    Get started
                 </Button>
                 <Button variant="link" size="sm" className="align-self-start text-left pl-0" onClick={restart}>
                     Restart
