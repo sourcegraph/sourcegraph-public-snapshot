@@ -5,7 +5,7 @@ const path = require('path')
 
 const ruleName = 'filenames/match-regex'
 const messages = stylelint.utils.ruleMessages(ruleName, {
-  expected: 'Yo expected ...',
+  expected: 'Expected ...',
 })
 
 module.exports = stylelint.createPlugin(ruleName, function (primaryOption, secondaryOptionObject) {
