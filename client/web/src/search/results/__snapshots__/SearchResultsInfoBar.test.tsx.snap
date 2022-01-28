@@ -387,9 +387,9 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               </div>
               <a
                 class="btn btn-primary"
-                href="/sign-up?src=Monitor&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
+                href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
               >
-                Sign up for Sourcegraph
+                Get started
               </a>
             </div>
           </div>
@@ -488,9 +488,9 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               </div>
               <a
                 class="btn btn-primary"
-                href="/sign-up?src=Saved&returnTo=%2Fsearch"
+                href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fsearch"
               >
-                Sign up for Sourcegraph
+                Get started
               </a>
             </div>
           </div>
@@ -812,9 +812,9 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
               </div>
               <a
                 class="btn btn-primary"
-                href="/sign-up?src=Monitor&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
+                href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
               >
-                Sign up for Sourcegraph
+                Get started
               </a>
             </div>
           </div>
@@ -913,9 +913,9 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
               </div>
               <a
                 class="btn btn-primary"
-                href="/sign-up?src=Saved&returnTo=%2Fsearch"
+                href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fsearch"
               >
-                Sign up for Sourcegraph
+                Get started
               </a>
             </div>
           </div>
