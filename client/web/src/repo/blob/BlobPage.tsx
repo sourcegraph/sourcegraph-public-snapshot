@@ -359,6 +359,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     telemetryService={props.telemetryService}
                     location={props.location}
                     onHoverToken={props.onHoverToken}
+                    disableStatusBar={false}
                 />
             )}
         </>
