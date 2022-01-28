@@ -35,6 +35,7 @@ var checkFuncs = map[string]dependencyCheck{
 	"psql":     checkInPath("psql"),
 	"yarn":     combineChecks(checkInPath("yarn"), checkCommandOutputContains("yarn version", "yarn version")),
 	"go":       combineChecks(checkInPath("go"), checkCommandOutputContains("go version", "go version")),
+	"docker":   wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
 }
 
 type builtinCheck struct {

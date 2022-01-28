@@ -700,7 +700,7 @@ commands:
 
 checks:
   docker:
-    cmd: docker version
+    checkFunc: docker
     failMessage: "Failed to run 'docker version'. Please make sure Docker is running."
 
   docker-compose:
@@ -708,7 +708,7 @@ checks:
     failMessage: "Failed to run 'docker-compose version'. Please make sure Docker is running."
 
   go:
-    cmd: go version || (echo "➡️ Install Go or make it sure it is in the \$PATH" && exit 1)
+    checkFunc: go
     failMessage: 'Failed to run go'
 
   go-version:
@@ -719,13 +719,12 @@ checks:
     failMessage: 'Incorrect go version'
 
   redis:
-    cmd: (command -v redis-cli && redis-cli -p 6379 PING) || docker-compose -f dev/redis-postgres.yml exec -T redis redis-cli PING
+    checkFunc: redis
     failMessage: 'Failed to connect to Redis on port 6379. Please make sure Redis is running.'
 
   postgres:
-    # cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
-    failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
     checkFunc: postgres
+    failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
 
   git-version:
     cmd: |
