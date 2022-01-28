@@ -283,7 +283,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [authProvidersByKind]
     )
 
-    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+    const { data } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
         GET_ORG_FEATURE_FLAG_VALUE,
         {
             variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
