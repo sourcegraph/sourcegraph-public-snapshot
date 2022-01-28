@@ -24,6 +24,10 @@
         color: var(--primary);
         font-weight: bold;
     }
+
+    &--filename {
+        color: var(--body-color);
+    }
 }
 
 .reference-link {
