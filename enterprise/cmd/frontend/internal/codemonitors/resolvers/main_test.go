@@ -140,12 +140,12 @@ func newTestResolver(t *testing.T, db database.DB) *Resolver {
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
-	return newResolverWithClock(db, clock).(*Resolver)
+	return newResolverWithClock(db, clock)
 }
 
 // newResolverWithClock is used in tests to set the clock manually.
-func newResolverWithClock(db database.DB, clock func() time.Time) graphqlbackend.CodeMonitorsResolver {
-	mockDB := edb.NewMockEnterpriseDBFrom(edb.NewDB(db))
+func newResolverWithClock(db database.DB, clock func() time.Time) *Resolver {
+	mockDB := edb.NewMockEnterpriseDBFrom(edb.NewEnterpriseDB(db))
 	mockDB.CodeMonitorsFunc.SetDefaultReturn(edb.CodeMonitorsWithClock(db, clock))
 	return &Resolver{db: mockDB}
 }
