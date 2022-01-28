@@ -47,16 +47,24 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 	migrationRunner := runnerFromDB(storeFactory, db, schema)
 
 	upOptions := runner.Options{
-		Up:          true,
-		SchemaNames: []string{name},
+		Operations: []runner.MigrationOperation{
+			{
+				SchemaName: name,
+				Up:         true,
+			},
+		},
 	}
 	downOptions := runner.Options{
-		Up: false,
-		// Run down to the root "squashed commits" migration. We don't go
-		// any farther than that because it would require a fresh database,
-		// and that doesn't adequately test upgrade idempotency.
-		TargetMigration: schema.Definitions.First(),
-		SchemaNames:     []string{name},
+		Operations: []runner.MigrationOperation{
+			{
+				SchemaName: name,
+				Up:         false,
+				// Run down to the root "squashed commits" migration. We don't go
+				// any farther than that because it would require a fresh database,
+				// and that doesn't adequately test upgrade idempotency.
+				TargetMigration: schema.Definitions.First(),
+			},
+		},
 	}
 
 	//

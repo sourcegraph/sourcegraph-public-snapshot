@@ -82,6 +82,16 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
+// IsGitHubAppCloudEnabled returns true if all required configuration options for
+// Sourcegraph Cloud GitHub App are filled by checking the given dotcom config.
+func IsGitHubAppCloudEnabled(dotcom *schema.Dotcom) bool {
+	return dotcom != nil &&
+		dotcom.GithubAppCloud != nil &&
+		dotcom.GithubAppCloud.AppID != "" &&
+		dotcom.GithubAppCloud.PrivateKey != "" &&
+		dotcom.GithubAppCloud.Slug != ""
+}
+
 func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
@@ -147,10 +157,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 	dotcomConfig := conf.SiteConfig().Dotcom
 	if envvar.SourcegraphDotComMode() &&
 		c.GithubAppInstallationID != "" &&
-		dotcomConfig != nil &&
-		dotcomConfig.GithubAppCloud != nil &&
-		dotcomConfig.GithubAppCloud.AppID != "" &&
-		dotcomConfig.GithubAppCloud.PrivateKey != "" {
+		IsGitHubAppCloudEnabled(dotcomConfig) {
 		privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "decode private key")

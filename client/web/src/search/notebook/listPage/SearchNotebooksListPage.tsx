@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
 
@@ -227,7 +228,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                 )}
                 {(selectedTab === 'my' || selectedTab === 'starred') && !authenticatedUser && (
                     <UnauthenticatedNotebooksSection
-                        cta={selectedTab === 'my' ? 'Sign up to create notebooks' : 'Sign up to star notebooks'}
+                        cta={selectedTab === 'my' ? 'Get started creating notebooks' : 'Get started starring notebooks'}
                         telemetryService={telemetryService}
                         onSelectExploreNotebooks={() =>
                             onSelectTab('explore', 'SearchNotebooksExploreNotebooksTabClick')
@@ -259,7 +260,7 @@ const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMy
             <Button
                 as={Link}
                 onClick={onClick}
-                to={`/sign-up?returnTo=${encodeURIComponent('/notebooks')}`}
+                to={buildGetStartedURL('search-notebooks', '/notebooks')}
                 variant="primary"
             >
                 {cta}
