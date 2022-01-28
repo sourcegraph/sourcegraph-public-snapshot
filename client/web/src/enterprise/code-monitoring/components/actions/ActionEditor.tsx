@@ -150,14 +150,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
-                            <div
-                                className={classNames(
-                                    'font-weight-bold',
-                                    !completed && classNames(styles.cardLink, 'btn-link')
-                                )}
-                            >
-                                {title}
-                            </div>
+                            <div className={classNames('font-weight-bold', !completed && styles.cardLink)}>{title}</div>
                             {completed ? (
                                 <span
                                     className="text-muted font-weight-normal"

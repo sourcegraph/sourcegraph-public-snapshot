@@ -8,7 +8,7 @@ import { useHistory, useLocation } from 'react-router'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnectionFilter } from '../../../components/FilteredConnection'
@@ -152,10 +152,10 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     path={[{ icon: MagnifyIcon, to: '/search' }, { text: 'Notebooks' }]}
                     actions={
                         authenticatedUser && (
-                            <Link to={PageRoutes.NotebookCreate} className="btn btn-primary">
+                            <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link}>
                                 <PlusIcon className="icon-inline" />
                                 Create notebook
-                            </Link>
+                            </Button>
                         )
                     }
                     className="mb-3"
@@ -257,18 +257,19 @@ const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMy
 
     return (
         <div className="d-flex justify-content-center align-items-center flex-column p-3">
-            <Link
+            <Button
+                as={Link}
                 onClick={onClick}
                 to={buildGetStartedURL('search-notebooks', '/notebooks')}
-                className="btn btn-primary"
+                variant="primary"
             >
                 {cta}
-            </Link>
+            </Button>
             <span className="my-3 text-muted">or</span>
             <span className={classNames('d-flex align-items-center', styles.explorePublicNotebooks)}>
-                <button className="btn btn-link p-1" type="button" onClick={onSelectExploreNotebooks}>
+                <Button className="p-1" variant="link" onClick={onSelectExploreNotebooks}>
                     explore
-                </button>{' '}
+                </Button>{' '}
                 public notebooks
             </span>
         </div>
