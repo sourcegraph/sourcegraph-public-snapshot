@@ -63,30 +63,28 @@ interface CoolCodeIntelToolsTab {
     component: React.ComponentType<CoolCodeIntelPopoverTabProps>
 }
 
-export const TokenPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => {
-    if (!props.hoveredToken) {
-        return (
+export const TokenPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
+    <>
+        {props.hoveredToken ? (
+            <code>
+                Line: {props.hoveredToken.line}
+                {'\n'}
+                Character: {props.hoveredToken.character}
+                {'\n'}
+                Repo: {props.hoveredToken.repoName}
+                {'\n'}
+                Commit: {props.hoveredToken.commitID}
+                {'\n'}
+                Path: {props.hoveredToken.filePath}
+                {'\n'}
+            </code>
+        ) : (
             <p>
                 <i>No token</i>
             </p>
-        )
-    }
-
-    return (
-        <code>
-            Line: {props.hoveredToken.line}
-            {'\n'}
-            Character: {props.hoveredToken.character}
-            {'\n'}
-            Repo: {props.hoveredToken.repoName}
-            {'\n'}
-            Commit: {props.hoveredToken.commitID}
-            {'\n'}
-            Path: {props.hoveredToken.filePath}
-            {'\n'}
-        </code>
-    )
-}
+        )}
+    </>
+)
 
 export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => {
     if (!props.hoveredToken) {
