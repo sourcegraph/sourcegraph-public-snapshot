@@ -36,6 +36,7 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -1824,22 +1825,24 @@ func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregato
 		return nil, errors.New("aggErrs should never be nil")
 	}
 
-	ao := alertObserver{
+	ao := alert.Observer{
 		Db:           r.db,
 		SearchInputs: r.SearchInputs,
-		hasResults:   matchCount > 0,
+		HasResults:   matchCount > 0,
 	}
 	for _, err := range aggErrs.Errors {
 		ao.Error(ctx, err)
 	}
 	alert, err := ao.Done(&common)
 
+	searchAlert := NewSearchAlertResolver(alert)
+
 	sortResults(matches)
 
 	return &SearchResults{
 		Matches: matches,
 		Stats:   common,
-		Alert:   alert,
+		Alert:   searchAlert,
 	}, err
 }
 
