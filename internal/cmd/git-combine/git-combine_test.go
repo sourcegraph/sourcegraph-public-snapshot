@@ -1,12 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestCombine(t *testing.T) {
@@ -59,5 +64,46 @@ git fetch --depth 100 sourcegraph
 	cmd.Dir = dir
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestSanitizeMessage(t *testing.T) {
+	cases := []struct {
+		message   string
+		wantTitle string
+	}{{
+		message:   "",
+		wantTitle: "",
+	}, {
+		message:   "unchanged title\n\nbody",
+		wantTitle: "unchanged title",
+	}, {
+		message:   "foo\n\nbar\nbaz",
+		wantTitle: "foo",
+	}, {
+		message:   "foo\nbar\nbaz",
+		wantTitle: "foo",
+	}, {
+		message:   "use decoration for active inlay hints link, support cusor decoration fyi @hediet, https://github.com/microsoft/vscode/issues/129528",
+		wantTitle: "use decoration for active inlay hints link, support cusor decoration fyi",
+	}, {
+		message:   "naively @strip at the first @",
+		wantTitle: "naively",
+	}, {
+		message:   "naively https://foo.com strip at the url",
+		wantTitle: "naively",
+	}}
+
+	for _, tc := range cases {
+		dir := "test"
+		commit := &object.Commit{
+			Message: tc.message,
+			Hash:    plumbing.ZeroHash,
+		}
+		want := fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, tc.wantTitle, commit.Hash)
+		got := sanitizeMessage(dir, commit)
+		if d := cmp.Diff(want, got); d != "" {
+			t.Errorf("unexpected for %q:\n%s", tc.message, d)
+		}
 	}
 }
