@@ -24,7 +24,7 @@ if (isChromatic()) {
             // Default theme + Dark mode.
             addStory({
                 storeItem,
-                isDarkModeEnabled: true,
+                isDarkModeEnabled: false,
             })
         }
 
