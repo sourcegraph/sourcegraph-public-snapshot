@@ -134,6 +134,12 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
                     enabled: true,
                     recipients: { nodes: [{ id: 'baz-3' }] },
                 },
+                {
+                    __typename: 'MonitorWebhook',
+                    id: 'test-action-4',
+                    enabled: true,
+                    url: 'https://example.com/webhook',
+                },
             ],
         },
         trigger: { id: 'test-3', query: 'test' },
@@ -145,10 +151,10 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
         actions: {
             nodes: [
                 {
-                    __typename: 'MonitorEmail',
-                    id: 'test-action-4 ',
+                    __typename: 'MonitorWebhook',
+                    id: 'test-action-4',
                     enabled: true,
-                    recipients: { nodes: [{ id: 'baz-4' }] },
+                    url: 'https://example.com/webhook',
                 },
             ],
         },

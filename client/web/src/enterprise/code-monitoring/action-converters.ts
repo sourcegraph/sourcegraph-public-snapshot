@@ -4,6 +4,8 @@ import {
     IMonitorEmailInput,
     IMonitorSlackWebhook,
     IMonitorSlackWebhookInput,
+    IMonitorWebhook,
+    IMonitorWebhookInput,
 } from '@sourcegraph/shared/src/schema'
 
 import {
@@ -15,9 +17,13 @@ import {
 
 import { MonitorAction } from './components/FormActionArea'
 
-function isActionSupported(action: MonitorAction): action is IMonitorEmail | IMonitorSlackWebhook {
-    // We currently only support email and Slack webhook actions
-    return action.__typename === 'MonitorEmail' || action.__typename === 'MonitorSlackWebhook'
+function isActionSupported(action: MonitorAction): action is IMonitorEmail | IMonitorSlackWebhook | IMonitorWebhook {
+    // We currently support email, Slack webhook, and generic webhook actions
+    return (
+        action.__typename === 'MonitorEmail' ||
+        action.__typename === 'MonitorSlackWebhook' ||
+        action.__typename === 'MonitorWebhook'
+    )
 }
 
 function convertEmailAction(action: IMonitorEmail, authenticatedUserId: AuthenticatedUser['id']): IMonitorEmailInput {
@@ -30,6 +36,13 @@ function convertEmailAction(action: IMonitorEmail, authenticatedUserId: Authenti
 }
 
 function convertSlackWebhookAction(action: IMonitorSlackWebhook): IMonitorSlackWebhookInput {
+    return {
+        enabled: action.enabled,
+        url: action.url,
+    }
+}
+
+function convertWebhookAction(action: IMonitorWebhook): IMonitorWebhookInput {
     return {
         enabled: action.enabled,
         url: action.url,
@@ -49,6 +62,10 @@ export function convertActionsForCreate(
             case 'MonitorSlackWebhook':
                 return {
                     slackWebhook: convertSlackWebhookAction(action),
+                }
+            case 'MonitorWebhook':
+                return {
+                    webhook: convertWebhookAction(action),
                 }
         }
     })
@@ -73,6 +90,13 @@ export function convertActionsForUpdate(
                     slackWebhook: {
                         id: action.id || null,
                         update: convertSlackWebhookAction(action),
+                    },
+                }
+            case 'MonitorWebhook':
+                return {
+                    webhook: {
+                        id: action.id || null,
+                        update: convertWebhookAction(action),
                     },
                 }
         }
