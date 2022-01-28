@@ -720,13 +720,13 @@ export const appendLineRangeQueryParameter = (url: string, range: string | undef
     return newUrl.pathname + `?${searchQuery}` + newUrl.hash
 }
 
-export function buildGetStartedURL(source: string, returnTo: null | string = null): string {
+export function buildGetStartedURL(source: string, returnTo?: string): string {
     const url = new URL('https://about.sourcegraph.com/get-started')
     url.searchParams.set('utm_medium', 'inproduct')
     url.searchParams.set('utm_source', source)
     url.searchParams.set('utm_campaign', 'inproduct-cta')
 
-    if (returnTo !== null) {
+    if (returnTo !== undefined) {
         url.searchParams.set('returnTo', returnTo)
     }
 
