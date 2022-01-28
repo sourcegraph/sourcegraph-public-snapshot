@@ -1,7 +1,16 @@
 import { curveLinear } from '@visx/curve'
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
-import { Axis, DataProvider, GlyphSeries, LineSeries, Tooltip, TooltipProvider, XYChart , EventEmitterProvider } from '@visx/xychart'
+import {
+    Axis,
+    DataProvider,
+    GlyphSeries,
+    LineSeries,
+    Tooltip,
+    TooltipProvider,
+    XYChart,
+    EventEmitterProvider,
+} from '@visx/xychart'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import { XYCHART_EVENT_SOURCE } from '@visx/xychart/lib/constants'
 import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber'
