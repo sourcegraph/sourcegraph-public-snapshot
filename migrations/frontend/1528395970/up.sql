@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395969
--- +++
-
 BEGIN;
 
 ALTER TABLE cm_trigger_jobs
