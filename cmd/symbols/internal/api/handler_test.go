@@ -1,6 +1,7 @@
 package api
 
 import (
+	"archive/tar"
 	"context"
 	"net/http/httptest"
 	"os"
@@ -50,7 +51,8 @@ func TestHandler(t *testing.T) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
 
-	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext), 0, 10, &observation.TestContext)
+	shouldRead := func(tarHeader *tar.Header) bool { return true }
+	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext, shouldRead), 0, 10, &observation.TestContext)
 	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser)
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
 	handler := NewHandler(MakeSqliteSearchFunc(NewOperations(&observation.TestContext), cachedDatabaseWriter), "")

@@ -24,7 +24,7 @@ import (
 type Git interface {
 	LogReverse(commit string, n int) ([]LogEntry, error)
 	RevListEach(commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
-	CatFile(commit string, path string) ([]byte, error)
+	ArchiveEach(commit string, paths []string, onFile func(path string, contents []byte) error) error
 }
 
 type Symbol struct {
@@ -250,66 +250,72 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 			return errors.Wrap(err, "AppendHop (deleted)")
 		}
 
+		deletedPaths := []string{}
+		addedPaths := []string{}
 		for _, pathStatus := range entry.PathStatuses {
 			if pathStatus.Status == DeletedAMD || pathStatus.Status == ModifiedAMD {
-				id := 0
-
-				ok := false
-				if id, ok = pathToBlobIdCache[pathStatus.Path]; !ok {
-					found := false
-					for _, hop := range hops {
-						TASKLOG.Start("GetBlob")
-						id, found, err = GetBlob(tx, hop, pathStatus.Path)
-						TASKLOG.Start("idle")
-						if err != nil {
-							return errors.Wrap(err, "GetBlob")
-						}
-						if found {
-							break
-						}
-					}
-					if !found {
-						return fmt.Errorf("could not find blob for path %s", pathStatus.Path)
-					}
-				}
-
-				TASKLOG.Start("UpdateBlobHops")
-				err = UpdateBlobHops(tx, id, DeletedAD, entry.Commit)
-				TASKLOG.Start("idle")
-				if err != nil {
-					return errors.Wrap(err, "UpdateBlobHops")
-				}
+				deletedPaths = append(deletedPaths, pathStatus.Path)
 			}
-
 			if pathStatus.Status == AddedAMD || pathStatus.Status == ModifiedAMD {
-				TASKLOG.Start("CatFile")
-				contents, err := git.CatFile(entry.Commit, pathStatus.Path)
-				TASKLOG.Start("idle")
-				if err != nil {
-					return errors.Wrap(err, "CatFile")
-				}
-				TASKLOG.Start("parse")
-				symbols, err := parse(pathStatus.Path, contents)
-				TASKLOG.Start("idle")
-				if err != nil {
-					return err
-				}
-				blob := Blob{
-					Commit:  entry.Commit,
-					Path:    pathStatus.Path,
-					Added:   []string{entry.Commit},
-					Deleted: []string{},
-					Symbols: symbols,
-				}
-				TASKLOG.Start("InsertBlob")
-				id, err := InsertBlob(tx, blob, repo)
-				TASKLOG.Start("idle")
-				if err != nil {
-					return errors.Wrap(err, "InsertBlob")
-				}
-				pathToBlobIdCache[pathStatus.Path] = id
+				addedPaths = append(addedPaths, pathStatus.Path)
 			}
 		}
+
+		for _, deletedPath := range deletedPaths {
+			id := 0
+			ok := false
+			if id, ok = pathToBlobIdCache[deletedPath]; !ok {
+				found := false
+				for _, hop := range hops {
+					TASKLOG.Start("GetBlob")
+					id, found, err = GetBlob(tx, hop, deletedPath)
+					TASKLOG.Start("idle")
+					if err != nil {
+						return errors.Wrap(err, "GetBlob")
+					}
+					if found {
+						break
+					}
+				}
+				if !found {
+					return fmt.Errorf("could not find blob for path %s", deletedPath)
+				}
+			}
+
+			TASKLOG.Start("UpdateBlobHops")
+			err = UpdateBlobHops(tx, id, DeletedAD, entry.Commit)
+			TASKLOG.Start("idle")
+			if err != nil {
+				return errors.Wrap(err, "UpdateBlobHops")
+			}
+		}
+
+		TASKLOG.Start("ArchiveEach")
+		git.ArchiveEach(entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
+			TASKLOG.Start("parse")
+			symbols, err := parse(addedPath, contents)
+			TASKLOG.Start("idle")
+			if err != nil {
+				return err
+			}
+			blob := Blob{
+				Commit:  entry.Commit,
+				Path:    addedPath,
+				Added:   []string{entry.Commit},
+				Deleted: []string{},
+				Symbols: symbols,
+			}
+			TASKLOG.Start("InsertBlob")
+			id, err := InsertBlob(tx, blob, repo)
+			TASKLOG.Start("idle")
+			if err != nil {
+				return errors.Wrap(err, "InsertBlob")
+			}
+			pathToBlobIdCache[addedPath] = id
+			TASKLOG.Start("ArchiveEach")
+			return nil
+		})
+		TASKLOG.Start("idle")
 
 		TASKLOG.Start("DeleteRedundant")
 		err = DeleteRedundant(tx, entry.Commit)
@@ -545,40 +551,47 @@ func (git SubprocessGit) RevListEach(givenCommit string, onCommit func(commit st
 	return RevListEach(output, onCommit)
 }
 
-func (git SubprocessGit) CatFile(commit string, path string) ([]byte, error) {
-	_, err := git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
-	if err != nil {
-		return nil, err
+func (git SubprocessGit) ArchiveEach(commit string, paths []string, onFile func(path string, contents []byte) error) error {
+	for _, path := range paths {
+		_, err := git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
+		if err != nil {
+			return err
+		}
+
+		line, err := git.catFileStdout.ReadString('\n')
+		if err != nil {
+			return err
+		}
+		line = line[:len(line)-1] // Drop the trailing newline
+		parts := strings.Split(line, " ")
+		if len(parts) != 3 {
+			return fmt.Errorf("unexpected cat-file output: %q", line)
+		}
+		size, err := strconv.ParseInt(parts[2], 10, 64)
+		if err != nil {
+			return err
+		}
+
+		fileContents, err := io.ReadAll(io.LimitReader(&git.catFileStdout, size))
+		if err != nil {
+			return err
+		}
+
+		discarded, err := git.catFileStdout.Discard(1) // Discard the trailing newline
+		if err != nil {
+			return err
+		}
+		if discarded != 1 {
+			return fmt.Errorf("expected to discard 1 byte, but discarded %d", discarded)
+		}
+
+		err = onFile(path, fileContents)
+		if err != nil {
+			return err
+		}
 	}
 
-	line, err := git.catFileStdout.ReadString('\n')
-	if err != nil {
-		return nil, err
-	}
-	line = line[:len(line)-1] // Drop the trailing newline
-	parts := strings.Split(line, " ")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("unexpected cat-file output: %q", line)
-	}
-	size, err := strconv.ParseInt(parts[2], 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
-	fileContents, err := io.ReadAll(io.LimitReader(&git.catFileStdout, size))
-	if err != nil {
-		return nil, err
-	}
-
-	discarded, err := git.catFileStdout.Discard(1) // Discard the trailing newline
-	if err != nil {
-		return nil, err
-	}
-	if discarded != 1 {
-		return nil, fmt.Errorf("expected to discard 1 byte, but discarded %d", discarded)
-	}
-
-	return fileContents, nil
+	return nil
 }
 
 func GetCommit(db Queryable, repo, givenCommit string) (ancestor string, height int, present bool, err error) {

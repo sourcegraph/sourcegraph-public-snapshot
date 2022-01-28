@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"path"
 	"strings"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -25,6 +24,7 @@ type repositoryFetcher struct {
 	fetchSem            chan int
 	operations          *operations
 	maxTotalPathsLength int
+	shouldRead          func(tarHeader *tar.Header) bool
 }
 
 type ParseRequest struct {
@@ -37,12 +37,13 @@ type parseRequestOrError struct {
 	Err          error
 }
 
-func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maximumConcurrentFetches int, maxTotalPathsLength int, observationContext *observation.Context) RepositoryFetcher {
+func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maximumConcurrentFetches int, maxTotalPathsLength int, observationContext *observation.Context, shouldRead func(tarHeader *tar.Header) bool) RepositoryFetcher {
 	return &repositoryFetcher{
 		gitserverClient:     gitserverClient,
 		fetchSem:            make(chan int, maximumConcurrentFetches),
 		operations:          newOperations(observationContext),
 		maxTotalPathsLength: maxTotalPathsLength,
+		shouldRead:          shouldRead,
 	}
 }
 
@@ -88,7 +89,7 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 		}
 		defer rc.Close()
 
-		err = readTar(ctx, tar.NewReader(rc), callback, trace)
+		err = readTar(ctx, tar.NewReader(rc), f.shouldRead, callback, trace)
 		if err != nil {
 			return errors.Wrap(err, "readTar")
 		}
@@ -149,7 +150,7 @@ func (f *repositoryFetcher) limitConcurrentFetches(ctx context.Context) (func(),
 	}
 }
 
-func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request ParseRequest), traceLog observation.TraceLogger) error {
+func readTar(ctx context.Context, tarReader *tar.Reader, shouldRead func(tarHeader *tar.Header) bool, callback func(request ParseRequest), traceLog observation.TraceLogger) error {
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -164,15 +165,13 @@ func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request P
 			return err
 		}
 
-		readTarHeader(tarReader, tarHeader, callback, traceLog)
+		if shouldRead(tarHeader) {
+			readTarHeader(tarReader, tarHeader, callback, traceLog)
+		}
 	}
 }
 
 func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(request ParseRequest), trace observation.TraceLogger) error {
-	if !shouldParse(tarHeader) {
-		return nil
-	}
-
 	// 32MB is the same size used by io.Copy
 	buffer := make([]byte, 32*1024)
 
@@ -219,26 +218,4 @@ func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(r
 	request := ParseRequest{Path: tarHeader.Name, Data: data}
 	callback(request)
 	return nil
-}
-
-// maxFileSize (512KB) is the maximum size of files we attempt to parse.
-const maxFileSize = 1 << 19
-
-func shouldParse(tarHeader *tar.Header) bool {
-	// We do not search large files
-	if tarHeader.Size > maxFileSize {
-		return false
-	}
-
-	// We only care about files
-	if tarHeader.Typeflag != tar.TypeReg && tarHeader.Typeflag != tar.TypeRegA {
-		return false
-	}
-
-	// JSON files are symbol-less
-	if path.Ext(tarHeader.Name) == ".json" {
-		return false
-	}
-
-	return true
 }

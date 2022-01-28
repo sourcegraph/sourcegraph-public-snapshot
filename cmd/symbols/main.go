@@ -3,11 +3,13 @@
 package main
 
 import (
+	"archive/tar"
 	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -110,13 +112,33 @@ func main() {
 
 	var searchFunc types.SearchFunc
 	if config.useRockskip {
-		searchFunc, err = api.MakeRockskipSearchFunc(api.NewOperations(observationContext), config.ctags, config.maxRepos)
+		searchFunc, err = api.MakeRockskipSearchFunc(observationContext, config.ctags, config.maxRepos)
 		if err != nil {
 			log.Fatalf("Failed to create rockskip search function: %s", err)
 		}
 	} else {
 		gitserverClient := gitserver.NewClient(observationContext)
-		repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, config.maxTotalPathsLength, observationContext)
+
+		shouldRead := func(tarHeader *tar.Header) bool {
+			// We do not search large files over 512KiB
+			if tarHeader.Size > 524288 {
+				return false
+			}
+
+			// We only care about files
+			if tarHeader.Typeflag != tar.TypeReg && tarHeader.Typeflag != tar.TypeRegA {
+				return false
+			}
+
+			// JSON files are symbol-less
+			if path.Ext(tarHeader.Name) == ".json" {
+				return false
+			}
+
+			return true
+		}
+
+		repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, config.maxTotalPathsLength, observationContext, shouldRead)
 		parser := parser.NewParser(parserPool, repositoryFetcher, config.requestBufferSize, config.numCtagsProcesses, observationContext)
 		databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
 		cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)

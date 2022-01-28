@@ -54,10 +54,11 @@ func (ctags Ctags) Close() {
 const HOME = "/Users/chrismwendt/"
 
 func TestIndex(t *testing.T) {
-	repo := "github.com/gorilla/mux"
+	// repo := "github.com/gorilla/mux"
 	// repo := "github.com/hashicorp/raft"
 	// repo := "github.com/crossplane/crossplane"
 	// repo := "github.com/kubernetes/kubernetes"
+	repo := "github.com/hashicorp/go-multierror"
 
 	git, err := NewSubprocessGit(repo)
 	if err != nil {
@@ -75,7 +76,7 @@ func TestIndex(t *testing.T) {
 	}
 	defer parser.Close()
 
-	revParse := exec.Command("git", "rev-parse", "HEAD")
+	revParse := exec.Command("git", "rev-parse", "HEAD~1")
 	revParse.Dir = HOME + repo
 	output, err := revParse.Output()
 	if err != nil {

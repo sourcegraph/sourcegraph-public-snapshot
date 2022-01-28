@@ -1,33 +1,44 @@
 package api
 
 import (
+	"archive/tar"
 	"bytes"
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	"sync"
 
 	"github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
+	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	rockskip "github.com/sourcegraph/sourcegraph/enterprise/cmd/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfig, maxRepos int) (types.SearchFunc, error) {
+func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig types.CtagsConfig, maxRepos int) (types.SearchFunc, error) {
 	var repoToMutexMutex = sync.Mutex{}
 	var repoToMutex = map[string]*sync.Mutex{}
 
 	parser := mustCreateCtagsParser(ctagsConfig)
+
+	operations := NewOperations(observationContext)
+	// TODO use operations
+	_ = operations
+
+	gitserverClient := symbolsGitserver.NewClient(observationContext)
+
+	shouldRead := func(tarHeader *tar.Header) bool { return true }
+	f := fetcher.NewRepositoryFetcher(gitserverClient, 16, observationContext, shouldRead)
 
 	db := mustInitializeCodeIntelDB()
 
@@ -76,7 +87,7 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 			return symbols, nil
 		}
 
-		err = rockskip.Index(NewGitserver(string(args.Repo)), db, parse, string(args.Repo), string(args.CommitID), maxRepos)
+		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, parse, string(args.Repo), string(args.CommitID), maxRepos)
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Index")
 		}
@@ -149,11 +160,13 @@ func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
 }
 
 type Gitserver struct {
+	f    fetcher.RepositoryFetcher
 	repo string
 }
 
-func NewGitserver(repo string) rockskip.Git {
+func NewGitserver(f fetcher.RepositoryFetcher, repo string) rockskip.Git {
 	return Gitserver{
+		f:    f,
 		repo: repo,
 	}
 }
@@ -183,8 +196,25 @@ func (g Gitserver) RevListEach(commit string, onCommit func(commit string) (shou
 	return rockskip.RevListEach(stdout, onCommit)
 }
 
-func (g Gitserver) CatFile(commit string, path string) ([]byte, error) {
-	command := gitserver.DefaultClient.Command("git", "cat-file", "blob", fmt.Sprintf("%s:%s", commit, path))
-	command.Repo = api.RepoName(g.repo)
-	return command.Output(context.Background())
+func (g Gitserver) ArchiveEach(commit string, paths []string, onFile func(path string, contents []byte) error) error {
+	args := types.SearchArgs{Repo: api.RepoName(g.repo), CommitID: api.CommitID(commit)}
+	parseRequestOrErrors := g.f.FetchRepositoryArchive(context.TODO(), args, paths)
+	defer func() {
+		// Ensure the channel is drained
+		for range parseRequestOrErrors {
+		}
+	}()
+
+	for parseRequestOrError := range parseRequestOrErrors {
+		if parseRequestOrError.Err != nil {
+			return parseRequestOrError.Err
+		}
+
+		err := onFile(parseRequestOrError.ParseRequest.Path, parseRequestOrError.ParseRequest.Data)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
