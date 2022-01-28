@@ -151,7 +151,7 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     return (
-        <div className="d-flex">
+        <div className={classNames('align-items-stretch', styles.referencesList)}>
             <div className={classNames('px-0', styles.sideReferences)}>
                 <SideReferences {...props} activeLocation={activeLocation} setActiveLocation={onReferenceClick} />
             </div>

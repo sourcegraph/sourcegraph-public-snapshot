@@ -92,13 +92,18 @@
     color: var(--icon-color);
 }
 
+.references-list {
+    display: flex;
+    min-height: 0;
+}
+
 .side-references {
     flex: 1;
+    overflow: scroll;
     max-height: 22vw;
-    overflow-y: scroll;
 }
 .side-blob {
     flex: 1;
+    overflow: scroll;
     overflow-y: scroll;
-    max-height: 22vw;
 }
