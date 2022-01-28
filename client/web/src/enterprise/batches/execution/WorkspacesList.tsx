@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Link } from '@sourcegraph/wildcard'
+import { Input, Link, Select } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../components/diff/DiffStat'
 import {
@@ -20,6 +20,7 @@ import { BatchSpecWorkspaceListFields, BatchSpecWorkspaceState, Scalars } from '
 import { Branch } from '../Branch'
 
 import { useWorkspacesListConnection } from './backend'
+import { isValidBatchSpecWorkspaceState } from './util'
 import styles from './WorkspacesList.module.scss'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
@@ -101,12 +102,15 @@ export interface WorkspaceFilterRowProps {
 export const WorkspaceFilterRow: React.FunctionComponent<WorkspaceFilterRowProps> = ({ onFiltersChange }) => {
     const history = useHistory()
     const searchElement = useRef<HTMLInputElement | null>(null)
-    const searchParameters = new URLSearchParams(history.location.search)
     const [state, setState] = useState<BatchSpecWorkspaceState | undefined>(() => {
+        const searchParameters = new URLSearchParams(history.location.search)
         const value = searchParameters.get('state')
         return value && isValidBatchSpecWorkspaceState(value) ? value : undefined
     })
-    const [search, setSearch] = useState<string | undefined>(() => searchParameters.get('search') ?? undefined)
+    const [search, setSearch] = useState<string | undefined>(() => {
+        const searchParameters = new URLSearchParams(history.location.search)
+        return searchParameters.get('search') ?? undefined
+    })
     useEffect(() => {
         const searchParameters = new URLSearchParams(history.location.search)
         if (state) {
@@ -131,44 +135,39 @@ export const WorkspaceFilterRow: React.FunctionComponent<WorkspaceFilterRowProps
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state, search])
 
-    const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
-            event?.preventDefault()
-            setSearch(searchElement.current?.value)
-        },
-        [setSearch, searchElement]
-    )
+    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(event => {
+        event?.preventDefault()
+        setSearch(searchElement.current?.value)
+    }, [])
 
     return (
-        <>
-            <div className="row no-gutters mr-1">
-                <div className="m-0 col">
-                    <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
-                        <input
-                            className="form-control flex-grow-1"
-                            type="search"
-                            ref={searchElement}
-                            defaultValue={search}
-                            placeholder="Search repository name"
+        <div className="row no-gutters mr-1">
+            <div className="m-0 col">
+                <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
+                    <Input
+                        className="form-control flex-grow-1"
+                        type="search"
+                        ref={searchElement}
+                        defaultValue={search}
+                        placeholder="Search repository name"
+                    />
+                </Form>
+            </div>
+            <div className="w-100 d-block d-md-none" />
+            <div className="m-0 col col-md-auto">
+                <div className="row no-gutters">
+                    <div className="col mb-2 ml-0 ml-md-2">
+                        <WorkspaceFilter<BatchSpecWorkspaceState>
+                            values={Object.values(BatchSpecWorkspaceState)}
+                            label="State"
+                            selected={state}
+                            onChange={setState}
+                            className="w-100"
                         />
-                    </Form>
-                </div>
-                <div className="w-100 d-block d-md-none" />
-                <div className="m-0 col col-md-auto">
-                    <div className="row no-gutters">
-                        <div className="col mb-2 ml-0 ml-md-2">
-                            <WorkspaceFilter<BatchSpecWorkspaceState>
-                                values={Object.values(BatchSpecWorkspaceState)}
-                                label="State"
-                                selected={state}
-                                onChange={setState}
-                                className="w-100"
-                            />
-                        </div>
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     )
 }
 
@@ -195,19 +194,19 @@ export const WorkspaceFilter = <T extends string>({
     )
 
     return (
-        <>
-            <select className={classNames('form-control', className)} value={selected} onChange={innerOnChange}>
-                <option value="">{label}</option>
-                {values.map(state => (
-                    <option value={state} key={state}>
-                        {upperFirst(lowerCase(state))}
-                    </option>
-                ))}
-            </select>
-        </>
+        <Select
+            id="workspace-state"
+            className={className}
+            value={selected}
+            onChange={innerOnChange}
+            aria-label="Filter by workspace state"
+        >
+            <option value="">{label}</option>
+            {values.map(state => (
+                <option value={state} key={state}>
+                    {upperFirst(lowerCase(state))}
+                </option>
+            ))}
+        </Select>
     )
-}
-
-function isValidBatchSpecWorkspaceState(state: string): state is BatchSpecWorkspaceState {
-    return Object.values(BatchSpecWorkspaceState).some(value => value === state)
 }

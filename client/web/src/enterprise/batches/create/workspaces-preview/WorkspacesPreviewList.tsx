@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -16,6 +16,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import { Input } from '@sourcegraph/wildcard'
 
 import {
     Scalars,
@@ -139,49 +140,48 @@ export const WorkspacePreviewFilterRow: React.FunctionComponent<WorkspacePreview
 }) => {
     const history = useHistory()
     const searchElement = useRef<HTMLInputElement | null>(null)
-    const searchParameters = new URLSearchParams(history.location.search)
-    const [search, setSearch] = useState<string | undefined>(() => searchParameters.get('search') ?? undefined)
-    useEffect(() => {
+    const [search, setSearch] = useState<string | undefined>(() => {
         const searchParameters = new URLSearchParams(history.location.search)
-        if (search) {
-            searchParameters.set('search', search)
-        } else {
-            searchParameters.delete('search')
-        }
-        if (history.location.search !== searchParameters.toString()) {
-            history.replace({ ...history.location, search: searchParameters.toString() })
-        }
-        // Update the filters in the parent component.
-        onFiltersChange({
-            search: search || null,
-        })
-        // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search])
+        return searchParameters.get('search') ?? undefined
+    })
 
-    const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
+    const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
+        event => {
             event?.preventDefault()
-            setSearch(searchElement.current?.value)
+            const value = searchElement.current?.value
+            setSearch(value)
+
+            // Update the location, too.
+            const searchParameters = new URLSearchParams(history.location.search)
+            if (value) {
+                searchParameters.set('search', value)
+            } else {
+                searchParameters.delete('search')
+            }
+            if (history.location.search !== searchParameters.toString()) {
+                history.replace({ ...history.location, search: searchParameters.toString() })
+            }
+            // Update the filters in the parent component.
+            onFiltersChange({
+                search: value || null,
+            })
         },
-        [setSearch, searchElement]
+        [history, onFiltersChange]
     )
 
     return (
-        <>
-            <div className="row no-gutters mr-1">
-                <div className="m-0 col">
-                    <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
-                        <input
-                            className="form-control flex-grow-1"
-                            type="search"
-                            ref={searchElement}
-                            defaultValue={search}
-                            placeholder="Search repository name"
-                        />
-                    </Form>
-                </div>
+        <div className="row no-gutters mr-1">
+            <div className="m-0 col">
+                <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
+                    <Input
+                        className="flex-grow-1"
+                        type="search"
+                        ref={searchElement}
+                        defaultValue={search}
+                        placeholder="Search repository name"
+                    />
+                </Form>
             </div>
-        </>
+        </div>
     )
 }
