@@ -73,11 +73,11 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
 		withoutContextFilter := query.OmitField(q, query.FieldContext)
 		proposedQueries := []*search.ProposedQuery{
-			search.NewProposedQuery(
-				"search in the global context",
-				fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
-				o.PatternType,
-			),
+			{
+				Description: "search in the global context",
+				Query:       fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
+				PatternType: o.PatternType,
+			},
 		}
 
 		return &search.Alert{
@@ -114,11 +114,11 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 		if o.reposExist(ctx, tryIncludeForks) {
 			proposedQueries = append(proposedQueries,
-				search.NewProposedQuery(
-					"include forked repositories in your query.",
-					o.OriginalQuery+" fork:yes",
-					o.PatternType,
-				),
+				&search.ProposedQuery{
+					Description: "include forked repositories in your query.",
+					Query:       o.OriginalQuery + " fork:yes",
+					PatternType: o.PatternType,
+				},
 			)
 		}
 	}
@@ -133,11 +133,11 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 		if o.reposExist(ctx, tryIncludeArchived) {
 			proposedQueries = append(proposedQueries,
-				search.NewProposedQuery(
-					"include archived repositories in your query.",
-					o.OriginalQuery+" archived:yes",
-					o.PatternType,
-				),
+				&search.ProposedQuery{
+					Description: "include archived repositories in your query.",
+					Query:       o.OriginalQuery + " archived:yes",
+					PatternType: o.PatternType,
+				},
 			)
 		}
 	}
