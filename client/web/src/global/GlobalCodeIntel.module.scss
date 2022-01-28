@@ -28,6 +28,11 @@
 
 .reference-link {
     color: inherit;
+
+    span {
+        font-family: monospace;
+        color: var(--primary);
+    }
 }
 
 .resizable-panel {

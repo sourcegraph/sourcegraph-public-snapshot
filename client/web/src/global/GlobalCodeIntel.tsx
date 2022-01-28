@@ -177,8 +177,7 @@ export const ReferencesList: React.FunctionComponent<
 
     return (
         <div>
-            <h3 className="card-header">Doc</h3>
-            {hover && <div className="card-body" dangerouslySetInnerHTML={{ __html: hover.markdown.html }} />}
+            {hover && <div className="card-body mb-0" dangerouslySetInnerHTML={{ __html: hover.markdown.html }} />}
             <h3 className="card-header">Definitions</h3>
             {definitions.length > 0 ? (
                 <LocationsList
@@ -375,8 +374,10 @@ const ReferenceGroup: React.FunctionComponent<{
                                         to={fileURL}
                                         className={styles.referenceLink}
                                     >
-                                        {reference.range?.start?.line}
-                                        {': '}
+                                        <span>
+                                            {reference.range?.start?.line}
+                                            {': '}
+                                        </span>
                                         <code>{getLineContent(reference)}</code>
                                     </Link>
                                 </div>
