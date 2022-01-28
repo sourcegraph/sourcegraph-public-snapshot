@@ -216,7 +216,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
             <RepoHeaderActionAnchor
                 className="btn test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
-                href={hijackLink ? '' : url}
+                to={hijackLink ? '' : url}
                 target="_blank"
                 file={true}
                 rel="noopener noreferrer"
@@ -235,7 +235,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
             <RepoHeaderActionAnchor
                 className="btn btn-icon test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
-                href={hijackLink ? '' : url}
+                to={hijackLink ? '' : url}
                 target="_blank"
                 rel="noopener noreferrer"
                 id={TARGET_ID}

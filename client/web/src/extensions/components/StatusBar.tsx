@@ -9,9 +9,8 @@ import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Badge, Button, useObservable, Link } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable, Link, ButtonLink } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -195,7 +194,7 @@ const StatusBarItem: React.FunctionComponent<
             className={classNames(
                 'h-100 d-flex align-items-center px-1',
                 styles.item,
-                noop && classNames('text-decoration-none', styles.itemNoop),
+                noop && styles.itemNoop,
                 className
             )}
             data-tooltip={statusBarItem.tooltip}

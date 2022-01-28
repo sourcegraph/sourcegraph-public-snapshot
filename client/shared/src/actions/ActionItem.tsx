@@ -6,12 +6,11 @@ import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, ButtonLink, ButtonLinkProps } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { ActionContribution, Evaluated } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
-import { ButtonLink } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -45,6 +44,10 @@ export interface ActionItemComponentProps
     location: H.Location
 
     iconClassName?: string
+
+    actionItemVariant?: ButtonLinkProps['variant']
+    actionItemSize?: ButtonLinkProps['size']
+    actionItemOutline?: ButtonLinkProps['outline']
 }
 
 export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
@@ -240,6 +243,11 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                       rel: 'noopener noreferrer',
                   }
                 : {}
+        const buttonLinkProps: Partial<ButtonLinkProps> = {
+            variant: this.props.actionItemVariant ?? 'link',
+            size: this.props.actionItemSize,
+            outline: this.props.actionItemOutline,
+        }
 
         return (
             <ButtonLink
@@ -261,7 +269,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     'test-action-item',
                     this.props.className,
                     showLoadingSpinner && styles.actionItemLoading,
-                    pressed && [this.props.pressedClassName]
+                    pressed && [this.props.pressedClassName],
+                    buttonLinkProps.variant === 'link' && 'p-0 font-weight-normal border-0 align-baseline d-inline'
                 )}
                 pressed={pressed}
                 onSelect={this.runAction}
@@ -269,6 +278,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 // it as a button that executes the command.
                 to={to}
                 {...newTabProps}
+                {...buttonLinkProps}
                 tabIndex={this.props.tabIndex}
             >
                 {content}{' '}

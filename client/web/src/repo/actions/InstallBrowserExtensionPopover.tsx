@@ -5,8 +5,8 @@ import React, { useMemo } from 'react'
 import FocusLock from 'react-focus-lock'
 import { Popover } from 'reactstrap'
 
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../auth/icons'
 
@@ -86,7 +86,9 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
 
                         <div className="d-flex justify-content-end">
                             <ButtonLink
-                                className="btn btn-outline-secondary mr-2"
+                                variant="secondary"
+                                outline={true}
+                                className="mr-2"
                                 onSelect={onReject}
                                 to={url}
                                 {...linkProps}
@@ -95,7 +97,9 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                             </ButtonLink>
 
                             <ButtonLink
-                                className="btn btn-outline-secondary mr-2"
+                                variant="secondary"
+                                outline={true}
+                                className="mr-2"
                                 onSelect={onClose}
                                 to={url}
                                 {...linkProps}
@@ -104,7 +108,8 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                             </ButtonLink>
 
                             <ButtonLink
-                                className="btn btn-primary mr-2"
+                                variant="primary"
+                                className="mr-2"
                                 onSelect={onInstall}
                                 to="/help/integration/browser_extension"
                                 {...linkProps}

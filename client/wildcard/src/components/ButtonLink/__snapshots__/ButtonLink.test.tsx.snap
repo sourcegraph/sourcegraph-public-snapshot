@@ -22,7 +22,9 @@ exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
     data-pressed="true"
     data-tooltip="SourceGraph.com"
     href="https://sourcegraph.com"
+    rel="noopener noreferrer"
     tabindex="0"
+    target="_blank"
   >
     Button link
   </a>
