@@ -48,10 +48,12 @@ var (
 		parentHashes,
 	}
 
-	// commitSeparator is a special sequence of bytes we use to separate each commit, zero bytes surrounding "SEP".
-	// This is required since the number of zero byte separators per commit changes depending on the number of
-	// files modified in the commit.
-	commitSeparator = []byte("\x00SEP\x00")
+	// commitSeparator is a special ascii code we use to separate each commit, the
+	// ASCII record separator:
+	// https://www.asciihex.com/character/control/30/0x1E/rs-record-separator. This
+	// is required since the number of zero byte separators per commit changes
+	// depending on the number of files modified in the commit.
+	commitSeparator = []byte("\x1E")
 
 	// Note that we begin each commit with a special string constant. This allows us
 	// to easily separate each commit since the number of parts in each commit varies
@@ -61,7 +63,7 @@ var (
 		"--decorate=full",
 		"-z",
 		"--no-merges",
-		"--format=format:" + "%x00SEP%x00" + strings.Join(commitFields, "%x00") + "%x00",
+		"--format=format:" + "%x1E" + strings.Join(commitFields, "%x00") + "%x00",
 	}
 
 	sep = []byte{0x0}
@@ -292,14 +294,12 @@ func NewCommitScanner(r io.Reader, includeModifiedFiles bool) *CommitScanner {
 
 	// Split by commit
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if len(data) == 0 { // should only happen when atEOF
-			return 0, nil, nil
-		}
-
-		// Ensure that we always have the pattern SEP + data + SEP, even if we are at the
-		// end of out input.
-		if atEOF && !bytes.HasSuffix(data, commitSeparator) {
-			data = append(data, commitSeparator...)
+		if len(data) == 0 {
+			if !atEOF {
+				// Read more data
+				return 0, nil, nil
+			}
+			return 0, nil, errors.Errorf("incomplete data")
 		}
 
 		if !bytes.HasPrefix(data, commitSeparator) {
@@ -307,21 +307,17 @@ func NewCommitScanner(r io.Reader, includeModifiedFiles bool) *CommitScanner {
 			return 0, nil, errors.Errorf("expected commit separator")
 		}
 
-		// We expect at least two separators, if not, we need to read more data.
-		if bytes.Count(data, commitSeparator) < 2 {
-			return 0, nil, nil
-		}
-
-		// We know our data begins with our separator, so we can drop it
-		data = data[len(commitSeparator):]
-		// Find the next separator and read to there
-		idx := bytes.Index(data, commitSeparator)
+		// Find the index of the next separator
+		idx := bytes.Index(data[1:], commitSeparator)
 		if idx == -1 {
-			return 0, nil, errors.Errorf("commit separator not found")
+			if !atEOF {
+				return 0, nil, nil
+			}
+			return len(data), data[1:], nil
 		}
-		token = data[:idx]
+		token = data[1 : idx+1]
 
-		return len(token) + len(commitSeparator), token, nil
+		return len(token) + 1, token, nil
 	})
 
 	return &CommitScanner{
