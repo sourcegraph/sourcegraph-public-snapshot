@@ -33,6 +33,7 @@ import {
     retryWhen,
     mapTo,
     take,
+    distinct,
 } from 'rxjs/operators'
 import { HoverAlert } from 'sourcegraph'
 
@@ -1463,46 +1464,63 @@ function initializeGithubSearchPageEnhancement(
 
     // advanced search page
     if (githubURL.pathname === '/search/advanced') {
+        // TODO: consider accessing input fields using 'form#search_form' selector
         // render advanced search page enhancement
         return
     }
 
     // search results page
-    const searchQuery = githubURL.searchParams.get('q')
-    if (searchQuery) {
+    const urlSearchQuery = githubURL.searchParams.get('q')
+    if (urlSearchQuery) {
         // render search results page enhancement
-        const container = document.querySelector('.codesearch-results')
+        const resultsContainer = document.querySelector('.codesearch-results')
 
         // TODO: handle not found case
-        if (container) {
-            // build sourcegraph URL query params
-            const queryParameters = [searchQuery]
+        if (resultsContainer) {
+            const biuldSourcegraphURL = (searchTerm: string): string => {
+                const queryParameters = searchTerm.split(' ')
 
-            const githubResultType = githubURL.searchParams.get('type')
-            let sourcegraphResultType = ''
-            if (!githubResultType || githubResultType === 'repositories') {
-                sourcegraphResultType = 'repo'
-            } else if (githubResultType === 'commits') {
-                sourcegraphResultType = 'commit'
+                const githubResultType = githubURL.searchParams.get('type')
+                let sourcegraphResultType = ''
+                if (!githubResultType || githubResultType === 'repositories') {
+                    sourcegraphResultType = 'repo'
+                } else if (githubResultType === 'commits') {
+                    sourcegraphResultType = 'commit'
+                }
+
+                if (sourcegraphResultType) {
+                    queryParameters.push(`type:${sourcegraphResultType}`)
+                }
+
+                // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be corretly parsed by sourcegraph search page.
+                // TODO: investigate possible risks search params direct assignment may introduce.
+                return `${new URL('/search', sourcegraphURL).href}?q=${queryParameters.join('+')}`
             }
-            if (sourcegraphResultType) {
-                queryParameters.push(`type:${sourcegraphResultType}`)
-            }
 
-            // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be corretly parsed by sourcegraph search page.
-            // TODO: investigate possible risks search params direct assignment may introduce.
-            const sourcegraphURLHref = `${new URL('/search', sourcegraphURL).href}?q=${queryParameters.join('+')}`
-
-            console.log(sourcegraphURLHref)
             // create link to sourcegraph search page
             const link = document.createElement('a')
-            link.setAttribute('href', sourcegraphURLHref)
+            link.setAttribute('href', biuldSourcegraphURL(urlSearchQuery))
             link.setAttribute('target', '_blank')
             link.setAttribute('rel', 'noopener noreferrer')
             link.textContent = 'Search in Sourcegraph'
 
             // render link
-            container?.prepend(link)
+            resultsContainer?.prepend(link)
+
+            // track search input changes and update sourcegraph link href
+            const headerSearchInput = document.querySelector('.header-search-input')
+
+            if (headerSearchInput) {
+                fromEvent(headerSearchInput, 'blur')
+                    .pipe(
+                        map(event => (event.target instanceof HTMLInputElement ? event.target.value.trim() : '')),
+                        distinct()
+                    )
+                    // TODO: observable is unsubscribed
+                    .subscribe(searchInputValue => {
+                        link.setAttribute('href', biuldSourcegraphURL(searchInputValue))
+                    })
+            }
         }
 
         return
