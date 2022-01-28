@@ -95,6 +95,7 @@ export interface BlobProps
     /** The current text document to be rendered and provided to extensions */
     blobInfo: BlobInfo
     onHoverToken: (hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec) => void
+    disableStatusBar: boolean
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -636,15 +637,17 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         })
                         .toArray()}
             </div>
-            <StatusBar
-                getStatusBarItems={getStatusBarItems}
-                extensionsController={extensionsController}
-                uri={toURIWithPath(blobInfo)}
-                location={location}
-                className={styles.blobStatusBarBody}
-                statusBarRef={nextStatusBarElement}
-                hideWhileInitializing={true}
-            />
+            {!props.disableStatusBar && (
+                <StatusBar
+                    getStatusBarItems={getStatusBarItems}
+                    extensionsController={extensionsController}
+                    uri={toURIWithPath(blobInfo)}
+                    location={location}
+                    className={styles.blobStatusBarBody}
+                    statusBarRef={nextStatusBarElement}
+                    hideWhileInitializing={true}
+                />
+            )}
         </>
     )
 }
