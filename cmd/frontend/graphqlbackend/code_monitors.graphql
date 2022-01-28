@@ -1,3 +1,29 @@
+extend type Query {
+    """
+    Runs a code monitor search.
+    """
+    codeMonitorSearch(
+        """
+        The version of the search syntax being used.
+        All new clients should use the latest version.
+        """
+        version: SearchVersion = V2
+        """
+        PatternType controls the search pattern type, if and only if it is not specified in the query string using
+        the patternType: field.
+        """
+        patternType: SearchPatternType
+        """
+        The search query (such as "foo" or "repo:myrepo foo").
+        """
+        query: String = ""
+        """
+        codeMonitorID is the code monitor associated with this search
+        """
+        codeMonitorID: ID!
+    ): Search
+}
+
 extend type Mutation {
     """
     Create a code monitor.
