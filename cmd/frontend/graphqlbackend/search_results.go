@@ -810,6 +810,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				Diff:          diff,
 				HasTimeFilter: commit.HasTimeFilter(args.Query),
 				Limit:         int(args.PatternInfo.FileMatchLimit),
+				CodeMonitorID: inputs.CodeMonitorID,
 			})
 		}
 
