@@ -1,26 +1,22 @@
 package backend
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
-	"path"
-	"path/filepath"
-	"sort"
+	"net/url"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)
@@ -32,9 +28,7 @@ var (
 
 // CountGoImporters returns the number of Go importers for the repository's Go subpackages. This is
 // a special case used only on Sourcegraph.com for repository badges.
-//
-// TODO: The import path is not always the same as the repository name.
-func CountGoImporters(ctx context.Context, db database.DB, repo api.RepoName) (count int, err error) {
+func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) (count int, err error) {
 	if MockCountGoImporters != nil {
 		return MockCountGoImporters(ctx, repo)
 	}
@@ -62,109 +56,73 @@ func CountGoImporters(ctx context.Context, db database.DB, repo api.RepoName) (c
 		}
 	}()
 
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second) // avoid tying up resources unduly
-	defer cancel()
+	var q struct {
+		Query     string
+		Variables map[string]interface{}
+	}
 
-	// Find all (possible) Go packages in the repository.
-	goPackages, err := listGoPackagesInRepoImprecise(ctx, db, repo)
+	q.Query = countGoImportersGraphQLQuery
+	q.Variables = map[string]interface{}{
+		"query": fmt.Sprintf(`f:go\.mod ^\s+%s\S*\s+v.* count:all visibility:public timeout:20s`, repo),
+	}
+
+	body, err := json.Marshal(q)
 	if err != nil {
 		return 0, err
 	}
-	const maxSubpackages = 50 // arbitrary limit to avoid overloading api.godoc.org
-	if len(goPackages) > maxSubpackages {
-		goPackages = goPackages[:maxSubpackages]
+
+	rawurl, err := gqlURL("CountGoImporters")
+	if err != nil {
+		return 0, err
 	}
 
-	// Count importers for each of the repository's Go packages.
-	//
-	// TODO: The count sums together the user counts of all of the repository's subpackages. This
-	// overcounts the number of users, because if another project uses multiple subpackages in this
-	// repository, it is counted multiple times. This limitation is now documented and will be
-	// addressed in the future. See https://github.com/sourcegraph/sourcegraph/issues/2663.
-	for _, pkg := range goPackages {
-		// Assumes the import path is the same as the repo name - not always true!
-		req, err := http.NewRequest("GET", "https://api.godoc.org/importers/"+pkg, nil)
-		if err != nil {
-			return 0, err
-		}
-
-		response, err := countGoImportersHTTPClient.Do(req.WithContext(ctx))
-		if err != nil {
-			return 0, err
-		}
-		defer response.Body.Close()
-
-		var result struct {
-			Results []struct {
-				Path string
-			}
-		}
-		bytes, err := io.ReadAll(response.Body)
-		if err != nil {
-			return 0, err
-		}
-		err = json.Unmarshal(bytes, &result)
-		if err != nil {
-			return 0, err
-		}
-		count += len(result.Results)
+	req, err := http.NewRequestWithContext(ctx, "POST", rawurl, bytes.NewReader(body))
+	if err != nil {
+		return 0, err
 	}
 
-	return count, nil
+	resp, err := cli.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, errors.Wrap(err, "ReadBody")
+	}
+
+	var v struct {
+		Data struct {
+			Search struct{ Results struct{ MatchCount int } }
+		}
+		Errors []interface{}
+	}
+
+	if err := json.Unmarshal(respBody, &v); err != nil {
+		return 0, errors.Wrap(err, "Decode")
+	}
+
+	if len(v.Errors) > 0 {
+		return 0, errors.Errorf("graphql: errors: %v", v.Errors)
+	}
+
+	return v.Data.Search.Results.MatchCount, nil
 }
 
-// listGoPackagesInRepoImprecise returns a list of import paths for all (probable) Go packages in
-// the repository. It computes the list based solely on the repository name (as a prefix) and
-// filenames in the repository; it does not parse or build the Go files to determine the list
-// precisely.
-func listGoPackagesInRepoImprecise(ctx context.Context, db database.DB, repoName api.RepoName) ([]string, error) {
-	if !envvar.SourcegraphDotComMode() {
-		// 🚨 SECURITY: Avoid leaking information about private repositories that the viewer is not
-		// allowed to access.
-		return nil, errors.New(
-			"listGoPackagesInRepoImprecise is only supported on Sourcegraph.com for public repositories",
-		)
-	}
-
-	repo, err := NewRepos(db.Repos()).GetByName(ctx, repoName)
+// gqlURL returns the frontend's internal GraphQL API URL, with the given ?queryName parameter
+// which is used to keep track of the source and type of GraphQL queries.
+func gqlURL(queryName string) (string, error) {
+	u, err := url.Parse(internalapi.Client.URL)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-
-	commitID, err := git.ResolveRevision(ctx, repo.Name, "HEAD", git.ResolveRevisionOptions{})
-	if err != nil {
-		return nil, err
-	}
-	fis, err := git.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "", true)
-	if err != nil {
-		return nil, err
-	}
-
-	subpaths := map[string]struct{}{} // all non-vendor/internal/hidden dirs containing *.go files
-	for _, fi := range fis {
-		if name := fi.Name(); filepath.Ext(name) == ".go" {
-			dir := path.Dir(name)
-			if isPossibleExternallyImportableGoPackageDir(dir) {
-				subpaths[dir] = struct{}{}
-			}
-		}
-	}
-
-	importPaths := make([]string, 0, len(subpaths))
-	for subpath := range subpaths {
-		importPaths = append(importPaths, path.Join(string(repo.Name), subpath))
-	}
-	sort.Strings(importPaths)
-	return importPaths, nil
+	u.Path = "/.internal/graphql"
+	u.RawQuery = queryName
+	return u.String(), nil
 }
 
-func isPossibleExternallyImportableGoPackageDir(dirPath string) bool {
-	components := strings.Split(dirPath, "/")
-	for _, c := range components {
-		if (strings.HasPrefix(c, ".") && len(c) > 1) || strings.HasPrefix(c, "_") || c == "vendor" || c == "internal" ||
-			c == "testdata" {
-			return false
-		}
-	}
-	return true
-}
+const countGoImportersGraphQLQuery = `
+query CountGoImporters($query: String!) {
+  search(query: $query) { results { matchCount } }
+}`
