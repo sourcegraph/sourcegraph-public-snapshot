@@ -3,7 +3,7 @@ import React from 'react'
 
 import { LoadingSpinner, Button, ButtonProps } from '@sourcegraph/wildcard'
 
-interface Props extends Omit<ButtonProps, 'as'> {
+interface Props extends ButtonProps {
     loading: boolean
     label: string
     alwaysShowLabel: boolean

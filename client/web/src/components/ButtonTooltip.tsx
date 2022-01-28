@@ -4,7 +4,7 @@ import { Button, ButtonProps } from '@sourcegraph/wildcard'
 
 import styles from './InputTooltip.module.scss'
 
-interface ButtonTooltipProps extends Omit<ButtonProps, 'as'> {
+interface ButtonTooltipProps extends ButtonProps {
     tooltip?: string
 }
 
