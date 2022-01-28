@@ -254,7 +254,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
-	pipeline.AddStep("fail!", bk.Cmd("exit 1"))
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline has unique keys
@@ -263,16 +262,24 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Add a notify block
-	if c.RunType.Is(MainBranch) || true {
+	if c.RunType.Is(MainBranch) {
 		ctx := context.Background()
-		ghc := github.NewClient(http.DefaultClient)
+
+		// Slack client for retriving Slack profile data, not for making the request - for
+		// more details, see the config.Notify docstring.
 		slc := slack.New(c.Notify.SlackToken)
+
+		// For now, we use an unauthenticated GitHub client because `sourcegraph/sourcegraph`
+		// is a public repository.
+		ghc := github.NewClient(http.DefaultClient)
+
+		// Get teammate based on GitHub author of commit
 		teammates := team.NewTeammateResolver(ghc, slc)
 		tm, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", c.Commit)
 		if err != nil {
-			pipeline.AddSlackNotify(c.Notify.Channel, "", fmt.Errorf("failed to get Slack user: %w", err))
+			pipeline.AddFailureSlackNotify(c.Notify.Channel, "", fmt.Errorf("failed to get Slack user: %w", err))
 		} else {
-			pipeline.AddSlackNotify(c.Notify.Channel, tm.SlackID, nil)
+			pipeline.AddFailureSlackNotify(c.Notify.Channel, tm.SlackID, nil)
 		}
 	}
 

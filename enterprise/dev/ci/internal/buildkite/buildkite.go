@@ -188,7 +188,9 @@ type slackChannelsNotification struct {
 	Message  string   `json:"message"`
 }
 
-func (p *Pipeline) AddSlackNotify(channel string, mentionUserID string, err error) {
+// AddFailureSlackNotify configures a notify block that updates the given channel if the
+// build fails.
+func (p *Pipeline) AddFailureSlackNotify(channel string, mentionUserID string, err error) {
 	n := slackChannelsNotification{
 		Channels: []string{channel},
 	}
