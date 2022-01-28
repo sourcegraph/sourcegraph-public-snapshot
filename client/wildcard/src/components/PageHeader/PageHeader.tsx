@@ -46,6 +46,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
     className,
     headingElement: HeadingX = 'h1',
 }) => {
+    console.log('Hello!')
     if (path.length === 0) {
         return null
     }
