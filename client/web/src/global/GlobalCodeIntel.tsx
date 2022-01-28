@@ -22,7 +22,7 @@ import {
 import { Tab, TabList, TabPanel, TabPanels, Tabs, Link, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables } from '../graphql-operations'
-import { BlobProps } from '../repo/blob/Blob'
+import { Blob, BlobProps } from '../repo/blob/Blob'
 
 import styles from './GlobalCodeIntel.module.scss'
 import { FETCH_REFERENCES_QUERY } from './GlobalCodeIntelQueries'
@@ -97,6 +97,9 @@ interface Location {
         commit: {
             oid: string
         }
+        highlight: {
+            html: string
+        }
     }
     range?: {
         start: {
@@ -131,6 +134,27 @@ export const ReferencesList: React.FunctionComponent<
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
 
+    return (
+        <div className={classNames('', activeLocation !== undefined ? 'd-flex' : 'd-flex')}>
+            <div className={classNames('px-0', styles.sideReferences)}>
+                <SideReferences {...props} activeLocation={activeLocation} setActiveLocation={setActiveLocation} />
+            </div>
+            {activeLocation !== undefined && (
+                <div className={classNames('px-0 border-left', styles.sideBlob)}>
+                    <SideBlob {...props} activeLocation={activeLocation} />
+                </div>
+            )}
+        </div>
+    )
+}
+
+export const SideReferences: React.FunctionComponent<
+    {
+        hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+        setActiveLocation: (location: Location | undefined) => void
+        activeLocation: Location | undefined
+    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
+> = props => {
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
         FETCH_REFERENCES_QUERY,
         {
@@ -180,6 +204,7 @@ export const ReferencesList: React.FunctionComponent<
                 content: node.resource.content,
                 path: node.resource.path,
                 commit: node.resource.commit,
+                highlight: { html: node.resource.highlight.html },
             },
             url: '',
             lines: [],
@@ -200,6 +225,7 @@ export const ReferencesList: React.FunctionComponent<
                 content: node.resource.content,
                 path: node.resource.path,
                 commit: node.resource.commit,
+                highlight: { html: node.resource.highlight.html },
             },
             url: '',
             lines: [],
@@ -215,7 +241,7 @@ export const ReferencesList: React.FunctionComponent<
     const hover = data.repository.commit?.blob?.lsif?.hover
 
     return (
-        <div>
+        <>
             {hover && (
                 <Markdown
                     className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
@@ -226,8 +252,8 @@ export const ReferencesList: React.FunctionComponent<
             {definitions.length > 0 ? (
                 <LocationsList
                     locations={definitions}
-                    activeLocation={activeLocation}
-                    setActiveLocation={setActiveLocation}
+                    activeLocation={props.activeLocation}
+                    setActiveLocation={props.setActiveLocation}
                 />
             ) : (
                 <p className="text-muted pl-2">
@@ -238,17 +264,43 @@ export const ReferencesList: React.FunctionComponent<
             {references.length > 0 ? (
                 <LocationsList
                     locations={references}
-                    activeLocation={activeLocation}
-                    setActiveLocation={setActiveLocation}
+                    activeLocation={props.activeLocation}
+                    setActiveLocation={props.setActiveLocation}
                 />
             ) : (
                 <p className="text-muted pl-2">
                     <i>No references found</i>
                 </p>
             )}
-        </div>
+        </>
     )
 }
+
+export const SideBlob: React.FunctionComponent<
+    {
+        hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+        activeLocation: Location
+    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
+> = props => (
+    <Blob
+        {...props}
+        onHoverToken={(token: HoveredToken) => {
+            console.log('sideblob token', token)
+        }}
+        disableStatusBar={true}
+        wrapCode={true}
+        className={styles.sideBlob}
+        blobInfo={{
+            content: props.activeLocation.resource.content,
+            html: props.activeLocation.resource.highlight.html,
+            filePath: props.activeLocation.resource.path,
+            repoName: props.activeLocation.resource.repository.name,
+            commitID: props.activeLocation.resource.commit.oid,
+            revision: props.activeLocation.resource.commit.oid,
+            mode: 'lspmode',
+        }}
+    />
+)
 
 const buildFileURL = (location: Location): string => {
     const path = `/${location.resource.repository.name}/-/blob/${location.resource.path}`
