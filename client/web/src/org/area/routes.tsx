@@ -19,8 +19,9 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
         path: '/settings',
         render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
     },
+    // PIROS: FFLAG HERE
     {
-        path: '/members',
+        path: '/members-v2',
         render: props => <OrgMembersArea {...props} isLightTheme={props.isLightTheme} />,
     },
     ...namespaceAreaRoutes,

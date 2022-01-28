@@ -19,6 +19,7 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE } from '../backend'
 
 import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
+import { OrgSettingsMembersPage } from './members-v1/OrgSettingsMembersPage'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
 
@@ -104,14 +105,15 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     <OrgSettingsProfilePage {...routeComponentProps} {...props} />
                                 )}
                             />
-                            {/* <Route
-                                path={`${props.match.path}/members`}
+                            {/* PIROS: FFLAG HERE */}
+                            <Route
+                                path={`${props.match.path}/members-v1`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 render={routeComponentProps => (
                                     <OrgSettingsMembersPage {...routeComponentProps} {...props} />
                                 )}
-                            /> */}
+                            />
                             {showOrgCode && [
                                 <Route
                                     path={`${props.match.path}/code-hosts`}

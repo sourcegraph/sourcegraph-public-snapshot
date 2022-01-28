@@ -13,8 +13,9 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
         icon: CogOutlineIcon,
         condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
     },
+    // PIROS: FFLAG HERE
     {
-        to: '/members',
+        to: '/members-v2',
         label: 'Members',
         icon: AccountMultipleIcon,
         condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
