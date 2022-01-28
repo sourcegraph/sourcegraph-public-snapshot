@@ -180,6 +180,7 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 
 type slackNotifier struct {
 	Slack slackChannelsNotification `json:"slack"`
+	If    string                    `json:"if"`
 }
 
 type slackChannelsNotification struct {
@@ -199,6 +200,7 @@ func (p *Pipeline) AddSlackNotify(channel string, mentionUserID string, err erro
 	}
 	p.Notify = append(p.Notify, slackNotifier{
 		Slack: n,
+		If:    `build.state == "failed"`,
 	})
 }
 

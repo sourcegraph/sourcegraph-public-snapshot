@@ -262,7 +262,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Add a notify block
-	if c.RunType.Is(MainBranch) {
+	if c.RunType.Is(MainBranch) || true {
 		ctx := context.Background()
 		ghc := github.NewClient(http.DefaultClient)
 		slc := slack.New(c.Notify.SlackToken)
