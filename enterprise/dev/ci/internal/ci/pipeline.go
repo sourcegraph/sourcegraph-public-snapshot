@@ -254,6 +254,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
+	pipeline.AddStep("fail!", bk.Cmd("exit 1"))
 	ops.Apply(pipeline)
 
 	// Validate generated pipeline has unique keys
