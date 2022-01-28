@@ -23,12 +23,11 @@ type Pipeline struct {
 }
 
 type BuildOptions struct {
-	Message   string                 `json:"message,omitempty"`
-	Commit    string                 `json:"commit,omitempty"`
-	Branch    string                 `json:"branch,omitempty"`
-	MetaData  map[string]interface{} `json:"meta_data,omitempty"`
-	Env       map[string]string      `json:"env,omitempty"`
-	IsDraftPR bool                   `json:"is_draft_pr,omitempty"`
+	Message  string                 `json:"message,omitempty"`
+	Commit   string                 `json:"commit,omitempty"`
+	Branch   string                 `json:"branch,omitempty"`
+	MetaData map[string]interface{} `json:"meta_data,omitempty"`
+	Env      map[string]string      `json:"env,omitempty"`
 }
 
 func (bo BuildOptions) MarshalJSON() ([]byte, error) {
@@ -81,6 +80,7 @@ type Step struct {
 	SoftFail               []softFailExitStatus   `json:"soft_fail,omitempty"`
 	Retry                  *RetryOptions          `json:"retry,omitempty"`
 	Agents                 map[string]string      `json:"agents,omitempty"`
+	If                     string                 `json:"if,omitempty"`
 }
 
 var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
@@ -339,6 +339,12 @@ func Plugin(name string, plugin interface{}) StepOpt {
 func DependsOn(dependency ...string) StepOpt {
 	return func(step *Step) {
 		step.DependsOn = append(step.DependsOn, dependency...)
+	}
+}
+
+func If(condition string) StepOpt {
+	return func(step *Step) {
+		step.If = condition
 	}
 }
 

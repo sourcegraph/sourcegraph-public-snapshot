@@ -59,11 +59,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Build options for pipeline operations that spawn more build steps
 	buildOptions := bk.BuildOptions{
-		Message:   os.Getenv("BUILDKITE_MESSAGE"),
-		Commit:    c.Commit,
-		Branch:    c.Branch,
-		Env:       env,
-		IsDraftPR: c.IsDraftPR,
+		Message: os.Getenv("BUILDKITE_MESSAGE"),
+		Commit:  c.Commit,
+		Branch:  c.Branch,
+		Env:     env,
 	}
 
 	// Make all command steps timeout after 60 minutes in case a buildkite agent
@@ -111,7 +110,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Append(triggerAsync(buildOptions))
 		}
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}, c))
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case BackendIntegrationTests:
 		ops.Append(
@@ -119,7 +118,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}, c))
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -157,7 +156,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Trivy security scans
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}, c))
+		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 		// Publish images after everything is done
 		ops.Append(wait,
 			publishFinalDockerImage(c, patchImage))
@@ -212,7 +211,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-		}, c))
+		}))
 
 		// Various integration tests
 		ops.Append(

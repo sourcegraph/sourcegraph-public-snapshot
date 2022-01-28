@@ -28,7 +28,6 @@ type Config struct {
 	Version     string
 	Commit      string
 	BuildNumber int
-	IsDraftPR   bool
 
 	// ChangedFiles is the list of files that have changed since the
 	// merge-base with origin/main.
@@ -46,10 +45,9 @@ type Config struct {
 // variables.
 func NewConfig(now time.Time) Config {
 	var (
-		commit    = os.Getenv("BUILDKITE_COMMIT")
-		branch    = os.Getenv("BUILDKITE_BRANCH")
-		tag       = os.Getenv("BUILDKITE_TAG")
-		isDraftPR = os.Getenv("BUILDKITE_PULL_REQUEST_DRAFT") == "true"
+		commit = os.Getenv("BUILDKITE_COMMIT")
+		branch = os.Getenv("BUILDKITE_BRANCH")
+		tag    = os.Getenv("BUILDKITE_TAG")
 
 		// evaluates what type of pipeline run this is
 		runType = computeRunType(tag, branch)
@@ -116,7 +114,6 @@ func NewConfig(now time.Time) Config {
 		MustIncludeCommit: mustIncludeCommits,
 		ChangedFiles:      changedFiles,
 		BuildNumber:       buildNumber,
-		IsDraftPR:         isDraftPR,
 
 		// get flags from commit message
 		MessageFlags: parseMessageFlags(os.Getenv("BUILDKITE_MESSAGE")),

@@ -34,7 +34,7 @@ type CoreTestOperationsOptions struct {
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
 // arguments, please add it to the switch case within `GeneratePipeline` instead.
-func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptions, config Config) *operations.Set {
+func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptions) *operations.Set {
 	// Various RunTypes can provide a nil changedFiles to run all checks.
 	runAll := len(changedFiles) == 0
 
@@ -50,19 +50,13 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		// If there are any Graphql changes, they are impacting the client as well.
 		ops.Append(
 			clientIntegrationTests,
+			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,   // ~4.5m
 			addWebApp,       // ~3m
 			addBrowserExt,   // ~2m
 			addBrandedTests, // ~1.5m
 			addTsLint,
 		)
-
-		// Append operations we want to avoid running too often
-		if !config.IsDraftPR {
-			ops.Append(
-				clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			)
-		}
 	}
 
 	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
@@ -263,7 +257,9 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
-			bk.Cmd(chromaticCommand))
+			bk.If("!build.pull_request.draft"),
+			bk.Cmd(chromaticCommand),
+		)
 	}
 }
 
