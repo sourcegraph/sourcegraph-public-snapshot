@@ -172,7 +172,7 @@ export const WorkspacePreviewFilterRow: React.FunctionComponent<WorkspacePreview
     return (
         <div className="row no-gutters mr-1">
             <div className="m-0 col">
-                <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
+                <Form className="d-flex mb-2" onSubmit={onSubmit}>
                     <Input
                         className="flex-grow-1"
                         type="search"
