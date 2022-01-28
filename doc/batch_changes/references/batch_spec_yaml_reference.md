@@ -506,7 +506,7 @@ The body (description) of the changeset on the code host. If the code supports M
 
 ## [`changesetTemplate.branch`](#changesettemplate-branch)
 
-The name of the Git branch to create or update on each repository with the changes.
+The name of the Git branch to create or update on each repository with the changes. This must be a valid Git branch name, which means that it cannot include whitespace.
 
 If multiple branches within the same repository are matched in [`on.repository`](#on-repository), then this value must be dynamic, since it is impossible to create multiple branches with the same name in the same repository. This is often most easily accomplished with the `repository.branch` template variable. For example, this will create `new-feature-3.34` and `new-feature-3.35` branches:
 
