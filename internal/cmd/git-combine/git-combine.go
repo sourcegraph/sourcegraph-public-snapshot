@@ -26,17 +26,17 @@ import (
 
 // Options are configurables for Combine.
 type Options struct {
-	// Limit is the maximum number of commits we import from each remote. The
+	// LimitRemote is the maximum number of commits we import from each remote. The
 	// memory usage of Combine is based on the number of unseen commits per
-	// remote. Limit is useful to specify when importing a large new upstream.
-	Limit int
+	// remote. LimitRemote is useful to specify when importing a large new upstream.
+	LimitRemote int
 
 	Logger *log.Logger
 }
 
 func (o *Options) SetDefaults() {
-	if o.Limit == 0 {
-		o.Limit = math.MaxInt
+	if o.LimitRemote == 0 {
+		o.LimitRemote = math.MaxInt
 	}
 
 	if o.Logger == nil {
@@ -115,7 +115,7 @@ func Combine(path string, opt Options) error {
 
 		seen := recentRootTrees[remote]
 
-		for i := 0; i < opt.Limit; i++ {
+		for i := 0; i < opt.LimitRemote; i++ {
 			commit, err := iter.Next()
 			if err == io.EOF {
 				break
@@ -441,12 +441,12 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 
 func main() {
 	daemon := flag.Bool("daemon", false, "run in daemon mode. This mode loops on fetch, combine, push.")
-	limit := flag.Int("limit", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
+	limitRemote := flag.Int("limit-remote", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
 
 	flag.Parse()
 
 	opt := Options{
-		Limit: *limit,
+		LimitRemote: *limitRemote,
 	}
 
 	gitDir, err := getGitDir()
