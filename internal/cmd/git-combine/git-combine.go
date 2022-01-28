@@ -379,6 +379,21 @@ func commitTitle(commit *object.Commit) string {
 	return strings.TrimSpace(title)
 }
 
+func hasRemote(path, remote string) (bool, error) {
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return false, err
+	}
+
+	conf, err := r.Config()
+	if err != nil {
+		return false, err
+	}
+
+	_, ok := conf.Remotes[remote]
+	return ok, nil
+}
+
 func getGitDir() (string, error) {
 	dir := os.Getenv("GIT_DIR")
 	if dir == "" {
@@ -441,7 +456,11 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 			return nil
 		}
 
-		if err := runGit(dir, "push", "origin"); err != nil {
+		if hasOrigin, err := hasRemote(dir, "origin"); err != nil {
+			return err
+		} else if !hasOrigin {
+			opt.Logger.Printf("skipping push since remote origin is missing")
+		} else if err := runGit(dir, "push", "origin"); err != nil {
 			return err
 		}
 
