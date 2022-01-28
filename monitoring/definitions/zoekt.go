@@ -139,7 +139,7 @@ func Zoekt() *monitoring.Container {
 						{
 							Name:        "repos_stopped_tracking_total_per_instance",
 							Description: "the number of repositories we stopped tracking over 5m (per instance)",
-							Query:       "increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m])",
+							Query:       "sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number).With(func(observable monitoring.Observable, panel *sdk.Panel) {
 								panel.GraphPanel.Legend.RightSide = true

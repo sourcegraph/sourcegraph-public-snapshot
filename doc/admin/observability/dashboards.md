@@ -13416,7 +13416,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m])`
+Query: `sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m]))`
 
 </details>
 
