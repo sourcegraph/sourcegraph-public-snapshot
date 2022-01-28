@@ -15,6 +15,7 @@ import (
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
+	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -320,7 +321,9 @@ func TestQueryMonitor(t *testing.T) {
 		func() error { _, err := r.store.EnqueueQueryTriggerJobs(ctx); return err },
 		// To have a consistent state we have to log the number of search results for
 		// each completed trigger job.
-		func() error { return r.store.UpdateTriggerJobWithResults(ctx, 1, "", 1) },
+		func() error {
+			return r.store.UpdateTriggerJobWithResults(ctx, 1, "", make([]cmtypes.CommitSearchResult, 1))
+		},
 	})
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	require.NoError(t, err)

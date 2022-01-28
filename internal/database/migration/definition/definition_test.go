@@ -7,13 +7,13 @@ import (
 )
 
 func TestDefinitionGetByID(t *testing.T) {
-	definitions := &Definitions{definitions: []Definition{
+	definitions := newDefinitions([]Definition{
 		{ID: 1, UpFilename: "1.up.sql"},
 		{ID: 2, UpFilename: "2.up.sql"},
 		{ID: 3, UpFilename: "3.up.sql"},
 		{ID: 4, UpFilename: "4.up.sql"},
 		{ID: 5, UpFilename: "5.up.sql"},
-	}}
+	})
 
 	definition, ok := definitions.GetByID(3)
 	if !ok {
@@ -26,13 +26,13 @@ func TestDefinitionGetByID(t *testing.T) {
 }
 
 func TestUpTo(t *testing.T) {
-	definitions := &Definitions{definitions: []Definition{
+	definitions := newDefinitions([]Definition{
 		{ID: 11, UpFilename: "11.up.sql"},
 		{ID: 12, UpFilename: "12.up.sql"},
 		{ID: 13, UpFilename: "13.up.sql"},
 		{ID: 14, UpFilename: "14.up.sql"},
 		{ID: 15, UpFilename: "15.up.sql"},
-	}}
+	})
 
 	t.Run("zero", func(t *testing.T) {
 		// middle of sequence
@@ -85,13 +85,13 @@ func TestUpTo(t *testing.T) {
 }
 
 func TestUpFrom(t *testing.T) {
-	definitions := &Definitions{definitions: []Definition{
+	definitions := newDefinitions([]Definition{
 		{ID: 11, UpFilename: "11.up.sql"},
 		{ID: 12, UpFilename: "12.up.sql"},
 		{ID: 13, UpFilename: "13.up.sql"},
 		{ID: 14, UpFilename: "14.up.sql"},
 		{ID: 15, UpFilename: "15.up.sql"},
-	}}
+	})
 
 	t.Run("no limit", func(t *testing.T) {
 		// middle of sequence
@@ -149,13 +149,13 @@ func TestUpFrom(t *testing.T) {
 }
 
 func TestDownTo(t *testing.T) {
-	definitions := &Definitions{definitions: []Definition{
+	definitions := newDefinitions([]Definition{
 		{ID: 11, UpFilename: "11.up.sql"},
 		{ID: 12, UpFilename: "12.up.sql"},
 		{ID: 13, UpFilename: "13.up.sql"},
 		{ID: 14, UpFilename: "14.up.sql"},
 		{ID: 15, UpFilename: "15.up.sql"},
-	}}
+	})
 
 	t.Run("zero", func(t *testing.T) {
 		if _, err := definitions.DownTo(14, 0); err == nil {
@@ -196,13 +196,13 @@ func TestDownTo(t *testing.T) {
 }
 
 func TestDownFrom(t *testing.T) {
-	definitions := &Definitions{definitions: []Definition{
+	definitions := newDefinitions([]Definition{
 		{ID: 11, UpFilename: "11.up.sql"},
 		{ID: 12, UpFilename: "12.up.sql"},
 		{ID: 13, UpFilename: "13.up.sql"},
 		{ID: 14, UpFilename: "14.up.sql"},
 		{ID: 15, UpFilename: "15.up.sql"},
-	}}
+	})
 
 	t.Run("zero", func(t *testing.T) {
 		// middle of sequence

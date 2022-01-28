@@ -6,6 +6,7 @@ import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { PageHeader, AlertLink, useTimeoutManager, Alert } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
@@ -112,7 +113,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     {showCta && (
                                         <Alert className={classNames('mb-0 py-1', styles.alert)} variant="info">
                                             An account is required to create and configure extensions.{' '}
-                                            <AlertLink to="/sign-up">Register now!</AlertLink>
+                                            <AlertLink to={buildGetStartedURL('extension')}>Get started!</AlertLink>
                                         </Alert>
                                     )}
                                     {/* If site admin, render user toggle and site toggle (both small) */}
