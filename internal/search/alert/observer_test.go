@@ -1,4 +1,4 @@
-package graphqlbackend
+package alert
 
 import (
 	"context"
@@ -41,8 +41,8 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		alert, _ := (&alertObserver{}).errorToAlert(context.Background(), test.multiErr)
-		haveAlertDescription := *alert.Description()
+		alert, _ := (&Observer{}).errorToAlert(context.Background(), test.multiErr)
+		haveAlertDescription := alert.Description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
 		}
@@ -75,10 +75,10 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveAlert, _ := (&alertObserver{}).errorToAlert(context.Background(), multiErr)
+		haveAlert, _ := (&Observer{}).errorToAlert(context.Background(), multiErr)
 
-		if haveAlert != nil && haveAlert.Title() != test.wantAlertTitle {
-			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.Title(), test.wantAlertTitle)
+		if haveAlert != nil && haveAlert.Title != test.wantAlertTitle {
+			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.Title, test.wantAlertTitle)
 		}
 
 	}
@@ -88,17 +88,15 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 	db := database.NewDB(nil)
 
 	searchQuery := "context:@user repo:r1 foo"
-	wantAlert := &searchAlert{
-		alert: &search.Alert{
-			PrometheusType: "no_resolved_repos__context_none_in_common",
-			Title:          "No repositories found for your query within the context @user",
-			ProposedQueries: []*search.ProposedQuery{
-				search.NewProposedQuery(
-					"search in the global context",
-					"context:global repo:r1 foo",
-					query.SearchTypeRegex,
-				),
-			},
+	wantAlert := &search.Alert{
+		PrometheusType: "no_resolved_repos__context_none_in_common",
+		Title:          "No repositories found for your query within the context @user",
+		ProposedQueries: []*search.ProposedQuery{
+			search.NewProposedQuery(
+				"search in the global context",
+				"context:global repo:r1 foo",
+				query.SearchTypeRegex,
+			),
 		},
 	}
 
@@ -106,7 +104,7 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sr := alertObserver{
+	sr := Observer{
 		Db: database.NewDB(db),
 		SearchInputs: &run.SearchInputs{
 			OriginalQuery: searchQuery,
@@ -118,4 +116,36 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 	alert := sr.alertForNoResolvedRepos(context.Background(), q)
 	require.NoError(t, err)
 	require.Equal(t, wantAlert, alert)
+}
+
+func TestIsContextError(t *testing.T) {
+	cases := []struct {
+		err  error
+		want bool
+	}{
+		{
+			context.Canceled,
+			true,
+		},
+		{
+			context.DeadlineExceeded,
+			true,
+		},
+		{
+			errors.Wrap(context.Canceled, "wrapped"),
+			true,
+		},
+		{
+			errors.New("not a context error"),
+			false,
+		},
+	}
+	ctx := context.Background()
+	for _, c := range cases {
+		t.Run(c.err.Error(), func(t *testing.T) {
+			if got := isContextError(ctx, c.err); got != c.want {
+				t.Fatalf("wanted %t, got %t", c.want, got)
+			}
+		})
+	}
 }
