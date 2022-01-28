@@ -19,6 +19,7 @@ type SearchInputs struct {
 	PatternType   query.SearchType
 	UserSettings  *schema.Settings
 	Features      featureflag.FlagSet
+	CodeMonitorID *int64
 
 	// DefaultLimit is the default limit to use if not specified in query.
 	DefaultLimit int

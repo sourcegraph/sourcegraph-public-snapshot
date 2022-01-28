@@ -6,6 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -111,6 +112,15 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		defaultLimit = defaultMaxSearchResults
 	}
 
+	var codeMonitorID *int64
+	if args.CodeMonitorID != nil {
+		var i int64
+		if err := relay.UnmarshalSpec(*args.CodeMonitorID, &i); err != nil {
+			return nil, err
+		}
+		codeMonitorID = &i
+	}
+
 	inputs := &run.SearchInputs{
 		Plan:          plan,
 		Query:         plan.ToParseTree(),
@@ -119,6 +129,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		Features:      featureflag.FromContext(ctx),
 		PatternType:   searchType,
 		DefaultLimit:  defaultLimit,
+		CodeMonitorID: codeMonitorID,
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)
