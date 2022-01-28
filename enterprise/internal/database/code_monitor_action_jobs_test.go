@@ -6,6 +6,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
+
+	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 )
 
 func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
@@ -53,7 +55,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 		wantNumResults = 42
 		wantQuery      = testQuery + " after:\"" + s.Now().UTC().Format(time.RFC3339) + "\""
 	)
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, wantNumResults)
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, make(cmtypes.CommitSearchResults, wantNumResults))
 	require.NoError(t, err)
 
 	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, fixtures.monitor.ID, triggerJobID)

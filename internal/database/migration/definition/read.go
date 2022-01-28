@@ -131,7 +131,10 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 		return Definition{}, err
 	}
 
-	definition.Metadata.Parent = payload.Parent
+	if payload.Parent != 0 {
+		definition.Parents = append(definition.Parents, payload.Parent)
+	}
+
 	return definition, nil
 }
 
@@ -184,8 +187,7 @@ func reorderDefinitions(migrationDefinitions []Definition) error {
 	}
 
 	for _, migrationDefinition := range migrationDefinitions {
-		parent := migrationDefinition.Metadata.Parent
-		if parent != 0 {
+		for _, parent := range migrationDefinition.Parents {
 			if _, ok := migrationDefinitionMap[parent]; !ok {
 				return unknownMigrationError(parent, &migrationDefinition.ID)
 			}
@@ -289,7 +291,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 func root(migrationDefinitions []Definition) (int, error) {
 	roots := make([]int, 0, 1)
 	for _, migrationDefinition := range migrationDefinitions {
-		if migrationDefinition.Metadata.Parent == 0 {
+		if len(migrationDefinition.Parents) == 0 {
 			roots = append(roots, migrationDefinition.ID)
 		}
 	}
@@ -308,7 +310,7 @@ func root(migrationDefinitions []Definition) (int, error) {
 func children(migrationDefinitions []Definition) map[int][]int {
 	children := make(map[int][]int, len(migrationDefinitions))
 	for _, migrationDefinition := range migrationDefinitions {
-		if parent := migrationDefinition.Metadata.Parent; parent != 0 {
+		for _, parent := range migrationDefinition.Parents {
 			children[parent] = append(children[parent], migrationDefinition.ID)
 		}
 	}
@@ -328,12 +330,12 @@ func validateLinearizedGraph(migrationDefinitions []Definition) error {
 		return nil
 	}
 
-	if migrationDefinitions[0].Metadata.Parent != 0 {
+	if len(migrationDefinitions[0].Parents) != 0 {
 		return fmt.Errorf("unexpected parent for root definition")
 	}
 
 	for _, definition := range migrationDefinitions[1:] {
-		if definition.Metadata.Parent != definition.ID-1 {
+		if len(definition.Parents) != 1 || definition.Parents[0] != definition.ID-1 {
 			return fmt.Errorf("unexpected parent declared in definition %d", definition.ID)
 		}
 	}

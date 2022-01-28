@@ -578,14 +578,21 @@ Slack webhook actions configured on code monitors
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
  execution_logs    | json[]                   |           |          | 
+ search_results    | jsonb                    |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "search_results_is_array" CHECK (jsonb_typeof(search_results) = 'array'::text)
 Foreign-key constraints:
     "cm_trigger_jobs_query_fk" FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE
 Referenced by:
     TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
 
 ```
+
+**num_results**: DEPRECATED: replaced by len(search_results). Can be removed after version 3.37 release cut
+
+**results**: DEPRECATED: replaced by len(search_results) > 0. Can be removed after version 3.37 release cut
 
 # Table "public.cm_webhooks"
 ```
