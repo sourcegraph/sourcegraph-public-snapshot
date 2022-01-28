@@ -78,11 +78,14 @@ func validateSchema(db *sql.DB, schema *schemas.Schema, validateOnly bool, obser
 			return fmt.Errorf("database schema out of date")
 		}
 
-		options := runner.Options{
-			Up:          true,
-			SchemaNames: []string{schema.Name},
-		}
-		return migrationRunner.Run(ctx, options)
+		return migrationRunner.Run(ctx, runner.Options{
+			Operations: []runner.MigrationOperation{
+				{
+					SchemaName: schema.Name,
+					Up:         true,
+				},
+			},
+		})
 	}
 
 	return nil

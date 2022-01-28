@@ -1,1 +1,1 @@
-CREATE INDEX CONCURRENTLY IF NOT EXISTS security_event_logs_source ON security_event_logs USING btree (source);
+CREATE INDEX IF NOT EXISTS security_event_logs_source ON security_event_logs USING btree (source);
