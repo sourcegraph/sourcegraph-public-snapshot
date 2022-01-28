@@ -31,6 +31,9 @@ const config: Meta = {
     title: 'wildcard/Tabs',
     component: Tabs,
     parameters: {
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',

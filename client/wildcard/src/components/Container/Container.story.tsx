@@ -90,6 +90,9 @@ export const Overview: Story = () => (
 )
 
 Overview.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+    },
     design: {
         type: 'figma',
         name: 'Figma',

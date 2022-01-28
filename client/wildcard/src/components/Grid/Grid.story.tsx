@@ -8,6 +8,9 @@ const config: Meta = {
 
     parameters: {
         component: Grid,
+        chromatic: {
+            enableDarkMode: true,
+        },
     },
 }
 

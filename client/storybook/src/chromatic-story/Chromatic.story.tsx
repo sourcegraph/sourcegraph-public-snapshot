@@ -21,12 +21,8 @@ if (isChromatic()) {
         // Add three more versions of each story to test visual regressions with Chromatic snapshots.
         // In other environments, these themes can be explored by a user via toolbar toggles.
         for (const storeItem of storeItems) {
-            console.log(storeItems)
             // Default theme + Dark mode.
-            addStory({
-                storeItem,
-                isDarkModeEnabled: false,
-            })
+            addStory({ storeItem })
         }
 
         storyStore.finishConfiguring()
