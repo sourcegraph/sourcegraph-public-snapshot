@@ -2330,25 +2330,7 @@ type ExternalService implements Node {
     In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
     reaches out to the code host directly which is wasteful if repositories are already cloned.
     """
-    invitableCollaborators: [InvitableCollaborator!]!
-}
-
-"""
-A collaborator that can be invited to Sourcegraph.
-"""
-type InvitableCollaborator {
-    """
-    The collaborator's email address
-    """
-    email: String!
-    """
-    The collaborator's name (not username)
-    """
-    name: String!
-    """
-    The collaborator's avatar URL (per their code host)
-    """
-    avatarURL: String!
+    invitableCollaborators: [Person!]!
 }
 
 """
