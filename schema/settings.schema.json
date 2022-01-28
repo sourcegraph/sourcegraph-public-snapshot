@@ -55,7 +55,7 @@
           }
         },
         "showCodeMonitoringTestEmailButton": {
-          "description": "Enables the 'Send test email' debugging button for code monitoring.",
+          "description": "REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.",
           "type": "boolean",
           "default": false,
           "!go": {

@@ -487,12 +487,13 @@ func testSearchClient(t *testing.T, client searchClient) {
 				minMatchCount: 500,
 				skip:          skipGraphQL,
 			},
-			{
-				name:          "default limit graphql",
-				query:         ".",
-				minMatchCount: 30,
-				skip:          skipStream,
-			},
+			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// {
+			// 	name:          "default limit graphql",
+			// 	query:         ".",
+			// 	minMatchCount: 30,
+			// 	skip:          skipStream,
+			// },
 			{
 				name:  "regular expression without indexed search",
 				query: "index:no patterntype:regexp ^func.*$",

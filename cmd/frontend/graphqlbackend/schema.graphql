@@ -854,6 +854,7 @@ enum EventSource {
     WEB
     CODEHOSTINTEGRATION
     BACKEND
+    STATICWEB
 }
 
 """

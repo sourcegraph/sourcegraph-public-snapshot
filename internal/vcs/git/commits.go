@@ -181,8 +181,7 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 // commits on {branchName} not also on the tip of the default branch. If the
 // supplied branch name is the default branch, then this method instead returns
 // all commits reachable from HEAD.
-// TODO: sub-repo filtering
-func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time, checker authz.SubRepoPermissionChecker) (_ map[string]time.Time, err error) {
 	args := []string{"log", "--pretty=format:%H:%cI"}
 	if maxAge != nil {
 		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
@@ -200,7 +199,21 @@ func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName st
 		return nil, err
 	}
 
-	return parseCommitsUniqueToBranch(strings.Split(string(out), "\n"))
+	commits, err := parseCommitsUniqueToBranch(strings.Split(string(out), "\n"))
+	if authz.SubRepoEnabled(checker) && err == nil {
+		return filterCommitsUniqueToBranch(ctx, repo, commits, checker), nil
+	}
+	return commits, err
+}
+
+func filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time, checker authz.SubRepoPermissionChecker) map[string]time.Time {
+	filtered := make(map[string]time.Time, len(commitsMap))
+	for commitID, timeStamp := range commitsMap {
+		if _, err := GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			filtered[commitID] = timeStamp
+		}
+	}
+	return filtered
 }
 
 func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
@@ -229,8 +242,10 @@ func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err err
 
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
-// TODO: sub-repo filtering
-func HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error) {
+func HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string, checker authz.SubRepoPermissionChecker) (bool, error) {
+	if authz.SubRepoEnabled(checker) {
+		return hasCommitAfterWithFiltering(ctx, repo, date, revspec, checker)
+	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: HasCommitAfter")
 	span.SetTag("Date", date)
 	span.SetTag("RevSpec", revspec)
@@ -245,12 +260,21 @@ func HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec
 		return false, err
 	}
 
-	n, err := CommitCount(ctx, repo, CommitsOptions{
+	n, err := commitCount(ctx, repo, CommitsOptions{
 		N:     1,
 		After: date,
 		Range: string(commitid),
 	})
 	return n > 0, err
+}
+
+func hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string, checker authz.SubRepoPermissionChecker) (bool, error) {
+	if commits, err := Commits(ctx, repo, CommitsOptions{After: date, Range: revspec}, checker); err != nil {
+		return false, err
+	} else if len(commits) > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 func isBadObjectErr(output, obj string) bool {
@@ -361,9 +385,8 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	return args, nil
 }
 
-// CommitCount returns the number of commits that would be returned by Commits.
-// TODO: sub-repo filtering
-func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
+// commitCount returns the number of commits that would be returned by Commits.
+func commitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (uint, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -537,8 +560,13 @@ func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte)
 
 // BranchesContaining returns a map from branch names to branch tip hashes for
 // each branch containing the given commit.
-// TODO: sub-repo filtering
-func BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+func BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) ([]string, error) {
+	if authz.SubRepoEnabled(checker) {
+		// GetCommit to validate that the user has permissions to access it.
+		if _, err := GetCommit(ctx, repo, commit, ResolveRevisionOptions{}, checker); err != nil {
+			return nil, err
+		}
+	}
 	cmd := gitserver.DefaultClient.Command("git", "branch", "--contains", string(commit), "--format", "%(refname)")
 	cmd.Repo = repo
 
@@ -569,8 +597,7 @@ func parseBranchesContaining(lines []string) []string {
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-// TODO: sub-repo filtering
-func RefDescriptions(ctx context.Context, repo api.RepoName) (map[string][]gitdomain.RefDescription, error) {
+func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ map[string][]gitdomain.RefDescription, err error) {
 	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
 		args := append(make([]string, 0, 3), "for-each-ref")
 		if refPrefix == "refs/tags/" {
@@ -602,7 +629,24 @@ func RefDescriptions(ctx context.Context, repo api.RepoName) (map[string][]gitdo
 		}
 	}
 
+	if authz.SubRepoEnabled(checker) {
+		return filterRefDescriptions(ctx, repo, aggregate, checker), nil
+	}
 	return aggregate, nil
+}
+
+func filterRefDescriptions(ctx context.Context,
+	repo api.RepoName,
+	refDescriptions map[string][]gitdomain.RefDescription,
+	checker authz.SubRepoPermissionChecker,
+) map[string][]gitdomain.RefDescription {
+	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
+	for commitID, descriptions := range refDescriptions {
+		if _, err := GetCommit(ctx, repo, api.CommitID(commitID), ResolveRevisionOptions{}, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			filtered[commitID] = descriptions
+		}
+	}
+	return filtered
 }
 
 var refPrefixes = map[string]gitdomain.RefType{
@@ -666,8 +710,14 @@ func parseRefDescriptions(lines []string) (map[string][]gitdomain.RefDescription
 // CommitDate returns the time that the given commit was committed. If the given
 // revision does not exist, a false-valued flag is returned along with a nil
 // error and zero-valued time.
-// TODO: sub-repo filtering
-func CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
+func CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) (_ string, _ time.Time, revisionExists bool, err error) {
+	if authz.SubRepoEnabled(checker) {
+		// GetCommit to validate that the user has permissions to access it.
+		if _, err := GetCommit(ctx, repo, commit, ResolveRevisionOptions{}, checker); err != nil {
+			return "", time.Time{}, false, nil
+		}
+	}
+
 	cmd := gitserver.DefaultClient.Command("git", "show", "-s", "--format=%H:%cI", string(commit))
 	cmd.Repo = repo
 
@@ -709,7 +759,6 @@ type CommitGraphOptions struct {
 // from a commit to its parents. If a commit is supplied, the returned graph will
 // be rooted at the given commit. If a non-zero limit is supplied, at most that
 // many commits will be returned.
-// TODO: sub-repo filtering
 func CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
 	args := []string{"log", "--pretty=%H %P", "--topo-order"}
 	if opts.AllRefs {

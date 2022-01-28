@@ -8,9 +8,10 @@ import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
+import { CodeMonitorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
@@ -56,17 +57,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                 },
                 trigger: { query: codeMonitor.trigger.query },
 
-                actions: codeMonitor.actions.nodes.map(action => ({
-                    email:
-                        action.__typename === 'MonitorEmail'
-                            ? {
-                                  enabled: action.enabled,
-                                  priority: MonitorEmailPriority.NORMAL,
-                                  recipients: [authenticatedUser.id],
-                                  header: '',
-                              }
-                            : undefined,
-                })),
+                actions: convertActionsForCreate(codeMonitor.actions.nodes, authenticatedUser.id),
             })
         },
         [authenticatedUser.id, createCodeMonitor]

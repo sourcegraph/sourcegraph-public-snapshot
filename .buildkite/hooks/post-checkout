@@ -9,9 +9,5 @@ echo "Running git fetch..."
 git fetch
 echo "Running git fetch... done"
 
-echo "install asdf plugins"
-asdf install
-echo "done installing"
-
 # Link the trace-script so we can have pretty steps in the buildkite ui
 ln -s "$(pwd)/enterprise/dev/ci/scripts/trace-command.sh" tr 2>/dev/null || true
