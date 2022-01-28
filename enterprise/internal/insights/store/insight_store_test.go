@@ -1664,3 +1664,61 @@ func TestUpdateFrontendSeries(t *testing.T) {
 		}}).Equal(t, gotAfterUpdate)
 	})
 }
+
+func TestGetReferenceCount(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
+									VALUES (1, 'test title', 'test description', 'unique-1'),
+									       (2, 'test title 2', 'test description 2', 'unique-2'),
+										   (3, 'test title 3', 'test description 3', 'unique-3')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO dashboard (id, title)
+		VALUES (1, 'dashboard 1'), (2, 'dashboard 2'), (3, 'dashboard 3');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+									VALUES  (1, 1),
+											(2, 1),
+											(3, 1),
+											(2, 2);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	t.Run("finds a single reference", func(t *testing.T) {
+		referenceCount, err := store.GetReferenceCount(ctx, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("ReferenceCount", referenceCount).Equal(t, 1)
+	})
+	t.Run("finds 3 references", func(t *testing.T) {
+		referenceCount, err := store.GetReferenceCount(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("ReferenceCount", referenceCount).Equal(t, 3)
+	})
+	t.Run("finds no references", func(t *testing.T) {
+		referenceCount, err := store.GetReferenceCount(ctx, 3)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("ReferenceCount", referenceCount).Equal(t, 0)
+	})
+}

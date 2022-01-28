@@ -15,10 +15,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func mustURL(t *testing.T, u string) *url.URL {
@@ -551,7 +549,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		}
-
 		mockOrgRepo = extsvc.Repository{
 			URI: "github.com/org/org-repo",
 			ExternalRepoSpec: api.ExternalRepoSpec{
@@ -560,7 +557,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		}
-
 		mockListCollaborators = func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
 			switch page {
 			case 1:
@@ -712,106 +708,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
 				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
 			}
-		})
-
-		t.Run("internal repo in org", func(t *testing.T) {
-			mockInternalOrgRepo := github.Repository{
-				ID:         "github_repo_id",
-				IsPrivate:  true,
-				Visibility: github.VisibilityInternal,
-			}
-
-			p := NewProvider("", ProviderOptions{
-				GitHubURL: mustURL(t, "https://github.com"),
-			})
-
-			p.client = &mockClient{
-				MockListRepositoryCollaborators: mockListCollaborators,
-				MockListOrganizationMembers: func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					switch page {
-					case 1:
-						return []*github.Collaborator{
-							{DatabaseID: 1234},
-							{DatabaseID: 67471}, // duplicate from collaborators
-						}, true, nil
-					case 2:
-						return []*github.Collaborator{
-							{DatabaseID: 5678},
-						}, false, nil
-					}
-
-					return []*github.Collaborator{}, false, nil
-				},
-				MockGetRepository: func(ctx context.Context, owner, repo string) (*github.Repository, error) {
-					return &mockInternalOrgRepo, nil
-				},
-				MockGetOrganization: func(ctx context.Context, login string) (org *github.OrgDetails, err error) {
-					if login == "org" {
-						return &github.OrgDetails{
-							DefaultRepositoryPermission: "none",
-						}, nil
-					}
-
-					t.Fatalf("unexpected call to GetOrganization with %q", login)
-					return nil, nil
-				},
-			}
-
-			memCache := memGroupsCache()
-			p.groupsCache = memCache
-
-			t.Run("feature flag disabled", func(t *testing.T) {
-				accountIDs, err := p.FetchRepoPerms(
-					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
-				)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				// These account IDs will have access to the internal repo.
-				wantAccountIDs := []extsvc.AccountID{
-					// expect mockListCollaborators members only - we do not want to include org members
-					// if internal repository support is not enabled.
-					"57463526",
-					"67471",
-					"187831",
-				}
-				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
-				}
-			})
-
-			t.Run("feature flag enabled", func(t *testing.T) {
-				conf.Mock(&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						ExperimentalFeatures: &schema.ExperimentalFeatures{
-							EnableGithubInternalRepoVisibility: true,
-						},
-					},
-				})
-
-				accountIDs, err := p.FetchRepoPerms(
-					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
-				)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				// These account IDs will have access to the internal repo.
-				wantAccountIDs := []extsvc.AccountID{
-					// mockListCollaborators members.
-					"57463526",
-					"67471",
-					"187831",
-					// expect dedpulicated MockListOrganizationMembers users as well since we want to grant access
-					// to org members as well if the target repo has visibility "internal"
-					"1234",
-					"5678",
-				}
-				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
-				}
-			})
 		})
 
 		t.Run("repo in non-read org but in teams", func(t *testing.T) {
