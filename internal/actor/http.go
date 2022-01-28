@@ -65,7 +65,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	actor := FromContext(req.Context())
-	path := getURLPath(req.URL.Path)
+	path := getCondensedURLPath(req.URL.Path)
 	switch {
 	// Indicate this is an internal user
 	case actor.IsInternal():
@@ -136,12 +136,12 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func getURLPath(urlPath string) string {
-	if strings.Contains(urlPath, "/.internal/git/github.com/") {
-		return "/.internal/git/github.com/"
+func getCondensedURLPath(urlPath string) string {
+	if strings.Contains(urlPath, "/.internal/git/") {
+		return "/.internal/git/"
 	}
-	if strings.Contains(urlPath, "/git/github.com/") {
-		return "/git/github.com/"
+	if strings.Contains(urlPath, "/git/") {
+		return "/git/"
 	}
 	return urlPath
 }
