@@ -114,7 +114,7 @@ const gqlSearchQuery = `query CodeMonitorSearch(
 	}
 }`
 
-func search(ctx context.Context, query string, userID int32) (*searchResults, error) {
+func search(ctx context.Context, query string, userID int32, monitorID *int64) (*searchResults, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     gqlSearchQuery,
