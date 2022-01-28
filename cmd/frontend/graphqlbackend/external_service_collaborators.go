@@ -21,6 +21,11 @@ import (
 // for listing collaborators to *some* of the repositories associated with this external service
 // *before* they are cloned onto Sourcegraph.
 func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([]*invitableCollaboratorResolver, error) {
+	// SECURITY: This API should only be exposed for user-added external services, not for example by
+	// site-wide (CloudDefault) external services (the API also makes zero sense in that context.)
+	if r.externalService.IsSiteOwned() {
+		return nil, errors.New("InvitableCollaborators may only be used on user-added external services.")
+	}
 	cfg, err := r.externalService.Configuration()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse external service config")
