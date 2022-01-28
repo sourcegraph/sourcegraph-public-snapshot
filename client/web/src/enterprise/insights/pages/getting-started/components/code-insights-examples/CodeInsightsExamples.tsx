@@ -12,7 +12,8 @@ import {
     getLineStroke,
     LineChart,
 } from '../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
-import { DATA_SERIES_COLORS, encodeUrlSearchInsight } from '../../../insights/creation/search-insight'
+import { encodeCaptureInsightURL } from '../../../insights/creation/capture-group'
+import { DATA_SERIES_COLORS, encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
 
 import styles from './CodeInsightsExamples.module.scss'
 
@@ -65,7 +66,7 @@ const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
     },
 }
 
-const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeUrlSearchInsight({
+const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
     title: 'Repos with READMEs / without READMEs',
     allRepos: true,
     series: SEARCH_INSIGHT_EXAMPLES_DATA.series,
@@ -141,6 +142,12 @@ const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
     },
 }
 
+const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
+    title: 'Node.js versions (present or most popular)',
+    repositories: 'github.com/awesomeOrg/examplerepo',
+    groupSearchQuery: 'nvm install ([0-9]+\\.[0-9]+) archived:no fork:no',
+})
+
 const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
     const { className } = props
 
@@ -148,6 +155,17 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
         <View.Root
             title="Node.js versions (present or most popular)"
             subtitle={<InlineCodeBlock className="mt-1">repo:github.com/awesomeOrg/examplerepo</InlineCodeBlock>}
+            actions={
+                <Button
+                    as={Link}
+                    variant="link"
+                    size="sm"
+                    className={styles.actionLink}
+                    to={`/insights/create/capture-group?${CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                >
+                    Use as template
+                </Button>
+            }
             className={classNames(className)}
         >
             <div className={styles.captureGroup}>
