@@ -13,6 +13,19 @@
     max-height: 27vh;
 }
 
+.hover-markdown {
+    p,
+    pre {
+        padding-left: 0.5em;
+        margin-bottom: 0em;
+        padding-bottom: 0em;
+        padding-top: 0em;
+    }
+    code {
+        padding-left: 0em;
+    }
+}
+
 .cool-code-intel-reference {
     code {
         overflow: hidden;
