@@ -673,7 +673,7 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 		if errors.As(err, &e) {
 			for _, err2 := range e {
 				if err2.Type == graphqlErrTypeNotFound {
-					log15.Warn("GitHub repository not found", "error", err2)
+					log15.Warn("RecentCommitters: GitHub repository not found", "error", err2)
 					continue
 				}
 				return nil, err
