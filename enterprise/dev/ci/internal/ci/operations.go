@@ -45,8 +45,13 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		// these on all PRs
 		addPrettier,
 		addCheck,
-		addCIScriptsTests,
 	})
+
+	if runAll || changedFiles.AffectsPathsPrefixedBy("enterprise/dev/ci/scripts") {
+		ops.Append(
+			addCIScriptsTests,
+		)
+	}
 
 	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the client as well.
