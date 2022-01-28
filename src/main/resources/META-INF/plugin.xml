@@ -1,72 +1,7 @@
 <idea-plugin>
   <id>com.sourcegraph.jetbrains</id>
   <name>Sourcegraph</name>
-  <version>1.2.2</version>
   <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
-
-  <description><![CDATA[
-      Sourcegraph for JetBrains IDEs (IntelliJ, PyCharm, GoLand, etc.)<br>
-      <ul>
-        <li>Search snippets of code on Sourcegraph.</li>
-        <li>Copy and share a link to code on Sourcegraph.</li>
-        <li>Quickly go from files in your editor to Sourcegraph.</li>
-      </ul>
-    ]]></description>
-
-  <change-notes><![CDATA[
-    <ul>
-       <li>v1.2.2 - Minor bug fixes
-         <ul>
-            <li>It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for details.</li>
-            <li>Special thanks: @oliviernotteghem for contributing the new features in this release!</li>
-            <li>Fixed bugs where Open in Sourcegraph from the git menu does not work for repos with ssh url as their remote url</li>
-          </ul>
-      </li>
-      <li>v1.2.1 - Open Revision in Sourcegraph
-       <ul>
-          <li>Added "Open In Sourcegraph" action to VCS History and Git Log to open a revision in the Sourcegraph diff view.</li>
-          <li>Added "defaultBranch" configuration option that allows opening files in a specific branch on Sourcegraph.</li>
-          <li>Added "remoteUrlReplacements" configuration option that allow users to replace specified values in the remote url with new strings.</li>
-        </ul>
-      </li>
-      <li>v1.2.0 - Copy link to file, search in repository, per-repository configuration, bug fixes & more
-       <ul>
-          <li>The search menu entry is now no longer present when no text has been selected.</li>
-          <li>When on a branch that does not exist remotely, `master` will now be used instead.</li>
-          <li>Menu entries (Open file, etc.) are now under a Sourcegraph sub-menu.</li>
-          <li>Added a "Copy link to file" action (alt+c / opt+c).</li>
-          <li>Added a "Search in repository" action  (alt+r / opt+r).</li>
-          <li>It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for details.</li>
-          <li>Special thanks: @oliviernotteghem for contributing the new features in this release!</li>
-        </ul>
-      </li>
-      <li>v1.1.2 - Minor bug fixes around searching.
-        <ul>
-          <li>Fixed an error that occurred when trying to search with no selection.</li>
-          <li>The git remote used for repository detection is now `sourcegraph` and then `origin`, instead of the previously poor choice of just the first git remote.</li>
-        </ul>
-      </li>
-      <li>v1.1.1 - Fixed search shortcut.
-        <ul>
-          <li>Updated the search URL to reflect a recent Sourcegraph.com change.</li>
-        </ul>
-      </li>
-      <li>v1.1.0 - Configurable Sourcegraph URL
-        <ul>
-          <li>Added support for using the plugin with on-premises Sourcegraph instances.</li>
-        </ul>
-      </li>
-      <li>v1.0.0 - Initial Release
-        <ul>
-          <li>Basic Open File & Search functionality.</li>
-        </ul>
-      </li>
-    </ul>
-    ]]>
-  </change-notes>
-
-  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-  <idea-version since-build="145.0"/>
 
   <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->

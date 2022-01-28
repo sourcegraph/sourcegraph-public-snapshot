@@ -21,7 +21,7 @@ public class CommitViewUriBuilderTest {
         "intellij",
         "1.1");
 
-    String want = "https://www.sourcegraph.com/github.com/sourcegraph/sourcegraph-jetbrains/-/commit/1fa8d5d6286c24924b55c15ed4d1a0b85ccab4d5?editor=JetBrains&version=v1.2.0&utm_product_name=intellij&utm_product_version=1.1";
+    String want = "https://www.sourcegraph.com/github.com/sourcegraph/sourcegraph-jetbrains.git/-/commit/1fa8d5d6286c24924b55c15ed4d1a0b85ccab4d5?editor=JetBrains&version=v1.2.2&utm_product_name=intellij&utm_product_version=1.1";
     assertEquals(want, got.toString());
   }
 
