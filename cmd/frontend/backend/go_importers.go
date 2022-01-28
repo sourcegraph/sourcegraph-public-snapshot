@@ -63,7 +63,7 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 
 	q.Query = countGoImportersGraphQLQuery
 	q.Variables = map[string]interface{}{
-		"query": fmt.Sprintf(`f:go\.mod ^\s+%s\S*\s+v.* count:all visibility:public timeout:20s`, repo),
+		"query": fmt.Sprintf(`f:go\.mod ^\s+%s\S*\s+v.* count:all visibility:public timeout:20s`, regexp.QuoteMeta(repo)),
 	}
 
 	body, err := json.Marshal(q)
