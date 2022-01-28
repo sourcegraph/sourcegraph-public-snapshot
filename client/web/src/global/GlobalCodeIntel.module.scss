@@ -94,8 +94,11 @@
 
 .side-references {
     flex: 1;
+    max-height: 22vw;
+    overflow-y: scroll;
 }
 .side-blob {
     flex: 1;
-    max-height: 24vw;
+    overflow-y: scroll;
+    max-height: 22vw;
 }
