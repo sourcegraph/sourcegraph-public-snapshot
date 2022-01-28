@@ -1,14 +1,18 @@
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
-import * as View from '../../../../views'
-import { LegendBlock, LegendItem } from '../../../../views'
+import { Button } from '@sourcegraph/wildcard'
+
+import * as View from '../../../../../../views'
+import { LegendBlock, LegendItem } from '../../../../../../views'
 import {
     getLineStroke,
     LineChart,
-} from '../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
+} from '../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
+import { DATA_SERIES_COLORS, encodeUrlSearchInsight } from '../../../insights/creation/search-insight'
 
 import styles from './CodeInsightsExamples.module.scss'
 
@@ -25,6 +29,7 @@ interface ExampleCardProps {
 
 interface SeriesWithQuery extends LineChartSeries<any> {
     query: string
+    name: string
 }
 
 type Content = Omit<LineChartContentType<any, string>, 'chart' | 'series'> & { series: SeriesWithQuery[] }
@@ -43,13 +48,13 @@ const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
         {
             dataKey: 'a',
             name: 'A metric',
-            stroke: 'var(--blue)',
+            stroke: DATA_SERIES_COLORS.BLUE,
             query: 'file:README archived:no fork:no',
         },
         {
             dataKey: 'b',
             name: 'B metric',
-            stroke: 'var(--warning)',
+            stroke: DATA_SERIES_COLORS.ORANGE,
             query: '-file:README archived:no fork:no',
         },
     ],
@@ -60,7 +65,13 @@ const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
     },
 }
 
-export const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = props => {
+const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeUrlSearchInsight({
+    title: 'Repos with READMEs / without READMEs',
+    allRepos: true,
+    series: SEARCH_INSIGHT_EXAMPLES_DATA.series,
+})
+
+const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = props => {
     const { className } = props
 
     return (
@@ -68,6 +79,17 @@ export const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps>
             title="Repos with READMEs / without READMEs"
             subtitle={<InlineCodeBlock className="mt-1">All repositories</InlineCodeBlock>}
             className={classNames(className)}
+            actions={
+                <Button
+                    as={Link}
+                    variant="link"
+                    size="sm"
+                    className={styles.actionLink}
+                    to={`/insights/create/search?${SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                >
+                    Use as template
+                </Button>
+            }
         >
             <div className={styles.chart}>
                 <ParentSize>
@@ -119,7 +141,7 @@ const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
     },
 }
 
-export const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
+const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
     const { className } = props
 
     return (
