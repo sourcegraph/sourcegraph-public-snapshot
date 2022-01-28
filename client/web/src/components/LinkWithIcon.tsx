@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { kebabCase } from 'lodash'
 import React from 'react'
 import { NavLink, NavLinkProps } from 'react-router-dom'
 
@@ -23,6 +24,7 @@ export const LinkWithIcon: React.FunctionComponent<LinkWithIconProps> = props =>
             className={classNames('d-flex', 'align-items-center', className)}
             activeClassName={activeClassName}
             variant="link"
+            data-testid={kebabCase(text)}
         >
             <Icon className="icon-inline mr-1" />
             <span className="inline-block">{text}</span>
