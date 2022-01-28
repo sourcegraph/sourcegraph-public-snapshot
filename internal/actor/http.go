@@ -137,11 +137,11 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 }
 
 func getCondensedURLPath(urlPath string) string {
-	if strings.Contains(urlPath, "/.internal/git/") {
-		return "/.internal/git/"
+	if strings.HasPrefix(urlPath, "/.internal/git/") {
+		return "/.internal/git/..."
 	}
-	if strings.Contains(urlPath, "/git/") {
-		return "/git/"
+	if strings.HasPrefix(urlPath, "/git/") {
+		return "/git/..."
 	}
 	return urlPath
 }
