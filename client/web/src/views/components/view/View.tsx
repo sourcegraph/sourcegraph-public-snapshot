@@ -46,7 +46,6 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
                             <h4 title={title} className={styles.title}>
                                 {title}
                             </h4>
-                            {subtitle}
                         </div>
 
                         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */}
@@ -60,6 +59,8 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
                         >
                             {actions}
                         </div>
+
+                        <div className={styles.subtitle}>{subtitle}</div>
                     </header>
                 )}
 
