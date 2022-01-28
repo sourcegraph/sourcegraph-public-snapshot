@@ -18,10 +18,10 @@ export function getPositions(position: Position, flipping: Flipping): Position[]
 
 export function getRoundedElement(element: Rectangle): Rectangle {
     return createRectangle(
-        Math.floor(element.left),
-        Math.floor(element.top),
-        Math.floor(element.width),
-        Math.floor(element.height)
+        Math.ceil(element.left),
+        Math.ceil(element.top),
+        Math.ceil(element.width),
+        Math.ceil(element.height)
     )
 }
 

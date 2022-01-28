@@ -197,6 +197,15 @@ func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
 
 type StepOpt func(step *Step)
 
+// RawCmd adds a command step without any instrumentation. This is useful to
+// test the instrumentation itself.
+func RawCmd(command string) StepOpt {
+	return func(step *Step) {
+		step.Command = append(step.Command, command)
+	}
+}
+
+// Cmd adds a command step with added instrumentation for testing purposes.
 func Cmd(command string) StepOpt {
 	return func(step *Step) {
 		// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
