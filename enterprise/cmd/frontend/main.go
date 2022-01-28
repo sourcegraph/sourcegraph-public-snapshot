@@ -79,12 +79,18 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	services, err := codeintel.NewServices(ctx, conf, db)
+	codeIntelConfig := &codeintel.Config{}
+	codeIntelConfig.Load()
+	if err := codeIntelConfig.Validate(); err != nil {
+		log.Fatalf("failed to load codeintel config: %s", err)
+	}
+
+	services, err := codeintel.NewServices(ctx, codeIntelConfig, conf, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := codeintel.Init(ctx, db, conf, &enterpriseServices, observationContext, services); err != nil {
+	if err := codeintel.Init(ctx, db, codeIntelConfig, &enterpriseServices, observationContext, services); err != nil {
 		log.Fatalf("failed to initialize codeintel: %s", err)
 	}
 

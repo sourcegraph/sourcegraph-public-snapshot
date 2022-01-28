@@ -13,7 +13,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"google.golang.org/api/option"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -24,7 +23,7 @@ type gcsStore struct {
 	manageBucket bool
 	config       GCSConfig
 	client       gcsAPI
-	operations   *operations
+	operations   *Operations
 }
 
 var _ Store = &gcsStore{}
@@ -35,14 +34,8 @@ type GCSConfig struct {
 	CredentialsFileContents string
 }
 
-func (c *GCSConfig) load(parent *env.BaseConfig) {
-	c.ProjectID = parent.Get("PRECISE_CODE_INTEL_UPLOAD_GCP_PROJECT_ID", "", "The project containing the GCS bucket.")
-	c.CredentialsFile = parent.GetOptional("PRECISE_CODE_INTEL_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE", "The path to a service account key file with access to GCS.")
-	c.CredentialsFileContents = parent.GetOptional("PRECISE_CODE_INTEL_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT", "The contents of a service account key file with access to GCS.")
-}
-
 // newGCSFromConfig creates a new store backed by GCP storage.
-func newGCSFromConfig(ctx context.Context, config *Config, operations *operations) (Store, error) {
+func newGCSFromConfig(ctx context.Context, config *Config, operations *Operations) (Store, error) {
 	client, err := storage.NewClient(ctx, gcsClientOptions(config.GCS)...)
 	if err != nil {
 		return nil, err
@@ -51,7 +44,7 @@ func newGCSFromConfig(ctx context.Context, config *Config, operations *operation
 	return newGCSWithClient(&gcsAPIShim{client}, config.Bucket, config.TTL, config.ManageBucket, config.GCS, operations), nil
 }
 
-func newGCSWithClient(client gcsAPI, bucket string, ttl time.Duration, manageBucket bool, config GCSConfig, operations *operations) *gcsStore {
+func newGCSWithClient(client gcsAPI, bucket string, ttl time.Duration, manageBucket bool, config GCSConfig, operations *Operations) *gcsStore {
 	return &gcsStore{
 		bucket:       bucket,
 		ttl:          ttl,
@@ -89,7 +82,7 @@ func (s *gcsStore) Init(ctx context.Context) error {
 }
 
 func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
-	ctx, endObservation := s.operations.get.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.Get.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -103,7 +96,7 @@ func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err er
 }
 
 func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
-	ctx, endObservation := s.operations.upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -129,7 +122,7 @@ func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64
 }
 
 func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
-	ctx, endObservation := s.operations.compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("destination", destination),
 		log.String("sources", strings.Join(sources, ", ")),
 	}})
@@ -160,7 +153,7 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 }
 
 func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
-	ctx, endObservation := s.operations.delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
