@@ -88,7 +88,8 @@ func IsGitHubAppCloudEnabled(dotcom *schema.Dotcom) bool {
 	return dotcom != nil &&
 		dotcom.GithubAppCloud != nil &&
 		dotcom.GithubAppCloud.AppID != "" &&
-		dotcom.GithubAppCloud.PrivateKey != ""
+		dotcom.GithubAppCloud.PrivateKey != "" &&
+		dotcom.GithubAppCloud.Slug != ""
 }
 
 func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
