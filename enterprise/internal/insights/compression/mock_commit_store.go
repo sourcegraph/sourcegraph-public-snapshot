@@ -48,12 +48,12 @@ func NewMockCommitStore() *MockCommitStore {
 			},
 		},
 		InsertCommitsFunc: &CommitStoreInsertCommitsFunc{
-			defaultHook: func(context.Context, api.RepoID, []*gitdomain.Commit) error {
+			defaultHook: func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
 				return nil
 			},
 		},
 		SaveFunc: &CommitStoreSaveFunc{
-			defaultHook: func(context.Context, api.RepoID, *gitdomain.Commit) error {
+			defaultHook: func(context.Context, api.RepoID, *gitdomain.Commit, string) error {
 				return nil
 			},
 		},
@@ -80,12 +80,12 @@ func NewStrictMockCommitStore() *MockCommitStore {
 			},
 		},
 		InsertCommitsFunc: &CommitStoreInsertCommitsFunc{
-			defaultHook: func(context.Context, api.RepoID, []*gitdomain.Commit) error {
+			defaultHook: func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
 				panic("unexpected invocation of MockCommitStore.InsertCommits")
 			},
 		},
 		SaveFunc: &CommitStoreSaveFunc{
-			defaultHook: func(context.Context, api.RepoID, *gitdomain.Commit) error {
+			defaultHook: func(context.Context, api.RepoID, *gitdomain.Commit, string) error {
 				panic("unexpected invocation of MockCommitStore.Save")
 			},
 		},
@@ -346,24 +346,24 @@ func (c CommitStoreGetMetadataFuncCall) Results() []interface{} {
 // CommitStoreInsertCommitsFunc describes the behavior when the
 // InsertCommits method of the parent MockCommitStore instance is invoked.
 type CommitStoreInsertCommitsFunc struct {
-	defaultHook func(context.Context, api.RepoID, []*gitdomain.Commit) error
-	hooks       []func(context.Context, api.RepoID, []*gitdomain.Commit) error
+	defaultHook func(context.Context, api.RepoID, []*gitdomain.Commit, string) error
+	hooks       []func(context.Context, api.RepoID, []*gitdomain.Commit, string) error
 	history     []CommitStoreInsertCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertCommits delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCommitStore) InsertCommits(v0 context.Context, v1 api.RepoID, v2 []*gitdomain.Commit) error {
-	r0 := m.InsertCommitsFunc.nextHook()(v0, v1, v2)
-	m.InsertCommitsFunc.appendCall(CommitStoreInsertCommitsFuncCall{v0, v1, v2, r0})
+func (m *MockCommitStore) InsertCommits(v0 context.Context, v1 api.RepoID, v2 []*gitdomain.Commit, v3 string) error {
+	r0 := m.InsertCommitsFunc.nextHook()(v0, v1, v2, v3)
+	m.InsertCommitsFunc.appendCall(CommitStoreInsertCommitsFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the InsertCommits method
 // of the parent MockCommitStore instance is invoked and the hook queue is
 // empty.
-func (f *CommitStoreInsertCommitsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, []*gitdomain.Commit) error) {
+func (f *CommitStoreInsertCommitsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, []*gitdomain.Commit, string) error) {
 	f.defaultHook = hook
 }
 
@@ -371,7 +371,7 @@ func (f *CommitStoreInsertCommitsFunc) SetDefaultHook(hook func(context.Context,
 // InsertCommits method of the parent MockCommitStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *CommitStoreInsertCommitsFunc) PushHook(hook func(context.Context, api.RepoID, []*gitdomain.Commit) error) {
+func (f *CommitStoreInsertCommitsFunc) PushHook(hook func(context.Context, api.RepoID, []*gitdomain.Commit, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -380,7 +380,7 @@ func (f *CommitStoreInsertCommitsFunc) PushHook(hook func(context.Context, api.R
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CommitStoreInsertCommitsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoID, []*gitdomain.Commit) error {
+	f.SetDefaultHook(func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
 		return r0
 	})
 }
@@ -388,12 +388,12 @@ func (f *CommitStoreInsertCommitsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CommitStoreInsertCommitsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoID, []*gitdomain.Commit) error {
+	f.PushHook(func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
 		return r0
 	})
 }
 
-func (f *CommitStoreInsertCommitsFunc) nextHook() func(context.Context, api.RepoID, []*gitdomain.Commit) error {
+func (f *CommitStoreInsertCommitsFunc) nextHook() func(context.Context, api.RepoID, []*gitdomain.Commit, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -435,6 +435,9 @@ type CommitStoreInsertCommitsFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 []*gitdomain.Commit
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -443,7 +446,7 @@ type CommitStoreInsertCommitsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CommitStoreInsertCommitsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -455,23 +458,23 @@ func (c CommitStoreInsertCommitsFuncCall) Results() []interface{} {
 // CommitStoreSaveFunc describes the behavior when the Save method of the
 // parent MockCommitStore instance is invoked.
 type CommitStoreSaveFunc struct {
-	defaultHook func(context.Context, api.RepoID, *gitdomain.Commit) error
-	hooks       []func(context.Context, api.RepoID, *gitdomain.Commit) error
+	defaultHook func(context.Context, api.RepoID, *gitdomain.Commit, string) error
+	hooks       []func(context.Context, api.RepoID, *gitdomain.Commit, string) error
 	history     []CommitStoreSaveFuncCall
 	mutex       sync.Mutex
 }
 
 // Save delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockCommitStore) Save(v0 context.Context, v1 api.RepoID, v2 *gitdomain.Commit) error {
-	r0 := m.SaveFunc.nextHook()(v0, v1, v2)
-	m.SaveFunc.appendCall(CommitStoreSaveFuncCall{v0, v1, v2, r0})
+func (m *MockCommitStore) Save(v0 context.Context, v1 api.RepoID, v2 *gitdomain.Commit, v3 string) error {
+	r0 := m.SaveFunc.nextHook()(v0, v1, v2, v3)
+	m.SaveFunc.appendCall(CommitStoreSaveFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Save method of the
 // parent MockCommitStore instance is invoked and the hook queue is empty.
-func (f *CommitStoreSaveFunc) SetDefaultHook(hook func(context.Context, api.RepoID, *gitdomain.Commit) error) {
+func (f *CommitStoreSaveFunc) SetDefaultHook(hook func(context.Context, api.RepoID, *gitdomain.Commit, string) error) {
 	f.defaultHook = hook
 }
 
@@ -479,7 +482,7 @@ func (f *CommitStoreSaveFunc) SetDefaultHook(hook func(context.Context, api.Repo
 // Save method of the parent MockCommitStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *CommitStoreSaveFunc) PushHook(hook func(context.Context, api.RepoID, *gitdomain.Commit) error) {
+func (f *CommitStoreSaveFunc) PushHook(hook func(context.Context, api.RepoID, *gitdomain.Commit, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -488,7 +491,7 @@ func (f *CommitStoreSaveFunc) PushHook(hook func(context.Context, api.RepoID, *g
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CommitStoreSaveFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoID, *gitdomain.Commit) error {
+	f.SetDefaultHook(func(context.Context, api.RepoID, *gitdomain.Commit, string) error {
 		return r0
 	})
 }
@@ -496,12 +499,12 @@ func (f *CommitStoreSaveFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CommitStoreSaveFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoID, *gitdomain.Commit) error {
+	f.PushHook(func(context.Context, api.RepoID, *gitdomain.Commit, string) error {
 		return r0
 	})
 }
 
-func (f *CommitStoreSaveFunc) nextHook() func(context.Context, api.RepoID, *gitdomain.Commit) error {
+func (f *CommitStoreSaveFunc) nextHook() func(context.Context, api.RepoID, *gitdomain.Commit, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -543,6 +546,9 @@ type CommitStoreSaveFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 *gitdomain.Commit
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -551,7 +557,7 @@ type CommitStoreSaveFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CommitStoreSaveFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

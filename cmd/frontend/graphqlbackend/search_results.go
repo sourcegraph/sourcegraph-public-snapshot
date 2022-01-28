@@ -1018,7 +1018,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+				return NewSearchAlertResolver(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)).wrapResults(), nil
 			default:
 			}
 
@@ -1047,7 +1047,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertForCappedAndExpression().wrapResults(), nil
+			return NewSearchAlertResolver(search.AlertForCappedAndExpression()).wrapResults(), nil
 		}
 	}
 	result.Stats.IsLimitHit = !exhausted
@@ -1129,7 +1129,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 	var alert *searchAlert
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].priority > alerts[j].priority
+			return alerts[i].alert.Priority > alerts[j].alert.Priority
 		})
 		alert = alerts[0]
 	}
@@ -1213,7 +1213,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	var status, alertType string
 	status = DetermineStatusForLogs(srr, err)
 	if srr != nil && srr.SearchResults.Alert != nil {
-		alertType = srr.SearchResults.Alert.PrometheusType()
+		alertType = srr.SearchResults.Alert.alert.PrometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
@@ -1442,7 +1442,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 	var alert *searchAlert
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].priority > alerts[j].priority
+			return alerts[i].alert.Priority > alerts[j].alert.Priority
 		})
 		alert = alerts[0]
 	}
@@ -1536,7 +1536,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 		if rr == nil || !rr.Stats.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
-			return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+			return NewSearchAlertResolver(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)).wrapResults(), nil
 		} else {
 			err = nil
 		}

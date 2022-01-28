@@ -32,7 +32,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
                 Create a code monitor
             </Button>
         ) : (
-            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Sign up to create a code monitor" />
+            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Get started with code monitors" />
         )}
     </div>
 )

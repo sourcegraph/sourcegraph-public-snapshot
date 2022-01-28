@@ -21,7 +21,7 @@ type StoreFactory func(db *sql.DB, migrationsTable string) Store
 
 func newStoreFactory(observationContext *observation.Context) func(db *sql.DB, migrationsTable string) Store {
 	return func(db *sql.DB, migrationsTable string) Store {
-		return store.NewWithDB(db, migrationsTable, store.NewOperations(observationContext))
+		return NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(observationContext)))
 	}
 }
 
@@ -37,4 +37,21 @@ func initStore(ctx context.Context, newStore StoreFactory, db *sql.DB, schema *s
 	}
 
 	return store, nil
+}
+
+type storeShim struct {
+	*store.Store
+}
+
+func NewStoreShim(s *store.Store) Store {
+	return &storeShim{s}
+}
+
+func (s *storeShim) Transact(ctx context.Context) (runner.Store, error) {
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &storeShim{tx}, nil
 }
