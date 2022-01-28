@@ -315,13 +315,15 @@ func buildGoTests(f func(description, testSuffix string)) {
 	// This is a bandage solution to speed up the go tests by running the slowest ones
 	// concurrently. As a results, the PR time affecting only Go code is divided by two.
 	slowGoTestPackages := []string{
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
-		"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
-		"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
-		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",       // 224s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore",     // 122s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
+		"github.com/sourcegraph/sourcegraph/internal/database",                                  // 253s
+		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                        // 52 + 60
+		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/database",                       // 94s
+		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
 	}
 
 	f("all", "exclude "+strings.Join(slowGoTestPackages, " "))
