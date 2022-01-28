@@ -156,7 +156,10 @@ export const ReferencesList: React.FunctionComponent<
     if (loading && !data) {
         return (
             <>
-                <LoadingSpinner className="mx-auto my-4" />
+                <LoadingSpinner inline={false} className="mx-auto my-4" />
+                <p className="text-muted text-center">
+                    <i>Loading references ...</i>
+                </p>
             </>
         )
     }
@@ -178,7 +181,7 @@ export const ReferencesList: React.FunctionComponent<
     return (
         <div>
             {hover && <div className="card-body mb-0" dangerouslySetInnerHTML={{ __html: hover.markdown.html }} />}
-            <h3 className="card-header">Definitions</h3>
+            <h4 className="card-header py-1">Definitions</h4>
             {definitions.length > 0 ? (
                 <LocationsList
                     locations={definitions}
@@ -188,7 +191,7 @@ export const ReferencesList: React.FunctionComponent<
             ) : (
                 <span>Nothing found</span>
             )}
-            <h3 className="card-header">References</h3>
+            <h4 className="card-header py-1">References</h4>
             {references.length > 0 ? (
                 <LocationsList
                     locations={references}
@@ -262,7 +265,7 @@ const LocationsList: React.FunctionComponent<{
         const lines = location.resource.content.split(/\r?\n/)
         const range = location.range
         if (range !== null) {
-            return lines[range.start?.line]
+            return lines[range.start?.line].trim()
         }
         return ''
     }
@@ -341,7 +344,7 @@ const ReferenceGroup: React.FunctionComponent<{
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
 
     return (
-        <div className="ml-2">
+        <div className="ml-4">
             <button
                 aria-expanded={isOpen}
                 type="button"
@@ -354,13 +357,13 @@ const ReferenceGroup: React.FunctionComponent<{
                     <MenuDownIcon className={classNames('icon-inline', styles.chevron)} />
                 )}
 
-                <span>
+                <span className={styles.coolCodeIntelReferenceFilename}>
                     {fileBase ? `${fileBase}/` : null}
                     {fileName} ({group.references.length} references)
                 </span>
             </button>
 
-            <Collapse id={group.repoName + group.path} isOpen={isOpen}>
+            <Collapse id={group.repoName + group.path} isOpen={isOpen} className="ml-2">
                 <ul className="list-unstyled pl-3 py-1 mb-0">
                     {group.references.map(reference => {
                         const fileURL = buildFileURL(reference)
@@ -429,12 +432,18 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
     )
 })
 
-export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelPanelProps> = props => (
-    <Resizable
-        className={styles.resizablePanel}
-        handlePosition="top"
-        defaultSize={350}
-        storageKey="panel-size"
-        element={<CoolCodeIntelPanel {...props} />}
-    />
-)
+export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelPanelProps> = props => {
+    if (!props.hoveredToken) {
+        return null
+    }
+
+    return (
+        <Resizable
+            className={styles.resizablePanel}
+            handlePosition="top"
+            defaultSize={350}
+            storageKey="panel-size"
+            element={<CoolCodeIntelPanel {...props} />}
+        />
+    )
+}
