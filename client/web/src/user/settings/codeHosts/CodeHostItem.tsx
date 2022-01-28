@@ -53,9 +53,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     useGitHubApp,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
-    const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
-        isAddConnectionModalOpen,
-    ])
+    const toggleAddConnectionModal = useCallback(
+        () => setIsAddConnectionModalOpen(!isAddConnectionModalOpen),
+        [isAddConnectionModalOpen]
+    )
 
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
@@ -74,11 +75,15 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     }, [kind, navigateToAuthProvider])
 
     const toGitHubApp = function (): void {
-        window.location.assign(`https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${encodeURIComponent(owner.id)}`)
+        window.location.assign(
+            `https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${encodeURIComponent(
+                owner.id
+            )}`
+        )
     }
 
     const isUserOwner = owner.type === 'user'
-    const connectAction = useGitHubApp ? toGitHubApp : (isUserOwner ? toAuthProvider : toggleAddConnectionModal)
+    const connectAction = useGitHubApp ? toGitHubApp : isUserOwner ? toAuthProvider : toggleAddConnectionModal
     const updateAction = isUserOwner ? toAuthProvider : toggleUpdateModal
 
     return (
