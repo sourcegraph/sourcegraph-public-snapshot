@@ -7,7 +7,7 @@
 To get started, click on the "Create batch change" button on the Batch Changes page, or go to `/batch-changes/create`.
 You will be prompted to choose a name for your namespace and optionally define a custom namespace to put your batch change in.
 
-<!-- TODO: Screenshot of the batch change create form here. -->
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/ssbc_create_form.png" class="screenshot">
 
 Once done, click "Create".
 
@@ -19,7 +19,7 @@ You should see the editor view now. This view consists of three main areas:
 - The editor in the middle
 - The workspaces preview panel on the right
 
-<!-- TODO: Screenshot of the editor view with 3 red boxes around the panels. -->
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/ssbc_editor_panels.png" class="screenshot">
 
 You can pick from the examples in the library pane to get started quickly, or begin working on your batch spec in the editor right away. The editor will provide documentation as you hover over tokens in the YAML spec and supports auto-completion.
 
@@ -27,7 +27,7 @@ You can pick from the examples in the library pane to get started quickly, or be
 
 Once satisfied or to test your batch change's scope, you can at any time run a new preview from the right hand side panel. After resolution, it will show all the workspaces in repositories that matched the given `on` statements. You can search through them and determine if your query is satisfying before starting execution. You can also exclude single workspaces from this list.
 
-<!-- TODO: Screenshot of the editor page with workspaces resolved. -->
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/ssbc_workspace_preview.png" class="screenshot">
 
 ### Executing your batch spec
 
@@ -48,7 +48,7 @@ On this page, you see
 
 Once finished, you can proceed to the batch spec preview as you know it from before.
 
-<!-- TODO: Screenshot of the execution page here. -->
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/ssbc_execution_screen.png" class="screenshot">
 
 ### Previewing and applying the batch spec
 
@@ -56,7 +56,7 @@ On this page, you can review the changes proposed one more time and also review 
 
 Congratulations, you got your first server-side Batch Change going 🎊
 
-<!-- TODO: Screenshot of the preview page here. -->
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/ssbc_preview_screen.png" class="screenshot">
 
 ## Updating your server-side batch change
 
