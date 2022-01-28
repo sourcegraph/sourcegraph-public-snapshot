@@ -1,7 +1,8 @@
 import classNames from 'classnames'
+import { createMemoryHistory } from 'history'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -29,9 +30,11 @@ import { FETCH_REFERENCES_QUERY } from './GlobalCodeIntelQueries'
 
 const SHOW_COOL_CODEINTEL = localStorage.getItem('coolCodeIntel') !== null
 
+type CoolHoveredToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+
 export const GlobalCodeIntel: React.FunctionComponent<
     {
-        hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+        hoveredToken?: CoolHoveredToken
         showPanel: boolean
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
 > = props => {
@@ -47,7 +50,7 @@ export const GlobalCodeIntel: React.FunctionComponent<
 }
 
 export interface CoolCodeIntelPopoverTabProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'> {
-    hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+    hoveredToken?: CoolHoveredToken
 }
 
 const LAST_TAB_STORAGE_KEY = 'CoolCodeIntel.lastTab'
@@ -129,19 +132,37 @@ interface LocationGroup {
 
 export const ReferencesList: React.FunctionComponent<
     {
-        hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+        hoveredToken: CoolHoveredToken
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
 
+    useEffect(() => {
+        setActiveLocation(undefined)
+    }, [props.hoveredToken])
+
+    const history = useMemo(() => createMemoryHistory(), [])
+
+    const onReferenceClick = (location: Location | undefined): void => {
+        if (location) {
+            history.push(location.url)
+        }
+        setActiveLocation(location)
+    }
+
     return (
-        <div className={classNames('', activeLocation !== undefined ? 'd-flex' : 'd-flex')}>
+        <div className="d-flex">
             <div className={classNames('px-0', styles.sideReferences)}>
-                <SideReferences {...props} activeLocation={activeLocation} setActiveLocation={setActiveLocation} />
+                <SideReferences {...props} activeLocation={activeLocation} setActiveLocation={onReferenceClick} />
             </div>
             {activeLocation !== undefined && (
                 <div className={classNames('px-0 border-left', styles.sideBlob)}>
-                    <SideBlob {...props} activeLocation={activeLocation} />
+                    <SideBlob
+                        {...props}
+                        history={history}
+                        location={history.location}
+                        activeLocation={activeLocation}
+                    />
                 </div>
             )}
         </div>
@@ -150,7 +171,7 @@ export const ReferencesList: React.FunctionComponent<
 
 export const SideReferences: React.FunctionComponent<
     {
-        hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+        hoveredToken: CoolHoveredToken
         setActiveLocation: (location: Location | undefined) => void
         activeLocation: Location | undefined
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
@@ -278,14 +299,15 @@ export const SideReferences: React.FunctionComponent<
 
 export const SideBlob: React.FunctionComponent<
     {
-        hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+        hoveredToken: CoolHoveredToken
         activeLocation: Location
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
 > = props => (
     <Blob
         {...props}
-        onHoverToken={(token: HoveredToken) => {
+        onHoverToken={(token: CoolHoveredToken) => {
             console.log('sideblob token', token)
+            props.onHoverToken(token)
         }}
         disableStatusBar={true}
         wrapCode={true}
@@ -376,7 +398,6 @@ const LocationsList: React.FunctionComponent<{
                     activeLocation={activeLocation}
                     setActiveLocation={setActiveLocation}
                     getLineContent={getLineContent}
-                    buildFileURL={buildFileURL}
                 />
             ))}
         </>
@@ -388,8 +409,7 @@ const RepoReferenceGroup: React.FunctionComponent<{
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
     getLineContent: (location: Location) => string
-    buildFileURL: (location: Location) => string
-}> = ({ repoReferenceGroup, setActiveLocation, getLineContent, buildFileURL, activeLocation }) => {
+}> = ({ repoReferenceGroup, setActiveLocation, getLineContent, activeLocation }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
 
@@ -420,7 +440,6 @@ const RepoReferenceGroup: React.FunctionComponent<{
                         activeLocation={activeLocation}
                         setActiveLocation={setActiveLocation}
                         getLineContent={getLineContent}
-                        buildFileURL={buildFileURL}
                     />
                 ))}
             </Collapse>
@@ -433,8 +452,7 @@ const ReferenceGroup: React.FunctionComponent<{
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
     getLineContent: (reference: Location) => string
-    buildFileURL: (reference: Location) => string
-}> = ({ group, setActiveLocation: setActiveLocation, getLineContent, buildFileURL, activeLocation }) => {
+}> = ({ group, setActiveLocation: setActiveLocation, getLineContent, activeLocation }) => {
     const [fileBase, fileName] = splitPath(group.path)
 
     const [isOpen, setOpen] = useState<boolean>(true)
@@ -463,16 +481,20 @@ const ReferenceGroup: React.FunctionComponent<{
             <Collapse id={group.repoName + group.path} isOpen={isOpen} className="ml-2">
                 <ul className="list-unstyled pl-3 py-1 mb-0">
                     {group.locations.map(reference => {
-                        const fileURL = buildFileURL(reference)
                         const className =
-                            activeLocation && activeLocation.url === fileURL ? styles.coolCodeIntelReferenceActive : ''
+                            activeLocation && activeLocation.url === reference.url
+                                ? styles.coolCodeIntelReferenceActive
+                                : ''
 
                         return (
-                            <li key={fileURL} className={classNames('border-0 rounded-0', className)}>
+                            <li key={reference.url} className={classNames('border-0 rounded-0', className)}>
                                 <div>
                                     <Link
-                                        onClick={() => setActiveLocation(reference)}
-                                        to={fileURL}
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            setActiveLocation(reference)
+                                        }}
+                                        to={reference.url}
                                         className={styles.referenceLink}
                                     >
                                         <span>
@@ -497,7 +519,7 @@ const TABS: CoolCodeIntelToolsTab[] = [
 ]
 
 interface CoolCodeIntelPanelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'> {
-    hoveredToken?: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+    hoveredToken?: CoolHoveredToken
 }
 
 export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
@@ -521,7 +543,7 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
             </div>
             <TabPanels>
                 {TABS.map(tab => (
-                    <TabPanel key={tab.id} data-testid="panel-tabs-content">
+                    <TabPanel key={tab.id}>
                         <tab.component {...props} />
                     </TabPanel>
                 ))}
