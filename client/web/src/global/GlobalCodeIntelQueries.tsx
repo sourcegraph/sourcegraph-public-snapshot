@@ -1,5 +1,32 @@
 import { gql } from '@sourcegraph/http-client'
 export const FETCH_REFERENCES_QUERY = gql`
+    fragment GitBlobFields on GitBlob {
+        path
+        content
+        richHTML
+        highlight(disableTimeout: false) {
+            aborted
+            html
+        }
+        repository {
+            name
+        }
+        commit {
+            oid
+        }
+    }
+
+    fragment RangeFields on Range {
+        start {
+            line
+            character
+        }
+        end {
+            line
+            character
+        }
+    }
+
     query CoolCodeIntelReferences(
         $repository: String!
         $commit: String!
@@ -15,24 +42,10 @@ export const FETCH_REFERENCES_QUERY = gql`
                         references(line: $line, character: $character, after: $after) {
                             nodes {
                                 resource {
-                                    path
-                                    content
-                                    repository {
-                                        name
-                                    }
-                                    commit {
-                                        oid
-                                    }
+                                    ...GitBlobFields
                                 }
                                 range {
-                                    start {
-                                        line
-                                        character
-                                    }
-                                    end {
-                                        line
-                                        character
-                                    }
+                                    ...RangeFields
                                 }
                             }
                             pageInfo {
@@ -42,24 +55,10 @@ export const FETCH_REFERENCES_QUERY = gql`
                         definitions(line: $line, character: $character) {
                             nodes {
                                 resource {
-                                    path
-                                    content
-                                    repository {
-                                        name
-                                    }
-                                    commit {
-                                        oid
-                                    }
+                                    ...GitBlobFields
                                 }
                                 range {
-                                    start {
-                                        line
-                                        character
-                                    }
-                                    end {
-                                        line
-                                        character
-                                    }
+                                    ...RangeFields
                                 }
                             }
                         }
