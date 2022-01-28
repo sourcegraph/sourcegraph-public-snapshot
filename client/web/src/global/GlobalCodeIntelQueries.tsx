@@ -65,6 +65,7 @@ export const FETCH_REFERENCES_QUERY = gql`
                         hover(line: $line, character: $character) {
                             markdown {
                                 html
+                                text
                             }
                         }
                     }
