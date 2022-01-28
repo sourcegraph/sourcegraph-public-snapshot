@@ -8,31 +8,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 )
 
-type searchAlert struct {
+type searchAlertResolver struct {
 	alert *search.Alert
 }
 
-func NewSearchAlertResolver(alert *search.Alert) *searchAlert {
+func NewSearchAlertResolver(alert *search.Alert) *searchAlertResolver {
 	if alert == nil {
 		return nil
 	}
-	return &searchAlert{alert: alert}
+	return &searchAlertResolver{alert: alert}
 }
 
-func (a searchAlert) Title() string { return a.alert.Title }
+func (a searchAlertResolver) Title() string { return a.alert.Title }
 
-func (a searchAlert) Description() *string {
+func (a searchAlertResolver) Description() *string {
 	if a.alert.Description == "" {
 		return nil
 	}
 	return &a.alert.Description
 }
 
-func (a searchAlert) PrometheusType() string {
+func (a searchAlertResolver) PrometheusType() string {
 	return a.alert.PrometheusType
 }
 
-func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
+func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescription {
 	if len(a.alert.ProposedQueries) == 0 {
 		return nil
 	}
@@ -43,11 +43,11 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	return &proposedQueries
 }
 
-func (a searchAlert) wrapResults() *SearchResults {
+func (a searchAlertResolver) wrapResults() *SearchResults {
 	return &SearchResults{Alert: &a}
 }
 
-func (a searchAlert) wrapSearchImplementer(db database.DB) *alertSearchImplementer {
+func (a searchAlertResolver) wrapSearchImplementer(db database.DB) *alertSearchImplementer {
 	return &alertSearchImplementer{
 		db:    db,
 		alert: a,
@@ -58,7 +58,7 @@ func (a searchAlert) wrapSearchImplementer(db database.DB) *alertSearchImplement
 // SearchImplementer. This helps avoid needing to have a db on the searchAlert type
 type alertSearchImplementer struct {
 	db    database.DB
-	alert searchAlert
+	alert searchAlertResolver
 }
 
 func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver, error) {

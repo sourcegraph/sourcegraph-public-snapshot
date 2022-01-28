@@ -147,7 +147,7 @@ type SearchResultsResolver struct {
 type SearchResults struct {
 	Matches result.Matches
 	Stats   streaming.Stats
-	Alert   *searchAlert
+	Alert   *searchAlertResolver
 }
 
 // Results are the results found by the search. It respects the limits set. To
@@ -213,7 +213,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	return strconv.Itoa(int(count))
 }
 
-func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.SearchResults.Alert }
+func (sr *SearchResultsResolver) Alert() *searchAlertResolver { return sr.SearchResults.Alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 	return int32(sr.elapsed.Milliseconds())
@@ -1071,7 +1071,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 	var (
 		mu     sync.Mutex
 		stats  streaming.Stats
-		alerts []*searchAlert
+		alerts []*searchAlertResolver
 		dedup  = result.NewDeduper()
 		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
 		// this concurrency limit should probably be informed by a user's rate limit quota
@@ -1126,7 +1126,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 		return nil, err
 	}
 
-	var alert *searchAlert
+	var alert *searchAlertResolver
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
 			return alerts[i].alert.Priority > alerts[j].alert.Priority
@@ -1331,7 +1331,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 	var (
 		mu     sync.Mutex
 		stats  streaming.Stats
-		alerts []*searchAlert
+		alerts []*searchAlertResolver
 		dedup  = result.NewDeduper()
 		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
 		// this concurrency limit should probably be informed by a user's rate limit quota
@@ -1439,7 +1439,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		sortResults(matches)
 	}
 
-	var alert *searchAlert
+	var alert *searchAlertResolver
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
 			return alerts[i].alert.Priority > alerts[j].alert.Priority
