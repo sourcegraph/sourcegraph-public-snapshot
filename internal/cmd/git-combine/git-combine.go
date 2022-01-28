@@ -354,7 +354,21 @@ func sanitizeSignature(sig object.Signature) object.Signature {
 func sanitizeMessage(dir string, commit *object.Commit) string {
 	// There are lots of things that could link to other artificats in the
 	// commit message. So we play it safe and just remove the message.
-	return fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, commitTitle(commit), commit.Hash)
+	title := commitTitle(commit)
+
+	// vscode seems to often include URLs to issues and ping users in commit
+	// titles. I am guessing this is due to its tiny box for creating commit
+	// messages. This leads to github crosslinking to megarepo. Lets naively
+	// sanitize.
+	for _, bad := range []string{"@", "http://", "https://"} {
+		if i := strings.Index(title, bad); i >= 0 {
+			title = title[:i]
+		}
+	}
+
+	title = strings.TrimSpace(title)
+
+	return fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, title, commit.Hash)
 }
 
 func commitTitle(commit *object.Commit) string {
