@@ -18,6 +18,7 @@ const config: Meta = {
     ],
 
     parameters: {
+        chromatic: { disableSnapshot: false },
         component: RadioButton,
         chromatic: {
             enableDarkMode: true,

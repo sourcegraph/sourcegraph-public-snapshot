@@ -20,6 +20,7 @@ const config: Meta = {
     decorators: [decorator],
 
     parameters: {
+        chromatic: { disableSnapshot: false },
         component: Tooltip,
         chromatic: {
             enableDarkMode: true,

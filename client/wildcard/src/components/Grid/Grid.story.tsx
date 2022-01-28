@@ -7,6 +7,7 @@ const config: Meta = {
     title: 'wildcard/Grid',
 
     parameters: {
+        chromatic: { disableSnapshot: false },
         component: Grid,
     },
 }

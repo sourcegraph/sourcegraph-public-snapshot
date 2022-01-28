@@ -22,6 +22,7 @@ const config: Meta = {
     ],
 
     parameters: {
+        chromatic: { disableSnapshot: false },
         component: Button,
         chromatic: {
             enableDarkMode: true,

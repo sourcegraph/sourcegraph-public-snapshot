@@ -15,6 +15,7 @@ const config: Meta = {
         ),
     ],
     parameters: {
+        chromatic: { disableSnapshot: false },
         component: FeedbackText,
         chromatic: {
             enableDarkMode: true,

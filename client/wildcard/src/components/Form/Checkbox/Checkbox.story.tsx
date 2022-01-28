@@ -18,6 +18,7 @@ const config: Meta = {
     ],
 
     parameters: {
+        chromatic: { disableSnapshot: false },
         component: Checkbox,
         chromatic: {
             enableDarkMode: true,

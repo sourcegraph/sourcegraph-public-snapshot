@@ -18,6 +18,7 @@ const config: Meta = {
     ],
 
     parameters: {
+        chromatic: { disableSnapshot: false },
         component: Card,
         chromatic: {
             enableDarkMode: true,

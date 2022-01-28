@@ -19,6 +19,7 @@ const config: Meta = {
     ],
 
     parameters: {
+        chromatic: { disableSnapshot: false },
         component: TextArea,
         chromatic: {
             enableDarkMode: true,

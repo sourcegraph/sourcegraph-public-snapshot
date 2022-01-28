@@ -16,6 +16,7 @@ const config: Meta = {
     ],
 
     parameters: {
+        chromatic: { disableSnapshot: false },
         component: Modal,
         chromatic: {
             enableDarkMode: true,
