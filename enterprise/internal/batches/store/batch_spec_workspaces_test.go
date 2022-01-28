@@ -8,24 +8,19 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
-	esStore := database.ExternalServicesWith(s)
 
-	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
-
-	if err := repoStore.Create(ctx, repo, deletedRepo); err != nil {
-		t.Fatal(err)
-	}
+	repos, _ := ct.CreateTestRepos(t, ctx, s.DatabaseDB(), 3)
+	deletedRepo := repos[2].With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := repoStore.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +31,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			BatchSpecID:      int64(i + 567),
 			ChangesetSpecIDs: []int64{int64(i + 456), int64(i + 678)},
 
-			RepoID: repo.ID,
+			RepoID: repos[i].ID,
 			Branch: "master",
 			Commit: "d34db33f",
 			Path:   "sub/dir/ectory",
@@ -63,10 +58,6 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			Ignored:            true,
 			Skipped:            true,
 			CachedResultFound:  i == 1,
-		}
-
-		if i == cap(workspaces)-1 {
-			job.RepoID = deletedRepo.ID
 		}
 
 		workspaces = append(workspaces, job)
@@ -247,6 +238,25 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				t.Fatalf("invalid jobs returned: %s", diff)
 			}
 		})
+
+		t.Run("TextSearch", func(t *testing.T) {
+			for i, r := range repos[:2] {
+				have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+					TextSearch: []search.TextSearchTerm{{Term: string(r.Name)}},
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != 1 {
+					t.Fatalf("wrong number of results. have=%d", len(have))
+				}
+
+				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspace{workspaces[i]}); diff != "" {
+					t.Fatalf("invalid jobs returned: %s", diff)
+				}
+			}
+		})
 	})
 
 	t.Run("Count", func(t *testing.T) {
@@ -347,7 +357,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			}
 
 			tt.workspace.BatchSpecID = tt.batchSpec.ID
-			tt.workspace.RepoID = repo.ID
+			tt.workspace.RepoID = repos[0].ID
 			tt.workspace.Branch = "master"
 			tt.workspace.Commit = "d34db33f"
 			tt.workspace.Path = "sub/dir/ectory"
