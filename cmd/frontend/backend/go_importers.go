@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 
 	"github.com/cockroachdb/errors"
@@ -63,7 +64,7 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 
 	q.Query = countGoImportersGraphQLQuery
 	q.Variables = map[string]interface{}{
-		"query": fmt.Sprintf(`f:go\.mod ^\s+%s\S*\s+v.* count:all visibility:public timeout:20s`, regexp.QuoteMeta(repo)),
+		"query": fmt.Sprintf(`f:go\.mod ^\s+%s\S*\s+v.* count:all visibility:public timeout:20s`, regexp.QuoteMeta(string(repo))),
 	}
 
 	body, err := json.Marshal(q)
