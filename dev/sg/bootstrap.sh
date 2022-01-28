@@ -60,6 +60,9 @@ main() {
 
   printf '%s\n' 'running sg install' 1>&2
   "$_file" install </dev/tty
+
+  printf '%s\n' 'recording sg version' 1>&2
+  "$_file" version -record
 }
 
 get_architecture() {

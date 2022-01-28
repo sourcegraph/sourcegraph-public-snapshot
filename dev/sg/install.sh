@@ -3,6 +3,11 @@
 set -euf -o pipefail
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 
+# Silently try to record previous version if easily available
+if command -v "sg" &>/dev/null; then
+  sg version -record 2>/dev/null || true
+fi
+
 # The BUILD_COMMIT is baked into the binary (see `go install` below) and
 # contains the latest commit in the `dev/sg` folder. If the directory is
 # "dirty", though, we mark the build as a dev build.
