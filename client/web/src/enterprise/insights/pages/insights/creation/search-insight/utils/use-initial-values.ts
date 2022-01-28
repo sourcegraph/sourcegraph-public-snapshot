@@ -6,7 +6,7 @@ import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CreateInsightFormFields } from '../types'
 
-import { decodeUrlSearchInsight } from './search-insight-url-parsers/search-insight-url-parsers'
+import { decodeSearchInsightUrl } from './search-insight-url-parsers/search-insight-url-parsers'
 import { useURLQueryInsight } from './use-url-query-insight/use-url-query-insight'
 
 export interface UseInitialValuesResult {
@@ -22,7 +22,7 @@ export function useSearchInsightInitialValues(): UseInitialValuesResult {
     // to support 1-click creation insight flow for the search result page.
     const { hasQueryInsight, data: urlQueryInsightValues } = useURLQueryInsight(search)
 
-    const urlParsedInsightValues = useMemo(() => decodeUrlSearchInsight(search), [search])
+    const urlParsedInsightValues = useMemo(() => decodeSearchInsightUrl(search), [search])
 
     // Creation UI saves all form values in local storage to be able restore these
     // values if page was fully refreshed or user came back from other page.

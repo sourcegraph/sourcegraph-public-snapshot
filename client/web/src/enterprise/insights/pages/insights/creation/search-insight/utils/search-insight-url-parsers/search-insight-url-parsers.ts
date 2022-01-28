@@ -2,7 +2,7 @@ import { SearchBasedInsightSeries } from '../../../../../../core/types'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { CreateInsightFormFields } from '../../types'
 
-export function decodeUrlSearchInsight(queryParameters: string): CreateInsightFormFields | null {
+export function decodeSearchInsightUrl(queryParameters: string): CreateInsightFormFields | null {
     try {
         const searchParameter = new URLSearchParams(decodeURIComponent(queryParameters))
 
@@ -36,7 +36,7 @@ interface SearchInsightURLValues extends Omit<CreateInsightFormFields, Unsupport
     series: (Omit<SearchBasedInsightSeries, 'id'> & { id?: string })[]
 }
 
-export function encodeUrlSearchInsight(values: Partial<SearchInsightURLValues>): string {
+export function encodeSearchInsightUrl(values: Partial<SearchInsightURLValues>): string {
     const parameters = new URLSearchParams()
     const keys = Object.keys(values) as (keyof SearchInsightURLValues)[]
 
