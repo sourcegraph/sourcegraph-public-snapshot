@@ -619,6 +619,10 @@ type RecentCommittersResults struct {
 
 // Lists recent committers for a repository.
 func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommittersParams) (*RecentCommittersResults, error) {
+	if params.First == 0 {
+		params.First = 100
+	}
+
 	query := `
 	  query($name: String!, $owner: String!, $after: String, $first: Int!) {
 		repository(name: $name, owner: $owner) {
