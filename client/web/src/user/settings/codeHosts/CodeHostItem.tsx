@@ -74,7 +74,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     }, [kind, navigateToAuthProvider])
 
     const toGitHubApp = function (): void {
-        window.location.assign(`https://github.com/apps/<your GitHub app slug>/installations/new?state=${encodeURIComponent(owner.id)}`)
+        window.location.assign(`https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${encodeURIComponent(owner.id)}`)
     }
 
     const isUserOwner = owner.type === 'user'

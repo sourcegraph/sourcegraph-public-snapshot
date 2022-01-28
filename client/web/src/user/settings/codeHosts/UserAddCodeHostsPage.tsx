@@ -342,7 +342,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
-                                        useGitHubApp={useGitHubApp}
+                                        useGitHubApp={useGitHubApp && kind === ExternalServiceKind.GITHUB}
                                     />
                                 </CodeHostListItem>
                             ) : null
