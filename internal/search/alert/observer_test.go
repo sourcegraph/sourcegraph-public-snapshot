@@ -92,11 +92,12 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		PrometheusType: "no_resolved_repos__context_none_in_common",
 		Title:          "No repositories found for your query within the context @user",
 		ProposedQueries: []*search.ProposedQuery{
-			search.NewProposedQuery(
-				"search in the global context",
-				"context:global repo:r1 foo",
-				query.SearchTypeRegex,
-			),
+			{
+
+				Description: "search in the global context",
+				Query:       "context:global repo:r1 foo",
+				PatternType: query.SearchTypeRegex,
+			},
 		},
 	}
 
