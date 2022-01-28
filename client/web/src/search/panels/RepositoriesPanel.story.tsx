@@ -34,10 +34,19 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('Populated', () => <WebStory>{() => <RepositoriesPanel {...props} />}</WebStory>)
+add('RepositoriesPanel', () => (
+    <WebStory>
+        {() => (
+            <div style={{ maxWidth: '32rem' }}>
+                <h2>Populated</h2>
+                <RepositoriesPanel {...props} />
 
-add('Loading', () => <WebStory>{() => <RepositoriesPanel {...props} fetchRecentSearches={() => NEVER} />}</WebStory>)
+                <h2>Loading</h2>
+                <RepositoriesPanel {...props} fetchRecentSearches={() => NEVER} />
 
-add('Empty', () => (
-    <WebStory>{() => <RepositoriesPanel {...props} fetchRecentSearches={() => of(emptyRecentSearches)} />}</WebStory>
+                <h2>Empty</h2>
+                <RepositoriesPanel {...props} fetchRecentSearches={() => of(emptyRecentSearches)} />
+            </div>
+        )}
+    </WebStory>
 ))

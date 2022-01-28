@@ -363,30 +363,3 @@ add('limit hit with some results', () => {
         </WebStory>
     )
 })
-
-add('results with signup CTA', () => {
-    const result: AggregateStreamingSearchResults = {
-        state: 'complete',
-        results: MULTIPLE_SEARCH_RESULT.results,
-        filters: MULTIPLE_SEARCH_RESULT.filters,
-        progress: {
-            durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
-            skipped: [],
-        },
-    }
-
-    return (
-        <WebStory>
-            {() => (
-                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                    <StreamingSearchResults
-                        {...defaultProps}
-                        authenticatedUser={null}
-                        streamSearch={() => of(result)}
-                    />
-                </SearchQueryStateStoreProvider>
-            )}
-        </WebStory>
-    )
-})

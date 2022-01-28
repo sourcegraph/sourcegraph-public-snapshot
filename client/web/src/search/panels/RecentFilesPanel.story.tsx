@@ -34,10 +34,19 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('Populated', () => <WebStory>{() => <RecentFilesPanel {...props} />}</WebStory>)
+add('RecentFilesPanel', () => (
+    <WebStory>
+        {() => (
+            <div style={{ maxWidth: '32rem' }}>
+                <h2>Populated</h2>
+                <RecentFilesPanel {...props} />
 
-add('Loading', () => <WebStory>{() => <RecentFilesPanel {...props} fetchRecentFileViews={() => NEVER} />}</WebStory>)
+                <h2>Loading</h2>
+                <RecentFilesPanel {...props} fetchRecentFileViews={() => NEVER} />
 
-add('Empty', () => (
-    <WebStory>{() => <RecentFilesPanel {...props} fetchRecentFileViews={() => of(emptyRecentFiles)} />}</WebStory>
+                <h2>Empty</h2>
+                <RecentFilesPanel {...props} fetchRecentFileViews={() => of(emptyRecentFiles)} />
+            </div>
+        )}
+    </WebStory>
 ))

@@ -7,7 +7,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 
-const { add } = storiesOf('search-ui/searchContexts/SearchContextCtaPrompt', module)
+const { add } = storiesOf('search-ui/input/SearchContextCtaPrompt', module)
     .addParameters({
         chromatic: { viewports: [500] },
     })

@@ -22,7 +22,7 @@ const searchContext = {
 } as ISearchContext
 
 add(
-    'delete modal',
+    'DeleteSearchContextModal',
     () => (
         <WebStory>
             {webProps => (

@@ -12,7 +12,7 @@ import { DeleteMonitorModal } from './DeleteMonitorModal'
 const { add } = storiesOf('web/enterprise/code-monitoring/DeleteMonitorModal', module)
 
 add(
-    'Example',
+    'DeleteMonitorModal',
     () => (
         <WebStory>
             {props => (

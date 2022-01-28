@@ -10,7 +10,7 @@ import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module)
 
 add(
-    'Example',
+    'CreateCodeMonitorPage',
     () => (
         <WebStory>
             {props => (
