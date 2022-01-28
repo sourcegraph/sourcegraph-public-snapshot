@@ -85,7 +85,7 @@ export const VsceSearchResultsInfoBar: React.FunctionComponent<VsceSearchResults
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
                     source="Saved"
-                    viewEventName="SearchResultSavedSeachCTAShown"
+                    viewEventName="VSCE_SaveSearchClick"
                     returnTo=""
                     telemetryService={telemetryService}
                     isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
@@ -157,7 +157,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     }, [onToggle])
 
     const onClick = (): void => {
-        telemetryService.log('SignUpPLG_VSCE_1_Search')
+        telemetryService.log('VSCE_SignUp_ModalClick')
     }
 
     // Whenever dropdown opens, log view event

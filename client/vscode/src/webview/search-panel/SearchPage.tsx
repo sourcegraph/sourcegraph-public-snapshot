@@ -17,22 +17,20 @@ import {
     fetchSearchContexts,
     getUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/search/backend'
-import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
+import { appendContextFilter, sanitizeQueryForTelemetry } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import {
-    EventSource,
     CurrentAuthStateResult,
     CurrentAuthStateVariables,
     SearchResult,
     SearchVariables,
     TreeEntriesResult,
     TreeEntriesVariables,
-    EventLogsDataResult,
-    logUserSearchEventVariables,
 } from '../../graphql-operations'
 import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
@@ -40,7 +38,7 @@ import { WebviewPageProps } from '../platform/context'
 import { HomePanels } from './HomePanels'
 import { SearchBetaIcon } from './icons'
 import styles from './index.module.scss'
-import { currentAuthStateQuery, logEventsQuery, searchQuery, treeEntriesQuery } from './queries'
+import { currentAuthStateQuery, searchQuery, treeEntriesQuery } from './queries'
 import { RepoPage } from './RepoPage'
 import { convertGQLSearchToSearchMatches, SearchResults } from './SearchResults'
 import { DEFAULT_SEARCH_CONTEXT_SPEC } from './state'
@@ -152,15 +150,11 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     const onSignUpClick = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
-            platformContext.telemetryService.log(
-                'VSCESearchPageClicked',
-                { campaign: 'Sign up link' },
-                { campaign: 'Sign up link' }
-            )
+            platformContext.telemetryService.log('VSCE_CreateAccountBanner_Click')
         },
         [platformContext.telemetryService]
     )
-
+    // Set initial states
     useEffect(() => {
         setLoading(true)
         // Check for Access Token to display sign up CTA at start up
@@ -318,7 +312,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             sourcegraphVSCodeExtensionAPI
                 .hasActivePanel()
                 .then(response => {
-                    console.log('Search Performed', response)
+                    console.log('Search Panel Active', response)
                 }) // TODO error handling
                 .catch(error => console.log(error))
             // Set Full Query for Results Page
@@ -363,44 +357,49 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         instanceHostname,
         validAccessToken,
         openRepoFileTree,
+        authenticatedUser,
     ])
     // Log Search to User Event Logs to sync Search History
     useEffect(() => {
         if (queryToRun.query && validAccessToken && fullQuery) {
             setLoading(true)
-            ;(async () => {
-                const queryString = `${queryToRun.query}${caseSensitive ? ' case:yes' : ''}`
-                const eventArgument = JSON.stringify({
+            let queryString = `${queryToRun.query}${caseSensitive ? ' case:yes' : ''}`
+            if (selectedSearchContextSpec) {
+                queryString = appendContextFilter(queryString, selectedSearchContextSpec)
+            }
+            const metrics = queryString ? collectMetrics(queryString) : undefined
+            const isSourcegraphDotCom = instanceHostname.startsWith('https://sourcegraph.com')
+            platformContext.telemetryService.log(
+                'SearchResultsQueried',
+                {
                     code_search: {
                         query_data: {
-                            empty: false,
-                            query: {},
-                            combined: selectedSearchContextSpec
-                                ? appendContextFilter(queryString, selectedSearchContextSpec)
-                                : queryString,
+                            query: metrics,
+                            combined: queryString,
+                            empty: !queryString,
                         },
                     },
-                })
-                const userEventVariables = {
-                    name: 'SearchResultsQueried',
-                    userCookieID: '',
-                    source: EventSource.CODEHOSTINTEGRATION,
-                    url: `https://${instanceHostname}/search?q=${encodeURIComponent(
-                        queryString
-                    )}&patternType=${patternType}`,
-                    argument: eventArgument,
-                }
-                const userEventLog = await platformContext
-                    .requestGraphQL<EventLogsDataResult, logUserSearchEventVariables>({
-                        request: logEventsQuery,
-                        variables: userEventVariables,
-                        mightContainPrivateInfo: true,
-                    })
-                    .toPromise()
-                if (userEventLog.data) {
-                    console.log('Search Synced')
-                }
-            })().catch(error => console.error(error))
+                },
+                {
+                    code_search: {
+                        query_data: {
+                            // 🚨 PRIVACY: never provide any private query data in the
+                            // { code_search: query_data: query } property,
+                            // which is also potentially exported in pings data.
+                            query: metrics,
+
+                            // 🚨 PRIVACY: Only collect the full query string for unauthenticated users
+                            // on Sourcegraph.com, and only after sanitizing to remove certain filters.
+                            combined:
+                                !authenticatedUser && isSourcegraphDotCom
+                                    ? sanitizeQueryForTelemetry(queryString)
+                                    : undefined,
+                            empty: !queryString,
+                        },
+                    },
+                },
+                `https://${instanceHostname}/search?q=${encodeURIComponent(queryString)}&patternType=${patternType}`
+            )
         }
         setLoading(false)
     }, [
@@ -412,6 +411,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         instanceHostname,
         patternType,
         platformContext,
+        authenticatedUser,
     ])
 
     if (loading) {
@@ -456,7 +456,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 <Form className="d-flex my-2" onSubmit={onSubmit}>
                     {/* TODO temporary settings provider w/ mock in memory storage */}
                     <SearchBox
-                        isSourcegraphDotCom={true}
+                        isSourcegraphDotCom={instanceHostname.startsWith('https://sourcegraph.com')}
                         // Platform context props
                         platformContext={platformContext}
                         telemetryService={platformContext.telemetryService}

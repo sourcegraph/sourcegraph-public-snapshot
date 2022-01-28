@@ -2,14 +2,18 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { WebviewPageProps } from '../platform/context'
+import { TelemetryProps } from '../platform/telemetryService'
 
 import styles from './SearchSidebar.module.scss'
 
-interface OpenSearchPanelCtaProps extends Pick<WebviewPageProps, 'sourcegraphVSCodeExtensionAPI'> {
+interface OpenSearchPanelCtaProps extends TelemetryProps, Pick<WebviewPageProps, 'sourcegraphVSCodeExtensionAPI'> {
     onDesktop: boolean
 }
 
-export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps> = ({ onDesktop }) => (
+export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps> = ({
+    onDesktop,
+    telemetryService,
+}) => (
     <div className={classNames(styles.cta)}>
         <p className={classNames(styles.ctaTitle)}>Welcome!</p>
         <div className={classNames(styles.ctaContainer)}>
@@ -24,12 +28,17 @@ export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps
             <div className={classNames(styles.ctaParagraph, 'mb-0')}>
                 <p className={classNames('my-0', styles.text)}>Learn more:</p>
                 <p className="mb-0">
-                    <a href="http://sourcegraph.com/" className={classNames('my-0', styles.text)}>
+                    <a
+                        href="http://sourcegraph.com/"
+                        className={classNames('my-0', styles.text)}
+                        onClick={() => telemetryService.log('VSCE_Sidebar_learnsourcegraph_Click')}
+                    >
                         Sourcegraph.com
                     </a>
                     <br />
                     <a
                         href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"
+                        onClick={() => telemetryService.log('VSCE_Sidebar_learnextension_Click')}
                         className={classNames('my-0', styles.text)}
                     >
                         Sourcegraph VS Code extension

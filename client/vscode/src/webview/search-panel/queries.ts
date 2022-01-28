@@ -265,3 +265,10 @@ export const logEventsQuery = gql`
         }
     }
 `
+export const logEventsMutation = gql`
+    mutation LogEvents($events: [Event!]) {
+        logEvents(events: $events) {
+            alwaysNil
+        }
+    }
+`

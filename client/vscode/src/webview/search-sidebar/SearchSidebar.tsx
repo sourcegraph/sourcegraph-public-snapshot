@@ -48,7 +48,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
             sourcegraphVSCodeExtensionAPI
                 .getLocalSearchHistory()
                 .then(response => {
-                    setLocalFileHistory(response.files)
+                    setLocalFileHistory(response.files.reverse())
                     setLocalRecentSearches(response.searches)
                 })
                 .catch(() => {
@@ -215,6 +215,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                         />
                     ) : (
                         <OpenSearchPanelCta
+                            telemetryService={platformContext.telemetryService}
                             sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                             onDesktop={onDesktop}
                         />
@@ -240,10 +241,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                 patternType={patternType}
                 caseSensitive={caseSensitive}
                 settingsCascade={settingsCascade}
-                telemetryService={{
-                    log: () => {},
-                    logViewEvent: () => {},
-                }}
+                telemetryService={platformContext.telemetryService}
             />
         )
     }

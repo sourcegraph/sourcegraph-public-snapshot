@@ -8,6 +8,7 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { SourcegraphVsceUserSettingProps } from '../backend/requestGraphQl'
+import { UserEventVariables } from '../graphql-operations'
 
 import { SearchSidebarMediator } from './search-sidebar/mediator'
 
@@ -31,7 +32,7 @@ export interface SourcegraphVSCodeExtensionAPI
     // Shared methods
     requestGraphQL: (request: string, variables: any) => Promise<GraphQLResult<any>>
     getSettings: () => ProxySubscribable<SettingsCascadeOrError<Settings>>
-
+    logVsceEvent: (variables: UserEventVariables) => Promise<void>
     // For search webview
     panelInitialized: (panelId: string) => void
     // Get User Settings, including hostname, token, corsUrl, authUser info, platform name
@@ -52,13 +53,14 @@ export interface SourcegraphVSCodeExtensionAPI
     openSearchPanel: () => void
     // Update Cors Setting - return true when updated successfully
     updateCorsUri: (uri: string) => Promise<boolean>
-    // Get Last Selected Search Context from Local Storage
+    // Get & set items from Local Storage
+    getLocalStorageItem: (key: string) => string
+    setLocalStorageItem: (key: string, value: string) => Promise<boolean>
+    // Get and update Last Selected Search Context from Local Storage
     getLastSelectedSearchContext: () => string
-    // Update Last Selected Search Context in Local Storage
     updateLastSelectedSearchContext: (context: string) => Promise<boolean>
-    // Get Last Selected Search Context from Local Storage
+    // Get and update Last Selected Search Context from Local Storage
     getLocalRecentSearch: () => LocalRecentSeachProps[]
-    // Update Last Selected Search Context in Local Storage
     setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => Promise<boolean>
     // Display File Tree when repo is clicked
     displayFileTree: (setting: boolean) => void

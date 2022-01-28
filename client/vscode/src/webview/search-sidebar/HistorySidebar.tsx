@@ -73,11 +73,13 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
             <div className={styles.sidebarContainer}>
                 {useQueryState && (
                     <SearchTypes
+                        platformContext={platformContext}
                         forceButton={true}
                         useQueryState={useQueryState}
                         patternType={patternType}
                         caseSensitive={caseSensitive}
                         sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                        theme={theme}
                     />
                 )}
                 {validAccessToken && savedSearch && savedSearch.length > 0 && (

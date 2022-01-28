@@ -72,6 +72,9 @@ export function checkLink(uri: string): string {
     if (uri.startsWith('/sign-up?')) {
         return 'https://sourcegraph.com/sign-up?editor=vscode'
     }
+    if (uri.endsWith('/contexts')) {
+        return 'https://sourcegraph.com/contexts?editor=vscode'
+    }
     if (uri.startsWith('https://')) {
         return uri
     }

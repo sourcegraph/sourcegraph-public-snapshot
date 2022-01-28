@@ -67,6 +67,18 @@ export const SearchResults = React.memo<SearchResultsProps>(
             [platformContext]
         )
 
+        useEffect(
+            () => {
+                const searchResultUri = `https://${instanceHostname}/search?q=${encodeURIComponent(
+                    executedQuery
+                )}&patternType=${patternType}&case=${caseSensitive}?utm_campaign=vscode-extension`
+                platformContext.telemetryService.logViewEvent('SearchResults', {}, {}, searchResultUri)
+            },
+            // Only log view on initial load
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            []
+        )
+
         useEffect(() => {
             // create save search
             if (savedSearchFields !== undefined && authenticatedUser) {
@@ -166,6 +178,12 @@ export const SearchResults = React.memo<SearchResultsProps>(
                             filePath: '/',
                             first: 2500,
                         })
+                        platformContext.telemetryService.logViewEvent(
+                            'Repository',
+                            null,
+                            authenticatedUser !== null,
+                            `https://${host}/${result.repository}`
+                        )
                         return sourcegraphVSCodeExtensionAPI.openFile(`sourcegraph://${host}/${result.repository}`)
                     }
                     // TODO ensure component always calls this for VSCE (usually a link)
@@ -208,9 +226,10 @@ export const SearchResults = React.memo<SearchResultsProps>(
         }
 
         const onShareResultsClick = (): void => {
+            platformContext.telemetryService.log('VSCE_ShareLinkClick')
             ;(async () => {
                 const host = instanceHostname
-                const finalUri = `${host}/search?q=${encodeURIComponent(
+                const finalUri = `https://${host}/search?q=${encodeURIComponent(
                     executedQuery
                 )}&patternType=${patternType}&case=${caseSensitive}?utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=save-search`
                 return sourcegraphVSCodeExtensionAPI.copyLink(finalUri)

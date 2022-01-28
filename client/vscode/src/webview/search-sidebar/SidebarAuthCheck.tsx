@@ -53,7 +53,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                 .openLink(signInUrl)
                 .then(() => {})
                 .catch(() => {})
-            telemetryService.log('VSCESearchBarClicked', { campaign: 'Sign up link' }, { campaign: 'Sign up link' })
+            telemetryService.log('VSCE_Sidebar_CreateAccount')
         },
         [signInUrl, sourcegraphVSCodeExtensionAPI, telemetryService]
     )
@@ -102,7 +102,10 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                 </p>
                                 <p className={classNames(styles.ctaParagraph)}>
                                     See our{' '}
-                                    <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">
+                                    <a
+                                        href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token"
+                                        onClick={() => telemetryService.log('VSCE_Sidebar_AccessTokenDocsClick')}
+                                    >
                                         user docs
                                     </a>{' '}
                                     for a video guide on how to create an access token.

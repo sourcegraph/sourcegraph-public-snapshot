@@ -91,11 +91,7 @@ export const HomePanels: React.FunctionComponent<HomePanelsProps> = props => (
                                 src: 'DtL9ZJs/vsce-watch-and-learn.png',
                                 alt: 'Watch and learn video thumbnail',
                             }}
-                            onToggle={isOpen =>
-                                props.telemetryService.log(
-                                    isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
-                                )
-                            }
+                            onToggle={() => props.telemetryService.log('VSCE_Home_Watch&Lean')}
                             // assetsRoot="https://sourcegraph.com/.assets/"
                             assetsRoot="https://i.ibb.co/"
                         />

@@ -5,9 +5,10 @@ import { GRAPHQL_URI } from '@sourcegraph/shared/src/graphql/constants'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
+import { EventLogsDataResult, UserEventVariables } from '../graphql-operations'
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointSetting, endpointCorsSetting } from '../settings/endpointSetting'
-import { currentAuthStateQuery } from '../webview/search-panel/queries'
+import { currentAuthStateQuery, logEventsQuery } from '../webview/search-panel/queries'
 
 let invalidated = false
 
@@ -113,4 +114,14 @@ export interface SourcegraphVsceUserSettingProps {
     corsUrl: string
     validated: boolean
     platform: string
+}
+
+export const logEvent = async (userEventVariables: UserEventVariables): Promise<void> => {
+    const userEvent = await requestGraphQLFromVSCode<EventLogsDataResult, UserEventVariables>(
+        logEventsQuery,
+        userEventVariables
+    )
+    if (userEvent.data) {
+        return
+    }
 }

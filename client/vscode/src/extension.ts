@@ -8,7 +8,7 @@ import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { LocalStorageService } from '../localStorageService'
 
-import { invalidateClient, requestGraphQLFromVSCode, currentUserSettings } from './backend/requestGraphQl'
+import { invalidateClient, requestGraphQLFromVSCode, currentUserSettings, logEvent } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/settings'
 import { toSourcegraphLanguage } from './code-intel/languages'
 import { SourcegraphDefinitionProvider } from './code-intel/SourcegraphDefinitionProvider'
@@ -20,7 +20,7 @@ import { searchSelection } from './commands/searchSelection'
 import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
 import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
-import { EventLogsDataResult, EventSource, logUserSearchEventVariables } from './graphql-operations'
+import { EventSource, UserEventVariables } from './graphql-operations'
 import { log } from './log'
 import { updateAccessTokenSetting } from './settings/accessTokenSetting'
 import { updateCorsSetting } from './settings/endpointSetting'
@@ -30,7 +30,6 @@ import {
     initializeSearchPanelWebview,
     initializeSearchSidebarWebview,
 } from './webview/initialize'
-import { logEventsQuery } from './webview/search-panel/queries'
 import { createSearchSidebarMediator } from './webview/search-sidebar/mediator'
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     // Initialize the global application manager
@@ -96,15 +95,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                     })
                     const userEventVariables = {
                         name: 'ViewBlob',
-                        userCookieID: '',
+                        userCookieID: storageManager.getValue('sourcegraphAnonymousUid'),
                         source: EventSource.CODEHOSTINTEGRATION,
                         url: `${sgUri.replace('sourcegraph://', 'https://')}`,
                         argument: preString,
                     }
-                    await requestGraphQLFromVSCode<EventLogsDataResult, logUserSearchEventVariables>(
-                        logEventsQuery,
-                        userEventVariables
-                    )
+                    await logEvent(userEventVariables)
                 }
             }
         })
@@ -264,6 +260,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     const sourcegraphVSCodeExtensionAPI: SourcegraphVSCodeExtensionAPI = {
         requestGraphQL: requestGraphQLFromVSCode,
+        logVsceEvent: (variables: UserEventVariables) => logEvent(variables),
         getSettings: () => proxySubscribable(sourcegraphSettings.settings),
         ping: () => proxySubscribable(of('pong')),
         observeActiveWebviewQueryState: searchSidebarMediator.observeActiveWebviewQueryState,
@@ -284,6 +281,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         openSearchPanel: () => vscode.commands.executeCommand('sourcegraph.search'),
         // Get Cors from Setting
         updateCorsUri: (uri: string) => updateCorsSetting(uri),
+        // Get item from Local Storage
+        getLocalStorageItem: (key: string) => storageManager.getValue(key),
+        setLocalStorageItem: (key: string, value: string) => storageManager.setValue(key, value),
         // Get last selected search context from Setting
         getLastSelectedSearchContext: () => storageManager.getValue('sg-selected-context-test'),
         updateLastSelectedSearchContext: (spec: string) => storageManager.setValue('sg-selected-context-test', spec),

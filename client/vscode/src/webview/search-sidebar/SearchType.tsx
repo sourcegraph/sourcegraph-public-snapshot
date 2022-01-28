@@ -13,7 +13,7 @@ import { WebviewPageProps } from '../platform/context'
 
 import styles from './HistorySidebar.module.scss'
 
-interface SearchTypesProps extends Pick<WebviewPageProps, 'sourcegraphVSCodeExtensionAPI'> {
+interface SearchTypesProps extends WebviewPageProps {
     caseSensitive: boolean
     useQueryState: UseStore<SearchQueryState>
     forceButton?: boolean
@@ -39,9 +39,14 @@ export const SearchTypes: React.FunctionComponent<SearchTypesProps> = ({
     useQueryState,
     patternType,
     caseSensitive,
+    platformContext,
 }) => {
     const [collapsed, setCollapsed] = useState(false)
     const { query, setQueryState } = useQueryState(selectFromQueryState, shallow)
+
+    const onClick = (): void => {
+        platformContext.telemetryService.log('VSCE_Sidebar_SearchTypesClick')
+    }
 
     return (
         <div className={styles.sidebarSection}>
@@ -58,7 +63,7 @@ export const SearchTypes: React.FunctionComponent<SearchTypesProps> = ({
                 )}
             </button>
             {!collapsed && (
-                <div className={classNames('p-1', styles.sidebarSectionList)}>
+                <div className={classNames('p-1', styles.sidebarSectionList)} onSelect={() => onClick}>
                     <small>
                         {getSearchTypeLinks({
                             caseSensitive,

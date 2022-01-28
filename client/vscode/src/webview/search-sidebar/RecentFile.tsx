@@ -8,7 +8,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { EventLogResult } from '@sourcegraph/shared/src/search/backend'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { EventLogsDataResult } from '../../graphql-operations'
+import { EventLogsDataResult, EventLogsDataVariables } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 import { eventsQuery } from '../search-panel/queries'
 

@@ -4,11 +4,11 @@ import { BehaviorSubject, from } from 'rxjs'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { SourcegraphVSCodeExtensionAPI } from '../contract'
 
-import { vscodeTelemetryService } from './telemetryService'
+import { EventLogger } from './eventLogger'
+import { VsceTelemetryService } from './telemetryService'
 
 export interface VSCodePlatformContext
     extends Pick<
@@ -26,7 +26,7 @@ export interface VSCodePlatformContext
         | 'clientApplication'
     > {
     // Ensure telemetryService is non-nullable.
-    telemetryService: TelemetryService
+    telemetryService: VsceTelemetryService
 }
 
 export function createPlatformContext(
@@ -46,7 +46,8 @@ export function createPlatformContext(
         settings: wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.getSettings()),
         // TODO: implement GQL mutation, settings refresh
         updateSettings: () => Promise.resolve(),
-        telemetryService: vscodeTelemetryService,
+        // telemetryService: vscodeTelemetryService,
+        telemetryService: new EventLogger(sourcegraphVSCodeExtensionAPI),
         sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
         clientApplication: 'other', // TODO add 'vscode-extension' to `clientApplication`,
         getScriptURLForExtension: () => undefined,
