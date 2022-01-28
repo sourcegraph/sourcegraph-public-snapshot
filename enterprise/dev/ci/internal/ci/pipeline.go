@@ -59,10 +59,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Build options for pipeline operations that spawn more build steps
 	buildOptions := bk.BuildOptions{
-		Message: os.Getenv("BUILDKITE_MESSAGE"),
-		Commit:  c.Commit,
-		Branch:  c.Branch,
-		Env:     env,
+		Message:   os.Getenv("BUILDKITE_MESSAGE"),
+		Commit:    c.Commit,
+		Branch:    c.Branch,
+		Env:       env,
+		IsDraftPR: c.IsDraftPR,
 	}
 
 	// Make all command steps timeout after 60 minutes in case a buildkite agent
@@ -110,7 +111,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Append(triggerAsync(buildOptions))
 		}
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}, c))
 
 	case BackendIntegrationTests:
 		ops.Append(
@@ -118,7 +119,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}, c))
 
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
