@@ -11,9 +11,14 @@ type searchQueryDescription struct {
 }
 
 func (q searchQueryDescription) Query() string {
+	// Do not add logic here that manipulates the query string. Do it in the QueryString() method.
 	return q.query.QueryString()
 }
 
 func (q searchQueryDescription) Description() *string {
-	return q.query.Description()
+	if q.query.Description == "" {
+		return nil
+	}
+
+	return &q.query.Description
 }

@@ -38,7 +38,7 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	}
 	var proposedQueries []*searchQueryDescription
 	for _, q := range a.alert.ProposedQueries {
-		proposedQueries = append(proposedQueries, &searchQueryDescription{query: q})
+		proposedQueries = append(proposedQueries, &searchQueryDescription{q})
 	}
 	return &proposedQueries
 }
