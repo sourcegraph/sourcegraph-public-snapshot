@@ -157,7 +157,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Trivy security scans
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}, c))
 		// Publish images after everything is done
 		ops.Append(wait,
 			publishFinalDockerImage(c, patchImage))
@@ -212,7 +212,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-		}))
+		}, c))
 
 		// Various integration tests
 		ops.Append(
