@@ -148,6 +148,57 @@ func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, 
 	return 0, false, false, nil
 }
 
+// Versions returns three sets of migration versions that, together, describe the current schema
+// state. These states describe, respectively, the identifieers of all applied, pending, and failed
+// migrations.
+//
+// A failed migration requires administrator attention. A pending migration may currently be
+// in-progress, or may indicate that a migration was attempted but failed part way through.
+func (s *Store) Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, err error) {
+	ctx, endObservation := s.operations.versions.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	migrationLogs, err := scanMigrationLogs(s.Query(ctx, sqlf.Sprintf(versionsQuery, s.schemaName)))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	for _, migrationLog := range migrationLogs {
+		if migrationLog.Success == nil {
+			pendingVersions = append(pendingVersions, migrationLog.Version)
+			continue
+		}
+		if !*migrationLog.Success {
+			failedVersions = append(failedVersions, migrationLog.Version)
+			continue
+		}
+		if migrationLog.Up {
+			appliedVersions = append(appliedVersions, migrationLog.Version)
+		}
+	}
+
+	return appliedVersions, pendingVersions, failedVersions, nil
+}
+
+const versionsQuery = `
+-- source: internal/database/migration/store/store.go:Versions
+WITH ranked_migration_logs AS (
+	SELECT
+		migration_logs.*,
+		ROW_NUMBER() OVER (PARTITION BY version ORDER BY finished_at DESC) AS row_number
+	FROM migration_logs
+	WHERE schema = %s
+)
+SELECT
+	schema,
+	version,
+	up,
+	success
+FROM ranked_migration_logs
+WHERE row_number = 1
+ORDER BY version
+`
+
 // Lock creates and holds an advisory lock. This method returns a function that should be called
 // once the lock should be released. This method accepts the current function's error output and
 // wraps any additional errors that occur on close.
