@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -64,7 +65,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	actor := FromContext(req.Context())
-	path := req.URL.Path
+	path := getURLPath(req.URL.Path)
 	switch {
 	// Indicate this is an internal user
 	case actor.IsInternal():
@@ -133,4 +134,14 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(rw, req.WithContext(ctx))
 	})
+}
+
+func getURLPath(urlPath string) string {
+	if strings.Contains(urlPath, "/.internal/git/github.com/") {
+		return "/.internal/git/github.com/"
+	}
+	if strings.Contains(urlPath, "/git/github.com/") {
+		return "/git/github.com/"
+	}
+	return urlPath
 }
