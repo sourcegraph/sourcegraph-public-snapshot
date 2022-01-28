@@ -1316,6 +1316,13 @@ type Query {
         The search query (such as "foo" or "repo:myrepo foo").
         """
         query: String = ""
+        """
+        EXPERIMENTAL: this will likely be removed in a future release.
+        codeMonitorID is an optional monitor ID for commit and diff searches.
+        If set, a commit or diff search will start from the commit hashes last searched
+        as part of that code monitor.
+        """
+        codeMonitorID: ID
     ): Search
     """
     All saved searches configured for the current user, merged from all configurations.
