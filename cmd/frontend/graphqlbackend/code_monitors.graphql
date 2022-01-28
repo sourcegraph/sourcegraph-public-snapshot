@@ -20,7 +20,7 @@ extend type Query {
         """
         codeMonitorID is the code monitor associated with this search
         """
-        codeMonitorID: ID!
+        codeMonitorID: ID
     ): Search
 }
 
