@@ -99,7 +99,7 @@ import { observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
-import { githubCodeHost, isGithubCodeHost } from '../github/codeHost'
+import { GithubCodeHost, githubCodeHost, isGithubCodeHost } from '../github/codeHost'
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
@@ -208,23 +208,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link CodeView}s from the DOM.
      */
     codeViewResolvers: ViewResolver<CodeView>[]
-
-    /**
-     * Configuration for built-in search input enhancement
-     */
-    searchEnhancement?: {
-        /** Search input element resolver */
-        searchViewResolver: ViewResolver<{ element: HTMLElement }>
-        /** Search result element resolver */
-        resultViewResolver: ViewResolver<{ element: HTMLElement }>
-        /** Callback to trigger on input element change */
-        onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
-    }
-
-    /**
-     * TODO: description
-     */
-    searchPageEnhancement?: {}
 
     /**
      * Resolve {@link ContentView}s from the DOM.
@@ -829,24 +812,10 @@ export async function handleCodeHost({
         )
 
     if (isGithubCodeHost(codeHost)) {
-        subscriptions.add(initializeSearchEnhancement(codeHost.searchEnhancement, sourcegraphURL, mutations))
-
-        // TODO: handle not found case
-        const CONTAINER_SELECTOR =
-            '#repo-content-pjax-container > div > div.col-12.col-md-9.float-left.px-2.pt-3.pt-md-0.codesearch-results > div'
-        // =====
-        // TODO: Track URL/location change
-        // TODO: Get place/selector to inject a search button
-        const url = new URL(window.location.href)
-        const query = url.searchParams.get('q')
-        const type = url.searchParams.get('type')
-        console.log({ query, type })
-        const link = document.createElement('a')
-        link.setAttribute('href', `https://sourcegraph.com/search?q=${query}`)
-        link.textContent = 'Search in Sourcegraph'
-        const container = document.querySelector(CONTAINER_SELECTOR)
-        container?.prepend(link)
-        // TODO: Parse URL query + type and update button URL
+        subscriptions.add(initializeGithubSearchInputEnhancement(codeHost.searchEnhancement, sourcegraphURL, mutations))
+        subscriptions.add(
+            initializeGithubSearchPageEnhancement(codeHost.searchPageEnhancement, sourcegraphURL, mutations)
+        )
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
@@ -1450,8 +1419,8 @@ export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined
     return codeHost
 }
 
-function initializeSearchEnhancement(
-    searchEnhancement: NonNullable<CodeHost['searchEnhancement']>,
+function initializeGithubSearchInputEnhancement(
+    searchEnhancement: NonNullable<GithubCodeHost['searchEnhancement']>,
     sourcegraphURL: string,
     mutations: Observable<MutationRecordLike[]>
 ): Subscription {
@@ -1479,6 +1448,69 @@ function initializeSearchEnhancement(
     return combineLatest([searchView, resultView])
         .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
         .subscribe(onChange)
+}
+
+function initializeGithubSearchPageEnhancement(
+    searchPageEnhancement: NonNullable<GithubCodeHost['searchPageEnhancement']>,
+    sourcegraphURL: string,
+    mutations: Observable<MutationRecordLike[]>
+): Subscription | void {
+    const githubURL = new URL(window.location.href)
+
+    if (!githubURL.pathname.startsWith('/search')) {
+        return
+    }
+
+    // advanced search page
+    if (githubURL.pathname === '/search/advanced') {
+        // render advanced search page enhancement
+        return
+    }
+
+    // search results page
+    const searchQuery = githubURL.searchParams.get('q')
+    if (searchQuery) {
+        // render search results page enhancement
+        const container = document.querySelector('.codesearch-results')
+
+        // TODO: handle not found case
+        if (container) {
+            // build sourcegraph URL query params
+            const queryParameters = [searchQuery]
+
+            const githubResultType = githubURL.searchParams.get('type')
+            let sourcegraphResultType = ''
+            if (!githubResultType || githubResultType === 'repositories') {
+                sourcegraphResultType = 'repo'
+            } else if (githubResultType === 'commits') {
+                sourcegraphResultType = 'commit'
+            }
+            if (sourcegraphResultType) {
+                queryParameters.push(`type:${sourcegraphResultType}`)
+            }
+
+            // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be corretly parsed by sourcegraph search page.
+            // TODO: investigate possible risks search params direct assignment may introduce.
+            const sourcegraphURLHref = `${new URL('/search', sourcegraphURL).href}?q=${queryParameters.join('+')}`
+
+            console.log(sourcegraphURLHref)
+            // create link to sourcegraph search page
+            const link = document.createElement('a')
+            link.setAttribute('href', sourcegraphURLHref)
+            link.setAttribute('target', '_blank')
+            link.setAttribute('rel', 'noopener noreferrer')
+            link.textContent = 'Search in Sourcegraph'
+
+            // render link
+            container?.prepend(link)
+        }
+
+        return
+    }
+
+    // simple search page
+
+    // render simple search page enhancements and return
 }
 
 export function injectCodeIntelligenceToCodeHost(

@@ -316,7 +316,7 @@ const notificationClassNames = {
     [NotificationType.Error]: 'flash flash-error',
 }
 
-const searchEnhancement: CodeHost['searchEnhancement'] = {
+const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
     searchViewResolver: {
         selector: '.js-site-search-form input[type="text"][aria-controls="jump-to-results"]',
         resolveView: element => ({ element }),
@@ -423,15 +423,23 @@ export interface GithubCodeHost extends CodeHost {
     /**
      * TODO: description
      */
-    searchPageEnhancement: {}
+    searchPageEnhancement: {
+        /** Search input element resolver */
+        searchViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Search result element resolver */
+        resultViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Callback to trigger on input element change */
+        onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
+    }
 }
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => 'searchEnhancement' in codeHost
 
-export const githubCodeHost: CodeHost = {
+export const githubCodeHost: GithubCodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
     searchEnhancement,
+    searchPageEnhancement: {} as any,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
