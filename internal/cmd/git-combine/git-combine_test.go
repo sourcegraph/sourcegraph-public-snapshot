@@ -48,8 +48,8 @@ git fetch --depth 100 sourcegraph
 	}
 
 	opt := Options{
-		Limit:  100,
-		Logger: log.New(io.Discard, "", 0),
+		LimitRemote: 100,
+		Logger:      log.New(io.Discard, "", 0),
 	}
 	if testing.Verbose() {
 		opt.Logger = log.Default()
