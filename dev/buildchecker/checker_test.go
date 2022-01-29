@@ -8,7 +8,7 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/dev/internal/team"
+	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
 type mockBranchLocker struct {
