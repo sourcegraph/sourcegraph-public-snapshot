@@ -15,8 +15,8 @@ import { SearchContextsListTab } from './SearchContextsListTab'
 
 export interface SearchContextsListPageProps
     extends Pick<
-             SearchContextProps,
-             'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
+            SearchContextProps,
+            'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
         >,
         PlatformContextProps<'requestGraphQL'> {
     location: H.Location

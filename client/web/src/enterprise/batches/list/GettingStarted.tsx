@@ -83,9 +83,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                         <div>
                             <h4>
                                 <Link
-                                    to="/help/batch_changes/tutorials/updating_go_import_statements"
-                                    rel="noopener"
-                                >
+                                    to="/help/batch_changes/tutorials/updating_go_import_statements" rel="noopener">
                                     Refactoring with language aware search
                                 </Link>
                             </h4>
@@ -127,20 +125,13 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                 <p>
                     Learn about the batch spec{' '}
                     <Link
-                        to="/help/batch_changes/references/batch_spec_yaml_reference"
-                        rel="noopener"
-                    >
+                        to="/help/batch_changes/references/batch_spec_yaml_reference" rel="noopener">
                         YAML reference
                     </Link>
                     , its powerful{' '}
-                    <Link to="/help/batch_changes/references/batch_spec_templating">
-                        templating language
-                    </Link>
-                    ,{' '}
+                    <Link to="/help/batch_changes/references/batch_spec_templating">templating language</Link>,{' '}
                     <Link
-                        to="/help/batch_changes/explanations/permissions_in_batch_changes"
-                        rel="noopener"
-                    >
+                        to="/help/batch_changes/explanations/permissions_in_batch_changes" rel="noopener">
                         permissions
                     </Link>{' '}
                     and more in the{' '}

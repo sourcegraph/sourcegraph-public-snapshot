@@ -17,10 +17,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 <ul className="mb-0 pl-3">
                     <li>
                         <Link
-                            to="/help/admin/config/batch_changes#forks"
-                            rel="noopener"
-                            target="_blank"
-                        >
+                            to="/help/admin/config/batch_changes#forks" rel="noopener" target="_blank">
                             Batch Changes now supports pushing changesets to forked repositories.
                         </Link>
                     </li>

@@ -166,8 +166,8 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                                 ? 'Updating'
                                 : 'Saving'
                             : hasAppliedFilters
-                                ? 'Update default filters'
-                                : 'Save default filters'
+                            ? 'Update default filters'
+                            : 'Save default filters'
                     }
                     type="submit"
                     disabled={formAPI.submitting || !hasFiltersChanged}

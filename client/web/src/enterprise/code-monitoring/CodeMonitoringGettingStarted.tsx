@@ -138,9 +138,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                                 consistency concerns.
                             </p>
                             <Link
-                                to="/help/code_monitoring/how-tos/starting_points"
-                                className="link"
-                            >
+                                to="/help/code_monitoring/how-tos/starting_points" className="link">
                                 Explore starting points
                             </Link>
                         </div>

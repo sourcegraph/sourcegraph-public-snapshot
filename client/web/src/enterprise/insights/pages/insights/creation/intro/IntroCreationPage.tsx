@@ -90,10 +90,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                 <div className={styles.info}>
                     Not sure which insight type to choose? Learn more about the{' '}
                     <Link
-                        to="/help/code_insights/references/common_use_cases"
-                        target="_blank"
-                        rel="noopener"
-                    >
+                        to="/help/code_insights/references/common_use_cases" target="_blank" rel="noopener">
                         use cases.
                     </Link>
                 </div>

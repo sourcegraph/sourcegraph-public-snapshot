@@ -9,10 +9,7 @@ export const EmptyPoliciesList: React.FunctionComponent = () => (
         <br />
         {'No policies have been defined.  Enable precise code intelligence by '}
         <Link
-            to="/help/code_intelligence/how-to/configure_data_retention"
-            target="_blank"
-            rel="noreferrer noopener"
-        >
+            to="/help/code_intelligence/how-to/configure_data_retention" target="_blank" rel="noreferrer noopener">
             configuring data retention policies
         </Link>
         .
