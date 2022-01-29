@@ -40,7 +40,9 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 	runAll := len(changedFiles) == 0
 
 	// Base set
-	ops := operations.NewSet([]operations.Operation{
+	ops := operations.NewSet(nil)
+
+	linterOps := operations.NewNamedSet("Linters and static analysis", []operations.Operation{
 		// lightweight check that works over a lot of stuff - we are okay with running
 		// these on all PRs
 		addPrettier,
@@ -55,7 +57,7 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 
 	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the client as well.
-		ops.Append(
+		ops.Merge(operations.NewNamedSet("Client and GraphQL checks", []operations.Operation{
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,   // ~4.5m
@@ -63,21 +65,21 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 			addBrowserExt,   // ~2m
 			addBrandedTests, // ~1.5m
 			addTsLint,
-		)
+		}))
 	}
 
 	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the backend as well.
-		ops.Append(
+		goChecks := operations.NewNamedSet("Go and GraphQL checks", []operations.Operation{
 			addGoTests,
-		)
-
+		})
 		// If the changes are only in ./dev/sg then we skip the build
 		if runAll || !changedFiles.AffectsSg() {
-			ops.Append(
+			goChecks.Append(
 				addGoBuild, // ~0.5m
 			)
 		}
+		ops.Merge(goChecks)
 	}
 
 	if runAll || changedFiles.AffectsDatabaseSchema() {
@@ -85,28 +87,29 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		// to succeed when the new version of the schema is applied. This ensures that the
 		// schema can be rolled forward pre-upgrade without negatively affecting the running
 		// instance (which was working fine prior to the upgrade).
-		ops.Append(
+		ops.Merge(operations.NewNamedSet("Database backcompat tests", []operations.Operation{
 			addGoTestsBackcompat(opts.MinimumUpgradeableVersion),
-		)
+		}))
 	}
 
 	if runAll || changedFiles.AffectsGraphQL() {
-		ops.Append(addGraphQLLint)
+		linterOps.Append(addGraphQLLint)
 	}
 
 	if runAll || changedFiles.AffectsDockerfiles() {
-		ops.Append(addDockerfileLint)
+		linterOps.Append(addDockerfileLint)
+	}
+
+	if runAll || changedFiles.AffectsTerraformFiles() {
+		linterOps.Append(addTerraformLint)
 	}
 
 	if runAll || changedFiles.AffectsDocs() {
 		ops.Append(addDocs)
 	}
 
-	if runAll || changedFiles.AffectsTerraformFiles() {
-		ops.Append(addTerraformLint)
-	}
-
-	return &ops
+	ops.Merge(linterOps)
+	return ops
 }
 
 // Run enterprise/dev/ci/scripts tests

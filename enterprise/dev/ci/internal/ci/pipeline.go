@@ -98,7 +98,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	const minimumUpgradeableVersion = "3.36.0"
 
 	// Set up operations that add steps to a pipeline.
-	var ops operations.Set
+	ops := &operations.Set{}
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
@@ -189,23 +189,26 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(triggerAsync(buildOptions))
 
 		// Slow image builds
+		imageBuildOps := operations.NewNamedSet("Image builds", nil)
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
-
-		// Trivy security scans
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
 		if c.RunType.Is(MainDryRun, MainBranch, ReleaseBranch) {
-			ops.Append(buildExecutor(c.Version, skipHashCompare))
+			imageBuildOps.Append(buildExecutor(c.Version, skipHashCompare))
 			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
-				ops.Append(buildExecutorDockerMirror(c.Version))
+				imageBuildOps.Append(buildExecutorDockerMirror(c.Version))
 			}
 		}
+		ops.Merge(imageBuildOps)
+
+		// Trivy security scans
+		imageScanOps := operations.NewNamedSet("Image security scans", nil)
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+		}
+		ops.Merge(imageScanOps)
 
 		// Core tests
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
@@ -214,29 +217,32 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// Various integration tests
-		ops.Append(
+		ops.Merge(operations.NewNamedSet("Integration tests", []operations.Operation{
 			backendIntegrationTests(c.candidateImageTag()),
 			codeIntelQA(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
 			// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
 			// clusterQA(c.candidateImageTag()),
-			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
+			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
+		}))
 
 		// All operations before this point are required
 		ops.Append(wait)
 
 		// Add final artifacts
+		publishOps := operations.NewNamedSet("Publish images", nil)
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(publishFinalDockerImage(c, dockerImage))
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
 		if c.RunType.Is(MainBranch, ReleaseBranch) {
-			ops.Append(publishExecutor(c.Version, skipHashCompare))
+			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
 			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
-				ops.Append(publishExecutorDockerMirror(c.Version))
+				publishOps.Append(publishExecutorDockerMirror(c.Version))
 			}
 		}
+		ops.Merge(publishOps)
 	}
 
 	ops.Append(

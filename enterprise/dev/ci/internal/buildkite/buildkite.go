@@ -20,6 +20,10 @@ import (
 type Pipeline struct {
 	Env   map[string]string `json:"env,omitempty"`
 	Steps []interface{}     `json:"steps"`
+
+	// TODO
+	Group string `json:"group,omitempty"`
+	Key   string `json:"key,omitempty"`
 }
 
 type BuildOptions struct {
@@ -153,10 +157,13 @@ func (p *Pipeline) AddEnsureStep(label string, opts ...StepOpt) {
 	keys := []string{}
 	for i := len(p.Steps) - 1; i >= 0; i-- {
 		step := p.Steps[i]
-		if s, ok := step.(*Step); ok {
-			keys = append(keys, s.Key)
-		} else if wait, ok := step.(string); ok {
-			if wait == "wait" {
+		switch v := step.(type) {
+		case *Step:
+			keys = append(keys, v.Key)
+		case *Pipeline:
+			keys = append(keys, v.Key)
+		case string:
+			if v == "wait" {
 				break // we are done
 			}
 		}
