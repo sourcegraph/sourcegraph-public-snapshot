@@ -42,13 +42,28 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 	// Base set
 	ops := operations.NewSet(nil)
 
+	// Simple, fast-ish linter checks
 	linterOps := operations.NewNamedSet("Linters and static analysis", []operations.Operation{
 		// lightweight check that works over a lot of stuff - we are okay with running
 		// these on all PRs
 		addPrettier,
 		addCheck,
 	})
+	if runAll || changedFiles.AffectsGraphQL() {
+		linterOps.Append(addGraphQLLint)
+	}
+	if runAll || changedFiles.AffectsDockerfiles() {
+		linterOps.Append(addDockerfileLint)
+	}
+	if runAll || changedFiles.AffectsTerraformFiles() {
+		linterOps.Append(addTerraformLint)
+	}
+	if runAll || changedFiles.AffectsDocs() {
+		linterOps.Append(addDocs)
+	}
+	ops.Merge(linterOps)
 
+	// CI scripts testing
 	if runAll || changedFiles.AffectsPathsPrefixedBy("enterprise/dev/ci/scripts") {
 		ops.Append(
 			addCIScriptsTests,
@@ -92,23 +107,6 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		}))
 	}
 
-	if runAll || changedFiles.AffectsGraphQL() {
-		linterOps.Append(addGraphQLLint)
-	}
-
-	if runAll || changedFiles.AffectsDockerfiles() {
-		linterOps.Append(addDockerfileLint)
-	}
-
-	if runAll || changedFiles.AffectsTerraformFiles() {
-		linterOps.Append(addTerraformLint)
-	}
-
-	if runAll || changedFiles.AffectsDocs() {
-		ops.Append(addDocs)
-	}
-
-	ops.Merge(linterOps)
 	return ops
 }
 
@@ -126,9 +124,8 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 		}
 	}
 
-	pipeline.AddStep(":bash: Test CI Scripts",
-		stepOpts...,
-	)
+	pipeline.AddStep(":bash: Test CI scripts",
+		stepOpts...)
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
