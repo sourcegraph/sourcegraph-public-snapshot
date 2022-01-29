@@ -91,6 +91,7 @@ export class EventLogger implements VsceTelemetryService {
             anonymousUserID = uuid.v4()
             await this.vsceAPI.setLocalStorageItem(ANONYMOUS_USER_ID_KEY, anonymousUserID)
         }
+        this.anonymousUserID = anonymousUserID
     }
 
     public addEventLogListener(callback: (eventName: string) => void): () => void {
