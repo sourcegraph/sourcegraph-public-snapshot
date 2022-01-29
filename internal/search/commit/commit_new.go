@@ -28,6 +28,7 @@ type CommitSearch struct {
 	Diff          bool
 	HasTimeFilter bool
 	Limit         int
+	CodeMonitorID *int64
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {

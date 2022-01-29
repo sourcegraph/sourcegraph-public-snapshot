@@ -11,6 +11,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { AlertLink, useLocalStorage, useEventObservable, Alert } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
@@ -358,7 +359,9 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             {!authenticatedUser && (
                                 <Alert className="my-4" variant="info">
                                     <span>An account is required to create, enable and disable extensions. </span>
-                                    <AlertLink to="/sign-up?returnTo=/extensions">Register now!</AlertLink>
+                                    <AlertLink to={buildGetStartedURL('extension-registry', '/extensions')}>
+                                        Get started!
+                                    </AlertLink>
                                 </Alert>
                             )}
                             <ExtensionsList

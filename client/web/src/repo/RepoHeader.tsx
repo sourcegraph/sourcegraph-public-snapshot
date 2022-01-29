@@ -251,7 +251,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
                                 isOpen={isDropdownOpen}
                                 toggle={toggleDropdownOpen}
                             >
-                                <RepoHeaderActionDropdownToggle className="btn btn-icon" nav={true}>
+                                <RepoHeaderActionDropdownToggle nav={true}>
                                     <DotsVerticalIcon className="icon-inline" />
                                 </RepoHeaderActionDropdownToggle>
                                 <DropdownMenu>
