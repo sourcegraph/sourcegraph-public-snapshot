@@ -1570,7 +1570,7 @@ type RepoNotFoundError struct{}
 func (e RepoNotFoundError) Error() string  { return "GitHub repository not found" }
 func (e RepoNotFoundError) NotFound() bool { return true }
 
-// RepoNotFoundError is when the requested GitHub organization is not found.
+// OrgNotFoundError is when the requested GitHub organization is not found.
 type OrgNotFoundError struct{}
 
 func (e OrgNotFoundError) Error() string  { return "GitHub organization not found" }

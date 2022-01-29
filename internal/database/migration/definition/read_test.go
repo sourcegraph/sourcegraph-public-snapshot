@@ -12,16 +12,6 @@ import (
 )
 
 func TestReadDefinitions(t *testing.T) {
-	queryComparer := cmp.Comparer(func(a, b *sqlf.Query) bool {
-		if a == nil {
-			return b == nil
-		}
-		if b == nil {
-			return false
-		}
-		return strings.TrimSpace(a.Query(sqlf.PostgresBindVar)) == strings.TrimSpace(b.Query(sqlf.PostgresBindVar))
-	})
-
 	t.Run("well-formed", func(t *testing.T) {
 		fs, err := fs.Sub(testdata.Content, "well-formed")
 		if err != nil {

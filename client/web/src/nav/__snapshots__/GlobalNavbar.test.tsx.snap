@@ -230,9 +230,9 @@ exports[`GlobalNavbar default 1`] = `
           </a>
           <a
             class="btn btn-sm signUp"
-            to="/sign-up"
+            href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
           >
-            Sign up
+            Get started
           </a>
         </div>
       </li>
@@ -492,9 +492,9 @@ exports[`GlobalNavbar low-profile 1`] = `
           </a>
           <a
             class="btn btn-sm signUp"
-            to="/sign-up"
+            href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
           >
-            Sign up
+            Get started
           </a>
         </div>
       </li>

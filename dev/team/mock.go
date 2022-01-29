@@ -8,9 +8,8 @@ import (
 )
 
 // MockTeammateResolver is a mock implementation of the TeammateResolver
-// interface (from the package
-// github.com/sourcegraph/sourcegraph/dev/internal/team) used for unit
-// testing.
+// interface (from the package github.com/sourcegraph/sourcegraph/dev/team)
+// used for unit testing.
 type MockTeammateResolver struct {
 	// ResolveByCommitAuthorFunc is an instance of a mock function object
 	// controlling the behavior of the method ResolveByCommitAuthor.

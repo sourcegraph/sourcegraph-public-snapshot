@@ -10,6 +10,17 @@ import (
 // Helper functions on Files should all be in the format `AffectsXYZ`.
 type Files []string
 
+// AffectsPathsPrefixedBy returns whether the chanegs affects files
+// whose path are prefixed with the given string.
+func (f Files) AffectsPathsPrefixedBy(prefix string) bool {
+	for _, p := range f {
+		if strings.HasPrefix(p, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // AffectsDocs returns whether the changes affects documentation.
 func (f Files) AffectsDocs() bool {
 	for _, p := range f {

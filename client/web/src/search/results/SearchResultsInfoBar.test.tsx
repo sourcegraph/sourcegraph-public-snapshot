@@ -5,6 +5,7 @@ import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { SearchPatternType } from '../../graphql-operations'
@@ -44,7 +45,7 @@ describe('SearchResultsInfoBar', () => {
 
     test('code monitoring feature flag enabled, can create monitor from query', () => {
         expect(
-            render(
+            renderWithRouter(
                 <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo type:diff" />
             ).asFragment()
         ).toMatchSnapshot()
