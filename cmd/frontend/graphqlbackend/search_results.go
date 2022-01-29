@@ -1818,19 +1818,15 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 	}()
 
 	agg := run.NewAggregator(stream)
-	_ = agg.DoSearch(ctx, db, job)
-	matches, common, matchCount, aggErrs := agg.Get()
-
-	if aggErrs == nil {
-		return nil, errors.New("aggErrs should never be nil")
-	}
+	err = job.Run(ctx, db, agg)
+	matches, common, matchCount := agg.Get()
 
 	ao := alert.Observer{
 		Db:           db,
 		SearchInputs: searchInputs,
 		HasResults:   matchCount > 0,
 	}
-	for _, err := range aggErrs.Errors {
+	if err != nil {
 		ao.Error(ctx, err)
 	}
 	alert, err := ao.Done(&common)
