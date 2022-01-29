@@ -108,7 +108,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if c.ChangedFiles.AffectsClient() {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
 			// set it up separately from CoreTestOperations
-			ops.Append(triggerAsync(buildOptions))
+			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
+				triggerAsync(buildOptions)))
 		}
 		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
@@ -182,7 +183,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	default:
 		// Slow async pipeline
-		ops.Append(triggerAsync(buildOptions))
+		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
+			triggerAsync(buildOptions)))
 
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")

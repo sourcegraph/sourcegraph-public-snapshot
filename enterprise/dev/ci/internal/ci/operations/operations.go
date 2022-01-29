@@ -105,3 +105,7 @@ func (o *Set) Key() string {
 func (o *Set) isNamed() bool {
 	return o.name != ""
 }
+
+// PipelineSetupSetName should be used with NewNamedSets for operations to add to the
+// pipeline setup group.
+const PipelineSetupSetName = "Pipeline setup"

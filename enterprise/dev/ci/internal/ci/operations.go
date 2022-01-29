@@ -108,7 +108,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 
 	for _, f := range files {
 		if filepath.Ext(f.Name()) == ".sh" {
-			pipeline.AddStep(fmt.Sprintf(":bash: Test %q", f.Name()),
+			pipeline.AddStep(fmt.Sprintf(":bash: %s", f.Name()),
 				bk.RawCmd(fmt.Sprintf("%s/%s", testDir, f.Name())))
 		}
 	}
