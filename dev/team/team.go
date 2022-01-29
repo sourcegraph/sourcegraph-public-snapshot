@@ -17,7 +17,7 @@ import (
 
 // TeammateResolver provides an interface to find information about teammates.
 //
-//go:generate ../../mockgen.sh github.com/sourcegraph/sourcegraph/dev/internal/team -i TeammateResolver -o mock.go
+//go:generate ../mockgen.sh github.com/sourcegraph/sourcegraph/dev/team -i TeammateResolver -o mock.go
 type TeammateResolver interface {
 	// ResolveByName tries to resolve a teammate by name
 	ResolveByName(ctx context.Context, name string) (*Teammate, error)
@@ -37,7 +37,7 @@ type Teammate struct {
 
 	// Slack data is not available in handbook data, we populate it once in getTeamData
 	SlackID       string         `yaml:"-"`
-	SlackNickname string         `yaml:"-"`
+	SlackName     string         `yaml:"-"`
 	SlackTimezone *time.Location `yaml:"-"`
 
 	// Handbook team data fields
@@ -112,7 +112,7 @@ func (r *teammateResolver) ResolveByName(ctx context.Context, name string) (*Tea
 	// Try to find an exact match
 	for _, tm := range team {
 		if strings.ToLower(tm.Name) == name ||
-			strings.ToLower(tm.SlackNickname) == name ||
+			strings.ToLower(tm.SlackName) == name ||
 			strings.ToLower(tm.GitHub) == name {
 			return tm, nil
 		}
@@ -122,7 +122,7 @@ func (r *teammateResolver) ResolveByName(ctx context.Context, name string) (*Tea
 	candidates := []*Teammate{}
 	for _, tm := range team {
 		if strings.Contains(strings.ToLower(tm.Name), name) ||
-			strings.Contains(strings.ToLower(tm.SlackNickname), name) ||
+			strings.Contains(strings.ToLower(tm.SlackName), name) ||
 			strings.Contains(strings.ToLower(tm.GitHub), name) {
 			candidates = append(candidates, tm)
 		}
@@ -173,7 +173,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 			for _, user := range slackUsers {
 				if teammate, exists := emails[user.Profile.Email]; exists {
 					teammate.SlackID = user.ID
-					teammate.SlackNickname = user.Name
+					teammate.SlackName = user.Name
 					teammate.SlackTimezone, err = time.LoadLocation(user.TZ)
 					if err != nil {
 						onceErr = fmt.Errorf("teammate %q: time.LoadLocation: %w", teammate.Key, err)

@@ -18,8 +18,9 @@ import (
 )
 
 type Pipeline struct {
-	Env   map[string]string `json:"env,omitempty"`
-	Steps []interface{}     `json:"steps"`
+	Env    map[string]string `json:"env,omitempty"`
+	Steps  []interface{}     `json:"steps"`
+	Notify []slackNotifier   `json:"notify,omitempty"`
 }
 
 type BuildOptions struct {
@@ -175,6 +176,34 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 		step.GenerateKey()
 	}
 	p.Steps = append(p.Steps, step)
+}
+
+type slackNotifier struct {
+	Slack slackChannelsNotification `json:"slack"`
+	If    string                    `json:"if"`
+}
+
+type slackChannelsNotification struct {
+	Channels []string `json:"channels"`
+	Message  string   `json:"message"`
+}
+
+// AddFailureSlackNotify configures a notify block that updates the given channel if the
+// build fails.
+func (p *Pipeline) AddFailureSlackNotify(channel string, mentionUserID string, err error) {
+	n := slackChannelsNotification{
+		Channels: []string{channel},
+	}
+
+	if mentionUserID != "" {
+		n.Message = fmt.Sprintf("cc <@%s>", mentionUserID)
+	} else if err != nil {
+		n.Message = err.Error()
+	}
+	p.Notify = append(p.Notify, slackNotifier{
+		Slack: n,
+		If:    `build.state == "failed"`,
+	})
 }
 
 func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {
