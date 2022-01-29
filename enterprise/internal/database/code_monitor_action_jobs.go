@@ -225,7 +225,7 @@ SELECT
 	cm.description,
 	ctj.query_string,
 	cm.id AS monitorID,
-	ctj.num_results
+	jsonb_array_length(ctj.search_results)
 FROM cm_action_jobs caj
 INNER JOIN cm_trigger_jobs ctj on caj.trigger_event = ctj.id
 INNER JOIN cm_queries cq on cq.id = ctj.query

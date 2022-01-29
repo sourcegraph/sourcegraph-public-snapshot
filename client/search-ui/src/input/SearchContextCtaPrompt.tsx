@@ -3,6 +3,7 @@ import React from 'react'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Button, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 
 import styles from './SearchContextCtaPrompt.module.scss'
@@ -31,16 +32,13 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
         ? `Add your ${repositoriesVisibility} from GitHub or Gitlab to Sourcegraph and power up your searches with your personal search context.`
         : `Connect with GitHub or Gitlab to add your ${repositoriesVisibility} to Sourcegraph and power up your searches with your personal search context.`
 
-    const buttonText = authenticatedUser
-        ? hasUserAddedExternalServices
-            ? 'Add repositories'
-            : 'Connect with code host'
-        : 'Sign up for Sourcegraph'
+    const buttonText = hasUserAddedExternalServices ? 'Add repositories' : 'Connect with code host'
+
     const linkTo = authenticatedUser
         ? hasUserAddedExternalServices
             ? `/users/${authenticatedUser.username}/settings/repositories`
             : `/users/${authenticatedUser.username}/settings/code-hosts`
-        : `/sign-up?src=Context&returnTo=${encodeURIComponent('/user/settings/repositories')}`
+        : null
 
     const onClick = (): void => {
         const authenticatedActionKind = hasUserAddedExternalServices ? 'AddRepositories' : 'ConnectCodeHost'
@@ -61,16 +59,29 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             </div>
             <div className="text-muted">{copyText}</div>
 
-            <Button
-                className={styles.searchContextCtaPromptButton}
-                to={linkTo}
-                onClick={onClick}
-                variant="primary"
-                size="sm"
-                as={Link}
-            >
-                {buttonText}
-            </Button>
+            {authenticatedUser && linkTo !== null ? (
+                <Button
+                    className={styles.searchContextCtaPromptButton}
+                    to={linkTo}
+                    onClick={onClick}
+                    variant="primary"
+                    size="sm"
+                    as={Link}
+                >
+                    {buttonText}
+                </Button>
+            ) : (
+                <Button
+                    className={styles.searchContextCtaPromptButton}
+                    href={buildGetStartedURL('search-context-cta', '/user/settings/repositories')}
+                    onClick={onClick}
+                    variant="primary"
+                    size="sm"
+                    as="a"
+                >
+                    Get started
+                </Button>
+            )}
             <Button
                 className={classNames('border-0 ml-2', styles.searchContextCtaPromptButton)}
                 onClick={onDismissClick}

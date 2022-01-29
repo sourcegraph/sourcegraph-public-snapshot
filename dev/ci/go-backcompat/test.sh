@@ -103,7 +103,7 @@ git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
 # If we checkout a version that has flat-file migration definitions
 # we will not be able to load the definitions for the test. This
 # line can be removed once we no longer jump back before this change.
-./dev/ci/go-backcompat/dirize.sh
+./dev/ci/go-backcompat/reorganize_migrations.sh
 
 # If migration files have been renamed or deleted between these commits
 # (which historically we've done in response to reverted migrations), we

@@ -69,7 +69,6 @@ func Add(database db.Database, migrationName string) (up, down, metadata string,
 		downPath:     downMigrationFileTemplate,
 		metadataPath: fmt.Sprintf(metadataTemplate, migrationName, strings.Join(intsToStrings(parents), ", ")),
 	}
-
 	if err := writeMigrationFiles(contents); err != nil {
 		return "", "", "", err
 	}

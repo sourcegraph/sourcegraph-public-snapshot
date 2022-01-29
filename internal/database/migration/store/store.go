@@ -315,6 +315,11 @@ func (s *Store) runMigrationQuery(ctx context.Context, definitionVersion int, up
 	}
 
 	defer func() {
+		if err == nil {
+			err = s.Exec(ctx, sqlf.Sprintf(`UPDATE %s SET dirty = false`, quote(s.schemaName)))
+		}
+	}()
+	defer func() {
 		if execErr := s.Exec(ctx, sqlf.Sprintf(
 			`UPDATE migration_logs SET finished_at = NOW(), success = %s, error_message = %s WHERE id = %d`,
 			err == nil,

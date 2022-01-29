@@ -18,8 +18,9 @@ import (
 )
 
 type Pipeline struct {
-	Env   map[string]string `json:"env,omitempty"`
-	Steps []interface{}     `json:"steps"`
+	Env    map[string]string `json:"env,omitempty"`
+	Steps  []interface{}     `json:"steps"`
+	Notify []slackNotifier   `json:"notify,omitempty"`
 }
 
 type BuildOptions struct {
@@ -177,6 +178,34 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 	p.Steps = append(p.Steps, step)
 }
 
+type slackNotifier struct {
+	Slack slackChannelsNotification `json:"slack"`
+	If    string                    `json:"if"`
+}
+
+type slackChannelsNotification struct {
+	Channels []string `json:"channels"`
+	Message  string   `json:"message"`
+}
+
+// AddFailureSlackNotify configures a notify block that updates the given channel if the
+// build fails.
+func (p *Pipeline) AddFailureSlackNotify(channel string, mentionUserID string, err error) {
+	n := slackChannelsNotification{
+		Channels: []string{channel},
+	}
+
+	if mentionUserID != "" {
+		n.Message = fmt.Sprintf("cc <@%s>", mentionUserID)
+	} else if err != nil {
+		n.Message = err.Error()
+	}
+	p.Notify = append(p.Notify, slackNotifier{
+		Slack: n,
+		If:    `build.state == "failed"`,
+	})
+}
+
 func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {
 	output, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
@@ -197,6 +226,15 @@ func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
 
 type StepOpt func(step *Step)
 
+// RawCmd adds a command step without any instrumentation. This is useful to
+// test the instrumentation itself.
+func RawCmd(command string) StepOpt {
+	return func(step *Step) {
+		step.Command = append(step.Command, command)
+	}
+}
+
+// Cmd adds a command step with added instrumentation for testing purposes.
 func Cmd(command string) StepOpt {
 	return func(step *Step) {
 		// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.

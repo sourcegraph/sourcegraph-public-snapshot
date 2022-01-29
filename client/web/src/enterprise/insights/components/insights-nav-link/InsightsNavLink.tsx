@@ -8,7 +8,7 @@ export const InsightsNavItem: React.FunctionComponent = () => (
         to="/insights"
         text="Insights"
         icon={CodeInsightsIcon}
-        className="nav-link btn btn-link text-decoration-none"
+        className="nav-link text-decoration-none"
         activeClassName="active"
     />
 )
