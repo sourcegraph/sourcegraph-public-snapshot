@@ -36,7 +36,7 @@ func (r *JobWithOptional) Name() string {
 	return fmt.Sprintf("JobWithOptional{Required: %s, Optional: %s}", r.required.Name(), r.optional.Name())
 }
 
-func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.Sender) (*SearchResults, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -44,10 +44,10 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 
 	var optionalGroup, requiredGroup multierror.Group
 	requiredGroup.Go(func() error {
-		return r.required.Run(ctx, db, s)
+		return r.required.Run(ctx, db, s) // Need to collect results
 	})
 	optionalGroup.Go(func() error {
-		return r.optional.Run(ctx, db, s)
+		return r.optional.Run(ctx, db, s) // Need to collect results
 	})
 
 	var errs *multierror.Error
@@ -65,7 +65,7 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 		errs = multierror.Append(errs, err)
 	}
 
-	return errs.ErrorOrNil()
+	return errs.ErrorOrNil() // Need to collect results
 }
 
 // NewParallelJob will create a job that runs all its child jobs in separate
@@ -91,12 +91,12 @@ func (p ParallelJob) Name() string {
 	return fmt.Sprintf("ParallelJob{%s}", strings.Join(childNames, ", "))
 }
 
-func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (*SearchResults, error) {
 	var g multierror.Group
 	for _, job := range p {
 		job := job
 		g.Go(func() error {
-			return job.Run(ctx, db, s)
+			return job.Run(ctx, db, s) // Need to collect results
 		})
 	}
 	return g.Wait().ErrorOrNil()
@@ -119,7 +119,7 @@ type TimeoutJob struct {
 	timeout time.Duration
 }
 
-func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (*SearchResults, error) {
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
 	defer cancel()
 
@@ -149,7 +149,7 @@ type LimitJob struct {
 	limit int
 }
 
-func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (*SearchResults, error) {
 	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
 	defer cancel()
 
@@ -162,5 +162,7 @@ func (l *LimitJob) Name() string {
 
 type emptyJob struct{}
 
-func (e *emptyJob) Run(context.Context, database.DB, streaming.Sender) error { return nil }
-func (e *emptyJob) Name() string                                             { return "EmptyJob" }
+func (e *emptyJob) Run(context.Context, database.DB, streaming.Sender) (*SearchResults, error) {
+	return nil, nil
+}
+func (e *emptyJob) Name() string { return "EmptyJob" }

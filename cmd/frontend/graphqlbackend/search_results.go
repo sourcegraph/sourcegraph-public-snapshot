@@ -1791,10 +1791,15 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 	return args
 }
 
-// doResults returns the results of running a search job.
+type AggregatorJob struct {
+	Job          run.Job // Job to aggregate results over, including alert and error promotion.
+	SearchInputs *run.SearchInputs
+}
+
+// Run returns the results of running a search job.
 // Partial results AND an error may be returned.
-func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.DB, stream streaming.Sender, job run.Job) (res *run.SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "doResults", searchInputs.OriginalQuery)
+func (j *AggregatorJob) Run(ctx context.Context, db database.DB, stream streaming.Sender, job run.Job) (res *run.SearchResults, err error) {
+	tr, ctx := trace.New(ctx, "AggregatorJob", j.SearchInputs.OriginalQuery)
 	defer func() {
 		tr.SetError(err)
 		if res != nil {
@@ -1813,7 +1818,7 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 
 	ao := alert.Observer{
 		Db:           db,
-		SearchInputs: searchInputs,
+		SearchInputs: j.SearchInputs,
 		HasResults:   matchCount > 0,
 	}
 	for _, err := range aggErrs.Errors {

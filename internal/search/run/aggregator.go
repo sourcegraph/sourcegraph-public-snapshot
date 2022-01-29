@@ -90,6 +90,6 @@ func (a *Aggregator) DoSearch(ctx context.Context, db database.DB, job Job) (err
 		tr.Finish()
 	}()
 
-	err = job.Run(ctx, db, a)
+	_, err = job.Run(ctx, db, a) // job results are ignored and available to caller via `agg.Get()`.
 	return errors.Wrap(err, job.Name()+" search failed")
 }
