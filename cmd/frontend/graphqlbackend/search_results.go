@@ -1810,17 +1810,7 @@ func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *Searc
 	}()
 
 	agg := run.NewAggregator(r.stream)
-
 	_ = agg.DoSearch(ctx, r.db, job)
-
-	return r.toSearchResults(ctx, agg)
-}
-
-// toSearchResults converts an Aggregator to SearchResults.
-//
-// toSearchResults relies on all WaitGroups being done since it relies on
-// collecting from the streams.
-func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregator) (*SearchResults, error) {
 	matches, common, matchCount, aggErrs := agg.Get()
 
 	if aggErrs == nil {
