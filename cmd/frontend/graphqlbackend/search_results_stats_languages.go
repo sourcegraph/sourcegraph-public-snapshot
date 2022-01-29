@@ -43,7 +43,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsRe
 			srs.srsErr = err
 			return
 		}
-		results, err := srs.sr.doResults(ctx, job)
+		results, err := doResults(ctx, srs.sr.SearchInputs, srs.sr.db, srs.sr.stream, job)
 		if err != nil {
 			srs.srsErr = err
 			return
