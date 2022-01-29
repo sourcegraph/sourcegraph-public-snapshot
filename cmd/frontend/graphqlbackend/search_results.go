@@ -1535,7 +1535,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 	}()
 
 	start := time.Now()
-	rr, err := r.doResults(ctx, job)
+	rr, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1720,7 +1720,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.doResults(ctx, job)
+		results, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1807,8 +1807,8 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 
 // doResults returns the results of running a search job.
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
+func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.DB, stream streaming.Sender, job run.Job) (res *SearchResults, err error) {
+	tr, ctx := trace.New(ctx, "doResults", searchInputs.OriginalQuery)
 	defer func() {
 		tr.SetError(err)
 		if res != nil {
@@ -1817,8 +1817,8 @@ func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *Searc
 		tr.Finish()
 	}()
 
-	agg := run.NewAggregator(r.stream)
-	_ = agg.DoSearch(ctx, r.db, job)
+	agg := run.NewAggregator(stream)
+	_ = agg.DoSearch(ctx, db, job)
 	matches, common, matchCount, aggErrs := agg.Get()
 
 	if aggErrs == nil {
@@ -1826,8 +1826,8 @@ func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *Searc
 	}
 
 	ao := alert.Observer{
-		Db:           r.db,
-		SearchInputs: r.SearchInputs,
+		Db:           db,
+		SearchInputs: searchInputs,
 		HasResults:   matchCount > 0,
 	}
 	for _, err := range aggErrs.Errors {
