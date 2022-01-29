@@ -92,9 +92,7 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 
 	// CI scripts testing
 	if runAll || changedFiles.AffectsCIScripts() {
-		ops.Append(
-			addCIScriptsTests,
-		)
+		ops.Merge(operations.NewNamedSet("CI scripts tests", addCIScriptsTests))
 	}
 
 	return ops
@@ -102,20 +100,18 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 
 // Run enterprise/dev/ci/scripts tests
 func addCIScriptsTests(pipeline *bk.Pipeline) {
-	files, err := os.ReadDir("./enterprise/dev/ci/scripts/tests")
+	testDir := "./enterprise/dev/ci/scripts/tests"
+	files, err := os.ReadDir(testDir)
 	if err != nil {
 		log.Fatalf("Failed to list CI scripts tests scripts: %s", err)
 	}
 
-	var stepOpts []bk.StepOpt
 	for _, f := range files {
 		if filepath.Ext(f.Name()) == ".sh" {
-			stepOpts = append(stepOpts, bk.RawCmd(fmt.Sprintf("./enterprise/dev/ci/scripts/tests/%s", f.Name())))
+			pipeline.AddStep(fmt.Sprintf(":bash: Test %q", f.Name()),
+				bk.RawCmd(fmt.Sprintf("%s/%s", testDir, f.Name())))
 		}
 	}
-
-	pipeline.AddStep(":bash: Test CI scripts",
-		stepOpts...)
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
