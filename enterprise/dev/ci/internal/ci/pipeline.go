@@ -98,7 +98,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	const minimumUpgradeableVersion = "3.36.0"
 
 	// Set up operations that add steps to a pipeline.
-	ops := &operations.Set{}
+	ops := operations.NewSet()
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
@@ -123,24 +123,22 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
-		ops = operations.NewSet([]operations.Operation{
+		ops = operations.NewSet(
 			addTsLint,
 			addBrowserExt,
 			frontendTests,
 			wait,
-			addBrowserExtensionReleaseSteps,
-		})
+			addBrowserExtensionReleaseSteps)
 
 	case BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
-		ops = operations.NewSet([]operations.Operation{
+		ops = operations.NewSet(
 			addTsLint,
 			addBrowserExt,
 			frontendTests,
 			wait,
-			addBrowserExtensionE2ESteps,
-		})
+			addBrowserExtensionE2ESteps)
 
 	case ImagePatch:
 		// only build candidate image for the specified image in the branch name
@@ -149,26 +147,25 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
-		ops = operations.NewSet([]operations.Operation{
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
-		})
+		ops = operations.NewSet(
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()))
 
 		// Trivy security scans
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 		// Publish images after everything is done
-		ops.Append(wait,
+		ops.Append(
+			wait,
 			publishFinalDockerImage(c, patchImage))
 
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.Branch[27:]
-		ops = operations.NewSet([]operations.Operation{
+		ops = operations.NewSet(
 			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
 			wait,
-			publishFinalDockerImage(c, app),
-		})
+			publishFinalDockerImage(c, app))
 
 	case CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {
@@ -177,19 +174,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 	case ExecutorPatchNoTest:
-		ops = operations.NewSet([]operations.Operation{
+		ops = operations.NewSet(
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			buildExecutorDockerMirror(c.Version),
-			publishExecutorDockerMirror(c.Version),
-		})
+			publishExecutorDockerMirror(c.Version))
 
 	default:
 		// Slow async pipeline
 		ops.Append(triggerAsync(buildOptions))
 
 		// Slow image builds
-		imageBuildOps := operations.NewNamedSet("Image builds", nil)
+		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
@@ -204,7 +200,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(imageBuildOps)
 
 		// Trivy security scans
-		imageScanOps := operations.NewNamedSet("Image security scans", nil)
+		imageScanOps := operations.NewNamedSet("Image security scans")
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
 		}
@@ -217,21 +213,20 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// Various integration tests
-		ops.Merge(operations.NewNamedSet("Integration tests", []operations.Operation{
+		ops.Merge(operations.NewNamedSet("Integration tests",
 			backendIntegrationTests(c.candidateImageTag()),
 			codeIntelQA(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
 			// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
 			// clusterQA(c.candidateImageTag()),
-			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
-		}))
+			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion)))
 
 		// All operations before this point are required
 		ops.Append(wait)
 
 		// Add final artifacts
-		publishOps := operations.NewNamedSet("Publish images", nil)
+		publishOps := operations.NewNamedSet("Publish images")
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
@@ -256,7 +251,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 	ops.Apply(pipeline)
 
-	// Validate generated pipeline has unique keys
+	// Validate generated pipeline have unique keys
 	if err := ensureUniqueKeys(pipeline); err != nil {
 		return nil, err
 	}

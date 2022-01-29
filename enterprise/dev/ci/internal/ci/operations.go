@@ -40,15 +40,14 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 	runAll := len(changedFiles) == 0
 
 	// Base set
-	ops := operations.NewSet(nil)
+	ops := operations.NewSet()
 
 	// Simple, fast-ish linter checks
-	linterOps := operations.NewNamedSet("Linters and static analysis", []operations.Operation{
+	linterOps := operations.NewNamedSet("Linters and static analysis",
 		// lightweight check that works over a lot of stuff - we are okay with running
 		// these on all PRs
 		addPrettier,
-		addCheck,
-	})
+		addCheck)
 	if runAll || changedFiles.AffectsGraphQL() {
 		linterOps.Append(addGraphQLLint)
 	}
@@ -63,38 +62,23 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 	}
 	ops.Merge(linterOps)
 
-	// CI scripts testing
-	if runAll || changedFiles.AffectsPathsPrefixedBy("enterprise/dev/ci/scripts") {
-		ops.Append(
-			addCIScriptsTests,
-		)
-	}
-
 	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the client as well.
-		ops.Merge(operations.NewNamedSet("Client and GraphQL checks", []operations.Operation{
+		ops.Merge(operations.NewNamedSet("Client and GraphQL checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,   // ~4.5m
 			addWebApp,       // ~3m
 			addBrowserExt,   // ~2m
 			addBrandedTests, // ~1.5m
-			addTsLint,
-		}))
+			addTsLint))
 	}
 
 	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the backend as well.
-		goChecks := operations.NewNamedSet("Go and GraphQL checks", []operations.Operation{
+		ops.Merge(operations.NewNamedSet("Go and GraphQL checks",
 			addGoTests,
-		})
-		// If the changes are only in ./dev/sg then we skip the build
-		if runAll || !changedFiles.AffectsSg() {
-			goChecks.Append(
-				addGoBuild, // ~0.5m
-			)
-		}
-		ops.Merge(goChecks)
+			addGoBuild))
 	}
 
 	if runAll || changedFiles.AffectsDatabaseSchema() {
@@ -102,9 +86,15 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		// to succeed when the new version of the schema is applied. This ensures that the
 		// schema can be rolled forward pre-upgrade without negatively affecting the running
 		// instance (which was working fine prior to the upgrade).
-		ops.Merge(operations.NewNamedSet("Database backcompat tests", []operations.Operation{
-			addGoTestsBackcompat(opts.MinimumUpgradeableVersion),
-		}))
+		ops.Merge(operations.NewNamedSet("Database backcompat tests",
+			addGoTestsBackcompat(opts.MinimumUpgradeableVersion)))
+	}
+
+	// CI scripts testing
+	if runAll || changedFiles.AffectsCIScripts() {
+		ops.Append(
+			addCIScriptsTests,
+		)
 	}
 
 	return ops
@@ -155,7 +145,7 @@ func addPrettier(pipeline *bk.Pipeline) {
 
 // yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :graphql:",
+	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
 		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
 }
 
@@ -569,8 +559,8 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
+				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
 				if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
-					fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
 					return "cmd/" + app
 				}
 				return "enterprise/cmd/" + app
