@@ -24,44 +24,23 @@ func TestReadDefinitions(t *testing.T) {
 		}
 
 		expectedDefinitions := []Definition{
-			{ID: 10001, UpFilename: "10001_first.up.sql", DownFilename: "10001_first.down.sql", UpQuery: sqlf.Sprintf("10001 UP"), DownQuery: sqlf.Sprintf("10001 DOWN")},
-			{ID: 10002, UpFilename: "10002_second.up.sql", DownFilename: "10002_second.down.sql", UpQuery: sqlf.Sprintf("10002 UP"), DownQuery: sqlf.Sprintf("10002 DOWN"), Parents: []int{10001}},
-			{ID: 10003, UpFilename: "10003_third.up.sql", DownFilename: "10003_third.down.sql", UpQuery: sqlf.Sprintf("10003 UP"), DownQuery: sqlf.Sprintf("10003 DOWN"), Parents: []int{10002}},
-			{ID: 10004, UpFilename: "10004_fourth.up.sql", DownFilename: "10004_fourth.down.sql", UpQuery: sqlf.Sprintf("10004 UP"), DownQuery: sqlf.Sprintf("10004 DOWN"), Parents: []int{10003}},
-			{ID: 10005, UpFilename: "10005_fifth.up.sql", DownFilename: "10005_fifth.down.sql", UpQuery: sqlf.Sprintf("10005 UP"), DownQuery: sqlf.Sprintf("10005 DOWN"), Parents: []int{10004}},
+			{ID: 10001, UpQuery: sqlf.Sprintf("10001 UP"), DownQuery: sqlf.Sprintf("10001 DOWN")},
+			{ID: 10002, UpQuery: sqlf.Sprintf("10002 UP"), DownQuery: sqlf.Sprintf("10002 DOWN"), Parents: []int{10001}},
+			{ID: 10003, UpQuery: sqlf.Sprintf("10003 UP"), DownQuery: sqlf.Sprintf("10003 DOWN"), Parents: []int{10002}},
+			{ID: 10004, UpQuery: sqlf.Sprintf("10004 UP"), DownQuery: sqlf.Sprintf("10004 DOWN"), Parents: []int{10003}},
+			{ID: 10005, UpQuery: sqlf.Sprintf("10005 UP"), DownQuery: sqlf.Sprintf("10005 DOWN"), Parents: []int{10004}},
 		}
 		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
 			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("missing upgrade query", func(t *testing.T) {
-		testReadDefinitionsError(t, "missing-upgrade-query", "not found")
-	})
-
-	t.Run("missing downgrade query", func(t *testing.T) {
-		testReadDefinitionsError(t, "missing-downgrade-query", "not found")
-	})
-
-	t.Run("duplicate upgrade query", func(t *testing.T) {
-		testReadDefinitionsError(t, "duplicate-upgrade-query", "duplicate upgrade query")
-	})
-
-	t.Run("duplicate downgrade query", func(t *testing.T) {
-		testReadDefinitionsError(t, "duplicate-downgrade-query", "duplicate downgrade query")
-	})
-
-	t.Run("gap in sequence", func(t *testing.T) {
-		testReadDefinitionsError(t, "gap-in-sequence", "migration identifiers jump")
-	})
-
-	t.Run("root-with-parent", func(t *testing.T) {
-		testReadDefinitionsError(t, "root-with-parent", "no roots")
-	})
-
-	t.Run("unexpected-parent", func(t *testing.T) {
-		testReadDefinitionsError(t, "unexpected-parent", "cycle")
-	})
+	t.Run("missing metadata", func(t *testing.T) { testReadDefinitionsError(t, "missing-metadata", "malformed") })
+	t.Run("missing upgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-upgrade-query", "malformed") })
+	t.Run("missing downgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-downgrade-query", "malformed") })
+	t.Run("no roots", func(t *testing.T) { testReadDefinitionsError(t, "no-roots", "no roots") })
+	t.Run("multiple roots", func(t *testing.T) { testReadDefinitionsError(t, "multiple-roots", "multiple roots") })
+	t.Run("unknown parent", func(t *testing.T) { testReadDefinitionsError(t, "unknown-parent", "unknown migration") })
 
 	t.Run("concurrent index creation down", func(t *testing.T) {
 		testReadDefinitionsError(t, "concurrent-down", "did not expect down migration to contain concurrent creation of an index")
