@@ -628,6 +628,13 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 
 	var requiredJobs, optionalJobs []run.Job
 	addJob := func(required bool, job run.Job) {
+		// Filter out any jobs that aren't commit jobs as they are added
+		if inputs.CodeMonitorID != nil {
+			if _, ok := job.(*commit.CommitSearch); !ok {
+				return
+			}
+		}
+
 		if required {
 			requiredJobs = append(requiredJobs, job)
 		} else {
@@ -806,6 +813,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				Diff:          diff,
 				HasTimeFilter: commit.HasTimeFilter(args.Query),
 				Limit:         int(args.PatternInfo.FileMatchLimit),
+				CodeMonitorID: inputs.CodeMonitorID,
 			})
 		}
 
