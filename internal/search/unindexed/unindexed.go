@@ -363,7 +363,7 @@ func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		return zoektutil.DoZoektSearchGlobal(ctx, t.ZoektArgs, stream)
+		return zoektutil.DoZoektSearchGlobal(ctx, t.ZoektArgs, stream) // Rijnard stops here: Hmmm, no results to return, we're holding/gating it via aggregator. So doing the interface change is not the right way to go about it.
 	})
 	return g.Wait()
 }

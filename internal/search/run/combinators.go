@@ -44,10 +44,12 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 
 	var optionalGroup, requiredGroup multierror.Group
 	requiredGroup.Go(func() error {
-		return r.required.Run(ctx, db, s) // Need to collect results
+		_, err := r.required.Run(ctx, db, s) // Need to collect results
+		return err
 	})
 	optionalGroup.Go(func() error {
-		return r.optional.Run(ctx, db, s) // Need to collect results
+		_, err := r.optional.Run(ctx, db, s) // Need to collect results
+		return err
 	})
 
 	var errs *multierror.Error
@@ -65,7 +67,7 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 		errs = multierror.Append(errs, err)
 	}
 
-	return errs.ErrorOrNil() // Need to collect results
+	return nil, errs.ErrorOrNil() // Need to return results
 }
 
 // NewParallelJob will create a job that runs all its child jobs in separate
@@ -96,10 +98,11 @@ func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender
 	for _, job := range p {
 		job := job
 		g.Go(func() error {
-			return job.Run(ctx, db, s) // Need to collect results
+			_, err := job.Run(ctx, db, s) // Need to collect results
+			return err
 		})
 	}
-	return g.Wait().ErrorOrNil()
+	return nil, g.Wait().ErrorOrNil() // Need to return results
 }
 
 // NewTimeoutJob creates a new job that is canceled after the
