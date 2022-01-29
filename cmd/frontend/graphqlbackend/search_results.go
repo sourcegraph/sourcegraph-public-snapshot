@@ -1820,16 +1820,7 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 	agg := run.NewAggregator(stream)
 	err = job.Run(ctx, db, agg)
 	matches, common, matchCount := agg.Get()
-
-	ao := alert.Observer{
-		Db:           db,
-		SearchInputs: searchInputs,
-		HasResults:   matchCount > 0,
-	}
-	if err != nil {
-		ao.Error(ctx, err)
-	}
-	alert, err := ao.Done(&common)
+	alert, err := errorsToAlert(ctx, db, searchInputs, matchCount > 0, &common, err)
 
 	sortResults(matches)
 
@@ -1838,6 +1829,27 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 		Stats:   common,
 		Alert:   alert,
 	}, err
+}
+
+func errorsToAlert(
+	ctx context.Context,
+	db database.DB,
+	searchInputs *run.SearchInputs,
+	hasResults bool,
+	stats *streaming.Stats,
+	errors ...error,
+) (*search.Alert, error) {
+	ao := alert.Observer{
+		Db:           db,
+		SearchInputs: searchInputs,
+		HasResults:   hasResults,
+	}
+	for _, err := range errors {
+		if err != nil {
+			ao.Error(ctx, err)
+		}
+	}
+	return ao.Done(stats)
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
