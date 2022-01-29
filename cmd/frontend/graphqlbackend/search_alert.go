@@ -43,8 +43,8 @@ func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescription {
 	return &proposedQueries
 }
 
-func alertToSearchResults(alert *search.Alert) *SearchResults {
-	return &SearchResults{Alert: alert}
+func alertToSearchResults(alert *search.Alert) *run.SearchResults {
+	return &run.SearchResults{Alert: alert}
 }
 
 func (a searchAlertResolver) wrapSearchImplementer(db database.DB) *alertSearchImplementer {

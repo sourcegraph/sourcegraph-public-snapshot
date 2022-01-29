@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -39,6 +40,12 @@ func (inputs SearchInputs) MaxResults() int {
 	}
 
 	return search.DefaultMaxSearchResults
+}
+
+type SearchResults struct {
+	Matches result.Matches
+	Stats   streaming.Stats
+	Alert   *search.Alert
 }
 
 // Job is an interface shared by all individual search operations in the

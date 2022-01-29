@@ -131,7 +131,7 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
 	db database.DB
-	*SearchResults
+	*run.SearchResults
 
 	// limit is the maximum number of SearchResults to send back to the user.
 	limit int
@@ -142,12 +142,6 @@ type SearchResultsResolver struct {
 	// cache for user settings. Ideally this should be set just once in the code path
 	// by an upstream resolver
 	UserSettings *schema.Settings
-}
-
-type SearchResults struct {
-	Matches result.Matches
-	Stats   streaming.Stats
-	Alert   *search.Alert
 }
 
 // Results are the results found by the search. It respects the limits set. To
@@ -943,7 +937,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 
 // intersect returns the intersection of two sets of search result content
 // matches, based on whether a single file path contains content matches in both sets.
-func intersect(left, right *SearchResults) *SearchResults {
+func intersect(left, right *run.SearchResults) *run.SearchResults {
 	if left == nil || right == nil {
 		return nil
 	}
@@ -960,7 +954,7 @@ func intersect(left, right *SearchResults) *SearchResults {
 // and likely yields fewer than N results). If the intersection does not yield N
 // results, and is not exhaustive for every expression, we rerun the search by
 // doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*run.SearchResults, error) {
 	start := time.Now()
 
 	// Invariant: this function is only reachable from callers that
@@ -969,8 +963,8 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 
 	var (
 		err        error
-		result     *SearchResults
-		termResult *SearchResults
+		result     *run.SearchResults
+		termResult *run.SearchResults
 	)
 
 	// The number of results we want. Note that for intersect, this number
@@ -1007,7 +1001,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			return nil, err
 		}
 		if result == nil {
-			return &SearchResults{}, nil
+			return &run.SearchResults{}, nil
 		}
 		if len(result.Matches) == 0 {
 			// result might contain an alert.
@@ -1029,7 +1023,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 				return nil, err
 			}
 			if termResult == nil {
-				return &SearchResults{}, nil
+				return &run.SearchResults{}, nil
 			}
 			if len(termResult.Matches) == 0 {
 				// termResult might contain an alert.
@@ -1060,7 +1054,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 // expressions that are ORed together by searching for each subexpression. If
 // the maximum number of results are reached after evaluating a subexpression,
 // we shortcircuit and return results immediately.
-func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*run.SearchResults, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more operands.
 	operands := q.Pattern.(query.Operator).Operands
@@ -1136,7 +1130,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 		alert = alerts[0]
 	}
 
-	return &SearchResults{
+	return &run.SearchResults{
 		Matches: dedup.Results(),
 		Stats:   stats,
 		Alert:   alert,
@@ -1144,11 +1138,11 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
-func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.Basic) (*run.SearchResults, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
-			return &SearchResults{}, nil
+			return &run.SearchResults{}, nil
 		}
 
 		switch term.Kind {
@@ -1159,30 +1153,30 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		case query.Concat:
 			job, err := r.toSearchJob(q.ToParseTree())
 			if err != nil {
-				return &SearchResults{}, err
+				return &run.SearchResults{}, err
 			}
 			return r.evaluateJob(ctx, job)
 		}
 	case query.Pattern:
 		job, err := r.toSearchJob(q.ToParseTree())
 		if err != nil {
-			return &SearchResults{}, err
+			return &run.SearchResults{}, err
 		}
 		return r.evaluateJob(ctx, job)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
-		return &SearchResults{}, nil
+		return &run.SearchResults{}, nil
 	}
 	// Unreachable.
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
 // evaluate evaluates all expressions of a search query.
-func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*run.SearchResults, error) {
 	if q.Pattern == nil {
 		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
 		if err != nil {
-			return &SearchResults{}, err
+			return &run.SearchResults{}, err
 		}
 		return r.evaluateJob(ctx, job)
 	}
@@ -1280,9 +1274,9 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 	return srr, err
 }
 
-func (r *searchResolver) resultsToResolver(results *SearchResults) *SearchResultsResolver {
+func (r *searchResolver) resultsToResolver(results *run.SearchResults) *SearchResultsResolver {
 	if results == nil {
-		results = &SearchResults{}
+		results = &run.SearchResults{}
 	}
 	return &SearchResultsResolver{
 		SearchResults: results,
@@ -1318,7 +1312,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 	}
 }
 
-func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (_ *SearchResults, err error) {
+func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (_ *run.SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
@@ -1351,7 +1345,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 			defer sem.Release(1)
 
-			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
+			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*run.SearchResults, error) {
 				// Disable streaming for subqueries so we can use
 				// the results rather than sending them back to the caller
 				orig := r.stream
@@ -1372,7 +1366,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 				return err
 			}
 
-			var newResult *SearchResults
+			var newResult *run.SearchResults
 			if predicatePlan != nil {
 				// If a predicate filter generated a new plan, evaluate that plan.
 				newResult, err = r.resultsRecursive(ctx, predicatePlan)
@@ -1449,7 +1443,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		alert = alerts[0]
 	}
 
-	return &SearchResults{
+	return &run.SearchResults{
 		Matches: matches,
 		Stats:   stats,
 		Alert:   alert,
@@ -1519,7 +1513,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // A search job represents a tree of evaluation steps. If the deadline
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *run.SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "evaluateRoutine", "")
 	defer func() {
 		tr.SetError(err)
@@ -1549,7 +1543,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
-func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*SearchResults, error)) (query.Plan, error) {
+func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*run.SearchResults, error)) (query.Plan, error) {
 	var topErr error
 	success := false
 	newQ := query.MapParameter(q.ToParseTree(), func(field, value string, neg bool, ann query.Annotation) query.Node {
@@ -1799,7 +1793,7 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 
 // doResults returns the results of running a search job.
 // Partial results AND an error may be returned.
-func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.DB, stream streaming.Sender, job run.Job) (res *SearchResults, err error) {
+func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.DB, stream streaming.Sender, job run.Job) (res *run.SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", searchInputs.OriginalQuery)
 	defer func() {
 		tr.SetError(err)
@@ -1829,7 +1823,7 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 
 	sortResults(matches)
 
-	return &SearchResults{
+	return &run.SearchResults{
 		Matches: matches,
 		Stats:   common,
 		Alert:   alert,

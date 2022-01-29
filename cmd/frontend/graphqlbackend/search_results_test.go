@@ -332,7 +332,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
+				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), SearchResults: &run.SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
@@ -542,7 +542,7 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
 				db: database.NewMockDB(),
-				SearchResults: &SearchResults{
+				SearchResults: &run.SearchResults{
 					Stats:   tt.fields.searchResultsCommon,
 					Matches: tt.fields.results,
 					Alert:   tt.fields.alert,
