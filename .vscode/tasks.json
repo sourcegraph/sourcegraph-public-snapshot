@@ -131,7 +131,7 @@
       "script": "watch:node",
       "group": "build",
       "isBackground": true,
-      "problemMatcher": ["$ts-checker-webpack-watch"]
+      "problemMatcher": ["$ts-checker-webpack-watch"],
     },
     {
       "label": "watch-vscode-web",
@@ -140,7 +140,7 @@
       "script": "watch:web",
       "group": "build",
       "isBackground": true,
-      "problemMatcher": ["$ts-checker-webpack-watch"]
+      "problemMatcher": ["$ts-checker-webpack-watch"],
     },
-  ]
+  ],
 }
