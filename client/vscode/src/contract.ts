@@ -3,6 +3,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ProxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { Event } from '@sourcegraph/web/src/graphql-operations'
 
 import { VSCEState, VSCEStateMachine } from './state'
 
@@ -21,6 +22,11 @@ export interface ExtensionCoreAPI {
 
     openLink: (uri: string) => void
     reloadWindow: () => void
+
+    logEvents: (variables: Event) => void
+
+    getLocalStorageItem: (key: string) => string
+    setLocalStorageItem: (key: string, value: string) => Promise<boolean>
 }
 
 export interface SearchPanelAPI {

@@ -3,11 +3,14 @@ import { of, ReplaySubject } from 'rxjs'
 import * as vscode from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
+import { Event } from '@sourcegraph/web/src/graphql-operations'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
+import { logEvent } from './backend/eventLogger'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
 import { ExtensionCoreAPI } from './contract'
+import { LocalStorageService } from './localStorage'
 import { updateAccessTokenSetting } from './settings/accessTokenSetting'
 import { endpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
@@ -46,8 +49,8 @@ import { registerWebviews } from './webview/commands'
 
 export function activate(context: vscode.ExtensionContext): void {
     const stateMachine = createVSCEStateMachine()
-
     invalidateContextOnSettingsChange({ context, stateMachine })
+    const storageManager = new LocalStorageService(context.workspaceState)
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
@@ -83,6 +86,9 @@ export function activate(context: vscode.ExtensionContext): void {
         },
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
+        logEvents: (variables: Event) => logEvent(variables),
+        getLocalStorageItem: (key: string) => storageManager.getValue(key),
+        setLocalStorageItem: (key: string, value: string) => storageManager.setValue(key, value),
     }
 
     registerWebviews({ context, extensionCoreAPI, initializedPanelIDs, sourcegraphSettings })

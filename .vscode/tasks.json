@@ -111,5 +111,36 @@
       "path": "client/extension-api/",
       "problemMatcher": ["$eslint-stylish"],
     },
-  ],
+    ,
+    {
+      "label": "build-vscode-node",
+      "type": "npm",
+      "path": "client/vscode/",
+      "script": "build:node",
+    },
+    {
+      "label": "build-vscode-web",
+      "type": "npm",
+      "path": "client/vscode/",
+      "script": "build:web",
+    },
+    {
+      "label": "watch-vscode-node",
+      "type": "npm",
+      "path": "client/vscode/",
+      "script": "watch:node",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": ["$ts-checker-webpack-watch"]
+    },
+    {
+      "label": "watch-vscode-web",
+      "type": "npm",
+      "path": "client/vscode/",
+      "script": "watch:web",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": ["$ts-checker-webpack-watch"]
+    },
+  ]
 }

@@ -5,11 +5,13 @@ import { BehaviorSubject, from, Observable } from 'rxjs'
 import { GraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ExtensionCoreAPI } from '../../contract'
 
-import { vscodeTelemetryService } from './telemetryService'
+import { EventLogger } from './eventLogger'
+import { VsceTelemetryService } from './telemetryService'
+
+// import { vscodeTelemetryService } from './telemetryService'
 
 export interface VSCodePlatformContext
     extends Pick<
@@ -26,7 +28,8 @@ export interface VSCodePlatformContext
         | 'clientApplication'
     > {
     // Ensure telemetryService is non-nullable.
-    telemetryService: TelemetryService
+    // telemetryService: TelemetryService
+    telemetryService: VsceTelemetryService
     requestGraphQL: <R, V = object>(options: {
         request: string
         variables: V
@@ -49,7 +52,7 @@ export function createPlatformContext(extensionCoreAPI: Comlink.Remote<Extension
         settings: wrapRemoteObservable(extensionCoreAPI.observeSourcegraphSettings()),
         // TODO: implement GQL mutation, settings refresh (called by extensions, impl w/ ext. host).
         updateSettings: () => Promise.resolve(),
-        telemetryService: vscodeTelemetryService,
+        telemetryService: new EventLogger(extensionCoreAPI),
         sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
         clientApplication: 'other', // TODO add 'vscode-extension' to `clientApplication`,
         getScriptURLForExtension: () => undefined,
