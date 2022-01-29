@@ -21,4 +21,4 @@ export const MenuButton = React.forwardRef(({ children, ...props }, reference) =
 
 const PopoverTriggerButton = React.forwardRef((props, reference) => (
     <PopoverTrigger ref={reference} as={Button} {...props} />
-)) as ForwardReferenceComponent<'button', MenuButtonProps>
+)) as ForwardReferenceComponent<'button', ButtonProps>

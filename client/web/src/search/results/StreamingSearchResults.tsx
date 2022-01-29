@@ -18,6 +18,7 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
@@ -382,10 +383,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
                 searches and more."
                         cta={{
-                            label: 'Create a free account',
-                            href: `/sign-up?src=SearchCTA&returnTo=${encodeURIComponent(
-                                '/user/settings/repositories'
-                            )}`,
+                            label: 'Get started',
+                            href: buildGetStartedURL('search-cta', '/user/settings/repositories'),
                             onClick: onSignUpClick,
                         }}
                         icon={<SearchBetaIcon />}

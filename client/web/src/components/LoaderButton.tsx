@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, ButtonProps } from '@sourcegraph/wildcard'
 
-interface Props extends React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {
+interface Props extends ButtonProps {
     loading: boolean
     label: string
     alwaysShowLabel: boolean
@@ -15,12 +15,7 @@ export const LoaderButton: React.FunctionComponent<Partial<Props>> = ({
     alwaysShowLabel,
     ...props
 }) => (
-    <button
-        {...props}
-        className={classNames(props.className, 'd-flex justify-content-center align-items-center')}
-        // eslint-disable-next-line react/button-has-type
-        type={props.type ?? 'button'}
-    >
+    <Button {...props} className={classNames(props.className, 'd-flex justify-content-center align-items-center')}>
         {loading ? (
             <>
                 <LoadingSpinner />
@@ -29,5 +24,5 @@ export const LoaderButton: React.FunctionComponent<Partial<Props>> = ({
         ) : (
             label
         )}
-    </button>
+    </Button>
 )

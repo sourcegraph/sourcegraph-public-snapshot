@@ -440,8 +440,8 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 			style = output.StyleSuggestion
 		case "broken":
 			// State 'broken' is happens when a conditional is not met. Why is it 'broken'
-			// and not 'skipped'? We don't it be like this, but it do. Anyway, we pretend
-			// it was skipped.
+			// and not 'skipped'? We don't think it be like this, but it do. Anyway, we
+			// pretend it was skipped and treat it as such.
 			// https://buildkite.com/docs/pipelines/conditionals#conditionals-and-the-broken-state
 			*job.State = "skipped"
 			fallthrough

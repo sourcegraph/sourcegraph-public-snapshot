@@ -13380,13 +13380,55 @@ Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__
 
 <br />
 
+#### zoekt: repos_stopped_tracking_total_aggregate
+
+<p class="subtitle">The number of repositories we stopped tracking over 5m (aggregate)</p>
+
+Repositories we stop tracking are soft-deleted during the next cleanup job.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(index_num_stopped_tracking_total[5m]))`
+
+</details>
+
+<br />
+
+#### zoekt: repos_stopped_tracking_total_per_instance
+
+<p class="subtitle">The number of repositories we stopped tracking over 5m (per instance)</p>
+
+Repositories we stop tracking are soft-deleted during the next cleanup job.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m]))`
+
+</details>
+
+<br />
+
 #### zoekt: average_resolve_revision_duration
 
 <p class="subtitle">Average resolve revision duration over 5m</p>
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-average-resolve-revision-duration) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100030` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13413,7 +13455,7 @@ this indicates repositories will not get updated indexes.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-get-index-options-error-increase) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100031` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
