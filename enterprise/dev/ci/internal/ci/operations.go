@@ -253,11 +253,11 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 		}
 
 		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
+			bk.IfReadyForReview(),
 			bk.AutomaticRetry(3),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
-			bk.If("!build.pull_request.draft"),
 			bk.Cmd(chromaticCommand),
 		)
 	}

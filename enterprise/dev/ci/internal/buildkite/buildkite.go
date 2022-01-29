@@ -342,9 +342,9 @@ func DependsOn(dependency ...string) StepOpt {
 	}
 }
 
-func If(condition string) StepOpt {
+func IfReadyForReview() StepOpt {
 	return func(step *Step) {
-		step.If = condition
+		step.If = "build.pull_request.id != null && !build.pull_request.draft"
 	}
 }
 
