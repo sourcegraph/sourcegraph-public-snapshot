@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Observable } from 'rxjs'
 
 import {
     SearchPatternType,
@@ -8,11 +9,14 @@ import {
     fetchSearchContexts,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
 import { SearchHomeState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
+
+import styles from './index.module.scss'
 
 // TODO:
 // Logo, feedback button
@@ -40,10 +44,13 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
         query: '',
     })
 
-    // TODO: get query state from sidebar in context (already implemented "for free" w/ submission for search results view).
+    useEffect(() => {
+        console.log('initial mount')
+    }, [])
+
+    // TODO: we need an API for updating search query state from the sidebar.
 
     const onSubmit = useCallback(() => {
-        // TODO check if we need query state ref for perf
         extensionCoreAPI
             .streamSearch(userQueryState.query, {
                 caseSensitive,
@@ -66,6 +73,12 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
         [extensionCoreAPI]
     )
 
+    const fetchStreamSuggestions = useCallback(
+        (query): Observable<SearchMatch[]> =>
+            wrapRemoteObservable(extensionCoreAPI.fetchStreamSuggestions(query, instanceURL)),
+        [extensionCoreAPI, instanceURL]
+    )
+
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
         return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
@@ -74,7 +87,14 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
     return (
         <div>
             {/* <BrandHeader /> */}
-            <div className="d-flex my-2">
+            {/* eslint-disable-next-line react/forbid-elements */}
+            <form
+                className="d-flex my-2"
+                onSubmit={event => {
+                    event.preventDefault()
+                    onSubmit()
+                }}
+            >
                 <SearchBox
                     caseSensitive={caseSensitive}
                     setCaseSensitivity={setCaseSensitivity}
@@ -97,16 +117,17 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
                     fetchSearchContexts={fetchSearchContexts}
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                    fetchStreamSuggestions={fetchStreamSuggestions}
                     settingsCascade={settingsCascade}
                     globbing={globbing}
                     isLightTheme={theme === 'theme-light'}
                     telemetryService={platformContext.telemetryService}
                     platformContext={platformContext}
-                    // TODO editor font
-                    className={classNames('flex-grow-1 flex-shrink-past-contents')}
+                    className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
+                    containerClassName={styles.searchBoxContainer}
                 />
-            </div>
-            {/* <SearchExamples /> */}
+            </form>
+            {/* <SearchExamples />. alias ModalVideo  */}
         </div>
     )
 }

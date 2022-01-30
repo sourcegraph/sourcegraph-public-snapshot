@@ -3,6 +3,7 @@ import { of, ReplaySubject } from 'rxjs'
 import vscode, { env } from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
@@ -106,6 +107,8 @@ export function activate(context: vscode.ExtensionContext): void {
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         streamSearch,
+        fetchStreamSuggestions: (query, sourcegraphURL) =>
+            proxySubscribable(fetchStreamSuggestions(query, sourcegraphURL)),
         setSelectedSearchContextSpec: spec => {
             stateMachine.emit({ type: 'set_selected_search_context_spec', spec })
             return localStorageService.setValue(SELECTED_SEARCH_CONTEXT_SPEC_KEY, spec)

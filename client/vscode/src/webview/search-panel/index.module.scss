@@ -1,3 +1,30 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 :global(body) {
     padding: 0 1rem;
+}
+
+.search-box {
+    background-color: var(--vscode-editorWidget-background);
+    border-color: var(--vscode-editorWidget-border);
+
+    &:first-child {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    // Override for search context separator
+    --border-color-2: var(--vscode-editorWidget-border);
+    // For button hover background
+    --color-bg-2: var(--vscode-input-background);
+
+    .btn:hover {
+        background-color: var(--vscode-input-background);
+    }
+}
+
+.search-box-container {
+    @media (--xs-breakpoint-down) {
+        background-color: var(--vscode-editorWidget-background);
+    }
 }
