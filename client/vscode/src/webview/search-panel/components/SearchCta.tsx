@@ -18,11 +18,11 @@ export const SearchPageCta: React.FunctionComponent<SearchPageCtaProps> = ({
     buttonText,
     onClickAction,
 }) => (
-    <div className="cta-card d-flex flex-md-row flex-column align-items-center p-1">
+    <div className={classNames('cta-card d-flex flex-md-row flex-column align-items-center', styles.container)}>
         <div className="mr-md-3 ml-3">
             <div className="w-50">{icon}</div>
         </div>
-        <div className={classNames('flex-1 my-md-0 my-2', styles.container)}>
+        <div className={classNames('flex-1 my-md-0 my-2', styles.contentContainer)}>
             <div className={classNames('mb-1', styles.title)}>
                 <strong>{ctaTitle}</strong>
             </div>
