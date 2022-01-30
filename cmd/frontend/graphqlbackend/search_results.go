@@ -125,7 +125,9 @@ func (c *SearchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryReso
 }
 
 func (c *SearchResultsResolver) IndexUnavailable() bool {
-	return c.Stats.IsIndexUnavailable
+	// This used to return c.Stats.IsIndexUnavailable, but it was never set,
+	// so would always return false
+	return false
 }
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
