@@ -352,6 +352,7 @@
     "@visx/pattern": "^1.7.0",
     "@visx/scale": "^1.7.0",
     "@visx/xychart": "^1.7.3",
+    "@vscode/webview-ui-toolkit": "^0.9.0",
     "ajv": "^8.6.3",
     "ajv-formats": "^2.1.1",
     "apollo3-cache-persist": "^0.12.1",

@@ -2440,6 +2440,36 @@
     mermaid "^8.9.0"
     puppeteer "^11.0.0"
 
+"@microsoft/fast-element@^1.6.2", "@microsoft/fast-element@^1.7.0":
+  version "1.7.0"
+  resolved "https://registry.npmjs.org/@microsoft/fast-element/-/fast-element-1.7.0.tgz#7e4b164c77c07d93b28f057231b37e7e2e8fed04"
+  integrity sha512-2qpAWuiOSdQfH/XdO8ZtVhlvQVCjHlojWUPoGbvHJDizBccZib+4uGReG87RIBp2Fi0s7ngYPRUioS1Lr+Xe0A==
+
+"@microsoft/fast-foundation@^2.30.0", "@microsoft/fast-foundation@^2.32.2":
+  version "2.32.2"
+  resolved "https://registry.npmjs.org/@microsoft/fast-foundation/-/fast-foundation-2.32.2.tgz#c309c734965c5b2e3e264b5d05843aeb6c633229"
+  integrity sha512-xbagdbnNyKGg3Uvx+llTgN6C47FYYN1Wo5bRL8r3QcNalBkgsA/4T5fZFOoEypxUPzRDlEH/A81G1c8CJwHdLw==
+  dependencies:
+    "@microsoft/fast-element" "^1.7.0"
+    "@microsoft/fast-web-utilities" "^5.1.0"
+    tabbable "^5.2.0"
+    tslib "^1.13.0"
+
+"@microsoft/fast-react-wrapper@^0.1.18":
+  version "0.1.25"
+  resolved "https://registry.npmjs.org/@microsoft/fast-react-wrapper/-/fast-react-wrapper-0.1.25.tgz#905d07d6e2056668ada0cfbcf0484c68f028fdb0"
+  integrity sha512-0qWU/pUY31/YKLgHzgn0+1Ye5klvTrp4/9X6PGzQk5GAU2jjN9dv1Atzsf5bz+BdkE3oWfBhiV6UOJvA/YbnmA==
+  dependencies:
+    "@microsoft/fast-element" "^1.7.0"
+    "@microsoft/fast-foundation" "^2.32.2"
+
+"@microsoft/fast-web-utilities@^5.1.0":
+  version "5.1.0"
+  resolved "https://registry.npmjs.org/@microsoft/fast-web-utilities/-/fast-web-utilities-5.1.0.tgz#e060fea2b47c2dcfb4a9ba90a55559f0844d1cdb"
+  integrity sha512-S2PCxI4XqtIxLM1N7i/NuIAgx+mJM01+mDzyB3vZlYibAkOT0bzp5YZCp+coXowokSin/nK5T2kqShMXEzI6Jg==
+  dependencies:
+    exenv-es6 "^1.0.0"
+
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
   resolved "https://registry.npmjs.org/@mrmlnc/readdir-enhanced/-/readdir-enhanced-2.2.1.tgz#524af240d1a360527b730475ecfa1344aa540dde"
@@ -5927,6 +5957,15 @@
     lodash "^4.17.10"
     mitt "^2.1.0"
     prop-types "^15.6.2"
+
+"@vscode/webview-ui-toolkit@^0.9.0":
+  version "0.9.0"
+  resolved "https://registry.npmjs.org/@vscode/webview-ui-toolkit/-/webview-ui-toolkit-0.9.0.tgz#a3472f62bc17d4076d9540070aeb3db83080b4f6"
+  integrity sha512-F67LSz0yURKqPomSZA4xTu9d8VC+MtjlpCk2KygX8m2R3tvTSOjpntQ/6U1gjPVG0Pmw1m3YB2Yhhyo8E/c0zw==
+  dependencies:
+    "@microsoft/fast-element" "^1.6.2"
+    "@microsoft/fast-foundation" "^2.30.0"
+    "@microsoft/fast-react-wrapper" "^0.1.18"
 
 "@webassemblyjs/ast@1.11.1":
   version "1.11.1"
@@ -11594,6 +11633,11 @@ execall@^2.0.0:
   integrity sha512-0FU2hZ5Hh6iQnarpRtQurM/aAvp3RIbfvgLHrcqJYzhXyV2KFruhuChf9NC6waAhiUR7FFtlugkI4p7f2Fqlow==
   dependencies:
     clone-regexp "^2.1.0"
+
+exenv-es6@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/exenv-es6/-/exenv-es6-1.0.0.tgz#bd459136369af17cf33f959b5af58803d4068c80"
+  integrity sha512-fcG/TX8Ruv9Ma6PBaiNsUrHRJzVzuFMP6LtPn/9iqR+nr9mcLeEOGzXQGLC5CVQSXGE98HtzW2mTZkrCA3XrDg==
 
 exit-hook@^1.0.0:
   version "1.1.1"
@@ -22176,6 +22220,11 @@ tabbable@^5.1.5:
   resolved "https://registry.npmjs.org/tabbable/-/tabbable-5.1.5.tgz#efec48ede268d511c261e3b81facbb4782a35147"
   integrity sha512-oVAPrWgLLqrbvQE8XqcU7CVBq6SQbaIbHkhOca3u7/jzuQvyZycrUKPCGr04qpEIUslmUlULbSeN+m3QrKEykA==
 
+tabbable@^5.2.0:
+  version "5.2.1"
+  resolved "https://registry.npmjs.org/tabbable/-/tabbable-5.2.1.tgz#e3fda7367ddbb172dcda9f871c0fdb36d1c4cd9c"
+  integrity sha512-40pEZ2mhjaZzK0BnI+QGNjJO8UYx9pP5v7BGe17SORTO0OEuuaAwQTkAp8whcZvqon44wKFOikD+Al11K3JICQ==
+
 table@^5.2.3:
   version "5.4.6"
   resolved "https://registry.npmjs.org/table/-/table-5.4.6.tgz#1292d19500ce3f86053b05f0e8e7e4a3bb21079e"
@@ -22731,7 +22780,7 @@ tsconfig-paths@^3.9.0:
     minimist "^1.2.0"
     strip-bom "^3.0.0"
 
-tslib@^1.0.0, tslib@^1.10.0, tslib@^1.11.1, tslib@^1.11.2, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
+tslib@^1.0.0, tslib@^1.10.0, tslib@^1.11.1, tslib@^1.11.2, tslib@^1.13.0, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
   version "1.14.1"
   resolved "https://registry.npmjs.org/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
   integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
