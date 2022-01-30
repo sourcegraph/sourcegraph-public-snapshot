@@ -1,4 +1,15 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .container {
+    padding: 0.25rem;
+
+    @media (--sm-breakpoint-down) {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+}
+
+.content-container {
     padding: 1rem;
     flex: 1;
 }
