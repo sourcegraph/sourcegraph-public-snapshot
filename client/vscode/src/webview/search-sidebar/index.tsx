@@ -15,7 +15,7 @@ import {
 import { ExtensionCoreAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
 import { createPlatformContext, WebviewPageProps } from '../platform/context'
-import { adaptToEditorTheme } from '../theme'
+import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
 
 import { createSearchSidebarAPI } from './api'
 import { AuthSidebarView } from './AuthSidebarView'
@@ -35,7 +35,7 @@ const platformContext = createPlatformContext(extensionCoreAPI)
 
 setLinkComponent(AnchorLink)
 
-const themes = adaptToEditorTheme()
+const themes = adaptSourcegraphThemeToEditorTheme()
 
 const Main: React.FC = () => {
     // TODO: make sure we only rerender on necessary changes
@@ -53,6 +53,9 @@ const Main: React.FC = () => {
         useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeSourcegraphSettings()), [])
     )
     // Do not block rendering on settings unless we observe UI jitter
+
+    // TODO: If init is taking too long, show a message.
+    // Also check if anything has errored out.
 
     // If any of the remote values have yet to load.
     const initialized =
