@@ -1,2 +1,3 @@
-name: 'gitserver_repos_new_lasterror_idx'
+name: 'gitserver repos new lasterror idx'
 parent: 1528395895
+createIndexConcurrently: true
