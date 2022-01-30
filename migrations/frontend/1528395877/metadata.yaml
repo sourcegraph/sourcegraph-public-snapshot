@@ -1,2 +1,3 @@
-name: 'index-lsif-uploads-repo'
+name: 'index lsif uploads repo'
 parent: 1528395876
+createIndexConcurrently: true
