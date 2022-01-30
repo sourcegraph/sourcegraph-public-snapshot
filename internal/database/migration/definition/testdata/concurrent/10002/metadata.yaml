@@ -1,3 +1,3 @@
-name: second
+name: 'second'
 parent: 10001
 createIndexConcurrently: true

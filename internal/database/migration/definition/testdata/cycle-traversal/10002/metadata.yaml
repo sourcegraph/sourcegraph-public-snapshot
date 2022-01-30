@@ -1,4 +1,4 @@
-name: second
+name: 'second'
 parents:
   - 10001
   - 10005

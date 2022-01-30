@@ -55,19 +55,9 @@ func Squash(database db.Database, commit string) error {
 		return err
 	}
 
-	// Remove the migration file pairs that were just squashed
-	filenames, err := removeAncestorsOf(database, ds, newRoot)
-	if err != nil {
-		return err
-	}
-
 	out.Write("")
 	block := out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
 	defer block.Close()
-
-	for _, filename := range filenames {
-		block.Writef("Deleted: %s", filename)
-	}
 
 	// Write the replacement migration pair
 	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, newRoot)
@@ -88,6 +78,17 @@ func Squash(database db.Database, commit string) error {
 	block.Writef("Created: %s", upPath)
 	block.Writef("Created: %s", downPath)
 	block.Writef("Created: %s", metadataPath)
+
+	// Remove the migration file pairs that were just squashed
+	filenames, err := removeAncestorsOf(database, ds, newRoot)
+	if err != nil {
+		return err
+	}
+
+	for _, filename := range filenames {
+		block.Writef("Deleted: %s", filename)
+	}
+
 	return nil
 }
 
@@ -154,47 +155,38 @@ func generateSquashedMigrations(database db.Database, targetVersions []int) (up,
 	return upMigration, "-- Nothing\n", nil
 }
 
-// removeAncestorsOf removes all migrations that are an ancestor of the given target version.
-// This method returns the names of the files that were removed.
-func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetVersion int) ([]string, error) {
-	allDefinitions := ds.All()
-
-	allIDs := make([]int, 0, len(allDefinitions))
-	for _, definition := range allDefinitions {
-		allIDs = append(allIDs, definition.ID)
-	}
-
-	properDescendants, err := ds.Down(allIDs, []int{targetVersion})
-	if err != nil {
-		return nil, err
-	}
-
-	keep := make(map[int]struct{}, len(properDescendants))
-	for _, definition := range properDescendants {
-		keep[definition.ID] = struct{}{}
-	}
-
-	// Gather the set of names that are NOT a proper descendant of the given target version.
-	// This will leave us with the ancestors of the target version (including itself).
-	names := make([]string, 0, len(allDefinitions))
-	for _, definition := range allDefinitions {
-		if _, ok := keep[definition.ID]; !ok {
-			names = append(names, strconv.Itoa(definition.ID))
+// runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
+func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
+	pending := out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
+	defer func() {
+		if err == nil {
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrated PostgreSQL schema"))
+		} else {
+			pending.Destroy()
 		}
+	}()
+
+	ctx := context.Background()
+
+	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
 
-	baseDir, err := migrationDirectoryForDatabase(database)
-	if err != nil {
-		return nil, err
+	options := runner.Options{
+		Operations: []runner.MigrationOperation{
+			{
+				SchemaName:     database.Name,
+				Type:           runner.MigrationOperationTypeTargetedUp,
+				TargetVersions: targetVersions,
+			},
+		},
 	}
 
-	for _, name := range names {
-		if err := os.RemoveAll(filepath.Join(baseDir, name)); err != nil {
-			return nil, err
-		}
+	dsns := map[string]string{
+		database.Name: postgresDSN,
 	}
 
-	return names, nil
+	return connections.RunnerFromDSNs(dsns, "sg", storeFactory).Run(ctx, options)
 }
 
 // runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.
@@ -250,40 +242,6 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 	}
 
 	return teardown, nil
-}
-
-// runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
-func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
-	pending := out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
-	defer func() {
-		if err == nil {
-			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrated PostgreSQL schema"))
-		} else {
-			pending.Destroy()
-		}
-	}()
-
-	ctx := context.Background()
-
-	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
-	}
-
-	options := runner.Options{
-		Operations: []runner.MigrationOperation{
-			{
-				SchemaName:     database.Name,
-				Type:           runner.MigrationOperationTypeTargetedUp,
-				TargetVersions: targetVersions,
-			},
-		},
-	}
-
-	dsns := map[string]string{
-		database.Name: postgresDSN,
-	}
-
-	return connections.RunnerFromDSNs(dsns, "sg", storeFactory).Run(ctx, options)
 }
 
 // generateSquashedUpMigration returns the contents of an up migration file containing the
@@ -373,4 +331,47 @@ outer:
 	}
 
 	return fmt.Sprintf("BEGIN;\n\n%s\n\nCOMMIT;\n", strings.TrimSpace(filteredContent))
+}
+
+// removeAncestorsOf removes all migrations that are an ancestor of the given target version.
+// This method returns the names of the files that were removed.
+func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetVersion int) ([]string, error) {
+	allDefinitions := ds.All()
+
+	allIDs := make([]int, 0, len(allDefinitions))
+	for _, definition := range allDefinitions {
+		allIDs = append(allIDs, definition.ID)
+	}
+
+	properDescendants, err := ds.Down(allIDs, []int{targetVersion})
+	if err != nil {
+		return nil, err
+	}
+
+	keep := make(map[int]struct{}, len(properDescendants))
+	for _, definition := range properDescendants {
+		keep[definition.ID] = struct{}{}
+	}
+
+	// Gather the set of names that are NOT a proper descendant of the given target version.
+	// This will leave us with the ancestors of the target version (including itself).
+	names := make([]string, 0, len(allDefinitions))
+	for _, definition := range allDefinitions {
+		if _, ok := keep[definition.ID]; !ok {
+			names = append(names, strconv.Itoa(definition.ID))
+		}
+	}
+
+	baseDir, err := migrationDirectoryForDatabase(database)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, name := range names {
+		if err := os.RemoveAll(filepath.Join(baseDir, name)); err != nil {
+			return nil, err
+		}
+	}
+
+	return names, nil
 }

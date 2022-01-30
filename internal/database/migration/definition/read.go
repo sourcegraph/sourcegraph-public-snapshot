@@ -94,25 +94,6 @@ func readDefinition(fs fs.FS, version int) (Definition, error) {
 	})
 }
 
-// readQueryFromFile returns the query parsed from the given file.
-func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
-	file, err := fs.Open(filepath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	contents, err := io.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-
-	// Stringify -> SQL-ify the contents of the file. We first replace any
-	// SQL placeholder values with an escaped version so that the sqlf.Sprintf
-	// call does not try to interpolate the text with variables we don't have.
-	return sqlf.Sprintf(strings.ReplaceAll(string(contents), "%", "%%")), nil
-}
-
 // hydrateMetadataFromFile populates the given definition with metdata parsed
 // from the given file. The mutated definition is returned.
 func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (_ Definition, _ error) {
@@ -179,6 +160,25 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 	}
 
 	return definition, nil
+}
+
+// readQueryFromFile returns the query parsed from the given file.
+func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
+	file, err := fs.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	contents, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	// Stringify -> SQL-ify the contents of the file. We first replace any
+	// SQL placeholder values with an escaped version so that the sqlf.Sprintf
+	// call does not try to interpolate the text with variables we don't have.
+	return sqlf.Sprintf(strings.ReplaceAll(string(contents), "%", "%%")), nil
 }
 
 var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)

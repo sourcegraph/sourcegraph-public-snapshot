@@ -10,6 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
 
+const metadataTemplate = `name: %s
+parents: [%s]
+`
+
 const upMigrationFileTemplate = `BEGIN;
 
 -- Perform migration here.
@@ -31,11 +35,6 @@ const downMigrationFileTemplate = `BEGIN;
 -- Undo the changes made in the up migration
 
 COMMIT;
-`
-
-const metadataTemplate = `
-name: %s
-parents: [%s]
 `
 
 // Add creates a new up/down migration file pair for the given database and returns the
