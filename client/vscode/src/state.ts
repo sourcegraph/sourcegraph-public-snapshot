@@ -89,6 +89,10 @@ interface CommonContext {
         'queryState' | 'searchCaseSensitivity' | 'searchPatternType'
     > | null
 
+    // searchSidebarQueryState (this should also duplicate previous
+    // submitted search query state so we know that it's from
+    // that "search session")
+
     // In common context and not just `search-results` to retain during `idle` or `remote-browsing` states.
     searchResults: AggregateStreamingSearchResults | null
 

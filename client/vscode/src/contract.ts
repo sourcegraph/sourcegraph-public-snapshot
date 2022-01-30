@@ -2,7 +2,7 @@ import { GraphQLResult } from '@sourcegraph/http-client'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ProxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { SearchMatch, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { VSCEState, VSCEStateMachine } from './state'
@@ -28,9 +28,12 @@ export interface ExtensionCoreAPI {
      * Cancels previous search when called.
      */
     streamSearch: (query: string, options: StreamSearchOptions) => void
+    fetchStreamSuggestions: (query: string, sourcegraphURL: string) => ProxySubscribable<SearchMatch[]>
     setSelectedSearchContextSpec: (spec: string) => void
 }
 
+// Data flows one way for now (one sidebar <-> one panel UX),
+// but these APIs are in place in case we implement a one sidebar <-> many panels UX
 export interface SearchPanelAPI {
     // TODO remove once other methods are implemented
     ping: () => ProxySubscribable<'pong'>
