@@ -25,6 +25,7 @@ export async function initializeSearchPanelWebview({
     const panel = vscode.window.createWebviewPanel('sourcegraphSearch', 'Sourcegraph', vscode.ViewColumn.One, {
         enableScripts: true,
         retainContextWhenHidden: true,
+        enableFindWidget: true,
         localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
     })
 
@@ -79,7 +80,7 @@ export async function initializeSearchPanelWebview({
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
     </head>
-    <body>
+    <body class="search-panel">
         <div id="root" />
         <script nonce="${nonce}" src="${scriptSource.toString()}"></script>
     </body>
@@ -146,7 +147,7 @@ export function initializeSearchSidebarWebview({
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
     </head>
-    <body>
+    <body class="search-sidebar">
         <div id="root" />
         <script nonce="${nonce}" src="${scriptSource.toString()}"></script>
     </body>

@@ -17,7 +17,8 @@ import {
 import { ExtensionCoreAPI, SearchPanelAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
 import { createPlatformContext, WebviewPageProps } from '../platform/context'
-import { adaptToEditorTheme } from '../theme'
+import { adaptMonacoThemeToEditorTheme } from '../theming/monacoTheme'
+import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
 
 import { SearchHomeView } from './SearchHomeView'
 import { SearchResultsView } from './SearchResultsView'
@@ -39,7 +40,8 @@ Comlink.expose(searchPanelAPI, expose)
 
 export const extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI> = Comlink.wrap(proxy)
 
-const themes = adaptToEditorTheme()
+const themes = adaptSourcegraphThemeToEditorTheme()
+adaptMonacoThemeToEditorTheme()
 
 extensionCoreAPI.panelInitialized(document.documentElement.dataset.panelId!).catch(() => {
     // noop (TODO?)
@@ -64,6 +66,9 @@ const Main: React.FC = () => {
         useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeSourcegraphSettings()), [])
     )
     // Do not block rendering on settings unless we observe UI jitter
+
+    // TODO: If init is taking too long, show a message.
+    // Also check if anything has errored out.
 
     // If any of the remote values have yet to load.
     const initialized =

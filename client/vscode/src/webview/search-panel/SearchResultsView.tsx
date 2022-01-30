@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Observable } from 'rxjs'
 
 import {
     SearchPatternType,
@@ -8,10 +9,11 @@ import {
     fetchSearchContexts,
 } from '@sourcegraph/search'
 import { SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { appendContextFilter, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
-import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -22,6 +24,7 @@ import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchPageCta } from './components/SearchCta'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
+import styles from './index.module.scss'
 
 export interface SearchResultsViewProps extends WebviewPageProps {
     context: SearchResultsState['context']
@@ -91,6 +94,12 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         [platformContext]
     )
 
+    const fetchStreamSuggestions = useCallback(
+        (query): Observable<SearchMatch[]> =>
+            wrapRemoteObservable(extensionCoreAPI.fetchStreamSuggestions(query, instanceURL)),
+        [extensionCoreAPI, instanceURL]
+    )
+
     const globbing = useMemo(() => globbingEnabledFromSettings(settingsCascade), [settingsCascade])
 
     const setSelectedSearchContextSpec = useCallback(
@@ -157,7 +166,14 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
     return (
         <div>
-            <div className="d-flex my-2">
+            {/* eslint-disable-next-line react/forbid-elements */}
+            <form
+                className="d-flex my-2"
+                onSubmit={event => {
+                    event.preventDefault()
+                    onSubmit()
+                }}
+            >
                 <SearchBox
                     caseSensitive={context.submittedSearchQueryState?.searchCaseSensitivity}
                     setCaseSensitivity={setCaseSensitivity}
@@ -180,16 +196,16 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     fetchSearchContexts={fetchSearchContexts}
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                    fetchStreamSuggestions={fetchStreamSuggestions}
                     settingsCascade={settingsCascade}
                     globbing={globbing}
                     isLightTheme={theme === 'theme-light'}
                     telemetryService={platformContext.telemetryService}
                     platformContext={platformContext}
-                    // TODO editor font
-                    className={classNames('flex-grow-1 flex-shrink-past-contents')}
+                    className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
+                    containerClassName={styles.searchBoxContainer}
                 />
-            </div>
-
+            </form>
             {!authenticatedUser && (
                 <SearchPageCta
                     icon={<SearchBetaIcon />}
@@ -199,7 +215,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     onClickAction={onSignUpClick}
                 />
             )}
-
             <SearchResultsInfoBar
                 onShareResultsClick={onShareResultsClick}
                 showSavedSearchForm={showSavedSearchForm}
@@ -230,7 +245,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     instanceURL={instanceURL}
                 />
             )}
-
             <StreamingSearchResultsList
                 isLightTheme={theme === 'theme-light'}
                 settingsCascade={settingsCascade}
