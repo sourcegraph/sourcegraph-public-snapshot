@@ -1,4 +1,5 @@
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
+import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
 import React, { useMemo } from 'react'
 import { render } from 'react-dom'
@@ -6,14 +7,7 @@ import { of } from 'rxjs'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
-import {
-    AnchorLink,
-    LoadingSpinner,
-    setLinkComponent,
-    useObservable,
-    WildcardThemeContext,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI, SearchPanelAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
@@ -80,7 +74,7 @@ const Main: React.FC = () => {
         settingsCascade !== undefined
 
     if (!initialized) {
-        return <LoadingSpinner />
+        return <VSCodeProgressRing />
     }
 
     const webviewPageProps: WebviewPageProps = {
