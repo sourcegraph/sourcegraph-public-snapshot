@@ -64,7 +64,7 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 
 	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the client as well.
-		ops.Merge(operations.NewNamedSet("Client and GraphQL checks",
+		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,   // ~4.5m
@@ -76,7 +76,7 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 
 	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the backend as well.
-		ops.Merge(operations.NewNamedSet("Go and GraphQL checks",
+		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
 			addGoBuild))
 	}
@@ -86,13 +86,13 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		// to succeed when the new version of the schema is applied. This ensures that the
 		// schema can be rolled forward pre-upgrade without negatively affecting the running
 		// instance (which was working fine prior to the upgrade).
-		ops.Merge(operations.NewNamedSet("Database backcompat tests",
+		ops.Merge(operations.NewNamedSet("DB backcompat tests",
 			addGoTestsBackcompat(opts.MinimumUpgradeableVersion)))
 	}
 
-	// CI scripts testing
+	// CI script testing
 	if runAll || changedFiles.AffectsCIScripts() {
-		ops.Merge(operations.NewNamedSet("CI scripts tests", addCIScriptsTests))
+		ops.Merge(operations.NewNamedSet("CI script tests", addCIScriptsTests))
 	}
 
 	return ops
@@ -734,7 +734,7 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 
 func uploadBuildeventTrace() operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":arrow_heading_up: Uploading trace to HoneyComb",
+		p.AddStep(":arrow_heading_up: Upload build trace",
 			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
 		)
 	}
