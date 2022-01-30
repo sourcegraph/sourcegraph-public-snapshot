@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395922
--- +++
-
 BEGIN;
 
 ALTER TABLE

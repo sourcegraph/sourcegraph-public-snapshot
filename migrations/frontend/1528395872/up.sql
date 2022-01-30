@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395871
--- +++
-
 BEGIN;
 
 ALTER TABLE lsif_uploads ADD COLUMN num_references int;

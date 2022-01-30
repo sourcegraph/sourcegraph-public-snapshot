@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000021
--- +++
-
 BEGIN;
 
 -- This will reset the state of the insight definition tables to empty so that the OOB migration can fully

@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395966
--- +++
-
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS notebook_stars (

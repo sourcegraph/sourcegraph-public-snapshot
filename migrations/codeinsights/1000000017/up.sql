@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000016
--- +++
-
 BEGIN;
 
 CREATE TYPE time_unit AS ENUM ('HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR');
@@ -16,4 +12,3 @@ ALTER TABLE insight_view
     ADD COLUMN default_filter_include_repo_regex text,
     ADD COLUMN default_filter_exclude_repo_regex text
 ;
-

@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000025
--- +++
-
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_current_public (

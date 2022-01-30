@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000013
--- +++
-
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS dashboard

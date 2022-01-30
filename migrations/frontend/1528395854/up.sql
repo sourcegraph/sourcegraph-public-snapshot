@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395853
--- +++
-
 BEGIN;
 ALTER TABLE insights_query_runner_jobs
     ADD COLUMN priority INT NOT NULL DEFAULT 1;
@@ -16,4 +12,3 @@ CREATE INDEX insights_query_runner_jobs_priority_idx on insights_query_runner_jo
 CREATE INDEX insights_query_runner_jobs_cost_idx on insights_query_runner_jobs(cost);
 
 COMMIT;
-

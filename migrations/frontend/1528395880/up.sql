@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395879
--- +++
-
 BEGIN;
 
 -- Insert migration here. See README.md. Highlights:

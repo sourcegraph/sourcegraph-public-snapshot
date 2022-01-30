@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395872
--- +++
-
 BEGIN;
 
 INSERT INTO out_of_band_migrations (id, team, component, description, introduced_version_major, introduced_version_minor, non_destructive)

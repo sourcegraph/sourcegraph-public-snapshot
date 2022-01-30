@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395942
--- +++
-
 BEGIN;
 
 UPDATE saved_searches

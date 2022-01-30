@@ -1,8 +1,3 @@
--- +++
--- parent: 1000000011
--- +++
-
-
 BEGIN;
 
 -- Insert migration here. See README.md. Highlights:

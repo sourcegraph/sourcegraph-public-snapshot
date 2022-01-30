@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395837
--- +++
-
 BEGIN;
 
 ALTER TABLE IF EXISTS repo ADD COLUMN blocked jsonb;

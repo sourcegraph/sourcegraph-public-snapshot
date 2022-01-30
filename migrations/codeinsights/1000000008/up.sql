@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000007
--- +++
-
 BEGIN;
 
 CREATE TABLE insight_series

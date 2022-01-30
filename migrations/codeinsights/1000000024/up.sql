@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000023
--- +++
-
 BEGIN;
 
 ALTER TABLE IF EXISTS insight_series

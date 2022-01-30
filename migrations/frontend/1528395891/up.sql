@@ -1,8 +1,3 @@
--- +++
--- parent: 1528395890
--- +++
-
-
 BEGIN;
 
 ALTER TABLE lsif_dependency_indexing_jobs

@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000020
--- +++
-
 BEGIN;
 
 ALTER TABLE insight_dirty_queries
