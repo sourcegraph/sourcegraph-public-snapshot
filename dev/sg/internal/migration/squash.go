@@ -54,19 +54,23 @@ func Squash(database db.Database, commit string) error {
 	}
 
 	// Write the replacement migration pair
-	upPath, downPath, err := makeMigrationFilenames(database, lastMigrationIndex, "squashed_migrations")
+	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, lastMigrationIndex)
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(upPath, []byte(squashedUpMigration), os.ModePerm); err != nil {
-		return err
+
+	contents := map[string]string{
+		upPath:       squashedUpMigration,
+		downPath:     squashedDownMigration,
+		metadataPath: "name: 'squashed_migrations'\n",
 	}
-	if err := os.WriteFile(downPath, []byte(squashedDownMigration), os.ModePerm); err != nil {
+	if err := writeMigrationFiles(contents); err != nil {
 		return err
 	}
 
 	block.Writef("Created: %s", upPath)
 	block.Writef("Created: %s", downPath)
+	block.Writef("Created: %s", metadataPath)
 	return nil
 }
 

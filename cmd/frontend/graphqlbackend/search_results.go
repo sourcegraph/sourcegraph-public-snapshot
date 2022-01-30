@@ -628,6 +628,13 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 
 	var requiredJobs, optionalJobs []run.Job
 	addJob := func(required bool, job run.Job) {
+		// Filter out any jobs that aren't commit jobs as they are added
+		if inputs.CodeMonitorID != nil {
+			if _, ok := job.(*commit.CommitSearch); !ok {
+				return
+			}
+		}
+
 		if required {
 			requiredJobs = append(requiredJobs, job)
 		} else {
@@ -806,6 +813,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				Diff:          diff,
 				HasTimeFilter: commit.HasTimeFilter(args.Query),
 				Limit:         int(args.PatternInfo.FileMatchLimit),
+				CodeMonitorID: inputs.CodeMonitorID,
 			})
 		}
 
@@ -1527,7 +1535,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 	}()
 
 	start := time.Now()
-	rr, err := r.doResults(ctx, job)
+	rr, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1712,7 +1720,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.doResults(ctx, job)
+		results, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1799,8 +1807,8 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 
 // doResults returns the results of running a search job.
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
+func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.DB, stream streaming.Sender, job run.Job) (res *SearchResults, err error) {
+	tr, ctx := trace.New(ctx, "doResults", searchInputs.OriginalQuery)
 	defer func() {
 		tr.SetError(err)
 		if res != nil {
@@ -1809,20 +1817,16 @@ func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *Searc
 		tr.Finish()
 	}()
 
-	agg := run.NewAggregator(r.stream)
-	_ = agg.DoSearch(ctx, r.db, job)
-	matches, common, matchCount, aggErrs := agg.Get()
-
-	if aggErrs == nil {
-		return nil, errors.New("aggErrs should never be nil")
-	}
+	agg := run.NewAggregator(stream)
+	err = job.Run(ctx, db, agg)
+	matches, common, matchCount := agg.Get()
 
 	ao := alert.Observer{
-		Db:           r.db,
-		SearchInputs: r.SearchInputs,
+		Db:           db,
+		SearchInputs: searchInputs,
 		HasResults:   matchCount > 0,
 	}
-	for _, err := range aggErrs.Errors {
+	if err != nil {
 		ao.Error(ctx, err)
 	}
 	alert, err := ao.Done(&common)
