@@ -44,6 +44,19 @@
         --info-3: var(--vscode-inputValidation-infoBorder);
         --danger: var(--vscode-inputValidation-errorBackground);
     }
+    .theme-dark {
+        .sourcegraph-tooltip {
+            --tooltip-bg: var(--vscode-input-background);
+            --tooltip-color: var(--vscode-editorWidget-foreground);
+        }
+    }
+    .theme-light {
+        // Ensure tooltip always has a dark background with light text.
+        .sourcegraph-tooltip {
+            --tooltip-bg: var(--vscode-editorWidget-foreground);
+            --tooltip-color: var(--vscode-input-background);
+        }
+    }
 }
 
 // stylelint-disable-next-line selector-max-id

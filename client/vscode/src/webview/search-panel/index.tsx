@@ -12,6 +12,7 @@ import {
     setLinkComponent,
     useObservable,
     WildcardThemeContext,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI, SearchPanelAPI } from '../../contract'
@@ -124,6 +125,7 @@ render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <Main />
+            <Tooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
     </ShortcutProvider>,
     document.querySelector('#root')
