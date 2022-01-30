@@ -1,5 +1,4 @@
 import { render } from '@testing-library/react'
-import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
@@ -35,8 +34,6 @@ describe('UserNavItem', () => {
         },
     }
 
-    const history = H.createMemoryHistory({ keyLength: 0 })
-
     test('simple', () => {
         expect(
             render(
@@ -46,7 +43,6 @@ describe('UserNavItem', () => {
                         isLightTheme={true}
                         onThemePreferenceChange={() => undefined}
                         themePreference={ThemePreference.Light}
-                        location={history.location}
                         authenticatedUser={USER}
                         showDotComMarketing={true}
                         isExtensionAlertAnimating={false}

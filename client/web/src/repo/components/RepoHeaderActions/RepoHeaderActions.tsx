@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
-import { DropdownToggle, DropdownToggleProps } from 'reactstrap'
 
-import { ButtonLink, ButtonLinkProps, Button, ButtonProps } from '@sourcegraph/wildcard'
+import { ButtonLink, ButtonLinkProps, MenuButton } from '@sourcegraph/wildcard'
+import { MenuButtonProps } from '@sourcegraph/wildcard/src/components/Menu'
 
 import styles from './RepoHeaderActions.module.scss'
 
@@ -24,14 +24,14 @@ export const RepoHeaderActionButtonLink: React.FunctionComponent<RepoHeaderButto
     </ButtonLink>
 )
 
-export const RepoHeaderActionDropdownToggle: React.FunctionComponent<ButtonProps & DropdownToggleProps> = ({
+export const RepoHeaderActionDropdownToggle: React.FunctionComponent<MenuButtonProps> = ({
     children,
     className,
     ...rest
 }) => (
-    <Button as={DropdownToggle} className={classNames('btn-icon', styles.action, className)} {...rest}>
+    <MenuButton className={classNames('btn-icon', styles.action, className)} {...rest}>
         {children}
-    </Button>
+    </MenuButton>
 )
 
 export type RepoHeaderActionAnchorProps = ButtonLinkProps & {

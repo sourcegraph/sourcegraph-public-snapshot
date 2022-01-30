@@ -1,15 +1,24 @@
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import React, { useCallback, useState } from 'react'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
-import { Button, useEventObservable } from '@sourcegraph/wildcard'
+import {
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    Button,
+    useEventObservable,
+    MenuList,
+    Position,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -73,26 +82,25 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
     notebookId,
     deleteNotebook,
 }) => {
-    const [isOpen, setIsOpen] = useState(false)
-    const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
-
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
 
     return (
         <>
-            <ButtonDropdown isOpen={isOpen} toggle={toggleOpen} group={false}>
-                <Button tag="button" outline={true} as={DropdownToggle}>
+            <Menu>
+                <MenuButton outline={true}>
                     <DotsHorizontalIcon />
-                </Button>
-                <DropdownMenu right={true}>
-                    <DropdownItem disabled={true}>Settings</DropdownItem>
-                    <DropdownItem divider={true} />
-                    <DropdownItem className="btn-danger" onClick={() => setShowDeleteModal(true)}>
+                </MenuButton>
+                <MenuList position={Position.bottomEnd}>
+                    <MenuItem disabled={true} onSelect={noop}>
+                        Settings
+                    </MenuItem>
+                    <MenuDivider />
+                    <MenuItem className="btn-danger" onSelect={() => setShowDeleteModal(true)}>
                         Delete notebook
-                    </DropdownItem>
-                </DropdownMenu>
-            </ButtonDropdown>
+                    </MenuItem>
+                </MenuList>
+            </Menu>
             <DeleteNotebookModal
                 notebookId={notebookId}
                 isOpen={showDeleteModal}
@@ -115,8 +123,6 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
     viewerCanManage,
 }) => {
     const [isPublic, setIsPublic] = useState(initialIsPublic)
-    const [isOpen, setIsOpen] = useState(false)
-    const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
 
     const updateVisibility = useCallback(
         (isPublic: boolean) => {
@@ -127,8 +133,8 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
     )
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={toggleOpen} group={false}>
-            <Button tag="button" outline={viewerCanManage} disabled={!viewerCanManage} as={DropdownToggle}>
+        <Menu>
+            <MenuButton disabled={!viewerCanManage} outline={viewerCanManage}>
                 {isPublic ? (
                     <span>
                         <WebIcon className="icon-inline" /> Public
@@ -138,28 +144,30 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
                         <LockIcon className="icon-inline" /> Private
                     </span>
                 )}
-            </Button>
-            <DropdownMenu right={true} className={styles.visibilityDropdownMenu}>
-                <DropdownItem disabled={true}>Change notebook visibility</DropdownItem>
-                <DropdownItem divider={true} />
-                <DropdownItem onClick={() => updateVisibility(false)} className={styles.visibilityDropdownItem}>
+            </MenuButton>
+            <MenuList position={Position.bottomEnd}>
+                <MenuItem disabled={true} onSelect={noop}>
+                    Change notebook visibility
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem onSelect={() => updateVisibility(false)} className={styles.visibilityDropdownItem}>
                     <div>
                         <LockIcon className="icon-inline" /> Private
                     </div>
                     <div>
                         <strong>Only you</strong> will be able to view the notebook.
                     </div>
-                </DropdownItem>
-                <DropdownItem onClick={() => updateVisibility(true)} className={styles.visibilityDropdownItem}>
+                </MenuItem>
+                <MenuItem onSelect={() => updateVisibility(true)} className={styles.visibilityDropdownItem}>
                     <div>
                         <WebIcon className="icon-inline" /> Public
                     </div>
                     <div>
                         <strong>Everyone</strong> will be able to view the notebook.
                     </div>
-                </DropdownItem>
-            </DropdownMenu>
-        </ButtonDropdown>
+                </MenuItem>
+            </MenuList>
+        </Menu>
     )
 }
 
