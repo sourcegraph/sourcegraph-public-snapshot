@@ -1,2 +1,3 @@
-name: 'extensions_list_missing_index'
+name: 'extensions list missing index'
 parent: 1528395896
+createIndexConcurrently: true
