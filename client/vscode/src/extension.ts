@@ -16,8 +16,8 @@ import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessT
 import { endpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
-import { createVSCEStateMachine } from './state'
-import { registerWebviews } from './webview/commands'
+import { createVSCEStateMachine, VSCEQueryState } from './state'
+import { focusSearchPanel, registerWebviews } from './webview/commands'
 
 // Sourcegraph VS Code extension architecture
 // -----
@@ -89,11 +89,15 @@ export function activate(context: vscode.ExtensionContext): void {
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
 
+    // Used to observe search box query state from sidebar
+    const sidebarQueryStates = new ReplaySubject<VSCEQueryState>(1)
+
     const streamSearch = createStreamSearch({ context, stateMachine, sourcegraphURL: initialInstanceURL })
 
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         observeState: () => proxySubscribable(stateMachine.observeState()),
+        observePanelQueryState: () => proxySubscribable(sidebarQueryStates.asObservable()),
         emit: event => stateMachine.emit(event),
         requestGraphQL: requestGraphQLFromVSCode,
         observeSourcegraphSettings: () => proxySubscribable(sourcegraphSettings.settings),
@@ -106,6 +110,7 @@ export function activate(context: vscode.ExtensionContext): void {
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
+        focusSearchPanel,
         streamSearch,
         fetchStreamSuggestions: (query, sourcegraphURL) =>
             proxySubscribable(fetchStreamSuggestions(query, sourcegraphURL)),
@@ -113,6 +118,7 @@ export function activate(context: vscode.ExtensionContext): void {
             stateMachine.emit({ type: 'set_selected_search_context_spec', spec })
             return localStorageService.setValue(SELECTED_SEARCH_CONTEXT_SPEC_KEY, spec)
         },
+        setSidebarQueryState: sidebarQueryState => sidebarQueryStates.next(sidebarQueryState),
     }
 
     registerWebviews({ context, extensionCoreAPI, initializedPanelIDs, sourcegraphSettings })

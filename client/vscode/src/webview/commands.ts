@@ -6,6 +6,10 @@ import { ExtensionCoreAPI } from '../contract'
 
 import { initializeSearchPanelWebview, initializeSearchSidebarWebview } from './initialize'
 
+// Track current active webview panel to make sure only one panel exists at a time
+let currentSearchPanel: vscode.WebviewPanel | undefined
+let searchSidebarWebviewView: vscode.WebviewView | undefined
+
 export function registerWebviews({
     context,
     extensionCoreAPI,
@@ -17,10 +21,6 @@ export function registerWebviews({
     initializedPanelIDs: Observable<string>
     sourcegraphSettings: ReturnType<typeof initializeSourcegraphSettings>
 }): void {
-    // Track current active webview panel to make sure only one panel exists at a time
-    let currentActiveWebviewPanel: vscode.WebviewPanel | undefined
-    let searchSidebarWebviewView: vscode.WebviewView | undefined
-
     // TODO if remote files are open from previous session, we need
     // to focus search sidebar to activate code intel (load extension host),
     // and to do that we need to make sourcegraph:// file opening an activation event.
@@ -34,8 +34,8 @@ export function registerWebviews({
                 focusSearchSidebar()
             }
 
-            if (currentActiveWebviewPanel) {
-                currentActiveWebviewPanel.reveal()
+            if (currentSearchPanel) {
+                currentSearchPanel.reveal()
             } else {
                 sourcegraphSettings.refreshSettings()
 
@@ -45,7 +45,7 @@ export function registerWebviews({
                     initializedPanelIDs,
                 })
 
-                currentActiveWebviewPanel = webviewPanel
+                currentSearchPanel = webviewPanel
 
                 webviewPanel.onDidChangeViewState(() => {
                     if (webviewPanel.active) {
@@ -60,7 +60,7 @@ export function registerWebviews({
                 })
 
                 webviewPanel.onDidDispose(() => {
-                    currentActiveWebviewPanel = undefined
+                    currentSearchPanel = undefined
                     // Ideally focus last used sidebar tab on search panel close. In lieu of that (for v1),
                     // just focus the file explorer if the search sidebar is currently focused.
                     if (searchSidebarWebviewView?.visible) {
@@ -115,6 +115,10 @@ function focusSearchSidebar(): void {
             console.error(error)
         }
     )
+}
+
+export function focusSearchPanel(): void {
+    currentSearchPanel?.reveal()
 }
 
 function focusFileExplorer(): void {

@@ -28,7 +28,6 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
     className,
     assetsRoot = '',
 }) => {
-    console.log('alias modalvideorender')
     const onClick = (): void => {
         onToggle?.(false)
         extensionCoreAPI.openLink(src).catch(error => {
