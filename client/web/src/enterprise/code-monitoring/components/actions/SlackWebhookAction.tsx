@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { Alert, Button, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Button, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { ActionProps } from '../FormActionArea'
 
@@ -68,9 +68,9 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
         >
             <Alert variant="info" className="mt-4">
                 Go to{' '}
-                <a href="https://api.slack.com/" target="_blank" rel="noopener">
+                <Link to="https://api.slack.com/" target="_blank" rel="noopener">
                     Slack
-                </a>{' '}
+                </Link>{' '}
                 to create a webhook URL. If you already have a Slack webhook URL, paste it in the field below.{' '}
                 Documentation coming soon. {/* TODO: Add link to documentation once #27161 is resolved */}
             </Alert>

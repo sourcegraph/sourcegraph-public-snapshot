@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Container, Button } from '@sourcegraph/wildcard'
+import { Container, Button, Link } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 
@@ -58,13 +58,13 @@ export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
             <Container className="mb-3">
                 <p className="mb-0">
                     The batch spec (
-                    <a
-                        href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
+                    <Link
+                        to="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
                         rel="noopener noreferrer"
                         target="_blank"
                     >
                         syntax reference
-                    </a>
+                    </Link>
                     ) describes what the batch change does. You'll provide it when previewing, creating, and updating
                     batch changes. We recommend committing it to source control.
                 </p>
@@ -91,9 +91,9 @@ export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
             <Container className="mb-3">
                 <p>
                     Use the{' '}
-                    <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
+                    <Link to="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
                         Sourcegraph CLI (src)
-                    </a>{' '}
+                    </Link>{' '}
                     to preview the commits and changesets that your batch change will make:
                 </p>
                 <CodeSnippet code={`src batch preview -f ${selectedSample.name}`} language="bash" className="mb-3" />
