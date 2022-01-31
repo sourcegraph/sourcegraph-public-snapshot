@@ -371,6 +371,7 @@ func onVisit(db *sql.DB, repo string, maxRepos int) (locker.UnlockFunc, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "begin transaction")
 	}
+	defer tx.Rollback()
 
 	_, err = tx.Exec(`SELECT pg_advisory_xact_lock($1, $2)`, LOCKS_NAMESPACE, DELETION_LOCK_ID)
 	if err != nil {
