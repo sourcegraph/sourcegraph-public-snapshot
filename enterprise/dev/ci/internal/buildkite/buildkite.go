@@ -21,6 +21,15 @@ type Pipeline struct {
 	Env    map[string]string `json:"env,omitempty"`
 	Steps  []interface{}     `json:"steps"`
 	Notify []slackNotifier   `json:"notify,omitempty"`
+
+	// Group, if provided, indicates this Pipeline is actually a group of steps.
+	// See: https://buildkite.com/docs/pipelines/group-step
+	Group
+}
+
+type Group struct {
+	Group string `json:"group,omitempty"`
+	Key   string `json:"key,omitempty"`
 }
 
 type BuildOptions struct {
@@ -142,28 +151,6 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	}
 
 	p.Steps = append(p.Steps, step)
-}
-
-// AddEnsureStep adds a step that has a dependency on all other steps prior to this step,
-// up until a wait step.
-//
-// We do not go past the closest "wait" because it won't work anyway - a failure before a
-// "wait" will not allow this step to run.
-func (p *Pipeline) AddEnsureStep(label string, opts ...StepOpt) {
-	// Collect all keys to make this step depends on all others, traversing in reverse
-	// until we reach a "wait", if there is one.
-	keys := []string{}
-	for i := len(p.Steps) - 1; i >= 0; i-- {
-		step := p.Steps[i]
-		if s, ok := step.(*Step); ok {
-			keys = append(keys, s.Key)
-		} else if wait, ok := step.(string); ok {
-			if wait == "wait" {
-				break // we are done
-			}
-		}
-	}
-	p.AddStep(label, append(opts, DependsOn(keys...))...)
 }
 
 func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
