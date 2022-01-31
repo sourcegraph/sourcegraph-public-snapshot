@@ -23,6 +23,7 @@ import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { SearchBetaIcon } from '../../components/CtaIcons'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { usePersistentCadence } from '../../hooks'
@@ -31,6 +32,7 @@ import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-ena
 import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
 import { OnboardingTourInfo } from '../../onboarding-tour/OnboardingTourInfo'
 import { BrowserExtensionAlert } from '../../repo/actions/BrowserExtensionAlert'
+import { IDEExtensionAlert } from '../../repo/actions/IdeExtensionAlert'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
@@ -40,7 +42,6 @@ import {
 } from '../../stores'
 import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
-import { SearchBetaIcon } from '../CtaIcons'
 import { submitSearch } from '../helpers'
 
 import { DidYouMean } from './DidYouMean'
@@ -387,7 +388,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             />
 
             <div className={styles.streamingSearchResultsContainer}>
-                {showOnboardingTour && <OnboardingTourInfo className="mt-2 mr-3 mb-3" />}
+                {showOnboardingTour && <OnboardingTourInfo className="mt-2 mr-3 mb-3" />}{' '}
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}
@@ -425,18 +426,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {ctaToDisplay === 'ide' && (
-                    <CtaAlert
-                        title="The power of Sourcegraph in your IDE"
-                        description="Link your editor and Sourcegraph to improve your ability to reference and reuse code across multiple repositories."
-                        cta={{
-                            label: 'Learn more about IDE extensions',
-                            href: buildGetStartedURL('search-cta', '/user/settings/repositories'),
-                            onClick: onSignUpClick,
-                        }}
-                        icon={<SearchBetaIcon />}
-                        className="mr-3"
-                        onClose={onCtaAlertDismissed}
-                    />
+                    <IDEExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} />
                 )}
 
                 <StreamingSearchResultsList
