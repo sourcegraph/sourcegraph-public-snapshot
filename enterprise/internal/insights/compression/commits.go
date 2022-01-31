@@ -126,9 +126,10 @@ type CommitStamp struct {
 }
 
 type CommitIndexMetadata struct {
-	RepoId        int
-	Enabled       bool
-	LastIndexedAt time.Time
+	RepoId          int
+	Enabled         bool
+	LastIndexedAt   time.Time
+	OldestIndexedAt *time.Time
 }
 
 const getCommitsInRangeStr = `
@@ -143,7 +144,8 @@ INSERT INTO commit_index(repo_id, commit_bytea, committed_at, debug_field) VALUE
 
 const getCommitIndexMetadataStr = `
 -- source: enterprise/internal/insights/compression/commits.go:GetMetadata
-SELECT repo_id, enabled, last_indexed_at FROM commit_index_metadata WHERE repo_id = %s;
+SELECT repo_id, enabled, last_indexed_at FROM commit_index_metadata, (select min(committed_at) from commit_index where repo_id = %1) as oldest_indexed_at
+WHERE repo_id = $1;
 `
 
 const upsertCommitIndexMetadataStampStr = `

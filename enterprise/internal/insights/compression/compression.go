@@ -105,8 +105,9 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []types.Frame, i
 	for i := 1; i < len(frames); i++ {
 		previous := frames[i-1]
 		frame := frames[i]
-		if metadata.LastIndexedAt.Before(frame.To) {
-			// The commit indexer is not up to date enough to understand if this frame can be dropped
+		if metadata.LastIndexedAt.Before(frame.To) || metadata.OldestIndexedAt.After(frame.From) {
+			// The commit indexer is not up to date enough to understand if this frame can be dropped,
+			// or the index doesn't contain enough history to be able to compress this frame
 			addToPlan(frame, "")
 			continue
 		}
