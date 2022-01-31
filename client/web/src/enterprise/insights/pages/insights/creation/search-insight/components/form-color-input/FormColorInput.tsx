@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { startCase } from 'lodash';
 import React, { ChangeEventHandler, memo } from 'react'
 import { noop } from 'rxjs'
 
@@ -33,7 +34,7 @@ export const FormColorInput: React.FunctionComponent<FormColorInputProps> = memo
                         key={key}
                         /* eslint-disable-next-line react/forbid-dom-props */
                         style={{ color: DATA_SERIES_COLORS[key] }}
-                        title={key.toLocaleLowerCase()}
+                        title={startCase(key.toLocaleLowerCase())}
                         className={styles.formColorPickerColorBlock}
                     >
                         <input
