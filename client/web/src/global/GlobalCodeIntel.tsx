@@ -86,9 +86,13 @@ export const TokenPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> =
     </>
 )
 
-export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
-    <div>{props.hoveredToken && <ReferencesList hoveredToken={props.hoveredToken} {...props} />}</div>
-)
+export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => {
+    if (!props.hoveredToken) {
+        return null
+    }
+
+    return <ReferencesList hoveredToken={props.hoveredToken} {...props} />
+}
 
 interface Location {
     resource: {
