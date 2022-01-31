@@ -23,12 +23,13 @@ import (
 )
 
 type CommitSearch struct {
-	Query         gitprotocol.Node
-	RepoOpts      search.RepoOptions
-	Diff          bool
-	HasTimeFilter bool
-	Limit         int
-	CodeMonitorID *int64
+	Query                gitprotocol.Node
+	RepoOpts             search.RepoOptions
+	Diff                 bool
+	HasTimeFilter        bool
+	Limit                int
+	CodeMonitorID        *int64
+	IncludeModifiedFiles bool
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
@@ -68,11 +69,12 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 		}
 
 		args := &protocol.SearchRequest{
-			Repo:        repoRev.Repo.Name,
-			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
-			Query:       j.Query,
-			IncludeDiff: j.Diff,
-			Limit:       j.Limit,
+			Repo:                 repoRev.Repo.Name,
+			Revisions:            searchRevsToGitserverRevs(repoRev.Revs),
+			Query:                j.Query,
+			IncludeDiff:          j.Diff,
+			Limit:                j.Limit,
+			IncludeModifiedFiles: j.IncludeModifiedFiles,
 		}
 
 		onMatches := func(in []protocol.CommitMatch) {
