@@ -50,7 +50,7 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 		Operations: []runner.MigrationOperation{
 			{
 				SchemaName: name,
-				Up:         true,
+				Type:       runner.MigrationOperationTypeUpgrade,
 			},
 		},
 	}
@@ -58,11 +58,11 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 		Operations: []runner.MigrationOperation{
 			{
 				SchemaName: name,
-				Up:         false,
+				Type:       runner.MigrationOperationTypeTargetedDown,
 				// Run down to the root "squashed commits" migration. We don't go
 				// any farther than that because it would require a fresh database,
 				// and that doesn't adequately test upgrade idempotency.
-				TargetMigration: schema.Definitions.First(),
+				TargetVersion: schema.Definitions.First(),
 			},
 		},
 	}
