@@ -62,7 +62,7 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 		// or another migrator is currently running and holding an advisory lock. If we're
 		// not migrating to the latest schema, concurrent migrations may have unexpected
 		// behavior. In either case, we'll early exit here.
-		if schemaContext.schemaVersion.dirty {
+		if schemaContext.initialSchemaVersion.dirty {
 			acquired, unlock, err := schemaContext.store.TryLock(ctx)
 			if err != nil {
 				return err
@@ -94,7 +94,7 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 		// Check if another instance changed the schema version before we acquired the
 		// lock. If we're not migrating to the latest schema, concurrent migrations may
 		// have unexpected behavior. We'll early exit here.
-		if version != schemaContext.schemaVersion.version {
+		if version != schemaContext.initialSchemaVersion.version {
 			return errMigrationContention
 		}
 	}
@@ -114,7 +114,7 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 func (r *Runner) runSchemaUp(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) (err error) {
 	log15.Info("Upgrading schema", "schema", schemaContext.schema.Name)
 
-	definitions, err := schemaContext.schema.Definitions.UpTo(schemaContext.schemaVersion.version, operation.TargetVersion)
+	definitions, err := schemaContext.schema.Definitions.UpTo(schemaContext.initialSchemaVersion.version, operation.TargetVersion)
 	if err != nil {
 		return err
 	}
@@ -126,10 +126,10 @@ func (r *Runner) runSchemaDown(ctx context.Context, operation MigrationOperation
 	log15.Info("Downgrading schema", "schema", schemaContext.schema.Name)
 
 	if operation.TargetVersion == 0 {
-		operation.TargetVersion = schemaContext.schemaVersion.version - 1
+		operation.TargetVersion = schemaContext.initialSchemaVersion.version - 1
 	}
 
-	definitions, err := schemaContext.schema.Definitions.DownTo(schemaContext.schemaVersion.version, operation.TargetVersion)
+	definitions, err := schemaContext.schema.Definitions.DownTo(schemaContext.initialSchemaVersion.version, operation.TargetVersion)
 	if err != nil {
 		return err
 	}

@@ -73,7 +73,7 @@ func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (
 // down migrations can be run with an explicit "down" operation.
 func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
 	definitions := schemaContext.schema.Definitions
-	leafVersions := []int{schemaContext.schemaVersion.version}
+	leafVersions := []int{schemaContext.initialSchemaVersion.version}
 
 	log15.Info(
 		"Desugaring `revert` to `targeted down` operation",

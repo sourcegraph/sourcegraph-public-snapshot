@@ -24,9 +24,9 @@ func NewRunner(storeFactories map[string]StoreFactory) *Runner {
 }
 
 type schemaContext struct {
-	schema        *schemas.Schema
-	store         Store
-	schemaVersion schemaVersion
+	schema               *schemas.Schema
+	store                Store
+	initialSchemaVersion schemaVersion
 }
 
 type schemaVersion struct {
@@ -69,9 +69,9 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 			defer wg.Done()
 
 			errorCh <- visitor(ctx, schemaName, schemaContext{
-				schema:        schemaMap[schemaName],
-				store:         storeMap[schemaName],
-				schemaVersion: versionMap[schemaName],
+				schema:               schemaMap[schemaName],
+				store:                storeMap[schemaName],
+				initialSchemaVersion: versionMap[schemaName],
 			})
 		}(schemaName)
 	}

@@ -18,7 +18,7 @@ func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaCo
 	// instance has what it needs to run, so we should be good with that. Do not crash here if
 	// the database is is dirty, as that would cause a troublesome deployment to cause outages
 	// on the old instance (which seems stressful, don't do that).
-	if newer, err := isDatabaseNewer(schemaContext.schemaVersion.version, schemaContext.schema.Definitions); err != nil {
+	if newer, err := isDatabaseNewer(schemaContext.initialSchemaVersion.version, schemaContext.schema.Definitions); err != nil {
 		return err
 	} else if newer {
 		return nil
@@ -79,7 +79,7 @@ func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaCo
 // this while a migrator seems to be running concurrently so that we do not fail fast on
 // applications that would succeed after the migration finishes.
 func (r *Runner) waitForMigration(ctx context.Context, schemaName string, schemaContext schemaContext) (int, bool, error) {
-	version, dirty := schemaContext.schemaVersion.version, schemaContext.schemaVersion.dirty
+	version, dirty := schemaContext.initialSchemaVersion.version, schemaContext.initialSchemaVersion.dirty
 
 	for dirty {
 		// While the previous version of the schema we queried was marked as dirty, we
