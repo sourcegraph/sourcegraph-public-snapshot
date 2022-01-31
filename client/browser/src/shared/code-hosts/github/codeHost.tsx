@@ -509,9 +509,9 @@ function enhanceSearchPage(sourcegraphURL: string): void {
 
     render(
         <SourcegraphIconButton
-            label="Search in Sourcegraph"
-            title="Search in Sourcegraph to get hover tooltips, go to definition and more"
-            ariaLabel="Search in Sourcegraph to get hover tooltips, go to definition and more"
+            label="Search on Sourcegraph"
+            title="Search on Sourcegraph to get hover tooltips, go to definition and more"
+            ariaLabel="Search on Sourcegraph to get hover tooltips, go to definition and more"
             className={classNames('btn', styles.sourcegraphIconButton)}
             iconClassName={classNames(styles.icon)}
             href={buildLinkHref()}
