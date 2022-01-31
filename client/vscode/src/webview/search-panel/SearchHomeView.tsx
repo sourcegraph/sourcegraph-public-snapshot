@@ -16,12 +16,9 @@ import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbi
 import { SearchHomeState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
+import { BrandHeader } from './components/BrandHeader'
+import { HomeFooter } from './components/HomeFooter'
 import styles from './index.module.scss'
-
-// TODO:
-// Logo, feedback button
-// SearchBox
-// Search examples
 
 export interface SearchHomeViewProps extends WebviewPageProps {
     context: SearchHomeState['context']
@@ -85,49 +82,57 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
     }, [instanceURL])
 
     return (
-        <div>
-            {/* <BrandHeader /> */}
-            {/* eslint-disable-next-line react/forbid-elements */}
-            <form
-                className="d-flex my-2"
-                onSubmit={event => {
-                    event.preventDefault()
-                    onSubmit()
-                }}
-            >
-                <SearchBox
-                    caseSensitive={caseSensitive}
-                    setCaseSensitivity={setCaseSensitivity}
-                    patternType={patternType}
-                    setPatternType={setPatternType}
-                    isSourcegraphDotCom={isSourcegraphDotCom}
-                    hasUserAddedExternalServices={false}
-                    hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
-                    structuralSearchDisabled={false}
-                    queryState={userQueryState}
-                    onChange={setUserQueryState}
-                    onSubmit={onSubmit}
-                    authenticatedUser={authenticatedUser}
-                    searchContextsEnabled={true}
-                    showSearchContext={true}
-                    showSearchContextManagement={true}
-                    defaultSearchContextSpec="global"
-                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                    selectedSearchContextSpec={context.selectedSearchContextSpec}
-                    fetchSearchContexts={fetchSearchContexts}
-                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                    fetchStreamSuggestions={fetchStreamSuggestions}
-                    settingsCascade={settingsCascade}
-                    globbing={globbing}
+        <div className="d-flex flex-column align-items-center">
+            <BrandHeader theme={theme} extensionCoreAPI={extensionCoreAPI} />
+
+            <div className={styles.homeSearchBoxContainer}>
+                {/* eslint-disable-next-line react/forbid-elements */}
+                <form
+                    className="d-flex my-2"
+                    onSubmit={event => {
+                        event.preventDefault()
+                        onSubmit()
+                    }}
+                >
+                    <SearchBox
+                        caseSensitive={caseSensitive}
+                        setCaseSensitivity={setCaseSensitivity}
+                        patternType={patternType}
+                        setPatternType={setPatternType}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        hasUserAddedExternalServices={false}
+                        hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
+                        structuralSearchDisabled={false}
+                        queryState={userQueryState}
+                        onChange={setUserQueryState}
+                        onSubmit={onSubmit}
+                        authenticatedUser={authenticatedUser}
+                        searchContextsEnabled={true}
+                        showSearchContext={true}
+                        showSearchContextManagement={true}
+                        defaultSearchContextSpec="global"
+                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                        selectedSearchContextSpec={context.selectedSearchContextSpec}
+                        fetchSearchContexts={fetchSearchContexts}
+                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                        fetchStreamSuggestions={fetchStreamSuggestions}
+                        settingsCascade={settingsCascade}
+                        globbing={globbing}
+                        isLightTheme={theme === 'theme-light'}
+                        telemetryService={platformContext.telemetryService}
+                        platformContext={platformContext}
+                        className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
+                        containerClassName={styles.searchBoxContainer}
+                    />
+                </form>
+
+                <HomeFooter
                     isLightTheme={theme === 'theme-light'}
+                    setQuery={setUserQueryState}
                     telemetryService={platformContext.telemetryService}
-                    platformContext={platformContext}
-                    className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
-                    containerClassName={styles.searchBoxContainer}
                 />
-            </form>
-            {/* <SearchExamples />. alias ModalVideo  */}
+            </div>
         </div>
     )
 }

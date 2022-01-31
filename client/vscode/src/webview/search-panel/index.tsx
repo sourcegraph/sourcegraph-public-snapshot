@@ -98,7 +98,7 @@ const Main: React.FC = () => {
     if (state?.status === 'search-results') {
         return <SearchResultsView {...webviewPageProps} context={state.context} />
     }
-    // If state is remote browsing but the search panel is still visible in a different column,
+    // If state is remote browsing/idle but the search panel is still visible in a different column,
     // we should still show results. Determine state by whether submittedSearchQuery is not null.
     if (state.context.submittedSearchQueryState !== null) {
         return (
