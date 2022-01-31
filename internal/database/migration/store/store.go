@@ -305,11 +305,7 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.runMigrationQuery(ctx, definition.ID, up, f)
-}
-
-func (s *Store) runMigrationQuery(ctx context.Context, definitionVersion int, up bool, f func() error) (err error) {
-	logID, err := s.createMigrationLog(ctx, definitionVersion, up)
+	logID, err := s.createMigrationLog(ctx, definition.ID, up)
 	if err != nil {
 		return err
 	}
@@ -326,12 +322,6 @@ func (s *Store) runMigrationQuery(ctx context.Context, definitionVersion int, up
 			errMsgPtr(err),
 			logID,
 		)); execErr != nil {
-			err = multierror.Append(err, execErr)
-		}
-	}()
-
-	defer func() {
-		if execErr := s.Exec(ctx, sqlf.Sprintf(`UPDATE %s SET dirty=false`, quote(s.schemaName))); execErr != nil {
 			err = multierror.Append(err, execErr)
 		}
 	}()
