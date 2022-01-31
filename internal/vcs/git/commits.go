@@ -417,14 +417,20 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRe
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit")
 	defer span.Finish()
 
-	args := []string{"rev-list", "--max-count=1", "--max-parents=0", "HEAD"}
+	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
-	id := api.CommitID(bytes.TrimSpace(out))
+	lines := string(bytes.TrimSpace(out))
+	tokens := strings.Split(lines, "\n")
+	if len(tokens) == 0 {
+		return nil, errors.New("FirstEverCommit returned no revisions")
+	}
+	first := tokens[0]
+	id := api.CommitID(bytes.TrimSpace([]byte(first)))
 	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
 }
 
