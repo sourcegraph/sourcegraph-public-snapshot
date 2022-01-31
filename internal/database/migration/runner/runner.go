@@ -135,23 +135,23 @@ func (r *Runner) fetchVersions(ctx context.Context, storeMap map[string]Store) (
 	versions := make(map[string]schemaVersion, len(storeMap))
 
 	for schemaName, store := range storeMap {
-		version, dirty, err := r.fetchVersion(ctx, schemaName, store)
+		schemaVersion, err := r.fetchVersion(ctx, schemaName, store)
 		if err != nil {
 			return nil, err
 		}
 
-		versions[schemaName] = schemaVersion{version, dirty}
+		versions[schemaName] = schemaVersion
 	}
 
 	return versions, nil
 }
 
-func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Store) (int, bool, error) {
+func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Store) (schemaVersion, error) {
 	version, dirty, _, err := store.Version(ctx)
 	if err != nil {
-		return 0, false, err
+		return schemaVersion{}, err
 	}
 
 	log15.Info("Checked current version", "schema", schemaName, "version", version, "dirty", dirty)
-	return version, dirty, nil
+	return schemaVersion{version, dirty}, nil
 }
