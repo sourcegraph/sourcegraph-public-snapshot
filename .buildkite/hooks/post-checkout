@@ -28,7 +28,7 @@ aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile build
 
 # TODO remove this when making job the default queue
 # Skip on normal queues because standard agents do not have fresh asdf installs
-if [ "$BUILDKITE_AGENT_META_DATA_QUEUE" = "standard,default" ]; then 
+if [ "$BUILDKITE_AGENT_META_DATA_QUEUE" = "standard,default" ]; then
     exit 0
 fi
 
@@ -51,7 +51,7 @@ else
     pushd "$HOME"
     tar cfz "$cache_file" .asdf
     popd
-    aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "$HOME/$cache_file" "s3://sourcegraph_buildkite_cache/$cache_key" 
+    aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "$HOME/$cache_file" "s3://sourcegraph_buildkite_cache/$cache_key"
 fi
 
 unset AWS_SHARED_CREDENTIALS_FILE
