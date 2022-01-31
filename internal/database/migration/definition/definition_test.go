@@ -269,11 +269,11 @@ func TestDown(t *testing.T) {
 
 func TestUpTo(t *testing.T) {
 	definitions := newDefinitions([]Definition{
-		{ID: 11, UpFilename: "11.up.sql"},
-		{ID: 12, UpFilename: "12.up.sql"},
-		{ID: 13, UpFilename: "13.up.sql"},
-		{ID: 14, UpFilename: "14.up.sql"},
-		{ID: 15, UpFilename: "15.up.sql"},
+		{ID: 11, UpQuery: sqlf.Sprintf("SELECT 11;")},
+		{ID: 12, UpQuery: sqlf.Sprintf("SELECT 12;")},
+		{ID: 13, UpQuery: sqlf.Sprintf("SELECT 13;")},
+		{ID: 14, UpQuery: sqlf.Sprintf("SELECT 14;")},
+		{ID: 15, UpQuery: sqlf.Sprintf("SELECT 15;")},
 	})
 
 	t.Run("zero", func(t *testing.T) {
@@ -328,11 +328,11 @@ func TestUpTo(t *testing.T) {
 
 func TestUpFrom(t *testing.T) {
 	definitions := newDefinitions([]Definition{
-		{ID: 11, UpFilename: "11.up.sql"},
-		{ID: 12, UpFilename: "12.up.sql"},
-		{ID: 13, UpFilename: "13.up.sql"},
-		{ID: 14, UpFilename: "14.up.sql"},
-		{ID: 15, UpFilename: "15.up.sql"},
+		{ID: 11, UpQuery: sqlf.Sprintf("SELECT 11;")},
+		{ID: 12, UpQuery: sqlf.Sprintf("SELECT 12;")},
+		{ID: 13, UpQuery: sqlf.Sprintf("SELECT 13;")},
+		{ID: 14, UpQuery: sqlf.Sprintf("SELECT 14;")},
+		{ID: 15, UpQuery: sqlf.Sprintf("SELECT 15;")},
 	})
 
 	t.Run("no limit", func(t *testing.T) {
@@ -392,11 +392,11 @@ func TestUpFrom(t *testing.T) {
 
 func TestDownTo(t *testing.T) {
 	definitions := newDefinitions([]Definition{
-		{ID: 11, UpFilename: "11.up.sql"},
-		{ID: 12, UpFilename: "12.up.sql"},
-		{ID: 13, UpFilename: "13.up.sql"},
-		{ID: 14, UpFilename: "14.up.sql"},
-		{ID: 15, UpFilename: "15.up.sql"},
+		{ID: 11, UpQuery: sqlf.Sprintf("SELECT 11;")},
+		{ID: 12, UpQuery: sqlf.Sprintf("SELECT 12;")},
+		{ID: 13, UpQuery: sqlf.Sprintf("SELECT 13;")},
+		{ID: 14, UpQuery: sqlf.Sprintf("SELECT 14;")},
+		{ID: 15, UpQuery: sqlf.Sprintf("SELECT 15;")},
 	})
 
 	t.Run("zero", func(t *testing.T) {
@@ -439,11 +439,11 @@ func TestDownTo(t *testing.T) {
 
 func TestDownFrom(t *testing.T) {
 	definitions := newDefinitions([]Definition{
-		{ID: 11, UpFilename: "11.up.sql"},
-		{ID: 12, UpFilename: "12.up.sql"},
-		{ID: 13, UpFilename: "13.up.sql"},
-		{ID: 14, UpFilename: "14.up.sql"},
-		{ID: 15, UpFilename: "15.up.sql"},
+		{ID: 11, UpQuery: sqlf.Sprintf("SELECT 11;")},
+		{ID: 12, UpQuery: sqlf.Sprintf("SELECT 12;")},
+		{ID: 13, UpQuery: sqlf.Sprintf("SELECT 13;")},
+		{ID: 14, UpQuery: sqlf.Sprintf("SELECT 14;")},
+		{ID: 15, UpQuery: sqlf.Sprintf("SELECT 15;")},
 	})
 
 	t.Run("zero", func(t *testing.T) {
