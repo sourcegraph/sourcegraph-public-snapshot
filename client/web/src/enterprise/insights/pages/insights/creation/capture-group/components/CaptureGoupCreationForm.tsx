@@ -11,8 +11,8 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
-import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
+import { searchQueryValidator } from '../utils/search-query-validator'
 
 import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfoBadge'
 import { CaptureGroupQueryInput } from './query-input/CaptureGroupQueryInput'
@@ -199,7 +199,8 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     disabled={submitting}
                     data-testid="insight-save-button"
-                    className="btn btn-primary mr-2 mb-2"
+                    className="mr-2 mb-2"
+                    variant="primary"
                 />
 
                 <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>

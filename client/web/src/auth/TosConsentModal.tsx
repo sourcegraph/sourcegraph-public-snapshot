@@ -70,7 +70,8 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                         label="Agree and continue"
                         type="submit"
                         disabled={!agree}
-                        className="btn btn-primary mt-4"
+                        className="mt-4"
+                        variant="primary"
                     />
                 </form>
                 <p className="mt-5">

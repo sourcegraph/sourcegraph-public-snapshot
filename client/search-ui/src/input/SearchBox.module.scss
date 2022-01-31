@@ -43,12 +43,12 @@
     }
 
     &__focus-container {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
         height: calc(100% + 2px); // add 2 pixels for border
         display: flex;
         align-items: center;
         flex: 1 1 auto;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
         margin: -1px; // To compensate for the border
         border: 1px solid transparent;
         // Match padding from the regular query input.
@@ -95,7 +95,7 @@
     }
 
     &__separator {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
         width: 1px;
         height: 1.125rem;
         background-color: var(--border-color-2);

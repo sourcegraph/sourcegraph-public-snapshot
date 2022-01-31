@@ -11,7 +11,7 @@
 .media-hero-content {
     display: flex;
     // Stretch the charts container to the full width ignore parent paddings and border
-    // stylelint-disable-next-line declaration-property-unit-whitelist
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     margin: 1.5rem calc((-1px - 1.5rem));
     padding: 1rem 1.5rem;
     background: var(--marketing-gradient);

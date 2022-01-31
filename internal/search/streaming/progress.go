@@ -28,9 +28,6 @@ type Stats struct {
 	// ExcludedArchived is the count of excluded archived repos because the
 	// search query doesn't apply to them, but that we want to know about.
 	ExcludedArchived int
-
-	// IsIndexUnavailable is true if indexed search was unavailable.
-	IsIndexUnavailable bool
 }
 
 // Update updates c with the other data, deduping as necessary. It modifies c but
@@ -41,7 +38,6 @@ func (c *Stats) Update(other *Stats) {
 	}
 
 	c.IsLimitHit = c.IsLimitHit || other.IsLimitHit
-	c.IsIndexUnavailable = c.IsIndexUnavailable || other.IsIndexUnavailable
 
 	if c.Repos == nil && len(other.Repos) > 0 {
 		c.Repos = make(map[api.RepoID]struct{}, len(other.Repos))
@@ -69,8 +65,7 @@ func (c *Stats) Zero() bool {
 		len(c.Repos) > 0 ||
 		c.Status.Len() > 0 ||
 		c.ExcludedForks > 0 ||
-		c.ExcludedArchived > 0 ||
-		c.IsIndexUnavailable)
+		c.ExcludedArchived > 0)
 }
 
 func (c *Stats) String() string {
@@ -96,9 +91,6 @@ func (c *Stats) String() string {
 	}
 	if c.IsLimitHit {
 		parts = append(parts, "limitHit")
-	}
-	if c.IsIndexUnavailable {
-		parts = append(parts, "indexUnavailable")
 	}
 
 	return "Stats{" + strings.Join(parts, " ") + "}"

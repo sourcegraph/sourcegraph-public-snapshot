@@ -218,13 +218,9 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                             ))}
                         </small>
                     </div>
-                    <button
-                        type="submit"
-                        disabled={disableForm}
-                        className={`btn btn-${disableForm ? 'secondary' : 'primary'}`}
-                    >
+                    <Button type="submit" disabled={disableForm} variant={disableForm ? 'secondary' : 'primary'}>
                         Generate license
-                    </button>
+                    </Button>
                 </Form>
             )}
             {isErrorLike(creation) && <ErrorAlert className="mt-3" error={creation} />}

@@ -870,6 +870,8 @@ type GithubAppCloud struct {
 	AppID string `json:"appID,omitempty"`
 	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph Cloud.
 	PrivateKey string `json:"privateKey,omitempty"`
+	// Slug description: The slug of the GitHub App for Sourcegraph Cloud.
+	Slug string `json:"slug,omitempty"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -1545,6 +1547,8 @@ type SettingsExperimentalFeatures struct {
 	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
 	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
 	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
+	// CodeInsightsLandingPage description: Enables code insights landing page layout.
+	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
