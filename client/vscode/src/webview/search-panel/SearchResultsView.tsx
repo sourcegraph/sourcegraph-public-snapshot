@@ -1,6 +1,7 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import {
     SearchPatternType,
@@ -51,8 +52,11 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
     // Update local query state on e.g. sidebar events.
     // TODO: create an API shared with SearchHomeView.
-    useEffect(() => {
+
+    useDeepCompareEffectNoCheck(() => {
         setUserQueryState(context.submittedSearchQueryState.queryState)
+        // It's a whole new object on each state update, so we need
+        // to compare (alternatively, construct full query TODO)
     }, [context.submittedSearchQueryState.queryState])
 
     const onSubmit = useCallback(
@@ -250,7 +254,9 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                 settingsCascade={settingsCascade}
                 telemetryService={platformContext.telemetryService}
                 allExpanded={allExpanded}
-                isSourcegraphDotCom={isSourcegraphDotCom} // TODO
+                // Debt: dotcom prop used only for "run search" link
+                // for search examples. Fix on VSCE.
+                isSourcegraphDotCom={false}
                 searchContextsEnabled={true}
                 showSearchContext={true}
                 platformContext={platformContext}
@@ -259,6 +265,9 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                 executedQuery={context.submittedSearchQueryState.queryState.query}
                 resultClassName="mr-0"
+                // TODO "no results" video thumbnail assets
+                // In build, copy ui/assets/img folder to dist/
+                assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
             />
         </div>
     )
