@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 var root string
@@ -75,9 +76,7 @@ func init() {
 		}
 	}()
 
-	gitserver.DefaultClient.Addrs = func() []string {
-		return []string{l.Addr().String()}
-	}
+	gitserver.DefaultClient = gitserver.NewTestClient(httpcli.InternalDoer, []string{l.Addr().String()})
 }
 
 func AsJSON(v interface{}) string {

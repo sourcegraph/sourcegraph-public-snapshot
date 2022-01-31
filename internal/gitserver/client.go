@@ -62,8 +62,22 @@ func ResetClientMocks() {
 // and httpcli.Doer.
 func NewClient(cli httpcli.Doer) *Client {
 	return &Client{
-		Addrs: func() []string {
+		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
+		},
+		HTTPClient:  cli,
+		HTTPLimiter: parallel.NewRun(500),
+		// Use the binary name for UserAgent. This should effectively identify
+		// which service is making the request (excluding requests proxied via the
+		// frontend internal API)
+		UserAgent: filepath.Base(os.Args[0]),
+	}
+}
+
+func NewTestClient(cli httpcli.Doer, addrs []string) *Client {
+	return &Client{
+		addrs: func() []string {
+			return addrs
 		},
 		HTTPClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
@@ -82,10 +96,10 @@ type Client struct {
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
 
-	// Addrs is a function which should return the addresses for gitservers. It
+	// addrs is a function which should return the addresses for gitservers. It
 	// is called each time a request is made. The function must be safe for
 	// concurrent use. It may return different results at different times.
-	Addrs func() []string
+	addrs func() []string
 
 	// UserAgent is a string identifying who the client is. It will be logged in
 	// the telemetry in gitserver.
@@ -116,9 +130,13 @@ type IClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 }
 
+func (c *Client) AllAddrs() []string {
+	return c.addrs()
+}
+
 // AddrForRepo returns the gitserver address to use for the given repo name.
 func (c *Client) AddrForRepo(repo api.RepoName) string {
-	addrs := c.Addrs()
+	addrs := c.AllAddrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
@@ -128,7 +146,7 @@ func (c *Client) AddrForRepo(repo api.RepoName) string {
 // RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
 // Rendezvous hashing scheme.
 func (c *Client) RendezvousAddrForRepo(repo api.RepoName) string {
-	addrs := c.Addrs()
+	addrs := c.addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
@@ -139,7 +157,7 @@ func (c *Client) RendezvousAddrForRepo(repo api.RepoName) string {
 // addrForKey returns the gitserver address to use for the given string key,
 // which is hashed for sharding purposes.
 func (c *Client) addrForKey(key string) string {
-	addrs := c.Addrs()
+	addrs := c.addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
@@ -583,7 +601,7 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 		err   error
 		repos []string
 	)
-	addrs := c.Addrs()
+	addrs := c.addrs()
 	for _, addr := range addrs {
 		wg.Add(1)
 		go func(addr string) {
@@ -793,7 +811,7 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 }
 
 func (c *Client) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	numPossibleShards := len(c.Addrs())
+	numPossibleShards := len(c.addrs())
 	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
@@ -870,7 +888,7 @@ func (c *Client) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (
 // If multiple errors occurred, an incomplete result is returned along with a
 // *multierror.Error.
 func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	numPossibleShards := len(c.Addrs())
+	numPossibleShards := len(c.addrs())
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
@@ -949,7 +967,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol
 func (c *Client) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
-	for _, addr := range c.Addrs() {
+	for _, addr := range c.addrs() {
 		stat, err := c.doReposStats(ctx, addr)
 		if err != nil {
 			allErr = multierror.Append(allErr, err)
