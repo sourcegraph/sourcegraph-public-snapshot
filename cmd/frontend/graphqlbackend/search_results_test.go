@@ -1008,14 +1008,14 @@ func TestSubRepoFiltering(t *testing.T) {
 	}
 }
 
-func TestSubRepoFilterFunc(t *testing.T) {
+func TestApplySubRepoFiltering(t *testing.T) {
 	unauthorizedFileName := "README.md"
 	errorFileName := "file.go"
 	var userWithSubRepoPerms int32 = 1234
 
-	srp := authz.NewMockSubRepoPermissionChecker()
-	srp.EnabledFunc.SetDefaultReturn(true)
-	srp.PermissionsFunc.SetDefaultHook(func(c context.Context, user int32, rc authz.RepoContent) (authz.Perms, error) {
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultReturn(true)
+	checker.PermissionsFunc.SetDefaultHook(func(c context.Context, user int32, rc authz.RepoContent) (authz.Perms, error) {
 		if user == userWithSubRepoPerms {
 			switch rc.Path {
 			case unauthorizedFileName:
@@ -1031,34 +1031,30 @@ func TestSubRepoFilterFunc(t *testing.T) {
 
 	type args struct {
 		ctxActor *actor.Actor
-		event    streaming.SearchEvent
+		matches  []result.Match
 	}
 	tests := []struct {
-		name      string
-		args      args
-		wantEvent streaming.SearchEvent
-		wantErr   string
+		name        string
+		args        args
+		wantMatches []result.Match
+		wantErr     string
 	}{
 		{
 			name: "read from user with no perms",
 			args: args{
 				ctxActor: actor.FromUser(789),
-				event: streaming.SearchEvent{
-					Results: []result.Match{
-						&result.FileMatch{
-							File: result.File{
-								Path: unauthorizedFileName,
-							},
-						},
-					},
-				},
-			},
-			wantEvent: streaming.SearchEvent{
-				Results: []result.Match{
+				matches: []result.Match{
 					&result.FileMatch{
 						File: result.File{
 							Path: unauthorizedFileName,
 						},
+					},
+				},
+			},
+			wantMatches: []result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: unauthorizedFileName,
 					},
 				},
 			},
@@ -1067,22 +1063,18 @@ func TestSubRepoFilterFunc(t *testing.T) {
 			name: "read for user with sub-repo perms",
 			args: args{
 				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				event: streaming.SearchEvent{
-					Results: []result.Match{
-						&result.FileMatch{
-							File: result.File{
-								Path: "not-unauthorized.md",
-							},
-						},
-					},
-				},
-			},
-			wantEvent: streaming.SearchEvent{
-				Results: []result.Match{
+				matches: []result.Match{
 					&result.FileMatch{
 						File: result.File{
 							Path: "not-unauthorized.md",
 						},
+					},
+				},
+			},
+			wantMatches: []result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "not-unauthorized.md",
 					},
 				},
 			},
@@ -1091,27 +1083,23 @@ func TestSubRepoFilterFunc(t *testing.T) {
 			name: "drop match due to auth for user with sub-repo perms",
 			args: args{
 				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				event: streaming.SearchEvent{
-					Results: []result.Match{
-						&result.FileMatch{
-							File: result.File{
-								Path: unauthorizedFileName,
-							},
-						},
-						&result.FileMatch{
-							File: result.File{
-								Path: "random-name.md",
-							},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: unauthorizedFileName,
 						},
 					},
-				},
-			},
-			wantEvent: streaming.SearchEvent{
-				Results: []result.Match{
 					&result.FileMatch{
 						File: result.File{
 							Path: "random-name.md",
 						},
+					},
+				},
+			},
+			wantMatches: []result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "random-name.md",
 					},
 				},
 			},
@@ -1120,27 +1108,23 @@ func TestSubRepoFilterFunc(t *testing.T) {
 			name: "drop match due to auth for user with sub-repo perms and error",
 			args: args{
 				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				event: streaming.SearchEvent{
-					Results: []result.Match{
-						&result.FileMatch{
-							File: result.File{
-								Path: errorFileName,
-							},
-						},
-						&result.FileMatch{
-							File: result.File{
-								Path: "random-name.md",
-							},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: errorFileName,
 						},
 					},
-				},
-			},
-			wantEvent: streaming.SearchEvent{
-				Results: []result.Match{
 					&result.FileMatch{
 						File: result.File{
 							Path: "random-name.md",
 						},
+					},
+				},
+			},
+			wantMatches: []result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "random-name.md",
 					},
 				},
 			},
@@ -1151,8 +1135,8 @@ func TestSubRepoFilterFunc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), tt.args.ctxActor)
-			event, err := subRepoFilterFunc(ctx, srp)(tt.args.event)
-			if diff := cmp.Diff(event, tt.wantEvent, cmpopts.IgnoreUnexported(search.RepoStatusMap{})); diff != "" {
+			matches, err := applySubRepoFiltering(ctx, checker, tt.args.matches)
+			if diff := cmp.Diff(matches, tt.wantMatches, cmpopts.IgnoreUnexported(search.RepoStatusMap{})); diff != "" {
 				t.Fatal(diff)
 			}
 			if tt.wantErr != "" {

@@ -17,30 +17,10 @@ func NewAggregator(stream streaming.Sender) *Aggregator {
 type Aggregator struct {
 	parentStream streaming.Sender
 
-	// eventTransformer can be applied to transform each SearchEvent before it gets
-	// propagated.
-	//
-	// It is currently used to provide sub-repo permissions filtering.
-	//
-	// SearchEvent is still propagated even in an error case - eventTransformer
-	// should make sure the appropriate transformations are made before returning an
-	// error.
-	eventTransformer EventTransformer
-
 	mu         sync.Mutex
 	results    []result.Match
 	stats      streaming.Stats
 	matchCount int
-}
-
-// EventTransformer is a function that is expected to transform search events
-type EventTransformer func(event streaming.SearchEvent) (streaming.SearchEvent, error)
-
-// SetEventTransformer sets the event transformer for the aggregator. It is not
-// safe for concurrent use and is expected to be called once before the
-// aggregator is used.
-func (a *Aggregator) SetEventTransformer(et EventTransformer) {
-	a.eventTransformer = et
 }
 
 // Get finalises aggregation over the stream and returns the aggregated
@@ -57,11 +37,6 @@ func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int) {
 //
 // It currently also applies sub-repo permissions filtering (see inline docs).
 func (a *Aggregator) Send(event streaming.SearchEvent) {
-	if a.eventTransformer != nil {
-		// TODO: a.Error has been removed, how to proceed?
-		event, _ = a.eventTransformer(event)
-	}
-
 	if a.parentStream != nil {
 		a.parentStream.Send(event)
 	}

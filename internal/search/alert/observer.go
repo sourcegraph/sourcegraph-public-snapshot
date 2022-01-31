@@ -200,8 +200,8 @@ func (o *Observer) update(alert *search.Alert) {
 	}
 }
 
-//  Done returns the highest priority alert and a multierror.Error containing
-//  all errors that could not be converted to alerts.
+// Done returns the highest priority alert and a multierror.Error containing
+// all errors that could not be converted to alerts.
 func (o *Observer) Done(stats *streaming.Stats) (*search.Alert, error) {
 	if !o.HasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
 		o.update(search.AlertForStructuralSearchNotSet(o.OriginalQuery))

@@ -1819,20 +1819,34 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 		tr.Finish()
 	}()
 
+	errs := &multierror.Error{}
+
 	agg := run.NewAggregator(stream)
-	if authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) {
-		agg.SetEventTransformer(subRepoFilterFunc(ctx, authz.DefaultSubRepoPermsChecker))
-	}
-	err = job.Run(ctx, db, agg)
+	errs = multierror.Append(job.Run(ctx, db, agg))
 	matches, common, matchCount := agg.Get()
+
+	checker := authz.DefaultSubRepoPermsChecker
+
+	if authz.SubRepoEnabled(checker) {
+		// We always want to apply sub-repo filtering, even if an error was returned by
+		// job.Run since we may have partial results that need filtering.
+		var filterErr error
+		matches, filterErr = applySubRepoFiltering(ctx, checker, matches)
+		errs = multierror.Append(filterErr)
+
+		matchCount = 0
+		for _, m := range matches {
+			matchCount += m.ResultCount()
+		}
+	}
 
 	ao := alert.Observer{
 		Db:           db,
 		SearchInputs: searchInputs,
 		HasResults:   matchCount > 0,
 	}
-	if err != nil {
-		ao.Error(ctx, err)
+	if errs.Len() > 0 {
+		ao.Error(ctx, errs)
 	}
 	alert, err := ao.Done(&common)
 
@@ -1845,65 +1859,65 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 	}, err
 }
 
-// subRepoFilterFunc returns a filtering function that applies sub-repo permissions
-// to search events. It is possible that a nil function is returned.
-func subRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker) run.EventTransformer {
-	if checker == nil || !checker.Enabled() {
-		return nil
+// applySubRepoFiltering filters a set of matches using the provided
+// authz.SubRepoPermissionChecker
+func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return matches, nil
 	}
 
 	a := actor.FromContext(ctx)
-	return func(e streaming.SearchEvent) (streaming.SearchEvent, error) {
-		errs := &multierror.Error{}
-		filtered := streaming.SearchEvent{
-			Results: e.Results[:0],
-			Stats:   e.Stats,
-		}
-		for _, m := range e.Results {
-			switch mm := m.(type) {
-			case *result.FileMatch:
-				repo := mm.Repo.Name
-				matchedPath := mm.Path
+	errs := &multierror.Error{}
 
-				content := authz.RepoContent{
-					Repo: repo,
-					Path: matchedPath,
-				}
-				perms, err := authz.ActorPermissions(ctx, checker, a, content)
-				if err != nil {
-					errs = multierror.Append(errs, err)
-					continue
-				}
+	// Filter matches in place
+	filtered := matches[:0]
 
-				if perms.Include(authz.Read) {
-					filtered.Results = append(filtered.Results, m)
-				}
-			case *result.CommitMatch:
-				allowed, err := authz.CanReadAllPaths(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
-				if err != nil {
-					errs = multierror.Append(errs, err)
-					continue
-				}
-				if !allowed {
-					continue
-				}
-				filtered.Results = append(filtered.Results, m)
-				continue
-			case *result.RepoMatch:
-				// Repo filtering is taking care of by our usual repo filtering logic
-				filtered.Results = append(filtered.Results, m)
+	for _, m := range matches {
+		switch mm := m.(type) {
+		case *result.FileMatch:
+			repo := mm.Repo.Name
+			matchedPath := mm.Path
+
+			content := authz.RepoContent{
+				Repo: repo,
+				Path: matchedPath,
+			}
+			perms, err := authz.ActorPermissions(ctx, checker, a, content)
+			if err != nil {
+				errs = multierror.Append(errs, err)
 				continue
 			}
+
+			if perms.Include(authz.Read) {
+				filtered = append(filtered, m)
+			}
+		case *result.CommitMatch:
+			allowed, err := authz.CanReadAllPaths(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+			if !allowed {
+				continue
+			}
+			filtered = append(filtered, m)
+			continue
+		case *result.RepoMatch:
+			// Repo filtering is taking care of by our usual repo filtering logic
+			filtered = append(filtered, m)
+			continue
 		}
 
-		if errs.Len() == 0 {
-			return filtered, nil
-		}
-		// We don't want to return sensitive authz information or excluded paths to the
-		// user so we'll return generic error and log something more specific.
-		log15.Warn("Applying sub-repo permissions to search results", "error", errs)
-		return filtered, errors.New("subRepoFilterFunc")
 	}
+
+	if errs.Len() == 0 {
+		return filtered, nil
+	}
+
+	// We don't want to return sensitive authz information or excluded paths to the
+	// user so we'll return generic error and log something more specific.
+	log15.Warn("Applying sub-repo permissions to search results", "error", errs)
+	return filtered, errors.New("subRepoFilterFunc")
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
