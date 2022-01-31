@@ -55,7 +55,7 @@ while IFS= read -r line; do
 done
 
 if [ "$MARKDOWN" = true ]; then
-  printf "_%s_\n%s\n" "$SECTION" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$BUILDKITE_JOB_ID" --append
+  printf "**%s**\n%s\n" "$SECTION" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$BUILDKITE_JOB_ID" --append
 else
-  printf "_%s_\n\`\`\`term\n%s\n\`\`\`\n" "$SECTION" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$BUILDKITE_JOB_ID" --append
+  printf "**%s**\n\`\`\`term\n%s\n\`\`\`\n" "$SECTION" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$BUILDKITE_JOB_ID" --append
 fi
