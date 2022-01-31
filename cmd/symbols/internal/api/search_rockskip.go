@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"log"
 	"os"
-	"sync"
 
 	"github.com/sourcegraph/go-ctags"
 
@@ -26,9 +25,6 @@ import (
 )
 
 func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig types.CtagsConfig, maxRepos int) (types.SearchFunc, error) {
-	var repoToMutexMutex = sync.Mutex{}
-	var repoToMutex = map[string]*sync.Mutex{}
-
 	parser := mustCreateCtagsParser(ctagsConfig)
 
 	operations := NewOperations(observationContext)
@@ -57,16 +53,6 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig
 		// defer func() {
 		// 	endObservation(1, observation.Args{})
 		// }()
-
-		repoToMutexMutex.Lock()
-		mutex, ok := repoToMutex[string(args.Repo)]
-		if !ok {
-			mutex = &sync.Mutex{}
-			repoToMutex[string(args.Repo)] = mutex
-		}
-		mutex.Lock()
-		repoToMutexMutex.Unlock()
-		defer mutex.Unlock()
 
 		var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
 			entries, err := parser.Parse(path, bytes)
