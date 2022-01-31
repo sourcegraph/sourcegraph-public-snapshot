@@ -1897,15 +1897,12 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 				errs = multierror.Append(errs, err)
 				continue
 			}
-			if !allowed {
-				continue
+			if allowed {
+				filtered = append(filtered, m)
 			}
-			filtered = append(filtered, m)
-			continue
 		case *result.RepoMatch:
 			// Repo filtering is taking care of by our usual repo filtering logic
 			filtered = append(filtered, m)
-			continue
 		}
 
 	}
