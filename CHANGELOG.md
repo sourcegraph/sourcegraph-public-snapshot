@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.2.3]
+
 - Upgrade JetBrains IntelliJ shell to 1.3.1 and modernize the build and release pipeline.
 
 ## [1.2.2] - Minor bug fixes
@@ -22,7 +24,7 @@
 - When on a branch that does not exist remotely, `master` will now be used instead.
 - Menu entries (Open file, etc.) are now under a Sourcegraph sub-menu.
 - Added a "Copy link to file" action (alt+c / opt+c).
-- Added a "Search in repository" action  (alt+r / opt+r).
+- Added a "Search in repository" action (alt+r / opt+r).
 - It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for details.
 - Special thanks: @oliviernotteghem for contributing the new features in this release!
 
