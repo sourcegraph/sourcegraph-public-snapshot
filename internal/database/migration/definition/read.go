@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,17 +17,8 @@ import (
 )
 
 func ReadDefinitions(fs fs.FS) (*Definitions, error) {
-	filenames, err := readSQLFilenames(fs)
+	migrationDefinitions, err := readDefinitions(fs)
 	if err != nil {
-		return nil, err
-	}
-
-	migrationDefinitions, err := buildDefinitionStencils(filenames)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := hydrateDefinitions(fs, migrationDefinitions); err != nil {
 		return nil, err
 	}
 
@@ -53,217 +43,119 @@ func (e instructionalError) Error() string {
 	return fmt.Sprintf("%s: %s\n\n%s\n", e.class, e.description, e.instructions)
 }
 
-func readSQLFilenames(fs fs.FS) ([]string, error) {
+func readDefinitions(fs fs.FS) ([]Definition, error) {
 	root, err := http.FS(fs).Open("/")
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = root.Close() }()
 
-	files, err := root.Readdir(0)
+	migrations, err := root.Readdir(0)
 	if err != nil {
 		return nil, err
 	}
 
-	filenames := make([]string, 0, len(files))
-	for _, file := range files {
-		filenames = append(filenames, file.Name())
-	}
-	sort.Strings(filenames)
-
-	return filenames, nil
-}
-
-var pattern = lazyregexp.New(`^(\d+)_[^.]+\.(up|down)\.sql$`)
-
-func buildDefinitionStencils(filenames []string) ([]Definition, error) {
-	definitionMap := make(map[int]Definition, len(filenames))
-
-	// Iterate through the set of filenames looking for things that have the shape
-	// of a migration query file. Group these by identifier and match the up and down
-	// direction query definitions together.
-
-	for _, filename := range filenames {
-		match := pattern.FindStringSubmatch(filename)
-		if len(match) == 0 {
-			continue
-		}
-
-		id, _ := strconv.Atoi(match[1])
-		definition := definitionMap[id]
-
-		if match[2] == "up" {
-			// Check for duplicates before overwriting
-			if definition.UpFilename != "" {
-				return nil, fmt.Errorf("duplicate upgrade query for migration definition %d: %s and %s", id, definition.UpFilename, filename)
-			}
-
-			definitionMap[id] = Definition{
-				UpFilename:   filename,
-				DownFilename: definition.DownFilename,
-			}
-		} else {
-			// Check for duplicates before overwriting
-			if definition.DownFilename != "" {
-				return nil, fmt.Errorf("duplicate downgrade query for migration definition %d: %s and %s", id, definition.DownFilename, filename)
-			}
-
-			definitionMap[id] = Definition{
-				UpFilename:   definitionMap[id].UpFilename,
-				DownFilename: filename,
-			}
+	versions := make([]int, 0, len(migrations))
+	for _, file := range migrations {
+		if version, err := strconv.Atoi(file.Name()); err == nil {
+			versions = append(versions, version)
 		}
 	}
+	sort.Ints(versions)
 
-	// Check for migrations with only direction defined
-	// Assign identifiers directly to migration definition values
-
-	for id, definition := range definitionMap {
-		if definition.UpFilename == "" {
-			return nil, fmt.Errorf("upgrade query for migration definition %d not found", id)
-		}
-		if definition.DownFilename == "" {
-			return nil, fmt.Errorf("downgrade query for migration definition %d not found", id)
+	definitions := make([]Definition, 0, len(versions))
+	for _, version := range versions {
+		definition, err := readDefinition(fs, version)
+		if err != nil {
+			return nil, errors.Wrapf(err, "malformed migration definition %d", version)
 		}
 
-		definitionMap[id] = Definition{
-			ID:           id,
-			UpFilename:   definition.UpFilename,
-			DownFilename: definition.DownFilename,
-		}
-	}
-
-	// Flatten the definition map into ordered list
-	definitions := make([]Definition, 0, len(definitionMap))
-	for _, definition := range definitionMap {
 		definitions = append(definitions, definition)
-	}
-	sort.Slice(definitions, func(i, j int) bool {
-		return definitions[i].ID < definitions[j].ID
-	})
-
-	// Check for gaps in ids
-	for i, definition := range definitions {
-		if i > 0 && definition.ID != definitions[i-1].ID+1 {
-			return nil, fmt.Errorf("migration identifiers jump from %d to %d", definitions[i-1].ID, definition.ID)
-		}
 	}
 
 	return definitions, nil
 }
 
-func hydrateDefinitions(fs fs.FS, definitions []Definition) (err error) {
-	for i, definition := range definitions {
-		upQuery, metadata, err := readQueryFromFile(fs, definition.UpFilename)
-		if err != nil {
-			return err
-		}
+func readDefinition(fs fs.FS, version int) (Definition, error) {
+	upFilename := fmt.Sprintf("%d/up.sql", version)
+	downFilename := fmt.Sprintf("%d/down.sql", version)
+	metadataFilename := fmt.Sprintf("%d/metadata.yaml", version)
 
-		downQuery, _, err := readQueryFromFile(fs, definition.DownFilename)
-		if err != nil {
-			return err
-		}
+	upQuery, err := readQueryFromFile(fs, upFilename)
+	if err != nil {
+		return Definition{}, err
+	}
 
-		if _, ok := parseIndexMetadata(downQuery.Query(sqlf.PostgresBindVar)); ok {
-			return instructionalError{
-				class:       "malformed concurrent index creation",
-				description: "did not expect down migration to contain concurrent creation of an index",
-				instructions: strings.Join([]string{
-					"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
-					"Downgrades indicate an instance stability error which generally requires a maintenance window.",
-				}, " "),
-			}
-		}
+	downQuery, err := readQueryFromFile(fs, downFilename)
+	if err != nil {
+		return Definition{}, err
+	}
 
-		var parents []int
-		if metadata.Parent != 0 {
-			parents = append(parents, metadata.Parent)
-		}
-
-		definitions[i] = Definition{
-			ID:           definition.ID,
-			UpFilename:   definition.UpFilename,
-			UpQuery:      upQuery,
-			DownFilename: definition.DownFilename,
-			DownQuery:    downQuery,
-			Parents:      parents,
+	if _, ok := parseIndexMetadata(downQuery.Query(sqlf.PostgresBindVar)); ok {
+		return Definition{}, instructionalError{
+			class:       "malformed concurrent index creation",
+			description: "did not expect down migration to contain concurrent creation of an index",
+			instructions: strings.Join([]string{
+				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
+				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
+			}, " "),
 		}
 	}
 
-	return nil
+	return hydrateMetadataFromFile(fs, metadataFilename, Definition{
+		ID:        version,
+		UpQuery:   upQuery,
+		DownQuery: downQuery,
+	})
 }
 
-type Metadata struct {
-	Parent int
-}
-
-// readQueryFromFile returns the parsed query and extracted metadata read from
-// the given file.
-func readQueryFromFile(fs fs.FS, filepath string) (_ *sqlf.Query, metadata Metadata, _ error) {
+// hydrateMetadataFromFile populates the given definition with metdata parsed
+// from the given file. The mutated definition is returned.
+func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (_ Definition, _ error) {
 	file, err := fs.Open(filepath)
 	if err != nil {
-		return nil, metadata, err
+		return Definition{}, err
 	}
 	defer file.Close()
 
 	contents, err := io.ReadAll(file)
 	if err != nil {
-		return nil, metadata, err
+		return Definition{}, err
 	}
 
-	query, metadata, err := extractMetadata(string(contents))
+	var payload struct {
+		Name   string `yaml:"name"`
+		Parent int    `yaml:"parent"`
+	}
+	if err := yaml.Unmarshal(contents, &payload); err != nil {
+		return Definition{}, err
+	}
+
+	if payload.Parent != 0 {
+		definition.Parents = append(definition.Parents, payload.Parent)
+	}
+
+	return definition, nil
+}
+
+// readQueryFromFile returns the parsed query and extracted metadata read from
+// the given file.
+func readQueryFromFile(fs fs.FS, filepath string) (_ *sqlf.Query, _ error) {
+	file, err := fs.Open(filepath)
 	if err != nil {
-		return nil, metadata, errors.Wrap(err, "failed to extract metadata")
+		return nil, err
+	}
+	defer file.Close()
+
+	contents, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
 	}
 
 	// Stringify -> SQL-ify the contents of the file. We first replace any
 	// SQL placeholder values with an escaped version so that the sqlf.Sprintf
 	// call does not try to interpolate the text with variables we don't have.
-	return sqlf.Sprintf(strings.ReplaceAll(query, "%", "%%")), metadata, nil
-}
-
-var (
-	metadataFence   = `-- +++`
-	metadataPattern = lazyregexp.New(`[\s\S]*` + regexp.QuoteMeta(metadataFence) + `([.\s\S]+)` + regexp.QuoteMeta(metadataFence))
-)
-
-// extractMetadata splits the given migration file contents into query and optional metadata.
-// Metadata can be supplied alongside a query by attaching a SQL comment at the top of the file
-// with the following shape:
-//
-// -- +++
-// -- key: value
-// -- allowed: here
-// -- because: this
-// -- is: interpreted
-// -- as: yaml
-// -- +++
-// -- anything remaining is returned as part of the SQL query.
-//
-// Note that thee SQL query itself can have additional comments; metadata need only be at the top
-// of the file for extraction.
-func extractMetadata(contents string) (_ string, metadata Metadata, _ error) {
-	match := metadataPattern.FindStringSubmatch(contents)
-
-	if len(match) > 0 {
-		if err := yaml.Unmarshal([]byte(extractCommentPrefix(match[1])), &metadata); err != nil {
-			return "", metadata, err
-		}
-
-		return strings.TrimSpace(contents[len(match[0]):]), metadata, nil
-	}
-
-	return contents, metadata, nil
-}
-
-// extractCommentPrefix removes the `-- ` on each line of the given multiline string.
-func extractCommentPrefix(match string) string {
-	lines := strings.Split(match, "\n")
-	for i := range lines {
-		lines[i] = strings.TrimPrefix(lines[i], "-- ")
-	}
-
-	return strings.Join(lines, "\n")
+	return sqlf.Sprintf(strings.ReplaceAll(string(contents), "%", "%%")), nil
 }
 
 var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
@@ -292,6 +184,14 @@ func reorderDefinitions(migrationDefinitions []Definition) error {
 	migrationDefinitionMap := make(map[int]Definition, len(migrationDefinitions))
 	for _, migrationDefinition := range migrationDefinitions {
 		migrationDefinitionMap[migrationDefinition.ID] = migrationDefinition
+	}
+
+	for _, migrationDefinition := range migrationDefinitions {
+		for _, parent := range migrationDefinition.Parents {
+			if _, ok := migrationDefinitionMap[parent]; !ok {
+				return unknownMigrationError(parent, &migrationDefinition.ID)
+			}
+		}
 	}
 
 	// Find topological order of migrations

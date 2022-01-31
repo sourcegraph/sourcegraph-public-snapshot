@@ -9,7 +9,8 @@ import { panels } from '@sourcegraph/branded/src/components/panel/Panel.fixtures
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid } from '..'
+import { Button } from '../Button'
+import { Grid } from '../Grid'
 import { Tabs, Tab, TabList, TabPanel, TabPanels } from '../Tabs'
 
 import { PANEL_POSITIONS } from './constants'
@@ -100,16 +101,15 @@ export const WithChildren: Story = props => {
                         ))}
                     </TabList>
                     <div className="align-items-center d-flex mr-2">
-                        <button
-                            type="button"
+                        <Button
                             onClick={closePanel}
-                            className={classNames('btn btn-icon ml-2')}
+                            className={classNames('btn-icon ml-2')}
                             title="Close panel"
                             data-tooltip="Close panel"
                             data-placement="left"
                         >
                             <CloseIcon className="icon-inline" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
                 <TabPanels>

@@ -71,7 +71,7 @@
 }
 
 .separator {
-    // stylelint-disable-next-line declaration-property-unit-whitelist
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     width: 1px;
     height: 0.875rem;
     background-color: var(--oc-cyan-1);
