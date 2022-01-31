@@ -8,17 +8,22 @@ import (
 )
 
 func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
-	return r.forEachSchema(ctx, schemaNames, func(ctx context.Context, schemaName string, schemaContext schemaContext) error {
-		return r.validateSchema(ctx, schemaName, schemaContext)
+	return r.forEachSchema(ctx, schemaNames, func(ctx context.Context, schemaContext schemaContext) error {
+		return r.validateSchema(ctx, schemaContext)
 	})
 }
 
-func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaContext schemaContext) error {
+// validateSchema returns a non-nil error value if the target database schema is not in the state
+// expected by the given schema context. This method will block if there are relevant migrations
+// in progress.
+func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext) error {
+	schemaName := schemaContext.schema.Name
+
 	// If database version is strictly newer, then we have a deployment in-process. The current
 	// instance has what it needs to run, so we should be good with that. Do not crash here if
 	// the database is is dirty, as that would cause a troublesome deployment to cause outages
 	// on the old instance (which seems stressful, don't do that).
-	if newer, err := isDatabaseNewer(schemaContext.schemaVersion.version, schemaContext.schema.Definitions); err != nil {
+	if newer, err := isDatabaseNewer(schemaContext.initialSchemaVersion.version, schemaContext.schema.Definitions); err != nil {
 		return err
 	} else if newer {
 		return nil
@@ -79,16 +84,16 @@ func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaCo
 // this while a migrator seems to be running concurrently so that we do not fail fast on
 // applications that would succeed after the migration finishes.
 func (r *Runner) waitForMigration(ctx context.Context, schemaName string, schemaContext schemaContext) (int, bool, error) {
-	version, dirty := schemaContext.schemaVersion.version, schemaContext.schemaVersion.dirty
+	version, dirty := schemaContext.initialSchemaVersion.version, schemaContext.initialSchemaVersion.dirty
 
 	for dirty {
 		// While the previous version of the schema we queried was marked as dirty, we
 		// will block until we can acquire the migration lock, then re-check the version.
-		newVersion, newDirty, err := r.lockedVersion(ctx, schemaContext)
+		newSchemaVersion, err := r.lockedVersion(ctx, schemaContext)
 		if err != nil {
 			return 0, false, err
 		}
-		if newVersion == version {
+		if newSchemaVersion.version == version {
 			// Version didn't change, no migrator instance was running and we were able
 			// to acquire the lock right away. Break from this loop otherwise we'll just
 			// be busy-querying the same state.
@@ -96,17 +101,17 @@ func (r *Runner) waitForMigration(ctx context.Context, schemaName string, schema
 		}
 
 		// Version changed, check again
-		version, dirty = newVersion, newDirty
+		version, dirty = newSchemaVersion.version, newSchemaVersion.dirty
 	}
 
 	return version, dirty, nil
 }
 
-func (r *Runner) lockedVersion(ctx context.Context, schemaContext schemaContext) (_ int, _ bool, err error) {
+func (r *Runner) lockedVersion(ctx context.Context, schemaContext schemaContext) (_ schemaVersion, err error) {
 	if locked, unlock, err := schemaContext.store.Lock(ctx); err != nil {
-		return 0, false, err
+		return schemaVersion{}, err
 	} else if !locked {
-		return 0, false, fmt.Errorf("failed to acquire migration lock")
+		return schemaVersion{}, fmt.Errorf("failed to acquire migration lock")
 	} else {
 		defer func() { err = unlock(err) }()
 	}
