@@ -350,6 +350,7 @@ func buildGoTests(f func(description, testSuffix string)) {
 		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/database",                       // 94s
 		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
+		"github.com/sourcegraph/sourcegraph/internal/search/",
 	}
 
 	f("all", "exclude "+strings.Join(slowGoTestPackages, " "))
