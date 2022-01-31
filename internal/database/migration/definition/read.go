@@ -276,10 +276,10 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 		marks    = make(map[int]MarkType, len(migrationDefinitions))
 		childMap = children(migrationDefinitions)
 
-		dfs func(id int) error
+		dfs func(id int, parents []int) error
 	)
 
-	dfs = func(id int) error {
+	dfs = func(id int, parents []int) error {
 		if marks[id] == MarkTypeVisiting {
 			// currently processing
 			return ErrCycle
@@ -293,7 +293,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 		defer func() { marks[id] = MarkTypeVisited }()
 
 		for _, child := range childMap[id] {
-			if err := dfs(child); err != nil {
+			if err := dfs(child, append(append([]int(nil), parents...), id)); err != nil {
 				return err
 			}
 		}
@@ -303,7 +303,8 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 		return nil
 	}
 
-	if err := dfs(root); err != nil {
+	// Perform a depth-first traversal from the single root we found above
+	if err := dfs(root, nil); err != nil {
 		return nil, err
 	}
 	if len(order) != len(migrationDefinitions) {
