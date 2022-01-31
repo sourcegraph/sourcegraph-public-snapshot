@@ -281,8 +281,27 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 
 	dfs = func(id int, parents []int) error {
 		if marks[id] == MarkTypeVisiting {
-			// currently processing
-			return ErrCycle
+			// We're currently processing the descendants of this node, so we have a paths in
+			// both directions between these two nodes.
+
+			// Peel off the head of the parent list until we reach the target  node. This leaves
+			// us with a slice starting with the target node, followed by the path back to itself.
+			// We'll use this instance of a cycle in the error description.
+			for len(parents) > 0 && parents[0] != id {
+				parents = parents[1:]
+			}
+			if len(parents) == 0 || parents[0] != id {
+				panic("unreachable")
+			}
+			cycle := append(parents, id)
+
+			return instructionalError{
+				class:       "migration dependency cycle",
+				description: fmt.Sprintf("migrations %d and %d declare each other as dependencies", parents[len(parents)-1], id),
+				instructions: strings.Join([]string{
+					fmt.Sprintf("Break one of the links in the following cycle:\n%s", strings.Join(intsToStrings(cycle), " -> ")),
+				}, " "),
+			}
 		}
 		if marks[id] == MarkTypeVisited {
 			// already visited
@@ -307,8 +326,19 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 	if err := dfs(root, nil); err != nil {
 		return nil, err
 	}
-	if len(order) != len(migrationDefinitions) {
-		return nil, ErrCycle
+	if len(order) < len(migrationDefinitions) {
+		// We didn't visit every node, but we also do not have more than one root. There necessarliy
+		// exists a cycle that we didn't enter in the traversal from our root. Continue the traversal
+		// starting from each unvisited node until we return a cycle.
+		for _, migrationDefinition := range migrationDefinitions {
+			if _, ok := marks[migrationDefinition.ID]; !ok {
+				if err := dfs(migrationDefinition.ID, nil); err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		panic("unreachable")
 	}
 
 	return order, nil
