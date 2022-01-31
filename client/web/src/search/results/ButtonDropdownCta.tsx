@@ -55,17 +55,17 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
 
     return (
         <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>
-            <DropdownToggle
-                className={classNames(
-                    'btn btn-sm btn-outline-secondary text-decoration-none',
-                    className,
-                    styles.toggle
-                )}
+            <Button
+                className={classNames('text-decoration-none', styles.toggle, className)}
                 nav={true}
                 caret={false}
+                variant="secondary"
+                outline={true}
+                size="sm"
+                as={DropdownToggle}
             >
                 {button}
-            </DropdownToggle>
+            </Button>
             <DropdownMenu right={true} className={styles.container}>
                 <div className="d-flex mb-3">
                     <div className="d-flex align-items-center mr-3">

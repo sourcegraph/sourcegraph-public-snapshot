@@ -23,28 +23,31 @@ const action: ActionProps['action'] = {
     enabled: true,
 }
 
-add('disabled', () => <WebStory>{() => <SlackWebhookAction {...defaultProps} disabled={true} />}</WebStory>)
-
-add('closed, not populated', () => <WebStory>{() => <SlackWebhookAction {...defaultProps} />}</WebStory>)
-
-add('open, not populated', () => (
-    <WebStory>{() => <SlackWebhookAction {...defaultProps} _testStartOpen={true} />}</WebStory>
-))
-
-add('closed, populated, enabled', () => (
-    <WebStory>{() => <SlackWebhookAction {...defaultProps} action={action} />}</WebStory>
-))
-
-add('open, populated, enabled', () => (
-    <WebStory>{() => <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={action} />}</WebStory>
-))
-
-add('closed, populated, disabled', () => (
-    <WebStory>{() => <SlackWebhookAction {...defaultProps} action={{ ...action, enabled: false }} />}</WebStory>
-))
-
-add('open, populated, disabled', () => (
+add('SlackWebhookAction', () => (
     <WebStory>
-        {() => <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />}
+        {() => (
+            <>
+                <h2>Action card disabled</h2>
+                <SlackWebhookAction {...defaultProps} disabled={true} />
+
+                <h2>Closed, not populated</h2>
+                <SlackWebhookAction {...defaultProps} />
+
+                <h2>Open, not populated</h2>
+                <SlackWebhookAction {...defaultProps} _testStartOpen={true} />
+
+                <h2>Closed, populated, enabled</h2>
+                <SlackWebhookAction {...defaultProps} action={action} />
+
+                <h2>Open, populated, enabled</h2>
+                <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={action} />
+
+                <h2>Closed, populated, disabled</h2>
+                <SlackWebhookAction {...defaultProps} action={{ ...action, enabled: false }} />
+
+                <h2>Open, populated, disabled</h2>
+                <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />
+            </>
+        )}
     </WebStory>
 ))

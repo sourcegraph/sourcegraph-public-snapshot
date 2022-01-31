@@ -39,7 +39,7 @@ var (
 	metricIncomingActors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_actors_incoming_requests",
 		Help: "Total number of actors set from incoming requests by actor type.",
-	}, []string{"actor_type"})
+	}, []string{"actor_type", "path"})
 
 	metricOutgoingActors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_actors_outgoing_requests",
@@ -97,6 +97,7 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		uidStr := req.Header.Get(headerKeyActorUID)
+		path := getCondensedURLPath(req.URL.Path)
 		switch uidStr {
 		// Request associated with internal actor - add internal actor to context
 		//
@@ -105,11 +106,11 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 		// access in some cases.
 		case headerValueInternalActor:
 			ctx = WithInternalActor(ctx)
-			metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
+			metricIncomingActors.WithLabelValues(metricActorTypeInternal, path).Inc()
 
 		// Request not associated with any actor
 		case "", headerValueNoActor:
-			metricIncomingActors.WithLabelValues(metricActorTypeNone).Inc()
+			metricIncomingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 
 		// Request associated with authenticated user - add user actor to context
 		default:
@@ -118,7 +119,7 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 				log15.Warn("invalid user ID in request",
 					"error", err,
 					"uid", uidStr)
-				metricIncomingActors.WithLabelValues(metricActorTypeInvalid).Inc()
+				metricIncomingActors.WithLabelValues(metricActorTypeInvalid, path).Inc()
 
 				// Do not proceed with request
 				rw.WriteHeader(http.StatusForbidden)
@@ -129,7 +130,7 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 			// Valid user, add to context
 			actor := FromUser(int32(uid))
 			ctx = WithActor(ctx, actor)
-			metricIncomingActors.WithLabelValues(metricActorTypeUser).Inc()
+			metricIncomingActors.WithLabelValues(metricActorTypeUser, path).Inc()
 		}
 
 		next.ServeHTTP(rw, req.WithContext(ctx))

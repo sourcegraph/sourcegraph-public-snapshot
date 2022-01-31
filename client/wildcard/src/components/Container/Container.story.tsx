@@ -4,7 +4,8 @@ import React from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Alert } from '..'
+import { Alert } from '../Alert'
+import { Button } from '../Button'
 
 import { Container } from './Container'
 
@@ -56,12 +57,10 @@ export const Overview: Story = () => (
             </div>
         </Container>
         <div className="mb-3">
-            <button type="button" className="btn btn-primary mr-2">
+            <Button variant="primary" className="mr-2">
                 Save
-            </button>
-            <button type="button" className="btn btn-secondary">
-                Cancel
-            </button>
+            </Button>
+            <Button variant="secondary">Cancel</Button>
         </div>
         <hr />
         <h1>Example 2</h1>
@@ -73,18 +72,16 @@ export const Overview: Story = () => (
             <div className="form-group">
                 <input type="text" className="form-control" />
             </div>
-            <button type="button" className="btn btn-secondary mb-2">
+            <Button className="mb-2" variant="secondary">
                 Save
-            </button>
+            </Button>
             <hr className="mb-2" />
             <h3>Section II</h3>
             <p>Here you change your email.</p>
             <div className="form-group">
                 <input type="text" className="form-control" />
             </div>
-            <button type="button" className="btn btn-secondary">
-                Save
-            </button>
+            <Button variant="secondary">Save</Button>
         </Container>
     </>
 )

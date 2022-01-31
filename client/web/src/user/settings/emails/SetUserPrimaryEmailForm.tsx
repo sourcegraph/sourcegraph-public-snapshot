@@ -93,7 +93,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     label="Save"
                     type="submit"
                     disabled={options.length === 1 || statusOrError === 'loading'}
-                    className="btn btn-primary"
+                    variant="primary"
                 />
             </Form>
             {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} />}
