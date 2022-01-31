@@ -221,7 +221,6 @@ export class OrgArea extends React.Component<Props> {
                 )
                 .subscribe(
                     stateUpdate => {
-                        debugger
                         if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
                             const childBreadcrumbSetters = this.props.setBreadcrumb({
                                 key: 'OrgArea',

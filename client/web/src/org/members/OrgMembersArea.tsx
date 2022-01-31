@@ -12,6 +12,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
 import { OrgMembersSidebar } from './OrgMembersSidebar'
 import { OrgMembersListPage } from './OrgMembersListPage'
+import { OrgPendingInvitesPage } from './OrgPendingInvites'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -31,7 +32,6 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * an organization's settings.
  */
 export const OrgMembersArea: React.FunctionComponent<Props> = props => {
-
     if (!props.authenticatedUser) {
         return null
     }
@@ -54,7 +54,9 @@ export const OrgMembersArea: React.FunctionComponent<Props> = props => {
                                 path={`${props.match.path}/pending-invites`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
-                                render={routeComponentProps => <div>pending invites</div>}
+                                render={routeComponentProps => (
+                                    <OrgPendingInvitesPage {...routeComponentProps} {...props} />
+                                )}
                             />
                             <Route component={NotFoundPage} />
                         </Switch>
