@@ -22,11 +22,17 @@ import {
 } from '@sourcegraph/shared/src/util/url'
 import { Tab, TabList, TabPanel, TabPanels, Tabs, Link, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables } from '../graphql-operations'
+import {
+    CoolCodeIntelHighlightedBlobResult,
+    CoolCodeIntelHighlightedBlobVariables,
+    CoolCodeIntelReferencesResult,
+    CoolCodeIntelReferencesVariables,
+    LocationFields,
+} from '../graphql-operations'
 import { Blob, BlobProps } from '../repo/blob/Blob'
 
 import styles from './GlobalCodeIntel.module.scss'
-import { FETCH_REFERENCES_QUERY } from './GlobalCodeIntelQueries'
+import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './GlobalCodeIntelQueries'
 
 const SHOW_COOL_CODEINTEL = localStorage.getItem('coolCodeIntel') !== null
 
@@ -103,9 +109,6 @@ interface Location {
         commit: {
             oid: string
         }
-        highlight: {
-            html: string
-        }
     }
     range?: {
         start: {
@@ -120,6 +123,25 @@ interface Location {
 
     url: string
     lines: string[]
+}
+
+const buildLocation = (node: LocationFields): Location => {
+    const location: Location = {
+        resource: {
+            repository: { name: node.resource.repository.name },
+            content: node.resource.content,
+            path: node.resource.path,
+            commit: node.resource.commit,
+        },
+        url: '',
+        lines: [],
+    }
+    if (node.range !== null) {
+        location.range = node.range
+    }
+    location.url = buildFileURL(location)
+    location.lines = location.resource.content.split(/\r?\n/)
+    return location
 }
 
 interface RepoLocationGroup {
@@ -149,6 +171,7 @@ export const ReferencesList: React.FunctionComponent<
     const onReferenceClick = (location: Location | undefined): void => {
         if (location) {
             history.push(location.url)
+            console.log('pushing new location', location.url)
         }
         setActiveLocation(location)
     }
@@ -222,44 +245,12 @@ export const SideReferences: React.FunctionComponent<
 
     const references: Location[] = []
     for (const node of data.repository.commit?.blob?.lsif?.references.nodes) {
-        const location: Location = {
-            resource: {
-                repository: { name: node.resource.repository.name },
-                content: node.resource.content,
-                path: node.resource.path,
-                commit: node.resource.commit,
-                highlight: { html: node.resource.highlight.html },
-            },
-            url: '',
-            lines: [],
-        }
-        if (node.range !== null) {
-            location.range = node.range
-        }
-        location.url = buildFileURL(location)
-        location.lines = location.resource.content.split(/\r?\n/)
-        references.push(location)
+        references.push(buildLocation(node))
     }
 
     const definitions: Location[] = []
     for (const node of data.repository.commit?.blob?.lsif?.definitions.nodes) {
-        const location: Location = {
-            resource: {
-                repository: { name: node.resource.repository.name },
-                content: node.resource.content,
-                path: node.resource.path,
-                commit: node.resource.commit,
-                highlight: { html: node.resource.highlight.html },
-            },
-            url: '',
-            lines: [],
-        }
-        if (node.range !== null) {
-            location.range = node.range
-        }
-        location.url = buildFileURL(location)
-        location.lines = location.resource.content.split(/\r?\n/)
-        definitions.push(location)
+        definitions.push(buildLocation(node))
     }
 
     const hover = data.repository.commit?.blob?.lsif?.hover
@@ -302,28 +293,23 @@ export const SideReferences: React.FunctionComponent<
 
 export const SideBlob: React.FunctionComponent<
     {
-        hoveredToken: CoolHoveredToken
         activeLocation: Location
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
 > = props => {
-    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
-        FETCH_REFERENCES_QUERY,
-        {
-            variables: {
-                repository: props.hoveredToken.repoName,
-                commit: props.hoveredToken.commitID,
-                path: props.hoveredToken.filePath,
-                // ATTENTION: Off by one ahead!!!!
-                line: props.hoveredToken.line - 1,
-                character: props.hoveredToken.character - 1,
-                after: null,
-            },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            nextFetchPolicy: 'network-only',
-        }
-    )
+    const { data, error, loading } = useQuery<
+        CoolCodeIntelHighlightedBlobResult,
+        CoolCodeIntelHighlightedBlobVariables
+    >(FETCH_HIGHLIGHTED_BLOB, {
+        variables: {
+            repository: props.activeLocation.resource.repository.name,
+            commit: props.activeLocation.resource.commit.oid,
+            path: props.activeLocation.resource.path,
+        },
+        // Cache this data but always re-request it in the background when we revisit
+        // this page to pick up newer changes.
+        fetchPolicy: 'cache-and-network',
+        nextFetchPolicy: 'network-only',
+    })
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -331,7 +317,9 @@ export const SideBlob: React.FunctionComponent<
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <p className="text-muted text-center">
-                    <i>Loading references ...</i>
+                    <i>
+                        Loading <code>{props.activeLocation.resource.path}</code>...
+                    </i>
                 </p>
             </>
         )
@@ -343,9 +331,21 @@ export const SideBlob: React.FunctionComponent<
     }
 
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.repository?.commit?.blob?.lsif) {
+    if (!data?.repository?.commit?.blob?.highlight) {
         return <>Nothing found</>
     }
+
+    const { html, aborted } = data?.repository?.commit?.blob?.highlight
+    if (aborted) {
+        return (
+            <p className="text-warning text-center">
+                <i>
+                    Highlighting <code>{props.activeLocation.resource.path}</code> failed
+                </i>
+            </p>
+        )
+    }
+
     return (
         <Blob
             {...props}
@@ -358,7 +358,7 @@ export const SideBlob: React.FunctionComponent<
             className={styles.sideBlob}
             blobInfo={{
                 content: props.activeLocation.resource.content,
-                html: props.activeLocation.resource.highlight.html,
+                html,
                 filePath: props.activeLocation.resource.path,
                 repoName: props.activeLocation.resource.repository.name,
                 commitID: props.activeLocation.resource.commit.oid,
