@@ -813,7 +813,7 @@ export async function handleCodeHost({
 
     if (isGithubCodeHost(codeHost)) {
         subscriptions.add(initializeGithubSearchInputEnhancement(codeHost.searchEnhancement, sourcegraphURL, mutations))
-        subscriptions.add(codeHost.enhanceSearchPage(sourcegraphURL))
+        codeHost.enhanceSearchPage(sourcegraphURL)
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {

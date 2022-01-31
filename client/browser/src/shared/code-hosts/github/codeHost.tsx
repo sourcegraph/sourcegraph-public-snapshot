@@ -3,8 +3,8 @@ import classNames from 'classnames'
 import { trimStart } from 'lodash'
 import React from 'react'
 import { render } from 'react-dom'
-import { defer, fromEvent, merge, Observable, of, Subscription } from 'rxjs'
-import { distinct, map } from 'rxjs/operators'
+import { defer, of } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -19,6 +19,7 @@ import {
     toAbsoluteBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 
+import { button } from '@sourcegraph/wildcard/src/components/PageSelector/PageSelector.module.scss'
 import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
@@ -423,7 +424,7 @@ export interface GithubCodeHost extends CodeHost {
         onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
     }
 
-    enhanceSearchPage: (sourcegraphURL: string) => Subscription
+    enhanceSearchPage: (sourcegraphURL: string) => void
 }
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => 'searchEnhancement' in codeHost
@@ -431,83 +432,88 @@ export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost
 /**
  * Adds "Search in Sourcegraph buttons" to GitHub search pages
  */
-function enhanceSearchPage(sourcegraphURL: string): Subscription {
+function enhanceSearchPage(sourcegraphURL: string): void {
     const githubURL = new URL(window.location.href)
 
     if (!githubURL.pathname.startsWith('/search')) {
-        return new Subscription()
+        return
     }
 
-    let observingQuery: Observable<string> | null = null
-    let buttonContainer: HTMLElement | null = null
+    let getSearchQuery: (() => string[]) | null = null
+    let buttonContainer: HTMLElement
+
     const urlSearchQuery = githubURL.searchParams.get('q') || ''
 
     if (urlSearchQuery) {
         // search results page
-        // render search results page enhancement
         buttonContainer = document.createElement('div')
-        const resultsContainer = document.querySelector('.codesearch-results')
-        resultsContainer?.prepend(buttonContainer)
+        const form = document.querySelector('.application-main .js-site-search-form')
+        const submitButton = [
+            ...document.querySelectorAll<HTMLButtonElement>(".application-main button[type='submit']"),
+        ].find(button => button.form === form)
+        submitButton?.after(buttonContainer)
+        buttonContainer.classList.add('ml-2', 'd-none', 'd-md-block')
 
-        // track search input changes and update sourcegraph link href
-        const inputElement = document.querySelector('.header-search-input')
+        const inputElement = document.querySelector<HTMLInputElement>('.header-search-input')
         if (inputElement) {
-            observingQuery = fromEvent(inputElement, 'blur').pipe(
-                map(event => (event.target instanceof HTMLInputElement ? event.target.value.trim() : '')),
-                distinct()
-            )
+            getSearchQuery = () => inputElement.value.split(' ').map(substring => substring.trim())
         }
     } else {
-        // simple search page
+        // simple/advanced search page
         buttonContainer = document.createElement('div')
-        const searchButton = document.querySelector('#search_form button[type="submit"]')
-        searchButton?.after(buttonContainer)
+        const searchInputContainer = document.querySelector('.search-form-fluid')
+        searchInputContainer?.append(buttonContainer)
+        buttonContainer.classList.add('ml-0', 'ml-md-2', 'mt-2', 'mt-md-0')
 
-        const inputElement = document.querySelector('#search_form input')
+        const inputElement = document.querySelector<HTMLInputElement>('#search_form input')
         if (inputElement) {
-            observingQuery = fromEvent(inputElement, 'blur').pipe(
-                map(event => (event.target instanceof HTMLInputElement ? event.target.value.trim() : '')),
-                distinct()
-            )
+            getSearchQuery = () => inputElement.value.split(' ').map(substring => substring.trim())
         }
-        // render simple search page enhancements and return
     }
 
-    if (!observingQuery || !buttonContainer) {
-        return new Subscription()
+    if (!buttonContainer || !getSearchQuery) {
+        return
     }
 
-    const buildQueryURL = (searchTerm: string): string => {
-        const queryParameters = searchTerm.split(' ')
+    const githubResultType = githubURL.searchParams.get('type')
+    let sourcegraphResultType = ''
+    if (!githubResultType || githubResultType.toLowerCase() === 'repositories') {
+        sourcegraphResultType = 'repo'
+    } else if (githubResultType.toLowerCase() === 'commits') {
+        sourcegraphResultType = 'commit'
+    }
 
-        const githubResultType = githubURL.searchParams.get('type')
-        let sourcegraphResultType = ''
-        if (!githubResultType || githubResultType === 'repositories') {
-            sourcegraphResultType = 'repo'
-        } else if (githubResultType === 'commits') {
-            sourcegraphResultType = 'commit'
-        }
+    const buildLinkHref = (): string => {
+        const url = new URL('/search', sourcegraphURL)
+        const queryParameters = getSearchQuery ? getSearchQuery().filter(Boolean) : []
 
         if (sourcegraphResultType) {
             queryParameters.push(`type:${sourcegraphResultType}`)
         }
 
-        // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be corretly parsed by sourcegraph search page.
-        // TODO: investigate possible risks search params direct assignment may introduce.
-        return queryParameters.join('+')
+        if (queryParameters.length > 0) {
+            // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be corretly parsed by sourcegraph search page.
+            // TODO: investigate possible risks search params direct assignment may introduce.
+            return `${url.href}?q=${queryParameters.join('+')}`
+        }
+
+        return url.href
     }
 
-    return merge(of(urlSearchQuery), observingQuery).subscribe(searchInputValue => {
-        render(
-            <SourcegraphIconButton
-                label="Search in Sourcegraph"
-                // TODO: style
-                className="btn btn-sm tooltipped tooltipped-s"
-                href={`${new URL('/search', sourcegraphURL).href}?q=${buildQueryURL(searchInputValue)}`}
-            />,
-            buttonContainer
-        )
-    })
+    render(
+        <SourcegraphIconButton
+            label="Search in Sourcegraph"
+            title="Search in Sourcegraph to get hover tooltips, go to definition and more"
+            ariaLabel="Search in Sourcegraph to get hover tooltips, go to definition and more"
+            className={classNames('btn', styles.sourcegraphIconButton)}
+            iconClassName={classNames(styles.icon)}
+            href={buildLinkHref()}
+            onFocus={event => {
+                event.target.href = buildLinkHref()
+            }}
+        />,
+        buttonContainer
+    )
 }
 
 export const githubCodeHost: GithubCodeHost = {
