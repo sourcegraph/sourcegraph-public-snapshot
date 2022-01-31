@@ -271,19 +271,25 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-
-		if autoAcceptChanges {
-			chromaticCommand += " --auto-accept-changes"
-		}
-
-		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
+		stepOpts := []bk.StepOpt{
 			bk.AutomaticRetry(3),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
-			bk.Cmd(chromaticCommand))
+		}
+
+		// Upload storybook to Chromatic
+		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+		if autoAcceptChanges {
+			chromaticCommand += " --auto-accept-changes"
+		} else {
+			// Unless we plan on automatically accepting these changes, we only run this
+			// step on ready-for-review pull requests.
+			stepOpts = append(stepOpts, bk.IfReadyForReview())
+		}
+
+		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
+			append(stepOpts, bk.Cmd(chromaticCommand))...)
 	}
 }
 
