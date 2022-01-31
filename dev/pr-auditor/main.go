@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
@@ -41,7 +40,7 @@ func main() {
 	if err != nil {
 		log.Fatal("ReadFile: ", err)
 	}
-	var payload *Payload
+	var payload *EventPayload
 	if err := json.Unmarshal(payloadData, &payload); err != nil {
 		log.Fatal("Unmarshal: ", err)
 	}
@@ -52,40 +51,23 @@ func main() {
 		return
 	}
 
-	acceptance := checkAcceptance(payload.PullRequest.Body)
+	acceptance := checkAcceptance(ctx, ghc, payload)
 	log.Printf("checkAcceptance: %+v\n", acceptance)
-	if acceptance.Checked {
-		log.Println("Acceptance checked, done")
+	if acceptance.Checked && acceptance.Reviewed {
+		log.Println("Acceptance checked and PR reviewed, done")
 		return
 	}
+	issue, closeIssue := generateAcceptanceAuditTrailIssue(payload, &acceptance)
 
-	var (
-		issueTitle     = fmt.Sprintf("acceptance checklist exception: PR %s#%d", payload.Repository.FullName, payload.PullRequest.Number)
-		issueBody      = fmt.Sprintf("%s did not go through the acceptance checklist.", payload.PullRequest.URL)
-		issueAssignees = []string{}
-		closeIssue     bool
-	)
-	if acceptance.Explanation == "" {
-		user := payload.PullRequest.MergedBy.Login
-		issueAssignees = append(issueAssignees, user)
-		issueBody += fmt.Sprintf("\n\nNo explanation was provided - @%s please comment in this issue with an explanation for this exception and close this issue.", user)
-	} else {
-		closeIssue = true
-		issueBody += fmt.Sprintf("\n\nProvided explanation:\n\n%s", acceptance.Explanation)
-	}
-
-	log.Println("Creating issue for exception")
-	created, _, err := ghc.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, &github.IssueRequest{
-		Title:     github.String(issueTitle),
-		Body:      github.String(issueBody),
-		Assignees: &issueAssignees,
-	})
+	log.Printf("Creating issue for exception: %+v\n", issue)
+	created, _, err := ghc.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, issue)
 	if err != nil {
 		log.Fatal("Issues.Create: ", err)
 	}
 	log.Println("Created issue: ", created.GetHTMLURL())
 
 	if closeIssue {
+		log.Println("Closing created issue")
 		_, _, err := ghc.Issues.Edit(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, created.GetNumber(), &github.IssueRequest{
 			State: github.String("closed"),
 		})

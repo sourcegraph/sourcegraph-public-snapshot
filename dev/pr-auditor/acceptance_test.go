@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"strings"
 	"testing"
@@ -58,7 +59,12 @@ And a little complicated; there's also the following reasons:
 			body, err := os.ReadFile(tt.bodyFile)
 			require.NoError(t, err)
 
-			got := checkAcceptance(string(body))
+			got := checkAcceptance(context.Background(), nil, &EventPayload{
+				PullRequest: PullRequestPayload{
+					Body:           string(body),
+					ReviewComments: 1, // Happy path
+				},
+			})
 			assert.Equal(t, tt.want.Checked, got.Checked)
 			t.Log("got.Explanation: ", got.Explanation)
 			if tt.want.Explanation == "" {
@@ -67,6 +73,7 @@ And a little complicated; there's also the following reasons:
 				assert.True(t, strings.Contains(got.Explanation, tt.want.Explanation),
 					"Expected explanation:\n\n%s\n\nTo include:\n\n%s\n", got.Explanation, tt.want.Explanation)
 			}
+			assert.True(t, got.Reviewed) // Check this is always set
 		})
 	}
 }
