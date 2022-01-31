@@ -277,6 +277,14 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 		dfs func(id int, parents []int) error
 	)
 
+	for _, children := range childMap {
+		// Reverse-order each child slice. This will end up giving the output slice the
+		// property that migrations not related via ancestry will be ordered by their
+		// version number. This gives a nice, determinstic, and intuitive order in which
+		// migrations will be applied.
+		sort.Sort(sort.Reverse(sort.IntSlice(children)))
+	}
+
 	dfs = func(id int, parents []int) error {
 		if marks[id] == MarkTypeVisiting {
 			// We're currently processing the descendants of this node, so we have a paths in
