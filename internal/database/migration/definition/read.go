@@ -314,8 +314,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 	return order, nil
 }
 
-// root returns the unique migration definition with no parent. An error is returned
-// if there is not exactly one root.
+// root returns the unique migration definition with no parent or an error of no such migration exists.
 func root(migrationDefinitions []Definition) (int, error) {
 	roots := make([]int, 0, 1)
 	for _, migrationDefinition := range migrationDefinitions {
@@ -324,10 +323,29 @@ func root(migrationDefinitions []Definition) (int, error) {
 		}
 	}
 	if len(roots) == 0 {
-		return 0, ErrNoRoots
+		return 0, instructionalError{
+			class:       "no roots",
+			description: "every migration declares a parent",
+			instructions: strings.Join([]string{
+				`There is no migration defined in this schema that does not declare a parent.`,
+				`This indicates either a migration dependency cycle or a reference to a parent migration that no longer exists.`,
+			}, " "),
+		}
 	}
+
 	if len(roots) > 1 {
-		return 0, ErrMultipleRoots
+		strRoots := intsToStrings(roots)
+		sort.Strings(strRoots)
+
+		return 0, instructionalError{
+			class:       "multiple roots",
+			description: fmt.Sprintf("expected exactly one migration to have no parent but found %d", len(roots)),
+			instructions: strings.Join([]string{
+				`There are multiple migrations defined in this schema that do not declare a parent.`,
+				`This indicates a new migration that did not correctly attach itself to an existing migration.`,
+				`This may also indicate the presence of a duplicate squashed migration.`,
+			}, " "),
+		}
 	}
 
 	return roots[0], nil
@@ -369,4 +387,13 @@ func validateLinearizedGraph(migrationDefinitions []Definition) error {
 	}
 
 	return nil
+}
+
+func intsToStrings(ints []int) []string {
+	strs := make([]string, 0, len(ints))
+	for _, value := range ints {
+		strs = append(strs, strconv.Itoa(value))
+	}
+
+	return strs
 }
