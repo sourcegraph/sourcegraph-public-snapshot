@@ -239,14 +239,13 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 repository.
                             </p>
                             <h3>
-                                <a
-                                    // eslint-disable-next-line react/jsx-no-target-blank
+                                <Link
                                     target="_blank"
                                     rel="noopener"
-                                    href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                    to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                                 >
                                     Learn more
-                                </a>
+                                </Link>
                             </h3>
                             <p className="text-muted mt-3 mb-0">
                                 <strong>Note:</strong> only the Go programming language is currently supported.

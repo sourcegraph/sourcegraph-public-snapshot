@@ -87,7 +87,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 description={
                     <>
                         Purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
-                        <a href="https://about.sourcegraph.com/pricing">pricing</a> for more information.
+                        <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
                     </>
                 }
                 className="mb-3"

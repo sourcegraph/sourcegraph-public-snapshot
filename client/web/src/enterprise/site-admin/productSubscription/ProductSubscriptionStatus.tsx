@@ -168,10 +168,9 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                         <Alert variant="warning">
                             You have exceeded your licensed users.{' '}
                             <Link to="/site-admin/license">View your license details</Link> or{' '}
-                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a href="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
+                            <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
                                 upgrade your license
-                            </a>{' '}
+                            </Link>{' '}
                             to true up and prevent a retroactive charge.
                         </Alert>
                     )

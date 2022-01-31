@@ -101,8 +101,6 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 	return nil
 }
 
-const indexPollInterval = time.Second
-
 // applyMigrations attempts to take an advisory lock, then re-checks the version of the database. If there are
 // still migrations to apply from the given definitions, they are applied in-order. If not all definitions are
 // applied, this method returns a true-valued flag indicating that it should be re-invoked to attempt to apply
@@ -190,6 +188,8 @@ func (r *Runner) applyMigration(
 
 	return nil
 }
+
+const indexPollInterval = time.Second
 
 // createIndexConcurrently deals with the special case of `CREATE INDEX CONCURRENTLY` migrations. We cannot
 // hold an advisory lock during concurrent index creation without trivially deadlocking concurrent migrator
