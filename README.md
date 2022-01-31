@@ -77,10 +77,11 @@ Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issue
 
 The publishing process is based on the actions outlined in the [`intellij-platform-plugin-template`](https://github.com/JetBrains/intellij-platform-plugin-template).
 
-1. Create a [new release](https://github.com/sourcegraph/sourcegraph-jetbrains/releases/new) on GitHub.
-2. Pick the new version number as the git tag (e.g. `v1.2.3`).
-3. Copy/paste the `[Unreleased]` section of the [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph-jetbrains/blob/main/CHANGELOG.md) into the GitHub release text.
-4. Once published, a GitHub action is triggered that will publish the release automatically and create a PR to update the changelog and version text.
+1. Update `gradle.properties` and set the version number for this release (e.g. `1.2.3`).
+2. Create a [new release](https://github.com/sourcegraph/sourcegraph-jetbrains/releases/new) on GitHub.
+3. Pick the new version number as the git tag (e.g. `v1.2.3`).
+4. Copy/paste the `[Unreleased]` section of the [`CHANGELOG.md`](https://github.com/sourcegraph/sourcegraph-jetbrains/blob/main/CHANGELOG.md) into the GitHub release text.
+5. Once published, a GitHub action is triggered that will publish the release automatically and create a PR to update the changelog and version text. You may need to manually fix the content.
 
 ## Version History
 
