@@ -102,7 +102,6 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                             'test-batches-confirm-apply-btn text-nowrap',
                             isLoading === true || (!viewerCanAdminister && 'disabled')
                         )}
-                        variant="primary"
                         onClick={onApply}
                         disabled={!canApply}
                         data-tooltip={disabledTooltip()}
