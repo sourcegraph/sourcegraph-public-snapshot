@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -14,35 +15,30 @@ import (
 
 func Up(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 	var (
-		upFlagSet          = flag.NewFlagSet(fmt.Sprintf("%s up", commandName), flag.ExitOnError)
-		upDatabaseNameFlag = upFlagSet.String("db", "all", `The target database instance. Supply "all" (the default) to migrate all databases.`)
-		upTargetFlag       = upFlagSet.Int("target", 0, "Apply all migrations up to this target. Zero (the default) applies all migrations.")
+		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s up", commandName), flag.ExitOnError)
+		schemaNameFlag = flagSet.String("db", "all", `The target schema(s) to migrate. Comma-separated values are accepted. Supply "all" (the default) to migrate all schemas.`)
 	)
 
-	execUp := func(ctx context.Context, args []string) error {
+	exec := func(ctx context.Context, args []string) error {
 		if len(args) != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 			return flag.ErrHelp
 		}
 
-		if *upDatabaseNameFlag == "all" && *upTargetFlag != 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply -db to migrate a specific database"))
+		schemaNames := strings.Split(*schemaNameFlag, ",")
+		if len(schemaNames) == 0 {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a schema via -db"))
 			return flag.ErrHelp
 		}
-
-		var databaseNames []string
-		if *upDatabaseNameFlag == "all" {
-			databaseNames = append(databaseNames, schemas.SchemaNames...)
-		} else {
-			databaseNames = append(databaseNames, *upDatabaseNameFlag)
+		if len(schemaNames) == 1 && schemaNames[0] == "all" {
+			schemaNames = schemas.SchemaNames
 		}
 
 		operations := []runner.MigrationOperation{}
-		for _, databaseName := range databaseNames {
+		for _, schemaName := range schemaNames {
 			operations = append(operations, runner.MigrationOperation{
-				SchemaName:    databaseName,
-				Type:          runner.MigrationOperationTypeTargetedUp,
-				TargetVersion: *upTargetFlag,
+				SchemaName: schemaName,
+				Type:       runner.MigrationOperationTypeUpgrade,
 			})
 		}
 
@@ -53,10 +49,10 @@ func Up(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 
 	return &ffcli.Command{
 		Name:       "up",
-		ShortUsage: fmt.Sprintf("%s up [-db=all] [-target=0]", commandName),
-		ShortHelp:  "Run up migrations",
-		FlagSet:    upFlagSet,
-		Exec:       execUp,
+		ShortUsage: fmt.Sprintf("%s up -db=<schema>", commandName),
+		ShortHelp:  "Apply all migrations",
+		FlagSet:    flagSet,
+		Exec:       exec,
 		LongHelp:   ConstructLongHelp(),
 	}
 }
