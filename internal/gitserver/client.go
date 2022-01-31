@@ -92,6 +92,30 @@ type Client struct {
 	UserAgent string
 }
 
+//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i IClient -o mock_client.go
+type IClient interface {
+	AddrForRepo(api.RepoName) string
+	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
+	ArchiveURL(api.RepoName, ArchiveOptions) *url.URL
+	Command(name string, args ...string) *Cmd
+	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
+	GetGitolitePhabricatorMetadata(_ context.Context, gitoliteHost string, _ api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error)
+	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	IsRepoCloneable(context.Context, api.RepoName) error
+	IsRepoCloned(context.Context, api.RepoName) (bool, error)
+	ListCloned(context.Context) ([]string, error)
+	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
+	P4Exec(_ context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
+	Remove(context.Context, api.RepoName) error
+	RendezvousAddrForRepo(api.RepoName) string
+	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+	RepoInfo(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
+	ReposStats(context.Context) (map[string]*protocol.ReposStats, error)
+	RequestRepoMigrate(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
+}
+
 // AddrForRepo returns the gitserver address to use for the given repo name.
 func (c *Client) AddrForRepo(repo api.RepoName) string {
 	addrs := c.Addrs()
