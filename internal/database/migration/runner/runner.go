@@ -152,6 +152,15 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 		return schemaVersion{}, err
 	}
 
-	log15.Info("Checked current version", "schema", schemaName, "version", version, "dirty", dirty)
-	return schemaVersion{version, dirty}, nil
+	log15.Info(
+		"Checked current version",
+		"schema", schemaName,
+		"version", version,
+		"dirty", dirty,
+	)
+
+	return schemaVersion{
+		version,
+		dirty,
+	}, nil
 }
