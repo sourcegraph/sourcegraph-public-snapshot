@@ -5,7 +5,7 @@
     justify-content: center;
     padding: 1rem;
     position: static;
-    height: 14rem;
+    min-height: 14rem;
     background: var(--color-bg-1);
     border: 1px solid var(--border-color-1);
     border-radius: 3px;
@@ -14,4 +14,8 @@
 
 .expanded {
     height: 36rem;
+}
+
+.form {
+    width: 100%;
 }
