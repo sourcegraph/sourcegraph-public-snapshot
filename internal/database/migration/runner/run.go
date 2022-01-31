@@ -34,7 +34,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 		schemaName := schemaContext.schema.Name
 
 		// Block until we can write into this channel. This ensures that we only have at most
-		// the same number of active goroutines as we have slots int he channel's buffer.
+		// the same number of active goroutines as we have slots in the channel's buffer.
 		semaphore <- struct{}{}
 		defer func() { <-semaphore }()
 
