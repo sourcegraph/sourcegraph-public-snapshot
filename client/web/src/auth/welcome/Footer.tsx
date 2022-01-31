@@ -8,10 +8,13 @@ import { useSteps } from '../Steps/context'
 
 interface Props {
     onFinish: FinishWelcomeFlow
+    skippableSteps?: number[]
 }
 
-export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
+export const Footer: React.FunctionComponent<Props> = ({ onFinish, skippableSteps }) => {
     const { setStep, currentIndex, currentStep } = useSteps()
+
+    const isSkippable = (skippableSteps ?? []).includes(currentIndex)
 
     return (
         <div className="d-flex align-items-center justify-content-end mt-4 w-100">
@@ -40,9 +43,9 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
                 )}
                 <LoaderButton
                     alwaysShowLabel={true}
-                    label={currentStep.isLastStep ? 'Start searching' : 'Continue'}
+                    label={currentStep.isLastStep ? 'Start searching' : isSkippable ? 'Skip this step' : 'Continue'}
                     className="float-right ml-2"
-                    disabled={!currentStep.isComplete}
+                    disabled={!isSkippable && !currentStep.isComplete}
                     variant="primary"
                     onClick={event => {
                         if (currentStep.isLastStep) {

@@ -214,7 +214,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                         </StepPanel>
                                     </StepPanels>
                                     <StepActions>
-                                        <Footer onFinish={finishWelcomeFlow} />
+                                        <Footer onFinish={finishWelcomeFlow} skippableSteps={[3]} />
                                     </StepActions>
                                 </Steps>
                             </div>
