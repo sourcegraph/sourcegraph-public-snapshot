@@ -91,17 +91,6 @@ func readDefinition(fs fs.FS, version int) (Definition, error) {
 		return Definition{}, err
 	}
 
-	if _, ok := parseIndexMetadata(downQuery.Query(sqlf.PostgresBindVar)); ok {
-		return Definition{}, instructionalError{
-			class:       "malformed concurrent index creation",
-			description: "did not expect down migration to contain concurrent creation of an index",
-			instructions: strings.Join([]string{
-				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
-				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
-			}, " "),
-		}
-	}
-
 	return hydrateMetadataFromFile(fs, metadataFilename, Definition{
 		ID:        version,
 		UpQuery:   upQuery,
@@ -124,8 +113,9 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 	}
 
 	var payload struct {
-		Name   string `yaml:"name"`
-		Parent int    `yaml:"parent"`
+		Name                    string `yaml:"name"`
+		Parent                  int    `yaml:"parent"`
+		CreateIndexConcurrently bool   `yaml:"createIndexConcurrently"`
 	}
 	if err := yaml.Unmarshal(contents, &payload); err != nil {
 		return Definition{}, err
@@ -135,11 +125,44 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 		definition.Parents = append(definition.Parents, payload.Parent)
 	}
 
+	if _, ok := parseIndexMetadata(definition.DownQuery.Query(sqlf.PostgresBindVar)); ok {
+		return Definition{}, instructionalError{
+			class:       "malformed concurrent index creation",
+			description: "did not expect down migration to contain concurrent creation of an index",
+			instructions: strings.Join([]string{
+				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
+				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
+			}, " "),
+		}
+	}
+
+	if indexMetadata, ok := parseIndexMetadata(definition.UpQuery.Query(sqlf.PostgresBindVar)); ok {
+		if !payload.CreateIndexConcurrently {
+			return Definition{}, instructionalError{
+				class:       "malformed concurrent index creation",
+				description: "did not expect up migration to contain concurrent creation of an index",
+				instructions: strings.Join([]string{
+					"Add `createIndexConcurrently: true` to this migration's metadata.yaml file.",
+				}, " "),
+			}
+		}
+
+		definition.IsCreateIndexConcurrently = true
+		definition.IndexMetadata = indexMetadata
+	} else if payload.CreateIndexConcurrently {
+		return Definition{}, instructionalError{
+			class:       "malformed concurrent index creation",
+			description: "expected up migration to contain concurrent creation of an index",
+			instructions: strings.Join([]string{
+				"Remove `createIndexConcurrently: true` from this migration's metadata.yaml file.",
+			}, " "),
+		}
+	}
+
 	return definition, nil
 }
 
-// readQueryFromFile returns the parsed query and extracted metadata read from
-// the given file.
+// readQueryFromFile returns the query parsed from the given file.
 func readQueryFromFile(fs fs.FS, filepath string) (_ *sqlf.Query, _ error) {
 	file, err := fs.Open(filepath)
 	if err != nil {

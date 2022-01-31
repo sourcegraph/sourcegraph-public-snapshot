@@ -35,6 +35,36 @@ func TestReadDefinitions(t *testing.T) {
 		}
 	})
 
+	t.Run("concurrent", func(t *testing.T) {
+		fs, err := fs.Sub(testdata.Content, "concurrent")
+		if err != nil {
+			t.Fatalf("unexpected error fetching schema %q: %s", "concurrent", err)
+		}
+
+		definitions, err := ReadDefinitions(fs)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		expectedDefinitions := []Definition{
+			{ID: 10001, UpQuery: sqlf.Sprintf("10001 UP"), DownQuery: sqlf.Sprintf("10001 DOWN"), Parents: nil}, // first
+			{
+				ID:                        10002,
+				UpQuery:                   sqlf.Sprintf("-- Some docs here\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx ON tbl(col1, col2, col3);"),
+				DownQuery:                 sqlf.Sprintf("DROP INDEX IF EXISTS idx;"),
+				IsCreateIndexConcurrently: true,
+				IndexMetadata: &IndexMetadata{
+					TableName: "tbl",
+					IndexName: "idx",
+				},
+				Parents: []int{10001},
+			}, // second
+		}
+		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
+			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)
+		}
+	})
+
 	t.Run("missing metadata", func(t *testing.T) { testReadDefinitionsError(t, "missing-metadata", "malformed") })
 	t.Run("missing upgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-upgrade-query", "malformed") })
 	t.Run("missing downgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-downgrade-query", "malformed") })
@@ -42,9 +72,13 @@ func TestReadDefinitions(t *testing.T) {
 	t.Run("multiple roots", func(t *testing.T) { testReadDefinitionsError(t, "multiple-roots", "multiple roots") })
 	t.Run("unknown parent", func(t *testing.T) { testReadDefinitionsError(t, "unknown-parent", "unknown migration") })
 
-	t.Run("concurrent index creation down", func(t *testing.T) {
-		testReadDefinitionsError(t, "concurrent-down", "did not expect down migration to contain concurrent creation of an index")
-	})
+	errConcurrentUnexpected := "did not expect up migration to contain concurrent creation of an index"
+	errConcurrentExpected := "expected up migration to contain concurrent creation of an index"
+	errConcurrentDown := "did not expect down migration to contain concurrent creation of an index"
+
+	t.Run("unexpected concurrent index creation", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-unexpected", errConcurrentUnexpected) })
+	t.Run("missing concurrent index creation", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-expected", errConcurrentExpected) })
+	t.Run("concurrent index creation down", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-down", errConcurrentDown) })
 }
 
 func testReadDefinitionsError(t *testing.T, name, expectedError string) {
