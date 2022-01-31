@@ -290,12 +290,12 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 		return errors.Wrap(err, "GetActionJobMetadata")
 	}
 
-	w, err := s.GetSlackWebhookAction(ctx, *j.SlackWebhook)
+	w, err := s.GetWebhookAction(ctx, *j.Webhook)
 	if err != nil {
-		return errors.Wrap(err, "GetSlackWebhookAction")
+		return errors.Wrap(err, "GetWebhookAction")
 	}
 
-	utmSource := "code-monitor-slack-webhook"
+	utmSource := "code-monitor-webhook"
 	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
 	if err != nil {
 		return errors.Wrap(err, "GetSearchURL")
