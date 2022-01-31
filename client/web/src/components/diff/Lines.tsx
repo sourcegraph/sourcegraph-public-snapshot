@@ -102,7 +102,7 @@ export const Line: React.FunctionComponent<Line> = ({
             >
                 <div className={classNames('d-inline', styles.lineCode)}>
                     <div
-                        className="d-inline-block"
+                        className={classNames('d-inline-block', styles.lineForceWrap)}
                         dangerouslySetInnerHTML={{ __html: html }}
                         data-diff-marker={diffHunkTypeIndicators[kind]}
                     />
