@@ -45,10 +45,17 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 }
 
 func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) (err error) {
+	// First, rewrite operations into a smaller set of operations we'll handle below. This call converts
+	// upgrade and revert operations into targeted up and down operations.
+	operation, err = desugarOperation(schemaContext, operation)
+	if err != nil {
+		return err
+	}
+
 	// Determine if we are upgrading to the latest schema. There are some properties around
 	// contention which we want to accept on normal "upgrade to latest" behavior, but want to
 	// alert on when a user is downgrading or upgrading to a specific version.
-	upgradingToLatest := operation.Up && operation.TargetMigration == 0
+	upgradingToLatest := operation.Type == MigrationOperationTypeTargetedUp && operation.TargetVersion == 0
 
 	if !upgradingToLatest {
 		// If the database is dirty, then either the last attempted migration had failed,
@@ -98,7 +105,7 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 		return errDirtyDatabase
 	}
 
-	if operation.Up {
+	if operation.Type == MigrationOperationTypeTargetedUp {
 		return r.runSchemaUp(ctx, operation, schemaContext)
 	}
 	return r.runSchemaDown(ctx, operation, schemaContext)
@@ -107,7 +114,7 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 func (r *Runner) runSchemaUp(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) (err error) {
 	log15.Info("Upgrading schema", "schema", schemaContext.schema.Name)
 
-	definitions, err := schemaContext.schema.Definitions.UpTo(schemaContext.schemaVersion.version, operation.TargetMigration)
+	definitions, err := schemaContext.schema.Definitions.UpTo(schemaContext.schemaVersion.version, operation.TargetVersion)
 	if err != nil {
 		return err
 	}
@@ -118,11 +125,11 @@ func (r *Runner) runSchemaUp(ctx context.Context, operation MigrationOperation, 
 func (r *Runner) runSchemaDown(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) error {
 	log15.Info("Downgrading schema", "schema", schemaContext.schema.Name)
 
-	if operation.TargetMigration == 0 {
-		operation.TargetMigration = schemaContext.schemaVersion.version - 1
+	if operation.TargetVersion == 0 {
+		operation.TargetVersion = schemaContext.schemaVersion.version - 1
 	}
 
-	definitions, err := schemaContext.schema.Definitions.DownTo(schemaContext.schemaVersion.version, operation.TargetMigration)
+	definitions, err := schemaContext.schema.Definitions.DownTo(schemaContext.schemaVersion.version, operation.TargetVersion)
 	if err != nil {
 		return err
 	}
@@ -134,7 +141,7 @@ func (r *Runner) applyMigrations(ctx context.Context, operation MigrationOperati
 	log15.Info(
 		"Applying migrations",
 		"schema", schemaContext.schema.Name,
-		"up", operation.Up,
+		"type", operation.Type,
 		"count", len(definitions),
 	)
 
@@ -158,18 +165,18 @@ func (r *Runner) applyMigration(
 		"Applying migration",
 		"schema", schemaContext.schema.Name,
 		"migrationID", definition.ID,
-		"up", operation.Up,
+		"type", operation.Type,
 	)
 
 	direction := schemaContext.store.Up
-	if !operation.Up {
+	if operation.Type != MigrationOperationTypeTargetedUp {
 		direction = schemaContext.store.Down
 	}
 
 	applyMigration := func() error {
 		return direction(ctx, definition)
 	}
-	if err := schemaContext.store.WithMigrationLog(ctx, definition, operation.Up, applyMigration); err != nil {
+	if err := schemaContext.store.WithMigrationLog(ctx, definition, operation.Type == MigrationOperationTypeTargetedUp, applyMigration); err != nil {
 		return errors.Wrapf(err, "failed to apply migration %d", definition.ID)
 	}
 

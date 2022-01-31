@@ -9,8 +9,12 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 
 	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,14 +28,15 @@ type graphQLQuery struct {
 }
 
 type gqlSearchVars struct {
-	Query string `json:"query"`
+	Query     string      `json:"query"`
+	MonitorID *graphql.ID `json:"monitorID"`
 }
 
 type gqlSearchResponse struct {
 	Data struct {
-		Search struct {
+		CodeMonitorSearch struct {
 			Results searchResults `json:"results"`
-		} `json:"search"`
+		} `json:"codeMonitorSearch"`
 	} `json:"data"`
 	Errors []gqlerrors.FormattedError
 }
@@ -45,8 +50,9 @@ type searchResults struct {
 
 const gqlSearchQuery = `query CodeMonitorSearch(
 	$query: String!,
+	$monitorID: ID,
 ) {
-	search(query: $query) {
+	codeMonitorSearch(query: $query, codeMonitorID: $monitorID) {
 		results {
 			approximateResultCount
 			limitHit
@@ -114,11 +120,23 @@ const gqlSearchQuery = `query CodeMonitorSearch(
 	}
 }`
 
-func search(ctx context.Context, query string, userID int32, monitorID *int64) (*searchResults, error) {
+func search(ctx context.Context, query string, userID int32, monitorID *int64) (_ *searchResults, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "CodeMonitorSearch")
+	defer func() {
+		span.LogFields(log.Error(err))
+		span.Finish()
+	}()
+
+	vars := gqlSearchVars{Query: query}
+	if monitorID != nil {
+		id := relay.MarshalID("CodeMonitorID", *monitorID)
+		vars.MonitorID = &id
+	}
+
 	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(graphQLQuery{
+	err = json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     gqlSearchQuery,
-		Variables: gqlSearchVars{Query: query},
+		Variables: vars,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "Encode")
@@ -135,6 +153,14 @@ func search(ctx context.Context, query string, userID int32, monitorID *int64) (
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	if span != nil {
+		carrier := opentracing.HTTPHeadersCarrier(req.Header)
+		span.Tracer().Inject(
+			span.Context(),
+			opentracing.HTTPHeaders,
+			carrier,
+		)
+	}
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
@@ -152,7 +178,7 @@ func search(ctx context.Context, query string, userID int32, monitorID *int64) (
 		}
 		return nil, combined
 	}
-	return &res.Data.Search.Results, nil
+	return &res.Data.CodeMonitorSearch.Results, nil
 }
 
 func gqlURL(queryName string) (string, error) {

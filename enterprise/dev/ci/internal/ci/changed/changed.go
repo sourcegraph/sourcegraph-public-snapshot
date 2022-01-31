@@ -10,11 +10,10 @@ import (
 // Helper functions on Files should all be in the format `AffectsXYZ`.
 type Files []string
 
-// AffectsPathsPrefixedBy returns whether the chanegs affects files
-// whose path are prefixed with the given string.
-func (f Files) AffectsPathsPrefixedBy(prefix string) bool {
+// AffectsPathsPrefixedBy returns whether the chanegs affects CI scripts.
+func (f Files) AffectsCIScripts() bool {
 	for _, p := range f {
-		if strings.HasPrefix(p, prefix) {
+		if strings.HasPrefix(p, "enterprise/dev/ci/scripts") {
 			return true
 		}
 	}

@@ -22,6 +22,7 @@ func NewCodeIntelligenceConfigurationPolicyConnectionResolver(db database.DB, po
 		db:         db,
 		policies:   policies,
 		totalCount: totalCount,
+		errTracer:  errTracer,
 	}
 }
 

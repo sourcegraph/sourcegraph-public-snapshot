@@ -12,7 +12,7 @@ import { useQueryParameters } from '../../../hooks/use-query-parameters'
 
 import { CaptureGroupCreationPage } from './capture-group/CaptureGroupCreationPage'
 import { LangStatsInsightCreationPage } from './lang-stats/LangStatsInsightCreationPage'
-import { SearchInsightCreationPage } from './search-insight/SearchInsightCreationPage'
+import { SearchInsightCreationPage } from './search-insight'
 
 export enum InsightCreationPageType {
     LangStats = 'lang-stats',
