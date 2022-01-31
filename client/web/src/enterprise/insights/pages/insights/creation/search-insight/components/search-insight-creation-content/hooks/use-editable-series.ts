@@ -2,12 +2,12 @@ import { useState } from 'react'
 import * as uuid from 'uuid'
 
 import { useFieldAPI } from '../../../../../../../components/form/hooks/useField'
+import { DEFAULT_DATA_SERIES_COLOR } from '../../../constants'
 import { CreateInsightFormFields, EditableDataSeries } from '../../../types'
-import { DEFAULT_ACTIVE_COLOR } from '../../form-color-input/FormColorInput'
 
 import { remove, replace } from './helpers'
 
-export const EDIT_SERIES_PREFIX = 'runtime-series'
+const EDIT_SERIES_PREFIX = 'runtime-series'
 
 export const createDefaultEditSeries = (series?: Partial<EditableDataSeries>): EditableDataSeries => ({
     id: `${EDIT_SERIES_PREFIX}.${uuid.v4()}`,
@@ -20,7 +20,7 @@ const defaultEditSeries = {
     edit: false,
     name: '',
     query: '',
-    stroke: DEFAULT_ACTIVE_COLOR,
+    stroke: DEFAULT_DATA_SERIES_COLOR,
 }
 
 export interface UseEditableSeriesProps {
