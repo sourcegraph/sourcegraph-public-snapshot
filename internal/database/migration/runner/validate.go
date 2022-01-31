@@ -13,6 +13,9 @@ func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
 	})
 }
 
+// validateSchema returns a non-nil error value if the target database schema is not in the state
+// expected by the given schema context. This method will block if there are relevant migrations
+// in progress.
 func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext) error {
 	schemaName := schemaContext.schema.Name
 
