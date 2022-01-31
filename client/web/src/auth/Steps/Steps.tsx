@@ -6,7 +6,7 @@ import { StepsContext, useStepsContext, StepListContext, useStepListContext, Ste
 import { initialState, reducer } from './reducer'
 import stepsStyles from './Steps.module.scss'
 
-type Color = 'orange' | 'blue' | 'purple'
+type Color = 'orange' | 'blue' | 'purple' | 'green'
 
 export interface StepProps {
     borderColor: Color
@@ -22,16 +22,17 @@ interface StepListProps {
 export interface StepsProps {
     children: React.ReactElement<StepProps> | React.ReactElement<StepProps>[]
     initialStep: number
+    totalSteps: number
 }
 
-export const Steps: React.FunctionComponent<StepsProps> = ({ initialStep = 1, children }) => {
-    const [state, dispatch] = useReducer(reducer, initialState(initialStep))
+export const Steps: React.FunctionComponent<StepsProps> = ({ initialStep = 1, totalSteps, children }) => {
+    const [state, dispatch] = useReducer(reducer, initialState(initialStep, totalSteps))
 
     if (!children) {
         throw new Error('Steps must include at least one child')
     }
 
-    if (initialStep < 1 || initialStep > React.Children.count(children)) {
+    if (initialStep < 1 || initialStep > totalSteps) {
         throw new Error('Current step is out of limits')
     }
 
@@ -78,6 +79,10 @@ export const StepList: React.FunctionComponent<StepListProps> = ({ children, num
 
     const childrenArray = React.Children.toArray(children)
 
+    if (childrenArray.length !== state.totalSteps) {
+        throw new Error('StepList must include as many steps as defined by totalSteps')
+    }
+
     useEffect(() => {
         const steps = childrenArray.reduce((accumulator: StepsInterface, _current, index) => {
             const value = {
@@ -122,6 +127,10 @@ export const StepPanels: React.FunctionComponent = ({ children }) => {
     const childrenArray = React.Children.toArray(children)
     const indexArray = current - 1
 
+    if (childrenArray.length !== state.totalSteps) {
+        throw new Error('StepPanels must include as many steps as defined by totalSteps')
+    }
+
     if (!children) {
         throw new Error('StepPanels must include at least one child')
     }
@@ -132,7 +141,7 @@ export const StepPanels: React.FunctionComponent = ({ children }) => {
         )
     }
 
-    return <div className="mt-4 pb-3">{childrenArray[indexArray]}</div>
+    return <div className="mt-4 pb-3 w-100">{childrenArray[indexArray]}</div>
 }
 
 export const StepPanel: React.FunctionComponent = ({ children }) => <>{children}</>

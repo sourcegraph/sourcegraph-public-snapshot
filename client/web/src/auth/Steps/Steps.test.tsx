@@ -8,7 +8,11 @@ describe('Steps', () => {
     let queries: RenderResult
 
     const renderWithProps = (props: StepsProps): RenderResult =>
-        render(<Steps initialStep={props.initialStep}>{props.children}</Steps>)
+        render(
+            <Steps initialStep={props.initialStep} totalSteps={props.totalSteps}>
+                {props.children}
+            </Steps>
+        )
     const onChangeMock = sinon.spy()
 
     beforeEach(() => {
@@ -22,6 +26,7 @@ describe('Steps', () => {
             expect(() =>
                 renderWithProps({
                     initialStep: -1,
+                    totalSteps: 3,
                     children: [
                         <StepList key={1} numeric={true}>
                             <Step borderColor="blue">Panel 1 title</Step>
@@ -38,6 +43,7 @@ describe('Steps', () => {
             expect(() =>
                 renderWithProps({
                     initialStep: 10,
+                    totalSteps: 3,
                     children: [
                         <StepList key={1} numeric={true}>
                             <Step borderColor="blue">Panel 1 title</Step>
@@ -54,6 +60,7 @@ describe('Steps', () => {
             expect(() =>
                 renderWithProps({
                     initialStep: 2,
+                    totalSteps: 3,
                     children: [
                         <StepList key={1} numeric={true}>
                             <Step borderColor="blue">Panel 1 title</Step>
@@ -70,6 +77,7 @@ describe('Steps', () => {
             expect(() =>
                 renderWithProps({
                     initialStep: 1,
+                    totalSteps: 3,
                     children: [
                         <StepList key={1} numeric={true}>
                             <Step borderColor="blue">Panel 1 title</Step>

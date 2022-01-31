@@ -25,7 +25,7 @@ export const Stepper: Story = () => (
     <BrandedStory styles={webStyles}>
         {() => (
             <Container>
-                <Steps initialStep={2}>
+                <Steps initialStep={2} totalSteps={3}>
                     <StepList numeric={true}>
                         <Step borderColor="blue">Panel 1 title</Step>
                         <Step borderColor="orange">Panel 2 Title</Step>
