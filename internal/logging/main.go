@@ -102,6 +102,16 @@ func LogEntryLevelString(l log15.Lvl) string {
 	}
 }
 
+// From iTerm section "Anchor (OSC 8)"
+// https://iterm2.com/documentation-escape-codes.html
+func itermLink(url, text string) string {
+	return fmt.Sprintf("\x1B]8;;%s\x07%s\x1B]8;;\x07", url, text)
+}
+
+func vscodeUrl(file string) string {
+	return fmt.Sprintf("vscode://file/%s", file)
+}
+
 // Init initializes log15's root logger based on Sourcegraph-wide logging configuration
 // variables. See https://docs.sourcegraph.com/admin/observability#logs
 func Init(options ...Option) {
