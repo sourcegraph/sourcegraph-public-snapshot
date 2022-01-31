@@ -39,12 +39,13 @@ export const FETCH_REFERENCES_QUERY = gql`
         $line: Int!
         $character: Int!
         $after: String
+        $filter: String
     ) {
         repository(name: $repository) {
             commit(rev: $commit) {
                 blob(path: $path) {
                     lsif {
-                        references(line: $line, character: $character, after: $after) {
+                        references(line: $line, character: $character, after: $after, filter: $filter) {
                             nodes {
                                 ...LocationFields
                             }
@@ -52,7 +53,7 @@ export const FETCH_REFERENCES_QUERY = gql`
                                 endCursor
                             }
                         }
-                        definitions(line: $line, character: $character) {
+                        definitions(line: $line, character: $character, filter: $filter) {
                             nodes {
                                 ...LocationFields
                             }

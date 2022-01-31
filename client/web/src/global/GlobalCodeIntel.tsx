@@ -8,7 +8,7 @@ import { Collapse } from 'reactstrap'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import { useQuery } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import {
@@ -20,7 +20,18 @@ import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
-import { Tab, TabList, TabPanel, TabPanels, Tabs, Link, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
+import {
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    Link,
+    LoadingSpinner,
+    useLocalStorage,
+    CardHeader,
+    useDebounce,
+} from '@sourcegraph/wildcard'
 
 import {
     CoolCodeIntelHighlightedBlobResult,
@@ -162,8 +173,15 @@ export const ReferencesList: React.FunctionComponent<
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
 
+    const [filter, setFilter] = useState<string | undefined>(undefined)
+
+    const debouncedFilter = useDebounce(filter, 250)
+    console.log(debouncedFilter)
+
     useEffect(() => {
         setActiveLocation(undefined)
+        console.log('set filter to undefined')
+        setFilter(undefined)
     }, [props.hoveredToken])
 
     const history = useMemo(() => createMemoryHistory(), [])
@@ -179,7 +197,22 @@ export const ReferencesList: React.FunctionComponent<
     return (
         <div className={classNames('align-items-stretch', styles.referencesList)}>
             <div className={classNames('px-0', styles.sideReferences)}>
-                <SideReferences {...props} activeLocation={activeLocation} setActiveLocation={onReferenceClick} />
+                <input
+                    className="form-control w-90"
+                    type="text"
+                    placeholder="Filter by filename..."
+                    value={filter === undefined ? '' : filter}
+                    onChange={event => {
+                        setFilter(event.target.value)
+                    }}
+                />
+                <SideReferences
+                    {...props}
+                    activeLocation={activeLocation}
+                    setActiveLocation={onReferenceClick}
+                    filter={debouncedFilter}
+                    setFilter={setFilter}
+                />
             </div>
             {activeLocation !== undefined && (
                 <div className={classNames('px-0 border-left', styles.sideBlob)}>
@@ -200,6 +233,8 @@ export const SideReferences: React.FunctionComponent<
         hoveredToken: CoolHoveredToken
         setActiveLocation: (location: Location | undefined) => void
         activeLocation: Location | undefined
+        filter: string | undefined
+        setFilter: (filter: string | undefined) => void
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
 > = props => {
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
@@ -213,6 +248,7 @@ export const SideReferences: React.FunctionComponent<
                 line: props.hoveredToken.line - 1,
                 character: props.hoveredToken.character - 1,
                 after: null,
+                filter: props.filter || null,
             },
             // Cache this data but always re-request it in the background when we revisit
             // this page to pick up newer changes.
@@ -263,24 +299,30 @@ export const SideReferences: React.FunctionComponent<
                     dangerousInnerHTML={renderMarkdown(hover.markdown.text)}
                 />
             )}
-            <h4 className="card-header py-1">Definitions</h4>
+            <CardHeader>
+                <h4 className="py-1">Definitions</h4>
+            </CardHeader>
             {definitions.length > 0 ? (
                 <LocationsList
                     locations={definitions}
                     activeLocation={props.activeLocation}
                     setActiveLocation={props.setActiveLocation}
+                    filter={props.filter}
                 />
             ) : (
                 <p className="text-muted pl-2">
                     <i>No definitions found</i>
                 </p>
             )}
-            <h4 className="card-header py-1">References</h4>
+            <CardHeader>
+                <h4 className="py-1">References</h4>
+            </CardHeader>
             {references.length > 0 ? (
                 <LocationsList
                     locations={references}
                     activeLocation={props.activeLocation}
                     setActiveLocation={props.setActiveLocation}
+                    filter={props.filter}
                 />
             ) : (
                 <p className="text-muted pl-2">
@@ -397,7 +439,8 @@ const LocationsList: React.FunctionComponent<{
     locations: Location[]
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
-}> = ({ locations, activeLocation, setActiveLocation }) => {
+    filter: string | undefined
+}> = ({ locations, activeLocation, setActiveLocation, filter }) => {
     const byFile: Record<string, Location[]> = {}
     for (const location of locations) {
         if (byFile[location.resource.path] === undefined) {
@@ -443,6 +486,7 @@ const LocationsList: React.FunctionComponent<{
                     activeLocation={activeLocation}
                     setActiveLocation={setActiveLocation}
                     getLineContent={getLineContent}
+                    filter={filter}
                 />
             ))}
         </>
@@ -454,7 +498,8 @@ const RepoReferenceGroup: React.FunctionComponent<{
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
     getLineContent: (location: Location) => string
-}> = ({ repoReferenceGroup, setActiveLocation, getLineContent, activeLocation }) => {
+    filter: string | undefined
+}> = ({ repoReferenceGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
 
@@ -485,6 +530,7 @@ const RepoReferenceGroup: React.FunctionComponent<{
                         activeLocation={activeLocation}
                         setActiveLocation={setActiveLocation}
                         getLineContent={getLineContent}
+                        filter={filter}
                     />
                 ))}
             </Collapse>
@@ -497,11 +543,15 @@ const ReferenceGroup: React.FunctionComponent<{
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
     getLineContent: (reference: Location) => string
-}> = ({ group, setActiveLocation: setActiveLocation, getLineContent, activeLocation }) => {
-    const [fileBase, fileName] = splitPath(group.path)
-
+    filter: string | undefined
+}> = ({ group, setActiveLocation: setActiveLocation, getLineContent, activeLocation, filter }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(!isOpen), [isOpen])
+
+    let highlighted = [group.path]
+    if (filter !== undefined) {
+        highlighted = group.path.split(filter)
+    }
 
     return (
         <div className="ml-4">
@@ -518,8 +568,16 @@ const ReferenceGroup: React.FunctionComponent<{
                 )}
 
                 <span className={styles.coolCodeIntelReferenceFilename}>
-                    {fileBase ? `${fileBase}/` : null}
-                    {fileName} ({group.locations.length} references)
+                    {highlighted.length === 2 ? (
+                        <span>
+                            {highlighted[0]}
+                            <mark>{filter}</mark>
+                            {highlighted[1]}
+                        </span>
+                    ) : (
+                        group.path
+                    )}{' '}
+                    ({group.locations.length} references)
                 </span>
             </button>
 
