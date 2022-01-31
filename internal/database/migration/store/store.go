@@ -268,16 +268,6 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 	return s.Exec(ctx, definition.DownQuery)
 }
 
-// WithMigrationLog runs the given function while writing its progress to a migration log associated
-// with the given definition. All users are assumed to run either `s.Up` or `s.Down` as part of the
-// given function, among any other behaviors that are necessary to perform in the _critical section_.
-func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) (err error) {
-	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.runMigrationQuery(ctx, definition.ID, up, f)
-}
-
 // IndexStatus returns an object describing the current validity status and creation progress of the
 // index with the given name. If the index does not exist, a false-valued flag is returned.
 func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ storetypes.IndexStatus, _ bool, err error) {
@@ -288,7 +278,7 @@ func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_
 }
 
 const indexStatusQuery = `
--- source: internal/database/migration/store/store.go:IndeStatus
+-- source: internal/database/migration/store/store.go:IndexStatus
 SELECT
 	pi.indisvalid,
 	pi.indisready,
@@ -307,6 +297,16 @@ WHERE
 	ai.relname = %s AND
 	ai.indexrelname = %s
 `
+
+// WithMigrationLog runs the given function while writing its progress to a migration log associated
+// with the given definition. All users are assumed to run either `s.Up` or `s.Down` as part of the
+// given function, among any other behaviors that are necessary to perform in the _critical section_.
+func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) (err error) {
+	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.runMigrationQuery(ctx, definition.ID, up, f)
+}
 
 func (s *Store) runMigrationQuery(ctx context.Context, definitionVersion int, up bool, f func() error) (err error) {
 	logID, err := s.createMigrationLog(ctx, definitionVersion, up)
