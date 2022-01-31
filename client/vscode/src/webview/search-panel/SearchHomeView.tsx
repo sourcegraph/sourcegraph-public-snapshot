@@ -1,12 +1,14 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import {
     SearchPatternType,
     fetchAutoDefinedSearchContexts,
     getUserSearchContextNamespaces,
     fetchSearchContexts,
+    QueryState,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -37,15 +39,9 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
     const [caseSensitive, setCaseSensitivity] = useState(false)
     const [patternType, setPatternType] = useState(SearchPatternType.literal)
 
-    const [userQueryState, setUserQueryState] = useState({
+    const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
     })
-
-    useEffect(() => {
-        console.log('initial mount')
-    }, [])
-
-    // TODO: we need an API for updating search query state from the sidebar.
 
     const onSubmit = useCallback(() => {
         extensionCoreAPI
@@ -55,9 +51,30 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
                 version: LATEST_VERSION,
                 trace: undefined,
             })
-            .then(() => {})
-            .catch(() => {})
+            .catch(error => {
+                // TODO surface error to users? Errors will typically be caught and
+                // surfaced throught streaming search reuls.
+                console.error(error)
+            })
+
+        extensionCoreAPI
+            .setSidebarQueryState({
+                queryState: { query: userQueryState.query },
+                searchCaseSensitivity: caseSensitive,
+                searchPatternType: patternType,
+            })
+            .catch(error => {
+                // TODO surface error to users
+                console.error('Error updating sidebar query state from panel', error)
+            })
     }, [userQueryState.query, caseSensitive, patternType, extensionCoreAPI])
+
+    // Update local query state on sidebar query state updates.
+    useDeepCompareEffectNoCheck(() => {
+        if (context.searchSidebarQueryState.proposedQueryState?.queryState) {
+            setUserQueryState(context.searchSidebarQueryState.proposedQueryState?.queryState)
+        }
+    }, [context.searchSidebarQueryState.proposedQueryState?.queryState])
 
     const globbing = useMemo(() => globbingEnabledFromSettings(settingsCascade), [settingsCascade])
 
@@ -124,6 +141,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
                         platformContext={platformContext}
                         className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                         containerClassName={styles.searchBoxContainer}
+                        autoFocus={true}
                     />
                 </form>
 

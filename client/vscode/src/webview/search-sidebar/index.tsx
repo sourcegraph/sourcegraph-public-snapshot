@@ -87,10 +87,15 @@ const Main: React.FC = () => {
         )
     }
 
-    return <SearchSidebarView {...webviewPageProps} />
-    // return <p>state: {state.status}</p>
+    // <SearchSidebarView> is wrapped w/ React.memo so pass only necessary props.
+    return (
+        <SearchSidebarView
+            platformContext={platformContext}
+            extensionCoreAPI={extensionCoreAPI}
+            settingsCascade={settingsCascade}
+        />
+    )
 }
-console.log('executing sidebar module')
 
 render(
     <ShortcutProvider>

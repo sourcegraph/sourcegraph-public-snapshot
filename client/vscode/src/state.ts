@@ -79,27 +79,30 @@ export interface ContextInvalidatedState {
     status: 'context-invalidated'
     context: CommonContext
 }
+
+/**
+ * Subset of SearchQueryState that's necessary and clone-able (`postMessage`) for the VS Code extension.
+ */
+export type VSCEQueryState = Pick<SearchQueryState, 'queryState' | 'searchCaseSensitivity' | 'searchPatternType'> | null
+
 interface CommonContext {
     authenticatedUser: AuthenticatedUser | null
 
-    // The search sidebar only needs submitted search query state.
-    // The search panel maintains its own local query state.
-    submittedSearchQueryState: Pick<
-        SearchQueryState,
-        'queryState' | 'searchCaseSensitivity' | 'searchPatternType'
-    > | null
+    submittedSearchQueryState: VSCEQueryState
 
-    // searchSidebarQueryState (this should also duplicate previous
-    // submitted search query state so we know that it's from
-    // that "search session")
+    searchSidebarQueryState: {
+        proposedQueryState: VSCEQueryState
+        /**
+         * The current query state as known to the sidebar.
+         * Used to "anchor" query state updates to the correct state
+         * in case the panel's search query state has changed since
+         * the sidebar event.
+         *
+         * Debt: we don't use this yet.
+         */
+        currentQueryState: VSCEQueryState
+    }
 
-    // The sidebar will either update query state OR actually perform a search.
-
-    // searchSidebarQueryState: {
-    //     proposedQueryState: {}
-    // }
-
-    // In common context and not just `search-results` to retain during `idle` or `remote-browsing` states.
     searchResults: AggregateStreamingSearchResults | null
 
     selectedSearchContextSpec: string | undefined
@@ -113,6 +116,10 @@ function createInitialState({ localStorageService }: { localStorageService: Loca
             submittedSearchQueryState: null,
             searchResults: null,
             selectedSearchContextSpec: localStorageService.getValue(SELECTED_SEARCH_CONTEXT_SPEC_KEY) || undefined,
+            searchSidebarQueryState: {
+                proposedQueryState: null,
+                currentQueryState: null,
+            },
         },
     }
 }
@@ -129,6 +136,7 @@ type SearchEvent =
       }
     | { type: 'received_search_results'; searchResults: AggregateStreamingSearchResults }
     | { type: 'set_selected_search_context_spec'; spec: string } // TODO see how this handles instance change
+    | { type: 'sidebar_query_update'; proposedQueryState: VSCEQueryState; currentQueryState: VSCEQueryState }
 
 type TabsEvent =
     | { type: 'search_panel_unfocused' }
@@ -168,6 +176,20 @@ export function createVSCEStateMachine({
                 context: {
                     ...state.context,
                     selectedSearchContextSpec: event.spec,
+                },
+            } as VSCEState
+            // Type assertion is safe since existing context should be assignable to the existing state.
+            // debt: refactor switch statement to elegantly handle this event safely.
+        }
+        if (event.type === 'sidebar_query_update') {
+            return {
+                ...state,
+                context: {
+                    ...state.context,
+                    searchSidebarQueryState: {
+                        proposedQueryState: event.proposedQueryState,
+                        currentQueryState: event.currentQueryState,
+                    },
                 },
             } as VSCEState
             // Type assertion is safe since existing context should be assignable to the existing state.
