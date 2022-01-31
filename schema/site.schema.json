@@ -1375,7 +1375,7 @@
           "pattern": "^[^<@]"
         },
         "allowSignup": {
-          "description": "Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.",
+          "description": "Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.",
           "type": "boolean",
           "!go": { "pointer": true }
         }
