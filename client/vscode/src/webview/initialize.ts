@@ -106,6 +106,7 @@ export function initializeSearchSidebarWebview({
 } {
     webviewView.webview.options = {
         enableScripts: true,
+        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
     }
 
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
@@ -142,7 +143,9 @@ export function initializeSearchSidebarWebview({
         </style>
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-webview: vscode-resource: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
         webviewView.webview.cspSource
-    } vscode-resource: http: https: data:; connect-src 'self' http: https:; font-src ${webviewView.webview.cspSource};">
+    } vscode-resource: http: 'unsafe-inline' https: data:; connect-src 'self' http: https:; font-src ${
+        webviewView.webview.cspSource
+    };">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
