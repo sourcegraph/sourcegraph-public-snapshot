@@ -19,6 +19,15 @@ export STEP_START
 # ASDF setup
 # ----------
 
+# TODO remove this when making job the default queue
+# Skip on normal queues because standard agents do not have fresh asdf installs
+if [ "$BUILDKITE_AGENT_META_DATA_QUEUE" = "standard,default" ]; then
+    echo "install asdf plugins"
+    asdf install
+    echo "done installing"
+    exit 0
+fi
+
 # set the buildkite cache access keys
 AWS_CONFIG_DIR_PATH="/buildkite/.aws"
 mkdir -p "$AWS_CONFIG_DIR_PATH"
@@ -28,12 +37,6 @@ AWS_SHARED_CREDENTIALS_FILE="/buildkite/.aws/credentials"
 export AWS_SHARED_CREDENTIALS_FILE
 aws configure set aws_access_key_id "$BUILDKITE_HMAC_KEY" --profile buildkite
 aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
-
-# TODO remove this when making job the default queue
-# Skip on normal queues because standard agents do not have fresh asdf installs
-if [ "$BUILDKITE_AGENT_META_DATA_QUEUE" = "standard,default" ]; then
-    exit 0
-fi
 
 asdf_checksum=$(sha1sum .tool-versions | awk '{print $1}')
 cache_file="cache-asdf-$asdf_checksum.tar.gz"
