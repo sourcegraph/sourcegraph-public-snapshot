@@ -15,6 +15,7 @@ import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
 import { createSearchSidebarAPI } from './api'
 import { AuthSidebarView } from './AuthSidebarView'
 import { ContextInvalidatedSidebarView } from './ContextInvalidatedSidebarView'
+import { SearchSidebarView } from './SearchSidebarView'
 
 // TODO: load extension host
 
@@ -82,23 +83,12 @@ const Main: React.FC = () => {
         return <AuthSidebarView {...webviewPageProps} />
     }
 
-    if (state.status === 'remote-browsing') {
-        // TODO files sidebar
-    }
-
-    if (state.status === 'idle') {
-        // Search sidebar?
-    }
-
-    return (
-        <div>
-            <h1>state: {state?.status}</h1>
-        </div>
-    )
+    return <SearchSidebarView {...webviewPageProps} />
+    // return <p>state: {state.status}</p>
 }
+console.log('executing sidebar module')
 
 render(
-    // TODO zustand context (search query state)
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <Main />

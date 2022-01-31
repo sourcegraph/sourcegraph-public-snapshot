@@ -28,6 +28,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { ModalVideo as DefaultModalVideo } from '../documentation/ModalVideo'
+
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import styles from './StreamingSearchResultsList.module.scss'
@@ -59,6 +61,7 @@ export interface StreamingSearchResultsListProps
      * Classname to be applied to the container of a search result.
      */
     resultClassName?: string
+    ModalVideo?: typeof DefaultModalVideo
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -78,6 +81,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     platformContext,
     executedQuery,
     resultClassName,
+    ModalVideo,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -184,6 +188,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                                 telemetryService={telemetryService}
                                 showSearchContext={showSearchContext}
                                 assetsRoot={assetsRoot}
+                                ModalVideo={ModalVideo}
                             />
                         )}
                     </>

@@ -1,0 +1,14 @@
+.sidebar-container {
+    padding: 0.125rem 0 1.5rem 0;
+
+    & [data-reach-tabs] {
+        // Override our default background color.
+        background: none;
+    }
+
+    --brand-secondary: var(--vscode-button-hoverBackground);
+
+    .btn-outline-secondary:hover {
+        background: transparent !important;
+    }
+}

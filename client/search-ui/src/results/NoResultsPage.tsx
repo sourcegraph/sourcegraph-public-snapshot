@@ -13,7 +13,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link } from '@sourcegraph/wildcard'
 
-import { ModalVideo } from '../documentation/ModalVideo'
+import { ModalVideo as DefaultModalVideo } from '../documentation/ModalVideo'
 import searchBoxStyle from '../input/SearchBox.module.scss'
 import searchContextDropDownStyles from '../input/SearchContextDropdown.module.scss'
 
@@ -168,6 +168,7 @@ interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchCont
     showSearchContext: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
+    ModalVideo?: typeof DefaultModalVideo
 }
 
 export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
@@ -177,6 +178,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
     isSourcegraphDotCom,
     showSearchContext,
     assetsRoot,
+    ModalVideo = DefaultModalVideo,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 

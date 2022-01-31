@@ -21,6 +21,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
+import { ModalVideo } from './alias/ModalVideo'
 import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchPageCta } from './components/SearchCta'
@@ -269,6 +270,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     // TODO "no results" video thumbnail assets
                     // In build, copy ui/assets/img folder to dist/
                     assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
+                    ModalVideo={ModalVideo}
                 />
             </div>
         </div>
