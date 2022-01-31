@@ -167,7 +167,7 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 }
 
 // readQueryFromFile returns the query parsed from the given file.
-func readQueryFromFile(fs fs.FS, filepath string) (_ *sqlf.Query, _ error) {
+func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
 	file, err := fs.Open(filepath)
 	if err != nil {
 		return nil, err
@@ -236,12 +236,6 @@ func reorderDefinitions(migrationDefinitions []Definition) error {
 
 	return nil
 }
-
-var (
-	ErrNoRoots       = fmt.Errorf("no roots")
-	ErrMultipleRoots = fmt.Errorf("multiple roots")
-	ErrCycle         = fmt.Errorf("cycle")
-)
 
 // findDefinitionOrder returns an order of migration definition identifiers such that
 // migrations occur only after their dependencies (parents). This assumes that the set
