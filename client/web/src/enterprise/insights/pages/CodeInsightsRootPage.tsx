@@ -11,6 +11,7 @@ import { CodeInsightsIcon } from '../../../insights/Icons'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
 
 import { DashboardPageContent } from './dashboards/dashboard-page/DashboardsPage'
+import { CodeInsightsGettingStartedPage } from './getting-started/CodeInsightsGettingStartedPage'
 
 export enum CodeInsightsRootPageURLPaths {
     CodeInsights = '/dashboards/:dashboardId?',
@@ -89,7 +90,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                 <DashboardPageContent telemetryService={telemetryService} dashboardID={params?.dashboardId} />
             )}
 
-            {activeView === CodeInsightsRootPageTab.GettingStarted && <h1>Hello from getting started section</h1>}
+            {activeView === CodeInsightsRootPageTab.GettingStarted && <CodeInsightsGettingStartedPage />}
         </Page>
     )
 }

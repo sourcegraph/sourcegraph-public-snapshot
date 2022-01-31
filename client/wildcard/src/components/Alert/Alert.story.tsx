@@ -28,6 +28,9 @@ const config: Meta = {
     ],
     parameters: {
         component: Alert,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: [
             {
                 type: 'figma',
