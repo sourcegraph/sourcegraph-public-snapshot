@@ -81,13 +81,15 @@ export const Button = React.forwardRef(
         // events. This restores the tooltip behavior for disabled buttons by rendering an
         // invisible `div` with the tooltip on top of the button, in the case that it is
         // disabled. See https://stackoverflow.com/a/3100395 for more.
-        return disabled && tooltip ? (
-            <div className={styles.container}>
-                <div className={styles.disabledTooltip} data-tooltip={tooltip} />
-                {buttonComponent}
-            </div>
-        ) : (
-            buttonComponent
-        )
+        if (disabled && tooltip) {
+            return (
+                <div className={styles.container}>
+                    <div className={styles.disabledTooltip} data-tooltip={tooltip} />
+                    {buttonComponent}
+                </div>
+            )
+        }
+
+        return buttonComponent
     }
 ) as ForwardReferenceComponent<'button', ButtonProps>
