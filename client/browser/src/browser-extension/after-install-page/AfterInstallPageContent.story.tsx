@@ -13,7 +13,7 @@ const config: Meta = {
         chromatic: {
             enableDarkMode: true,
         },
-    }
+    },
 }
 
 export default config
