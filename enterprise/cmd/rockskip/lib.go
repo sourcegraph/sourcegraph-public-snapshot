@@ -291,7 +291,7 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 		}
 
 		TASKLOG.Start("ArchiveEach")
-		git.ArchiveEach(entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
+		err = git.ArchiveEach(entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
 			TASKLOG.Start("parse")
 			symbols, err := parse(addedPath, contents)
 			TASKLOG.Start("idle")
@@ -316,6 +316,9 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 			return nil
 		})
 		TASKLOG.Start("idle")
+		if err != nil {
+			return errors.Wrap(err, "while looping ArchiveEach")
+		}
 
 		TASKLOG.Start("DeleteRedundant")
 		err = DeleteRedundant(tx, entry.Commit)
