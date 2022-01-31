@@ -446,10 +446,12 @@ function enhanceSearchPage(sourcegraphURL: string): void {
     if (urlSearchQuery) {
         // search results page
         const form = document.querySelector('.application-main .js-site-search-form')
+        const input = form?.querySelector<HTMLInputElement>('input.form-control')
         const submitButton = [
             ...document.querySelectorAll<HTMLButtonElement>(".application-main button[type='submit']"),
         ].find(button => button.form === form)
-        if (!submitButton) {
+
+        if (!input || !submitButton) {
             return
         }
 
@@ -457,27 +459,19 @@ function enhanceSearchPage(sourcegraphURL: string): void {
         buttonContainer.classList.add('ml-2', 'd-none', 'd-md-block')
         submitButton?.after(buttonContainer)
 
-        const inputElement = document.querySelector<HTMLInputElement>('.header-search-input')
-        if (!inputElement) {
-            return
-        }
-
-        getSearchQuery = () => inputElement.value.split(' ').map(substring => substring.trim())
+        getSearchQuery = () => input.value.split(' ').map(substring => substring.trim())
     } else {
         // simple/advanced search page
         const searchInputContainer = document.querySelector('.search-form-fluid')
-        if (!searchInputContainer) {
+        const inputElement = document.querySelector<HTMLInputElement>('#search_form input')
+
+        if (!searchInputContainer || !inputElement) {
             return
         }
 
         buttonContainer = document.createElement('div')
         buttonContainer.classList.add('ml-0', 'ml-md-2', 'mt-2', 'mt-md-0')
         searchInputContainer?.append(buttonContainer)
-
-        const inputElement = document.querySelector<HTMLInputElement>('#search_form input')
-        if (!inputElement) {
-            return
-        }
 
         getSearchQuery = () => inputElement.value.split(' ').map(substring => substring.trim())
     }
