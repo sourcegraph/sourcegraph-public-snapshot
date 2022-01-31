@@ -434,7 +434,7 @@ export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost
 function enhanceSearchPage(sourcegraphURL: string): void {
     const githubURL = new URL(window.location.href)
 
-    if (!githubURL.pathname.startsWith('/search')) {
+    if (!githubURL.pathname.startsWith('/search') && !githubURL.pathname.endsWith('/search')) {
         return
     }
 
@@ -456,7 +456,7 @@ function enhanceSearchPage(sourcegraphURL: string): void {
         }
 
         buttonContainer = document.createElement('div')
-        buttonContainer.classList.add('ml-2', 'd-none', 'd-md-block')
+        buttonContainer.classList.add('ml-2', 'd-none', 'd-md-block') // classes copied from sibling - Github submit button
         submitButton?.after(buttonContainer)
 
         getSearchQuery = () => input.value.split(' ').map(substring => substring.trim())
@@ -470,7 +470,7 @@ function enhanceSearchPage(sourcegraphURL: string): void {
         }
 
         buttonContainer = document.createElement('div')
-        buttonContainer.classList.add('ml-0', 'ml-md-2', 'mt-2', 'mt-md-0')
+        buttonContainer.classList.add('ml-0', 'ml-md-2', 'mt-2', 'mt-md-0') // classes copied from sibling - Github submit button
         searchInputContainer?.append(buttonContainer)
 
         getSearchQuery = () => inputElement.value.split(' ').map(substring => substring.trim())
