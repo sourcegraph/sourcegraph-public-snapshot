@@ -221,7 +221,6 @@ const SelectBox: React.FunctionComponent<{
         <InputTooltip
             id={`select-changeset-${isPublishableResult.changesetSpecID}`}
             type="checkbox"
-            className="btn"
             checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
             onChange={toggleSelected}
             tooltip="Click to select changeset for bulk-modifying the publication state"
@@ -230,7 +229,6 @@ const SelectBox: React.FunctionComponent<{
         <InputTooltip
             id="select-changeset-hidden"
             type="checkbox"
-            className="btn"
             checked={false}
             disabled={true}
             tooltip={isPublishableResult.reason}

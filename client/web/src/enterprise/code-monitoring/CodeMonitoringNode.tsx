@@ -67,6 +67,8 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             return 'Sends email notification'
                         case 'MonitorSlackWebhook':
                             return 'Sends Slack notification'
+                        case 'MonitorWebhook':
+                            return 'Calls webhook'
                         default:
                             return ''
                     }

@@ -27,7 +27,7 @@
         visibility: hidden;
 
         /* We want consistent anchor size links, regardless of heading size. */
-        /* stylelint-disable-next-line declaration-property-unit-whitelist */
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         font-size: 14px;
     }
 }
@@ -44,6 +44,6 @@
     height: 0.75rem;
     background: var(--border-color-2);
 
-    /* stylelint-disable-next-line declaration-property-unit-whitelist */
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     width: 1px;
 }

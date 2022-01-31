@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage, Link } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
@@ -9,6 +9,7 @@ import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/h
 import { CaptureGroupInsight } from '../../../../core/types'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
+import { useCaptureInsightInitialValues } from './hooks/use-capture-insight-initial-values'
 import { CaptureGroupFormFields } from './types'
 import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-sanitizer'
 
@@ -21,10 +22,7 @@ interface CaptureGroupCreationPageProps extends TelemetryProps {
 export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreationPageProps> = props => {
     const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
-    const [initialFormValues, setInitialFormValues] = useLocalStorage<CaptureGroupFormFields | undefined>(
-        'insights.capture-group-creation-ui',
-        undefined
-    )
+    const [initialFormValues, setInitialFormValues] = useCaptureInsightInitialValues()
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCaptureGroupCreationPage')

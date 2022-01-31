@@ -4,6 +4,8 @@ import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import styles from './Toggles.module.scss'
 
 export interface ToggleProps {
@@ -72,11 +74,11 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
 
     return (
         // Click events here are defined in useEffect
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-        <div
+        <Button
+            as="div"
             ref={toggleCheckbox}
             className={classNames(
-                'btn btn-icon',
+                'btn-icon',
                 styles.toggle,
                 props.className,
                 !!disabledRule && styles.disabled,
@@ -91,6 +93,6 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
             {...interactiveProps}
         >
             <Icon className="icon-inline" />
-        </div>
+        </Button>
     )
 }

@@ -9,8 +9,9 @@ import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
+import { DEFAULT_DATA_SERIES_COLOR } from '../../constants'
 import { EditableDataSeries } from '../../types'
-import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
+import { FormColorInput } from '../form-color-input/FormColorInput'
 
 import { getQueryPatternTypeFilter } from './get-pattern-type-filter'
 
@@ -78,7 +79,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         initialValues: {
             seriesName: name ?? '',
             seriesQuery: query ?? '',
-            seriesColor: color ?? DEFAULT_ACTIVE_COLOR,
+            seriesColor: color ?? DEFAULT_DATA_SERIES_COLOR,
         },
         onSubmit: values =>
             onSubmit({

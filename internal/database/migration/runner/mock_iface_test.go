@@ -35,6 +35,9 @@ type MockStore struct {
 	// VersionFunc is an instance of a mock function object controlling the
 	// behavior of the method Version.
 	VersionFunc *StoreVersionFunc
+	// WithMigrationLogFunc is an instance of a mock function object
+	// controlling the behavior of the method WithMigrationLog.
+	WithMigrationLogFunc *StoreWithMigrationLogFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -74,6 +77,11 @@ func NewMockStore() *MockStore {
 		VersionFunc: &StoreVersionFunc{
 			defaultHook: func(context.Context) (int, bool, bool, error) {
 				return 0, false, false, nil
+			},
+		},
+		WithMigrationLogFunc: &StoreWithMigrationLogFunc{
+			defaultHook: func(context.Context, definition.Definition, bool, func() error) error {
+				return nil
 			},
 		},
 	}
@@ -118,6 +126,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.Version")
 			},
 		},
+		WithMigrationLogFunc: &StoreWithMigrationLogFunc{
+			defaultHook: func(context.Context, definition.Definition, bool, func() error) error {
+				panic("unexpected invocation of MockStore.WithMigrationLog")
+			},
+		},
 	}
 }
 
@@ -145,6 +158,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		VersionFunc: &StoreVersionFunc{
 			defaultHook: i.Version,
+		},
+		WithMigrationLogFunc: &StoreWithMigrationLogFunc{
+			defaultHook: i.WithMigrationLog,
 		},
 	}
 }
@@ -891,4 +907,116 @@ func (c StoreVersionFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreVersionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// StoreWithMigrationLogFunc describes the behavior when the
+// WithMigrationLog method of the parent MockStore instance is invoked.
+type StoreWithMigrationLogFunc struct {
+	defaultHook func(context.Context, definition.Definition, bool, func() error) error
+	hooks       []func(context.Context, definition.Definition, bool, func() error) error
+	history     []StoreWithMigrationLogFuncCall
+	mutex       sync.Mutex
+}
+
+// WithMigrationLog delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) WithMigrationLog(v0 context.Context, v1 definition.Definition, v2 bool, v3 func() error) error {
+	r0 := m.WithMigrationLogFunc.nextHook()(v0, v1, v2, v3)
+	m.WithMigrationLogFunc.appendCall(StoreWithMigrationLogFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithMigrationLog
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreWithMigrationLogFunc) SetDefaultHook(hook func(context.Context, definition.Definition, bool, func() error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithMigrationLog method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreWithMigrationLogFunc) PushHook(hook func(context.Context, definition.Definition, bool, func() error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreWithMigrationLogFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, definition.Definition, bool, func() error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreWithMigrationLogFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, definition.Definition, bool, func() error) error {
+		return r0
+	})
+}
+
+func (f *StoreWithMigrationLogFunc) nextHook() func(context.Context, definition.Definition, bool, func() error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreWithMigrationLogFunc) appendCall(r0 StoreWithMigrationLogFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreWithMigrationLogFuncCall objects
+// describing the invocations of this function.
+func (f *StoreWithMigrationLogFunc) History() []StoreWithMigrationLogFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreWithMigrationLogFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreWithMigrationLogFuncCall is an object that describes an invocation
+// of method WithMigrationLog on an instance of MockStore.
+type StoreWithMigrationLogFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 definition.Definition
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 func() error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreWithMigrationLogFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreWithMigrationLogFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }

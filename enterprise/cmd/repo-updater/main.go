@@ -47,7 +47,7 @@ func enterpriseInit(
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
 
-	codemonitorsBackground.StartBackgroundJobs(ctx, db)
+	codemonitorsBackground.StartBackgroundJobs(ctx, edb.NewEnterpriseDB(db))
 
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.

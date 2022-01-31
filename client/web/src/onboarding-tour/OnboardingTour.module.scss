@@ -94,9 +94,9 @@
     flex-grow: 1;
 
     &::-webkit-scrollbar {
-        /* stylelint-disable-next-line declaration-property-unit-whitelist */
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         margin-left: 4px;
-        /* stylelint-disable-next-line declaration-property-unit-whitelist */
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         width: 4px;
     }
 
@@ -119,7 +119,7 @@
 .progress-bar {
     width: 0.9rem;
     height: 0.9rem;
-    /* stylelint-disable-next-line declaration-property-unit-whitelist */
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     margin-right: 1px;
 
     // stylelint-disable-next-line selector-class-pattern

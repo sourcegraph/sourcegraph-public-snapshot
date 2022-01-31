@@ -1,7 +1,7 @@
 .code-excerpt {
     :global(.line),
     :global(.code) {
-        /* stylelint-disable-next-line declaration-property-unit-whitelist */
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         height: 18px;
         vertical-align: middle;
         padding: 0;
@@ -21,6 +21,10 @@
     :global(.code) {
         white-space: pre;
         padding-left: 1rem;
+    }
+
+    :global(.hl-source) {
+        cursor: text;
     }
 
     &-error {

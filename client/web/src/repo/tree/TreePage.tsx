@@ -458,11 +458,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 <section className={styles.section}>
                                     <h2>Actions</h2>
                                     {items.map(item => (
-                                        <ActionItem
+                                        <Button
                                             {...props}
                                             key={item.action.id}
                                             {...item}
-                                            className="btn btn-secondary mr-1 mb-1"
+                                            className="mr-1 mb-1"
+                                            variant="secondary"
+                                            as={ActionItem}
                                         />
                                     ))}
                                 </section>

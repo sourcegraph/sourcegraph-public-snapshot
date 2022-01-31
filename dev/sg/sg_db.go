@@ -203,7 +203,7 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 	for _, schemaName := range schemaNames {
 		operations = append(operations, runner.MigrationOperation{
 			SchemaName: schemaName,
-			Up:         true,
+			Type:       runner.MigrationOperationTypeUpgrade,
 		})
 	}
 

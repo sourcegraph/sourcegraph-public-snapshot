@@ -171,7 +171,9 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     }
                     type="submit"
                     disabled={formAPI.submitting || !hasFiltersChanged}
-                    className="btn btn-outline-secondary ml-auto mr-2"
+                    className="ml-auto mr-2"
+                    variant="secondary"
+                    outline={true}
                 />
 
                 <Button

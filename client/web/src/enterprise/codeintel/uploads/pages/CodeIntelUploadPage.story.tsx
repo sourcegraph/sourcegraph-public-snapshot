@@ -187,6 +187,10 @@ Completed.args = {
             finishedAt: '2020-06-14T12:30:30+00:00',
         }),
 }
+Completed.parameters = {
+    // Keep snapshots for one variant
+    chromatic: { disableSnapshots: false },
+}
 
 export const Errored = Template.bind({})
 Errored.args = {
