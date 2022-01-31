@@ -34,8 +34,10 @@ var (
 		LongHelp:   cliutil.ConstructLongHelp(),
 	}
 
-	upCommand   = cliutil.Up("sg migration", runMigration, stdout.Out)
-	downCommand = cliutil.Down("sg migration", runMigration, stdout.Out)
+	upCommand     = cliutil.Up("sg migration", runMigration, stdout.Out)
+	upToCommand   = cliutil.UpTo("sg migration", runMigration, stdout.Out)
+	UndoCommand   = cliutil.Undo("sg migration", runMigration, stdout.Out)
+	downToCommand = cliutil.DownTo("sg migration", runMigration, stdout.Out)
 
 	migrationSquashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
 	migrationSquashDatabaseNameFlag = migrationSquashFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance")
@@ -60,7 +62,9 @@ var (
 		Subcommands: []*ffcli.Command{
 			migrationAddCommand,
 			upCommand,
-			downCommand,
+			upToCommand,
+			UndoCommand,
+			downToCommand,
 			migrationSquashCommand,
 		},
 	}
