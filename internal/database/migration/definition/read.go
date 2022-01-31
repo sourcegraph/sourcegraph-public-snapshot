@@ -91,17 +91,6 @@ func readDefinition(fs fs.FS, version int) (Definition, error) {
 		return Definition{}, err
 	}
 
-	if _, ok := parseIndexMetadata(downQuery.Query(sqlf.PostgresBindVar)); ok {
-		return Definition{}, instructionalError{
-			class:       "malformed concurrent index creation",
-			description: "did not expect down migration to contain concurrent creation of an index",
-			instructions: strings.Join([]string{
-				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
-				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
-			}, " "),
-		}
-	}
-
 	return hydrateMetadataFromFile(fs, metadataFilename, Definition{
 		ID:        version,
 		UpQuery:   upQuery,
