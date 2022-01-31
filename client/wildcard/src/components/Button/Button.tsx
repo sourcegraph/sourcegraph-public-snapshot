@@ -84,7 +84,10 @@ export const Button = React.forwardRef(
         if (disabled && tooltip) {
             return (
                 <div className={styles.container}>
-                    <div className={styles.disabledTooltip} data-tooltip={tooltip} />
+                    {/* We set a tabIndex for the tooltip-producing div so that keyboard
+                        users can still trigger it. */}
+                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+                    <div className={styles.disabledTooltip} data-tooltip={tooltip} tabIndex={0} />
                     {buttonComponent}
                 </div>
             )
