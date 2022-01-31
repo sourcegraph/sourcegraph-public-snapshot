@@ -1,12 +1,13 @@
 package migration
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -107,7 +112,7 @@ func generateSquashedMigrations(database db.Database, migrationIndex int) (up, d
 		err = teardown(err)
 	}()
 
-	if err := runMigrationsGoto(database, migrationIndex, postgresDSN); err != nil {
+	if err := runTargetedUpMigrations(database, migrationIndex, postgresDSN); err != nil {
 		return "", "", err
 	}
 
@@ -119,9 +124,8 @@ func generateSquashedMigrations(database db.Database, migrationIndex int) (up, d
 	return upMigration, "-- Nothing\n", nil
 }
 
-// runMigrationsGoto runs the `migrate` utility to migrate up or down to the given
-// migration index.
-func runMigrationsGoto(database db.Database, migrationIndex int, postgresDSN string) (err error) {
+// runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
+func runTargetedUpMigrations(database db.Database, targetVersion int, postgresDSN string) (err error) {
 	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
@@ -131,22 +135,27 @@ func runMigrationsGoto(database db.Database, migrationIndex int, postgresDSN str
 		}
 	}()
 
-	_, err = runMigrate(
-		database,
-		postgresDSN+fmt.Sprintf("&x-migrations-table=%s", database.MigrationsTable),
-		"goto", strconv.FormatInt(int64(migrationIndex), 10),
-	)
-	return err
-}
+	ctx := context.Background()
 
-// runMigrate runs the migrate utility with the given arguments.
-func runMigrate(database db.Database, postgresDSN string, args ...string) (string, error) {
-	baseDir, err := migrationDirectoryForDatabase(database)
-	if err != nil {
-		return "", err
+	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
 
-	return run.InRoot(exec.Command("migrate", append([]string{"-database", postgresDSN, "-path", baseDir}, args...)...))
+	options := runner.Options{
+		Operations: []runner.MigrationOperation{
+			{
+				SchemaName:    database.Name,
+				Type:          runner.MigrationOperationTypeTargetedUp,
+				TargetVersion: targetVersion,
+			},
+		},
+	}
+
+	dsns := map[string]string{
+		database.Name: postgresDSN,
+	}
+
+	return connections.RunnerFromDSNs(dsns, "sg", storeFactory).Run(ctx, options)
 }
 
 // runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.
