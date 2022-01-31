@@ -109,26 +109,88 @@ type ClientImplementor struct {
 
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i IClient -o mock_client.go
 type Client interface {
+	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(api.RepoName) string
+
 	Addrs() []string
+
+	// Archive produces an archive from a Git repository.
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
+
+	// ArchiveURL returns a URL from which an archive of the given Git repository can
+	// be downloaded from.
 	ArchiveURL(api.RepoName, ArchiveOptions) *url.URL
+
+	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
 	Command(name string, args ...string) *Cmd
+
+	// CreateCommitFromPatch will attempt to create a commit from a patch
+	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
+
+	// GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
+	// a user-provided command.
 	GetGitolitePhabricatorMetadata(_ context.Context, gitoliteHost string, _ api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error)
+
+	// GetObject fetches git object data in the supplied repo
 	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
+
+	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
+
 	IsRepoCloned(context.Context, api.RepoName) (bool, error)
+
+	// ListCloned lists all cloned repositories
 	ListCloned(context.Context) ([]string, error)
+
+	// ListGitolite lists Gitolite repositories.
 	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
+
+	// P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
 	P4Exec(_ context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
+
+	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
+
+	// RendezvousAddrForRepo returns the gitserver address to use for the given
+	// repo name using the Rendezvous hashing scheme.
 	RendezvousAddrForRepo(api.RepoName) string
+
 	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+
+	// RepoInfo retrieves information about one or more repositories on gitserver.
+	//
+	// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
+	// will be false and the error will be nil.
+	//
+	// If multiple errors occurred, an incomplete result is returned along with a
+	// *multierror.Error.
 	RepoInfo(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
+
+	// ReposStats will return a map of the ReposStats for each gitserver in a
+	// map. If we fail to fetch a stat from a gitserver, it won't be in the
+	// returned map and will be appended to the error. If no errors occur err will
+	// be nil.
+	//
+	// Note: If the statistics for a gitserver have not been computed, the
+	// UpdatedAt field will be zero. This can happen for new gitservers.
 	ReposStats(context.Context) (map[string]*protocol.ReposStats, error)
+
+	// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to aid our
+	// migration of gitserver repos to the rendezvous hashing scheme.
 	RequestRepoMigrate(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+
+	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
+	// with more detailed responses. Do not use this if you are not repo-updater.
+	//
+	// Repo updates are not guaranteed to occur. If a repo has been updated
+	// recently (within the Since duration specified in the request), the
+	// update won't happen.
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+
+	// Search executes a search as specified by args, streaming the results as
+	// it goes by calling onMatches with each set of results it receives in
+	// response.
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 }
 
@@ -136,7 +198,6 @@ func (c *ClientImplementor) Addrs() []string {
 	return c.addrs()
 }
 
-// AddrForRepo returns the gitserver address to use for the given repo name.
 func (c *ClientImplementor) AddrForRepo(repo api.RepoName) string {
 	addrs := c.addrs()
 	if len(addrs) == 0 {
@@ -145,8 +206,6 @@ func (c *ClientImplementor) AddrForRepo(repo api.RepoName) string {
 	return AddrForRepo(repo, addrs)
 }
 
-// RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
-// Rendezvous hashing scheme.
 func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
 	addrs := c.addrs()
 	if len(addrs) == 0 {
@@ -250,7 +309,6 @@ func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *u
 	}
 }
 
-// Archive produces an archive from a Git repository.
 func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("Repo", repo)
@@ -359,8 +417,6 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 	}
 }
 
-// Search executes a search as specified by args, streaming the results as it goes by calling onMatches with each set of results it
-// receives in response.
 func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
 	span.SetTag("repo", string(args.Repo))
@@ -418,7 +474,6 @@ func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	return eventDone.LimitHit, eventDone.Err()
 }
 
-// P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
 func (c *ClientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec")
 	defer func() {
@@ -476,8 +531,6 @@ type Cmd struct {
 	ExitStatus     int
 }
 
-// Command creates a new Cmd. Command name must be 'git',
-// otherwise it panics.
 func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
 	if name != "git" {
 		panic("gitserver: command name must be 'git'")
@@ -575,7 +628,6 @@ func (c *cmdReader) Close() error {
 	return c.rc.Close()
 }
 
-// ListGitolite lists Gitolite repositories.
 func (c *ClientImplementor) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
@@ -595,7 +647,6 @@ func (c *ClientImplementor) ListGitolite(ctx context.Context, gitoliteHost strin
 	return list, err
 }
 
-// ListCloned lists all cloned repositories
 func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 	var (
 		wg    sync.WaitGroup
@@ -632,8 +683,6 @@ func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 	return repos, err
 }
 
-// GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
-// a user-provided command.
 func (c *ClientImplementor) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
 	u := "http://" + c.addrForKey(gitoliteHost) +
 		"/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) +
@@ -672,12 +721,6 @@ func (c *ClientImplementor) doListOne(ctx context.Context, urlSuffix, addr strin
 	return list, err
 }
 
-// RequestRepoUpdate is the new protocol endpoint for synchronous requests
-// with more detailed responses. Do not use this if you are not repo-updater.
-//
-// Repo updates are not guaranteed to occur. If a repo has been updated
-// recently (within the Since duration specified in the request), the
-// update won't happen.
 func (c *ClientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
 	req := &protocol.RepoUpdateRequest{
 		Repo:  repo,
@@ -698,8 +741,6 @@ func (c *ClientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 	return info, err
 }
 
-// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to aid our
-// migration of gitserver repos to the rendezvous hashing scheme.
 func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
 	// We do not need to set a value for the attribute "Since" because the repo is not expected to
 	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
@@ -739,7 +780,6 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
 var MockIsRepoCloneable func(api.RepoName) error
 
-// IsRepoCloneable returns nil if the repository is cloneable.
 func (c *ClientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoName) error {
 	if MockIsRepoCloneable != nil {
 		return MockIsRepoCloneable(repo)
@@ -882,13 +922,6 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	return &res, err.ErrorOrNil()
 }
 
-// RepoInfo retrieves information about one or more repositories on gitserver.
-//
-// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
-// will be false and the error will be nil.
-//
-// If multiple errors occurred, an incomplete result is returned along with a
-// *multierror.Error.
 func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
 	numPossibleShards := len(c.addrs())
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
@@ -959,13 +992,6 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 	return &res, err.ErrorOrNil()
 }
 
-// ReposStats will return a map of the ReposStats for each gitserver in a
-// map. If we fail to fetch a stat from a gitserver, it won't be in the
-// returned map and will be appended to the error. If no errors occur err will
-// be nil.
-//
-// Note: If the statistics for a gitserver have not been computed, the
-// UpdatedAt field will be zero. This can happen for new gitservers.
 func (c *ClientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
@@ -1001,7 +1027,6 @@ func (c *ClientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 	return &stats, nil
 }
 
-// Remove removes the repository clone from gitserver.
 func (c *ClientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
 	req := &protocol.RepoDeleteRequest{
 		Repo: repo,
@@ -1084,8 +1109,6 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	return c.HTTPClient.Do(req)
 }
 
-// CreateCommitFromPatch will attempt to create a commit from a patch
-// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
 	if err != nil {
@@ -1112,7 +1135,6 @@ func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	return res.Rev, nil
 }
 
-// GetObject fetches git object data in the supplied repo
 func (c *ClientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 	if ClientMocks.GetObject != nil {
 		return ClientMocks.GetObject(repo, objectName)
