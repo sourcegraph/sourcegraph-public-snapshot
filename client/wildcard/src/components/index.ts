@@ -14,6 +14,7 @@ export { Panel } from './Panel'
 export { Tooltip, TooltipController } from './Tooltip'
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
 export { Icon } from './Icon'
+export { ButtonLink } from './ButtonLink'
 export { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink } from './Menu'
 export { Code, H1, H2, H3, H4, H5, H6, Label, Text } from './Typography'
 export * as Typography from './Typography'
@@ -26,6 +27,8 @@ export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReas
  * Type Exports
  * `export type` is required to avoid Webpack warnings.
  */
-export type { LinkProps } from './Link'
 export type { AlertProps, AlertLinkProps } from './Alert'
+export type { ButtonProps } from './Button'
+export type { ButtonLinkProps } from './ButtonLink'
+export type { LinkProps } from './Link'
 export type { PopoverOpenEvent } from './Popover'

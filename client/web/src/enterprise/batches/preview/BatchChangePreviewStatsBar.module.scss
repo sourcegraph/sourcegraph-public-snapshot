@@ -11,7 +11,7 @@
     &__horizontal-divider {
         border-top: 1px solid var(--border-color-2);
         width: 80%;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
         margin-left: calc(20% / 2);
     }
     &__diff {

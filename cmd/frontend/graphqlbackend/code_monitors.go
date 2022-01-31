@@ -22,6 +22,8 @@ type CodeMonitorsResolver interface {
 	TriggerTestEmailAction(ctx context.Context, args *TriggerTestEmailActionArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
+
+	CodeMonitorSearch(context.Context, *SearchArgs) (SearchImplementer, error)
 }
 
 type MonitorConnectionResolver interface {

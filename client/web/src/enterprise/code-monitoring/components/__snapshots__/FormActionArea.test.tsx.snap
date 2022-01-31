@@ -52,7 +52,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       class="flex mt-1"
     >
       <button
-        class="btn btn-sm mr-2 btn-secondary"
+        class="btn btn-secondary btn-sm mr-2"
         data-testid="send-test-email"
         disabled=""
         type="button"

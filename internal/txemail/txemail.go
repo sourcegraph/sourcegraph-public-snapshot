@@ -12,6 +12,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/jordan-wright/email"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -28,6 +30,11 @@ type Message struct {
 	Template txtypes.Templates // unparsed subject/body templates
 	Data     interface{}       // template data
 }
+
+var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_email_send",
+	Help: "Number of emails sent.",
+}, []string{"success"})
 
 // render returns the rendered message contents without sending email.
 func render(message Message) (*email.Email, error) {
@@ -119,19 +126,22 @@ func Send(ctx context.Context, message Message) error {
 	}
 
 	if conf.EmailSmtp.NoVerifyTLS {
-		return m.SendWithStartTLS(
+		err = m.SendWithStartTLS(
 			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
 			smtpAuth,
 			&tls.Config{
 				InsecureSkipVerify: true,
 			},
 		)
+	} else {
+		err = m.Send(
+			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
+			smtpAuth,
+		)
 	}
+	emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil)).Inc()
+	return err
 
-	return m.Send(
-		net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
-		smtpAuth,
-	)
 }
 
 // MockSend is used in tests to mock the Send func.

@@ -205,7 +205,6 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     <div className={styles.containerContent}>
                         <div className="d-flex float-right">
                             <Button
-                                // eslint-disable-next-line react/jsx-no-target-blank
                                 target="_blank"
                                 rel="noopener"
                                 href="https://docs.sourcegraph.com/code_intelligence/apidocs"
