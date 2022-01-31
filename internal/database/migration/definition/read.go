@@ -274,7 +274,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 	var (
 		order    = make([]int, 0, len(migrationDefinitions))
 		marks    = make(map[int]MarkType, len(migrationDefinitions))
-		children = children(migrationDefinitions)
+		childMap = children(migrationDefinitions)
 
 		dfs func(id int) error
 	)
@@ -292,7 +292,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 		marks[id] = MarkTypeVisiting
 		defer func() { marks[id] = MarkTypeVisited }()
 
-		for _, child := range children[id] {
+		for _, child := range childMap[id] {
 			if err := dfs(child); err != nil {
 				return err
 			}
@@ -335,14 +335,14 @@ func root(migrationDefinitions []Definition) (int, error) {
 // children constructs map from migration identifiers to the set of identifiers of all
 // dependent migrations.
 func children(migrationDefinitions []Definition) map[int][]int {
-	children := make(map[int][]int, len(migrationDefinitions))
+	childMap := make(map[int][]int, len(migrationDefinitions))
 	for _, migrationDefinition := range migrationDefinitions {
 		for _, parent := range migrationDefinition.Parents {
-			children[parent] = append(children[parent], migrationDefinition.ID)
+			childMap[parent] = append(childMap[parent], migrationDefinition.ID)
 		}
 	}
 
-	return children
+	return childMap
 }
 
 // validateLinearizedGraph returns an error if the given sequence of migrations are
