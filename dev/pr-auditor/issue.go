@@ -8,7 +8,7 @@ import (
 
 func generateAcceptanceAuditTrailIssue(payload *EventPayload, acceptance *acceptanceResult) (*github.IssueRequest, bool) {
 	var (
-		issueTitle     = fmt.Sprintf("acceptance checklist exception: PR %s#%d", payload.Repository.FullName, payload.PullRequest.Number)
+		issueTitle     = fmt.Sprintf("exception/acceptance: PR %s#%d", payload.Repository.FullName, payload.PullRequest.Number)
 		issueBody      string
 		issueAssignees = []string{}
 		closeIssue     bool
@@ -37,5 +37,9 @@ func generateAcceptanceAuditTrailIssue(payload *EventPayload, acceptance *accept
 		Title:     github.String(issueTitle),
 		Body:      github.String(issueBody),
 		Assignees: &issueAssignees,
+		Labels: &[]string{
+			"exception/acceptance",      // type of exception
+			payload.Repository.FullName, // allow filtering by repository
+		},
 	}, closeIssue
 }
