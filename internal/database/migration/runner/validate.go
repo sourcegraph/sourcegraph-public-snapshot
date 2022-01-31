@@ -8,12 +8,14 @@ import (
 )
 
 func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
-	return r.forEachSchema(ctx, schemaNames, func(ctx context.Context, schemaName string, schemaContext schemaContext) error {
-		return r.validateSchema(ctx, schemaName, schemaContext)
+	return r.forEachSchema(ctx, schemaNames, func(ctx context.Context, schemaContext schemaContext) error {
+		return r.validateSchema(ctx, schemaContext)
 	})
 }
 
-func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaContext schemaContext) error {
+func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext) error {
+	schemaName := schemaContext.schema.Name
+
 	// If database version is strictly newer, then we have a deployment in-process. The current
 	// instance has what it needs to run, so we should be good with that. Do not crash here if
 	// the database is is dirty, as that would cause a troublesome deployment to cause outages

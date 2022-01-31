@@ -34,7 +34,7 @@ type schemaVersion struct {
 	dirty   bool
 }
 
-type visitFunc func(ctx context.Context, schemaName string, schemaContext schemaContext) error
+type visitFunc func(ctx context.Context, schemaContext schemaContext) error
 
 // forEachSchema invokes the given function once for each schema in the given list, with
 // store instances initialized for each given schema name. Each function invocation occurs
@@ -68,7 +68,7 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 		go func(schemaName string) {
 			defer wg.Done()
 
-			errorCh <- visitor(ctx, schemaName, schemaContext{
+			errorCh <- visitor(ctx, schemaContext{
 				schema:               schemaMap[schemaName],
 				store:                storeMap[schemaName],
 				initialSchemaVersion: versionMap[schemaName],

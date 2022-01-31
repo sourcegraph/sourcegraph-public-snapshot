@@ -30,7 +30,9 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 	}
 	semaphore := make(chan struct{}, numRoutines)
 
-	return r.forEachSchema(ctx, schemaNames, func(ctx context.Context, schemaName string, schemaContext schemaContext) error {
+	return r.forEachSchema(ctx, schemaNames, func(ctx context.Context, schemaContext schemaContext) error {
+		schemaName := schemaContext.schema.Name
+
 		// Block until we can write into this channel. This ensures that we only have at most
 		// the same number of active goroutines as we have slots int he channel's buffer.
 		semaphore <- struct{}{}
