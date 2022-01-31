@@ -75,15 +75,17 @@ export interface StreamingSearchResultsProps
 export const LATEST_VERSION = 'V2'
 
 const CTA_ALERTS_CADENCE_KEY = 'SearchResultCtaAlerts.pageViews'
-const CTA_ALERT_DISPLAY_CADENCE = 5
+const CTA_ALERT_DISPLAY_CADENCE = 6
+const IDE_CTA_CADENCE_SHIFT = 3
 
-function useCtaAlert(): {
-    hasDismissedSignupAlert: boolean
-    hasDismissedBrowserExtensionAlert: boolean
-    isBrowserExtensionInstalled: boolean | undefined
-    displayCTAsBasedOnCadence: boolean
-    onSignupCtaAlertDismissed: () => void
-    onBrowserExtensionCtaAlertDismissed: () => void
+type CtaToDisplay = 'signup' | 'browser' | 'ide'
+
+function useCtaAlert(
+    isAuthenticated: boolean,
+    areResultsFound: boolean
+): {
+    ctaToDisplay?: CtaToDisplay
+    onCtaAlertDismissed: () => void
 } {
     const [hasDismissedSignupAlert, setHasDismissedSignupAlert] = useLocalStorage<boolean>(
         'StreamingSearchResults.hasDismissedSignupAlert',
@@ -93,23 +95,74 @@ function useCtaAlert(): {
         'StreamingSearchResults.hasDismissedBrowserExtensionAlert',
         false
     )
+    const [hasDismissedIDEExtensionAlert, setHasDismissedIDEExtensionAlert] = useLocalStorage<boolean>(
+        'StreamingSearchResults.hasDismissedIDEExtensionAlert',
+        false
+    )
     const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
-    const displayCTAsBasedOnCadence = usePersistentCadence(CTA_ALERTS_CADENCE_KEY, CTA_ALERT_DISPLAY_CADENCE)
 
-    const onSignupCtaAlertDismissed = useCallback(() => {
-        setHasDismissedSignupAlert(true)
-    }, [setHasDismissedSignupAlert])
+    const displaySignupAndBrowserExtensionCTAsBasedOnCadence = usePersistentCadence(
+        CTA_ALERTS_CADENCE_KEY,
+        CTA_ALERT_DISPLAY_CADENCE
+    )
+    const displayIDEExtensionCTABasedOnCadence = usePersistentCadence(
+        CTA_ALERTS_CADENCE_KEY,
+        CTA_ALERT_DISPLAY_CADENCE,
+        IDE_CTA_CADENCE_SHIFT
+    )
 
-    const onBrowserExtensionCtaAlertDismissed = useCallback(() => {
-        setHasDismissedBrowserExtensionAlert(true)
-    }, [setHasDismissedBrowserExtensionAlert])
-    return {
+    const ctaToDisplay = useMemo<CtaToDisplay | undefined>((): CtaToDisplay | undefined => {
+        if (!areResultsFound) {
+            return
+        }
+
+        if (!hasDismissedSignupAlert && !isAuthenticated && displaySignupAndBrowserExtensionCTAsBasedOnCadence) {
+            return 'signup'
+        }
+
+        if (
+            !hasDismissedBrowserExtensionAlert &&
+            isAuthenticated &&
+            isBrowserExtensionInstalled === false &&
+            displaySignupAndBrowserExtensionCTAsBasedOnCadence
+        ) {
+            return 'browser'
+        }
+
+        if (!hasDismissedIDEExtensionAlert && displayIDEExtensionCTABasedOnCadence) {
+            return 'ide'
+        }
+
+        return
+    }, [
+        areResultsFound,
         hasDismissedSignupAlert,
+        isAuthenticated,
+        displaySignupAndBrowserExtensionCTAsBasedOnCadence,
         hasDismissedBrowserExtensionAlert,
         isBrowserExtensionInstalled,
-        displayCTAsBasedOnCadence,
-        onSignupCtaAlertDismissed,
-        onBrowserExtensionCtaAlertDismissed,
+        hasDismissedIDEExtensionAlert,
+        displayIDEExtensionCTABasedOnCadence,
+    ])
+
+    const onCtaAlertDismissed = useCallback((): void => {
+        if (ctaToDisplay === 'signup') {
+            setHasDismissedSignupAlert(true)
+        } else if (ctaToDisplay === 'browser') {
+            setHasDismissedBrowserExtensionAlert(true)
+        } else if (ctaToDisplay === 'ide') {
+            setHasDismissedIDEExtensionAlert(true)
+        }
+    }, [
+        ctaToDisplay,
+        setHasDismissedBrowserExtensionAlert,
+        setHasDismissedIDEExtensionAlert,
+        setHasDismissedSignupAlert,
+    ])
+
+    return {
+        ctaToDisplay,
+        onCtaAlertDismissed,
     }
 }
 
@@ -129,14 +182,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
-    const {
-        hasDismissedSignupAlert,
-        hasDismissedBrowserExtensionAlert,
-        isBrowserExtensionInstalled,
-        displayCTAsBasedOnCadence,
-        onSignupCtaAlertDismissed,
-        onBrowserExtensionCtaAlertDismissed,
-    } = useCtaAlert()
 
     // Log view event on first load
     useEffect(
@@ -275,33 +320,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
     const showOnboardingTour =
         props.isSourcegraphDotCom && !props.authenticatedUser && props.featureFlags.get('getting-started-tour')
-    const showSignUpCta = useMemo<boolean>(
-        () => !hasDismissedSignupAlert && !authenticatedUser && displayCTAsBasedOnCadence && resultsFound,
-        [authenticatedUser, displayCTAsBasedOnCadence, hasDismissedSignupAlert, resultsFound]
-    )
-    const showBrowserExtensionCta = useMemo<boolean>(
-        () =>
-            !hasDismissedBrowserExtensionAlert &&
-            !!authenticatedUser &&
-            isBrowserExtensionInstalled === false &&
-            displayCTAsBasedOnCadence &&
-            resultsFound,
-        [
-            authenticatedUser,
-            displayCTAsBasedOnCadence,
-            hasDismissedBrowserExtensionAlert,
-            isBrowserExtensionInstalled,
-            resultsFound,
-        ]
-    )
+    const { ctaToDisplay, onCtaAlertDismissed } = useCtaAlert(!!authenticatedUser, resultsFound)
 
     // Log view event when signup CTA is shown
     useEffect(() => {
-        if (showSignUpCta) {
+        if (ctaToDisplay === 'signup') {
             telemetryService.log('SearchResultResultsCTAShown')
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [showSignUpCta])
+    }, [ctaToDisplay])
 
     return (
         <div className={styles.streamingSearchResults}>
@@ -377,7 +404,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     </div>
                 )}
 
-                {showSignUpCta && (
+                {ctaToDisplay === 'signup' && (
                     <CtaAlert
                         title="Sign up to add your public and private repositories and unlock search flow"
                         description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
@@ -389,12 +416,27 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         }}
                         icon={<SearchBetaIcon />}
                         className="mr-3"
-                        onClose={onSignupCtaAlertDismissed}
+                        onClose={onCtaAlertDismissed}
                     />
                 )}
 
-                {showBrowserExtensionCta && (
-                    <BrowserExtensionAlert className="mr-3" onAlertDismissed={onBrowserExtensionCtaAlertDismissed} />
+                {ctaToDisplay === 'browser' && (
+                    <BrowserExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} />
+                )}
+
+                {ctaToDisplay === 'ide' && (
+                    <CtaAlert
+                        title="The power of Sourcegraph in your IDE"
+                        description="Link your editor and Sourcegraph to improve your ability to reference and reuse code across multiple repositories."
+                        cta={{
+                            label: 'Learn more about IDE extensions',
+                            href: buildGetStartedURL('search-cta', '/user/settings/repositories'),
+                            onClick: onSignUpClick,
+                        }}
+                        icon={<SearchBetaIcon />}
+                        className="mr-3"
+                        onClose={onCtaAlertDismissed}
+                    />
                 )}
 
                 <StreamingSearchResultsList
