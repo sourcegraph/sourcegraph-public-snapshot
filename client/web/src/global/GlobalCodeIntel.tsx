@@ -32,11 +32,14 @@ const SHOW_COOL_CODEINTEL = localStorage.getItem('coolCodeIntel') !== null
 
 type CoolHoveredToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
+interface CoolCodeIntelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'> {
+    hoveredToken?: CoolHoveredToken
+}
+
 export const GlobalCodeIntel: React.FunctionComponent<
     {
-        hoveredToken?: CoolHoveredToken
         showPanel: boolean
-    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
+    } & CoolCodeIntelProps
 > = props => {
     if (!SHOW_COOL_CODEINTEL) {
         return null
@@ -49,21 +52,17 @@ export const GlobalCodeIntel: React.FunctionComponent<
     return null
 }
 
-export interface CoolCodeIntelPopoverTabProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'> {
-    hoveredToken?: CoolHoveredToken
-}
-
 const LAST_TAB_STORAGE_KEY = 'CoolCodeIntel.lastTab'
 
 type CoolCodeIntelTabID = 'references' | 'token' | 'definition'
 
-interface CoolCodeIntelToolsTab {
+interface CoolCodeIntelTab {
     id: CoolCodeIntelTabID
     label: string
-    component: React.ComponentType<CoolCodeIntelPopoverTabProps>
+    component: React.ComponentType<CoolCodeIntelProps>
 }
 
-export const TokenPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => (
+export const TokenPanel: React.FunctionComponent<CoolCodeIntelProps> = props => (
     <>
         {props.hoveredToken ? (
             <code>
@@ -86,7 +85,7 @@ export const TokenPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> =
     </>
 )
 
-export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelPopoverTabProps> = props => {
+export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
     if (!props.hoveredToken) {
         return null
     }
@@ -137,7 +136,7 @@ interface LocationGroup {
 export const ReferencesList: React.FunctionComponent<
     {
         hoveredToken: CoolHoveredToken
-    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
+    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
 
@@ -178,7 +177,7 @@ export const SideReferences: React.FunctionComponent<
         hoveredToken: CoolHoveredToken
         setActiveLocation: (location: Location | undefined) => void
         activeLocation: Location | undefined
-    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
+    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
 > = props => {
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
         FETCH_REFERENCES_QUERY,
@@ -305,28 +304,70 @@ export const SideBlob: React.FunctionComponent<
     {
         hoveredToken: CoolHoveredToken
         activeLocation: Location
-    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'>
-> = props => (
-    <Blob
-        {...props}
-        onHoverToken={(token: CoolHoveredToken) => {
-            console.log('sideblob token', token)
-            props.onHoverToken(token)
-        }}
-        disableStatusBar={true}
-        wrapCode={true}
-        className={styles.sideBlob}
-        blobInfo={{
-            content: props.activeLocation.resource.content,
-            html: props.activeLocation.resource.highlight.html,
-            filePath: props.activeLocation.resource.path,
-            repoName: props.activeLocation.resource.repository.name,
-            commitID: props.activeLocation.resource.commit.oid,
-            revision: props.activeLocation.resource.commit.oid,
-            mode: 'lspmode',
-        }}
-    />
-)
+    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
+> = props => {
+    const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
+        FETCH_REFERENCES_QUERY,
+        {
+            variables: {
+                repository: props.hoveredToken.repoName,
+                commit: props.hoveredToken.commitID,
+                path: props.hoveredToken.filePath,
+                // ATTENTION: Off by one ahead!!!!
+                line: props.hoveredToken.line - 1,
+                character: props.hoveredToken.character - 1,
+                after: null,
+            },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            nextFetchPolicy: 'network-only',
+        }
+    )
+
+    // If we're loading and haven't received any data yet
+    if (loading && !data) {
+        return (
+            <>
+                <LoadingSpinner inline={false} className="mx-auto my-4" />
+                <p className="text-muted text-center">
+                    <i>Loading references ...</i>
+                </p>
+            </>
+        )
+    }
+
+    // If we received an error before we had received any data
+    if (error && !data) {
+        throw new Error(error.message)
+    }
+
+    // If there weren't any errors and we just didn't receive any data
+    if (!data || !data.repository?.commit?.blob?.lsif) {
+        return <>Nothing found</>
+    }
+    return (
+        <Blob
+            {...props}
+            onHoverToken={(token: CoolHoveredToken) => {
+                console.log('sideblob token', token)
+                props.onHoverToken(token)
+            }}
+            disableStatusBar={true}
+            wrapCode={true}
+            className={styles.sideBlob}
+            blobInfo={{
+                content: props.activeLocation.resource.content,
+                html: props.activeLocation.resource.highlight.html,
+                filePath: props.activeLocation.resource.path,
+                repoName: props.activeLocation.resource.repository.name,
+                commitID: props.activeLocation.resource.commit.oid,
+                revision: props.activeLocation.resource.commit.oid,
+                mode: 'lspmode',
+            }}
+        />
+    )
+}
 
 const buildFileURL = (location: Location): string => {
     const path = `/${location.resource.repository.name}/-/blob/${location.resource.path}`
@@ -517,16 +558,12 @@ const ReferenceGroup: React.FunctionComponent<{
     )
 }
 
-const TABS: CoolCodeIntelToolsTab[] = [
+const TABS: CoolCodeIntelTab[] = [
     { id: 'token', label: 'Token', component: TokenPanel },
     { id: 'references', label: 'References', component: ReferencesPanel },
 ]
 
-interface CoolCodeIntelPanelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo'> {
-    hoveredToken?: CoolHoveredToken
-}
-
-export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
+export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps>(props => {
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
@@ -556,7 +593,7 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelPanelProps>(props => {
     )
 })
 
-export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelPanelProps> = props => {
+export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
     if (!props.hoveredToken) {
         return null
     }

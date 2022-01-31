@@ -1,9 +1,17 @@
 import { gql } from '@sourcegraph/http-client'
 export const FETCH_REFERENCES_QUERY = gql`
+    fragment LocationFields on Location {
+        resource {
+            ...GitBlobFields
+        }
+        range {
+            ...RangeFields
+        }
+    }
+
     fragment GitBlobFields on GitBlob {
         path
         content
-        richHTML
         highlight(disableTimeout: false) {
             aborted
             html
@@ -41,12 +49,7 @@ export const FETCH_REFERENCES_QUERY = gql`
                     lsif {
                         references(line: $line, character: $character, after: $after) {
                             nodes {
-                                resource {
-                                    ...GitBlobFields
-                                }
-                                range {
-                                    ...RangeFields
-                                }
+                                ...LocationFields
                             }
                             pageInfo {
                                 endCursor
@@ -54,12 +57,7 @@ export const FETCH_REFERENCES_QUERY = gql`
                         }
                         definitions(line: $line, character: $character) {
                             nodes {
-                                resource {
-                                    ...GitBlobFields
-                                }
-                                range {
-                                    ...RangeFields
-                                }
+                                ...LocationFields
                             }
                         }
                         hover(line: $line, character: $character) {
