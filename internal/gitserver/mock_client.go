@@ -312,7 +312,7 @@ func NewStrictMockClient() *MockClient {
 
 // NewMockClientFrom creates a new mock of the MockClient interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockClientFrom(i Client) *MockClient {
+func NewMockClientFrom(i ClientImplementor) *MockClient {
 	return &MockClient{
 		AddrForRepoFunc: &ClientAddrForRepoFunc{
 			defaultHook: i.AddrForRepo,

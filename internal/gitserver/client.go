@@ -46,7 +46,7 @@ var (
 	defaultLimiter = parallel.NewRun(500)
 
 	// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-	DefaultClient IClient = NewClient(defaultDoer)
+	DefaultClient Client = NewClient(defaultDoer)
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -61,8 +61,8 @@ func ResetClientMocks() {
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
-func NewClient(cli httpcli.Doer) *Client {
-	return &Client{
+func NewClient(cli httpcli.Doer) *ClientImplementor {
+	return &ClientImplementor{
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
@@ -75,8 +75,8 @@ func NewClient(cli httpcli.Doer) *Client {
 	}
 }
 
-func NewTestClient(cli httpcli.Doer, addrs []string) *Client {
-	return &Client{
+func NewTestClient(cli httpcli.Doer, addrs []string) *ClientImplementor {
+	return &ClientImplementor{
 		addrs: func() []string {
 			return addrs
 		},
@@ -89,8 +89,8 @@ func NewTestClient(cli httpcli.Doer, addrs []string) *Client {
 	}
 }
 
-// Client is a gitserver client.
-type Client struct {
+// ClientImplementor is a gitserver client.
+type ClientImplementor struct {
 	// HTTP client to use
 	HTTPClient httpcli.Doer
 
@@ -108,7 +108,7 @@ type Client struct {
 }
 
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i IClient -o mock_client.go
-type IClient interface {
+type Client interface {
 	AddrForRepo(api.RepoName) string
 	Addrs() []string
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
@@ -132,12 +132,12 @@ type IClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 }
 
-func (c *Client) Addrs() []string {
+func (c *ClientImplementor) Addrs() []string {
 	return c.addrs()
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (c *Client) AddrForRepo(repo api.RepoName) string {
+func (c *ClientImplementor) AddrForRepo(repo api.RepoName) string {
 	addrs := c.addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
@@ -147,7 +147,7 @@ func (c *Client) AddrForRepo(repo api.RepoName) string {
 
 // RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
 // Rendezvous hashing scheme.
-func (c *Client) RendezvousAddrForRepo(repo api.RepoName) string {
+func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
 	addrs := c.addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
@@ -158,7 +158,7 @@ func (c *Client) RendezvousAddrForRepo(repo api.RepoName) string {
 
 // addrForKey returns the gitserver address to use for the given string key,
 // which is hashed for sharding purposes.
-func (c *Client) addrForKey(key string) string {
+func (c *ClientImplementor) addrForKey(key string) string {
 	addrs := c.addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
@@ -231,7 +231,7 @@ func (a *archiveReader) Close() error {
 
 // ArchiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *Client) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *url.URL {
+func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *url.URL {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -251,7 +251,7 @@ func (c *Client) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *url.URL {
 }
 
 // Archive produces an archive from a Git repository.
-func (c *Client) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
+func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("Repo", repo)
 	span.SetTag("Treeish", opt.Treeish)
@@ -361,7 +361,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 // Search executes a search as specified by args, streaming the results as it goes by calling onMatches with each set of results it
 // receives in response.
-func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
+func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
 	span.SetTag("repo", string(args.Repo))
 	span.SetTag("query", args.Query.String())
@@ -419,7 +419,7 @@ func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMat
 }
 
 // P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
-func (c *Client) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
+func (c *ClientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec")
 	defer func() {
 		if errRes != nil {
@@ -468,7 +468,7 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 
 // Cmd represents a command to be executed remotely.
 type Cmd struct {
-	client *Client
+	client *ClientImplementor
 
 	Args           []string
 	Repo           api.RepoName // the repository to execute the command in
@@ -478,7 +478,7 @@ type Cmd struct {
 
 // Command creates a new Cmd. Command name must be 'git',
 // otherwise it panics.
-func (c *Client) Command(name string, arg ...string) *Cmd {
+func (c *ClientImplementor) Command(name string, arg ...string) *Cmd {
 	if name != "git" {
 		panic("gitserver: command name must be 'git'")
 	}
@@ -576,7 +576,7 @@ func (c *cmdReader) Close() error {
 }
 
 // ListGitolite lists Gitolite repositories.
-func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
+func (c *ClientImplementor) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
 	addr := c.addrForKey(gitoliteHost)
@@ -596,7 +596,7 @@ func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) (list []
 }
 
 // ListCloned lists all cloned repositories
-func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
+func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 	var (
 		wg    sync.WaitGroup
 		mu    sync.Mutex
@@ -634,7 +634,7 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 
 // GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
 // a user-provided command.
-func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
+func (c *ClientImplementor) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
 	u := "http://" + c.addrForKey(gitoliteHost) +
 		"/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) +
 		"&repo=" + url.QueryEscape(string(repoName))
@@ -655,7 +655,7 @@ func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHos
 	return &metadata, err
 }
 
-func (c *Client) doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
+func (c *ClientImplementor) doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
 	req, err := http.NewRequest("GET", "http://"+addr+"/list"+urlSuffix, nil)
 	if err != nil {
 		return nil, err
@@ -678,7 +678,7 @@ func (c *Client) doListOne(ctx context.Context, urlSuffix, addr string) ([]strin
 // Repo updates are not guaranteed to occur. If a repo has been updated
 // recently (within the Since duration specified in the request), the
 // update won't happen.
-func (c *Client) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
+func (c *ClientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
 	req := &protocol.RepoUpdateRequest{
 		Repo:  repo,
 		Since: since,
@@ -700,7 +700,7 @@ func (c *Client) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since
 
 // RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to aid our
 // migration of gitserver repos to the rendezvous hashing scheme.
-func (c *Client) RequestRepoMigrate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
 	// We do not need to set a value for the attribute "Since" because the repo is not expected to
 	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
 	// ignored.
@@ -740,7 +740,7 @@ func (c *Client) RequestRepoMigrate(ctx context.Context, repo api.RepoName) (*pr
 var MockIsRepoCloneable func(api.RepoName) error
 
 // IsRepoCloneable returns nil if the repository is cloneable.
-func (c *Client) IsRepoCloneable(ctx context.Context, repo api.RepoName) error {
+func (c *ClientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoName) error {
 	if MockIsRepoCloneable != nil {
 		return MockIsRepoCloneable(repo)
 	}
@@ -795,7 +795,7 @@ func (e *RepoNotCloneableErr) Error() string {
 	return fmt.Sprintf("repo not found (name=%s notfound=%v) because %s", e.repo, e.notFound, e.reason)
 }
 
-func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, error) {
+func (c *ClientImplementor) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, error) {
 	req := &protocol.IsRepoClonedRequest{
 		Repo: repo,
 	}
@@ -812,7 +812,7 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 	return cloned, nil
 }
 
-func (c *Client) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 	numPossibleShards := len(c.addrs())
 	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
@@ -889,7 +889,7 @@ func (c *Client) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (
 //
 // If multiple errors occurred, an incomplete result is returned along with a
 // *multierror.Error.
-func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
+func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
 	numPossibleShards := len(c.addrs())
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
@@ -966,7 +966,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol
 //
 // Note: If the statistics for a gitserver have not been computed, the
 // UpdatedAt field will be zero. This can happen for new gitservers.
-func (c *Client) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
+func (c *ClientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
 	for _, addr := range c.addrs() {
@@ -980,7 +980,7 @@ func (c *Client) ReposStats(ctx context.Context) (map[string]*protocol.ReposStat
 	return stats, allErr
 }
 
-func (c *Client) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
+func (c *ClientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://"+addr+"/repos-stats", nil)
 	if err != nil {
 		return nil, err
@@ -1002,7 +1002,7 @@ func (c *Client) doReposStats(ctx context.Context, addr string) (*protocol.Repos
 }
 
 // Remove removes the repository clone from gitserver.
-func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
+func (c *ClientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
 	req := &protocol.RepoDeleteRequest{
 		Repo: repo,
 	}
@@ -1022,7 +1022,7 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance
 // to which the HTTP POST request is sent. To use the rendezvous hashing scheme, see
 // httpPostWithURI.
-func (c *Client) httpPost(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error) {
+func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -1035,7 +1035,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, op string, pay
 // httpPostWithURI does not apply any transformations to the given URI. This allows the consumer to
 // use the predetermined hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
 // instance to which the HTTP POST request is sent.
-func (c *Client) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload interface{}) (resp *http.Response, err error) {
+func (c *ClientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload interface{}) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -1045,7 +1045,7 @@ func (c *Client) httpPostWithURI(ctx context.Context, repo api.RepoName, uri str
 }
 
 // do performs a request to a gitserver instance based on the address in the uri argument.
-func (c *Client) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
+func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
@@ -1086,7 +1086,7 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, uri string, 
 
 // CreateCommitFromPatch will attempt to create a commit from a patch
 // If possible, the error returned will be of type protocol.CreateCommitFromPatchError
-func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
+func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
 	if err != nil {
 		return "", err
@@ -1113,7 +1113,7 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 }
 
 // GetObject fetches git object data in the supplied repo
-func (c *Client) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+func (c *ClientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 	if ClientMocks.GetObject != nil {
 		return ClientMocks.GetObject(repo, objectName)
 	}

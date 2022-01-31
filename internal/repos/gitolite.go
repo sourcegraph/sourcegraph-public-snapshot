@@ -28,7 +28,7 @@ type GitoliteSource struct {
 	conn *schema.GitoliteConnection
 	// We ask gitserver to talk to gitolite because it holds the ssh keys
 	// required for authentication.
-	cli     *gitserver.Client
+	cli     *gitserver.ClientImplementor
 	exclude excludeFunc
 }
 
