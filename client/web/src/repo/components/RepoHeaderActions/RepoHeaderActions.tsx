@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { DropdownToggle, DropdownToggleProps } from 'reactstrap'
 
-import { Button, ButtonProps, ButtonLink, ButtonLinkProps } from '@sourcegraph/wildcard'
+import { ButtonLink, ButtonLinkProps, Button, ButtonProps } from '@sourcegraph/wildcard'
 
 import styles from './RepoHeaderActions.module.scss'
 
