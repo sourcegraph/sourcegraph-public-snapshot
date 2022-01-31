@@ -1,2 +1,3 @@
-name: 'add_missing_fk_indexes3'
+name: 'add missing fk indexes3'
 parent: 1528395887
+createIndexConcurrently: true

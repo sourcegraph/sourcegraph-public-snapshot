@@ -9,12 +9,10 @@ import (
 )
 
 type Definition struct {
-	ID           int
-	UpFilename   string
-	UpQuery      *sqlf.Query
-	DownFilename string
-	DownQuery    *sqlf.Query
-	Parents      []int
+	ID        int
+	UpQuery   *sqlf.Query
+	DownQuery *sqlf.Query
+	Parents   []int
 }
 
 type IndexMetadata struct {

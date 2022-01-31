@@ -1,2 +1,3 @@
-name: 'add_commit_to_lsif_uploads_repository_index'
+name: 'add commit to lsif uploads repository index'
 parent: 1528395899
+createIndexConcurrently: true

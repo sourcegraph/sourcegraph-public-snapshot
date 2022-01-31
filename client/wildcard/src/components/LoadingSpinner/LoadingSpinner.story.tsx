@@ -18,6 +18,9 @@ const config: Meta = {
 
     parameters: {
         component: LoadingSpinner,
+        chromatic: {
+            enableDarkMode: true,
+        },
     },
 }
 

@@ -19,9 +19,9 @@ func TestRunnerRun(t *testing.T) {
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{
 				{
-					SchemaName:      "well-formed",
-					Up:              true,
-					TargetMigration: 10000 + 2,
+					SchemaName:    "well-formed",
+					Type:          MigrationOperationTypeTargetedUp,
+					TargetVersion: 10000 + 2,
 				},
 			},
 		}); err != nil {
@@ -38,9 +38,9 @@ func TestRunnerRun(t *testing.T) {
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{
 				{
-					SchemaName:      "well-formed",
-					Up:              false,
-					TargetMigration: 10003 - 2,
+					SchemaName:    "well-formed",
+					Type:          MigrationOperationTypeTargetedDown,
+					TargetVersion: 10003 - 2,
 				},
 			},
 		}); err != nil {
@@ -58,9 +58,9 @@ func TestRunnerRun(t *testing.T) {
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{
 				{
-					SchemaName:      "query-error",
-					Up:              true,
-					TargetMigration: 10000 + 1,
+					SchemaName:    "query-error",
+					Type:          MigrationOperationTypeTargetedUp,
+					TargetVersion: 10000 + 1,
 				},
 			},
 		}); err == nil || !strings.Contains(err.Error(), "uh-oh") {
@@ -78,9 +78,9 @@ func TestRunnerRun(t *testing.T) {
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{
 				{
-					SchemaName:      "query-error",
-					Up:              false,
-					TargetMigration: 10001 - 1,
+					SchemaName:    "query-error",
+					Type:          MigrationOperationTypeTargetedDown,
+					TargetVersion: 10001 - 1,
 				},
 			},
 		}); err == nil || !strings.Contains(err.Error(), "uh-oh") {
@@ -95,9 +95,9 @@ func TestRunnerRun(t *testing.T) {
 		if err := makeTestRunner(t, testStoreWithVersion(10000, false)).Run(ctx, Options{
 			Operations: []MigrationOperation{
 				{
-					SchemaName:      "unknown",
-					Up:              true,
-					TargetMigration: 10000 + 1,
+					SchemaName:    "unknown",
+					Type:          MigrationOperationTypeTargetedUp,
+					TargetVersion: 10000 + 1,
 				},
 			},
 		}); err == nil || !strings.Contains(err.Error(), "unknown schema") {
@@ -111,9 +111,9 @@ func TestRunnerRun(t *testing.T) {
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{
 				{
-					SchemaName:      "well-formed",
-					Up:              true,
-					TargetMigration: 10000 + 1,
+					SchemaName:    "well-formed",
+					Type:          MigrationOperationTypeTargetedUp,
+					TargetVersion: 10000 + 1,
 				},
 			},
 		}); err == nil || !strings.Contains(err.Error(), "dirty database") {
@@ -128,9 +128,9 @@ func TestRunnerRun(t *testing.T) {
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{
 				{
-					SchemaName:      "well-formed",
-					Up:              true,
-					TargetMigration: 10002 + 0,
+					SchemaName:    "well-formed",
+					Type:          MigrationOperationTypeTargetedUp,
+					TargetVersion: 10002 + 0,
 				},
 			},
 		}); err == nil || !strings.Contains(err.Error(), "dirty database") {
@@ -146,9 +146,9 @@ func TestRunnerRun(t *testing.T) {
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{
 				{
-					SchemaName:      "well-formed",
-					Up:              true,
-					TargetMigration: 10000 + 1,
+					SchemaName:    "well-formed",
+					Type:          MigrationOperationTypeTargetedUp,
+					TargetVersion: 10000 + 1,
 				},
 			},
 		}); err == nil || !strings.Contains(err.Error(), "contention") {
@@ -163,9 +163,9 @@ func TestRunnerRun(t *testing.T) {
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{
 				{
-					SchemaName:      "well-formed",
-					Up:              true,
-					TargetMigration: 10002 + 1,
+					SchemaName:    "well-formed",
+					Type:          MigrationOperationTypeTargetedUp,
+					TargetVersion: 10002 + 1,
 				},
 			},
 		}); err == nil || !strings.Contains(err.Error(), "contention") {

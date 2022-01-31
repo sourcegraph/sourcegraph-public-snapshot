@@ -20,6 +20,11 @@ const decorator: DecoratorFn = story => (
 const config: Meta = {
     title: 'wildcard/PageHeader',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+        },
+    },
 }
 
 export default config

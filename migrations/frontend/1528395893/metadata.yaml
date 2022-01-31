@@ -1,2 +1,3 @@
-name: 'fix_repo_index_part_one'
+name: 'fix repo index part one'
 parent: 1528395892
+createIndexConcurrently: true
