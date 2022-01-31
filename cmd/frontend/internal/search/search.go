@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -138,6 +139,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	filters := &streaming.SearchFilters{}
 
+	var wgLogLatency sync.WaitGroup
+	defer wgLogLatency.Wait()
+
 	first := true
 	handleEvent := func(event streaming.SearchEvent) {
 		progress.Update(event)
@@ -177,7 +181,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			metricLatency.WithLabelValues(string(GuessSource(r))).
 				Observe(time.Since(start).Seconds())
 
-			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
+			graphqlbackend.LogSearchLatency(ctx, h.db, &wgLogLatency, &inputs, int32(time.Since(start).Milliseconds()))
 		}
 	}
 
