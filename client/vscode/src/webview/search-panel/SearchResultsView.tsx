@@ -169,10 +169,10 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     )
 
     return (
-        <div>
+        <div className={styles.resultsViewLayout}>
             {/* eslint-disable-next-line react/forbid-elements */}
             <form
-                className="d-flex my-2"
+                className="d-flex w-100 my-2 pb-2 border-bottom"
                 onSubmit={event => {
                     event.preventDefault()
                     onSubmit()
@@ -210,65 +210,67 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     containerClassName={styles.searchBoxContainer}
                 />
             </form>
-            {!authenticatedUser && (
-                <SearchPageCta
-                    icon={<SearchBetaIcon />}
-                    ctaTitle="Sign up to add your public and private repositories and access other features"
-                    ctaDescription="Do all the things editors can’t: search multiple repos & commit history, monitor, save searches and more."
-                    buttonText="Create a free account"
-                    onClickAction={onSignUpClick}
-                />
-            )}
-            <SearchResultsInfoBar
-                onShareResultsClick={onShareResultsClick}
-                showSavedSearchForm={showSavedSearchForm}
-                setShowSavedSearchForm={setShowSavedSearchForm}
-                extensionCoreAPI={extensionCoreAPI}
-                patternType={context.submittedSearchQueryState.searchPatternType}
-                authenticatedUser={authenticatedUser}
-                platformContext={platformContext}
-                stats={
-                    <StreamingProgress
-                        progress={context.searchResults?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
-                        state={context.searchResults?.state || 'loading'}
-                        onSearchAgain={onSearchAgain}
-                        showTrace={false}
+            <div className={styles.resultsViewScrollContainer}>
+                {!authenticatedUser && (
+                    <SearchPageCta
+                        icon={<SearchBetaIcon />}
+                        ctaTitle="Sign up to add your public and private repositories and access other features"
+                        ctaDescription="Do all the things editors can’t: search multiple repos & commit history, monitor, save searches and more."
+                        buttonText="Create a free account"
+                        onClickAction={onSignUpClick}
                     />
-                }
-                allExpanded={allExpanded}
-                onExpandAllResultsToggle={onExpandAllResultsToggle}
-            />
-            {authenticatedUser && showSavedSearchForm && (
-                <SavedSearchCreateForm
+                )}
+                <SearchResultsInfoBar
+                    onShareResultsClick={onShareResultsClick}
+                    showSavedSearchForm={showSavedSearchForm}
+                    setShowSavedSearchForm={setShowSavedSearchForm}
+                    extensionCoreAPI={extensionCoreAPI}
+                    patternType={context.submittedSearchQueryState.searchPatternType}
                     authenticatedUser={authenticatedUser}
-                    submitLabel="Add saved search"
-                    title="Add saved search"
-                    fullQuery={fullQuery}
-                    onComplete={() => setShowSavedSearchForm(false)}
                     platformContext={platformContext}
-                    instanceURL={instanceURL}
+                    stats={
+                        <StreamingProgress
+                            progress={context.searchResults?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
+                            state={context.searchResults?.state || 'loading'}
+                            onSearchAgain={onSearchAgain}
+                            showTrace={false}
+                        />
+                    }
+                    allExpanded={allExpanded}
+                    onExpandAllResultsToggle={onExpandAllResultsToggle}
                 />
-            )}
-            <StreamingSearchResultsList
-                isLightTheme={theme === 'theme-light'}
-                settingsCascade={settingsCascade}
-                telemetryService={platformContext.telemetryService}
-                allExpanded={allExpanded}
-                // Debt: dotcom prop used only for "run search" link
-                // for search examples. Fix on VSCE.
-                isSourcegraphDotCom={false}
-                searchContextsEnabled={true}
-                showSearchContext={true}
-                platformContext={platformContext}
-                results={context.searchResults ?? undefined}
-                authenticatedUser={authenticatedUser}
-                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
-                executedQuery={context.submittedSearchQueryState.queryState.query}
-                resultClassName="mr-0"
-                // TODO "no results" video thumbnail assets
-                // In build, copy ui/assets/img folder to dist/
-                assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
-            />
+                {authenticatedUser && showSavedSearchForm && (
+                    <SavedSearchCreateForm
+                        authenticatedUser={authenticatedUser}
+                        submitLabel="Add saved search"
+                        title="Add saved search"
+                        fullQuery={fullQuery}
+                        onComplete={() => setShowSavedSearchForm(false)}
+                        platformContext={platformContext}
+                        instanceURL={instanceURL}
+                    />
+                )}
+                <StreamingSearchResultsList
+                    isLightTheme={theme === 'theme-light'}
+                    settingsCascade={settingsCascade}
+                    telemetryService={platformContext.telemetryService}
+                    allExpanded={allExpanded}
+                    // Debt: dotcom prop used only for "run search" link
+                    // for search examples. Fix on VSCE.
+                    isSourcegraphDotCom={false}
+                    searchContextsEnabled={true}
+                    showSearchContext={true}
+                    platformContext={platformContext}
+                    results={context.searchResults ?? undefined}
+                    authenticatedUser={authenticatedUser}
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
+                    executedQuery={context.submittedSearchQueryState.queryState.query}
+                    resultClassName="mr-0"
+                    // TODO "no results" video thumbnail assets
+                    // In build, copy ui/assets/img folder to dist/
+                    assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
+                />
+            </div>
         </div>
     )
 }
