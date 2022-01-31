@@ -105,15 +105,16 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     <OrgSettingsProfilePage {...routeComponentProps} {...props} />
                                 )}
                             />
-                            {/* PIROS: FFLAG HERE */}
-                            <Route
-                                path={`${props.match.path}/members-v1`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                render={routeComponentProps => (
-                                    <OrgSettingsMembersPage {...routeComponentProps} {...props} />
-                                )}
-                            />
+                            {!props.newMembersInviteEnabled && (
+                                <Route
+                                    path={`${props.match.path}/members-v1`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={true}
+                                    render={routeComponentProps => (
+                                        <OrgSettingsMembersPage {...routeComponentProps} {...props} />
+                                    )}
+                                />
+                            )}
                             {showOrgCode && [
                                 <Route
                                     path={`${props.match.path}/code-hosts`}

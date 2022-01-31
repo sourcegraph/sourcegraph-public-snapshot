@@ -13,12 +13,12 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
         icon: CogOutlineIcon,
         condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
     },
-    // PIROS: FFLAG HERE
     {
         to: '/members-v2',
         label: 'Members',
         icon: AccountMultipleIcon,
-        condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
+        condition: ({ org: { viewerCanAdminister }, newMembersInviteEnabled }) =>
+            viewerCanAdminister && newMembersInviteEnabled,
     },
     {
         to: '/searches',

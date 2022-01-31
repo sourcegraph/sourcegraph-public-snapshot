@@ -22,14 +22,25 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
+import {
+    OrganizationResult,
+    OrganizationVariables,
+    OrgAreaOrganizationFields,
+    OrgFeatureFlagValueResult,
+    OrgFeatureFlagValueVariables,
+} from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { RouteDescriptor } from '../../util/contributions'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
+import { ORG_CODE_FEATURE_FLAG_EMAIL_INVITE } from '../backend'
 
-function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
+function queryOrganization(args: {
+    name: string
+    // id: string
+    // flagName: string organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
+}): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
         gql`
             query Organization($name: String!) {
@@ -72,6 +83,22 @@ function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizati
     )
 }
 
+function queryMembersFFlag(args: { orgID: string; flagName: string }): Observable<boolean> {
+    return requestGraphQL<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        gql`
+            query OrgFeatureFlagValue($orgID: ID!, $flagName: String!) {
+                organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            return data.organizationFeatureFlagValue
+        })
+    )
+}
+
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
@@ -106,6 +133,7 @@ interface State extends BreadcrumbSetters {
      * The fetched org or an error if an error occurred; undefined while loading.
      */
     orgOrError?: OrgAreaOrganizationFields | ErrorLike
+    emailInvite: boolean
 }
 
 /**
@@ -131,6 +159,8 @@ export interface OrgAreaPageProps
     authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
+
+    newMembersInviteEnabled: boolean
 }
 
 /**
@@ -148,6 +178,7 @@ export class OrgArea extends React.Component<Props> {
         this.state = {
             setBreadcrumb: props.setBreadcrumb,
             useBreadcrumb: props.useBreadcrumb,
+            emailInvite: false,
         }
     }
 
@@ -167,15 +198,30 @@ export class OrgArea extends React.Component<Props> {
                         return queryOrganization({ name }).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
                             map((orgOrError): PartialStateUpdate => ({ orgOrError })),
-
                             // Don't clear old org data while we reload, to avoid unmounting all components during
                             // loading.
                             startWith<PartialStateUpdate>(forceRefresh ? { orgOrError: undefined } : {})
                         )
                     })
                 )
+                .pipe(
+                    switchMap(state => {
+                        const flagObservable =
+                            state.orgOrError && !isErrorLike(state.orgOrError)
+                                ? queryMembersFFlag({
+                                      orgID: state.orgOrError.id,
+                                      flagName: ORG_CODE_FEATURE_FLAG_EMAIL_INVITE,
+                                  })
+                                : of(false)
+                        return flagObservable.pipe(
+                            catchError((): [boolean] => [false]), // set flag to false in case of error reading it
+                            map(emailInvite => ({ orgOrError: state.orgOrError, emailInvite }))
+                        )
+                    })
+                )
                 .subscribe(
                     stateUpdate => {
+                        debugger
                         if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
                             const childBreadcrumbSetters = this.props.setBreadcrumb({
                                 key: 'OrgArea',
@@ -186,6 +232,7 @@ export class OrgArea extends React.Component<Props> {
                                 useBreadcrumb: childBreadcrumbSetters.useBreadcrumb,
                                 setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
                                 orgOrError: stateUpdate.orgOrError,
+                                emailInvite: stateUpdate.emailInvite,
                             })
                         } else {
                             this.setState(stateUpdate)
@@ -237,6 +284,7 @@ export class OrgArea extends React.Component<Props> {
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
+            newMembersInviteEnabled: this.state.emailInvite,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

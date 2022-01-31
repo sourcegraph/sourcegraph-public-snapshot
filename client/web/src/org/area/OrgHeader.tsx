@@ -17,6 +17,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
 
 export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
     isSourcegraphDotCom: boolean
+    newMembersInviteEnabled: boolean
 }
 
 export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {}
@@ -33,6 +34,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
     match,
     className = '',
     isSourcegraphDotCom,
+    newMembersInviteEnabled,
 }) => (
     <div className={className}>
         <div className="container">
@@ -67,6 +69,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                         batchChangesWebhookLogsEnabled,
                                         org,
                                         isSourcegraphDotCom,
+                                        newMembersInviteEnabled,
                                     }) && (
                                         <li key={label} className="nav-item">
                                             <NavLink
