@@ -10,6 +10,7 @@ const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/web')
 const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
 const SEARCH_FOLDER = path.resolve(ROOT_FOLDER, './client/search')
+const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
 const SHARED_DOCUMENTS_GLOB = [
@@ -32,9 +33,17 @@ const BROWSER_DOCUMENTS_GLOB = [
 
 const SEARCH_DOCUMENTS_GLOB = [`${SEARCH_FOLDER}/src/**/*.{ts,tsx}`]
 
+const VSCODE_DOCUMENTS_GLOB = [`${VSCODE_FOLDER}/src/**/*.{ts,tsx}`]
+
 // Define ALL_DOCUMENTS_GLOB as the union of the previous glob arrays.
 const ALL_DOCUMENTS_GLOB = [
-  ...new Set([...SHARED_DOCUMENTS_GLOB, ...WEB_DOCUMENTS_GLOB, ...BROWSER_DOCUMENTS_GLOB, ...SEARCH_DOCUMENTS_GLOB]),
+  ...new Set([
+    ...SHARED_DOCUMENTS_GLOB,
+    ...WEB_DOCUMENTS_GLOB,
+    ...BROWSER_DOCUMENTS_GLOB,
+    ...SEARCH_DOCUMENTS_GLOB,
+    ...VSCODE_DOCUMENTS_GLOB,
+  ]),
 ]
 
 const SHARED_PLUGINS = [
@@ -119,6 +128,17 @@ async function generateGraphQlOperations() {
             noExport: false,
             enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'SearchGraphQlOperations',
+          },
+          plugins: SHARED_PLUGINS,
+        },
+
+        [path.join(VSCODE_FOLDER, './src/graphql-operations.ts')]: {
+          documents: VSCODE_DOCUMENTS_GLOB,
+          config: {
+            onlyOperationTypes: true,
+            noExport: false,
+            enumValues: '@sourcegraph/shared/src/graphql-operations',
+            interfaceNameForOperations: 'VSCodeGraphQlOperations',
           },
           plugins: SHARED_PLUGINS,
         },
