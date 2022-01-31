@@ -129,6 +129,7 @@ global contexts (`null`), `organization1` contexts (`organization1-id`), and `us
   "first": 50,
   "namespaces": [null, "organization1-id", "user1-id"],
   "orderBy": "SEARCH_CONTEXT_UPDATED_AT",
+  "descending": false
 }
 ```
 
