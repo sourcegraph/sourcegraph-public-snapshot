@@ -40,7 +40,7 @@ export interface SearchSidebarProps
 
     /**
      * Not yet implemented in the VS Code extension (blocked on Apollo Client integration).
-     * */
+     */
     getRevisions?: (revisionsProps: Omit<RevisionsProps, 'query'>) => (query: string) => JSX.Element
 
     /**
@@ -49,6 +49,12 @@ export interface SearchSidebarProps
     prefixContent?: JSX.Element
 
     buildSearchURLQueryFromQueryState: (queryParameters: BuildSearchQueryURLParameters) => string
+
+    /**
+     * Force search type links to be rendered as buttons.
+     * Used e.g. in the VS Code extension to update search query state.
+     */
+    forceButton?: boolean
 }
 
 const selectFromQueryState = ({

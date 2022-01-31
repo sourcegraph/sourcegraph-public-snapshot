@@ -93,6 +93,12 @@ interface CommonContext {
     // submitted search query state so we know that it's from
     // that "search session")
 
+    // The sidebar will either update query state OR actually perform a search.
+
+    // searchSidebarQueryState: {
+    //     proposedQueryState: {}
+    // }
+
     // In common context and not just `search-results` to retain during `idle` or `remote-browsing` states.
     searchResults: AggregateStreamingSearchResults | null
 
