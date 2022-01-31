@@ -14,7 +14,7 @@ type ViewCardElementProps = React.DetailedHTMLProps<Omit<React.HTMLAttributes<HT
 
 export interface ViewCardProps extends ViewCardElementProps {
     title?: string
-    subtitle?: string
+    subtitle?: ReactNode
     innerRef?: React.Ref<HTMLElement>
 
     /**
@@ -35,7 +35,6 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
         <Card
             as="section"
             {...otherProps}
-            /* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */
             tabIndex={0}
             ref={innerRef}
             className={classNames(otherProps.className, styles.view)}

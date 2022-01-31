@@ -28,6 +28,7 @@ type CommitSearch struct {
 	Diff                 bool
 	HasTimeFilter        bool
 	Limit                int
+	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
 }
 

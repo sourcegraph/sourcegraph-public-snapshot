@@ -6,9 +6,7 @@ import { ForwardReferenceComponent } from '../../types'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 import { getButtonSize, getButtonStyle } from './utils'
 
-export interface ButtonProps
-    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-        React.RefAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**
      * The variant style of the button. Defaults to `primary`
      */
@@ -41,7 +39,17 @@ export interface ButtonProps
  */
 export const Button = React.forwardRef(
     (
-        { children, as: Component = 'button', type = 'button', variant, size, outline, className, ...attributes },
+        {
+            children,
+            as: Component = 'button',
+            // Use default type="button" only for the `button` element.
+            type = Component === 'button' ? 'button' : undefined,
+            variant,
+            size,
+            outline,
+            className,
+            ...attributes
+        },
         reference
     ) => (
         <Component
@@ -52,7 +60,7 @@ export const Button = React.forwardRef(
                 size && getButtonSize({ size }),
                 className
             )}
-            type={Component === 'button' ? type : undefined}
+            type={type}
             {...attributes}
         >
             {children}

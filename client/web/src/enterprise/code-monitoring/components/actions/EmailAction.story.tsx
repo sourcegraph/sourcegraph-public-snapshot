@@ -25,24 +25,31 @@ const action: EmailActionProps['action'] = {
     enabled: true,
 }
 
-add('disabled', () => <WebStory>{() => <EmailAction {...defaultProps} disabled={true} />}</WebStory>)
-
-add('closed, not populated', () => <WebStory>{() => <EmailAction {...defaultProps} />}</WebStory>)
-
-add('open, not populated', () => <WebStory>{() => <EmailAction {...defaultProps} _testStartOpen={true} />}</WebStory>)
-
-add('closed, populated, enabled', () => <WebStory>{() => <EmailAction {...defaultProps} action={action} />}</WebStory>)
-
-add('open, populated, enabled', () => (
-    <WebStory>{() => <EmailAction {...defaultProps} _testStartOpen={true} action={action} />}</WebStory>
-))
-
-add('closed, populated, disabled', () => (
-    <WebStory>{() => <EmailAction {...defaultProps} action={{ ...action, enabled: false }} />}</WebStory>
-))
-
-add('open, populated, disabled', () => (
+add('EmailAction', () => (
     <WebStory>
-        {() => <EmailAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />}
+        {() => (
+            <>
+                <h2>Action card disabled</h2>
+                <EmailAction {...defaultProps} disabled={true} />
+
+                <h2>Closed, not populated</h2>
+                <EmailAction {...defaultProps} />
+
+                <h2>Open, not populated</h2>
+                <EmailAction {...defaultProps} _testStartOpen={true} />
+
+                <h2>Closed, populated, enabled</h2>
+                <EmailAction {...defaultProps} action={action} />
+
+                <h2>Open, populated, enabled</h2>
+                <EmailAction {...defaultProps} _testStartOpen={true} action={action} />
+
+                <h2>Closed, populated, disabled</h2>
+                <EmailAction {...defaultProps} action={{ ...action, enabled: false }} />
+
+                <h2>Open, populated, disabled</h2>
+                <EmailAction {...defaultProps} _testStartOpen={true} action={{ ...action, enabled: false }} />
+            </>
+        )}
     </WebStory>
 ))
