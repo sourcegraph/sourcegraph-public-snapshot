@@ -1,4 +1,4 @@
-export const DATA_SERIES_COLORS: Record<string, string> = {
+export const DATA_SERIES_COLORS = {
     RED: 'var(--oc-red-7)',
     PINK: 'var(--oc-pink-7)',
     GRAPE: 'var(--oc-grape-7)',
@@ -13,4 +13,4 @@ export const DATA_SERIES_COLORS: Record<string, string> = {
     ORANGE: 'var(--oc-orange-7)',
 }
 
-export const DEFAULT_DATA_SERIES_COLOR = DATA_SERIES_COLORS.PINK
+export const DEFAULT_DATA_SERIES_COLOR = DATA_SERIES_COLORS.GRAPE

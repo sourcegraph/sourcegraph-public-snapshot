@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { startCase } from 'lodash';
+import { startCase } from 'lodash'
 import React, { ChangeEventHandler, memo } from 'react'
 import { noop } from 'rxjs'
 
@@ -20,6 +20,8 @@ interface FormColorInputProps {
     className?: string
 }
 
+const COLORS_KEYS = Object.keys(DATA_SERIES_COLORS) as (keyof typeof DATA_SERIES_COLORS)[]
+
 /** Displays custom radio group for picking color of code insight chart line. */
 export const FormColorInput: React.FunctionComponent<FormColorInputProps> = memo(props => {
     const { className, value = null, title, name, onChange = noop } = props
@@ -29,7 +31,7 @@ export const FormColorInput: React.FunctionComponent<FormColorInputProps> = memo
             <legend className={classNames('mb-3', styles.formColorPickerTitle)}>{title}</legend>
 
             <div>
-                {Object.keys(DATA_SERIES_COLORS).map(key => (
+                {COLORS_KEYS.map(key => (
                     <label
                         key={key}
                         /* eslint-disable-next-line react/forbid-dom-props */
