@@ -1834,11 +1834,11 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 		stream = streaming.StreamFunc(func(event streaming.SearchEvent) {
 			var filterErr error
 			event.Results, filterErr = applySubRepoFiltering(ctx, checker, event.Results)
-
-			stream.Send(event)
 			mu.Lock()
 			errs = multierror.Append(filterErr)
 			mu.Unlock()
+
+			agg.Send(event)
 		})
 	}
 
