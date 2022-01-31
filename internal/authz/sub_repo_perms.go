@@ -313,6 +313,39 @@ func SubRepoEnabled(checker SubRepoPermissionChecker) bool {
 	return checker != nil && checker.Enabled()
 }
 
+// CanReadAllPaths returns true if the actor can read all paths.
+func CanReadAllPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string) (bool, error) {
+	if !SubRepoEnabled(checker) {
+		return true, nil
+	}
+	a := actor.FromContext(ctx)
+	if a.IsInternal() {
+		return true, nil
+	}
+	if !a.IsAuthenticated() {
+		return false, &ErrUnauthenticated{}
+	}
+
+	var perms Perms
+	var err error
+	c := RepoContent{
+		Repo: repo,
+	}
+
+	for _, p := range paths {
+		c.Path = p
+		perms, err = checker.Permissions(ctx, a.UID, c)
+		if err != nil {
+			return false, err
+		}
+		if !perms.Include(Read) {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 // FilterActorPaths will filter the given list of paths for the given actor
 // returning on paths they are allowed to read.
 func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, paths []string) ([]string, error) {

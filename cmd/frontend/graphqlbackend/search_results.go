@@ -1860,34 +1860,39 @@ func subRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCheck
 			Stats:   e.Stats,
 		}
 		for _, m := range e.Results {
-			var repo api.RepoName
-			var matchedPath string
-
 			switch mm := m.(type) {
 			case *result.FileMatch:
-				repo = mm.Repo.Name
-				matchedPath = mm.Path
+				repo := mm.Repo.Name
+				matchedPath := mm.Path
+
+				content := authz.RepoContent{
+					Repo: repo,
+					Path: matchedPath,
+				}
+				perms, err := authz.ActorPermissions(ctx, checker, a, content)
+				if err != nil {
+					errs = multierror.Append(errs, err)
+					continue
+				}
+
+				if perms.Include(authz.Read) {
+					filtered.Results = append(filtered.Results, m)
+				}
 			case *result.CommitMatch:
-				// TODO: Do commit filtering once we're returning modified file paths in CommitMatch
+				allowed, err := authz.CanReadAllPaths(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
+				if err != nil {
+					errs = multierror.Append(errs, err)
+					continue
+				}
+				if !allowed {
+					continue
+				}
 				filtered.Results = append(filtered.Results, m)
 				continue
 			case *result.RepoMatch:
 				// Repo filtering is taking care of by our usual repo filtering logic
 				filtered.Results = append(filtered.Results, m)
 				continue
-			}
-
-			content := authz.RepoContent{
-				Repo: repo,
-				Path: matchedPath,
-			}
-			perms, err := authz.ActorPermissions(ctx, checker, a, content)
-			if err != nil {
-				errs = multierror.Append(errs, err)
-				continue
-			}
-			if perms.Include(authz.Read) {
-				filtered.Results = append(filtered.Results, m)
 			}
 		}
 
@@ -1900,8 +1905,6 @@ func subRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCheck
 		return filtered, errors.New("subRepoFilterFunc")
 	}
 }
-
-
 
 // isContextError returns true if ctx.Err() is not nil or if err
 // is an error caused by context cancelation or timeout.
