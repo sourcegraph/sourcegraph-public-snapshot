@@ -26,7 +26,9 @@ func Flags(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 		},
 		Subcommands: []*ffcli.Command{
 			Up(commandName, run, out),
-			Down(commandName, run, out),
+			UpTo(commandName, run, out),
+			Undo(commandName, run, out),
+			DownTo(commandName, run, out),
 		},
 	}
 }
