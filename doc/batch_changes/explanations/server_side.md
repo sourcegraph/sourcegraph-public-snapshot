@@ -15,8 +15,8 @@ Server-side Batch Changes computing allows to:
 
 ## Setup
 
-This is a one-time process. Once a site-admin of the Sourcegraph instance set up executors and enabled server-side Batch Changes,
-all users of the Sourcegraph installation can get started with no additional setup required.
+This is a one-time process. Once a site-admin of the Sourcegraph instance sets up executors and enables server-side Batch Changes,
+all users of the Sourcegraph instance can get started with no additional setup required.
 
 Make sure that
 
