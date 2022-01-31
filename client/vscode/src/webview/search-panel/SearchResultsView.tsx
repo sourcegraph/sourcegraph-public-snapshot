@@ -8,6 +8,7 @@ import {
     fetchAutoDefinedSearchContexts,
     getUserSearchContextNamespaces,
     fetchSearchContexts,
+    QueryState,
 } from '@sourcegraph/search'
 import { SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -41,7 +42,29 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     context,
     instanceURL,
 }) => {
-    const [userQueryState, setUserQueryState] = useState(context.submittedSearchQueryState.queryState)
+    const [userQueryState, setUserQueryState] = useState<QueryState>(context.submittedSearchQueryState.queryState)
+
+    const onChange = useCallback(
+        (newState: QueryState) => {
+            setUserQueryState(newState)
+
+            extensionCoreAPI
+                .setSidebarQueryState({
+                    queryState: newState,
+                    searchCaseSensitivity: context.submittedSearchQueryState?.searchCaseSensitivity,
+                    searchPatternType: context.submittedSearchQueryState?.searchPatternType,
+                })
+                .catch(error => {
+                    // TODO surface error to users
+                    console.error('Error updating sidebar query state from panel', error)
+                })
+        },
+        [
+            extensionCoreAPI,
+            context.submittedSearchQueryState.searchCaseSensitivity,
+            context.submittedSearchQueryState.searchPatternType,
+        ]
+    )
 
     const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => {
@@ -51,9 +74,14 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
     const [showSavedSearchForm, setShowSavedSearchForm] = useState(false)
 
-    // Update local query state on e.g. sidebar events.
-    // TODO: create an API shared with SearchHomeView.
+    // Update local query state on sidebar query state updates.
+    useDeepCompareEffectNoCheck(() => {
+        if (context.searchSidebarQueryState.proposedQueryState?.queryState) {
+            setUserQueryState(context.searchSidebarQueryState.proposedQueryState?.queryState)
+        }
+    }, [context.searchSidebarQueryState.proposedQueryState?.queryState])
 
+    // Update local search query state on sidebar search submission.
     useDeepCompareEffectNoCheck(() => {
         setUserQueryState(context.submittedSearchQueryState.queryState)
         // It's a whole new object on each state update, so we need
@@ -64,15 +92,33 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; newQuery?: string }) => {
             const previousSearchQueryState = context.submittedSearchQueryState
 
+            const query = options?.newQuery ?? userQueryState.query
+            const caseSensitive = options?.caseSensitive ?? previousSearchQueryState.searchCaseSensitivity
+            const patternType = options?.patternType ?? previousSearchQueryState.searchPatternType
+
             extensionCoreAPI
-                .streamSearch(options?.newQuery ?? userQueryState.query, {
-                    caseSensitive: options?.caseSensitive ?? previousSearchQueryState.searchCaseSensitivity,
-                    patternType: options?.patternType ?? previousSearchQueryState.searchPatternType,
+                .streamSearch(query, {
+                    caseSensitive,
+                    patternType,
                     version: LATEST_VERSION,
                     trace: undefined,
                 })
-                .then(() => {})
-                .catch(() => {})
+                .catch(error => {
+                    // TODO surface error to users? Errors will typically be caught and
+                    // surfaced throught streaming search reuls.
+                    console.error(error)
+                })
+
+            extensionCoreAPI
+                .setSidebarQueryState({
+                    queryState: { query },
+                    searchCaseSensitivity: caseSensitive,
+                    searchPatternType: patternType,
+                })
+                .catch(error => {
+                    // TODO surface error to users
+                    console.error('Error updating sidebar query state from panel', error)
+                })
         },
         [userQueryState.query, context.submittedSearchQueryState, extensionCoreAPI]
     )
@@ -189,7 +235,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                     structuralSearchDisabled={false}
                     queryState={userQueryState}
-                    onChange={setUserQueryState}
+                    onChange={onChange}
                     onSubmit={onSubmit}
                     authenticatedUser={authenticatedUser}
                     searchContextsEnabled={true}
@@ -209,6 +255,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     platformContext={platformContext}
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                     containerClassName={styles.searchBoxContainer}
+                    autoFocus={true}
                 />
             </form>
             <div className={styles.resultsViewScrollContainer}>

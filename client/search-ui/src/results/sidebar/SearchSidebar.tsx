@@ -155,6 +155,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         query,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
                         buildSearchURLQueryFromQueryState: props.buildSearchURLQueryFromQueryState,
+                        forceButton: props.forceButton,
                     })}
                 </SearchSidebarSection>
                 <SearchSidebarSection
