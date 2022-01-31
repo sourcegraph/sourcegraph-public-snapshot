@@ -6,6 +6,7 @@ type EventPayload struct {
 	Action      string             `json:"action"`
 	PullRequest PullRequestPayload `json:"pull_request"`
 	Repository  RepositoryPayload  `json:"repository"`
+	Base        RefPayload         `json:"base"`
 }
 
 type PullRequestPayload struct {
@@ -29,4 +30,9 @@ type UserPayload struct {
 type RepositoryPayload struct {
 	FullName string `json:"full_name"`
 	URL      string `json:"html_url"`
+}
+
+type RefPayload struct {
+	// e.g. 'main'
+	Ref string `json:"ref"`
 }
