@@ -2318,6 +2318,20 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
+
+    """
+    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
+    repositories included by this external service, and is derived from commit history (because that
+    for example gives more accurate collaborator work email addresses than the contributors API which
+    often returns personal emails.
+
+    Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
+    inviting collaborators while repositories are cloning.
+
+    In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
+    reaches out to the code host directly which is wasteful if repositories are already cloned.
+    """
+    invitableCollaborators: [Person!]!
 }
 
 """
