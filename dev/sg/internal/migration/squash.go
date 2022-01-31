@@ -306,7 +306,7 @@ func removeMigrationFilesUpToIndex(database db.Database, targetIndex int) ([]str
 	}
 
 	for _, name := range filtered {
-		if err := os.Remove(filepath.Join(baseDir, name)); err != nil {
+		if err := os.RemoveAll(filepath.Join(baseDir, name)); err != nil {
 			return nil, err
 		}
 	}

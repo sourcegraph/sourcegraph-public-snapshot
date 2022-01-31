@@ -10,6 +10,7 @@
     :global(.line) {
         min-width: 1.5rem;
         text-align: right;
+        user-select: none;
 
         &::before {
             /* draw line number with css so it cannot be copied to clipboard */

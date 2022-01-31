@@ -8,10 +8,12 @@
 # https://sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/buildkite/kubernetes/buildkite-agent/buildkite-agent.Deployment.yaml
 
 steps:
-  - label: ':hammer_and_wrench: :pipeline: Generate pipeline'
-    command: |
-      echo "--- generate pipeline"
-      go run ./enterprise/dev/ci/gen-pipeline.go | tee generated-pipeline.yml
-      echo ""
-      echo "--- upload pipeline"
-      buildkite-agent pipeline upload generated-pipeline.yml
+  - group: "Pipeline setup"
+    steps:
+      - label: ':hammer_and_wrench: :pipeline: Generate pipeline'
+        command: |
+          echo "--- generate pipeline"
+          go run ./enterprise/dev/ci/gen-pipeline.go | tee generated-pipeline.yml
+          echo ""
+          echo "--- upload pipeline"
+          buildkite-agent pipeline upload generated-pipeline.yml
