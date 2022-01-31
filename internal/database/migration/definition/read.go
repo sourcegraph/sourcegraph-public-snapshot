@@ -16,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var isTesting = false
-
 func ReadDefinitions(fs fs.FS) (*Definitions, error) {
 	migrationDefinitions, err := readDefinitions(fs)
 	if err != nil {
