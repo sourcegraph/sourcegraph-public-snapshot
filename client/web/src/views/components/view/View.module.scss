@@ -12,13 +12,11 @@
 }
 
 .header {
-    display: flex;
     margin-bottom: 0.75rem;
-    flex-wrap: wrap;
 }
 
 .header-content {
-    flex-grow: 1;
+    display: flex;
 }
 
 .title {
@@ -30,6 +28,7 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     margin-bottom: 0.25rem;
+    flex-grow: 1;
 }
 
 .action {
