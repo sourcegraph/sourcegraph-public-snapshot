@@ -167,22 +167,24 @@ func (r *Runner) applyMigration(
 	operation MigrationOperation,
 	definition definition.Definition,
 ) error {
+	up := operation.Type == MigrationOperationTypeTargetedUp
+
 	log15.Info(
 		"Applying migration",
 		"schema", schemaContext.schema.Name,
 		"migrationID", definition.ID,
-		"type", operation.Type,
+		"up", up,
 	)
 
 	direction := schemaContext.store.Up
-	if operation.Type != MigrationOperationTypeTargetedUp {
+	if !up {
 		direction = schemaContext.store.Down
 	}
 
 	applyMigration := func() error {
 		return direction(ctx, definition)
 	}
-	if err := schemaContext.store.WithMigrationLog(ctx, definition, operation.Type == MigrationOperationTypeTargetedUp, applyMigration); err != nil {
+	if err := schemaContext.store.WithMigrationLog(ctx, definition, up, applyMigration); err != nil {
 		return errors.Wrapf(err, "failed to apply migration %d", definition.ID)
 	}
 
