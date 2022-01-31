@@ -9,10 +9,12 @@ import (
 )
 
 type Definition struct {
-	ID        int
-	UpQuery   *sqlf.Query
-	DownQuery *sqlf.Query
-	Parents   []int
+	ID                        int
+	UpQuery                   *sqlf.Query
+	DownQuery                 *sqlf.Query
+	Parents                   []int
+	IsCreateIndexConcurrently bool
+	IndexMetadata             *IndexMetadata
 }
 
 type IndexMetadata struct {
