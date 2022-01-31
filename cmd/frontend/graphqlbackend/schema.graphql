@@ -1949,6 +1949,7 @@ type SearchResults {
     """
     timedout: [Repository!]!
     """
+    DEPRECATED: This field is not used in known clients, and will always return `false`.
     True if indexed search is enabled but was not available during this search.
     """
     indexUnavailable: Boolean!
