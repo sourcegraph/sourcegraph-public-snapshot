@@ -398,13 +398,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         onDidCancel={onSaveQueryModalClose}
                     />
                 )}
-
                 {results?.alert && (
                     <div className={classNames(styles.streamingSearchResultsContentCentered, 'mt-4')}>
                         <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
                     </div>
                 )}
-
                 {ctaToDisplay === 'signup' && (
                     <CtaAlert
                         title="Sign up to add your public and private repositories and unlock search flow"
@@ -420,15 +418,12 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         onClose={onCtaAlertDismissed}
                     />
                 )}
-
                 {ctaToDisplay === 'browser' && (
                     <BrowserExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} />
                 )}
-
                 {ctaToDisplay === 'ide' && (
                     <IDEExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} />
                 )}
-
                 <StreamingSearchResultsList
                     {...props}
                     results={results}
