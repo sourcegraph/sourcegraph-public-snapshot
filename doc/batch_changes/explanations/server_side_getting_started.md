@@ -2,7 +2,7 @@
 
 <aside class="experimental">This feature is experimental. Follow the <a href="server_side#setup">setup guide</a> to get started.</aside>
 
-## Creating your first server-side Batch Change
+## Creating your first server-side batch change
 
 To get started, click on the "Create batch change" button on the Batch Changes page, or go to `/batch-changes/create`.
 You will be prompted to choose a name for your namespace and optionally define a custom namespace to put your batch change in.
