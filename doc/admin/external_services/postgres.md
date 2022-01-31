@@ -2,6 +2,8 @@
 
 You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
+Please review [the PostgreSQL](../postgres.md) documentation for a complete list of requirements.
+
 ## General recommendations
 
 If you choose to set up your own PostgreSQL server, please note **we strongly recommend each database to be set up in different servers and/or hosts**. We suggest either:
@@ -137,10 +139,13 @@ Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc).
 
 > NOTE: On Mac/Windows, if trying to connect to a PostgreSQL server on the same host machine, remember that Sourcegraph is running inside a Docker container inside of the Docker virtual machine. You may need to specify your actual machine IP address and not `localhost` or `127.0.0.1` as that refers to the Docker VM itself.
 
+----
 
-## Postgres Permissions
+## Postgres Permissions and Database Migrations
 
-By default, the migrations that Sourcegraph runs expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles. 
+There is a tight coupling between the respective database service accounts for the Frontend DB, CodeIntel DB and Sourcegraph [database migrations](../../dev/background-information/sql/migrations).
+
+By default, the migrations that Sourcegraph runs expect `SUPERUSER` permissions. Sourcegraph migrations contain SQL that enable extensions and modify roles.
 
 This may not be acceptable in all environments. At minimum we expect that the `PGUSER`
 and `CODEINTEL_PGUSER` have the `ALL` permissions on `PGDATABASE` and `CODEINTEL_PGDATABASE` respectively.
@@ -170,6 +175,17 @@ actions necessary to accomodate the migrator.
 ### Workaround for pgsql (sourcegraph)
 
 Sourcegraph requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
+
+Update these variables to match your deployment of the Sourcegraph _frontend_ database following [the guidance from the instructions section](#instructions). This database is called `pgsql` in the Docker Compose and Kubernetes deployments.
+
+```bash
+PGHOST=psql
+PGUSER=sourcegraph
+PGPASSWORD=secret
+PGDATABASE=sourcegraph
+```
+
+The SQL script below is intended to be run from by a database administrator with `SUPERUSER` priviledges against the Frontend Database. It creates a database, user, and configures necesasry permissions for use by the Sourcegraph _frontend_ services.
 
 ```sql
 # Create the application database
@@ -217,6 +233,16 @@ The `sg_service` database role is a legacy role that should be removed from all 
 
 CodeIntel requires some initial setup that requires `SUPERUSER` permissions. A database administrator needs to perform the necessary actions on behalf of Sourcegraph migrations as `SUPERUSER`.
 
+```bash
+CODEINTEL_PGHOST=psql2
+CODEINTEL_PGUSER=sourcegraph
+CODEINTEL_PGPASSWORD=secret
+CODEINTEL_PGDATABASE=sourcegraph-codeintel
+CODEINTEL_PGSSLMODE=require
+```
+
+The SQL script below is intended to be run from by a database administrator with `SUPERUSER` priviledges against the CodeIntel Database. It creates a database, user, and configures necesasry permissions for use by the Sourcegraph _frontend_ services.
+
 ```sql
 # Create the CodeIntel database
 CREATE DATABASE $CODEINTEL_PGDATABASE;
@@ -254,5 +280,3 @@ Failed to connect to codeintel database: 1 error occurred:
 
 The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
 ```
-
-
