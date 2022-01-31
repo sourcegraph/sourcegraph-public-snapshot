@@ -433,8 +433,10 @@ export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost
  */
 function enhanceSearchPage(sourcegraphURL: string): void {
     const githubURL = new URL(window.location.href)
+    const isGlobalSearchPage = githubURL.pathname.startsWith('/search')
+    const isRepoSearchPage = githubURL.pathname.endsWith('/search')
 
-    if (!githubURL.pathname.startsWith('/search') && !githubURL.pathname.endsWith('/search')) {
+    if (!isGlobalSearchPage && !isRepoSearchPage) {
         return
     }
 
@@ -478,8 +480,11 @@ function enhanceSearchPage(sourcegraphURL: string): void {
 
     const githubResultType = githubURL.searchParams.get('type')
     let sourcegraphResultType = ''
-    if (!githubResultType || githubResultType.toLowerCase() === 'repositories') {
-        sourcegraphResultType = 'repo'
+
+    if (!githubResultType) {
+        sourcegraphResultType = isGlobalSearchPage ? 'repo' : ''
+    } else if (githubResultType.toLowerCase() === 'repositories') {
+        sourcegraphResultType = isGlobalSearchPage ? 'repo' : ''
     } else if (githubResultType.toLowerCase() === 'commits') {
         sourcegraphResultType = 'commit'
     }
