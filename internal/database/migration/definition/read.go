@@ -115,15 +115,19 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 	var payload struct {
 		Name                    string `yaml:"name"`
 		Parent                  int    `yaml:"parent"`
+		Parents                 []int  `yaml:"parents"`
 		CreateIndexConcurrently bool   `yaml:"createIndexConcurrently"`
 	}
 	if err := yaml.Unmarshal(contents, &payload); err != nil {
 		return Definition{}, err
 	}
 
+	parents := payload.Parents
 	if payload.Parent != 0 {
-		definition.Parents = append(definition.Parents, payload.Parent)
+		parents = append(parents, payload.Parent)
 	}
+	sort.Ints(parents)
+	definition.Parents = parents
 
 	if _, ok := parseIndexMetadata(definition.DownQuery.Query(sqlf.PostgresBindVar)); ok {
 		return Definition{}, instructionalError{
