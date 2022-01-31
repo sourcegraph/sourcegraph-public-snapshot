@@ -21,6 +21,9 @@ const config: Meta = {
 
     parameters: {
         component: Tooltip,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',

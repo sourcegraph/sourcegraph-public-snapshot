@@ -19,6 +19,9 @@ const config: Meta = {
 
     parameters: {
         component: Card,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',
