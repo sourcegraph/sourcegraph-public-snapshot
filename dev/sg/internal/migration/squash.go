@@ -221,7 +221,21 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ st
 		return run.InRoot(cmd)
 	}
 
-	pgDumpOutput, err := pgDump("--schema-only", "--no-owner", "--exclude-table", "*schema_migrations")
+	excludeTables := []string{
+		"*schema_migrations",
+		"migration_logs",
+		"migration_logs_id_seq",
+	}
+
+	args := []string{
+		"--schema-only",
+		"--no-owner",
+	}
+	for _, tableName := range excludeTables {
+		args = append(args, "--exclude-table", tableName)
+	}
+
+	pgDumpOutput, err := pgDump(args...)
 	if err != nil {
 		return "", err
 	}
