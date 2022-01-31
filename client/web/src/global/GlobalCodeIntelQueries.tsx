@@ -1,4 +1,5 @@
 import { gql } from '@sourcegraph/http-client'
+
 export const FETCH_REFERENCES_QUERY = gql`
     fragment LocationFields on Location {
         resource {
@@ -12,10 +13,6 @@ export const FETCH_REFERENCES_QUERY = gql`
     fragment GitBlobFields on GitBlob {
         path
         content
-        highlight(disableTimeout: false) {
-            aborted
-            html
-        }
         repository {
             name
         }
@@ -67,6 +64,25 @@ export const FETCH_REFERENCES_QUERY = gql`
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+`
+
+export const FETCH_HIGHLIGHTED_BLOB = gql`
+    fragment HighlightedGitBlobFields on GitBlob {
+        highlight(disableTimeout: false) {
+            aborted
+            html
+        }
+    }
+
+    query CoolCodeIntelHighlightedBlob($repository: String!, $commit: String!, $path: String!) {
+        repository(name: $repository) {
+            commit(rev: $commit) {
+                blob(path: $path) {
+                    ...HighlightedGitBlobFields
                 }
             }
         }
