@@ -21,7 +21,7 @@ const decorator: DecoratorFn = story => <BrandedStory styles={brandedStyles}>{()
 const config: Meta = {
     title: 'browser/Options/OptionsPage',
     decorators: [decorator],
-    parameters: { chromatic: { delay: 500 } },
+    parameters: { chromatic: { delay: 500, enableDarkMode: true } },
 }
 
 export default config
