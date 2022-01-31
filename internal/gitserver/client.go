@@ -43,10 +43,11 @@ import (
 var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
-)
+	defaultLimiter = parallel.NewRun(500)
 
-// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-var DefaultClient = NewClient(defaultDoer)
+	// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
+	DefaultClient IClient = NewClient(defaultDoer)
+)
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
@@ -66,7 +67,7 @@ func NewClient(cli httpcli.Doer) *Client {
 			return conf.Get().ServiceConnections().GitServers
 		},
 		HTTPClient:  cli,
-		HTTPLimiter: parallel.NewRun(500),
+		HTTPLimiter: defaultLimiter,
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
@@ -109,6 +110,7 @@ type Client struct {
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i IClient -o mock_client.go
 type IClient interface {
 	AddrForRepo(api.RepoName) string
+	Addrs() []string
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
 	ArchiveURL(api.RepoName, ArchiveOptions) *url.URL
 	Command(name string, args ...string) *Cmd
@@ -130,13 +132,13 @@ type IClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 }
 
-func (c *Client) AllAddrs() []string {
+func (c *Client) Addrs() []string {
 	return c.addrs()
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 func (c *Client) AddrForRepo(repo api.RepoName) string {
-	addrs := c.AllAddrs()
+	addrs := c.addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
