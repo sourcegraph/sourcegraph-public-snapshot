@@ -107,7 +107,7 @@ type ClientImplementor struct {
 	UserAgent string
 }
 
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i IClient -o mock_client.go
+//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(api.RepoName) string
