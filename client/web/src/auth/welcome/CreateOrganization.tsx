@@ -20,18 +20,26 @@ export const CreateOrganization: React.FunctionComponent<CreateOrganization> = (
             <p className="text-muted">
                 Teams on Sourcegraph Cloud will be the quickest way to level up your team with powerful code search.
             </p>
-            <div
-                className={classNames({
-                    [styles.content]: true,
-                    [styles.expanded]: isExpanded,
-                })}
-            >
-                <p> Would you like to be added to the teams beta?</p>
-                <Button onClick={() => setIsExpanded(a => !a)} variant="success">
-                    Apply
-                </Button>
+            <div className={styles.content}>
+                {isExpanded ? (
+                    <p>Complete the form below and we’ll reach out to discuss the early beta.</p>
+                ) : (
+                    <>
+                        <p>Would you like to be added to the teams beta?</p>
+                        <Button onClick={() => setIsExpanded(true)} variant="success">
+                            Apply
+                        </Button>
+                    </>
+                )}
 
-                <div className={styles.form}>{form}</div>
+                <div
+                    className={classNames({
+                        [styles.form]: true,
+                        [styles.formExpanded]: isExpanded,
+                    })}
+                >
+                    {form}
+                </div>
             </div>
         </div>
     )

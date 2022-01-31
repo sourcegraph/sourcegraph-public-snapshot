@@ -9,13 +9,19 @@
     background: var(--color-bg-1);
     border: 1px solid var(--border-color-1);
     border-radius: 3px;
-    transition: height 150ms ease-in;
+    transition: min-height 150ms ease-in;
 }
 
 .expanded {
-    height: 36rem;
+    min-height: 56rem;
 }
 
 .form {
     width: 100%;
+    max-width: 48em;
+    display: none;
+}
+
+.formExpanded {
+    display: block;
 }
