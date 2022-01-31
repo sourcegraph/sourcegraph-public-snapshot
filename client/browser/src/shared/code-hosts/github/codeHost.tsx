@@ -19,7 +19,6 @@ import {
     toAbsoluteBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 
-import { button } from '@sourcegraph/wildcard/src/components/PageSelector/PageSelector.module.scss'
 import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
@@ -439,40 +438,48 @@ function enhanceSearchPage(sourcegraphURL: string): void {
         return
     }
 
-    let getSearchQuery: (() => string[]) | null = null
+    let getSearchQuery: () => string[]
     let buttonContainer: HTMLElement
 
     const urlSearchQuery = githubURL.searchParams.get('q') || ''
 
     if (urlSearchQuery) {
         // search results page
-        buttonContainer = document.createElement('div')
         const form = document.querySelector('.application-main .js-site-search-form')
         const submitButton = [
             ...document.querySelectorAll<HTMLButtonElement>(".application-main button[type='submit']"),
         ].find(button => button.form === form)
-        submitButton?.after(buttonContainer)
+        if (!submitButton) {
+            return
+        }
+
+        buttonContainer = document.createElement('div')
         buttonContainer.classList.add('ml-2', 'd-none', 'd-md-block')
+        submitButton?.after(buttonContainer)
 
         const inputElement = document.querySelector<HTMLInputElement>('.header-search-input')
-        if (inputElement) {
-            getSearchQuery = () => inputElement.value.split(' ').map(substring => substring.trim())
+        if (!inputElement) {
+            return
         }
+
+        getSearchQuery = () => inputElement.value.split(' ').map(substring => substring.trim())
     } else {
         // simple/advanced search page
-        buttonContainer = document.createElement('div')
         const searchInputContainer = document.querySelector('.search-form-fluid')
-        searchInputContainer?.append(buttonContainer)
+        if (!searchInputContainer) {
+            return
+        }
+
+        buttonContainer = document.createElement('div')
         buttonContainer.classList.add('ml-0', 'ml-md-2', 'mt-2', 'mt-md-0')
+        searchInputContainer?.append(buttonContainer)
 
         const inputElement = document.querySelector<HTMLInputElement>('#search_form input')
-        if (inputElement) {
-            getSearchQuery = () => inputElement.value.split(' ').map(substring => substring.trim())
+        if (!inputElement) {
+            return
         }
-    }
 
-    if (!buttonContainer || !getSearchQuery) {
-        return
+        getSearchQuery = () => inputElement.value.split(' ').map(substring => substring.trim())
     }
 
     const githubResultType = githubURL.searchParams.get('type')
@@ -485,7 +492,7 @@ function enhanceSearchPage(sourcegraphURL: string): void {
 
     const buildLinkHref = (): string => {
         const url = new URL('/search', sourcegraphURL)
-        const queryParameters = getSearchQuery ? getSearchQuery().filter(Boolean) : []
+        const queryParameters = getSearchQuery().filter(Boolean)
 
         if (sourcegraphResultType) {
             queryParameters.push(`type:${sourcegraphResultType}`)
