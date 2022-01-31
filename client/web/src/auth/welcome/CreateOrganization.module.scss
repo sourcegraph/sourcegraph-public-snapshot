@@ -1,0 +1,17 @@
+.content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    position: static;
+    height: 14rem;
+    background: var(--color-bg-1);
+    border: 1px solid var(--border-color-1);
+    border-radius: 3px;
+    transition: height 150ms ease-in;
+}
+
+.expanded {
+    height: 36rem;
+}
