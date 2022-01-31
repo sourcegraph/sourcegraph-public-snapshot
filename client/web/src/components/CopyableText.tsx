@@ -14,6 +14,9 @@ interface Props {
     /** An optional class name. */
     className?: string
 
+    /** Whether or not the input should take up all horizontal space (flex:1) */
+    flex?: boolean
+
     /** The size of the input element. */
     size?: number
 
@@ -37,7 +40,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className={classNames('form-inline', this.props.className)}>
-                <div className="input-group">
+                <div className={classNames('input-group', this.props.flex && 'flex-1')}>
                     <input
                         type={this.props.password ? 'password' : 'text'}
                         className={classNames('form-control', styles.input)}
