@@ -113,6 +113,23 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 	return r.runSchemaDown(ctx, operation, schemaContext)
 }
 
+func (r *Runner) applyMigrations(ctx context.Context, operation MigrationOperation, schemaContext schemaContext, definitions []definition.Definition) error {
+	log15.Info(
+		"Applying migrations",
+		"schema", schemaContext.schema.Name,
+		"type", operation.Type,
+		"count", len(definitions),
+	)
+
+	for _, definition := range definitions {
+		if err := r.applyMigration(ctx, schemaContext, operation, definition); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (r *Runner) runSchemaUp(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) (err error) {
 	log15.Info("Upgrading schema", "schema", schemaContext.schema.Name)
 
@@ -137,23 +154,6 @@ func (r *Runner) runSchemaDown(ctx context.Context, operation MigrationOperation
 	}
 
 	return r.applyMigrations(ctx, operation, schemaContext, definitions)
-}
-
-func (r *Runner) applyMigrations(ctx context.Context, operation MigrationOperation, schemaContext schemaContext, definitions []definition.Definition) error {
-	log15.Info(
-		"Applying migrations",
-		"schema", schemaContext.schema.Name,
-		"type", operation.Type,
-		"count", len(definitions),
-	)
-
-	for _, definition := range definitions {
-		if err := r.applyMigration(ctx, schemaContext, operation, definition); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // applyMigration applies the given migration in the direction indicated by the given operation.
