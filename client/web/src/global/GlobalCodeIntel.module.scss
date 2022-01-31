@@ -40,6 +40,12 @@
 
     &--filename {
         color: var(--body-color);
+
+        mark {
+            padding-left: 0;
+            padding-right: 0;
+            font-weight: bold;
+        }
     }
 }
 
@@ -107,5 +113,5 @@
 .side-blob {
     flex: 1;
     overflow: scroll;
-    max-height: 30vh;
+    max-height: 40vh;
 }
