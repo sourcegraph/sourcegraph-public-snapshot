@@ -1819,26 +1819,31 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 		tr.Finish()
 	}()
 
-	errs := &multierror.Error{}
-
 	agg := run.NewAggregator(stream)
-	errs = multierror.Append(job.Run(ctx, db, agg))
-	matches, common, matchCount := agg.Get()
+	stream = agg
+
+	var (
+		mu   sync.Mutex
+		errs = &multierror.Error{}
+	)
 
 	checker := authz.DefaultSubRepoPermsChecker
-
 	if authz.SubRepoEnabled(checker) {
-		// We always want to apply sub-repo filtering, even if an error was returned by
-		// job.Run since we may have partial results that need filtering.
-		var filterErr error
-		matches, filterErr = applySubRepoFiltering(ctx, checker, matches)
-		errs = multierror.Append(filterErr)
+		// Wrap the aggregator stream in a stream that filters out
+		// any matches that should be blocked by sub-repo permissions
+		stream = streaming.StreamFunc(func(event streaming.SearchEvent) {
+			var filterErr error
+			event.Results, filterErr = applySubRepoFiltering(ctx, checker, event.Results)
 
-		matchCount = 0
-		for _, m := range matches {
-			matchCount += m.ResultCount()
-		}
+			stream.Send(event)
+			mu.Lock()
+			errs = multierror.Append(filterErr)
+			mu.Unlock()
+		})
 	}
+
+	errs = multierror.Append(job.Run(ctx, db, stream))
+	matches, common, matchCount := agg.Get()
 
 	ao := alert.Observer{
 		Db:           db,
