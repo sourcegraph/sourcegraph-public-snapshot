@@ -3,7 +3,7 @@ import React, { ReactElement } from 'react'
 
 import { Button, Card } from '@sourcegraph/wildcard'
 
-import { DEFAULT_ACTIVE_COLOR } from '../../../form-color-input/FormColorInput'
+import { DEFAULT_DATA_SERIES_COLOR } from '../../../../constants'
 
 import styles from './SeriesCard.module.scss'
 
@@ -32,7 +32,7 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
         isRemoveSeriesAvailable,
         name,
         query,
-        stroke: color = DEFAULT_ACTIVE_COLOR,
+        stroke: color = DEFAULT_DATA_SERIES_COLOR,
         className,
         onEdit,
         onRemove,
