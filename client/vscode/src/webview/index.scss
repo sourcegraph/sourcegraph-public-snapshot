@@ -31,8 +31,8 @@
             }
         }
 
-        --input-bg: var(--vscode-editorWidget-background);
-        --input-border-color: var(--vscode-editorWidget-border);
+        --input-bg: var(--vscode-input-background);
+        --input-border-color: var(--vscode-input-border);
         --border-active-color: var(--vscode-focusBorder);
         --link-color: var(--vscode-textLink-foreground);
         --search-filter-keyword-color: var(--vscode-debugTokenExpression-name);

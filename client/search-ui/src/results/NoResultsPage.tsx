@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect } from 'react'
-
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
+import React, { useCallback, useEffect } from 'react'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery, Toggles } from '@sourcegraph/search-ui'
@@ -14,12 +13,11 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
-import { ModalVideo } from '../documentation/ModalVideo'
-
-import { AnnotatedSearchInput } from './AnnotatedSearchExample'
-
+import { ModalVideo as DefaultModalVideo } from '../documentation/ModalVideo'
 import searchBoxStyle from '../input/SearchBox.module.scss'
 import searchContextDropDownStyles from '../input/SearchContextDropdown.module.scss'
+
+import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 import styles from './NoResultsPage.module.scss'
 
 const noop = (): void => {}
@@ -172,6 +170,7 @@ interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchCont
     showSearchContext: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
+    ModalVideo?: typeof DefaultModalVideo
 }
 
 export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
@@ -181,6 +180,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
     isSourcegraphDotCom,
     showSearchContext,
     assetsRoot,
+    ModalVideo = DefaultModalVideo,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
