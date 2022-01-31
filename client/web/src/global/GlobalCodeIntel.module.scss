@@ -69,11 +69,11 @@
     flex-direction: column;
     position: relative;
 
-    [data-reach-tabs],
-    [data-reach-tab-panels],
-    [data-reach-tab-panel] {
-        height: 100%;
-    }
+    // [data-reach-tabs],
+    // [data-reach-tab-panels],
+    // [data-reach-tab-panel] {
+    //     height: 100%;
+    // }
 
     background-color: var(--color-bg-1);
     border-top: 2px solid var(--border-color-2);
@@ -100,11 +100,12 @@
 
 .references-list {
     display: flex;
-    height: 100%;
+    // height: 100%;
 }
 
 .side-references,
 .side-blob {
     flex: 1;
     overflow: scroll;
+    max-height: 30vh;
 }
