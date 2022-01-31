@@ -27,8 +27,8 @@ describe('decodeSearchInsightUrl', () => {
             title: 'Insight title',
             allRepos: true,
             series: [
-                { id: 1, edit: true, valid: false, name: 'series 1', query: 'test1', stroke: 'red' },
-                { id: 2, edit: true, valid: false, name: 'series 2', query: 'test2', stroke: 'blue' },
+                { id: 1, edit: false, valid: false, name: 'series 1', query: 'test1', stroke: 'red' },
+                { id: 2, edit: false, valid: false, name: 'series 2', query: 'test2', stroke: 'blue' },
             ],
             step: 'days',
             stepValue: '8',
@@ -54,8 +54,8 @@ describe('encodeSearchInsightUrl', () => {
             title: 'Insight title',
             allRepos: true,
             series: [
-                { id: '1', edit: true, valid: false, name: 'series 1', query: 'test1', stroke: 'red' },
-                { id: '2', edit: true, valid: false, name: 'series 2', query: 'test2', stroke: 'blue' },
+                { id: '1', edit: false, valid: false, name: 'series 1', query: 'test1', stroke: 'red' },
+                { id: '2', edit: false, valid: false, name: 'series 2', query: 'test2', stroke: 'blue' },
             ],
             step: 'days',
             stepValue: '8',
