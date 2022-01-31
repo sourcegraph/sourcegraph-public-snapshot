@@ -112,7 +112,7 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 
 	// For structural search with default limits we retry if we get no results.
 	agg := streaming.NewAggregatingStream()
-	err := streamStructuralSearch(ctx, args, repos, stream)
+	err := streamStructuralSearch(ctx, args, repos, agg)
 
 	event := agg.Get()
 	if len(event.Results) == 0 && err == nil {
