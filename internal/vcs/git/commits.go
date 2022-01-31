@@ -424,13 +424,13 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRe
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
-	lines := string(bytes.TrimSpace(out))
-	tokens := strings.Split(lines, "\n")
+	lines := bytes.TrimSpace(out)
+	tokens := bytes.Split(lines, []byte("\n"))
 	if len(tokens) == 0 {
 		return nil, errors.New("FirstEverCommit returned no revisions")
 	}
 	first := tokens[0]
-	id := api.CommitID(bytes.TrimSpace([]byte(first)))
+	id := api.CommitID(bytes.TrimSpace(first))
 	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true}, checker)
 }
 
