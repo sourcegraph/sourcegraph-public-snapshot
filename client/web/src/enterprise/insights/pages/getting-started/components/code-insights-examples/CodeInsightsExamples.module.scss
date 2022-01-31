@@ -25,6 +25,11 @@
     left: 0;
 }
 
+.action-link {
+    margin-top: -0.25rem;
+    flex-shrink: 0;
+}
+
 .legend {
     display: flex;
     flex-direction: column;
@@ -37,8 +42,9 @@
 }
 
 .code {
-    background-color: var(--gray-01);
+    background-color: var(--body-bg);
     padding: 0.25rem 0.5rem;
+    margin: 0;
     width: 100%;
     display: inline-block;
     border-radius: var(--border-radius);

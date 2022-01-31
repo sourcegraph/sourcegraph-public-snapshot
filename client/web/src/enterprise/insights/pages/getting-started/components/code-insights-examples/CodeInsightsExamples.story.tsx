@@ -1,7 +1,7 @@
 import { Meta } from '@storybook/react'
 import React from 'react'
 
-import { WebStory } from '../../../../components/WebStory'
+import { WebStory } from '../../../../../../components/WebStory'
 
 import { CodeInsightsExamples } from './CodeInsightsExamples'
 
