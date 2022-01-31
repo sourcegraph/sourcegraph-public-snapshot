@@ -59,6 +59,8 @@ func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.In
 		series, err := r.fetchSeries(ctx, seriesID)
 		if err != nil {
 			return nil, err
+		} else if series == nil {
+			return nil, errors.Newf("workHandler.getSeries: insight definition not found for series_id: %s", seriesID)
 		}
 
 		r.mu.Lock()

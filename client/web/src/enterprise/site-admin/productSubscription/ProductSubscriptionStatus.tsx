@@ -8,7 +8,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Link, CardFooter, Alert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount } from '../../../productSubscription/helpers'
@@ -110,7 +110,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                     ) : null
                 }
                 footer={
-                    <div className="card-footer d-flex align-items-center justify-content-between">
+                    <CardFooter className="d-flex align-items-center justify-content-between">
                         {license ? (
                             <>
                                 <div>
@@ -152,7 +152,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                 </div>
                             </>
                         )}
-                    </div>
+                    </CardFooter>
                 }
                 className={className}
             />
@@ -165,15 +165,14 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                     />
                 ) : (
                     license.userCount - actualUserCount < 0 && (
-                        <div className="alert alert-warning">
+                        <Alert variant="warning">
                             You have exceeded your licensed users.{' '}
                             <Link to="/site-admin/license">View your license details</Link> or{' '}
-                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a href="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
+                            <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
                                 upgrade your license
-                            </a>{' '}
+                            </Link>{' '}
                             to true up and prevent a retroactive charge.
-                        </div>
+                        </Alert>
                     )
                 ))}
         </div>

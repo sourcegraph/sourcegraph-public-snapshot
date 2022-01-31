@@ -13,13 +13,17 @@ import (
 )
 
 type Output struct {
-	MatchPattern  MatchPattern
+	SearchPattern MatchPattern
 	OutputPattern string
 	Separator     string
 }
 
+func (c *Output) ToSearchPattern() string {
+	return c.SearchPattern.String()
+}
+
 func (c *Output) String() string {
-	return fmt.Sprintf("Output with separator: (%s) -> (%s) separator: %s", c.MatchPattern.String(), c.OutputPattern, c.Separator)
+	return fmt.Sprintf("Output with separator: (%s) -> (%s) separator: %s", c.SearchPattern.String(), c.OutputPattern, c.Separator)
 }
 
 func substituteRegexp(content string, match *regexp.Regexp, replacePattern, separator string) string {
@@ -88,5 +92,5 @@ func (c *Output) Run(ctx context.Context, r result.Match) (Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	return output(ctx, content, c.MatchPattern, outputPattern, c.Separator)
+	return output(ctx, content, c.SearchPattern, outputPattern, c.Separator)
 }

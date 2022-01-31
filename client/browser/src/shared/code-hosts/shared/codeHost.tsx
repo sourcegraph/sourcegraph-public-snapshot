@@ -34,7 +34,7 @@ import {
     mapTo,
     take,
 } from 'rxjs/operators'
-import { NotificationType, HoverAlert } from 'sourcegraph'
+import { HoverAlert } from 'sourcegraph'
 
 import {
     ContextResolver,
@@ -64,6 +64,7 @@ import { registerHighlightContributions } from '@sourcegraph/shared/src/highligh
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -271,7 +272,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         context: URLToFileContext
     ) => string
 
-    notificationClassNames: Record<NotificationType, string>
+    notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
 
     /**
      * CSS classes for the command palette to customize styling

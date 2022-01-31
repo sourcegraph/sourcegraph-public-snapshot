@@ -36,6 +36,7 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -124,7 +125,9 @@ func (c *SearchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryReso
 }
 
 func (c *SearchResultsResolver) IndexUnavailable() bool {
-	return c.Stats.IsIndexUnavailable
+	// This used to return c.Stats.IsIndexUnavailable, but it was never set,
+	// so would always return false
+	return false
 }
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
@@ -146,7 +149,7 @@ type SearchResultsResolver struct {
 type SearchResults struct {
 	Matches result.Matches
 	Stats   streaming.Stats
-	Alert   *searchAlert
+	Alert   *search.Alert
 }
 
 // Results are the results found by the search. It respects the limits set. To
@@ -212,7 +215,9 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	return strconv.Itoa(int(count))
 }
 
-func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.SearchResults.Alert }
+func (sr *SearchResultsResolver) Alert() *searchAlertResolver {
+	return NewSearchAlertResolver(sr.SearchResults.Alert)
+}
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 	return int32(sr.elapsed.Milliseconds())
@@ -382,7 +387,7 @@ var (
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, si *run.SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer tr.Finish()
 	var types []string
@@ -450,7 +455,9 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
+			wg.Add(1)
 			go func() {
+				defer wg.Done()
 				err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
@@ -575,6 +582,16 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
 func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
+	// MaxResults depends on the query's `count:` parameter, and we should
+	// use the passed-in query to do this. However, `r.MaxResults()` uses
+	// the query stored on the resolver's SearchInputs rather than the passed-in
+	// query. This means for things like `evaluateAnd`, which modify the query
+	// count, the query on the resolver does not match the query passed in here,
+	// which leads to incorrect counts.
+	inputs := *r.SearchInputs // copy search inputs to update q
+	inputs.Query = q
+	maxResults := inputs.MaxResults()
+
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
@@ -615,6 +632,13 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 
 	var requiredJobs, optionalJobs []run.Job
 	addJob := func(required bool, job run.Job) {
+		// Filter out any jobs that aren't commit jobs as they are added
+		if inputs.CodeMonitorID != nil {
+			if _, ok := job.(*commit.CommitSearch); !ok {
+				return
+			}
+		}
+
 		if required {
 			requiredJobs = append(requiredJobs, job)
 		} else {
@@ -680,7 +704,6 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				addJob(true, &unindexed.RepoUniverseTextSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
-					FileMatchLimit:   args.PatternInfo.FileMatchLimit,
 
 					RepoOptions: repoOptions,
 				})
@@ -706,7 +729,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 					PatternInfo:      args.PatternInfo,
-					Limit:            r.MaxResults(),
+					Limit:            maxResults,
 
 					RepoOptions: repoOptions,
 				})
@@ -740,7 +763,6 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				addJob(true, &unindexed.RepoSubsetTextSearch{
 					ZoektArgs:         zoektArgs,
 					SearcherArgs:      searcherArgs,
-					FileMatchLimit:    args.PatternInfo.FileMatchLimit,
 					NotSearcherOnly:   !searcherOnly,
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
@@ -769,7 +791,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				addJob(required, &symbol.RepoSubsetSymbolSearch{
 					ZoektArgs:         zoektArgs,
 					PatternInfo:       args.PatternInfo,
-					Limit:             r.MaxResults(),
+					Limit:             maxResults,
 					NotSearcherOnly:   !searcherOnly,
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
@@ -790,11 +812,13 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				required = args.ResultTypes.Without(result.TypeCommit) == 0
 			}
 			addJob(required, &commit.CommitSearch{
-				Query:         commit.QueryToGitQuery(args.Query, diff),
-				RepoOpts:      repoOptions,
-				Diff:          diff,
-				HasTimeFilter: commit.HasTimeFilter(args.Query),
-				Limit:         int(args.PatternInfo.FileMatchLimit),
+				Query:                commit.QueryToGitQuery(args.Query, diff),
+				RepoOpts:             repoOptions,
+				Diff:                 diff,
+				HasTimeFilter:        commit.HasTimeFilter(args.Query),
+				Limit:                int(args.PatternInfo.FileMatchLimit),
+				CodeMonitorID:        inputs.CodeMonitorID,
+				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 			})
 		}
 
@@ -907,8 +931,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
 					args.RepoOptions = repoOptions
 					addJob(true, &run.RepoSearch{
-						Args:  &args,
-						Limit: r.MaxResults(),
+						Args: &args,
 					})
 				}
 			}
@@ -919,11 +942,14 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 		Options: repoOptions,
 	})
 
-	return run.NewTimeoutJob(
-		args.Timeout,
-		run.NewJobWithOptional(
-			run.NewParallelJob(requiredJobs...),
-			run.NewParallelJob(optionalJobs...),
+	return run.NewLimitJob(
+		maxResults,
+		run.NewTimeoutJob(
+			args.Timeout,
+			run.NewJobWithOptional(
+				run.NewParallelJob(requiredJobs...),
+				run.NewParallelJob(optionalJobs...),
+			),
 		),
 	), nil
 }
@@ -1007,7 +1033,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+				return alertToSearchResults(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)), nil
 			default:
 			}
 
@@ -1036,7 +1062,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertForCappedAndExpression().wrapResults(), nil
+			return alertToSearchResults(search.AlertForCappedAndExpression()), nil
 		}
 	}
 	result.Stats.IsLimitHit = !exhausted
@@ -1060,7 +1086,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 	var (
 		mu     sync.Mutex
 		stats  streaming.Stats
-		alerts []*searchAlert
+		alerts []*search.Alert
 		dedup  = result.NewDeduper()
 		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
 		// this concurrency limit should probably be informed by a user's rate limit quota
@@ -1115,10 +1141,10 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 		return nil, err
 	}
 
-	var alert *searchAlert
+	var alert *search.Alert
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].priority > alerts[j].priority
+			return alerts[i].Priority > alerts[j].Priority
 		})
 		alert = alerts[0]
 	}
@@ -1196,13 +1222,15 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	elapsed := time.Since(start)
 	if srr != nil {
 		srr.elapsed = elapsed
-		LogSearchLatency(ctx, r.db, r.SearchInputs, srr.ElapsedMilliseconds())
+		var wg sync.WaitGroup
+		LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
+		defer wg.Wait()
 	}
 
 	var status, alertType string
 	status = DetermineStatusForLogs(srr, err)
 	if srr != nil && srr.SearchResults.Alert != nil {
-		alertType = srr.SearchResults.Alert.PrometheusType()
+		alertType = srr.SearchResults.Alert.PrometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
@@ -1320,7 +1348,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 	var (
 		mu     sync.Mutex
 		stats  streaming.Stats
-		alerts []*searchAlert
+		alerts []*search.Alert
 		dedup  = result.NewDeduper()
 		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
 		// this concurrency limit should probably be informed by a user's rate limit quota
@@ -1428,10 +1456,10 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		sortResults(matches)
 	}
 
-	var alert *searchAlert
+	var alert *search.Alert
 	if len(alerts) > 0 {
 		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].priority > alerts[j].priority
+			return alerts[i].Priority > alerts[j].Priority
 		})
 		alert = alerts[0]
 	}
@@ -1514,7 +1542,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 	}()
 
 	start := time.Now()
-	rr, err := r.doResults(ctx, job)
+	rr, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1525,7 +1553,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 		if rr == nil || !rr.Stats.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
-			return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+			return alertToSearchResults(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)), nil
 		} else {
 			err = nil
 		}
@@ -1699,7 +1727,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.doResults(ctx, job)
+		results, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1786,8 +1814,8 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 
 // doResults returns the results of running a search job.
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
+func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.DB, stream streaming.Sender, job run.Job) (res *SearchResults, err error) {
+	tr, ctx := trace.New(ctx, "doResults", searchInputs.OriginalQuery)
 	defer func() {
 		tr.SetError(err)
 		if res != nil {
@@ -1796,43 +1824,16 @@ func (r *searchResolver) doResults(ctx context.Context, job run.Job) (res *Searc
 		tr.Finish()
 	}()
 
-	limit := r.MaxResults()
-
-	// For streaming search we want to limit based on all results, not just
-	// per backend. This works better than batch based since we have higher
-	// defaults.
-	stream := r.stream
-
-	if stream != nil {
-		var cancelOnLimit context.CancelFunc
-		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
-		defer cancelOnLimit()
-	}
-
 	agg := run.NewAggregator(stream)
+	err = job.Run(ctx, db, agg)
+	matches, common, matchCount := agg.Get()
 
-	_ = agg.DoSearch(ctx, r.db, job)
-
-	return r.toSearchResults(ctx, agg)
-}
-
-// toSearchResults converts an Aggregator to SearchResults.
-//
-// toSearchResults relies on all WaitGroups being done since it relies on
-// collecting from the streams.
-func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregator) (*SearchResults, error) {
-	matches, common, matchCount, aggErrs := agg.Get()
-
-	if aggErrs == nil {
-		return nil, errors.New("aggErrs should never be nil")
+	ao := alert.Observer{
+		Db:           db,
+		SearchInputs: searchInputs,
+		HasResults:   matchCount > 0,
 	}
-
-	ao := alertObserver{
-		Db:           r.db,
-		SearchInputs: r.SearchInputs,
-		hasResults:   matchCount > 0,
-	}
-	for _, err := range aggErrs.Errors {
+	if err != nil {
 		ao.Error(ctx, err)
 	}
 	alert, err := ao.Done(&common)

@@ -11,7 +11,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -221,7 +221,6 @@ const SelectBox: React.FunctionComponent<{
         <InputTooltip
             id={`select-changeset-${isPublishableResult.changesetSpecID}`}
             type="checkbox"
-            className="btn"
             checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
             onChange={toggleSelected}
             tooltip="Click to select changeset for bulk-modifying the publication state"
@@ -230,7 +229,6 @@ const SelectBox: React.FunctionComponent<{
         <InputTooltip
             id="select-changeset-hidden"
             type="checkbox"
-            className="btn"
             checked={false}
             disabled={true}
             tooltip={isPublishableResult.reason}
@@ -275,18 +273,18 @@ const ExpandedSection: React.FunctionComponent<
     }, [])
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return (
-            <div className="alert alert-info mb-0">
+            <Alert className="mb-0" variant="info">
                 When run, the changeset <strong>{node.targets.changeset.title}</strong> in repo{' '}
                 <strong>{node.targets.changeset.repository.name}</strong> will be removed from this batch change.
-            </div>
+            </Alert>
         )
     }
     if (node.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
         return (
-            <div className="alert alert-info mb-0">
+            <Alert className="mb-0" variant="info">
                 When run, the changeset with ID <strong>{node.targets.changesetSpec.description.externalID}</strong>{' '}
                 will be imported from <strong>{node.targets.changesetSpec.description.baseRepository.name}</strong>.
-            </div>
+            </Alert>
         )
     }
     return (
@@ -295,8 +293,8 @@ const ExpandedSection: React.FunctionComponent<
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a
-                            href=""
+                        <Link
+                            to=""
                             role="button"
                             onClick={onSelectDiff}
                             className={classNames(
@@ -318,12 +316,12 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </a>
+                        </Link>
                     </li>
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a
-                            href=""
+                        <Link
+                            to=""
                             role="button"
                             onClick={onSelectDescription}
                             className={classNames(
@@ -345,12 +343,12 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </a>
+                        </Link>
                     </li>
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a
-                            href=""
+                        <Link
+                            to=""
                             role="button"
                             onClick={onSelectCommits}
                             className={classNames(
@@ -374,17 +372,17 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </a>
+                        </Link>
                     </li>
                 </ul>
             </div>
             {selectedTab === 'diff' && (
                 <>
                     {node.delta.diffChanged && (
-                        <div className="alert alert-warning">
+                        <Alert variant="warning">
                             The files in this changeset have been altered from the previous version. These changes will
                             be pushed to the target branch.
-                        </div>
+                        </Alert>
                     )}
                     <ChangesetSpecFileDiffConnection
                         history={history}

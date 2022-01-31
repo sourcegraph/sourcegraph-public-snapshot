@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, Button } from '@sourcegraph/wildcard'
+import { Container, Button, Alert } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
@@ -83,11 +83,15 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, init
                 <Button type="submit" disabled={loading} id="test-EditUserProfileForm__save" variant="primary">
                     Save
                 </Button>
-                {error && <div className="mt-3 alert alert-danger">{error.message}</div>}
+                {error && (
+                    <Alert className="mt-3" variant="danger">
+                        {error.message}
+                    </Alert>
+                )}
                 {data?.updateUser && (
-                    <div className="mt-3 mb-0 alert alert-success test-EditUserProfileForm__success">
+                    <Alert className="mt-3 mb-0 test-EditUserProfileForm__success" variant="success">
                         User profile updated.
-                    </div>
+                    </Alert>
                 )}
                 {after && (
                     <>

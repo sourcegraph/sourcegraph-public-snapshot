@@ -10,7 +10,7 @@ import React from 'react'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Badge, AlertLink, Link } from '@sourcegraph/wildcard'
+import { Badge, AlertLink, Link, Alert } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -100,7 +100,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                     title={<h4 className="mb-0">The following errors occured while running this task:</h4>}
                 >
                     {node.errors.map((error, index) => (
-                        <div className="mt-2 alert alert-danger" key={index}>
+                        <Alert className="mt-2" key={index} variant="danger">
                             <p>
                                 {error.changeset.__typename === 'HiddenExternalChangeset' ? (
                                     <span className="text-muted">On hidden repository</span>
@@ -118,7 +118,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                                 )}
                             </p>
                             {error.error && <ErrorMessage error={'```\n' + error.error + '\n```'} />}
-                        </div>
+                        </Alert>
                     ))}
                 </Collapsible>
             </div>

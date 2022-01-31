@@ -4,6 +4,9 @@ import React from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Alert } from '../Alert'
+import { Button } from '../Button'
+
 import { Container } from './Container'
 
 const decorator: DecoratorFn = story => (
@@ -19,7 +22,7 @@ export default config
 
 export const Overview: Story = () => (
     <>
-        <div className="alert alert-info">
+        <Alert variant="info">
             <p>
                 A container is meant to group content semantically together. Every page using it should have a header,
                 optionally a description for the page and the container itself. Depending on the scope of a button, it
@@ -36,7 +39,7 @@ export const Overview: Story = () => (
                     live inside of the container, next to the content it is modifying. See example 2
                 </li>
             </ul>
-        </div>
+        </Alert>
         <hr />
         <h1>Example 1</h1>
         <h2>Some page explanation</h2>
@@ -54,12 +57,10 @@ export const Overview: Story = () => (
             </div>
         </Container>
         <div className="mb-3">
-            <button type="button" className="btn btn-primary mr-2">
+            <Button variant="primary" className="mr-2">
                 Save
-            </button>
-            <button type="button" className="btn btn-secondary">
-                Cancel
-            </button>
+            </Button>
+            <Button variant="secondary">Cancel</Button>
         </div>
         <hr />
         <h1>Example 2</h1>
@@ -71,23 +72,24 @@ export const Overview: Story = () => (
             <div className="form-group">
                 <input type="text" className="form-control" />
             </div>
-            <button type="button" className="btn btn-secondary mb-2">
+            <Button className="mb-2" variant="secondary">
                 Save
-            </button>
+            </Button>
             <hr className="mb-2" />
             <h3>Section II</h3>
             <p>Here you change your email.</p>
             <div className="form-group">
                 <input type="text" className="form-control" />
             </div>
-            <button type="button" className="btn btn-secondary">
-                Save
-            </button>
+            <Button variant="secondary">Save</Button>
         </Container>
     </>
 )
 
 Overview.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+    },
     design: {
         type: 'figma',
         name: 'Figma',

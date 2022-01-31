@@ -29,6 +29,15 @@ func Frontend() *monitoring.Container {
 
 	defaultSamplingInterval := (90 * time.Minute).Round(time.Second)
 
+	orgMetricSpec := []struct{ name, route, description string }{
+		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
+		{"create_org", "CreateOrganization", "API requests to create an organisation"},
+		{"remove_org_member", "RemoveUserFromOrganization", "API requests to remove organisation member"},
+		{"invite_org_member", "InviteUserToOrganization", "API requests to invite a new organisation member"},
+		{"org_invite_respond", "RespondToOrganizationInvitation", "API requests to respond to an org invitation"},
+		{"org_repositories", "OrgRepositories", "API requests to list repositories owned by an org"},
+	}
+
 	return &monitoring.Container{
 		Name:        "frontend",
 		Title:       "Frontend",
@@ -564,37 +573,8 @@ func Frontend() *monitoring.Container {
 			{
 				Title:  "Organisation GraphQL API requests",
 				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:           "org_members_rate",
-							Description:    "rate of API requests to list organisation members",
-							Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
-							Interpretation: `Rate (QPS) of requests to list organisation members`,
-						},
-						{
-							Name:           "org_members_latency_p99",
-							Description:    "99 percentile latency of API requests to list organisation members",
-							Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrganizationMembers"}[5m])) by (le))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
-							Interpretation: `99 percentile of org-members latency`,
-						},
-						{
-							Name:           "org_members_error_rate",
-							Description:    "percentage of API requests to list organisation members that return an error",
-							Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m]))*100`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCoreApplication,
-							Interpretation: `Percentage of org-members API requests that return an error`,
-						},
-					},
-				}},
+				Rows:   orgMetricRows(orgMetricSpec),
+			},
 			{
 				Title:  "Cloud KMS and cache",
 				Hidden: true,
@@ -864,4 +844,45 @@ func Frontend() *monitoring.Container {
 			},
 		},
 	}
+}
+
+func orgMetricRows(orgMetricSpec []struct {
+	name        string
+	route       string
+	description string
+}) []monitoring.Row {
+	result := []monitoring.Row{}
+	for _, m := range orgMetricSpec {
+		result = append(result, monitoring.Row{
+
+			{
+				Name:           m.name + "_rate",
+				Description:    "rate of " + m.description,
+				Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))`,
+				NoAlert:        true,
+				Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
+				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Interpretation: `Rate (QPS) of ` + m.description,
+			},
+			{
+				Name:           m.name + "_latency_p99",
+				Description:    "99 percentile latency of " + m.description,
+				Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="` + m.route + `"}[5m])) by (le))`,
+				NoAlert:        true,
+				Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
+				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Interpretation: `99 percentile latency of` + m.description,
+			},
+			{
+				Name:           m.name + "_error_rate",
+				Description:    "percentage of " + m.description + " that return an error",
+				Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="` + m.route + `",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))*100`,
+				NoAlert:        true,
+				Panel:          monitoring.Panel().Unit(monitoring.Percentage),
+				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Interpretation: `Percentage of ` + m.description + ` that return an error`,
+			},
+		})
+	}
+	return result
 }

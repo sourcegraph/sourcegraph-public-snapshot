@@ -72,7 +72,6 @@ func (r *CommitMatch) RepoName() types.MinimalRepo {
 	return r.Repo
 }
 
-// Limit implements Match.Limit()
 func (r *CommitMatch) Limit(limit int) int {
 	limitMatchedString := func(ms *MatchedString) int {
 		if len(ms.MatchedRanges) == 0 {

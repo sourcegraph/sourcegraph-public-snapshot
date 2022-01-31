@@ -24,6 +24,11 @@ const decorator: DecoratorFn = story => (
 const config: Meta = {
     title: 'shared/HoverOverlay',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+        },
+    },
 }
 
 export default config

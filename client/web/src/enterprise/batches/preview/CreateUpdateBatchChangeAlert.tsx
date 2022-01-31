@@ -5,7 +5,7 @@ import React, { useCallback, useContext, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Alert, Link } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
 import { MultiSelectContext } from '../MultiSelectContext'
@@ -80,7 +80,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
 
     return (
         <>
-            <div className="alert alert-info mb-3 d-block d-md-flex align-items-center body-lead">
+            <Alert className="mb-3 d-block d-md-flex align-items-center body-lead" variant="info">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
                     {batchChange ? (
                         <>
@@ -102,6 +102,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                             'test-batches-confirm-apply-btn text-nowrap',
                             isLoading === true || (!viewerCanAdminister && 'disabled')
                         )}
+                        variant="primary"
                         onClick={onApply}
                         disabled={!canApply}
                         data-tooltip={disabledTooltip()}
@@ -109,7 +110,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                         Apply
                     </Button>
                 </div>
-            </div>
+            </Alert>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
         </>
     )

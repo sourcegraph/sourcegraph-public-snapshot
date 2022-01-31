@@ -12,7 +12,7 @@ import (
 
 func Test_replace(t *testing.T) {
 	test := func(input string, cmd *Replace) string {
-		result, err := replace(context.Background(), []byte(input), cmd.MatchPattern, cmd.ReplacePattern)
+		result, err := replace(context.Background(), []byte(input), cmd.SearchPattern, cmd.ReplacePattern)
 		if err != nil {
 			return err.Error()
 		}
@@ -23,7 +23,7 @@ func Test_replace(t *testing.T) {
 		"regexp search replace",
 		"needs a bit more queryrunner").
 		Equal(t, test("needs more queryrunner", &Replace{
-			MatchPattern:   &Regexp{Value: regexp.MustCompile(`more (\w+)`)},
+			SearchPattern:  &Regexp{Value: regexp.MustCompile(`more (\w+)`)},
 			ReplacePattern: "a bit more $1",
 		}))
 
@@ -36,7 +36,7 @@ func Test_replace(t *testing.T) {
 		"structural search replace",
 		"foo(baz, bar)").
 		Equal(t, test("foo(bar, baz)", &Replace{
-			MatchPattern:   &Comby{Value: `foo(:[x], :[y])`},
+			SearchPattern:  &Comby{Value: `foo(:[x], :[y])`},
 			ReplacePattern: "foo(:[y], :[x])",
 		}))
 }

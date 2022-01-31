@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react'
 import { Redirect } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -47,9 +47,9 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
-            <div className="alert alert-info mt-3">
+            <Alert className="mt-3" variant="info">
                 No authentication providers are available. Contact a site administrator for help.
-            </div>
+            </Alert>
         ) : (
             <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
                 {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} icon={false} />}

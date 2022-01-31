@@ -139,7 +139,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
 		},
-		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: git.FirstEverCommit}).gitFirstEverCommit,
+		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: gitFirstEverCommit}).gitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return git.Commits(ctx, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
@@ -495,34 +495,33 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	// If we have a revision already derived from the execution plan, we will use that revision. Otherwise we will
 	// look it up from gitserver.
 	var revision string
+	recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repoName, bctx.execution.RecordingTime)
+	if err != nil {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
+			return // no error - repo may not be cloned yet (or not even pushed to code host yet)
+		}
+		softErr = multierror.Append(softErr, errors.Wrap(err, "FindNearestCommit"))
+		return
+	}
+	var nearestCommit *gitdomain.Commit
+	if len(recentCommits) > 0 {
+		nearestCommit = recentCommits[0]
+	}
+	if nearestCommit == nil {
+		log15.Error("null commit", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+		h.statistics[bctx.seriesID].Errored += 1
+		return // repository has no commits / is empty. Maybe not yet pushed to code host.
+	}
+	if nearestCommit.Committer == nil {
+		log15.Error("null committer", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+		h.statistics[bctx.seriesID].Errored += 1
+		return
+	}
+	log15.Debug("nearest_commit", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)
+	revision = string(nearestCommit.ID)
 
-	if len(bctx.execution.Revision) > 0 {
-		revision = bctx.execution.Revision
-	} else {
-		recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repoName, bctx.execution.RecordingTime)
-		if err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
-				return // no error - repo may not be cloned yet (or not even pushed to code host yet)
-			}
-			softErr = multierror.Append(softErr, errors.Wrap(err, "FindNearestCommit"))
-			return
-		}
-		var nearestCommit *gitdomain.Commit
-		if len(recentCommits) > 0 {
-			nearestCommit = recentCommits[0]
-		}
-		if nearestCommit == nil {
-			log15.Error("null commit", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
-			h.statistics[bctx.seriesID].Errored += 1
-			return // repository has no commits / is empty. Maybe not yet pushed to code host.
-		}
-		if nearestCommit.Committer == nil {
-			log15.Error("null committer", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
-			h.statistics[bctx.seriesID].Errored += 1
-			return
-		}
-		log15.Debug("nearest_commit", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)
-		revision = string(nearestCommit.ID)
+	if len(bctx.execution.Revision) > 0 && bctx.execution.Revision != revision {
+		log15.Warn("[historical_enqueuer] revision mismatch from commit index", "indexRevision", bctx.execution.Revision, "fetchedRevision", revision, "repoName", bctx.repoName, "repo_id", bctx.id, "before", bctx.execution.RecordingTime)
 	}
 
 	// Build the search query we will run. The most important part here is
@@ -560,4 +559,8 @@ func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, repoN
 	}
 	c.cache[repoName] = entry
 	return entry, nil
+}
+
+func gitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
+	return git.FirstEverCommit(ctx, repoName, authz.DefaultSubRepoPermsChecker)
 }

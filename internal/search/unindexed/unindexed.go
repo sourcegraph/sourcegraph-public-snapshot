@@ -309,7 +309,6 @@ func callSearcherOverRepos(
 type RepoSubsetTextSearch struct {
 	ZoektArgs         *search.ZoektParameters
 	SearcherArgs      *search.SearcherParameters
-	FileMatchLimit    int32
 	NotSearcherOnly   bool
 	UseIndex          query.YesNoOnly
 	ContainsRefGlobs  bool
@@ -319,9 +318,6 @@ type RepoSubsetTextSearch struct {
 }
 
 func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
-	defer cleanup()
-
 	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, t.OnMissingRepoRevs)
@@ -347,16 +343,12 @@ func (*RepoSubsetTextSearch) Name() string {
 type RepoUniverseTextSearch struct {
 	GlobalZoektQuery *zoektutil.GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
-	FileMatchLimit   int32
 
 	RepoOptions search.RepoOptions
 	UserID      int32
 }
 
 func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
-	defer cleanup()
-
 	userID := int32(0)
 
 	if envvar.SourcegraphDotComMode() {

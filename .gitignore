@@ -3,6 +3,7 @@
 
 # JetBrains/IntelliJ
 .idea
+.graphqlconfig
 
 # Emacs
 *~

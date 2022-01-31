@@ -1,31 +1,26 @@
 import React from 'react'
 
-import { State, Action } from './reducer'
+import { TabsSettings } from '.'
 
-export interface TabsContext {
-    state: State
-    dispatch: React.Dispatch<Action>
-}
+export const TabsSettingsContext = React.createContext<TabsSettings | null>(null)
+TabsSettingsContext.displayName = 'TabsSettingsContext'
 
-export const TabsContext = React.createContext<TabsContext | null>(null)
-TabsContext.displayName = 'TabsContext'
-
-export const TabsIndexContext = React.createContext<number>(0)
-TabsIndexContext.displayName = 'TabsIndexContext'
-
-export const useTabsContext = (): TabsContext => {
-    const context = React.useContext(TabsContext)
+export const useTabsSettings = (): TabsSettings => {
+    const context = React.useContext(TabsSettingsContext)
     if (!context) {
-        throw new Error('Tabs compound components can not be rendered outside the <Tabs> component')
+        throw new Error('useTabsSettingsContext or Tabs inner components cannot be used outside <Tabs> sub-tree')
     }
 
     return context
 }
 
-export const useTabsIndexContext = (): number => {
-    const context = React.useContext(TabsIndexContext)
+export const TabPanelIndexContext = React.createContext<number>(0)
+TabPanelIndexContext.displayName = 'TabPanelIndexContext'
+
+export const useTablePanelIndex = (): number => {
+    const context = React.useContext(TabPanelIndexContext)
     if (context === undefined) {
-        throw new Error('TabsIndexContext can not be used outside the <Tabs> component scope')
+        throw new Error('TabPanelIndexContext cannot be used outside <Tabs> sub-tree')
     }
     return context
 }

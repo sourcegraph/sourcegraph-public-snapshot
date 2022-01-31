@@ -91,6 +91,15 @@ describe('ManageCodeMonitorPage', () => {
                         },
                     },
                 },
+                {
+                    slackWebhook: {
+                        id: 'test-action-1',
+                        update: {
+                            enabled: true,
+                            url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
+                        },
+                    },
+                },
             ]
         )
         props.updateCodeMonitor.resetHistory()
@@ -105,10 +114,10 @@ describe('ManageCodeMonitorPage', () => {
 
     test('Clicking Edit in the action area opens the action form', () => {
         renderWithRouter(<ManageCodeMonitorPage {...props} />)
-        expect(screen.queryByTestId('action-form')).not.toBeInTheDocument()
-        const editTrigger = screen.getByTestId('form-action-toggle-email-notification')
+        expect(screen.queryByTestId('action-form-email')).not.toBeInTheDocument()
+        const editTrigger = screen.getByTestId('form-action-toggle-email')
         userEvent.click(editTrigger)
-        expect(screen.queryByTestId('action-form')).toBeInTheDocument()
+        expect(screen.queryByTestId('action-form-email')).toBeInTheDocument()
     })
 
     test('Save button is disabled when no changes have been made, enabled when changes have been made', () => {

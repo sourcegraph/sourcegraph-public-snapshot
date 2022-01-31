@@ -1,3 +1,7 @@
 {
-  "extends": ["@sourcegraph/stylelint-config"]
+  "extends": ["@sourcegraph/stylelint-config"],
+  "plugins": ["@sourcegraph/stylelint-plugin-sourcegraph"],
+  "rules": {
+    "filenames/match-regex": [2, "^.+\\.module(\\.scss)$"]
+  }
 }

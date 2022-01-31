@@ -7,9 +7,7 @@ import styles from './Button.module.scss'
 import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 import { getButtonSize, getButtonStyle } from './utils'
 
-export interface ButtonProps
-    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-        React.RefAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**
      * The variant style of the button. Defaults to `primary`
      */
@@ -22,13 +20,6 @@ export interface ButtonProps
      * Modifies the button style to have a transparent/light background and a more pronounced outline.
      */
     outline?: boolean
-    /**
-     * Used to change the element that is rendered.
-     * Useful if needing to style a link as a button, or in certain cases where a different element is required.
-     * Always be mindful of potentially accessibiliy pitfalls when using this!
-     * Note: This component assumes `HTMLButtonElement` types, providing a different component here will change the potential types that can be passed to this component.
-     */
-    as?: React.ElementType
     /**
      * A tooltip to display when the user hovers the button.
      */
@@ -56,7 +47,8 @@ export const Button = React.forwardRef(
         {
             children,
             as: Component = 'button',
-            type = 'button',
+            // Use default type="button" only for the `button` element.
+            type = Component === 'button' ? 'button' : undefined,
             variant,
             size,
             outline,
@@ -77,7 +69,7 @@ export const Button = React.forwardRef(
                     size && getButtonSize({ size }),
                     className
                 )}
-                type={Component === 'button' ? type : undefined}
+                type={type}
                 disabled={disabled}
                 {...attributes}
             >

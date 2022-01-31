@@ -8,14 +8,11 @@ import (
 // Patterns is a regular expression that matches any input that would also match
 // any registered recognizer pattern.
 var Patterns = func() *regexp.Regexp {
-	var patterns []string
+	var patterns []*regexp.Regexp
 	for _, recognizer := range Recognizers {
-		for _, pattern := range recognizer.Patterns() {
-			patterns = append(patterns, pattern.String())
-		}
+		patterns = append(patterns, recognizer.Patterns()...)
 	}
-
-	return regexp.MustCompile(strings.Join(patterns, "|"))
+	return OrPattern(patterns)
 }()
 
 // rawPattern creates a regular expression matching the given string literal.
@@ -44,4 +41,13 @@ func extensionPattern(pattern *regexp.Regexp) *regexp.Regexp {
 // pathPattern creates a regular expression that matches paths with the given basename.
 func pathPattern(pattern *regexp.Regexp) *regexp.Regexp {
 	return suffixPattern(regexp.MustCompile("(^|/)" + pattern.String()))
+}
+
+// OrPattern [r1, r2, r3, ...] is equivalent to r1|r2|r3|... .
+func OrPattern(patterns []*regexp.Regexp) *regexp.Regexp {
+	var patternStrings []string
+	for _, pattern := range patterns {
+		patternStrings = append(patternStrings, pattern.String())
+	}
+	return regexp.MustCompile(strings.Join(patternStrings, "|"))
 }

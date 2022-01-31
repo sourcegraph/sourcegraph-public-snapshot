@@ -10,6 +10,16 @@ import (
 // Helper functions on Files should all be in the format `AffectsXYZ`.
 type Files []string
 
+// AffectsPathsPrefixedBy returns whether the chanegs affects CI scripts.
+func (f Files) AffectsCIScripts() bool {
+	for _, p := range f {
+		if strings.HasPrefix(p, "enterprise/dev/ci/scripts") {
+			return true
+		}
+	}
+	return false
+}
+
 // AffectsDocs returns whether the changes affects documentation.
 func (f Files) AffectsDocs() bool {
 	for _, p := range f {
@@ -24,6 +34,17 @@ func (f Files) AffectsDocs() bool {
 func (c Files) AffectsSg() bool {
 	for _, p := range c {
 		if strings.HasPrefix(p, "dev/sg/") {
+			return true
+		}
+	}
+	return false
+}
+
+// AffectsTerraformFiles returns whether the changes affects terraform files.
+// This will be based on changes to TF files for now.
+func (c Files) AffectsTerraformFiles() bool {
+	for _, p := range c {
+		if strings.HasSuffix(p, ".tf") {
 			return true
 		}
 	}

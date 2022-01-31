@@ -1,10 +1,10 @@
-import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import React, { HTMLAttributes } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 export const renderError = (error: unknown): string =>
     renderMarkdown(upperFirst((asError(error).message || 'Unknown Error').replace(/\t/g, '')), { breaks: true })
@@ -36,10 +36,15 @@ export type ErrorAlertProps = {
 
     className?: string
     style?: React.CSSProperties
+
+    /**
+     * The Alert variant to display. Defaults to "danger"
+     */
+    variant?: AlertProps['variant']
 } & HTMLAttributes<HTMLDivElement>
 
 /**
- * Renders a given `Error` object in a Bootstrap danger alert.
+ * Renders a given `Error` object as a Wildcard alert.
  *
  * The error message is optimistically formatted as markdown to enrich links,
  * bullet points, respect line breaks, code and bolded elements.
@@ -50,12 +55,13 @@ export const ErrorAlert: React.FunctionComponent<ErrorAlertProps> = ({
     className,
     icon = true,
     prefix,
+    variant = 'danger',
     ...rest
 }) => {
     prefix = prefix?.trim().replace(/:+$/, '')
     return (
-        <div className={classNames('alert', 'alert-danger', className)} {...rest}>
+        <Alert className={className} variant={variant} {...rest}>
             {prefix && <strong>{prefix}:</strong>} <ErrorMessage error={error} />
-        </div>
+        </Alert>
     )
 }

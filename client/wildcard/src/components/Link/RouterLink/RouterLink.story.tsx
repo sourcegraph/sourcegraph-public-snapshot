@@ -17,6 +17,9 @@ const config: Meta = {
 
     parameters: {
         component: RouterLink,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',

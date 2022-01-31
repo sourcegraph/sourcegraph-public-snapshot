@@ -26,21 +26,36 @@ type LimitStream struct {
 }
 
 func (s *LimitStream) Send(event SearchEvent) {
-	s.s.Send(event)
+	count := int64(event.Results.ResultCount())
 
 	// Avoid limit checks if no change to result count.
-	count := event.Results.ResultCount()
 	if count == 0 {
+		s.s.Send(event)
 		return
 	}
 
-	old := s.remaining.Load()
-	s.remaining.Sub(int64(count))
+	// Get the remaining count before and after sending this event
+	after := s.remaining.Sub(count)
+	before := after + count
 
-	// Only send IsLimitHit once. Can race with other sends and be sent
-	// multiple times, but this is fine. Want to avoid lots of noop events
-	// after the first IsLimitHit.
-	if old >= 0 && s.remaining.Load() < 0 {
+	// Check if the event needs truncating before being sent
+	if after < 0 {
+		limit := before
+		if before < 0 {
+			limit = 0
+		}
+		event.Results.Limit(int(limit))
+	}
+
+	// Send the maybe-truncated event. We want to always send the event
+	// even if we truncate it to zero results in case it has stats on it
+	// that we care about it.
+	s.s.Send(event)
+
+	// Send the IsLimitHit event and call cancel exactly once. This will
+	// only trigger when the result count of an event causes us to cross
+	// the zero-remaining threshold.
+	if after <= 0 && before > 0 {
 		s.s.Send(SearchEvent{Stats: Stats{IsLimitHit: true}})
 		s.cancel()
 	}

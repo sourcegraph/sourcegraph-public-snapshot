@@ -17,7 +17,7 @@ import (
 
 func Test_output(t *testing.T) {
 	test := func(input string, cmd *Output) string {
-		result, err := output(context.Background(), input, cmd.MatchPattern, cmd.OutputPattern, cmd.Separator)
+		result, err := output(context.Background(), input, cmd.SearchPattern, cmd.OutputPattern, cmd.Separator)
 		if err != nil {
 			return err.Error()
 		}
@@ -28,7 +28,7 @@ func Test_output(t *testing.T) {
 		"regexp search outputs only digits",
 		"(1)~(2)~(3)~").
 		Equal(t, test("a 1 b 2 c 3", &Output{
-			MatchPattern:  &Regexp{Value: regexp.MustCompile(`(\d)`)},
+			SearchPattern: &Regexp{Value: regexp.MustCompile(`(\d)`)},
 			OutputPattern: "($1)",
 			Separator:     "~",
 		}))
@@ -43,7 +43,7 @@ func Test_output(t *testing.T) {
 		`train(regional, intercity)
 train(commuter, lightrail)`).
 		Equal(t, test("Im a train. train(intercity, regional). choo choo. train(lightrail, commuter)", &Output{
-			MatchPattern:  &Comby{Value: `train(:[x], :[y])`},
+			SearchPattern: &Comby{Value: `train(:[x], :[y])`},
 			OutputPattern: "train(:[y], :[x])",
 		}))
 }

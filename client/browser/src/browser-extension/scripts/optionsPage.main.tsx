@@ -183,7 +183,12 @@ const Options: React.FunctionComponent = () => {
                 return
             }
             storage.sync
-                .set({ sourcegraphURL: url, previouslyUsedURLs: uniq([...(previouslyUsedUrls || []), url]) })
+                .set({
+                    sourcegraphURL: url,
+                    previouslyUsedURLs: uniq([...(previouslyUsedUrls || []), url, sourcegraphUrl]).filter(
+                        value => !!value
+                    ) as string[],
+                })
                 .catch(console.error)
         },
         [previouslyUsedUrls, sourcegraphUrl]

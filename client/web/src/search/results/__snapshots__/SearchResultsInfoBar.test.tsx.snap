@@ -53,7 +53,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
           class="mr-2 navItem"
         >
           <a
-            class="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link"
+            class="btn btn-outline-secondary btn-sm text-decoration-none test-save-search-link"
             href=""
             role="button"
             tabindex="0"
@@ -159,7 +159,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="mr-2 navItem"
         >
           <a
-            class="btn btn-sm btn-outline-secondary text-decoration-none create-code-monitor-button"
+            class="btn btn-outline-secondary btn-sm text-decoration-none create-code-monitor-button"
             href="/code-monitoring/new?trigger-query=foo+type%3Adiff+patterntype%3Aliteral"
             tabindex="0"
           >
@@ -184,7 +184,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="mr-2 navItem"
         >
           <a
-            class="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link"
+            class="btn btn-outline-secondary btn-sm text-decoration-none test-save-search-link"
             href=""
             role="button"
             tabindex="0"
@@ -295,7 +295,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             <a
               aria-expanded="false"
               aria-haspopup="true"
-              class="btn btn-sm btn-outline-secondary text-decoration-none create-code-monitor-button toggle nav-link"
+              class="btn btn-outline-secondary btn-sm text-decoration-none toggle create-code-monitor-button nav-link"
               href="#"
             >
               <svg
@@ -387,9 +387,9 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               </div>
               <a
                 class="btn btn-primary"
-                href="/sign-up?src=Monitor&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
+                href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
               >
-                Sign up for Sourcegraph
+                Get started
               </a>
             </div>
           </div>
@@ -403,7 +403,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             <a
               aria-expanded="false"
               aria-haspopup="true"
-              class="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link toggle nav-link"
+              class="btn btn-outline-secondary btn-sm text-decoration-none toggle test-save-search-link nav-link"
               href="#"
             >
               <svg
@@ -488,9 +488,9 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               </div>
               <a
                 class="btn btn-primary"
-                href="/sign-up?src=Saved&returnTo=%2Fsearch"
+                href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fsearch"
               >
-                Sign up for Sourcegraph
+                Get started
               </a>
             </div>
           </div>
@@ -583,7 +583,8 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           data-tooltip="Code monitors only support type:diff or type:commit searches."
         >
           <a
-            class="btn btn-sm btn-outline-secondary text-decoration-none create-code-monitor-button disabled"
+            class="btn btn-outline-secondary btn-sm text-decoration-none create-code-monitor-button disabled"
+            disabled=""
             href=""
             role="button"
             tabindex="-1"
@@ -609,7 +610,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           class="mr-2 navItem"
         >
           <a
-            class="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link"
+            class="btn btn-outline-secondary btn-sm text-decoration-none test-save-search-link"
             href=""
             role="button"
             tabindex="0"
@@ -720,7 +721,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             <a
               aria-expanded="false"
               aria-haspopup="true"
-              class="btn btn-sm btn-outline-secondary text-decoration-none create-code-monitor-button toggle nav-link"
+              class="btn btn-outline-secondary btn-sm text-decoration-none toggle create-code-monitor-button nav-link"
               href="#"
             >
               <svg
@@ -812,9 +813,9 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
               </div>
               <a
                 class="btn btn-primary"
-                href="/sign-up?src=Monitor&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
+                href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
               >
-                Sign up for Sourcegraph
+                Get started
               </a>
             </div>
           </div>
@@ -828,7 +829,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             <a
               aria-expanded="false"
               aria-haspopup="true"
-              class="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link toggle nav-link"
+              class="btn btn-outline-secondary btn-sm text-decoration-none toggle test-save-search-link nav-link"
               href="#"
             >
               <svg
@@ -913,9 +914,9 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
               </div>
               <a
                 class="btn btn-primary"
-                href="/sign-up?src=Saved&returnTo=%2Fsearch"
+                href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fsearch"
               >
-                Sign up for Sourcegraph
+                Get started
               </a>
             </div>
           </div>

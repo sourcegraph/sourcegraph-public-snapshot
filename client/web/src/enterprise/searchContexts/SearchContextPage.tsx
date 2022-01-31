@@ -19,7 +19,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
+import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import styles from './SearchContextPage.module.scss'
 
@@ -234,9 +234,9 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                         </>
                     )}
                     {isErrorLike(searchContextOrError) && (
-                        <div className="alert alert-danger">
+                        <Alert variant="danger">
                             Error while loading the search context: <strong>{searchContextOrError.message}</strong>
-                        </div>
+                        </Alert>
                     )}
                 </div>
             </Page>

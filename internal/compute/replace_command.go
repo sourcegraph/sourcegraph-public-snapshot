@@ -13,12 +13,16 @@ import (
 )
 
 type Replace struct {
-	MatchPattern   MatchPattern
+	SearchPattern  MatchPattern
 	ReplacePattern string
 }
 
+func (c *Replace) ToSearchPattern() string {
+	return c.SearchPattern.String()
+}
+
 func (c *Replace) String() string {
-	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.MatchPattern.String(), c.ReplacePattern)
+	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.SearchPattern.String(), c.ReplacePattern)
 }
 
 func replace(ctx context.Context, content []byte, matchPattern MatchPattern, replacePattern string) (*Text, error) {
@@ -53,7 +57,7 @@ func (c *Replace) Run(ctx context.Context, r result.Match) (Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		return replace(ctx, content, c.MatchPattern, c.ReplacePattern)
+		return replace(ctx, content, c.SearchPattern, c.ReplacePattern)
 	}
 	return nil, nil
 }

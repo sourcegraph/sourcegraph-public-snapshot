@@ -338,7 +338,7 @@ async function getPanelTabTitles(driver: Driver): Promise<string[]> {
 function collectVisibleLinks(driver: Driver): Promise<string[]> {
     return driver.page.evaluate(() =>
         [...document.querySelectorAll<HTMLElement>('.test-file-match-children-item-wrapper')].map(
-            a => a.querySelector('.test-file-match-children-item')?.getAttribute('href') || ''
+            a => a.querySelector('.test-file-match-children-item')?.getAttribute('data-href') || ''
         )
     )
 }

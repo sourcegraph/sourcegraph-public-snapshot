@@ -12,7 +12,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link, Alert } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -340,7 +340,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         }
         if (this.state.reloadStartedAt) {
             alerts.push(
-                <div key="error" className={classNames('alert alert-primary', styles.alert)}>
+                <Alert key="error" className={styles.alert} variant="primary">
                     <p>
                         <LoadingSpinner /> Waiting for site to reload...
                     </p>
@@ -349,19 +349,19 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             <small>It's taking longer than expected. Check the server logs for error messages.</small>
                         </p>
                     )}
-                </div>
+                </Alert>
             )
         }
         if (this.state.restartToApply) {
             alerts.push(
-                <div key="remote-dirty" className={classNames('alert alert-warning', styles.alert, styles.alertFlex)}>
+                <Alert key="remote-dirty" className={classNames(styles.alert, styles.alertFlex)} variant="warning">
                     Server restart is required for the configuration to take effect.
                     {(this.state.site === undefined || this.state.site?.canReloadSite) && (
                         <Button onClick={this.reloadSite} variant="primary" size="sm">
                             Restart server
                         </Button>
                     )}
-                </div>
+                </Alert>
             )
         }
         if (
@@ -369,7 +369,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.state.site.configuration.validationMessages.length > 0
         ) {
             alerts.push(
-                <div key="validation-messages" className={classNames('alert alert-danger', styles.alert)}>
+                <Alert key="validation-messages" className={styles.alert} variant="danger">
                     <p>The server reported issues in the last-saved config:</p>
                     <ul>
                         {this.state.site.configuration.validationMessages.map((message, index) => (
@@ -378,7 +378,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             </li>
                         ))}
                     </ul>
-                </div>
+                </Alert>
             )
         }
 
@@ -414,12 +414,12 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         ].filter(property => contents?.includes(`"${property}"`))
         if (legacyKubernetesConfigProps.length > 0) {
             alerts.push(
-                <div key="legacy-cluster-props-present" className={classNames('alert alert-info', styles.alert)}>
+                <Alert key="legacy-cluster-props-present" className={styles.alert} variant="info">
                     The configuration contains properties that are valid only in the
                     <code>values.yaml</code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
                     <code>{legacyKubernetesConfigProps.join(' ')}</code>. You can disregard the validation warnings for
                     these properties reported by the configuration editor.
-                </div>
+                </Alert>
             )
         }
 

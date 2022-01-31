@@ -20,8 +20,7 @@ import (
 )
 
 type RepoSearch struct {
-	Args  *search.TextParameters
-	Limit int
+	Args *search.TextParameters
 }
 
 func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
@@ -31,12 +30,7 @@ func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.S
 		tr.Finish()
 	}()
 
-	tr.LogFields(
-		otlog.String("pattern", s.Args.PatternInfo.Pattern),
-		otlog.Int("limit", s.Limit))
-
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
-	defer cleanup()
+	tr.LogFields(otlog.String("pattern", s.Args.PatternInfo.Pattern))
 
 	repos := &searchrepos.Resolver{DB: db, Opts: s.Args.RepoOptions}
 	err = repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {

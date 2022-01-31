@@ -23,10 +23,7 @@ export const SupersedingBatchSpecAlert: React.FunctionComponent<SupersedingBatch
     }
 
     return (
-        <DismissibleAlert
-            className="alert-info"
-            partialStorageKey={`superseding-spec-${parseISO(spec.createdAt).getTime()}`}
-        >
+        <DismissibleAlert variant="info" partialStorageKey={`superseding-spec-${parseISO(spec.createdAt).getTime()}`}>
             <div className="d-flex align-items-center">
                 <div className="flex-grow-1">
                     A <Link to={applyURL}>modified batch spec</Link> is ready but not applied since{' '}

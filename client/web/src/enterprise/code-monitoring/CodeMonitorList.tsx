@@ -3,9 +3,6 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Container, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -20,8 +17,7 @@ import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 type CodeMonitorFilter = 'all' | 'user'
 
 interface CodeMonitorListProps
-    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>>,
-        SettingsCascadeProps<Settings> {
+    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>> {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -36,14 +32,13 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
                 Create a code monitor
             </Button>
         ) : (
-            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Sign up to create a code monitor" />
+            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Get started with code monitors" />
         )}
     </div>
 )
 
 export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
     authenticatedUser,
-    settingsCascade,
     fetchUserCodeMonitors,
     toggleCodeMonitorEnabled,
 }) => {
@@ -108,13 +103,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             hideSearch={true}
                             nodeComponent={CodeMonitorNode}
                             nodeComponentProps={{
-                                isSiteAdminUser: authenticatedUser?.siteAdmin ?? false,
                                 location,
-                                showCodeMonitoringTestEmailButton:
-                                    (!isErrorLike(settingsCascade.final) &&
-                                        settingsCascade.final?.experimentalFeatures
-                                            ?.showCodeMonitoringTestEmailButton) ||
-                                    false,
                                 toggleCodeMonitorEnabled,
                             }}
                             noun="code monitor"
@@ -128,7 +117,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                 </div>
             </div>
             <div className="mt-5">
-                We want to hear your feedback! <a href="mailto:feedback@sourcegraph.com">Share your thoughts</a>
+                We want to hear your feedback! <Link to="mailto:feedback@sourcegraph.com">Share your thoughts</Link>
             </div>
         </>
     )

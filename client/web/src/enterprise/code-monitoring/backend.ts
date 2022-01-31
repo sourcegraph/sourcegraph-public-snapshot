@@ -42,6 +42,7 @@ const CodeMonitorFragment = gql`
         actions {
             nodes {
                 ... on MonitorEmail {
+                    __typename
                     id
                     enabled
                     recipients {
@@ -51,11 +52,13 @@ const CodeMonitorFragment = gql`
                     }
                 }
                 ... on MonitorWebhook {
+                    __typename
                     id
                     enabled
                     url
                 }
                 ... on MonitorSlackWebhook {
+                    __typename
                     id
                     enabled
                     url

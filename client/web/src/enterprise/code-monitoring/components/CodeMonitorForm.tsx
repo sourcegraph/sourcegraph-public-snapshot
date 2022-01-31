@@ -8,7 +8,7 @@ import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, Button, useEventObservable } from '@sourcegraph/wildcard'
+import { Container, Button, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -168,13 +168,13 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         <small className="text-muted">
                             Give it a short, descriptive name to reference events on Sourcegraph and in notifications.
                             Do not include{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
+                            <Link
+                                to="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
                                 target="_blank"
                                 rel="noopener"
                             >
                                 confidential information
-                            </a>
+                            </Link>
                             .
                         </small>
                     </div>
@@ -215,7 +215,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             authenticatedUser={authenticatedUser}
                             disabled={!formCompletion.triggerCompleted}
                             onActionsChange={onActionsChange}
-                            description={currentCodeMonitorState.description}
+                            monitorName={currentCodeMonitorState.description}
                         />
                     </div>
                     <hr className={classNames('my-3', styles.horizontalRule)} />
@@ -276,7 +276,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         )}
                     </div>
                     {isErrorLike(codeMonitorOrError) && (
-                        <div className="alert alert-danger">Failed to create monitor: {codeMonitorOrError.message}</div>
+                        <Alert variant="danger">Failed to create monitor: {codeMonitorOrError.message}</Alert>
                     )}
                 </div>
             </Form>

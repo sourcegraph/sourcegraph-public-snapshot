@@ -50,29 +50,28 @@ export interface VSCEStateMachine {
 }
 export type VSCEState = SearchHomeState | SearchResultsState | RemoteBrowsingState | IdleState | ContextInvalidatedState
 
-interface SearchHomeState {
+export interface SearchHomeState {
     status: 'search-home'
     context: CommonContext & {}
 }
 
-interface SearchResultsState {
+export interface SearchResultsState {
     status: 'search-results'
     context: CommonContext & {}
 }
-
-interface RemoteBrowsingState {
+export interface RemoteBrowsingState {
     status: 'remote-browsing'
     context: CommonContext & {}
 }
 
-interface IdleState {
+export interface IdleState {
     status: 'idle'
     context: CommonContext & {}
 }
 
-interface ContextInvalidatedState {
+export interface ContextInvalidatedState {
     status: 'context-invalidated'
-    context: CommonContext & {}
+    context: CommonContext
 }
 
 interface CommonContext {
@@ -95,11 +94,9 @@ type TabsEvent =
     | { type: 'remote_file_focused' }
     | { type: 'remote_file_unfocused' }
 
-type SettingsEvent =
-    | {
-          type: 'sourcegraph_url_change'
-      }
-    | { type: 'access_token_change' }
+interface SettingsEvent {
+    type: 'sourcegraph_url_change'
+}
 
 export function createVSCEStateMachine(): VSCEStateMachine {
     const states = new BehaviorSubject<VSCEState>(INITIAL_STATE)
@@ -111,8 +108,13 @@ export function createVSCEStateMachine(): VSCEStateMachine {
         }
 
         // Events with the same behavior regardless of current state
-        if (event.type === 'sourcegraph_url_change' || event.type === 'access_token_change') {
-            return { status: 'context-invalidated', context: INITIAL_STATE.context }
+        if (event.type === 'sourcegraph_url_change') {
+            return {
+                status: 'context-invalidated',
+                context: {
+                    ...INITIAL_STATE.context,
+                },
+            }
         }
 
         switch (state.status) {

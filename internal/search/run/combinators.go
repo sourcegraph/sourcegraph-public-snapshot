@@ -130,6 +130,36 @@ func (t *TimeoutJob) Name() string {
 	return fmt.Sprintf("TimeoutJob{%s}", t.child.Name())
 }
 
+// NewLimitJob creates a new job that is canceled after the result limit
+// is hit. Whenever an event is sent down the stream, the result count
+// is incremented by the number of results in that event, and if it reaches
+// the limit, the context is canceled.
+func NewLimitJob(limit int, child Job) Job {
+	if _, ok := child.(*emptyJob); ok {
+		return child
+	}
+	return &LimitJob{
+		limit: limit,
+		child: child,
+	}
+}
+
+type LimitJob struct {
+	child Job
+	limit int
+}
+
+func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
+	defer cancel()
+
+	return l.child.Run(ctx, db, s)
+}
+
+func (l *LimitJob) Name() string {
+	return fmt.Sprintf("LimitJob{%s}", l.child.Name())
+}
+
 type emptyJob struct{}
 
 func (e *emptyJob) Run(context.Context, database.DB, streaming.Sender) error { return nil }

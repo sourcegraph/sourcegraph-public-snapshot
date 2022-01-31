@@ -12,11 +12,12 @@ import (
 )
 
 type SearchRequest struct {
-	Repo        api.RepoName
-	Revisions   []RevisionSpecifier
-	Query       Node
-	IncludeDiff bool
-	Limit       int
+	Repo                 api.RepoName
+	Revisions            []RevisionSpecifier
+	Query                Node
+	IncludeDiff          bool
+	Limit                int
+	IncludeModifiedFiles bool
 }
 
 type RevisionSpecifier struct {
@@ -73,8 +74,9 @@ type CommitMatch struct {
 	Refs       []string       `json:",omitempty"`
 	SourceRefs []string       `json:",omitempty"`
 
-	Message result.MatchedString `json:",omitempty"`
-	Diff    result.MatchedString `json:",omitempty"`
+	Message       result.MatchedString `json:",omitempty"`
+	Diff          result.MatchedString `json:",omitempty"`
+	ModifiedFiles []string             `json:",omitempty"`
 }
 
 type Signature struct {
