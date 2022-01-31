@@ -1,2 +1,4 @@
 name: 'fifth'
-parent: 10004
+parents:
+  - 10003
+  - 10004
