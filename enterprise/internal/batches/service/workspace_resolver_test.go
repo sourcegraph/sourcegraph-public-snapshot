@@ -327,42 +327,43 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
 	})
 
-	// TODO: Reimplement this test once the feature is reimplemented.
-	// t.Run("workspaces with skipped steps", func(t *testing.T) {
-	// 	conditionalSteps := []batcheslib.Step{
-	// 		// Step should only execute in rs[1]
-	// 		{Run: "echo 1", If: fmt.Sprintf(`${{ eq repository.name %q }}`, rs[1].Name)},
-	// 	}
-	// 	batchSpec := &batcheslib.BatchSpec{
-	// 		On: []batcheslib.OnQueryOrRepository{
-	// 			{Repository: string(rs[0].Name)},
-	// 			{Repository: string(rs[1].Name)},
-	// 		},
-	// 		Steps: conditionalSteps,
-	// 	}
+	// TODO: Reimplement this test once skipping execution jobs is reimplemented.
+	t.Run("workspaces with skipped steps", func(t *testing.T) {
+		t.Skip("TODO: Reimplement skipping execution jobs for empty workspaces")
+		conditionalSteps := []batcheslib.Step{
+			// Step should only execute in rs[1]
+			{Run: "echo 1", If: fmt.Sprintf(`${{ eq repository.name %q }}`, rs[1].Name)},
+		}
+		batchSpec := &batcheslib.BatchSpec{
+			On: []batcheslib.OnQueryOrRepository{
+				{Repository: string(rs[0].Name)},
+				{Repository: string(rs[1].Name)},
+			},
+			Steps: conditionalSteps,
+		}
 
-	// 	mockResolveRevision(t, map[string]api.CommitID{
-	// 		defaultBranches[rs[0].Name].branch: defaultBranches[rs[0].Name].commit,
-	// 		defaultBranches[rs[1].Name].branch: defaultBranches[rs[1].Name].commit,
-	// 	})
+		mockResolveRevision(t, map[string]api.CommitID{
+			defaultBranches[rs[0].Name].branch: defaultBranches[rs[0].Name].commit,
+			defaultBranches[rs[1].Name].branch: defaultBranches[rs[1].Name].commit,
+		})
 
-	// 	mockBatchIgnores(t, map[api.CommitID]bool{
-	// 		defaultBranches[rs[0].Name].commit: false,
-	// 		defaultBranches[rs[1].Name].commit: false,
-	// 	})
+		mockBatchIgnores(t, map[api.CommitID]bool{
+			defaultBranches[rs[0].Name].commit: false,
+			defaultBranches[rs[1].Name].commit: false,
+		})
 
-	// 	searchMatches := []streamhttp.EventMatch{}
+		searchMatches := []streamhttp.EventMatch{}
 
-	// 	// We want both workspaces, but only one of them has steps that need to run
-	// 	ws0 := buildRepoWorkspace(rs[0], "", "", []string{})
-	// 	ws0.Steps = conditionalSteps
-	// 	ws0.SkippedSteps = []int32{0}
-	// 	ws1 := buildRepoWorkspace(rs[1], "", "", []string{})
-	// 	ws1.Steps = conditionalSteps
+		// We want both workspaces, but only one of them has steps that need to run
+		ws0 := buildRepoWorkspace(rs[0], "", "", []string{})
+		// ws0.Steps = conditionalSteps
+		// ws0.SkippedSteps = []int32{0}
+		ws1 := buildRepoWorkspace(rs[1], "", "", []string{})
+		// ws1.Steps = conditionalSteps
 
-	// 	want := []*RepoWorkspace{ws0, ws1}
-	// 	resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
-	// })
+		want := []*RepoWorkspace{ws0, ws1}
+		resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
+	})
 }
 
 func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, u *types.User, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {

@@ -42,6 +42,13 @@ func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 	}
 }
 
+type workspaceCacheKey struct {
+	dbWorkspace   *btypes.BatchSpecWorkspace
+	repo          batcheslib.Repository
+	stepCacheKeys []string
+	skippedSteps  map[int32]struct{}
+}
+
 func (r *batchSpecWorkspaceCreator) process(
 	ctx context.Context,
 	tx *store.Store,
@@ -77,12 +84,7 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Build DB workspaces and check for cache entries.
 	ws := make([]*btypes.BatchSpecWorkspace, 0, len(workspaces))
 	// Collect all cache keys so we can look them up in a single query.
-	cacheKeyWorkspaces := make(map[string]struct {
-		dbWorkspace   *btypes.BatchSpecWorkspace
-		repo          batcheslib.Repository
-		stepCacheKeys []string
-		skippedSteps  map[int32]struct{}
-	})
+	cacheKeyWorkspaces := make(map[string]workspaceCacheKey)
 
 	// Build workspaces DB objects.
 	for _, w := range workspaces {
@@ -156,12 +158,7 @@ func (r *batchSpecWorkspaceCreator) process(
 			stepCacheKeys = append(stepCacheKeys, rawStepKey)
 		}
 
-		cacheKeyWorkspaces[rawKey] = struct {
-			dbWorkspace   *btypes.BatchSpecWorkspace
-			repo          batcheslib.Repository
-			stepCacheKeys []string
-			skippedSteps  map[int32]struct{}
-		}{
+		cacheKeyWorkspaces[rawKey] = workspaceCacheKey{
 			dbWorkspace:   workspace,
 			repo:          r,
 			stepCacheKeys: stepCacheKeys,
