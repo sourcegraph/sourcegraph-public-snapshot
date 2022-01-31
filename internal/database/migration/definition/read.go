@@ -159,40 +159,6 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 		}
 	}
 
-	if _, ok := parseIndexMetadata(definition.DownQuery.Query(sqlf.PostgresBindVar)); ok {
-		return Definition{}, instructionalError{
-			class:       "malformed concurrent index creation",
-			description: "did not expect down migration to contain concurrent creation of an index",
-			instructions: strings.Join([]string{
-				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
-				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
-			}, " "),
-		}
-	}
-
-	if indexMetadata, ok := parseIndexMetadata(definition.UpQuery.Query(sqlf.PostgresBindVar)); ok {
-		if !payload.CreateIndexConcurrently {
-			return Definition{}, instructionalError{
-				class:       "malformed concurrent index creation",
-				description: "did not expect up migration to contain concurrent creation of an index",
-				instructions: strings.Join([]string{
-					"Add `createIndexConcurrently: true` to this migration's metadata.yaml file.",
-				}, " "),
-			}
-		}
-
-		definition.IsCreateIndexConcurrently = true
-		definition.IndexMetadata = indexMetadata
-	} else if payload.CreateIndexConcurrently {
-		return Definition{}, instructionalError{
-			class:       "malformed concurrent index creation",
-			description: "expected up migration to contain concurrent creation of an index",
-			instructions: strings.Join([]string{
-				"Remove `createIndexConcurrently: true` from this migration's metadata.yaml file.",
-			}, " "),
-		}
-	}
-
 	return definition, nil
 }
 
@@ -298,12 +264,12 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 	var (
 		order    = make([]int, 0, len(migrationDefinitions))
 		marks    = make(map[int]MarkType, len(migrationDefinitions))
-		children = children(migrationDefinitions)
+		childMap = children(migrationDefinitions)
 
 		dfs func(id int, parents []int) error
 	)
 
-	for _, children := range children {
+	for _, children := range childMap {
 		// Reverse-order each child slice. This will end up giving the output slice the
 		// property that migrations not related via ancestry will be ordered by their
 		// version number. This gives a nice, determinstic, and intuitive order in which
@@ -343,7 +309,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 		marks[id] = MarkTypeVisiting
 		defer func() { marks[id] = MarkTypeVisited }()
 
-		for _, child := range children[id] {
+		for _, child := range childMap[id] {
 			if err := dfs(child, append(append([]int(nil), parents...), id)); err != nil {
 				return err
 			}
