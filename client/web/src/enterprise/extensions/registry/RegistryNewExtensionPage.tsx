@@ -14,7 +14,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegr
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -168,13 +168,13 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>
                         <div className="mb-3">
-                            <a target="_blank" rel="noopener" href="https://docs.sourcegraph.com/extensions/authoring">
+                            <Link target="_blank" rel="noopener" to="https://docs.sourcegraph.com/extensions/authoring">
                                 Learn more
-                            </a>{' '}
+                            </Link>{' '}
                             about authoring Sourcegraph extensions{' '}
-                            <a target="_blank" rel="noopener" href="https://docs.sourcegraph.com/extensions/authoring">
+                            <Link target="_blank" rel="noopener" to="https://docs.sourcegraph.com/extensions/authoring">
                                 <HelpCircleOutline className="icon-inline" />
-                            </a>
+                            </Link>
                         </div>
                         <Form onSubmit={this.onSubmit}>
                             <RegistryPublisherFormGroup

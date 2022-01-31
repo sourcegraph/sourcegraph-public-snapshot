@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
+import { Link } from '@sourcegraph/wildcard'
+
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -111,9 +113,9 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
 
             <small className="text-muted">
                 What other actions would you like to take?{' '}
-                <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
+                <Link to="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
-                </a>
+                </Link>
             </small>
         </>
     )

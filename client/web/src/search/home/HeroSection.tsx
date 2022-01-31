@@ -3,6 +3,7 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link } from '@sourcegraph/wildcard'
 
 import styles from './HeroSection.module.scss'
 
@@ -31,13 +32,13 @@ export const HeroSection: React.FunctionComponent<ThemeProps & TelemetryProps> =
                         <li>Integrate code with other services</li>
                     </ul>
                 </div>
-                <a
-                    href="https://about.sourcegraph.com/"
+                <Link
+                    to="https://about.sourcegraph.com/"
                     className={styles.link}
                     onClick={() => telemetryService.log('HomepageAboutSiteLinkClicked')}
                 >
                     Learn more about Sourcegraph <ArrowRightIcon className="ml-2" />
-                </a>
+                </Link>
             </div>
         </div>
     )
