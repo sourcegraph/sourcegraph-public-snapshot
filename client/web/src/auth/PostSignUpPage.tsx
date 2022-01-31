@@ -23,6 +23,7 @@ import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from './Steps'
 import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
+import { CreateOrganization } from './welcome/CreateOrganization'
 import { Footer } from './welcome/Footer'
 import { StartSearching } from './welcome/StartSearching'
 
@@ -148,11 +149,12 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                 </p>
                             </div>
                             <div className="mt-4 pb-3 d-flex flex-column align-items-center">
-                                <Steps initialStep={debug ? parseInt(debug, 10) : 1}>
+                                <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
                                     <StepList numeric={true} className={styles.container}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
-                                        <Step borderColor="orange">Start searching</Step>
+                                        <Step borderColor="orange">Create an organization</Step>
+                                        <Step borderColor="green">Start searching</Step>
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>
@@ -194,6 +196,9 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     onError={onError}
                                                 />
                                             </div>
+                                        </StepPanel>
+                                        <StepPanel>
+                                            <CreateOrganization />
                                         </StepPanel>
                                         <StepPanel>
                                             <StartSearching
