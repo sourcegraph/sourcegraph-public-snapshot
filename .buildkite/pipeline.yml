@@ -11,6 +11,9 @@ steps:
   - group: "Pipeline setup"
     steps:
       - label: ':hammer_and_wrench: :pipeline: Generate pipeline'
+        # Prioritize generating pipelines so that jobs can get generated and queued up as soon
+        # as possible, so as to better assess pipeline load e.g. to scale the Buildkite fleet.
+        priority: 10
         command: |
           echo "--- generate pipeline"
           go run ./enterprise/dev/ci/gen-pipeline.go | tee generated-pipeline.yml
