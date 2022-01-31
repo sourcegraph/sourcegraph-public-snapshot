@@ -1,7 +1,10 @@
 import { ApolloError, ApolloQueryResult } from '@apollo/client'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { EXTERNAL_SERVICES } from '@sourcegraph/web/src/components/externalServices/backend'
+import {
+    EXTERNAL_SERVICES_WITH_COLLABORATORS,
+    EXTERNAL_SERVICES,
+} from '@sourcegraph/web/src/components/externalServices/backend'
 
 import {
     Exact,
@@ -28,9 +31,12 @@ interface UseExternalServicesResult {
     ) => Promise<ApolloQueryResult<ExternalServicesResult>>
 }
 
-export const useExternalServices = (userId: string | null): UseExternalServicesResult => {
+export const useExternalServices = (
+    userId: string | null,
+    fetchCollaborators: boolean = false
+): UseExternalServicesResult => {
     const { data, loading, error, refetch } = useQuery<ExternalServicesResult, ExternalServicesVariables>(
-        EXTERNAL_SERVICES,
+        fetchCollaborators ? EXTERNAL_SERVICES_WITH_COLLABORATORS : EXTERNAL_SERVICES,
         {
             variables: {
                 namespace: userId,
