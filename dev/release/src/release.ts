@@ -357,8 +357,8 @@ ${
         ? ''
         : `### :information_source: How to update CHANGELOG
 - [ ] I understood the convention of our changelog format. [learn more](https://keepachangelog.com/en/1.0.0/)
-- [ ] I created a new H2 title named \`${release.version}\` after the \`Unreleases\` section if it doesn't already exist
-- [ ] I copied all changelogs of the commits belong to this patch release into the new H2 title \`## ${release.version}\` and they are grouped by type (e.g. \`### Added\`, \`### Changed\`).
+- [ ] Create a new H2 title named \`${release.version}\` after the \`Unreleased\` section if it doesn't already exist
+- [ ] Copy all changelog entries of the commits belong to this patch release into the new H2 title \`## ${release.version}\`, grouped into the types they were originally in (e.g. \`### Added\`, \`### Changed\`).
 `
 }
 
