@@ -48,10 +48,6 @@ func (ds *Definitions) All() []Definition {
 	return ds.definitions
 }
 
-func (ds *Definitions) Count() int {
-	return len(ds.definitions)
-}
-
 func (ds *Definitions) GetByID(id int) (Definition, bool) {
 	definition, ok := ds.definitionsMap[id]
 	return definition, ok
