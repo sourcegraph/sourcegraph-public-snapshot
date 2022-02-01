@@ -352,16 +352,6 @@ These steps must be completed before this PR can be merged, unless otherwise sta
 
 ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
-${
-    notPatchRelease
-        ? ''
-        : `### :information_source: How to update CHANGELOG
-- [ ] I understood the convention of our changelog format. Learn more from our [CHANGELOG.md](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md).
-- [ ] Create a new H2 title named \`${release.version}\` after the \`Unreleased\` section if it doesn't already exist
-- [ ] Copy all changelog entries of the commits belong to this patch release into the new H2 title \`## ${release.version}\`, grouped into the types they were originally in (e.g. \`### Added\`, \`### Changed\`).
-`
-}
-
 cc @${config.captainGitHubUsername}
 `,
                 }
@@ -430,7 +420,7 @@ cc @${config.captainGitHubUsername}
                                     items.push('Update the upgrade guides in `doc/admin/updates`')
                                 } else {
                                     items.push(
-                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch',
+                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch. Learn more about [how to update CHANGELOG.md](departments/product-engineering/engineering/process/releases#changelogmd).',
                                         'If any specific upgrade steps are required, update the upgrade guides in `doc/admin/updates`'
                                     )
                                 }
