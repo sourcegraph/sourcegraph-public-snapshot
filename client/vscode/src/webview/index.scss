@@ -58,6 +58,12 @@
         }
     }
     --max-homepage-container-width: 65rem;
+
+    // Media breakpoints
+    --media-sm: 576px;
+    --media-md: 768px;
+    --media-lg: 992px;
+    --media-xl: 1200px;
 }
 
 // stylelint-disable-next-line selector-max-id
