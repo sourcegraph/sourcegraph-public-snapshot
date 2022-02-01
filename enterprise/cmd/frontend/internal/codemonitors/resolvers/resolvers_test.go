@@ -231,6 +231,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 	}
 }
 
+// nolint:deadcode
 func graphqlUserID(id int32) graphql.ID {
 	return relay.MarshalID("User", id)
 }
