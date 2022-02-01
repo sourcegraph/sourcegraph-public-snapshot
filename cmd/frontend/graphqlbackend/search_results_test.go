@@ -780,7 +780,7 @@ func Test_toSearchInputs(t *testing.T) {
 				PatternType:  query.SearchTypeLiteral,
 			},
 		}
-		job, _ := resolver.toSearchJob(q, streaming.NewNullStream())
+		job, _ := resolver.toSearchJob(q)
 		return job.Name()
 	}
 
