@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
@@ -118,7 +117,7 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 }
 
 func (r *Runner) applyMigrations(ctx context.Context, operation MigrationOperation, schemaContext schemaContext, definitions []definition.Definition) error {
-	log15.Info(
+	logger.Info(
 		"Applying migrations",
 		"schema", schemaContext.schema.Name,
 		"type", operation.Type,
@@ -135,7 +134,7 @@ func (r *Runner) applyMigrations(ctx context.Context, operation MigrationOperati
 }
 
 func (r *Runner) runSchemaUp(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) (err error) {
-	log15.Info("Upgrading schema", "schema", schemaContext.schema.Name)
+	logger.Info("Upgrading schema", "schema", schemaContext.schema.Name)
 
 	definitions, err := schemaContext.schema.Definitions.UpTo(schemaContext.initialSchemaVersion.version, operation.TargetVersion)
 	if err != nil {
@@ -146,7 +145,7 @@ func (r *Runner) runSchemaUp(ctx context.Context, operation MigrationOperation, 
 }
 
 func (r *Runner) runSchemaDown(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) error {
-	log15.Info("Downgrading schema", "schema", schemaContext.schema.Name)
+	logger.Info("Downgrading schema", "schema", schemaContext.schema.Name)
 
 	if operation.TargetVersion == 0 {
 		operation.TargetVersion = schemaContext.initialSchemaVersion.version - 1
@@ -169,7 +168,7 @@ func (r *Runner) applyMigration(
 ) error {
 	up := operation.Type == MigrationOperationTypeTargetedUp
 
-	log15.Info(
+	logger.Info(
 		"Applying migration",
 		"schema", schemaContext.schema.Name,
 		"migrationID", definition.ID,
