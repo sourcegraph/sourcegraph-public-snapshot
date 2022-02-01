@@ -437,7 +437,7 @@ cc @${config.captainGitHubUsername}
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
                                     'Run `yarn run release release:finalize` to generate the tags required. **Note** CI will not pass until this command is run.',
-                                    'Re-run Buildkite on this branch, and ensure the build passes before merging this pull request'
+                                    'Re-run the build on this branch (using either `sg ci build --wait` or the Buildkite UI) and merge when the build passes.'
                                 )
                                 return items
                             })()
