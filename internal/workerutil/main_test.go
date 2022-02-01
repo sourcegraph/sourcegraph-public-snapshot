@@ -9,8 +9,8 @@ import (
 )
 
 func TestMain(m *testing.M) {
-		// This package is INCREDIBLY noisy. We disable all logs during tests, regardless
-		// of the `-v` flag, to save the noise in local development as well as CI.
+	// This package is INCREDIBLY noisy. We disable all logs during tests, regardless
+	// of the `-v` flag, to save the noise in local development as well as CI.
 	//
 	// If logs are needed to debug unit test behavior, then temporarily
 	// comment out the following lines.
