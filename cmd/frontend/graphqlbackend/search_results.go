@@ -1536,11 +1536,12 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
 func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "evaluateRoutine", "")
+	tr, ctx := trace.New(ctx, "evaluateJob", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	tr.LazyPrintf("job name: %s", job.Name())
 
 	start := time.Now()
 	rr, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
