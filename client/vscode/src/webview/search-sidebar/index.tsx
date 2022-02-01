@@ -15,6 +15,7 @@ import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
 import { createSearchSidebarAPI } from './api'
 import { AuthSidebarView } from './AuthSidebarView'
 import { ContextInvalidatedSidebarView } from './ContextInvalidatedSidebarView'
+import { HistoryHomeSidebar } from './HistorySidebarView'
 import { SearchSidebarView } from './SearchSidebarView'
 
 // TODO: load extension host
@@ -77,10 +78,13 @@ const Main: React.FC = () => {
         return <ContextInvalidatedSidebarView {...webviewPageProps} />
     }
 
-    // TODO: should we hide the access token form permanently if an unauthenticated user
-    // has performed a search before? Or just for this session?
-    if (state.status === 'search-home' && !authenticatedUser) {
-        return <AuthSidebarView {...webviewPageProps} />
+    if (state.status === 'search-home') {
+        // TODO: should we hide the access token form permanently if an unauthenticated user
+        // has performed a search before? Or just for this session?
+        if (!authenticatedUser) {
+            return <AuthSidebarView {...webviewPageProps} />
+        }
+        return <HistoryHomeSidebar {...webviewPageProps} authenticatedUser={authenticatedUser} />
     }
 
     // <SearchSidebarView> is wrapped w/ React.memo so pass only necessary props.
