@@ -121,6 +121,7 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
                 onChange={event => onSelect(event.target.value)}
                 onFocus={onFocus}
                 onBlur={onBlur}
+                onPaste={event => event.stopPropagation()}
                 data-testid={dataTestId}
             />
             {/* Only show suggestions popover for the latest input value */}

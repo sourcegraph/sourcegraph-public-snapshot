@@ -319,16 +319,21 @@ describe('Search Notebook', () => {
         // Edit new file block
         await driver.page.click(fileBlockSelector)
 
-        // Paste the file URL
-        await driver.replaceText({
-            selector: `${fileBlockSelector} [data-testid="file-block-url-input"]`,
-            newText:
-                'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/client/search/src/index.ts?L30-32',
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
-        // Wait for input to validate
-        await driver.page.waitForSelector(`${fileBlockSelector} [data-testid="file-block-url-input"].is-valid`)
+        // Simulate pasting the file URL
+        await driver.page.evaluate(
+            (fileBlockSelector: string, fileURL: string) => {
+                const dataTransfer = new DataTransfer()
+                dataTransfer.setData('text', fileURL)
+                const event = new ClipboardEvent('paste', {
+                    clipboardData: dataTransfer,
+                    bubbles: true,
+                })
+                const element = document.querySelector(fileBlockSelector)
+                element?.dispatchEvent(event)
+            },
+            fileBlockSelector,
+            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/client/search/src/index.ts?L30-32'
+        )
 
         // Wait for highlighted code to load
         await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
