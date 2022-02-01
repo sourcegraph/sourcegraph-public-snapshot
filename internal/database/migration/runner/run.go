@@ -54,7 +54,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 // the "dirty database" condition, or on context cancellation.
 func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) error {
 	// First, rewrite operations into a smaller set of operations we'll handle below. This call converts
-	// upgrade and revert operations into targeted upto and downto operations.
+	// upgrade and revert operations into targeted up and down operations.
 	operation, err := desugarOperation(schemaContext, operation)
 	if err != nil {
 		return err
