@@ -15,8 +15,10 @@
             bottom: 0;
             left: 0;
             right: 0;
-            margin-left: -100vw;
-            margin-right: -100vw;
+
+            // For stretching the bottom border across the entire screen
+            // stylelint-disable-next-line declaration-property-unit-allowed-list
+            margin: 0 -100vw;
             border-bottom: 1px solid var(--border-color-2);
         }
     }
