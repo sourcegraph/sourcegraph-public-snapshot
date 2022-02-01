@@ -1374,10 +1374,6 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.
 			defer sem.Release(1)
 
 			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
-				orig := r.stream
-				r.stream = nil
-				defer func() { r.stream = orig }()
-
 				plan, err := pred.Plan(q)
 				if err != nil {
 					return nil, err
