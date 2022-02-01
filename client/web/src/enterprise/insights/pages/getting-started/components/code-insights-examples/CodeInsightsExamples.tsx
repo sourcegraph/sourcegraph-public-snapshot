@@ -1,10 +1,9 @@
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import React from 'react'
-import { Link } from 'react-router-dom'
 import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
 import { LegendBlock, LegendItem } from '../../../../../../views'
@@ -24,9 +23,9 @@ export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamples>
         <h2>Example insights</h2>
         <p className="text-muted">
             We've created a few common simple insights to show you what the tool can do.{' '}
-            <a href="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
+            <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
                 Explore more use cases.
-            </a>
+            </Link>
         </p>
 
         <div className={styles.section}>
