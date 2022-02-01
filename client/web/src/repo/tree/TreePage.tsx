@@ -33,6 +33,7 @@ import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -57,7 +58,6 @@ import { SearchPatternType, GitCommitFields, Scalars, TreePageRepositoryFields }
 import { repoFilterForRepoRevision } from '../../search'
 import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
-import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -206,8 +206,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     revision,
                     filePath,
                     first: 2500,
+                    requestGraphQL: props.platformContext.requestGraphQL,
                 }).pipe(catchError((error): [ErrorLike] => [asError(error)])),
-            [repo.name, commitID, revision, filePath]
+            [repo.name, commitID, revision, filePath, props.platformContext]
         )
     )
 

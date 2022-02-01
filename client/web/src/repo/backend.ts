@@ -10,7 +10,6 @@ import {
     RevisionNotFoundError,
 } from '@sourcegraph/shared/src/backend/errors'
 import {
-    AbsoluteRepoFile,
     makeRepoURI,
     RepoRevision,
     RevisionSpec,
@@ -20,7 +19,6 @@ import {
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
-    TreeFields,
     ExternalLinkFields,
     RepositoryRedirectResult,
     RepositoryRedirectVariables,
@@ -197,54 +195,4 @@ export const fetchFileExternalLinks = memoizeObservable(
             })
         ),
     makeRepoURI
-)
-
-export const fetchTreeEntries = memoizeObservable(
-    (args: AbsoluteRepoFile & { first?: number }): Observable<TreeFields> =>
-        queryGraphQL(
-            gql`
-                query TreeEntries(
-                    $repoName: String!
-                    $revision: String!
-                    $commitID: String!
-                    $filePath: String!
-                    $first: Int
-                ) {
-                    repository(name: $repoName) {
-                        commit(rev: $commitID, inputRevspec: $revision) {
-                            tree(path: $filePath) {
-                                ...TreeFields
-                            }
-                        }
-                    }
-                }
-                fragment TreeFields on GitTree {
-                    isRoot
-                    url
-                    entries(first: $first, recursiveSingleChild: true) {
-                        ...TreeEntryFields
-                    }
-                }
-                fragment TreeEntryFields on TreeEntry {
-                    name
-                    path
-                    isDirectory
-                    url
-                    submodule {
-                        url
-                        commit
-                    }
-                    isSingleChild
-                }
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (errors || !data?.repository?.commit?.tree) {
-                    throw createAggregateError(errors)
-                }
-                return data.repository.commit.tree
-            })
-        ),
-    ({ first, ...args }) => `${makeRepoURI(args)}:first-${String(first)}`
 )
