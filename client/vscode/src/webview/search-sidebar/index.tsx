@@ -78,7 +78,8 @@ const Main: React.FC = () => {
         return <ContextInvalidatedSidebarView {...webviewPageProps} />
     }
 
-    if (state.status === 'search-home') {
+    // If a search hasn't been performed yet
+    if (state.status === 'search-home' || !state.context.submittedSearchQueryState) {
         // TODO: should we hide the access token form permanently if an unauthenticated user
         // has performed a search before? Or just for this session?
         if (!authenticatedUser) {

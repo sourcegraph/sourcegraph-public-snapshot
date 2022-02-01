@@ -19,8 +19,13 @@
     "Other"
   ],
   "activationEvents": [
+    "onFileSystem:sourcegraph",
+    "onLanguage:sourcegraph",
     "onCommand:sourcegraph.search",
+    "onCommand:sourcegraph.selectionSearch",
+    "onCommand:sourcegraph.openFile",
     "onView:sourcegraph.searchSidebar",
+    "onView:sourcegraph.files",
     "onWebviewPanel:sourcegraphSearch"
   ],
   "main": "./dist/node/extension.js",
@@ -53,8 +58,7 @@
         {
           "id": "sourcegraph.files",
           "name": "Files",
-          "visibility": "visible",
-          "when": "sourcegraph.state == 'remote-browsing'"
+          "visibility": "visible"
         }
       ]
     },
@@ -93,6 +97,8 @@
     ],
     "menus": {
       "editor/context": [
+      ],
+      "view/item/context": [
       ]
     }
   },
