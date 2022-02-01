@@ -1736,7 +1736,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		_, err = doResults(ctx, r.SearchInputs, r.db, agg, job)
+		err = job.Run(ctx, r.db, agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
