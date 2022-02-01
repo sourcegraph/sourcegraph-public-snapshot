@@ -68,7 +68,7 @@ func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (
 // This function selects to undo the migration that has no applied children. Repeated application of the
 // revert operation should "pop" off the last migration applied. This function will give up if the revert
 // is ambiguous, which can happen once a migration with multiple parents has been reverted. More complex
-// down migrations can be run with an targeeted down operation.
+// down migrations can be run with an targeted down operation.
 func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
 	definitions := schemaContext.schema.Definitions
 	leafVersions := []int{schemaContext.initialSchemaVersion.version}
