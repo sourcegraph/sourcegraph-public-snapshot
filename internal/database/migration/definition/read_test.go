@@ -24,11 +24,11 @@ func TestReadDefinitions(t *testing.T) {
 		}
 
 		expectedDefinitions := []Definition{
-			{ID: 10001, UpQuery: sqlf.Sprintf("10001 UP"), DownQuery: sqlf.Sprintf("10001 DOWN"), Parents: nil},                 // first
-			{ID: 10002, UpQuery: sqlf.Sprintf("10002 UP"), DownQuery: sqlf.Sprintf("10002 DOWN"), Parents: []int{10001}},        // second
-			{ID: 10003, UpQuery: sqlf.Sprintf("10003 UP"), DownQuery: sqlf.Sprintf("10003 DOWN"), Parents: []int{10002}},        // third or fourth (1)
-			{ID: 10004, UpQuery: sqlf.Sprintf("10004 UP"), DownQuery: sqlf.Sprintf("10004 DOWN"), Parents: []int{10002}},        // third or fourth (2)
-			{ID: 10005, UpQuery: sqlf.Sprintf("10005 UP"), DownQuery: sqlf.Sprintf("10005 DOWN"), Parents: []int{10003, 10004}}, // fifth
+			{ID: 10001, Name: "first", UpQuery: sqlf.Sprintf("10001 UP"), DownQuery: sqlf.Sprintf("10001 DOWN"), Parents: nil},
+			{ID: 10002, Name: "second", UpQuery: sqlf.Sprintf("10002 UP"), DownQuery: sqlf.Sprintf("10002 DOWN"), Parents: []int{10001}},
+			{ID: 10003, Name: "third or fourth (1)", UpQuery: sqlf.Sprintf("10003 UP"), DownQuery: sqlf.Sprintf("10003 DOWN"), Parents: []int{10002}},
+			{ID: 10004, Name: "third or fourth (2)", UpQuery: sqlf.Sprintf("10004 UP"), DownQuery: sqlf.Sprintf("10004 DOWN"), Parents: []int{10002}},
+			{ID: 10005, Name: "fifth", UpQuery: sqlf.Sprintf("10005 UP"), DownQuery: sqlf.Sprintf("10005 DOWN"), Parents: []int{10003, 10004}},
 		}
 		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
 			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)
@@ -47,9 +47,16 @@ func TestReadDefinitions(t *testing.T) {
 		}
 
 		expectedDefinitions := []Definition{
-			{ID: 10001, UpQuery: sqlf.Sprintf("10001 UP"), DownQuery: sqlf.Sprintf("10001 DOWN"), Parents: nil}, // first
+			{
+				ID:        10001,
+				Name:      "first",
+				UpQuery:   sqlf.Sprintf("10001 UP"),
+				DownQuery: sqlf.Sprintf("10001 DOWN"),
+				Parents:   nil,
+			},
 			{
 				ID:                        10002,
+				Name:                      "second",
 				UpQuery:                   sqlf.Sprintf("-- Some docs here\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx ON tbl(col1, col2, col3);"),
 				DownQuery:                 sqlf.Sprintf("DROP INDEX IF EXISTS idx;"),
 				IsCreateIndexConcurrently: true,
@@ -58,7 +65,7 @@ func TestReadDefinitions(t *testing.T) {
 					IndexName: "idx",
 				},
 				Parents: []int{10001},
-			}, // second
+			},
 		}
 		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
 			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)
