@@ -4,6 +4,8 @@ import (
 	"flag"
 	"os"
 	"testing"
+
+	"github.com/inconshreveable/log15"
 )
 
 func TestMain(m *testing.M) {
@@ -11,8 +13,9 @@ func TestMain(m *testing.M) {
 	// (regardless of the -v flag) to save spewing useless logs into CI.
 	//
 	// If logs are needed to debug unit test behavior, then temporarily
-	// comment out the following line.
-	disableLogs()
+	// comment out the following lines.
+	logger = log15.New()
+	logger.SetHandler(log15.DiscardHandler())
 
 	flag.Parse()
 	os.Exit(m.Run())
