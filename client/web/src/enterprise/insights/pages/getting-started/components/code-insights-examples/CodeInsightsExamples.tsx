@@ -17,10 +17,22 @@ import { DATA_SERIES_COLORS, encodeSearchInsightUrl } from '../../../insights/cr
 
 import styles from './CodeInsightsExamples.module.scss'
 
-export const CodeInsightsExamples: React.FunctionComponent = () => (
-    <section className={styles.section}>
-        <CodeInsightSearchExample className={styles.card} />
-        <CodeInsightCaptureExample className={styles.card} />
+export interface CodeInsightsExamples extends React.HTMLAttributes<HTMLElement> {}
+
+export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamples> = props => (
+    <section {...props}>
+        <h2>Example insights</h2>
+        <p className="text-muted">
+            We've created a few common simple insights to show you what the tool can do.{' '}
+            <a href="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
+                Explore more use cases.
+            </a>
+        </p>
+
+        <div className={styles.section}>
+            <CodeInsightSearchExample className={styles.card} />
+            <CodeInsightCaptureExample className={styles.card} />
+        </div>
     </section>
 )
 
