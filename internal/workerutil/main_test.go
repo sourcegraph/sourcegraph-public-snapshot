@@ -10,8 +10,8 @@ import (
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
-	}
+	// Disable logs in CI; if logs are needed to debug unit test behavior,
+	// then temporarily comment out the following line.
+	log15.Root().SetHandler(log15.DiscardHandler())
 	os.Exit(m.Run())
 }
