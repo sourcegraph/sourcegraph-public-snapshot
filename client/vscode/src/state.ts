@@ -195,34 +195,31 @@ export function createVSCEStateMachine({
             // Type assertion is safe since existing context should be assignable to the existing state.
             // debt: refactor switch statement to elegantly handle this event safely.
         }
+        if (event.type === 'submit_search_query') {
+            return {
+                status: 'search-results',
+                context: {
+                    ...state.context,
+                    submittedSearchQueryState: event.submittedSearchQueryState,
+                    searchResults: null, // Null out previous results.
+                },
+            }
+        }
+        if (event.type === 'received_search_results' && state.context.submittedSearchQueryState) {
+            return {
+                status: 'search-results',
+                context: {
+                    ...state.context,
+                    submittedSearchQueryState: state.context.submittedSearchQueryState,
+                    searchResults: event.searchResults,
+                },
+            }
+        }
 
         switch (state.status) {
             case 'search-home':
             case 'search-results':
                 switch (event.type) {
-                    case 'submit_search_query':
-                        return {
-                            status: 'search-results',
-                            context: {
-                                ...state.context,
-                                submittedSearchQueryState: event.submittedSearchQueryState,
-                                searchResults: null, // Null out previous results.
-                            },
-                        }
-
-                    case 'received_search_results': {
-                        // Only accept this event in search-results state.
-                        if (state.status === 'search-results') {
-                            return {
-                                status: 'search-results',
-                                context: {
-                                    ...state.context,
-                                    searchResults: event.searchResults,
-                                },
-                            }
-                        }
-                    }
-
                     case 'search_panel_unfocused':
                         return {
                             ...state,
