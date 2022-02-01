@@ -13,7 +13,9 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
-const { add } = storiesOf('search-ui/input/SearchBox', module).addParameters({ chromatic: { viewports: [575, 700] } })
+const { add } = storiesOf('search-ui/input/SearchBox', module).addParameters({
+    chromatic: { viewports: [575, 700], disableSnapshot: false },
+})
 
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,

@@ -7,7 +7,9 @@ import { WebStory } from '../../components/WebStory'
 
 import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage', module).addParameters({
+    chromatic: { disableSnapshot: false },
+})
 
 add(
     'CreateCodeMonitorPage',

@@ -66,7 +66,7 @@ const defaultProps: StreamingSearchResultsProps = {
 
 const { add } = storiesOf('web/search/results/StreamingSearchResults', module)
     .addParameters({
-        chromatic: { viewports: [577, 769, 993] },
+        chromatic: { viewports: [577, 769, 993], disableSnapshot: false },
     })
     .addDecorator(Story => {
         useExperimentalFeatures.setState({ codeMonitoring: true, showSearchContext: true })

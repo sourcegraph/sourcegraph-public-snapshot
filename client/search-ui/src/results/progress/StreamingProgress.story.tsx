@@ -11,7 +11,7 @@ const { add } = storiesOf('search-ui/results/progress/StreamingProgress', module
         type: 'figma',
         url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
     },
-    chromatic: { viewports: [1200] },
+    chromatic: { viewports: [1200], disableSnapshot: false },
 })
 
 const onSearchAgain = sinon.spy()

@@ -60,7 +60,7 @@ const { add } = storiesOf('web/search/home/SearchPage', module)
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
-        chromatic: { viewports: [544, 577, 769, 993] },
+        chromatic: { viewports: [544, 577, 769, 993], disableSnapshot: false },
     })
     .addDecorator(Story => {
         useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })

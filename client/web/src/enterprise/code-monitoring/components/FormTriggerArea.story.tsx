@@ -16,6 +16,7 @@ const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', modul
     chromatic: {
         delay: 600, // Delay screenshot for input validation debouncing
         viewports: [720],
+        disableSnapshot: false,
     },
 })
 

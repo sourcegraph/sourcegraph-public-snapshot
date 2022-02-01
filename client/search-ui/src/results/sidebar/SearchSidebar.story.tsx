@@ -24,7 +24,7 @@ const { add } = storiesOf('search-ui/results/sidebar/SearchSidebar', module).add
         type: 'figma',
         url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',
     },
-    chromatic: { viewports: [544, 577, 993] },
+    chromatic: { viewports: [544, 577, 993], disableSnapshot: false },
 })
 
 const mockUseQueryState = create<SearchQueryState>((set, get) => ({
