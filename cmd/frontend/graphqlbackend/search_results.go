@@ -1735,11 +1735,15 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		results, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
+		agg := streaming.NewAggregatingStream()
+		_, err = doResults(ctx, r.SearchInputs, r.db, agg, job)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
-		v = r.resultsToResolver(results)
+		v = r.resultsToResolver(&SearchResults{
+			Matches: agg.Get().Results,
+			Stats:   agg.Get().Stats,
+		})
 		if v.MatchCount() > 0 {
 			break
 		}
