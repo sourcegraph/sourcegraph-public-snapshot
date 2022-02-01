@@ -109,5 +109,5 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 	// We don't want to return sensitive authz information or excluded paths to the
 	// user so we'll return generic error and log something more specific.
 	log15.Warn("Applying sub-repo permissions to search results", "error", errs)
-	return filtered, errors.New("applySubRepoFiltering")
+	return filtered, errors.New("subRepoFilterFunc")
 }
