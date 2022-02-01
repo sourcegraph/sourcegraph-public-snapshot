@@ -3,7 +3,7 @@ package ci
 import "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 
 func withYarnCache() buildkite.StepOpt {
-	if !WantsStatelessBuild() {
+	if !buildkite.WantsStatelessBuild() {
 		return nil
 	}
 

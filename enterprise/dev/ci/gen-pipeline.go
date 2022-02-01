@@ -29,7 +29,7 @@ func main() {
 
 	// For the time being, we are running main builds in // of the normal builds in
 	// the stateless agents queue, in order to observe its stability.
-	if ci.WantsStatelessBuild() {
+	if buildkite.WantsStatelessBuild() {
 		// We do not want to trigger any deployment.
 		config.RunType = ci.MainDryRun
 	}

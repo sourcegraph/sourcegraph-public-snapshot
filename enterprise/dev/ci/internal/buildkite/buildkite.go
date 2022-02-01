@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -38,6 +39,10 @@ type BuildOptions struct {
 	Branch   string                 `json:"branch,omitempty"`
 	MetaData map[string]interface{} `json:"meta_data,omitempty"`
 	Env      map[string]string      `json:"env,omitempty"`
+}
+
+func WantsStatelessBuild() bool {
+	return os.Getenv("WANT_STATELESS") != ""
 }
 
 func (bo BuildOptions) MarshalJSON() ([]byte, error) {
@@ -153,7 +158,11 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 
 	// Set a default agent queue to assign this job to
 	if len(step.Agents) == 0 {
-		step.Agents["queue"] = "job"
+		if WantsStatelessBuild() {
+			step.Agents["queue"] = "job"
+		} else {
+			step.Agents["queue"] = "standard"
+		}
 	}
 
 	p.Steps = append(p.Steps, step)
