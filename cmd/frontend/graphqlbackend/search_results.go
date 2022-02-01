@@ -1870,25 +1870,6 @@ type SearchResultResolver interface {
 	ResultCount() int32
 }
 
-// compareFileLengths sorts file paths such that they appear earlier if they
-// match file: patterns in the query exactly.
-func compareFileLengths(left, right string, exactFilePatterns map[string]struct{}) bool {
-	_, aMatch := exactFilePatterns[path.Base(left)]
-	_, bMatch := exactFilePatterns[path.Base(right)]
-	if aMatch || bMatch {
-		if aMatch && bMatch {
-			// Prefer shorter file names (ie root files come first)
-			if len(left) != len(right) {
-				return len(left) < len(right)
-			}
-			return left < right
-		}
-		// Prefer exact match
-		return aMatch
-	}
-	return left < right
-}
-
 func compareDates(left, right *time.Time) bool {
 	if left == nil || right == nil {
 		return left != nil // Place the value that is defined first.
@@ -1897,13 +1878,11 @@ func compareDates(left, right *time.Time) bool {
 }
 
 // compareSearchResults sorts repository matches, file matches, and commits.
-// Repositories and filenames are sorted alphabetically. As a refinement, if any
-// filename matches a value in a non-empty set exactFilePatterns, then such
-// filenames are listed earlier.
+// Repositories and filenames are sorted alphabetically.
 //
 // Commits are sorted by date. Commits are not associated with searchrepos, and
 // will always list after repository or file match results, if any.
-func compareSearchResults(left, right result.Match, exactFilePatterns map[string]struct{}) bool {
+func compareSearchResults(left, right result.Match) bool {
 	sortKeys := func(match result.Match) (string, string, *time.Time) {
 		switch r := match.(type) {
 		case *result.RepoMatch:
@@ -1924,19 +1903,16 @@ func compareSearchResults(left, right result.Match, exactFilePatterns map[string
 	brepo, bfile, bdate := sortKeys(right)
 
 	if arepo == brepo {
-		if len(exactFilePatterns) == 0 {
-			if afile != bfile {
-				return afile < bfile
-			}
-			return compareDates(adate, bdate)
+		if afile != bfile {
+			return afile < bfile
 		}
-		return compareFileLengths(afile, bfile, exactFilePatterns)
+		return compareDates(adate, bdate)
 	}
 	return arepo < brepo
 }
 
 func sortResults(results []result.Match) {
-	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j], nil) })
+	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j]) })
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
