@@ -39,12 +39,12 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, error) {
 	srs.once.Do(func() {
-		job, err := srs.sr.toSearchJob(srs.sr.Query)
+		agg := streaming.NewAggregatingStream()
+		job, err := srs.sr.toSearchJob(srs.sr.Query, agg)
 		if err != nil {
 			srs.err = err
 			return
 		}
-		agg := streaming.NewAggregatingStream()
 		err = job.Run(ctx, srs.sr.db, agg)
 		if err != nil {
 			srs.err = err

@@ -581,7 +581,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 // query on all indexed repositories) then we need to convert our tree to
 // Zoekt's internal inputs and representation. These concerns are all handled by
 // toSearchJob.
-func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
+func (r *searchResolver) toSearchJob(q query.Q, stream streaming.Sender) (run.Job, error) {
 	// MaxResults depends on the query's `count:` parameter, and we should
 	// use the passed-in query to do this. However, `r.MaxResults()` uses
 	// the query stored on the resolver's SearchInputs rather than the passed-in
@@ -618,7 +618,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 		Timeout:     search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || r.stream != nil,
+		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || stream != nil,
 
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,
@@ -766,7 +766,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 					NotSearcherOnly:   !searcherOnly,
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
-					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(stream),
 					RepoOpts:          repoOptions,
 				})
 			}
@@ -795,7 +795,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 					NotSearcherOnly:   !searcherOnly,
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
-					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(stream),
 					RepoOpts:          repoOptions,
 				})
 			}
@@ -849,7 +849,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				NotSearcherOnly:   !searcherOnly,
 				UseIndex:          args.PatternInfo.Index,
 				ContainsRefGlobs:  query.ContainsRefGlobs(q),
-				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(stream),
 				RepoOpts:          repoOptions,
 			})
 		}
@@ -1177,14 +1177,14 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream s
 		case query.Or:
 			return r.evaluateOr(ctx, stream, q)
 		case query.Concat:
-			job, err := r.toSearchJob(q.ToParseTree())
+			job, err := r.toSearchJob(q.ToParseTree(), stream)
 			if err != nil {
 				return &SearchResults{}, err
 			}
 			return r.evaluateJob(ctx, stream, job)
 		}
 	case query.Pattern:
-		job, err := r.toSearchJob(q.ToParseTree())
+		job, err := r.toSearchJob(q.ToParseTree(), stream)
 		if err != nil {
 			return &SearchResults{}, err
 		}
@@ -1200,7 +1200,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream s
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
-		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
+		job, err := r.toSearchJob(query.ToNodes(q.Parameters), stream)
 		if err != nil {
 			return &SearchResults{}, err
 		}
@@ -1752,11 +1752,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		job, err := r.toSearchJob(r.Query)
+		agg := streaming.NewAggregatingStream()
+		job, err := r.toSearchJob(r.Query, agg)
 		if err != nil {
 			return nil, err
 		}
-		agg := streaming.NewAggregatingStream()
 		err = job.Run(ctx, r.db, agg)
 		if err != nil {
 			return nil, err // do not cache errors.
