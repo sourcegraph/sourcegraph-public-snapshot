@@ -35,7 +35,7 @@ func (s *memoryStore) Done(err error) error {
 
 func (s *memoryStore) Version(ctx context.Context) (int, bool, bool, error) {
 	if n := len(s.appliedVersions); n > 0 {
-		return s.pendingVersions[n-1], len(s.pendingVersions)+len(s.failedVersions) > 0, true, nil
+		return s.appliedVersions[n-1], len(s.pendingVersions)+len(s.failedVersions) > 0, true, nil
 	}
 
 	return 0, false, false, nil
