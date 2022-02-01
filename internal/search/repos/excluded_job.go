@@ -14,7 +14,7 @@ type ComputeExcludedRepos struct {
 }
 
 func (c *ComputeExcludedRepos) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
-	tr, ctx := trace.New(ctx, "RepoUniverseTextSearch", "")
+	tr, ctx := trace.New(ctx, "ComputeExcludedRepos", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
