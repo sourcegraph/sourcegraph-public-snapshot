@@ -1130,6 +1130,36 @@ func TestApplySubRepoFiltering(t *testing.T) {
 			},
 			wantErr: "subRepoFilterFunc",
 		},
+		{
+			name: "repo matches should be ignored",
+			args: args{
+				ctxActor: actor.FromUser(userWithSubRepoPerms),
+				matches: []result.Match{
+					&result.RepoMatch{
+						Name: "foo",
+						ID:   1,
+					},
+				},
+			},
+			wantMatches: []result.Match{
+				&result.RepoMatch{
+					Name: "foo",
+					ID:   1,
+				},
+			},
+		},
+		{
+			name: "should filter commit matches",
+			args: args{
+				ctxActor: actor.FromUser(userWithSubRepoPerms),
+				matches: []result.Match{
+					&result.CommitMatch{
+						ModifiedFiles: []string{unauthorizedFileName},
+					},
+				},
+			},
+			wantMatches: []result.Match{},
+		},
 	}
 
 	for _, tt := range tests {
