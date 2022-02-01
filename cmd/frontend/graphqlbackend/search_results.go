@@ -1181,14 +1181,14 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateJob(ctx, job)
+			return r.evaluateJob(ctx, r.stream, job)
 		}
 	case query.Pattern:
 		job, err := r.toSearchJob(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJob(ctx, job)
+		return r.evaluateJob(ctx, r.stream, job)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -1204,7 +1204,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchRe
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJob(ctx, job)
+		return r.evaluateJob(ctx, r.stream, job)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -1541,7 +1541,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // A search job represents a tree of evaluation steps. If the deadline
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sender, job run.Job) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "evaluateJob", "")
 	defer func() {
 		tr.SetError(err)
@@ -1550,7 +1550,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 	tr.LazyPrintf("job name: %s", job.Name())
 
 	start := time.Now()
-	agg := run.NewAggregator(r.stream)
+	agg := run.NewAggregator(stream)
 	err = job.Run(ctx, r.db, agg)
 	matches, common, matchCount := agg.Get()
 
