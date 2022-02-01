@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -39,6 +41,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	tr.TagFields(trace.LazyFields(j.Tags))
 
 	if err := j.ExpandUsernames(ctx, db); err != nil {
 		return err
@@ -114,6 +117,23 @@ func (j CommitSearch) Name() string {
 		return "Diff"
 	}
 	return "Commit"
+}
+
+func (j *CommitSearch) Tags() []log.Field {
+	return []log.Field{
+		trace.Stringer("query", j.Query),
+		trace.Stringer("repoOpts", &j.RepoOpts),
+		log.Bool("diff", j.Diff),
+		log.Bool("hasTimeFilter", j.HasTimeFilter),
+		log.Int("limit", j.Limit),
+		log.Int64("codeMonitorID", func() int64 {
+			if j.CodeMonitorID != nil {
+				return *j.CodeMonitorID
+			}
+			return 0
+		}()),
+		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+	}
 }
 
 func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
