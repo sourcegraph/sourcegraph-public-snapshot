@@ -608,7 +608,7 @@ func TestCompareSearchResults(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("test", func(t *testing.T) {
-			if got := compareSearchResults(tt.a, tt.b); got != tt.aIsLess {
+			if got := tt.a.Key().Less(tt.b.Key()); got != tt.aIsLess {
 				t.Errorf("compareSearchResults() = %v, aIsLess %v", got, tt.aIsLess)
 			}
 		})
