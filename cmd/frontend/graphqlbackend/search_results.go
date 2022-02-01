@@ -1022,7 +1022,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 	var exhausted bool
 	for {
 		q = q.MapCount(tryCount)
-		result, err = r.evaluatePatternExpression(ctx, q.MapPattern(operands[0]))
+		result, err = r.evaluatePatternExpression(ctx, r.stream, q.MapPattern(operands[0]))
 		if err != nil {
 			return nil, err
 		}
@@ -1044,7 +1044,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			default:
 			}
 
-			termResult, err = r.evaluatePatternExpression(ctx, q.MapPattern(term))
+			termResult, err = r.evaluatePatternExpression(ctx, r.stream, q.MapPattern(term))
 			if err != nil {
 				return nil, err
 			}
@@ -1111,7 +1111,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 
 			defer sem.Release(1)
 
-			new, err := r.evaluatePatternExpression(ctx, q.MapPattern(term))
+			new, err := r.evaluatePatternExpression(ctx, r.stream, q.MapPattern(term))
 			if err != nil || new == nil {
 				return err
 			}
@@ -1164,7 +1164,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
-func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
@@ -1181,14 +1181,14 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateJob(ctx, r.stream, job)
+			return r.evaluateJob(ctx, stream, job)
 		}
 	case query.Pattern:
 		job, err := r.toSearchJob(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJob(ctx, r.stream, job)
+		return r.evaluateJob(ctx, stream, job)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -1206,7 +1206,7 @@ func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, 
 		}
 		return r.evaluateJob(ctx, stream, job)
 	}
-	return r.evaluatePatternExpression(ctx, q)
+	return r.evaluatePatternExpression(ctx, stream, q)
 }
 
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
