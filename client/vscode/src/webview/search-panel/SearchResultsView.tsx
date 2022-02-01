@@ -19,6 +19,7 @@ import { LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stre
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
+import { SourcegraphUri } from '../../file-system/SourcegraphUri'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
@@ -215,21 +216,92 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         [platformContext.telemetryService]
     )
 
-    const onResultSelect = useCallback((result: SearchMatch, matchIndex?: number) => {
-        switch (result.type) {
-            case 'commit': {
+    const onResultSelect = useCallback(
+        (result: SearchMatch, matchIndex?: number) => {
+            const host = new URL(instanceURL).host
+            switch (result.type) {
+                case 'commit': {
+                    const commitURL = new URL(result.url, instanceURL)
+                    extensionCoreAPI.openLink(commitURL.href).catch(error => {
+                        console.error('Error opening commit in browser', error)
+                    })
+                    return
+                }
+                case 'path': {
+                    const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
+                        revision: result.commit,
+                        path: result.path,
+                    })
+                    extensionCoreAPI.openSourcegraphFile(sourcegraphUri.uri).catch(error => {
+                        console.error('Error opening Sourcegraph file', error)
+                    })
+                    return
+                }
+                case 'repo': {
+                    // TODO: repo page, add to file tree as well.
+
+                    extensionCoreAPI.openSourcegraphFile(`sourcegraph://${host}/${result.repository}`).catch(error => {
+                        console.error('Error opening Sourcegraph repository', error)
+                    })
+                    return
+                }
+                case 'symbol': {
+                    // Debt: this event handler is called for a file match (w/ index)
+                    // and bubbles up to its container (w/o index).
+                    // We can't just stop propogation, so may want to introduce a separate callback.
+                    if (typeof matchIndex === 'number') {
+                        const commit = result.commit ?? 'HEAD'
+                        // Fall back to first line match if matchIndex is somehow out of range
+                        const url = result.symbols[matchIndex].url
+
+                        const { path, position } = SourcegraphUri.parse(`https:/${url}`, window.URL)
+                        const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
+                            revision: commit,
+                            path,
+                            position: position
+                                ? {
+                                      line: position.line - 1, // Convert to 1-based
+                                      character: position.character,
+                                  }
+                                : undefined,
+                        })
+
+                        const uri = sourcegraphUri.uri + sourcegraphUri.positionSuffix()
+                        extensionCoreAPI.openSourcegraphFile(uri).catch(error => {
+                            console.error('Error opening Sourcegraph file', error)
+                        })
+                    }
+
+                    return
+                }
+                case 'content': {
+                    // Debt: this event handler is called for a file match (w/ index)
+                    // and bubbles up to its container (w/o index).
+                    // We can't just stop propogation, so may want to introduce a separate callback.
+                    if (typeof matchIndex === 'number') {
+                        const { lineNumber, offsetAndLengths } = result.lineMatches[matchIndex]
+                        const [start] = offsetAndLengths[0]
+
+                        const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
+                            revision: result.commit,
+                            path: result.path,
+                            position: {
+                                line: lineNumber - 1, // Convert to 1-based
+                                character: start,
+                            },
+                        })
+
+                        const uri = sourcegraphUri.uri + sourcegraphUri.positionSuffix()
+                        extensionCoreAPI.openSourcegraphFile(uri).catch(error => {
+                            console.error('Error opening Sourcegraph file', error)
+                        })
+                    }
+                    return
+                }
             }
-            case 'path': {
-            }
-            case 'repo': {
-            }
-            case 'symbol': {
-            }
-            case 'content': {
-            }
-        }
-        console.log('result selected!!', { result })
-    }, [])
+        },
+        [extensionCoreAPI, instanceURL]
+    )
 
     return (
         <div className={styles.resultsViewLayout}>

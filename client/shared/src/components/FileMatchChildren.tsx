@@ -286,14 +286,14 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             )}
 
             {/* Symbols */}
-            {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
+            {((result.type === 'symbol' && result.symbols) || []).map((symbol, index) => (
                 <Link
                     to={symbol.url}
                     className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
                     {...openInNewTabProps}
-                    onClick={() => props.onSelect()}
+                    onClick={() => props.onSelect(index)}
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>
