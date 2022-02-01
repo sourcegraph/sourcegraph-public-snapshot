@@ -54,7 +54,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 }
 
 func (s *subRepoPermsFilterJob) Name() string {
-	return fmt.Sprintf("SubRepoPermsJob{%s}", s.child.Name())
+	return fmt.Sprintf("SubRepoPermsFilterJob{%s}", s.child.Name())
 }
 
 // applySubRepoFiltering filters a set of matches using the provided
