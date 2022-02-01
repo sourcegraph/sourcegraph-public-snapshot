@@ -54,7 +54,7 @@ func DownTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command 
 	return &ffcli.Command{
 		Name:       "downto",
 		ShortUsage: fmt.Sprintf("%s downto -db=<schema> -target=<target>,<target>,...", commandName),
-		ShortHelp:  `Revert any applied migrations that are children of the given targets - this effectively "resets" the database to the target migration`,
+		ShortHelp:  `Revert any applied migrations that are children of the given targets - this effectively "resets" the schmea to the target version`,
 		FlagSet:    flagSet,
 		Exec:       exec,
 		LongHelp:   ConstructLongHelp(),
