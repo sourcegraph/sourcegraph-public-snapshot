@@ -326,15 +326,13 @@ func CanReadAllPaths(ctx context.Context, checker SubRepoPermissionChecker, repo
 		return false, &ErrUnauthenticated{}
 	}
 
-	var perms Perms
-	var err error
 	c := RepoContent{
 		Repo: repo,
 	}
 
 	for _, p := range paths {
 		c.Path = p
-		perms, err = checker.Permissions(ctx, a.UID, c)
+		perms, err := checker.Permissions(ctx, a.UID, c)
 		if err != nil {
 			return false, err
 		}
