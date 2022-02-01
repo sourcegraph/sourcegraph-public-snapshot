@@ -34,7 +34,11 @@ export const CodeInsightsTemplates: React.FunctionComponent<React.HTMLAttributes
     <section {...props}>
         <h2>Templates</h2>
         <p className="text-muted">
-            Some of the most popular <a href="/help/">use cases</a>, collected from our beta customers.
+            Some of the most popular{' '}
+            <a href="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
+                use cases
+            </a>
+            , collected from our beta customers.
         </p>
 
         <Tabs size="medium" className="mt-3">
@@ -61,7 +65,6 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
     const [allVisible, setAllVisible] = useState(false)
 
     const maxNumberOfCards = allVisible ? templates.length : 4
-
     const hasMoreLessButton = templates.length > 4
 
     return (

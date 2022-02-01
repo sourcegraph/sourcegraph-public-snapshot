@@ -24,7 +24,9 @@ export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamples>
         <h2>Example insights</h2>
         <p className="text-muted">
             We've created a few common simple insights to show you what the tool can do.{' '}
-            <a href="/help">Explore more use cases.</a>
+            <a href="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
+                Explore more use cases.
+            </a>
         </p>
 
         <div className={styles.section}>
