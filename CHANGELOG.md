@@ -14,9 +14,20 @@ All notable changes to `src-cli` are documented in this file.
 ### Added
 
 ### Changed
-- `src validate` can now execute default validation checks (add external service, clone repo, search repo, search non-indexed branch of that repo, remove external service) for Sourcegraph instance when no validation file is specified as well as continue to support JSON and YAML file validation files.  
 
 ### Fixed
+
+### Removed
+
+## 3.36.2
+
+### Changed
+
+- `src validate` can now execute default validation checks (add external service, clone repo, search repo, search non-indexed branch of that repo, remove external service) for Sourcegraph instance when no validation file is specified as well as continue to support JSON and YAML file validation files.
+
+### Fixed
+
+- `src batch preview` and `src batch apply` could erroneously return exit code 0 and no warning when the execution actually failed.
 
 ## 3.36.1
 
@@ -33,8 +44,6 @@ _This version is the same as 3.35.3, just retagged for the upcoming 3.36.0 relea
 ### Fixed
 
 - Certain Batch Changes features that previously would not work on prerelease versions of Sourcegraph will now work as expected again.
-
-### Removed
 
 ## 3.35.2
 
