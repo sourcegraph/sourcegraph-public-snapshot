@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
@@ -24,9 +23,9 @@ func NewRunner(storeFactories map[string]StoreFactory) *Runner {
 }
 
 type schemaContext struct {
-	schema        *schemas.Schema
-	store         Store
-	schemaVersion schemaVersion
+	schema               *schemas.Schema
+	store                Store
+	initialSchemaVersion schemaVersion
 }
 
 type schemaVersion struct {
@@ -34,7 +33,7 @@ type schemaVersion struct {
 	dirty   bool
 }
 
-type visitFunc func(ctx context.Context, schemaName string, schemaContext schemaContext) error
+type visitFunc func(ctx context.Context, schemaContext schemaContext) error
 
 // forEachSchema invokes the given function once for each schema in the given list, with
 // store instances initialized for each given schema name. Each function invocation occurs
@@ -68,10 +67,10 @@ func (r *Runner) forEachSchema(ctx context.Context, schemaNames []string, visito
 		go func(schemaName string) {
 			defer wg.Done()
 
-			errorCh <- visitor(ctx, schemaName, schemaContext{
-				schema:        schemaMap[schemaName],
-				store:         storeMap[schemaName],
-				schemaVersion: versionMap[schemaName],
+			errorCh <- visitor(ctx, schemaContext{
+				schema:               schemaMap[schemaName],
+				store:                storeMap[schemaName],
+				initialSchemaVersion: versionMap[schemaName],
 			})
 		}(schemaName)
 	}
@@ -135,23 +134,32 @@ func (r *Runner) fetchVersions(ctx context.Context, storeMap map[string]Store) (
 	versions := make(map[string]schemaVersion, len(storeMap))
 
 	for schemaName, store := range storeMap {
-		version, dirty, err := r.fetchVersion(ctx, schemaName, store)
+		schemaVersion, err := r.fetchVersion(ctx, schemaName, store)
 		if err != nil {
 			return nil, err
 		}
 
-		versions[schemaName] = schemaVersion{version, dirty}
+		versions[schemaName] = schemaVersion
 	}
 
 	return versions, nil
 }
 
-func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Store) (int, bool, error) {
+func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Store) (schemaVersion, error) {
 	version, dirty, _, err := store.Version(ctx)
 	if err != nil {
-		return 0, false, err
+		return schemaVersion{}, err
 	}
 
-	log15.Info("Checked current version", "schema", schemaName, "version", version, "dirty", dirty)
-	return version, dirty, nil
+	logger.Info(
+		"Checked current version",
+		"schema", schemaName,
+		"version", version,
+		"dirty", dirty,
+	)
+
+	return schemaVersion{
+		version,
+		dirty,
+	}, nil
 }

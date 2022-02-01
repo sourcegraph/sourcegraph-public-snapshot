@@ -31,7 +31,7 @@ func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
 	for _, schemaName := range schemaNames {
 		operations = append(operations, runner.MigrationOperation{
 			SchemaName: schemaName,
-			Up:         true,
+			Type:       runner.MigrationOperationTypeUpgrade,
 		})
 	}
 

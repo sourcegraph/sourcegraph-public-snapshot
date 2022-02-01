@@ -86,33 +86,33 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
 
                         <div className="d-flex justify-content-end">
                             <ButtonLink
-                                variant="secondary"
-                                outline={true}
                                 className="mr-2"
                                 onSelect={onReject}
                                 to={url}
                                 {...linkProps}
+                                variant="secondary"
+                                outline={true}
                             >
                                 No, thanks
                             </ButtonLink>
 
                             <ButtonLink
-                                variant="secondary"
-                                outline={true}
                                 className="mr-2"
                                 onSelect={onClose}
                                 to={url}
                                 {...linkProps}
+                                variant="secondary"
+                                outline={true}
                             >
                                 Remind me later
                             </ButtonLink>
 
                             <ButtonLink
-                                variant="primary"
                                 className="mr-2"
                                 onSelect={onInstall}
                                 to="/help/integration/browser_extension"
                                 {...linkProps}
+                                variant="primary"
                             >
                                 Install browser extension
                             </ButtonLink>

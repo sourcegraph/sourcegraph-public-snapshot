@@ -34,8 +34,10 @@ var (
 		LongHelp:   cliutil.ConstructLongHelp(),
 	}
 
-	upCommand   = cliutil.Up("sg migration", runMigration, stdout.Out)
-	downCommand = cliutil.Down("sg migration", runMigration, stdout.Out)
+	upCommand     = cliutil.Up("sg migration", runMigration, stdout.Out)
+	upToCommand   = cliutil.UpTo("sg migration", runMigration, stdout.Out)
+	UndoCommand   = cliutil.Undo("sg migration", runMigration, stdout.Out)
+	downToCommand = cliutil.DownTo("sg migration", runMigration, stdout.Out)
 
 	migrationSquashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
 	migrationSquashDatabaseNameFlag = migrationSquashFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance")
@@ -60,7 +62,9 @@ var (
 		Subcommands: []*ffcli.Command{
 			migrationAddCommand,
 			upCommand,
-			downCommand,
+			upToCommand,
+			UndoCommand,
+			downToCommand,
 			migrationSquashCommand,
 		},
 	}
@@ -94,14 +98,15 @@ func migrationAddExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	upFile, downFile, err := migration.Add(database, migrationName)
+	upFile, downFile, metadataFile, err := migration.Add(database, migrationName)
 	if err != nil {
 		return err
 	}
 
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files created"))
-	block.Writef("Up migration: %s", upFile)
-	block.Writef("Down migration: %s", downFile)
+	block.Writef("Up query file: %s", upFile)
+	block.Writef("Down query file: %s", downFile)
+	block.Writef("Metadata file: %s", metadataFile)
 	block.Close()
 
 	return nil

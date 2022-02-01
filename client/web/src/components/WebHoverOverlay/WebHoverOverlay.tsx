@@ -105,8 +105,10 @@ export const WebHoverOverlay: React.FunctionComponent<
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}
             getAlertVariant={getAlertVariant}
-            actionItemSize="sm"
-            actionItemVariant="secondary"
+            actionItemStyleProps={{
+                actionItemSize: 'sm',
+                actionItemVariant: 'secondary',
+            }}
         />
     )
 }

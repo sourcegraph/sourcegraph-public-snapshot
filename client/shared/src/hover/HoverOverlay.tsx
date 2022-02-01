@@ -92,9 +92,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         actionItemPressedClassName,
         contentClassName,
 
-        actionItemVariant,
-        actionItemSize,
-        actionItemOutline,
+        actionItemStyleProps,
 
         getAlertClassName,
         getAlertVariant,
@@ -173,9 +171,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                                     telemetryService={telemetryService}
                                     extensionsController={extensionsController}
                                     location={location}
-                                    actionItemVariant={actionItemVariant}
-                                    actionItemSize={actionItemSize}
-                                    actionItemOutline={actionItemOutline}
+                                    actionItemStyleProps={actionItemStyleProps}
                                 />
                             ))}
                         </div>

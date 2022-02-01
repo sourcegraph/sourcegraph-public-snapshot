@@ -38,6 +38,12 @@ export interface ActionItemAction {
     disabledWhen?: boolean
 }
 
+interface ActionItemStyleProps {
+    actionItemVariant?: ButtonLinkProps['variant']
+    actionItemSize?: ButtonLinkProps['size']
+    actionItemOutline?: ButtonLinkProps['outline']
+}
+
 export interface ActionItemComponentProps
     extends ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
@@ -45,9 +51,7 @@ export interface ActionItemComponentProps
 
     iconClassName?: string
 
-    actionItemVariant?: ButtonLinkProps['variant']
-    actionItemSize?: ButtonLinkProps['size']
-    actionItemOutline?: ButtonLinkProps['outline']
+    actionItemStyleProps?: ActionItemStyleProps
 }
 
 export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
@@ -244,9 +248,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                   }
                 : {}
         const buttonLinkProps: Partial<ButtonLinkProps> = {
-            variant: this.props.actionItemVariant ?? 'link',
-            size: this.props.actionItemSize,
-            outline: this.props.actionItemOutline,
+            variant: this.props.actionItemStyleProps?.actionItemVariant ?? 'link',
+            size: this.props.actionItemStyleProps?.actionItemSize,
+            outline: this.props.actionItemStyleProps?.actionItemOutline,
         }
 
         return (

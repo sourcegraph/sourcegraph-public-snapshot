@@ -374,6 +374,7 @@ func createLogFields(upload store.Upload) []log.Field {
 		log.String("commit", upload.Commit),
 		log.String("root", upload.Root),
 		log.String("indexer", upload.Indexer),
+		log.Int("queueDuration", int(time.Since(upload.UploadedAt))),
 	}
 
 	if upload.UploadSize != nil {

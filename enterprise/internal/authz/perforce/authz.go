@@ -46,7 +46,7 @@ func newAuthzProvider(
 
 	var depotIDs []extsvc.RepoID
 	if a.SubRepoPermissions {
-		depotIDs = make([]extsvc.RepoID, len(depotIDs))
+		depotIDs = make([]extsvc.RepoID, len(depots))
 		for i, depot := range depots {
 			// Force depots as directories
 			if strings.HasSuffix(depot, "/") {

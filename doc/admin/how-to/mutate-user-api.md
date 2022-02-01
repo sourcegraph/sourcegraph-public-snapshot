@@ -1,4 +1,7 @@
-# How to update or remove users with the GraphQL API console
+# Admin Level GraphQL Mutations
+
+
+## How to update or remove users with the GraphQL API console
 
 This document walk you through the steps of using mutation queries to update or remove users via the GraphQL API console. 
 
@@ -122,6 +125,24 @@ Example:
 }
 ```
 
+## How to Import your Code Host into Sourcegraph using GraphQL
+Sourcegraph super admins can use graphql API to import a code host into their sourcegraph instance using the `mutation.AddExternalService`.
+Your query would look like the sample below:
+
+```
+mutation {
+  addExternalService(
+    input: {kind: GITHUB, displayName: "github-m", config: "{\"url\":\"https://github.com\",\"token\":\"xxxxxxxxxxx\",\"repos\":[\"<owner>/<reponame>"]}"
+        
+    }
+  ) {
+    id
+    nextSyncAt
+  }
+}
+
+```
+You can also check the documentation explorer on the right-hand side of the `API console` page to explore the fields available.
 
 ## Further resources
 

@@ -10,6 +10,16 @@ import (
 // Helper functions on Files should all be in the format `AffectsXYZ`.
 type Files []string
 
+// AffectsPathsPrefixedBy returns whether the chanegs affects CI scripts.
+func (f Files) AffectsCIScripts() bool {
+	for _, p := range f {
+		if strings.HasPrefix(p, "enterprise/dev/ci/scripts") {
+			return true
+		}
+	}
+	return false
+}
+
 // AffectsDocs returns whether the changes affects documentation.
 func (f Files) AffectsDocs() bool {
 	for _, p := range f {

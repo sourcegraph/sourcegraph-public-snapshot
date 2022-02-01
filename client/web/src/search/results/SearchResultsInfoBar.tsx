@@ -17,7 +17,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, useLocalStorage, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -112,13 +112,13 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
     }
     return (
         <ButtonLink
-            size="sm"
-            outline={true}
-            variant="secondary"
             className={props.className}
             to={props.nonExperimentalLinkTo}
             onSelect={props.onNonExperimentalLinkClick}
             disabled={props.isNonExperimentalLinkDisabled}
+            variant="secondary"
+            outline={true}
+            size="sm"
         >
             {props.button}
         </ButtonLink>
@@ -330,12 +330,16 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         {actionItems => (
                             <>
                                 {actionItems.map(actionItem => (
-                                    <ActionItem
+                                    <Button
                                         {...props}
                                         {...actionItem}
                                         key={actionItem.action.id}
                                         showLoadingSpinnerDuringExecution={false}
-                                        className="btn btn-outline-secondary mr-2 text-decoration-none btn-sm"
+                                        className="mr-2 text-decoration-none"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        as={ActionItem}
                                     />
                                 ))}
                             </>

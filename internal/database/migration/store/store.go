@@ -254,6 +254,9 @@ func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, e
 			if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
 				err = multierror.Append(err, unlockErr)
 			}
+
+			// No-op if called more than once
+			locked = false
 		}
 
 		return err
