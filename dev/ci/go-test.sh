@@ -33,6 +33,7 @@ function go_test() {
     $test_packages | tee "$tmpfile"
   # Save the test exit code so we can return it after submitting the test run to the analytics.
   test_exit_code="${PIPESTATUS[0]}"
+  echo "... test_packages=${test_packages} test_exit_code=${test_exit_code}; PIPESTATUS=${PIPESTATUS[0]}"
   set -eo pipefail # resume being strict about errors
 
   local xml
