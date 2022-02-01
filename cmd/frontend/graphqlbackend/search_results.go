@@ -1452,7 +1452,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 	matches := dedup.Results()
 	if len(matches) > 0 {
-		sort.Sort(result.Matches(matches))
+		sort.Sort(matches)
 	}
 
 	var alert *search.Alert
@@ -1837,7 +1837,7 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 	}
 	alert, err := ao.Done(&common)
 
-	sort.Sort(result.Matches(matches))
+	sort.Sort(matches)
 
 	return &SearchResults{
 		Matches: matches,
