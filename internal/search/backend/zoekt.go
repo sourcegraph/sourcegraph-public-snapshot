@@ -20,6 +20,7 @@ var zoektHTTPClient, _ = httpcli.NewFactory(
 		httpcli.ContextErrorMiddleware,
 	),
 	httpcli.NewMaxIdleConnsPerHostOpt(500),
+	// This will also generate a metric named "src_zoekt_webserver_requests_total".
 	httpcli.MeteredTransportOpt("zoekt_webserver"),
 	httpcli.TracedTransportOpt,
 ).Client()
