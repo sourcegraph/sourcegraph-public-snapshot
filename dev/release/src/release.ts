@@ -352,6 +352,16 @@ These steps must be completed before this PR can be merged, unless otherwise sta
 
 ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
+${
+    notPatchRelease
+        ? ''
+        : `### :information_source: How to update CHANGELOG
+- [ ] I understood the convention of our changelog format. [learn more](https://keepachangelog.com/en/1.0.0/)
+- [ ] I created a new H2 title named \`${release.version}\` after the \`Unreleases\` section if it doesn't already exist
+- [ ] I copied all changelogs of the commits belong to this patch release into the new H2 title \`## ${release.version}\` and they are grouped by type (e.g. \`### Added\`, \`### Changed\`).
+`
+}
+
 cc @${config.captainGitHubUsername}
 `,
                 }
@@ -425,7 +435,9 @@ cc @${config.captainGitHubUsername}
                                     )
                                 }
                                 items.push(
-                                    'Ensure all other pull requests in the batch change have been merged - then run `yarn run release release:finalize` to generate the tags required, re-run Buildkite on this branch, and ensure the build passes before merging this pull request'
+                                    'Ensure all other pull requests in the batch change have been merged',
+                                    'Run `yarn run release release:finalize` to generate the tags required. **Note** CI will not pass until this command is run.',
+                                    'Re-run Buildkite on this branch, and ensure the build passes before merging this pull request'
                                 )
                                 return items
                             })()
