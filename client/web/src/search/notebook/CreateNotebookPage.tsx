@@ -4,6 +4,7 @@ import { catchError, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
@@ -26,7 +27,7 @@ function deserializeBlocks(serializedBlocks: string): CreateNotebookBlockInput[]
     })
 }
 
-export const CreateNotebookPage: React.FunctionComponent = () => {
+export const CreateNotebookPage: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
     const notebookOrError = useObservable(
         useMemo(() => {
             const serializedBlocks = location.hash.trim().slice(1)
@@ -39,6 +40,7 @@ export const CreateNotebookPage: React.FunctionComponent = () => {
     )
 
     if (notebookOrError && !isErrorLike(notebookOrError) && notebookOrError !== LOADING) {
+        telemetryService.log('SearchNotebookCreated')
         return <Redirect to={PageRoutes.Notebook.replace(':id', notebookOrError.id)} />
     }
 
