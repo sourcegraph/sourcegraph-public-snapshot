@@ -678,7 +678,7 @@ func TestEditCodeMonitor(t *testing.T) {
 			CreatedBy: apitest.UserOrg{
 				Name: user1.Username,
 			},
-			CreatedAt: marshalDateTime(t, r.db.CodeMonitors().Now()),
+			CreatedAt: got.UpdateCodeMonitor.CreatedAt,
 			Trigger: apitest.Trigger{
 				Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 				Query: "repo:bar",
