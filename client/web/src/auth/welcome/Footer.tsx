@@ -43,7 +43,13 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish, skippableStep
                 )}
                 <LoaderButton
                     alwaysShowLabel={true}
-                    label={currentStep.isLastStep ? 'Start searching' : isSkippable ? 'Skip this step' : 'Continue'}
+                    label={
+                        currentStep.isLastStep
+                            ? 'Start searching'
+                            : isSkippable && !currentStep.isComplete
+                            ? 'Skip this step'
+                            : 'Continue'
+                    }
                     className="float-right ml-2"
                     disabled={!isSkippable && !currentStep.isComplete}
                     variant="primary"
