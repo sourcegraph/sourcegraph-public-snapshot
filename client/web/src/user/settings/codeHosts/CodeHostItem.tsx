@@ -33,6 +33,7 @@ interface CodeHostItemProps {
     onDidAdd?: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
+    loading?: boolean
     useGitHubApp?: boolean
 }
 
@@ -50,6 +51,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     isUpdateModalOpen,
     toggleUpdateModal,
     onDidUpsert,
+    loading = false,
     useGitHubApp = false,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
@@ -146,6 +148,14 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             label="Connecting..."
                             alwaysShowLabel={true}
                             variant="primary"
+                        />
+                    ) : loading ? (
+                        <LoaderButton
+                            type="button"
+                            className="btn btn-primary"
+                            loading={true}
+                            disabled={true}
+                            alwaysShowLabel={false}
                         />
                     ) : (
                         <Button onClick={useGitHubApp ? toGitHubApp : connectAction} variant="primary">

@@ -333,26 +333,23 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                             authProvidersByKind[kind] ? (
                                 <CodeHostListItem key={id}>
-                                    {kind === ExternalServiceKind.GITHUB && loading ? (
-                                        <LoadingSpinner />
-                                    ) : (
-                                        <CodeHostItem
-                                            owner={owner}
-                                            service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
-                                            kind={kind}
-                                            name={defaultDisplayName}
-                                            isTokenUpdateRequired={isTokenUpdateRequired[kind]}
-                                            navigateToAuthProvider={navigateToAuthProvider}
-                                            icon={icon}
-                                            isUpdateModalOpen={isUpdateModalOpen}
-                                            toggleUpdateModal={toggleUpdateModal}
-                                            onDidUpsert={handleServiceUpsert}
-                                            onDidAdd={addNewService}
-                                            onDidRemove={removeService(kind)}
-                                            onDidError={handleError}
-                                            useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
-                                        />
-                                    )}
+                                    <CodeHostItem
+                                        owner={owner}
+                                        service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
+                                        kind={kind}
+                                        name={defaultDisplayName}
+                                        isTokenUpdateRequired={isTokenUpdateRequired[kind]}
+                                        navigateToAuthProvider={navigateToAuthProvider}
+                                        icon={icon}
+                                        isUpdateModalOpen={isUpdateModalOpen}
+                                        toggleUpdateModal={toggleUpdateModal}
+                                        onDidUpsert={handleServiceUpsert}
+                                        onDidAdd={addNewService}
+                                        onDidRemove={removeService(kind)}
+                                        onDidError={handleError}
+                                        loading={kind === ExternalServiceKind.GITHUB && loading}
+                                        useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
+                                    />
                                 </CodeHostListItem>
                             ) : null
                         )}
