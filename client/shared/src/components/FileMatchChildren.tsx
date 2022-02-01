@@ -30,6 +30,12 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    /**
+     * Called when the file's search result is selected.
+     * If it is a line match, it is called
+     * with the index of the selected match.
+     */
+    onSelect: (index?: number) => void
 }
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
@@ -105,6 +111,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
+                    onClick={() => props.onSelect()}
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>
@@ -132,6 +139,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     styles.itemClickable
                                 )}
                                 data-testid="file-match-children-item"
+                                onClick={() => props.onSelect(index)}
                             >
                                 <CodeExcerpt
                                     repoName={result.repository}

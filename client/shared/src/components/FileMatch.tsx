@@ -40,8 +40,10 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
 
     /**
      * Called when the file's search result is selected.
+     * If it is a line search result, it is called
+     * with the index of the selected match.
      */
-    onSelect: () => void
+    onSelect: (index?: number) => void
 
     /**
      * Whether this file should be rendered as expanded.
