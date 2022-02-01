@@ -22,6 +22,7 @@ hstore
 intarray
 pg_stat_statements
 pg_trgm
+pgcrypto
 ```
 
 ## [Configuring PostgreSQL](./config/postgres-conf.md)

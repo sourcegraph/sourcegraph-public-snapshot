@@ -184,6 +184,113 @@ func NewMockAPI() *MockAPI {
 	}
 }
 
+// NewStrictMockAPI creates a new mock of the API interface. All methods
+// panic on invocation, unless overwritten.
+func NewStrictMockAPI() *MockAPI {
+	return &MockAPI{
+		AlertManagersFunc: &APIAlertManagersFunc{
+			defaultHook: func(context.Context) (v1.AlertManagersResult, error) {
+				panic("unexpected invocation of MockAPI.AlertManagers")
+			},
+		},
+		AlertsFunc: &APIAlertsFunc{
+			defaultHook: func(context.Context) (v1.AlertsResult, error) {
+				panic("unexpected invocation of MockAPI.Alerts")
+			},
+		},
+		BuildinfoFunc: &APIBuildinfoFunc{
+			defaultHook: func(context.Context) (v1.BuildinfoResult, error) {
+				panic("unexpected invocation of MockAPI.Buildinfo")
+			},
+		},
+		CleanTombstonesFunc: &APICleanTombstonesFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockAPI.CleanTombstones")
+			},
+		},
+		ConfigFunc: &APIConfigFunc{
+			defaultHook: func(context.Context) (v1.ConfigResult, error) {
+				panic("unexpected invocation of MockAPI.Config")
+			},
+		},
+		DeleteSeriesFunc: &APIDeleteSeriesFunc{
+			defaultHook: func(context.Context, []string, time.Time, time.Time) error {
+				panic("unexpected invocation of MockAPI.DeleteSeries")
+			},
+		},
+		FlagsFunc: &APIFlagsFunc{
+			defaultHook: func(context.Context) (v1.FlagsResult, error) {
+				panic("unexpected invocation of MockAPI.Flags")
+			},
+		},
+		LabelNamesFunc: &APILabelNamesFunc{
+			defaultHook: func(context.Context, []string, time.Time, time.Time) ([]string, v1.Warnings, error) {
+				panic("unexpected invocation of MockAPI.LabelNames")
+			},
+		},
+		LabelValuesFunc: &APILabelValuesFunc{
+			defaultHook: func(context.Context, string, []string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error) {
+				panic("unexpected invocation of MockAPI.LabelValues")
+			},
+		},
+		MetadataFunc: &APIMetadataFunc{
+			defaultHook: func(context.Context, string, string) (map[string][]v1.Metadata, error) {
+				panic("unexpected invocation of MockAPI.Metadata")
+			},
+		},
+		QueryFunc: &APIQueryFunc{
+			defaultHook: func(context.Context, string, time.Time) (model.Value, v1.Warnings, error) {
+				panic("unexpected invocation of MockAPI.Query")
+			},
+		},
+		QueryExemplarsFunc: &APIQueryExemplarsFunc{
+			defaultHook: func(context.Context, string, time.Time, time.Time) ([]v1.ExemplarQueryResult, error) {
+				panic("unexpected invocation of MockAPI.QueryExemplars")
+			},
+		},
+		QueryRangeFunc: &APIQueryRangeFunc{
+			defaultHook: func(context.Context, string, v1.Range) (model.Value, v1.Warnings, error) {
+				panic("unexpected invocation of MockAPI.QueryRange")
+			},
+		},
+		RulesFunc: &APIRulesFunc{
+			defaultHook: func(context.Context) (v1.RulesResult, error) {
+				panic("unexpected invocation of MockAPI.Rules")
+			},
+		},
+		RuntimeinfoFunc: &APIRuntimeinfoFunc{
+			defaultHook: func(context.Context) (v1.RuntimeinfoResult, error) {
+				panic("unexpected invocation of MockAPI.Runtimeinfo")
+			},
+		},
+		SeriesFunc: &APISeriesFunc{
+			defaultHook: func(context.Context, []string, time.Time, time.Time) ([]model.LabelSet, v1.Warnings, error) {
+				panic("unexpected invocation of MockAPI.Series")
+			},
+		},
+		SnapshotFunc: &APISnapshotFunc{
+			defaultHook: func(context.Context, bool) (v1.SnapshotResult, error) {
+				panic("unexpected invocation of MockAPI.Snapshot")
+			},
+		},
+		TSDBFunc: &APITSDBFunc{
+			defaultHook: func(context.Context) (v1.TSDBResult, error) {
+				panic("unexpected invocation of MockAPI.TSDB")
+			},
+		},
+		TargetsFunc: &APITargetsFunc{
+			defaultHook: func(context.Context) (v1.TargetsResult, error) {
+				panic("unexpected invocation of MockAPI.Targets")
+			},
+		},
+		TargetsMetadataFunc: &APITargetsMetadataFunc{
+			defaultHook: func(context.Context, string, string, string) ([]v1.MetricMetadata, error) {
+				panic("unexpected invocation of MockAPI.TargetsMetadata")
+			},
+		},
+	}
+}
+
 // NewMockAPIFrom creates a new mock of the MockAPI interface. All methods
 // delegate to the given implementation, unless overwritten.
 func NewMockAPIFrom(i v1.API) *MockAPI {

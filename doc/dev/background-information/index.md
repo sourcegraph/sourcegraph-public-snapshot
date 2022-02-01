@@ -12,6 +12,7 @@
 
 ## Development
 
+- [`sg` - the Sourcegraph developer tool](./sg/index.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
@@ -29,14 +30,14 @@
 - [Developing observability](observability/index.md)
 - [Developing Sourcegraph extensions](sourcegraph_extensions.md)
 - [Dependencies and generated code](dependencies_and_codegen.md)
-- [Code reviews](code_reviews.md)
+- [Pull request reviews](pull_request_reviews.md)
 - [Commit messages](commit_messages.md)
 - [Exposing services](exposing-services.md)
 - [Developing a store](basestore.md)
 - [Developing a worker](workers.md)
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
-- [High-performance SQL](sql.md)
+- [Code host connections on local dev environment](code-host.md)
 
 ## [Languages](languages/index.md)
 
@@ -49,6 +50,13 @@
 ### [Extended guides](languages/extended_guide/index.md)
 
 - [Terraform Extended Guide](languages/extended_guide/terraform.md)
+
+## [SQL](sql/index.md)
+
+- [Migrations](sql/migrations.md)
+- High-performance guides
+  - [Batch operations](sql/batch_operations.md)
+  - [Materialized cache](sql/materialized_cache.md)
 
 ## Testing
 

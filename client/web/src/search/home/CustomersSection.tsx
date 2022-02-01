@@ -25,7 +25,11 @@ export const CustomersSection: React.FunctionComponent<ThemeProps> = props => {
             <div className={classNames('text-muted text-center mb-3', styles.text)}>
                 Our customers use Sourcegraph every day to build software you rely on.{' '}
             </div>
-            <a className={styles.logos} href="https://about.sourcegraph.com/customers">
+            <a
+                className={styles.logos}
+                href="https://about.sourcegraph.com/customers"
+                aria-label="Learn more about our customers"
+            >
                 {logos.map(logo => (
                     <div key={logo.key} className={styles.logo}>
                         {logo}

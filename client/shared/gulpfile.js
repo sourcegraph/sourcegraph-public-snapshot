@@ -62,7 +62,7 @@ async function graphQlSchema() {
         postProcessor: code => format(code, { ...formatOptions, parser: 'typescript' }),
       }
     )
-  await writeFile(__dirname + '/src/graphql/schema.ts', typings)
+  await writeFile(__dirname + '/src/schema.ts', typings)
 }
 
 /**
@@ -158,11 +158,11 @@ const draftV7resolver = {
  * @returns {Promise<void>}
  */
 async function schema() {
-  const outputDirectory = path.join(__dirname, '..', 'web', 'src', 'schema')
+  const outputDirectory = path.join(__dirname, 'src', 'schema')
   await mkdir(outputDirectory, { recursive: true })
   const schemaDirectory = path.join(__dirname, '..', '..', 'schema')
   await Promise.all(
-    ['json-schema-draft-07', 'settings', 'site'].map(async file => {
+    ['json-schema-draft-07', 'settings', 'site', 'batch_spec'].map(async file => {
       let schema = await readFile(path.join(schemaDirectory, `${file}.schema.json`), 'utf8')
       // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
       // when the schema is in a oneOf (to be merged with extension schemas).

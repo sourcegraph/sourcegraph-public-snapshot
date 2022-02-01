@@ -35,6 +35,11 @@ This information can be overlaid on all panels in that dashboard by enabling the
 On service dashboards, annotations can be displayed for occasions when a Sourcegraph version change is detected by enabling the "Version changes" toggle at the top of the dashboard.
 This can be useful for correlating metrics and alerts with Sourcegraph deployment and upgrade events.
 
+<video  width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://sourcegraphstatic.com/VersionAndAlertAnnotations.webm" type="video/webm">
+  <p>Version and alert annotations</p>
+</video>
+
 #### Querying metrics
 
 Specific metrics can be queried using Grafana's Explore panel, available at `/-/debug/grafana/explore` on your Sourcegraph instance.

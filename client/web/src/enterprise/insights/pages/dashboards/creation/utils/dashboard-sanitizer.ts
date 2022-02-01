@@ -1,6 +1,7 @@
 import * as uuid from 'uuid'
 
-import { InsightDashboard } from '../../../../../../schema/settings.schema'
+import { InsightDashboard } from '@sourcegraph/shared/src/schema/settings.schema'
+
 import { DashboardCreationFields } from '../components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 
 /**

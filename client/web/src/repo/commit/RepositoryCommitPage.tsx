@@ -1,25 +1,26 @@
+import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 
-import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
+import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import { property } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
     ModeSpec,
@@ -28,10 +29,10 @@ import {
     RevisionSpec,
     UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
-import { ErrorAlert } from '../../components/alerts'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
@@ -48,6 +49,8 @@ import {
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
+
+import styles from './RepositoryCommitPage.module.scss'
 
 const queryCommit = memoizeObservable(
     (args: { repo: Scalars['ID']; revspec: string }): Observable<GitCommitFields> =>
@@ -118,9 +121,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     private nextRepositoryCommitPageElement = (element: HTMLElement | null): void =>
         this.repositoryCommitPageElements.next(element)
 
-    /** Emits when the close button was clicked */
-    private closeButtonClicks = new Subject<MouseEvent>()
-    private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -135,7 +135,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             HoverMerged,
             ActionItemAction
         >({
-            closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.repositoryCommitPageElements),
@@ -151,7 +150,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             getDocumentHighlights: hoveredToken =>
                 getDocumentHighlights(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
-            pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
         this.onHandleDiffMode = this.onHandleDiffMode.bind(this)
@@ -233,7 +231,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-commit-page p-3" ref={this.nextRepositoryCommitPageElement}>
+            <div className={classNames('p-3', styles.repositoryCommitPage)} ref={this.nextRepositoryCommitPageElement}>
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)
@@ -242,7 +240,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                     }
                 />
                 {this.state.commitOrError === undefined ? (
-                    <LoadingSpinner className="icon-inline mt-2" />
+                    <LoadingSpinner className="mt-2" />
                 ) : isErrorLike(this.state.commitOrError) ? (
                     <ErrorAlert className="mt-2" error={this.state.commitOrError} />
                 ) : (
@@ -255,6 +253,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                     showSHAAndParentsRow={true}
                                     diffMode={this.state.diffMode}
                                     onHandleDiffMode={this.onHandleDiffMode}
+                                    className={styles.gitCommitNode}
                                 />
                             </div>
                         </div>
@@ -299,9 +298,10 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                     <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
+                        nav={url => this.props.history.push(url)}
+                        hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
-                        onCloseButtonClick={this.nextCloseButtonClick}
                     />
                 )}
             </div>

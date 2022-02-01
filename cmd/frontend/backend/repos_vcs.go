@@ -7,6 +7,8 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -14,9 +16,9 @@ import (
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.
 // If no rev is specified, HEAD is used.
 // Error cases:
-// * Repo does not exist: vcs.RepoNotExistError
-// * Commit does not exist: git.RevisionNotFoundError
-// * Empty repository: git.RevisionNotFoundError
+// * Repo does not exist: gitdomain.RepoNotExistError
+// * Commit does not exist: gitdomain.RevisionNotFoundError
+// * Empty repository: gitdomain.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
 func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
@@ -30,7 +32,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	return git.ResolveRevision(ctx, repo.Name, rev, git.ResolveRevisionOptions{})
 }
 
-func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {
+func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
 	if Mocks.Repos.GetCommit != nil {
 		return Mocks.Repos.GetCommit(ctx, repo, commitID)
 	}
@@ -44,5 +46,5 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	return git.GetCommit(ctx, repo.Name, commitID, git.ResolveRevisionOptions{})
+	return git.GetCommit(ctx, repo.Name, commitID, git.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 }

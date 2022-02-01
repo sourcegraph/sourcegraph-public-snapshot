@@ -1,12 +1,12 @@
 import classNames from 'classnames'
 import { formatDistance, isBefore, parseISO } from 'date-fns'
-import ErrorIcon from 'mdi-react/ErrorIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useState, useEffect, useCallback } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isErrorLike } from '@sourcegraph/common'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { syncChangeset } from '../backend'
@@ -78,13 +78,13 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
                 <span data-tooltip="Expand to see details.">
-                    <ErrorIcon className="icon-inline text-danger" /> Syncing from code host failed.
+                    <AlertCircleIcon className="icon-inline text-danger" /> Syncing from code host failed.
                 </span>
             ) : (
                 <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
-                <ErrorIcon data-tooltip={lastUpdatedAt.message} className="ml-2 icon-inline small" />
+                <AlertCircleIcon data-tooltip={lastUpdatedAt.message} className="ml-2 icon-inline small" />
             )}
             <span data-tooltip={tooltipText}>
                 <UpdateLoaderIcon
@@ -93,6 +93,7 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
                         typeof lastUpdatedAt !== 'string' && viewerCanAdminister && 'cursor-pointer'
                     )}
                     onClick={enqueueChangeset}
+                    inline={false}
                 />
             </span>
         </small>

@@ -1,6 +1,8 @@
 package upload
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,13 +34,13 @@ var ErrUnauthorized = errors.New("unauthorized upload")
 // If target is a non-nil pointer, it will be assigned the value of the upload identifier present
 // in the response body. This function returns an error as well as a boolean flag indicating if the
 // function can be retried.
-func performUploadRequest(httpClient Client, opts uploadRequestOptions) (bool, error) {
+func performUploadRequest(ctx context.Context, httpClient Client, opts uploadRequestOptions) (bool, error) {
 	req, err := makeUploadRequest(opts)
 	if err != nil {
 		return false, err
 	}
 
-	resp, body, err := performRequest(req, httpClient, opts.OutputOptions.Logger)
+	resp, body, err := performRequest(ctx, req, httpClient, opts.OutputOptions.Logger)
 	if err != nil {
 		return false, err
 	}
@@ -73,13 +75,13 @@ func makeUploadRequest(opts uploadRequestOptions) (*http.Request, error) {
 // performRequest performs an HTTP request and returns the HTTP response as well as the entire
 // body as a byte slice. If a logger is supplied, the request, response, and response body will
 // be logged.
-func performRequest(req *http.Request, httpClient Client, logger RequestLogger) (*http.Response, []byte, error) {
+func performRequest(ctx context.Context, req *http.Request, httpClient Client, logger RequestLogger) (*http.Response, []byte, error) {
 	started := time.Now()
 	if logger != nil {
 		logger.LogRequest(req)
 	}
 
-	resp, err := httpClient.Do(req)
+	resp, err := httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -105,8 +107,13 @@ func decodeUploadPayload(resp *http.Response, body []byte, target *int) (bool, e
 			return false, ErrUnauthorized
 		}
 
+		suffix := ""
+		if !bytes.HasPrefix(bytes.TrimSpace(body), []byte{'<'}) {
+			suffix = fmt.Sprintf(" (%s)", bytes.TrimSpace(body))
+		}
+
 		// Do not retry client errors
-		return resp.StatusCode >= 500, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		return resp.StatusCode >= 500, errors.Errorf("unexpected status code: %d%s", resp.StatusCode, suffix)
 	}
 
 	if target == nil {

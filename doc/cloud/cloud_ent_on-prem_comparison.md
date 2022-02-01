@@ -1,4 +1,4 @@
-# Differences between Sourcegraph cloud and Sourcegraph self-hosted
+# Differences between Sourcegraph Cloud and Sourcegraph self-hosted
 
 ## What is Sourcegraph self-hosted, and who should choose it?
 
@@ -10,13 +10,13 @@ Installation instructions for self-hosted Sourcegraph [can be found here](https:
 
 We also offer managed Sourcegraph instances; more details can [be found here](https://docs.sourcegraph.com/admin/install/managed).
 
-## What is Sourcegraph cloud, and who should choose it?
+## What is Sourcegraph Cloud, and who should choose it?
 
-Sourcegraph cloud is a newly-released cloud version of Sourcegraph, which can be accessed at sourcegraph.com. It allows users to:
+Sourcegraph Cloud is a newly-released cloud version of Sourcegraph, which can be accessed at sourcegraph.com. It allows users to:
 - Search an index of over 1 million open source repositories
 - Connect to and search their own public repositories
 - Connect to and search their own private repositories (Public Beta)
 
-Sourcegraph cloud offers the same core Code Search experience for private and public code as Sourcegraph self-hosted, but it does not support enterprise features such as user management, SAML integration, and batch changes. It is intended for personal use.
+Sourcegraph Cloud offers the same core Code Search experience for private and public code as Sourcegraph self-hosted, but it does not support enterprise features such as user management, SAML integration, and batch changes. It is intended for personal use.
 
-Sourcegraph cloud is a great choice for individuals who would like to search their own repositories without deploying Sourcegraph themselves. It also allows individuals to easily access our index of over 1 million open source repositories.
+Sourcegraph Cloud is a great choice for individuals who would like to search their own repositories without deploying Sourcegraph themselves. It also allows individuals to easily access our index of over 1 million open source repositories.

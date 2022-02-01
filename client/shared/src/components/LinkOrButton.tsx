@@ -4,14 +4,13 @@ import { noop } from 'lodash'
 import React, { useCallback, AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
 
-import { isDefined } from '../util/types'
-
-import { Link } from './Link'
+import { isDefined } from '@sourcegraph/common'
+import { Link, AnchorLink } from '@sourcegraph/wildcard'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
 
-interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
+export interface ButtonLinkProps extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
     /** The link destination URL. */
     to?: H.LocationDescriptor
 
@@ -56,7 +55,7 @@ interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
  *
  * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const ButtonLink: React.FunctionComponent<Props> = ({
+export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = ({
     className = 'nav-link',
     to,
     target,
@@ -117,9 +116,8 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
             // Need empty href for styling reasons
             // Use onAuxClick so that middle-clicks are caught.
             // Ideally this should a <button> but we can't guarantee we have the .btn-link class here.
-            // eslint-disable-next-line jsx-a11y/anchor-is-valid
-            <a
-                href=""
+            <AnchorLink
+                to=""
                 {...commonProps}
                 onClick={onClickPreventDefault}
                 onAuxClick={onClickPreventDefault}
@@ -128,7 +126,7 @@ export const ButtonLink: React.FunctionComponent<Props> = ({
                 data-content={dataContent}
             >
                 {children}
-            </a>
+            </AnchorLink>
         )
     }
 

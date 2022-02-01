@@ -24,7 +24,7 @@ import (
 
 // SetDerivedState will update the external state fields on the Changeset based
 // on the current state of the changeset and associated events.
-func SetDerivedState(ctx context.Context, repoStore *database.RepoStore, c *btypes.Changeset, es []*btypes.ChangesetEvent) {
+func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btypes.Changeset, es []*btypes.ChangesetEvent) {
 	// Copy so that we can sort without mutating the argument
 	events := make(ChangesetEvents, len(es))
 	copy(events, es)
@@ -610,7 +610,7 @@ func computeRev(ctx context.Context, repo api.RepoName, getOid, getRef func() (s
 }
 
 // changesetRepoName looks up a api.RepoName based on the RepoID within a changeset.
-func changesetRepoName(ctx context.Context, repoStore *database.RepoStore, c *btypes.Changeset) (api.RepoName, error) {
+func changesetRepoName(ctx context.Context, repoStore database.RepoStore, c *btypes.Changeset) (api.RepoName, error) {
 	// We need to use an internal actor here as the repo-updater otherwise has no access to the repo.
 	repo, err := repoStore.Get(actor.WithInternalActor(ctx), c.RepoID)
 	if err != nil {

@@ -40,6 +40,24 @@ func NewMockPackageReferenceScanner() *MockPackageReferenceScanner {
 	}
 }
 
+// NewStrictMockPackageReferenceScanner creates a new mock of the
+// PackageReferenceScanner interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockPackageReferenceScanner() *MockPackageReferenceScanner {
+	return &MockPackageReferenceScanner{
+		CloseFunc: &PackageReferenceScannerCloseFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockPackageReferenceScanner.Close")
+			},
+		},
+		NextFunc: &PackageReferenceScannerNextFunc{
+			defaultHook: func() (shared.PackageReference, bool, error) {
+				panic("unexpected invocation of MockPackageReferenceScanner.Next")
+			},
+		},
+	}
+}
+
 // NewMockPackageReferenceScannerFrom creates a new mock of the
 // MockPackageReferenceScanner interface. All methods delegate to the given
 // implementation, unless overwritten.

@@ -2,19 +2,20 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { Timestamp } from '../../components/time/Timestamp'
 import { SearchPatternType } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 
+import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
+import styles from './RecentSearchesPanel.module.scss'
 import { ShowMoreButton } from './ShowMoreButton'
 
 interface RecentSearch {
@@ -77,13 +78,13 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
 
     const loadingDisplay = <LoadingPanelView text="Loading recent searches" />
     const emptyDisplay = (
-        <div className="panel-container__empty-container text-muted">
+        <EmptyPanelContainer className="text-muted">
             <small className="mb-2">
                 Your recent searches will be displayed here. Here are a few searches to get you started:
             </small>
 
-            <ul className="recent-searches-panel__examples-list">
-                <li className="recent-searches-panel__examples-list-item">
+            <ul className={styles.examplesList}>
+                <li className={styles.examplesListItem}>
                     <small>
                         <Link
                             to={
@@ -100,7 +101,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                         </Link>
                     </small>
                 </li>
-                <li className="recent-searches-panel__examples-list-item">
+                <li className={styles.examplesListItem}>
                     <small>
                         <Link
                             to={
@@ -117,7 +118,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                         </Link>
                     </small>
                 </li>
-                <li className="recent-searches-panel__examples-list-item">
+                <li className={styles.examplesListItem}>
                     <small>
                         <Link
                             to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.literal, false)}
@@ -128,7 +129,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                     </small>
                 </li>
             </ul>
-        </div>
+        </EmptyPanelContainer>
     )
 
     function loadMoreItems(): void {
@@ -138,9 +139,9 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
 
     const contentDisplay = (
         <>
-            <table className="recent-searches-panel__results-table mt-2">
+            <table className={classNames('mt-2', styles.resultsTable)}>
                 <thead>
-                    <tr className="recent-searches-panel__results-table-row">
+                    <tr className={styles.resultsTableRow}>
                         <th>
                             <small>Search</small>
                         </th>
@@ -149,26 +150,24 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                         </th>
                     </tr>
                 </thead>
-                <tbody className="recent-searches-panel__results-table-body">
+                <tbody>
                     {processedResults?.map((recentSearch, index) => (
-                        <tr key={index} className="recent-searches-panel__results-table-row">
+                        <tr key={index} className={styles.resultsTableRow}>
                             <td>
-                                <small>
+                                <small className={styles.recentQuery}>
                                     <Link to={recentSearch.url} onClick={logSearchClicked}>
                                         <SyntaxHighlightedSearchQuery query={recentSearch.searchText} />
                                     </Link>
                                 </small>
                             </td>
-                            <td className="recent-searches-panel__results-table-date-col">
+                            <td className={styles.resultsTableDateCol}>
                                 <Timestamp noAbout={true} date={recentSearch.timestamp} now={now} strict={true} />
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
-            {recentSearches?.pageInfo.hasNextPage && (
-                <ShowMoreButton onClick={loadMoreItems} className="test-recent-searches-panel-show-more" />
-            )}
+            {recentSearches?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
         </>
     )
 
@@ -192,7 +191,7 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
     const recentSearches: RecentSearch[] = []
 
     for (const node of eventLogResult.nodes) {
-        if (node.argument) {
+        if (node.argument && node.url) {
             const parsedArguments = JSON.parse(node.argument)
             const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
 

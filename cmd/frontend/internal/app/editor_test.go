@@ -48,7 +48,7 @@ func TestEditorRev(t *testing.T) {
 		{strings.Repeat("d", 40), "@" + strings.Repeat("d", 40), true}, // default revision, explicit
 	}
 	for _, c := range cases {
-		got, err := editorRev(ctx, repoName, c.inputRev, c.beExplicit)
+		got, err := editorRev(ctx, database.NewMockDB(), repoName, c.inputRev, c.beExplicit)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -59,15 +59,12 @@ func TestEditorRev(t *testing.T) {
 }
 
 func TestEditorRedirect(t *testing.T) {
-	database.Mocks.Repos.GetFirstRepoNamesByCloneURL = func(ctx context.Context, cloneURL string) (api.RepoName, error) {
-		return "", nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.Repos = database.MockRepos{}
-	})
+	repos := database.NewMockRepoStore()
+	repos.GetFirstRepoNamesByCloneURLFunc.SetDefaultReturn("", nil)
 
-	database.Mocks.ExternalServices.List = func(database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(
+		[]*types.ExternalService{
 			{
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
@@ -101,11 +98,13 @@ func TestEditorRedirect(t *testing.T) {
 				DisplayName: "OtherSCP",
 				Config:      `{"url":"ssh://git@git.codehost.com"}`,
 			},
-		}, nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.ExternalServices = database.MockExternalServices{}
-	})
+		},
+		nil,
+	)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	cases := []struct {
 		name            string
@@ -323,7 +322,7 @@ func TestEditorRedirect(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			editorRequest, parseErr := parseEditorRequest(nil, c.q)
+			editorRequest, parseErr := parseEditorRequest(db, c.q)
 			if errStr(parseErr) != c.wantParseErr {
 				t.Fatalf("got parseErr %q want %q", parseErr, c.wantParseErr)
 			}

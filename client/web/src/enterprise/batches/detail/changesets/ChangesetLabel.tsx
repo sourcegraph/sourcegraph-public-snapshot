@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { Badge } from '@sourcegraph/wildcard'
+
 import { ChangesetLabelFields } from '../../../../graphql-operations'
 
 import styles from './ChangesetLabel.module.scss'
@@ -28,16 +30,13 @@ export const ChangesetLabel: React.FunctionComponent<Props> = ({ label }) => {
     const labelBrightness = colorBrightness(label.color)
 
     return (
-        <span
-            className={classNames(
-                'badge mr-2 badge-secondary',
-                labelBrightness < 127 ? 'text-white' : styles.changesetLabelTextDark
-            )}
-            // eslint-disable-next-line react/forbid-dom-props
+        <Badge
+            variant="secondary"
+            className={classNames('mr-2', labelBrightness < 127 ? 'text-white' : styles.changesetLabelTextDark)}
             style={{ backgroundColor: '#' + label.color }}
-            data-tooltip={label.description}
+            tooltip={label.description || undefined}
         >
             {label.text}
-        </span>
+        </Badge>
     )
 }

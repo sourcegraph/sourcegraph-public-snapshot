@@ -1,30 +1,11 @@
-import * as H from 'history'
-
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { SubmitSearchParameters } from '@sourcegraph/search'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { CharacterRange } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SearchType } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../tracking/eventLogger'
-
-import { SearchType } from './results/StreamingSearchResults'
-
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
-
-export interface SubmitSearchParameters
-    extends Partial<Pick<ActivationProps, 'activation'>>,
-        Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
-    history: H.History
-    query: string
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage' | 'repogroupPage' | 'excludedResults'
-    searchParameters?: { key: string; value: string }[]
-}
 
 const SUBMITTED_SEARCHES_COUNT_KEY = 'submitted-searches-count'
 
@@ -41,7 +22,6 @@ export function submitSearch({
     query,
     patternType,
     caseSensitive,
-    versionContext,
     selectedSearchContextSpec,
     activation,
     source,
@@ -51,7 +31,6 @@ export function submitSearch({
         query,
         patternType,
         caseSensitive,
-        versionContext,
         selectedSearchContextSpec,
         searchParameters
     )
@@ -70,7 +49,7 @@ export function submitSearch({
     eventLogger.log(
         'SearchSubmitted',
         {
-            query: appendContextFilter(query, selectedSearchContextSpec, versionContext),
+            query: appendContextFilter(query, selectedSearchContextSpec),
             source,
         },
         { source }
@@ -119,7 +98,7 @@ export function queryIndexOfScope(query: string, scope: string): number {
  * @param searchFilter The search scope (sub query) or dynamic filter to toggle (add/remove) from the current user query.
  * @returns The new query.
  */
-export function toggleSearchFilter(query: string, searchFilter: string): string {
+export function toggleSubquery(query: string, searchFilter: string): string {
     const index = queryIndexOfScope(query, searchFilter)
     if (index === -1) {
         // Scope doesn't exist in search query, so add it now.
@@ -176,41 +155,6 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 /** Returns true if the given value is of the GraphQL SearchResults type */
 export const isSearchResults = (value: any): value is GQL.ISearchResults =>
     value && typeof value === 'object' && value.__typename === 'SearchResults'
-
-export enum QueryChangeSource {
-    /**
-     * When the user has typed in the query or selected a suggestion.
-     * Prevents fetching/showing suggestions on every component update.
-     */
-    userInput,
-    searchReference,
-    searchTypes,
-}
-
-/**
- * The search query and additional information depending on how the query was
- * changed. See MonacoQueryInput for how this data is applied to the editor.
- */
-export type QueryState =
-    | {
-          /** Used to know how a change comes to be. This needs to be defined as
-           * optional so that unknown sources can make changes. */
-          changeSource?: QueryChangeSource.userInput
-          query: string
-      }
-    | {
-          /** Changes from the search side bar */
-          changeSource: QueryChangeSource.searchReference | QueryChangeSource.searchTypes
-          query: string
-          /** The query input will apply this selection */
-          selectionRange: CharacterRange
-          /** Ensure that newly added or updated filters are completely visible in
-           * the query input. */
-          revealRange: CharacterRange
-          /** Whether or not to trigger the completion popover. The popover is
-           * triggered at the end of the selection. */
-          showSuggestions?: boolean
-      }
 
 /**
  * Some filters should use an alias just for search so they receive the expected suggestions.

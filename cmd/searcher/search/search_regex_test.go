@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"testing"
 	"testing/iotest"
-	"testing/quick"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
@@ -20,81 +19,6 @@ import (
 	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
-
-func benchBytesToLower(b *testing.B, src []byte) {
-	dst := make([]byte, len(src))
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		bytesToLowerASCII(dst, src)
-	}
-}
-
-func BenchmarkBytesToLowerASCII(b *testing.B) {
-	b.Run("short", func(b *testing.B) { benchBytesToLower(b, []byte("a-z@[A-Z")) })
-	b.Run("pangram", func(b *testing.B) { benchBytesToLower(b, []byte("\tThe Quick Brown Fox juMPs over the LAZY dog!?")) })
-	long := bytes.Repeat([]byte{'A'}, 8*1024)
-	b.Run("8k", func(b *testing.B) { benchBytesToLower(b, long) })
-	b.Run("8k-misaligned", func(b *testing.B) { benchBytesToLower(b, long[1:]) })
-}
-
-func checkBytesToLower(t *testing.T, b []byte) {
-	t.Helper()
-	want := make([]byte, len(b))
-	bytesToLowerASCIIgeneric(want, b)
-	got := make([]byte, len(b))
-	bytesToLowerASCII(got, b)
-	if !bytes.Equal(want, got) {
-		t.Errorf("bytesToLowerASCII(%q)=%q want %q", b, got, want)
-	}
-}
-
-func TestBytesToLowerASCII(t *testing.T) {
-	// @ and [ are special: '@'+1=='A' and 'Z'+1=='['
-	t.Run("pangram", func(t *testing.T) {
-		checkBytesToLower(t, []byte("\t[The Quick Brown Fox juMPs over the LAZY dog!?@"))
-	})
-	t.Run("short", func(t *testing.T) {
-		checkBytesToLower(t, []byte("a-z@[A-Z"))
-	})
-	t.Run("quick", func(t *testing.T) {
-		f := func(b []byte) bool {
-			x := make([]byte, len(b))
-			bytesToLowerASCIIgeneric(x, b)
-			y := make([]byte, len(b))
-			bytesToLowerASCII(y, b)
-			return bytes.Equal(x, y)
-		}
-		if err := quick.Check(f, nil); err != nil {
-			t.Error(err)
-		}
-	})
-	t.Run("alignment", func(t *testing.T) {
-		// The goal of this test is to make sure we don't write to any bytes
-		// that don't belong to us.
-		b := make([]byte, 96)
-		c := make([]byte, 96)
-		for i := 0; i < len(b); i++ {
-			for j := i; j < len(b); j++ {
-				// fill b with Ms and c with xs
-				for k := range b {
-					b[k] = 'M'
-					c[k] = 'x'
-				}
-				// process a subslice of b
-				bytesToLowerASCII(c[i:j], b[i:j])
-				for k := range b {
-					want := byte('m')
-					if k < i || k >= j {
-						want = 'x'
-					}
-					if want != c[k] {
-						t.Errorf("bytesToLowerASCII bad byte using bounds [%d:%d] (len %d) at index %d, have %c want %c", i, j, len(c[i:j]), k, c[k], want)
-					}
-				}
-			}
-		}
-	})
-}
 
 func BenchmarkSearchRegex_large_fixed(b *testing.B) {
 	benchSearchRegex(b, &protocol.Request{
@@ -268,65 +192,6 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 		_, _, err := regexSearchBatch(ctx, rg, zf, 99999999, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
 		if err != nil {
 			b.Fatal(err)
-		}
-	}
-}
-
-func TestLowerRegexp(t *testing.T) {
-	// The expected values are a bit volatile, since they come from
-	// syntex.Regexp.String. So they may change between go versions. Just
-	// ensure they make sense.
-	cases := map[string]string{
-		"foo":       "foo",
-		"FoO":       "foo",
-		"(?m:^foo)": "(?m:^)foo", // regex parse simplifies to this
-		"(?m:^FoO)": "(?m:^)foo",
-
-		// Ranges for the characters can be tricky. So we include many
-		// cases. Importantly user intention when they write [^A-Z] is would
-		// expect [^a-z] to apply when ignoring case.
-		"[A-Z]":  "[a-z]",
-		"[^A-Z]": "[^A-Za-z]",
-		"[A-M]":  "[a-m]",
-		"[^A-M]": "[^A-Ma-m]",
-		"[A]":    "a",
-		"[^A]":   "[^Aa]",
-		"[M]":    "m",
-		"[^M]":   "[^Mm]",
-		"[Z]":    "z",
-		"[^Z]":   "[^Zz]",
-		"[a-z]":  "[a-z]",
-		"[^a-z]": "[^a-z]",
-		"[a-m]":  "[a-m]",
-		"[^a-m]": "[^a-m]",
-		"[a]":    "a",
-		"[^a]":   "[^a]",
-		"[m]":    "m",
-		"[^m]":   "[^m]",
-		"[z]":    "z",
-		"[^z]":   "[^z]",
-
-		// @ is tricky since it is 1 value less than A
-		"[^A-Z@]": "[^@-Za-z]",
-
-		// full unicode range should just be a .
-		"[\\x00-\\x{10ffff}]": "(?s:.)",
-
-		"[abB-Z]":       "[b-za-b]",
-		"([abB-Z]|FoO)": "([b-za-b]|foo)",
-		`[@-\[]`:        `[@-\[a-z]`,      // original range includes A-Z but excludes a-z
-		`\S`:            `[^\t-\n\f-\r ]`, // \S is shorthand for the expected
-	}
-
-	for expr, want := range cases {
-		re, err := syntax.Parse(expr, syntax.Perl)
-		if err != nil {
-			t.Fatal(expr, err)
-		}
-		lowerRegexpASCII(re)
-		got := re.String()
-		if want != got {
-			t.Errorf("lowerRegexp(%q) == %q != %q", expr, got, want)
 		}
 	}
 }

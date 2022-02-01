@@ -21,11 +21,6 @@ export type DeepReplace<T, M, R> = {
 export const subtypeOf = <U>() => <T extends U>(value: T): T => value
 
 /**
- * Returns true if `val` is not `null` or `undefined`
- */
-export const isDefined = <T>(value: T): value is NonNullable<T> => value !== undefined && value !== null
-
-/**
  * Returns a type guard that checks whether the given value is strictly equal to a specific value.
  * This can for example be used with `isNot()` to exclude string literals like `"loading"`.
  *

@@ -1,8 +1,9 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
@@ -50,31 +51,28 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
     const showDisabled = (): void => setEnablementFilter('disabled')
 
     return (
-        <div className={classnames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
+        <div className={classNames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
             <SidebarGroup>
                 <SidebarGroupHeader label="Categories" />
                 {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
-                    <button
-                        type="button"
-                        className={classnames(
-                            'btn text-left sidebar__link--inactive d-flex w-100',
-                            selectedCategory === category && 'btn-primary'
-                        )}
+                    <Button
+                        className="text-left sidebar__link--inactive d-flex w-100"
+                        variant={selectedCategory === category ? 'primary' : undefined}
                         data-test-extension-category={category}
                         key={category}
                         onClick={() => onSelectCategory(category)}
                     >
                         {category}
-                    </button>
+                    </Button>
                 ))}
             </SidebarGroup>
 
-            <hr className={classnames('my-3', styles.divider)} />
+            <hr className={classNames('my-3', styles.divider)} />
 
             <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="ml-2">
-                <DropdownToggle className="btn-sm" caret={true} color="outline-secondary">
+                <Button caret={true} color="outline-secondary" size="sm" as={DropdownToggle}>
                     {enablementFilterToLabel[enablementFilter]}
-                </DropdownToggle>
+                </Button>
                 <DropdownMenu>
                     <DropdownItem onClick={showAll} disabled={enablementFilter === 'all'}>
                         Show all
@@ -115,8 +113,8 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 }
 
 const ExtensionSidenavBanner: React.FunctionComponent = () => (
-    <div className={classnames(styles.banner, 'mx-2')}>
-        <img className={classnames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
+    <div className={classNames(styles.banner, 'mx-2')}>
+        <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
         {/* Override h4 font-weight */}
         <h4 className="mt-2 font-weight-bold">Create custom extensions!</h4>
         <small>

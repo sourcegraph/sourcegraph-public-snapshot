@@ -99,6 +99,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Weekly count of total and unique clicks of the `Create` and `Cancel` buttons on the `Create search insight` and `Create language insight` pages
   - Total count of insights grouped by time interval (step size) in days  
   - Total count of insights set organization visible grouped by insight type
+  - Total count of insights grouped by presentation type, series type, and presentation-series type.
 
 - Code monitoring usage data
   - Total number of views of the code monitoring page

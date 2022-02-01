@@ -38,6 +38,7 @@ func (s *Store) UpdatePackages(ctx context.Context, dumpID int, packages []preci
 		ctx,
 		tx.Handle().DB(),
 		"t_lsif_packages",
+		batch.MaxNumPostgresParameters,
 		[]string{"scheme", "name", "version"},
 		loadPackagesChannel(packages),
 	); err != nil {

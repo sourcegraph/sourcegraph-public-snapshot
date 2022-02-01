@@ -5,6 +5,8 @@
   "type": "object",
   "oneOf": [
     {
+      "title": "ExistingChangesetSpec",
+      "type": "object",
       "properties": {
         "baseRepository": {
           "type": "string",
@@ -21,6 +23,8 @@
       "additionalProperties": false
     },
     {
+      "title": "BranchChangesetSpec",
+      "type": "object",
       "properties": {
         "baseRepository": {
           "type": "string",

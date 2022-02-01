@@ -7,6 +7,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -20,6 +24,7 @@ var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
 type insightConnectionResolver struct {
 	insightsStore        store.Interface
 	workerBaseStore      *basestore.Store
+	orgStore             database.OrgStore
 	insightMetadataStore store.InsightMetadataStore
 
 	// arguments from query
@@ -67,7 +72,15 @@ func (r *insightConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 
 func (r *insightConnectionResolver) compute(ctx context.Context) ([]types.Insight, int64, error) {
 	r.once.Do(func() {
-		mapped, err := r.insightMetadataStore.GetMapped(ctx, store.InsightQueryArgs{UniqueIDs: r.ids})
+		args := store.InsightQueryArgs{UniqueIDs: r.ids}
+		var err error
+		args.UserID, args.OrgID, err = getUserPermissions(ctx, r.orgStore)
+		if err != nil {
+			r.err = errors.Wrap(err, "getUserPermissions")
+			return
+		}
+
+		mapped, err := r.insightMetadataStore.GetMapped(ctx, args)
 		if err != nil {
 			r.err = err
 			return

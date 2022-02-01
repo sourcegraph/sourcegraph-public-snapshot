@@ -38,6 +38,7 @@ func (s *Store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 		ctx,
 		tx.Handle().DB(),
 		"t_lsif_references",
+		batch.MaxNumPostgresParameters,
 		[]string{"scheme", "name", "version", "filter"},
 		loadReferencesChannel(references),
 	); err != nil {

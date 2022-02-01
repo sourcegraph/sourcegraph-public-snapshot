@@ -5,7 +5,7 @@
 
 ## Terraform versioning
 
-We use [asdf](https://asdf-vm.com/#/) to manage Terraform versions. After installing Asdf into your shell, run `asdf install && asdf reshim` to pickup the Terraform version defined in the `.tool-version` file for the specific Terraform module. 
+We use [asdf](https://asdf-vm.com/#/) to manage Terraform versions. After installing Asdf into your shell, run `asdf plugin add terraform && asdf install && asdf reshim` to pickup the Terraform version defined in the `.tool-version` file for the specific Terraform module.
 
 ## State
 

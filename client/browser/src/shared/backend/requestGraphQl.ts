@@ -3,12 +3,7 @@ import { once } from 'lodash'
 import { from, Observable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
 
-import {
-    GraphQLResult,
-    getGraphQLClient,
-    GraphQLClient,
-    requestGraphQLCommon,
-} from '@sourcegraph/shared/src/graphql/graphql'
+import { GraphQLResult, getGraphQLClient, GraphQLClient, requestGraphQLCommon } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { background } from '../../browser-extension/web-extension-api/runtime'
@@ -107,7 +102,9 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
      * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
      * After that, the same instance should be used by all consumers.
      */
-    const getBrowserGraphQLClient = once(() => getGraphQLClient({ headers: getHeaders(), baseUrl: sourcegraphURL }))
+    const getBrowserGraphQLClient = once(() =>
+        getGraphQLClient({ headers: getHeaders(), baseUrl: sourcegraphURL, isAuthenticated: false })
+    )
 
     return { getBrowserGraphQLClient, requestGraphQL }
 }

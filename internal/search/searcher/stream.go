@@ -52,7 +52,6 @@ func (rr StreamDecoder) ReadAll(r io.Reader) error {
 }
 
 type EventDone struct {
-	LimitHit    bool   `json:"limit_hit"`
-	DeadlineHit bool   `json:"deadline_hit"`
-	Error       string `json:"error"`
+	LimitHit bool   `json:"limit_hit"`
+	Error    string `json:"error"`
 }

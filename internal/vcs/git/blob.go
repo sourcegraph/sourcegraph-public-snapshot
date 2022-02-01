@@ -9,7 +9,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -17,9 +19,15 @@ import (
 
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-func ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, maxBytes int64) ([]byte, error) {
+func ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, maxBytes int64, checker authz.SubRepoPermissionChecker) ([]byte, error) {
 	if Mocks.ReadFile != nil {
 		return Mocks.ReadFile(commit, name)
+	}
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
 	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
@@ -40,9 +48,15 @@ func ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name 
 
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
-func NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
+func NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
 	if Mocks.NewFileReader != nil {
 		return Mocks.NewFileReader(commit, name)
+	}
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
 	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader")
@@ -133,7 +147,7 @@ func (br *blobReader) convertError(err error) error {
 	}
 	if strings.Contains(err.Error(), "fatal: bad object ") {
 		// Could be a git submodule.
-		fi, err := Stat(br.ctx, br.repo, br.commit, br.name)
+		fi, err := Stat(br.ctx, authz.DefaultSubRepoPermsChecker, br.repo, br.commit, br.name)
 		if err != nil {
 			return err
 		}

@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { ChangesetApplyPreviewNode } from './ChangesetApplyPreviewNode'
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
@@ -22,7 +22,7 @@ add('Overview', () => {
         ...Object.values(hiddenChangesetApplyPreviewStories),
     ]
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <>
                     {nodes.map((node, index) => (
@@ -41,6 +41,6 @@ add('Overview', () => {
                     ))}
                 </>
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

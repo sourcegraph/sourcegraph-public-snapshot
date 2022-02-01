@@ -1,6 +1,6 @@
 import { writeFile, mkdir } from 'mz/fs'
 import pTimeout from 'p-timeout'
-import { Browser } from 'puppeteer'
+import { Browser, WebWorker } from 'puppeteer'
 import * as uuid from 'uuid'
 
 import { Driver } from './driver'
@@ -32,7 +32,7 @@ export function afterEachRecordCoverage(getDriver: () => Driver): void {
 export async function recordCoverage(browser: Browser): Promise<void> {
     await mkdir('.nyc_output', { recursive: true })
     // Get pages, web workers, background pages, etc.
-    const targets = await browser.targets()
+    const targets = browser.targets()
 
     await Promise.all(
         targets.map(async target => {
@@ -44,7 +44,7 @@ export async function recordCoverage(browser: Browser): Promise<void> {
                 return
             }
             const coverage: typeof __coverage__ = await pTimeout(
-                executionContext.evaluate(() => globalThis.__coverage__),
+                (executionContext as WebWorker).evaluate(() => globalThis.__coverage__),
                 2000,
                 new Error(`Timeout getting coverage from ${target.url()}`)
             )

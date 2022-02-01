@@ -21,6 +21,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 1,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 2,
                 "scopes": "metaRegexpAssertion"
               },
@@ -53,6 +57,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 27,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 28,
                 "scopes": "identifier"
               },
@@ -76,6 +84,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 1,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 2,
                 "scopes": "identifier"
               },
@@ -90,6 +102,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 5,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 7,
@@ -459,6 +475,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 5,
                 "scopes": "metaRegexpAssertion"
               },
@@ -479,6 +499,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 16,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 17,
                 "scopes": "identifier"
               },
@@ -489,6 +513,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 20,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 24,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 25,
@@ -505,6 +533,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 28,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 32,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 33,
@@ -589,6 +621,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 0,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 5,
@@ -743,6 +779,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 1,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 2,
                 "scopes": "identifier"
               },
@@ -781,6 +821,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 0,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 2,
@@ -837,6 +881,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 0,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 5,
@@ -899,6 +947,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 1,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 2,
                 "scopes": "identifier"
               },
@@ -947,6 +999,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 1,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 2,
                 "scopes": "identifier"
               },
@@ -976,6 +1032,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 0,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 5,
@@ -1017,6 +1077,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 5,
                 "scopes": "identifier"
               },
@@ -1027,6 +1091,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 9,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 13,
@@ -1061,6 +1129,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 5,
                 "scopes": "identifier"
               },
@@ -1071,6 +1143,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 24,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 28,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 29,
@@ -1087,6 +1163,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 0,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 5,
@@ -1152,6 +1232,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 7,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 8,
                 "scopes": "metaContextPrefix"
               },
@@ -1170,6 +1254,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 0,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 2,
@@ -1212,6 +1300,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 32,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 33,
                 "scopes": "identifier"
               },
@@ -1237,6 +1329,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 0,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 2,
@@ -1280,6 +1376,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 0,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 5,
@@ -1326,6 +1426,10 @@ describe('getMonacoTokens()', () => {
                 "scopes": "field"
               },
               {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
                 "startIndex": 5,
                 "scopes": "metaPredicateNameAccess"
               },
@@ -1336,6 +1440,10 @@ describe('getMonacoTokens()', () => {
               {
                 "startIndex": 14,
                 "scopes": "field"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaFilterSeparator"
               },
               {
                 "startIndex": 19,

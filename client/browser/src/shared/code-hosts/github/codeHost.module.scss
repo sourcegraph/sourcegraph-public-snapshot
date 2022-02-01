@@ -1,0 +1,110 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+@mixin github-dark-theme {
+    [data-color-mode='dark'] {
+        @content;
+    }
+
+    [data-color-mode='auto'] {
+        @media (prefers-color-scheme: dark) {
+            @content;
+        }
+    }
+}
+
+:root {
+    /* Map out CSS variables to the theme-aware GitHub ones */
+    --body-bg: var(--color-bg-canvas);
+    --border-color: var(--color-border-primary);
+    --secondary: var(--color-auto-gray-2);
+}
+
+@include github-dark-theme {
+    --mark-bg: var(--mark-bg-dark);
+}
+
+.command-palette-action-item {
+    /* Reset GitHub's 44px min-height */
+    min-height: initial;
+}
+
+.action-item {
+    /* Match GitHub's button height even if button only contains icon
+     * (no text that would push the height) */
+    height: 28px;
+}
+
+.icon {
+    height: 16px;
+    width: 16px;
+}
+
+.code-view-toolbar {
+    margin-right: 4px;
+    margin-bottom: -4px;
+    text-align: right;
+}
+
+.code-view-toolbar-item {
+    /* The space provides enough margin */
+    margin-left: 0 !important;
+    margin-bottom: 4px;
+}
+
+.hover-overlay-badge {
+    /* GitHub badges (.label) are larger than badges on other codehosts, so
+     * move badges up to prevent spilling over into the next section (hover content) */
+    margin-top: -0.33rem;
+}
+
+.hover-overlay-close-button {
+    /* Align close button with large GitHub badges */
+    top: 0.33rem !important; /* !important to override default close button `top` */
+}
+
+/* Blob view
+ * Make sure only our code view toolbar shrinks and wraps,
+ * not GitHub's UI groups */
+:global(.repository-content) {
+    /* Exclude tree pages */
+    > :global(.Box):not(:global(.Box--condensed)) {
+        > :global(.Box-header):not(:global(.Box-header--blue)) {
+            > :global(.text-mono) {
+                /* only let Sourcegraph toolbar shrink */
+                flex-shrink: 0 !important;
+            }
+
+            > div:nth-child(2) {
+                > div:not(:global(.sourcegraph-github-file-code-view-toolbar-mount)) {
+                    /* only let Sourcegraph toolbar shrink */
+                    flex-shrink: 0;
+                    display: flex;
+                    align-items: center;
+                }
+            }
+        }
+    }
+}
+
+/* Diff views */
+
+:global(.diff-view) {
+    :global(.file-header) {
+        /* Trigger a two-row layout if file path and action items don't fit all in one row. */
+        flex-wrap: wrap;
+
+        :global(.file-info) {
+            /* Make sure file paths don't wrap to make space for buttons
+             * (instead trigger a two-row layout if it does not fit) */
+            flex: 0 2 auto !important;
+        }
+
+        :global(.file-actions) {
+            flex: 1 1 auto;
+            margin-left: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+    }
+}

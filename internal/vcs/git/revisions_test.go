@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestIsAbsoluteRevision(t *testing.T) {
@@ -70,7 +71,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 		"git cmd": {
 			repo:    MakeGitRepository(t, gitCommands...),
 			branch:  "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitserver.RevisionNotFoundError{}) },
+			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
 		},
 	}
 
@@ -133,7 +134,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		"git cmd": {
 			repo:    MakeGitRepository(t, gitCommands...),
 			tag:     "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitserver.RevisionNotFoundError{}) },
+			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
 		},
 	}
 

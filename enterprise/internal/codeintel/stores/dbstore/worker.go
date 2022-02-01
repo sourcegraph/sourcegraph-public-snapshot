@@ -62,8 +62,34 @@ func WorkerutilIndexStore(s basestore.ShareableStore, observationContext *observ
 	return dbworkerstore.NewWithMetrics(s.Handle(), indexWorkerStoreOptions, observationContext)
 }
 
-// StalledDependencyIndexingJobMaxAge is the maximum allowable duration between updating
+// StalledDependencySyncingJobMaxAge is the maximum allowable duration between updating
 // the state of a dependency indexing job as "processing" and locking the job row during
+// processing. An unlocked row that is marked as processing likely indicates that the worker
+// that dequeued the job has died. There should be a nearly-zero delay between these states
+// during normal operation.
+const StalledDependencySyncingJobMaxAge = time.Second * 25
+
+// DependencySyncingJobMaxNumResets is the maximum number of times a dependency indexing
+// job can be reset. If an job's failed attempts counter reaches this threshold, it will be
+// moved into "errored" rather than "queued" on its next reset.
+const DependencySyncingJobMaxNumResets = 3
+
+var dependencySyncingJobWorkerStoreOptions = dbworkerstore.Options{
+	Name:              "codeintel_dependency_syncing",
+	TableName:         "lsif_dependency_syncing_jobs j",
+	ColumnExpressions: dependencySyncingJobColumns,
+	Scan:              scanFirstDependencySyncingJobRecord,
+	OrderByExpression: sqlf.Sprintf("j.queued_at, j.upload_id"),
+	StalledMaxAge:     StalledDependencySyncingJobMaxAge,
+	MaxNumResets:      DependencySyncingJobMaxNumResets,
+}
+
+func WorkerutilDependencySyncStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
+	return dbworkerstore.NewWithMetrics(s.Handle(), dependencySyncingJobWorkerStoreOptions, observationContext)
+}
+
+// StalledDependencyIndexingJobMaxAge is the maximum allowable duration between updating
+// the state of a dependency indexing queueing job as "processing" and locking the job row during
 // processing. An unlocked row that is marked as processing likely indicates that the worker
 // that dequeued the job has died. There should be a nearly-zero delay between these states
 // during normal operation.
@@ -75,7 +101,7 @@ const StalledDependencyIndexingJobMaxAge = time.Second * 25
 const DependencyIndexingJobMaxNumResets = 3
 
 var dependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options{
-	Name:              "codeintel_dependency_index",
+	Name:              "codeintel_dependency_indexing",
 	TableName:         "lsif_dependency_indexing_jobs j",
 	ColumnExpressions: dependencyIndexingJobColumns,
 	Scan:              scanFirstDependencyIndexingJobRecord,

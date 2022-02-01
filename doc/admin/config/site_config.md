@@ -44,7 +44,7 @@ Set `FRONTEND_CONTAINER` to:
 - [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
 ```sh
-docker exec -it $FRONTEND_CONTAINER sh -c 'apk add --no-cache nano && nano ~/site-config.json'
+docker exec -it --user=root $FRONTEND_CONTAINER sh -c 'apk add --no-cache && nano /home/sourcegraph/site-config.json'
 ```
 
 Or if you prefer using a Vim editor:

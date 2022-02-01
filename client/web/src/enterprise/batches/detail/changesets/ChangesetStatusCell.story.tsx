@@ -2,8 +2,8 @@ import { storiesOf } from '@storybook/react'
 import { capitalize } from 'lodash'
 import React from 'react'
 
+import { WebStory } from '../../../../components/WebStory'
 import { ChangesetState } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 
@@ -13,8 +13,6 @@ const { add } = storiesOf('web/batches/ChangesetStatusCell', module).addDecorato
 
 for (const state of Object.values(ChangesetState)) {
     add(capitalize(state), () => (
-        <EnterpriseWebStory>
-            {() => <ChangesetStatusCell state={state} className="d-flex text-muted" />}
-        </EnterpriseWebStory>
+        <WebStory>{() => <ChangesetStatusCell state={state} className="d-flex text-muted" />}</WebStory>
     ))
 }

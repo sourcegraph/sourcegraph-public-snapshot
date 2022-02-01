@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import delay from 'delay'
 import { Key } from 'ts-key-enum'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -35,7 +36,9 @@ describe('Backend insight drill down filters', () => {
     it('should update user settings if drill-down filters have been persisted', async () => {
         const userSubjectSettigns = {
             'insights.allrepos': {
-                'searchInsights.insight.backend_ID_001': {},
+                'searchInsights.insight.backend_ID_001': {
+                    series: [],
+                },
             },
         }
 
@@ -67,7 +70,7 @@ describe('Backend insight drill down filters', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
-        await driver.page.click('button[aria-label="Filters button"]')
+        await driver.page.click('button[aria-label="Filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
         await driver.page.type('[name="excludeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
 
@@ -78,7 +81,7 @@ describe('Backend insight drill down filters', () => {
         })
 
         // In this time we should see active button state (filter dot should appear if we've got some filters)
-        await driver.page.click('button[aria-label="Active filters button"]')
+        await driver.page.click('button[aria-label="Active filters"]')
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
@@ -140,7 +143,7 @@ describe('Backend insight drill down filters', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
-        await driver.page.click('button[aria-label="Active filters button"]')
+        await driver.page.click('button[aria-label="Active filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
 
         await driver.page.click(
@@ -148,6 +151,9 @@ describe('Backend insight drill down filters', () => {
         )
 
         await driver.page.type('[name="insightName"]', 'Insight with filters')
+
+        // Wait until async validation of the insight name field will pass
+        await delay(500)
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
@@ -180,6 +186,9 @@ describe('Backend insight drill down filters', () => {
                             stroke: 'var(--primary)',
                         },
                     ],
+                    step: {
+                        months: 1,
+                    },
                     filters: {
                         includeRepoRegexp: '',
                         excludeRepoRegexp: 'github.com/sourcegraph/sourcegraph',

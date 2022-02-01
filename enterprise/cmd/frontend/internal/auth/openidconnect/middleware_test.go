@@ -143,10 +143,13 @@ func TestMiddleware(t *testing.T) {
 	defer func() { auth.MockGetAndSaveUser = nil }()
 	mockGetProviderValue.config.Issuer = oidcIDServer.URL
 
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: time.Now()}, nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
+	})
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
 		t.Fatal(err)
@@ -169,8 +172,8 @@ func TestMiddleware(t *testing.T) {
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware(nil).API(h))
-	authedHandler.Handle("/", Middleware(nil).App(h))
+	authedHandler.Handle("/.api/", Middleware(db).API(h))
+	authedHandler.Handle("/", Middleware(db).App(h))
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
@@ -341,13 +344,16 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 		}
 	}
 
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: time.Now()}, nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
+	})
+
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	authedHandler := Middleware(nil).App(h)
+	authedHandler := Middleware(db).App(h)
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))

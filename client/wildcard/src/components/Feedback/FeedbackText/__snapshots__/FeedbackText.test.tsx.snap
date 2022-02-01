@@ -1,0 +1,97 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FeedbackText render a FeedbackText 1`] = `
+<DocumentFragment>
+  <p>
+    Questions/feedback? Contact us at 
+    <a
+      href="https://twitter.com/sourcegraph"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      @sourcegraph
+    </a>
+     or 
+    <a
+      href="mailto:support@sourcegraph.com"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      support@sourcegraph.com
+    </a>
+    , or file issues on our 
+    <a
+      href="https://github.com/sourcegraph/issues/issues"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      public issue tracker
+    </a>
+    . 
+  </p>
+</DocumentFragment>
+`;
+
+exports[`FeedbackText render feedbackText with footer 1`] = `
+<DocumentFragment>
+  <p>
+    Questions/feedback? Contact us at 
+    <a
+      href="https://twitter.com/sourcegraph"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      @sourcegraph
+    </a>
+     or 
+    <a
+      href="mailto:support@sourcegraph.com"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      support@sourcegraph.com
+    </a>
+    , or file issues on our 
+    <a
+      href="https://github.com/sourcegraph/issues/issues"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      public issue tracker
+    </a>
+    . This is a footer text
+  </p>
+</DocumentFragment>
+`;
+
+exports[`FeedbackText render feedbackText with header 1`] = `
+<DocumentFragment>
+  <p>
+    This is a header text Contact us at 
+    <a
+      href="https://twitter.com/sourcegraph"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      @sourcegraph
+    </a>
+     or 
+    <a
+      href="mailto:support@sourcegraph.com"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      support@sourcegraph.com
+    </a>
+    , or file issues on our 
+    <a
+      href="https://github.com/sourcegraph/issues/issues"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      public issue tracker
+    </a>
+    . 
+  </p>
+</DocumentFragment>
+`;

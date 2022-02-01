@@ -11,11 +11,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -241,7 +243,7 @@ func insertPackageReferences(t testing.TB, store *Store, packageReferences []sha
 
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
 // with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
-// an upload as protected (visible to _some_ branch) butn ot visible from teh default branch, use the
+// an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
 // insertVisibleAtTipNonDefaultBranch method instead.
 func insertVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int, uploadIDs ...int) {
 	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
@@ -393,7 +395,7 @@ func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) ma
 	return uploadMetas
 }
 
-func getUploadStates(db dbutil.DB, ids ...int) (map[int]string, error) {
+func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -406,7 +408,7 @@ func getUploadStates(db dbutil.DB, ids ...int) (map[int]string, error) {
 	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
-func getIndexStates(db dbutil.DB, ids ...int) (map[int]string, error) {
+func getIndexStates(db database.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -457,5 +459,16 @@ func dumpToUpload(expected Dump) Upload {
 		RepositoryName:    expected.RepositoryName,
 		Indexer:           expected.Indexer,
 		AssociatedIndexID: expected.AssociatedIndexID,
+	}
+}
+
+func assertReferenceCounts(t *testing.T, store *Store, expectedReferenceCountsByID map[int]int) {
+	referenceCountsByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, reference_count FROM lsif_uploads`)))
+	if err != nil {
+		t.Fatalf("unexpected error querying reference counts: %s", err)
+	}
+
+	if diff := cmp.Diff(expectedReferenceCountsByID, referenceCountsByID); diff != "" {
+		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
 	}
 }

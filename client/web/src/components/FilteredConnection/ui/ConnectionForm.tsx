@@ -7,12 +7,17 @@ import { useAutoFocus } from '@sourcegraph/wildcard'
 
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from '../FilterControl'
 
+import styles from './ConnectionForm.module.scss'
+
 export interface ConnectionFormProps {
     /** Hides the filter input field. */
     hideSearch?: boolean
 
     /** CSS class name for the <input> element */
     inputClassName?: string
+
+    /** CSS class name for the <form> element */
+    formClassName?: string
 
     /** Placeholder text for the <input> element */
     inputPlaceholder?: string
@@ -39,6 +44,8 @@ export interface ConnectionFormProps {
     additionalFilterElement?: React.ReactElement
 
     values?: Map<string, FilteredConnectionFilterValue>
+
+    compact?: boolean
 }
 
 /**
@@ -49,6 +56,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
     (
         {
             hideSearch,
+            formClassName,
             inputClassName,
             inputPlaceholder,
             inputValue,
@@ -58,6 +66,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
             onValueSelect,
             additionalFilterElement,
             values,
+            compact,
         },
         reference
     ) => {
@@ -72,7 +81,11 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
 
         return (
             <Form
-                className="w-100 d-inline-flex justify-content-between flex-row filtered-connection__form"
+                className={classNames(
+                    'w-100 d-inline-flex justify-content-between flex-row',
+                    !compact && styles.noncompact,
+                    formClassName
+                )}
                 onSubmit={handleSubmit}
             >
                 {filters && onValueSelect && values && (

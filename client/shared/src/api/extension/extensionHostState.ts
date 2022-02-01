@@ -2,6 +2,8 @@ import * as comlink from 'comlink'
 import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
+import { Context } from '@sourcegraph/template-parser'
+
 import { ConfiguredExtension } from '../../extensions/extension'
 import { SettingsCascade } from '../../settings/settings'
 import { ReferenceCounter } from '../../util/ReferenceCounter'
@@ -11,7 +13,6 @@ import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
 import { ExecutableExtension, observeActiveExtensions } from './activation'
 import { ExtensionCodeEditor } from './api/codeEditor'
-import { Context } from './api/context/context'
 import { ExtensionDocument } from './api/textDocument'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { InitData } from './extensionHost'
@@ -34,8 +35,6 @@ export function createExtensionHostState(
 
         roots: new BehaviorSubject<readonly ExtensionWorkspaceRoot[]>([]),
         rootChanges: new Subject<void>(),
-        versionContextChanges: new Subject<string | undefined>(),
-        versionContext: undefined,
         searchContextChanges: new Subject<string | undefined>(),
         searchContext: undefined,
 
@@ -111,8 +110,6 @@ export interface ExtensionHostState {
     // Workspace
     roots: BehaviorSubject<readonly ExtensionWorkspaceRoot[]>
     rootChanges: Subject<void>
-    versionContextChanges: Subject<string | undefined>
-    versionContext: string | undefined
     searchContextChanges: Subject<string | undefined>
     searchContext: string | undefined
 

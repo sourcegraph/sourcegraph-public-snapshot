@@ -43,7 +43,7 @@ func newMetricsForTriggerQueries() codeMonitorsMetrics {
 	observationContext.Registerer.MustRegister(errors)
 
 	return codeMonitorsMetrics{
-		workerMetrics: workerutil.NewMetrics(observationContext, "code_monitors_trigger_queries", nil),
+		workerMetrics: workerutil.NewMetrics(observationContext, "code_monitors_trigger_queries"),
 		resets:        resets,
 		resetFailures: resetFailures,
 		errors:        errors,
@@ -76,7 +76,7 @@ func newActionMetrics() codeMonitorsMetrics {
 	observationContext.Registerer.MustRegister(errors)
 
 	return codeMonitorsMetrics{
-		workerMetrics: workerutil.NewMetrics(observationContext, "code_monitors_actions", nil),
+		workerMetrics: workerutil.NewMetrics(observationContext, "code_monitors_actions"),
 		resets:        resets,
 		resetFailures: resetFailures,
 		errors:        errors,

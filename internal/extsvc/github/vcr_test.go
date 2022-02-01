@@ -17,6 +17,10 @@ var vcrToken = &auth.OAuthBearerToken{
 	Token: os.Getenv("GITHUB_TOKEN"),
 }
 
+var gheToken = &auth.OAuthBearerToken{
+	Token: os.Getenv("GHE_TOKEN"),
+}
+
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
 
 // update indicates whether this test's testdata should be updated.

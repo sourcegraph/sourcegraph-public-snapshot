@@ -10,7 +10,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
@@ -168,7 +167,7 @@ var logStageEvent = func(userID int32, event string, isAuthenticated bool) error
 }
 
 // LogEvent logs users events.
-func LogEvent(ctx context.Context, db dbutil.DB, name, url string, userID int32, userCookieID, source string, argument json.RawMessage, featureFlags featureflag.FlagSet) error {
+func LogEvent(ctx context.Context, db database.DB, name, url string, userID int32, userCookieID, source string, argument json.RawMessage, featureFlags featureflag.FlagSet) error {
 	info := &database.Event{
 		Name:            name,
 		URL:             url,

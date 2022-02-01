@@ -11,13 +11,13 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 func TestClient_continuouslyUpdate(t *testing.T) {
 	t.Run("suppresses errors due to temporarily unreachable frontend", func(t *testing.T) {
-		api.MockInternalClientConfiguration = func() (conftypes.RawUnified, error) {
+		internalapi.MockClientConfiguration = func() (conftypes.RawUnified, error) {
 			return conftypes.RawUnified{}, &url.Error{
 				Op:  "Post",
 				URL: "https://example.com",
@@ -27,7 +27,7 @@ func TestClient_continuouslyUpdate(t *testing.T) {
 				},
 			}
 		}
-		defer func() { api.MockInternalClientConfiguration = nil }()
+		defer func() { internalapi.MockClientConfiguration = nil }()
 
 		var client client
 		var logMessages []string

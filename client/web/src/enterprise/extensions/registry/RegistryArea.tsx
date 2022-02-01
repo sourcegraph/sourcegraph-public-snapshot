@@ -9,6 +9,7 @@ import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { HeroPage } from '../../../components/HeroPage'
 import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
 
+import styles from './RegistryArea.module.scss'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -41,7 +42,7 @@ export const RegistryArea: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="registry-area">
+        <div className={styles.registryArea}>
             <Switch>
                 <Route
                     path={`${match.url}/new`}

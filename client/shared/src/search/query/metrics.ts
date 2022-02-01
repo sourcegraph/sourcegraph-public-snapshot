@@ -4,8 +4,27 @@ import { KeywordKind } from './token'
 
 const nonzero = (value: number): number | undefined => (value === 0 ? undefined : value)
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const collectMetrics = (query: string): any => {
+interface Metrics {
+    count_or?: number
+    count_and?: number
+    count_not?: number
+    count_select_repo?: number
+    count_select_file?: number
+    count_select_content?: number
+    count_select_symbol?: number
+    count_select_commit_diff_added?: number
+    count_select_commit_diff_removed?: number
+    count_repo_contains?: number
+    count_repo_contains_file?: number
+    count_repo_contains_content?: number
+    count_repo_contains_commit_after?: number
+    count_count_all?: number
+    count_non_global_context?: number
+    count_only_patterns?: number
+    count_only_patterns_three_or_more?: number
+}
+
+export const collectMetrics = (query: string): Metrics | undefined => {
     const tokens = scanSearchQuery(query)
     if (tokens.type !== 'success') {
         return undefined

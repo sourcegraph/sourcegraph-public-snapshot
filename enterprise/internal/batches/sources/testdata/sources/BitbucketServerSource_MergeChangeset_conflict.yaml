@@ -1,0 +1,80 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/154/merge?version=8
+    method: POST
+  response:
+    body: '{"errors":[{"context":null,"message":"You are attempting to modify a pull
+      request based on out-of-date information.","exceptionName":"com.atlassian.bitbucket.pull.PullRequestOutOfDateException","currentVersion":10,"expectedVersion":8,"pullRequest":{"id":154,"version":10,"title":"This
+      is a new title","description":"This is a new body","state":"OPEN","open":true,"closed":false,"createdDate":1639582116883,"updatedDate":1639737255599,"fromRef":{"id":"refs/heads/hello-world","displayId":"hello-world","latestCommit":"fbb818b2ba432f906a8f5fa58cadcc74dc1bf865","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"2046f48cd2633f58f1a4c2aa7b5b1b613e34a24c","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/154"}]}}}]}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 17 Dec 2021 10:36:40 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@9KC48Ux636x13414828x0'
+      X-Asessionid:
+      - 1tmlymt
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - thorsten
+      X-Content-Type-Options:
+      - nosniff
+    status: 409 Conflict
+    code: 409
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/154/merge?version=10
+    method: POST
+  response:
+    body: '{"errors":[{"context":null,"message":"The pull request has conflicts and
+      cannot be merged.","exceptionName":"com.atlassian.bitbucket.pull.PullRequestMergeVetoedException","conflicted":true,"vetoes":[]}]}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 17 Dec 2021 10:36:40 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@9KC48Ux636x13414830x1'
+      X-Asessionid:
+      - xxs1k9
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - thorsten
+      X-Content-Type-Options:
+      - nosniff
+    status: 409 Conflict
+    code: 409
+    duration: ""

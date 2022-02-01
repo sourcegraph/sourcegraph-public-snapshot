@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { DotcomGettingStartedPage } from './DotcomGettingStartedPage'
 
@@ -9,4 +9,4 @@ const { add } = storiesOf('web/batches/DotcomGettingStartedPage', module).addDec
     <div className="p-3 container">{story()}</div>
 ))
 
-add('Overview', () => <EnterpriseWebStory>{() => <DotcomGettingStartedPage />}</EnterpriseWebStory>)
+add('Overview', () => <WebStory>{() => <DotcomGettingStartedPage />}</WebStory>)

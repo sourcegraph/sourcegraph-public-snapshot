@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 /**
  * Displays an inline list of email addresses for an account.

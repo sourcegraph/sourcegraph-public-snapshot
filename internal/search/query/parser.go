@@ -404,14 +404,14 @@ loop:
 
 // ScanPredicate scans for a predicate that exists in the predicate
 // registry. It takes the current field as context.
-func ScanPredicate(field string, buf []byte) (string, int, bool) {
-	fieldRegistry, ok := DefaultPredicateRegistry[resolveFieldAlias(field)]
+func ScanPredicate(field string, buf []byte, lookup PredicateRegistry) (string, int, bool) {
+	fieldRegistry, ok := lookup[resolveFieldAlias(field)]
 	if !ok {
 		// This field has no registered predicates
 		return "", 0, false
 	}
 
-	predicateName, nameAdvance, ok := ScanPredicateName(fieldRegistry, buf)
+	predicateName, nameAdvance, ok := ScanPredicateName(buf, fieldRegistry)
 	if !ok {
 		return "", 0, false
 	}
@@ -431,8 +431,8 @@ func ScanPredicate(field string, buf []byte) (string, int, bool) {
 	return predicateName + params, nameAdvance + paramsAdvance, true
 }
 
-// ScanPredicateName scans for a well-known predicate name for he given field
-func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (string, int, bool) {
+// ScanPredicateName scans whether buf contains a well-known name in the predicate lookup table.
+func ScanPredicateName(buf []byte, lookup PredicateTable) (string, int, bool) {
 	var predicateName string
 	var advance int
 	for {
@@ -448,7 +448,7 @@ func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (s
 		advance += i
 	}
 
-	if _, ok := fieldRegistry[predicateName]; !ok {
+	if _, ok := lookup[predicateName]; !ok {
 		// The string is not a predicate
 		return "", 0, false
 	}
@@ -742,7 +742,7 @@ func (p *parser) ParseFieldValue(field string) (string, labels, error) {
 		return delimited('"')
 	}
 
-	value, advance, ok := ScanPredicate(field, p.buf[p.pos:])
+	value, advance, ok := ScanPredicate(field, p.buf[p.pos:], DefaultPredicateRegistry)
 	if ok {
 		p.pos += advance
 		return value, IsPredicate, nil

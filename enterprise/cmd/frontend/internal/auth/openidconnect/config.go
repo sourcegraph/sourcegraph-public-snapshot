@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -52,17 +53,17 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems conf.Problems) {
+func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 	var loggedNeedsExternalURL bool
-	for _, p := range c.AuthProviders {
-		if p.Openidconnect != nil && c.ExternalURL == "" && !loggedNeedsExternalURL {
+	for _, p := range c.SiteConfig().AuthProviders {
+		if p.Openidconnect != nil && c.SiteConfig().ExternalURL == "" && !loggedNeedsExternalURL {
 			problems = append(problems, conf.NewSiteProblem("openidconnect auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
 			loggedNeedsExternalURL = true
 		}
 	}
 
 	seen := map[schema.OpenIDConnectAuthProvider]int{}
-	for i, p := range c.AuthProviders {
+	for i, p := range c.SiteConfig().AuthProviders {
 		if p.Openidconnect != nil {
 			if j, ok := seen[*p.Openidconnect]; ok {
 				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j)))

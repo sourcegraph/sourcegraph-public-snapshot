@@ -22,8 +22,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -32,14 +34,6 @@ import (
 )
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
-
-var gracefulShutdownTimeout = func() time.Duration {
-	d, _ := time.ParseDuration(env.Get("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", "10s", "Graceful shutdown timeout"))
-	if d == 0 {
-		d = 10 * time.Second
-	}
-	return d
-}()
 
 const port = "3180"
 
@@ -65,8 +59,8 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Ready immediately
@@ -89,8 +83,8 @@ func main() {
 		h = handlers.LoggingHandler(os.Stdout, h)
 	}
 	h = instrumentHandler(prometheus.DefaultRegisterer, h)
-	h = trace.HTTPTraceMiddleware(h)
-	h = ot.Middleware(h)
+	h = trace.HTTPMiddleware(h, conf.DefaultClient())
+	h = ot.HTTPMiddleware(h)
 	http.Handle("/", h)
 
 	host := ""
@@ -108,10 +102,10 @@ func main() {
 
 	go func() {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 		<-c
 
-		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
 		if err := s.Shutdown(ctx); err != nil {
 			log15.Error("graceful termination timeout", "error", err)
 		}

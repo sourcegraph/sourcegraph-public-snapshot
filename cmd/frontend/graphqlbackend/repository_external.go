@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (r *RepositoryResolver) ExternalRepository() *externalRepositoryResolver {
@@ -49,7 +50,26 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	svcs, err := database.Repos(r.db).ExternalServices(ctx, r.IDInt32())
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	svcIDs := repo.ExternalServiceIDs()
+	if len(svcIDs) == 0 {
+		return &computedExternalServiceConnectionResolver{
+			db:               r.db,
+			args:             args.ConnectionArgs,
+			externalServices: []*types.ExternalService{},
+		}, nil
+	}
+
+	opts := database.ExternalServicesListOptions{
+		IDs:              svcIDs,
+		OrderByDirection: "ASC",
+	}
+
+	svcs, err := r.db.ExternalServices().List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

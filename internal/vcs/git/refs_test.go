@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestHumanReadableBranchName(t *testing.T) {
@@ -223,20 +224,20 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	wantBranchesGit := []*Branch{
 		{
 			Name: "b0", Head: "c4a53701494d1d788b1ceeb8bf32e90224962473",
-			Commit: &Commit{
+			Commit: &gitdomain.Commit{
 				ID:        "c4a53701494d1d788b1ceeb8bf32e90224962473",
-				Author:    Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Committer: &Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Author:    gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Message:   "foo1",
 				Parents:   []api.CommitID{"a3c1537db9797215208eec56f8e7c9c37f8358ca"},
 			},
 		},
 		{
 			Name: "master", Head: "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-			Commit: &Commit{
+			Commit: &gitdomain.Commit{
 				ID:        "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-				Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				Message:   "foo0",
 				Parents:   nil,
 			},

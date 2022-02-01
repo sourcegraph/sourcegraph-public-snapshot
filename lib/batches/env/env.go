@@ -1,4 +1,4 @@
-// Package env provides types to handle step environments in campaign specs.
+// Package env provides types to handle step environments in batch specs.
 package env
 
 import (
@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-// Environment represents an environment used for a campaign step, which may
+// Environment represents an environment used for a batch step, which may
 // require values to be resolved from the outer environment the executor is
 // running within.
 type Environment struct {

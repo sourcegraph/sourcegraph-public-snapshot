@@ -1,40 +1,37 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Path 1 path component 1`] = `
-Array [
-  "",
+<DocumentFragment>
   <strong>
     a
-  </strong>,
-]
+  </strong>
+</DocumentFragment>
 `;
 
 exports[`Path 2 path components 1`] = `
-Array [
+<DocumentFragment>
   <span
-    className="text-muted"
+    class="text-muted"
   >
-    a
-    /
-  </span>,
+    a/
+  </span>
   <strong>
     b
-  </strong>,
-]
+  </strong>
+</DocumentFragment>
 `;
 
 exports[`Path 3 path components 1`] = `
-Array [
+<DocumentFragment>
   <span
-    className="text-muted"
+    class="text-muted"
   >
-    a/b
-    /
-  </span>,
+    a/b/
+  </span>
   <strong>
     c
-  </strong>,
-]
+  </strong>
+</DocumentFragment>
 `;
 
-exports[`Path no path components 1`] = `null`;
+exports[`Path no path components 1`] = `<DocumentFragment />`;

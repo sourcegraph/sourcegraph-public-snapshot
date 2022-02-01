@@ -14,7 +14,6 @@ var HTTPAddrInternal = env.Get(
 )
 
 var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "false", "run as Sourcegraph.com, with add'l marketing and redirects"))
-var disableProfiler, _ = strconv.ParseBool(env.Get("SRC_DISABLE_PROFILER", "false", "Disable the gcloud profiler, for use when running locally without gcloud config"))
 var openGraphPreviewServiceURL = env.Get("OPENGRAPH_PREVIEW_SERVICE_URL", "", "The URL of the OpenGraph preview image generating service")
 
 // SourcegraphDotComMode is true if this server is running Sourcegraph.com
@@ -27,10 +26,6 @@ func SourcegraphDotComMode() bool {
 // MockSourcegraphDotComMode is used by tests to mock the result of SourcegraphDotComMode.
 func MockSourcegraphDotComMode(value bool) {
 	sourcegraphDotComMode = value
-}
-
-func DisableProfiler() bool {
-	return disableProfiler
 }
 
 func OpenGraphPreviewServiceURL() string {

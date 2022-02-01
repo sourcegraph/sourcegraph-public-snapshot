@@ -3,13 +3,13 @@ import FileCodeIcon from 'mdi-react/FileCodeIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
 
+import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
@@ -63,10 +63,10 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
     const loadingDisplay = <LoadingPanelView text="Loading recent files" />
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container align-items-center text-muted">
+        <EmptyPanelContainer className="align-items-center text-muted">
             <FileCodeIcon className="mb-2" size="2rem" />
             <small className="mb-2">This panel will display your most recently viewed files.</small>
-        </div>
+        </EmptyPanelContainer>
     )
 
     function loadMoreItems(): void {
@@ -81,9 +81,9 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
             </div>
             <dl className="list-group-flush">
                 {processedResults?.map((recentFile, index) => (
-                    <dd key={index} className="text-monospace test-recent-files-item">
+                    <dd key={index} className="text-monospace">
                         <small>
-                            <Link to={recentFile.url} onClick={logFileClicked}>
+                            <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
                                 {recentFile.repoName} › {recentFile.filePath}
                             </Link>
                         </small>
@@ -91,8 +91,8 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
                 ))}
             </dl>
             {recentFiles?.pageInfo.hasNextPage && (
-                <div className="test-recent-files-show-more-container">
-                    <ShowMoreButton onClick={loadMoreItems} className="test-recent-files-panel-show-more" />
+                <div>
+                    <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
                 </div>
             )}
         </div>
@@ -125,7 +125,7 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
     const recentFiles: RecentFile[] = []
 
     for (const node of eventLogResult.nodes) {
-        if (node.argument) {
+        if (node.argument && node.url) {
             const parsedArguments = JSON.parse(node.argument)
             let repoName = parsedArguments?.repoName as string
             let filePath = parsedArguments?.filePath as string

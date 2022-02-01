@@ -2,8 +2,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import { ExternalServiceKind } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { BatchChangesSiteConfigSettingsArea } from './BatchChangesSiteConfigSettingsArea'
 
@@ -12,7 +12,7 @@ const { add } = storiesOf('web/batches/settings/BatchChangesSiteConfigSettingsAr
 ))
 
 add('Overview', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangesSiteConfigSettingsArea
                 {...props}
@@ -47,11 +47,11 @@ add('Overview', () => (
                 }
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Config added', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangesSiteConfigSettingsArea
                 {...props}
@@ -101,5 +101,5 @@ add('Config added', () => (
                 }
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

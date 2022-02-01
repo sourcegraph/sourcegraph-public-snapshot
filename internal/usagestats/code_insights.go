@@ -2,27 +2,26 @@ package usagestats
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
-
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.CodeInsightsUsageStatistics, error) {
+func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types.CodeInsightsUsageStatistics, error) {
 	stats := types.CodeInsightsUsageStatistics{}
 
 	const platformQuery = `
 	SELECT
 		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       AS weekly_insights_page_views,
 		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        AS weekly_insights_unique_page_views,
-		COUNT(distinct anonymous_user_id)
+		COUNT(distinct user_id)
 			FILTER (WHERE name = 'InsightAddition')							AS weekly_insight_creators,
 		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 				AS weekly_insight_configure_click,
 		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 				AS weekly_insight_add_more_click
@@ -89,15 +88,15 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	const weeklyFirstTimeCreatorsQuery = `
 	WITH first_times AS (
 		SELECT
-			anonymous_user_id,
+			user_id,
 			MIN(timestamp) as first_time
 		FROM event_logs
 		WHERE name = 'InsightAddition'
-		GROUP BY anonymous_user_id
+		GROUP BY user_id
 		)
 	SELECT
 		DATE_TRUNC('week', $1::timestamp) AS week_start,
-		COUNT(distinct anonymous_user_id) as weekly_first_time_insight_creators
+		COUNT(distinct user_id) as weekly_first_time_insight_creators
 	FROM first_times
 	WHERE first_time > DATE_TRUNC('week', $1::timestamp);
 	`
@@ -131,70 +130,91 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	}
 	stats.InsightOrgVisible = orgVisible
 
+	totalCounts, err := GetTotalInsightCounts(ctx, db)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetTotalInsightCounts")
+	}
+	stats.InsightTotalCounts = totalCounts
+
 	return &stats, nil
 }
 
-func GetTimeStepCounts(ctx context.Context, db dbutil.DB) ([]types.InsightTimeIntervalPing, error) {
-	definedInsights, err := insights.GetSearchInsights(ctx, db, insights.All)
+func GetTotalInsightCounts(ctx context.Context, db database.DB) (types.InsightTotalCounts, error) {
+	store := database.EventLogs(db)
+	name := InsightsTotalCountPingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
+	if err != nil {
+		return types.InsightTotalCounts{}, err
+	} else if len(all) == 0 {
+		return types.InsightTotalCounts{}, nil
+	}
+
+	latest := all[0]
+	var totalCounts types.InsightTotalCounts
+	err = json.Unmarshal([]byte(latest.Argument), &totalCounts)
+	if err != nil {
+		return types.InsightTotalCounts{}, errors.Wrap(err, "Unmarshal")
+	}
+	return totalCounts, err
+}
+
+func GetTimeStepCounts(ctx context.Context, db database.DB) ([]types.InsightTimeIntervalPing, error) {
+	store := database.EventLogs(db)
+	name := InsightsIntervalCountsPingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
 	if err != nil {
 		return []types.InsightTimeIntervalPing{}, err
+	} else if len(all) == 0 {
+		return []types.InsightTimeIntervalPing{}, nil
 	}
 
-	daysCounts := make(map[int]int)
-	for _, insight := range definedInsights {
-		days := convertStepToDays(insight)
-		daysCounts[days] += 1
+	latest := all[0]
+	var intervalCounts []types.InsightTimeIntervalPing
+	err = json.Unmarshal([]byte(latest.Argument), &intervalCounts)
+	if err != nil {
+		return []types.InsightTimeIntervalPing{}, errors.Wrap(err, "Unmarshal")
 	}
-
-	results := make([]types.InsightTimeIntervalPing, 0)
-	for interval, count := range daysCounts {
-		results = append(results, types.InsightTimeIntervalPing{
-			IntervalDays: interval,
-			TotalCount:   count,
-		})
-	}
-
-	return results, nil
+	return intervalCounts, nil
 }
 
-// convertStepToDays converts the step interval defined in the insight settings to days, rounded down
-func convertStepToDays(insight insights.SearchInsight) int {
-	if insight.Step.Days != nil {
-		return *insight.Step.Days
-	} else if insight.Step.Hours != nil {
-		return 0
-	} else if insight.Step.Weeks != nil {
-		return *insight.Step.Weeks * 7
-	} else if insight.Step.Months != nil {
-		return *insight.Step.Months * 30
-	} else if insight.Step.Years != nil {
-		return *insight.Step.Years * 365
-	}
-
-	return 0
-}
-
-func GetOrgInsightCounts(ctx context.Context, db dbutil.DB) ([]types.OrgVisibleInsightPing, error) {
-
-	definedInsights, err := insights.GetSearchInsights(ctx, db, insights.Org)
+func GetOrgInsightCounts(ctx context.Context, db database.DB) ([]types.OrgVisibleInsightPing, error) {
+	store := database.EventLogs(db)
+	name := InsightsOrgVisibleInsightsPingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
 	if err != nil {
 		return []types.OrgVisibleInsightPing{}, err
+	} else if len(all) == 0 {
+		return []types.OrgVisibleInsightPing{}, nil
 	}
 
-	search := types.OrgVisibleInsightPing{Type: "search"}
-	search.TotalCount = len(definedInsights)
-
-	langStatsInsights, err := insights.GetLangStatsInsights(ctx, db, insights.Org)
+	latest := all[0]
+	var orgVisibleInsightCounts []types.OrgVisibleInsightPing
+	err = json.Unmarshal([]byte(latest.Argument), &orgVisibleInsightCounts)
 	if err != nil {
-		return []types.OrgVisibleInsightPing{}, err
+		return []types.OrgVisibleInsightPing{}, errors.Wrap(err, "Unmarshal")
 	}
-	lang := types.OrgVisibleInsightPing{Type: "lang-stats"}
-	lang.TotalCount = len(langStatsInsights)
-
-	return []types.OrgVisibleInsightPing{search, lang}, nil
+	return orgVisibleInsightCounts, nil
 }
 
-func GetCreationViewUsage(ctx context.Context, db dbutil.DB, timeSupplier func() time.Time) ([]types.AggregatedPingStats, error) {
+func GetCreationViewUsage(ctx context.Context, db database.DB, timeSupplier func() time.Time) ([]types.AggregatedPingStats, error) {
 	builder := creationPagesPingBuilder(timeSupplier)
 
 	results, err := builder.Sample(ctx, db)
@@ -220,7 +240,7 @@ func (b *PingQueryBuilder) With(name types.PingName) *PingQueryBuilder {
 }
 
 // Sample executes the derived query generated by this builder and returns a sample at the current time
-func (b *PingQueryBuilder) Sample(ctx context.Context, db dbutil.DB) ([]types.AggregatedPingStats, error) {
+func (b *PingQueryBuilder) Sample(ctx context.Context, db database.DB) ([]types.AggregatedPingStats, error) {
 
 	query := fmt.Sprintf(templatePingQueryStr, b.timeWindow)
 
@@ -288,9 +308,13 @@ const (
 
 const templatePingQueryStr = `
 -- source:internal/usagestats/code_insights.go:Sample
-SELECT name, COUNT(*) AS total_count, COUNT(DISTINCT anonymous_user_id) AS unique_count
+SELECT name, COUNT(*) AS total_count, COUNT(DISTINCT user_id) AS unique_count
 FROM event_logs
 WHERE name = ANY($2)
 AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)
 GROUP BY name;
 `
+
+const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
+const InsightsIntervalCountsPingName = `INSIGHT_TIME_INTERVALS`
+const InsightsOrgVisibleInsightsPingName = `INSIGHT_ORG_VISIBLE_INSIGHTS`

@@ -1,4 +1,4 @@
-The Prometheus lifecycle API is enabled in dev mode (when Sourcegraph is started by dev/start.sh or similar).
+The Prometheus lifecycle API is enabled in dev mode (when Sourcegraph is started by `sg start` or similar).
 You can edit, add, delete rules in this directory and then send
 
 ```shell script

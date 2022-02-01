@@ -10,7 +10,8 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -23,7 +24,8 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 
 	store := store.New(db, &observation.TestContext, nil)
 
@@ -39,7 +41,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	defer state.Unmock()
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = api.InternalClient }()
+	defer func() { internalClient = internalapi.Client }()
 
 	githubPR := buildGithubPR(time.Now(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
@@ -160,6 +162,6 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 		})
 
 		// Clean up database.
-		ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+		ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 	}
 }

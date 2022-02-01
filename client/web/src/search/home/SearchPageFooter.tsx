@@ -1,9 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
+import { Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 
@@ -33,7 +34,7 @@ const footerLinkSections: { name: string; links: { name: string; to: string; eve
         name: 'Company',
         links: [
             { name: 'About', to: 'https://about.sourcegraph.com/' },
-            { name: 'Careers', to: 'https://boards.greenhouse.io/sourcegraph91' },
+            { name: 'Careers', to: 'https://about.sourcegraph.com/jobs/' },
             { name: 'Contact', to: 'https://about.sourcegraph.com/contact' },
         ],
     },
@@ -74,7 +75,7 @@ export const SearchPageFooter: React.FunctionComponent<
 
     return isSourcegraphDotCom ? (
         <footer className={styles.footer}>
-            <Link to="/search" aria-label="Home" className="flex-shrink-0">
+            <Link to={PageRoutes.Search} aria-label="Home" className="flex-shrink-0">
                 <BrandLogo isLightTheme={isLightTheme} variant="symbol" className={styles.logo} />
             </Link>
 

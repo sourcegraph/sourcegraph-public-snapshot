@@ -1,19 +1,18 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import React from 'react'
-import { Link } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../components/form/form-input/FormInput'
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
 import { useField } from '../../../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
-import { Badge } from '../../../dashboard-select/components/badge/Badge'
+import { ReachableInsight } from '../../../../../../../core/backend/code-insights-backend-types'
+import { InsightsBadge } from '../../../dashboard-select/components/insights-badge/InsightsBadge'
 import { TruncatedText } from '../../../dashboard-select/components/trancated-text/TrancatedText'
-import { ReachableInsight } from '../../hooks/use-reachable-insights'
 
 import styles from './AddInsightModalContent.module.scss'
 
@@ -65,7 +64,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                 {...searchInput.input}
             />
 
-            <fieldset className={classnames('mt-2', styles.insightsContainer)}>
+            <fieldset className={classNames('mt-2', styles.insightsContainer)}>
                 {filteredInsights.map(insight => (
                     <label key={insight.id} className={styles.insightItem}>
                         <input
@@ -79,7 +78,9 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                         />
 
                         <TruncatedText>{insight.title}</TruncatedText>
-                        <Badge value={insight.owner.name} className={styles.insightOwnerName} />
+                        {insight.owner.name.length > 0 && (
+                            <InsightsBadge value={insight.owner.name} className={styles.insightOwnerName} />
+                        )}
                     </label>
                 ))}
             </fieldset>
@@ -101,7 +102,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                     label={formAPI.submitting ? 'Saving' : 'Save'}
                     type="submit"
                     disabled={formAPI.submitting}
-                    className="btn btn-primary"
+                    variant="primary"
                 />
             </div>
         </form>

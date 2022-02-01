@@ -1,7 +1,7 @@
 import { ApolloError, ReactiveVar } from '@apollo/client'
 import { upperFirst, xor } from 'lodash'
 
-import { useQuery, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { useQuery, gql } from '@sourcegraph/http-client'
 
 import { Maybe, UserRepositoriesVariables } from '../graphql-operations'
 

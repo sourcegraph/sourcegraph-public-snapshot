@@ -1,14 +1,21 @@
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import classNames from 'classnames'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
+import { CardBody, Card } from '@sourcegraph/wildcard'
+
+import styles from './DocumentationWelcomeAlert.module.scss'
 
 export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
-    <DismissibleAlert className="documentation-welcome-alert mt-3" partialStorageKey="apidocs-welcome">
-        <div className="card">
-            <div className="card-body p-3">
+    <DismissibleAlert
+        className={classNames('mt-3', styles.documentationWelcomeAlert)}
+        partialStorageKey="apidocs-welcome"
+    >
+        <Card>
+            <CardBody>
                 <h1>
-                    <BookOpenVariantIcon className="icon-inline mr-2" />
+                    <BookOpenBlankVariantIcon className="icon-inline mr-2" />
                     API docs, for your code
                 </h1>
                 <ul className="mb-0 pl-3">
@@ -25,7 +32,7 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
                         </a>
                     </li>
                 </ul>
-            </div>
-        </div>
+            </CardBody>
+        </Card>
     </DismissibleAlert>
 )

@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
@@ -74,7 +74,7 @@ func ParseExtensionID(extensionID string) (prefix, extensionIDWithoutPrefix stri
 
 // GetLocalExtensionByExtensionID looks up and returns the registry extension in the local registry
 // with the given extension ID. If there is no local extension registry, it is not implemented.
-var GetLocalExtensionByExtensionID func(ctx context.Context, db dbutil.DB, extensionIDWithoutPrefix string) (local graphqlbackend.RegistryExtension, err error)
+var GetLocalExtensionByExtensionID func(ctx context.Context, db database.DB, extensionIDWithoutPrefix string) (local graphqlbackend.RegistryExtension, err error)
 
 // GetExtensionByExtensionID gets the extension with the given extension ID.
 //
@@ -84,7 +84,7 @@ var GetLocalExtensionByExtensionID func(ctx context.Context, db dbutil.DB, exten
 // to the remote registry specified in site configuration (usually sourcegraph.com). The host must
 // be specified to refer to a local extension on the current Sourcegraph site (e.g.,
 // sourcegraph.example.com/publisher/name).
-func GetExtensionByExtensionID(ctx context.Context, db dbutil.DB, extensionID string) (local graphqlbackend.RegistryExtension, remote *registry.Extension, err error) {
+func GetExtensionByExtensionID(ctx context.Context, db database.DB, extensionID string) (local graphqlbackend.RegistryExtension, remote *registry.Extension, err error) {
 	_, extensionIDWithoutPrefix, isLocal, err := ParseExtensionID(extensionID)
 	if err != nil {
 		return nil, nil, err
@@ -207,13 +207,13 @@ func listRemoteRegistryExtensions(ctx context.Context, query string) ([]*registr
 
 // GetLocalFeaturedExtensions looks up and returns the featured registry extensions in the local registry
 // If this is not sourcegraph.com, it is not implemented.
-var GetLocalFeaturedExtensions func(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error)
+var GetLocalFeaturedExtensions func(ctx context.Context, db database.DB) ([]graphqlbackend.RegistryExtension, error)
 
 // GetFeaturedExtensions returns the set of featured extensions.
 //
 // If this is sourcegraph.com, these are local extensions. Otherwise, these are remote extensions
 // retrieved from sourcegraph.com.
-func GetFeaturedExtensions(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error) {
+func GetFeaturedExtensions(ctx context.Context, db database.DB) ([]graphqlbackend.RegistryExtension, error) {
 	if envvar.SourcegraphDotComMode() && GetLocalFeaturedExtensions != nil {
 		return GetLocalFeaturedExtensions(ctx, db)
 	}

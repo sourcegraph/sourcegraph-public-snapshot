@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-func FetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+func FetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 	// key is a sha256 hash since we want to use it for the disk name
 	h := sha256.Sum256([]byte(string(repo) + " " + string(commit)))
 	key := hex.EncodeToString(h[:])
@@ -72,6 +72,11 @@ func FetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.Commi
 	}
 
 	return openGzipReader(path)
+}
+
+func FetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	r, err := FetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
+	return r, err
 }
 
 func openGzipReader(name string) (io.ReadCloser, error) {

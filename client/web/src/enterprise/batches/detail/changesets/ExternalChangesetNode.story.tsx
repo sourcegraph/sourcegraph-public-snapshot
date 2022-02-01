@@ -5,13 +5,13 @@ import { addHours } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../../components/WebStory'
 import {
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
 } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import gridStyles from './BatchChangeChangesets.module.scss'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
@@ -23,7 +23,7 @@ const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecora
 add('All states', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <>
                     {Object.values(ChangesetState)
@@ -48,13 +48,16 @@ add('All states', () => {
                                     externalURL: {
                                         url: 'http://test.test/pr/123',
                                     },
+                                    forkNamespace: index % 2 === 0 ? 'user' : null,
                                     diffStat: {
+                                        __typename: 'DiffStat',
                                         added: 10,
                                         changed: 20,
                                         deleted: 8,
                                     },
                                     labels: [
                                         {
+                                            __typename: 'ChangesetLabel',
                                             color: '93ba13',
                                             description: 'Very awesome description',
                                             text: 'Some label',
@@ -71,8 +74,16 @@ add('All states', () => {
                                         type: ChangesetSpecType.BRANCH,
                                         description: {
                                             __typename: 'GitBranchChangesetDescription',
+                                            baseRef: 'my-branch',
                                             headRef: 'my-branch',
                                         },
+                                        forkTarget:
+                                            index % 2 === 0
+                                                ? {
+                                                      pushUser: true,
+                                                      namespace: null,
+                                                  }
+                                                : { pushUser: false, namespace: null },
                                     },
                                 }}
                                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
@@ -95,14 +106,14 @@ add('All states', () => {
                         ))}
                 </>
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Unpublished', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -120,12 +131,21 @@ add('Unpublished', () => {
                         createdAt: now.toISOString(),
                         externalID: null,
                         externalURL: null,
+                        forkNamespace: null,
                         diffStat: {
+                            __typename: 'DiffStat',
                             added: 10,
                             changed: 20,
                             deleted: 8,
                         },
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -137,8 +157,10 @@ add('Unpublished', () => {
                             type: ChangesetSpecType.BRANCH,
                             description: {
                                 __typename: 'GitBranchChangesetDescription',
+                                baseRef: 'my-branch',
                                 headRef: 'my-branch',
                             },
+                            forkTarget: null,
                         },
                     }}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
@@ -159,14 +181,14 @@ add('Unpublished', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Importing', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -185,8 +207,16 @@ add('Importing', () => {
                         createdAt: now.toISOString(),
                         externalID: '12345',
                         externalURL: null,
+                        forkNamespace: null,
                         diffStat: null,
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -213,14 +243,14 @@ add('Importing', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Importing failed', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -239,8 +269,16 @@ add('Importing failed', () => {
                         createdAt: now.toISOString(),
                         externalID: '99999',
                         externalURL: null,
+                        forkNamespace: null,
                         diffStat: null,
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -257,14 +295,14 @@ add('Importing failed', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Sync failed', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -283,8 +321,16 @@ add('Sync failed', () => {
                         createdAt: now.toISOString(),
                         externalID: '99999',
                         externalURL: null,
+                        forkNamespace: null,
                         diffStat: null,
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -301,6 +347,6 @@ add('Sync failed', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

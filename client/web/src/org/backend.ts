@@ -1,8 +1,8 @@
 import { concat, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 
 import { refreshAuthenticatedUser } from '../auth'
 import { requestGraphQL } from '../backend/graphql'
@@ -118,3 +118,10 @@ export function updateOrganization(id: Scalars['ID'], displayName: string): Prom
         )
         .toPromise()
 }
+
+export const GET_ORG_FEATURE_FLAG_VALUE = gql`
+    query OrgFeatureFlagValue($orgID: ID!, $flagName: String!) {
+        organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
+    }
+`
+export const ORG_CODE_FEATURE_FLAG_NAME = 'org-code'

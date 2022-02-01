@@ -70,7 +70,7 @@ var newOutputPlatformQuirks func(o *Output) error
 // newCapabilityWatcher returns a channel that receives a message when
 // capabilities are updated. By default, no watching functionality is
 // available.
-var newCapabilityWatcher func() chan capabilities = func() chan capabilities { return nil }
+var newCapabilityWatcher = func() chan capabilities { return nil }
 
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	caps, err := detectCapabilities()
@@ -131,6 +131,13 @@ func (o *Output) Lock() {
 	// about to render atomic if the cursor is hidden for a short length of
 	// time.
 	o.w.Write([]byte("\033[?25l"))
+}
+
+func (o *Output) SetVerbose() {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	o.opts.Verbose = true
+
 }
 
 func (o *Output) Unlock() {
@@ -239,4 +246,8 @@ func (o *Output) MoveUpLines(lines int) {
 // capabilities.
 func (o *Output) writeStyle(style Style) {
 	fmt.Fprintf(o.w, "%s", o.caps.formatArgs([]interface{}{style})...)
+}
+
+func (o *Output) ClearScreen() {
+	fmt.Fprintf(o.w, "\033c")
 }

@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Commands(ctx context.Context, globalEnv map[string]string, cmds ...Command) error {
+func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -41,24 +41,32 @@ func Commands(ctx context.Context, globalEnv map[string]string, cmds ...Command)
 
 	wg := sync.WaitGroup{}
 	failures := make(chan failedRun, len(cmds))
+	installed := make(chan string, len(cmds))
+	okayToStart := make(chan struct{})
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	cmdNames := make(map[string]struct{}, len(cmds))
+
 	for i, cmd := range cmds {
+		cmdNames[cmd.Name] = struct{}{}
+
 		wg.Add(1)
 
 		go func(cmd Command, ch <-chan struct{}) {
 			defer wg.Done()
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
-				if err = runWatch(ctx, cmd, root, globalEnv, ch); err != nil {
-					if err != ctx.Err() {
-						if cmd.ContinueWatchOnExit {
-							printCmdError(stdout.Out, cmd.Name, err)
-							time.Sleep(time.Second * 10) // backoff
-						} else {
-							failures <- failedRun{cmdName: cmd.Name, err: err}
-						}
+				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose, installed, okayToStart); err != nil {
+					if errors.Is(err, ctx.Err()) { // if error caused by context, terminate
+						return
+					}
+					if cmd.ContinueWatchOnExit {
+						printCmdError(stdout.Out, cmd.Name, err)
+						time.Sleep(time.Second * 10) // backoff
+					} else {
+						failures <- failedRun{cmdName: cmd.Name, err: err}
 					}
 				}
 			}
@@ -66,6 +74,11 @@ func Commands(ctx context.Context, globalEnv map[string]string, cmds ...Command)
 				cancel()
 			}
 		}(cmd, chs[i])
+	}
+
+	err = waitForInstallation(cmdNames, installed, failures, okayToStart)
+	if err != nil {
+		return err
 	}
 
 	wg.Wait()
@@ -77,6 +90,86 @@ func Commands(ctx context.Context, globalEnv map[string]string, cmds ...Command)
 	default:
 		return nil
 	}
+}
+
+func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
+	stdout.Out.Write("")
+	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", len(cmdNames)))
+	stdout.Out.Write("")
+
+	waitingMessages := []string{
+		"Still waiting for %s to finish installing...",
+		"Yup, still waiting for %s to finish installing...",
+		"Looks like we're still waiting for %s to finish installing...",
+		"This is getting awkward now. We're still waiting for %s to finish installing...",
+		"Nothing more to say, I guess. Come on %s ...",
+		"It might be your computer? Still waiting for %s ...",
+		"Anyway... how are you? (Still waiting for %s ...)",
+		"Still waiting for %s to finish installing...",
+	}
+	messageCount := 0
+
+	const tickInterval = 15 * time.Second
+	ticker := time.NewTicker(tickInterval)
+
+	done := 0.0
+	total := float64(len(cmdNames))
+	progress := stdout.Out.Progress([]output.ProgressBar{
+		{Label: fmt.Sprintf("Installing %d commands", len(cmdNames)), Max: total},
+	}, nil)
+
+	for {
+		select {
+		case cmdName := <-installed:
+			ticker.Reset(tickInterval)
+
+			delete(cmdNames, cmdName)
+			done += 1.0
+
+			progress.WriteLine(output.Linef("", output.StyleSuccess, "%s installed", cmdName))
+
+			progress.SetValue(0, done)
+			progress.SetLabelAndRecalc(0, fmt.Sprintf("%d/%d commands installed", int(done), int(total)))
+
+			// Everything installed!
+			if len(cmdNames) == 0 {
+				progress.Complete()
+				stdout.Out.Write("")
+				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
+				stdout.Out.Write("")
+				close(okayToStart)
+				return nil
+			}
+
+		case failure := <-failures:
+			progress.Destroy()
+
+			// Something went wrong with an installation, no need to wait for the others
+			printCmdError(stdout.Out, failure.cmdName, failure.err)
+			return failure
+
+		case <-ticker.C:
+			names := []string{}
+			for name := range cmdNames {
+				names = append(names, name)
+			}
+
+			idx := messageCount
+			if idx > len(waitingMessages)-1 {
+				idx = len(waitingMessages) - 1
+			}
+			msg := waitingMessages[idx]
+
+			emoji := output.EmojiHourglass
+			if idx > 3 {
+				emoji = output.EmojiShrug
+			}
+
+			progress.WriteLine(output.Linef(emoji, output.StyleBold, msg, strings.Join(names, ", ")))
+			messageCount += 1
+		}
+	}
+
 }
 
 // failedRun is returned by run when a command failed to run and run exits
@@ -93,6 +186,8 @@ func (e failedRun) Error() string {
 type installErr struct {
 	cmdName string
 	output  string
+
+	originalErr error
 }
 
 func (e installErr) Error() string {
@@ -129,6 +224,9 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	switch e := errors.Cause(err).(type) {
 	case installErr:
 		message = "Failed to build " + cmdName
+		if e.originalErr != nil {
+			message += ": " + e.originalErr.Error()
+		}
 		cmdOut = e.output
 	case reinstallErr:
 		message = "Failed to rebuild " + cmdName
@@ -171,7 +269,24 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	}
 }
 
-func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[string]string, reload <-chan struct{}) error {
+func runWatch(
+	ctx context.Context,
+	cmd Command,
+	root string,
+	globalEnv map[string]string,
+	reload <-chan struct{},
+	verbose bool,
+	installDone chan string,
+	okayToStart chan struct{},
+) error {
+	printDebug := func(f string, args ...interface{}) {
+		if !verbose {
+			return
+		}
+		message := fmt.Sprintf(f, args...)
+		stdout.Out.WriteLine(output.Linef("", output.StylePending, "%s[DEBUG] %s: %s %s", output.StyleBold, cmd.Name, output.StyleReset, message))
+	}
+
 	startedOnce := false
 
 	var (
@@ -191,12 +306,15 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 	for {
 		// Build it
 		if cmd.Install != "" {
-			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
+			if startedOnce {
+				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
+			}
 
 			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
-					return installErr{cmdName: cmd.Name, output: cmdOut}
+					installDone <- cmd.Name
+					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				} else {
 					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})
 					// Now we wait for a reload signal before we start to build it again
@@ -211,23 +329,33 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 			default:
 			}
 
-			stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
+			if startedOnce {
+				stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
+			}
 
 			if cmd.CheckBinary != "" {
 				newHash, err := md5HashFile(filepath.Join(root, cmd.CheckBinary))
 				if err != nil {
-					return installErr{cmdName: cmd.Name, output: cmdOut}
+					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				}
 
 				md5changed = md5hash != newHash
 				md5hash = newHash
 			}
+
+		}
+
+		if !startedOnce {
+			installDone <- cmd.Name
+			<-okayToStart
 		}
 
 		if cmd.CheckBinary == "" || md5changed {
 			for _, cancel := range cancelFuncs {
+				printDebug("Canceling previous process and waiting for it to exit...")
 				cancel() // Stop command
 				<-errs   // Wait for exit
+				printDebug("Previous command exited")
 			}
 			cancelFuncs = nil
 
@@ -291,7 +419,6 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 
 func makeEnv(envs ...map[string]string) []string {
 	combined := os.Environ()
-
 	expandedEnv := map[string]string{}
 
 	for _, env := range envs {

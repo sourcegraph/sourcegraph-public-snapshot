@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { CardBody, Card } from '@sourcegraph/wildcard'
+
 import { SourcegraphIcon } from '../../../auth/icons'
 
 import { BatchChangesChangelogAlert } from './BatchChangesChangelogAlert'
@@ -36,8 +38,8 @@ export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntr
 
 const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
     <div className={classNames(styles.batchChangesListIntroAlert, 'h-100')}>
-        <div className={classNames(styles.batchChangesListIntroCard, 'card p-2 h-100')}>
-            <div className="card-body d-flex align-items-start">
+        <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
+            <CardBody className="d-flex align-items-start">
                 {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}
                 <SourcegraphIcon className="mr-3 col-2 mt-2 d-none d-sm-block" />
                 <div>
@@ -51,7 +53,7 @@ const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
                         license.
                     </p>
                 </div>
-            </div>
-        </div>
+            </CardBody>
+        </Card>
     </div>
 )

@@ -1,12 +1,12 @@
+import { renderError } from '@sourcegraph/branded/src/components/alerts'
 import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
 
-import { renderError } from '../../../../../../../../components/alerts'
+import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit/sanitizers/repositories'
 import { Validator } from '../../../../../../components/form/hooks/useField'
 import { AsyncValidator } from '../../../../../../components/form/hooks/utils/use-async-validation'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
-import { fetchRepositories } from '../../../../../../core/backend/requests/fetch-repositories'
+import { fetchRepositories } from '../../../../../../core/backend/core/requests/fetch-repositories'
 import { EditableDataSeries } from '../../types'
-import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 
 export const repositoriesFieldValidator: Validator<string> = value => {
     if (value !== undefined && dedupeWhitespace(value).trim() === '') {
@@ -47,8 +47,9 @@ export const repositoriesExistValidator: AsyncValidator<string> = async value =>
         }
 
         const repositories = await fetchRepositories(repositoryNames).toPromise()
-
-        const nullRepositoryIndex = repositories.findIndex(repo => !repo)
+        const nullRepositoryIndex = repositories.findIndex(
+            (repo, index) => !repo || repo.name !== repositoryNames[index]
+        )
 
         if (nullRepositoryIndex !== -1) {
             const repoName = repositoryNames[nullRepositoryIndex]

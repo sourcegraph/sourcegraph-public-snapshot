@@ -32,6 +32,18 @@ func NewMockGcsAPI() *MockGcsAPI {
 	}
 }
 
+// NewStrictMockGcsAPI creates a new mock of the gcsAPI interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockGcsAPI() *MockGcsAPI {
+	return &MockGcsAPI{
+		BucketFunc: &GcsAPIBucketFunc{
+			defaultHook: func(string) gcsBucketHandle {
+				panic("unexpected invocation of MockGcsAPI.Bucket")
+			},
+		},
+	}
+}
+
 // surrogateMockGcsAPI is a copy of the gcsAPI interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore).
 // It is redefined here as it is unexported in the source package.
@@ -193,6 +205,33 @@ func NewMockGcsBucketHandle() *MockGcsBucketHandle {
 		UpdateFunc: &GcsBucketHandleUpdateFunc{
 			defaultHook: func(context.Context, storage.BucketAttrsToUpdate) error {
 				return nil
+			},
+		},
+	}
+}
+
+// NewStrictMockGcsBucketHandle creates a new mock of the gcsBucketHandle
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGcsBucketHandle() *MockGcsBucketHandle {
+	return &MockGcsBucketHandle{
+		AttrsFunc: &GcsBucketHandleAttrsFunc{
+			defaultHook: func(context.Context) (*storage.BucketAttrs, error) {
+				panic("unexpected invocation of MockGcsBucketHandle.Attrs")
+			},
+		},
+		CreateFunc: &GcsBucketHandleCreateFunc{
+			defaultHook: func(context.Context, string, *storage.BucketAttrs) error {
+				panic("unexpected invocation of MockGcsBucketHandle.Create")
+			},
+		},
+		ObjectFunc: &GcsBucketHandleObjectFunc{
+			defaultHook: func(string) gcsObjectHandle {
+				panic("unexpected invocation of MockGcsBucketHandle.Object")
+			},
+		},
+		UpdateFunc: &GcsBucketHandleUpdateFunc{
+			defaultHook: func(context.Context, storage.BucketAttrsToUpdate) error {
+				panic("unexpected invocation of MockGcsBucketHandle.Update")
 			},
 		},
 	}
@@ -675,6 +714,18 @@ func NewMockGcsComposer() *MockGcsComposer {
 	}
 }
 
+// NewStrictMockGcsComposer creates a new mock of the gcsComposer interface.
+// All methods panic on invocation, unless overwritten.
+func NewStrictMockGcsComposer() *MockGcsComposer {
+	return &MockGcsComposer{
+		RunFunc: &GcsComposerRunFunc{
+			defaultHook: func(context.Context) (*storage.ObjectAttrs, error) {
+				panic("unexpected invocation of MockGcsComposer.Run")
+			},
+		},
+	}
+}
+
 // surrogateMockGcsComposer is a copy of the gcsComposer interface (from the
 // package
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore).
@@ -841,6 +892,33 @@ func NewMockGcsObjectHandle() *MockGcsObjectHandle {
 		NewWriterFunc: &GcsObjectHandleNewWriterFunc{
 			defaultHook: func(context.Context) io.WriteCloser {
 				return nil
+			},
+		},
+	}
+}
+
+// NewStrictMockGcsObjectHandle creates a new mock of the gcsObjectHandle
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGcsObjectHandle() *MockGcsObjectHandle {
+	return &MockGcsObjectHandle{
+		ComposerFromFunc: &GcsObjectHandleComposerFromFunc{
+			defaultHook: func(...gcsObjectHandle) gcsComposer {
+				panic("unexpected invocation of MockGcsObjectHandle.ComposerFrom")
+			},
+		},
+		DeleteFunc: &GcsObjectHandleDeleteFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockGcsObjectHandle.Delete")
+			},
+		},
+		NewRangeReaderFunc: &GcsObjectHandleNewRangeReaderFunc{
+			defaultHook: func(context.Context, int64, int64) (io.ReadCloser, error) {
+				panic("unexpected invocation of MockGcsObjectHandle.NewRangeReader")
+			},
+		},
+		NewWriterFunc: &GcsObjectHandleNewWriterFunc{
+			defaultHook: func(context.Context) io.WriteCloser {
+				panic("unexpected invocation of MockGcsObjectHandle.NewWriter")
 			},
 		},
 	}

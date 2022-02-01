@@ -1,6 +1,6 @@
 import * as path from 'path'
 
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
 
 import { DiffResolvedRevisionSpec } from '../../repo'
 import { FileInfo, DiffInfo } from '../shared/codeHost'
@@ -267,7 +267,8 @@ export const getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView = (
     baseFilePath: string
 } => {
     // Get the file path from the breadcrumbs
-    const breadcrumbsElement = codeViewElement.querySelector('.breadcrumbs')
+    const breadcrumbsElement =
+        codeViewElement.querySelector('.breadcrumbs') ?? codeViewElement.querySelector('.file-breadcrumbs')
     if (!breadcrumbsElement) {
         throw new Error('Could not find diff code view breadcrumbs element through selector .breadcrumbs')
     }

@@ -45,7 +45,7 @@ function getRevisionSpecFromRevisionSelector(): RevisionSpec {
     )
 }
 
-export function getContext(): CodeHostContext {
+export async function getContext(): Promise<CodeHostContext> {
     const repoSpec = getRawRepoSpecFromLocation(window.location)
     let revisionSpec: Partial<RevisionSpec> = {}
     try {
@@ -53,9 +53,9 @@ export function getContext(): CodeHostContext {
     } catch {
         // RevSpec is optional in CodeHostContext
     }
-    return {
+    return Promise.resolve({
         ...repoSpec,
         ...revisionSpec,
         privateRepository: window.location.hostname !== 'bitbucket.org',
-    }
+    })
 }

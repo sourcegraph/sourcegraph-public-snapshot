@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -34,7 +35,9 @@ func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Op
 
 	innerCommand := strings.Join(rawOrDockerCommand.Command, " ")
 	if len(rawOrDockerCommand.Env) > 0 {
-		innerCommand = fmt.Sprintf("%s %s", strings.Join(rawOrDockerCommand.Env, " "), innerCommand)
+		// If we have env vars that are arguments to the command we need to escape them
+		quotedEnv := quoteEnv(rawOrDockerCommand.Env)
+		innerCommand = fmt.Sprintf("%s %s", strings.Join(quotedEnv, " "), innerCommand)
 	}
 	if rawOrDockerCommand.Dir != "" {
 		innerCommand = fmt.Sprintf("cd %s && %s", rawOrDockerCommand.Dir, innerCommand)
@@ -46,15 +49,6 @@ func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Op
 		Operation: spec.Operation,
 	}
 }
-
-// We've recently seen issues with concurent VM creation. It's likely we
-// can do better here and run an empty VM at application startup, but I
-// want to do this quick and dirty to see if we can raise our concurrency
-// without other issues.
-//
-// https://github.com/weaveworks/ignite/issues/559
-// Following up in https://github.com/sourcegraph/sourcegraph/issues/21377.
-var igniteRunLock sync.Mutex
 
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
@@ -75,11 +69,9 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		),
 		Operation: operations.SetupFirecrackerStart,
 	}
-	igniteRunLock.Lock()
-	err := errors.Wrap(runner.RunCommand(ctx, startCommand, logger), "failed to start firecracker vm")
-	igniteRunLock.Unlock()
-	if err != nil {
-		return err
+
+	if err := callWithInstrumentedLock(operations, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
+		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
 	if options.FirecrackerOptions.VMStartupScriptPath != "" {
@@ -94,6 +86,30 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 	}
 
 	return nil
+}
+
+// We've recently seen issues with concurent VM creation. It's likely we
+// can do better here and run an empty VM at application startup, but I
+// want to do this quick and dirty to see if we can raise our concurrency
+// without other issues.
+//
+// https://github.com/weaveworks/ignite/issues/559
+// Following up in https://github.com/sourcegraph/sourcegraph/issues/21377.
+var igniteRunLock sync.Mutex
+
+// callWithInstrumentedLock calls f while holding the igniteRunLock. The duration of the wait
+// and active portions of this method are emitted as prometheus metrics.
+func callWithInstrumentedLock(operations *Operations, f func() error) error {
+	lockRequestedAt := time.Now()
+	igniteRunLock.Lock()
+	lockAcquiredAt := time.Now()
+	err := f()
+	lockReleasedAt := time.Now()
+	igniteRunLock.Unlock()
+
+	operations.RunLockWaitTotal.Add(float64(lockAcquiredAt.Sub(lockRequestedAt) / time.Millisecond))
+	operations.RunLockHeldTotal.Add(float64(lockReleasedAt.Sub(lockAcquiredAt) / time.Millisecond))
+	return err
 }
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with

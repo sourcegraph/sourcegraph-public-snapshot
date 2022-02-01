@@ -61,7 +61,7 @@ func (s Symbol) LSPKind() lsp.SymbolKind {
 		return lsp.SKNamespace
 	case "package", "packagename", "subprogspec":
 		return lsp.SKPackage
-	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
+	case "class", "classes", "type", "service", "typedef", "union", "section", "subtype", "component":
 		return lsp.SKClass
 	case "method", "methodspec":
 		return lsp.SKMethod
@@ -237,6 +237,7 @@ var toSelectKind = map[string]string{
 	"packagename":     "package",
 	"subprogspec":     "package",
 	"class":           "class",
+	"classes":         "class",
 	"type":            "class",
 	"service":         "class",
 	"typedef":         "class",

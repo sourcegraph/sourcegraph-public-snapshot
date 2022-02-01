@@ -75,3 +75,8 @@ function hubSpotFeedbackFormURL(version: string): string {
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
     return execa('docker', ['version'], { stdout: 'ignore' })
 }
+
+export function changelogURL(version: string): string {
+    const versionAnchor = version.replace(/\./g, '-')
+    return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
+}

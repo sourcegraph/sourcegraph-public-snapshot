@@ -1,18 +1,28 @@
-import { storiesOf } from '@storybook/react'
+import { Meta } from '@storybook/react'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
 
 import { IntroCreationPage } from './IntroCreationPage'
 
-const { add } = storiesOf('web/insights/CreationInsightIntroPage', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+export default {
+    title: 'web/insights/creation-ui/IntroPage',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
         chromatic: {
-            viewports: [320, 576, 978, 1440],
+            viewports: [576, 978, 1440],
         },
-    })
+    },
+} as Meta
 
-add('Page', () => <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />)
+const API = new CodeInsightsGqlBackend({} as any)
+
+export const InsightIntroPageExample = () => (
+    <CodeInsightsBackendContext.Provider value={API}>
+        <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+    </CodeInsightsBackendContext.Provider>
+)

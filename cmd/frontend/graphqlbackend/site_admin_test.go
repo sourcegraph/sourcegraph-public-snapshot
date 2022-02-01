@@ -12,19 +12,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestDeleteUser(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		resetMocks()
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
@@ -42,10 +40,11 @@ func TestDeleteUser(t *testing.T) {
 	})
 
 	t.Run("delete current user", func(t *testing.T) {
-		resetMocks()
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{ID: 1, SiteAdmin: true}, nil
-		}
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		_, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
@@ -61,36 +60,31 @@ func TestDeleteUser(t *testing.T) {
 	})
 
 	// Mocking all database interactions here, but they are all thoroughly tested in the lower layer in "database" package.
-	resetMocks()
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.DeleteFunc.SetDefaultReturn(nil)
+	users.HardDeleteFunc.SetDefaultReturn(nil)
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, Username: "alice"}, nil
-	}
-	database.Mocks.Users.Delete = func(context.Context, int32) error {
-		return nil
-	}
-	database.Mocks.Users.HardDelete = func(context.Context, int32) error {
-		return nil
-	}
-	database.Mocks.UserEmails.ListByUser = func(context.Context, database.UserEmailsListOptions) ([]*database.UserEmail, error) {
-		return []*database.UserEmail{
-			{Email: "alice@example.com"},
-		}, nil
-	}
-	database.Mocks.ExternalAccounts.List = func(database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
-		return []*extsvc.Account{
-			{
-				AccountSpec: extsvc.AccountSpec{
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.com/",
-					AccountID:   "alice_gitlab",
-				},
+	})
+
+	userEmails := database.NewMockUserEmailsStore()
+	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "alice@example.com"}}, nil)
+
+	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts.ListFunc.SetDefaultReturn(
+		[]*extsvc.Account{{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "https://gitlab.com/",
+				AccountID:   "alice_gitlab",
 			},
-		}, nil
-	}
-	database.Mocks.Authz.RevokeUserPermissions = func(_ context.Context, args *database.RevokeUserPermissionsArgs) error {
+		}},
+		nil,
+	)
+
+	authzStore := database.NewMockAuthzStore()
+	authzStore.RevokeUserPermissionsFunc.SetDefaultHook(func(_ context.Context, args *database.RevokeUserPermissionsArgs) error {
 		if args.UserID != 6 {
 			return errors.Errorf("args.UserID: want 6 but got %v", args.UserID)
 		}
@@ -111,7 +105,13 @@ func TestDeleteUser(t *testing.T) {
 			t.Fatalf("args.Accounts: %v", diff)
 		}
 		return nil
-	}
+	})
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.AuthzFunc.SetDefaultReturn(authzStore)
 
 	tests := []struct {
 		name     string
@@ -121,7 +121,7 @@ func TestDeleteUser(t *testing.T) {
 			name: "soft delete a user",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					deleteUser(user: "VXNlcjo2") {
@@ -143,7 +143,7 @@ func TestDeleteUser(t *testing.T) {
 			name: "hard delete a user",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					deleteUser(user: "VXNlcjo2", hard: true) {

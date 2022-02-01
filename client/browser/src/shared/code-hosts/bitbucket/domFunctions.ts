@@ -106,3 +106,71 @@ export const diffDOMFunctions: DOMFunctions = {
     },
     isFirstCharacterDiffIndicator: () => false,
 }
+
+const newGetDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement => {
+    for (const lineNumberElement of codeView.querySelectorAll<HTMLElement>('.diff-line-number')) {
+        // For unchanged lines, `textContent` will be e.g. ' 4 4 ' (in one element).
+        const lineNumberString = lineNumberElement.textContent?.trim().split(' ')[0]
+        if (!lineNumberString) {
+            continue
+        }
+        const lineNumber = parseInt(lineNumberString, 10)
+        if (!isNaN(lineNumber) && lineNumber === line) {
+            const lineElement = lineNumberElement
+                .closest('tr')
+                ?.querySelector<HTMLElement>(`.diff-line[data-diff-line="${part === 'head' ? 'TO' : 'FROM'}"]`)
+
+            if (!lineElement) {
+                throw new Error('Could not find lineElem from lineNumElem')
+            }
+            return lineElement
+        }
+    }
+
+    throw new Error(`Could not locate line number element for line ${line}, part: ${String(part)}`)
+}
+
+export const newDiffDOMFunctions: DOMFunctions = {
+    getCodeElementFromTarget: target => {
+        const container = target.closest<HTMLElement>('.diff-line')
+        return container
+    },
+    getLineNumberFromCodeElement: codeElement => {
+        const lineNumberElement = codeElement
+            .closest('tr')
+            ?.querySelector<HTMLElement>('.diff-gutter .diff-line-number')
+
+        if (lineNumberElement) {
+            const lineNumber = parseInt((lineNumberElement.textContent || '').trim(), 10)
+            if (!isNaN(lineNumber)) {
+                return lineNumber
+            }
+        }
+
+        throw new Error('Could not find line number element for code element')
+    },
+    getDiffCodePart: codeElement => {
+        const diffLines = codeElement.closest('tr')?.querySelectorAll<HTMLElement>('.diff-line')
+
+        if (!diffLines || diffLines.length === 0) {
+            // Shouldn't happen since `codeElement` should have the .diff-line class.
+            throw new Error('Could not find diff lines for code element')
+        }
+        if (diffLines.length === 1) {
+            return codeElement.classList.contains('added-line') ? 'head' : 'base'
+        }
+
+        const [baseLine, headLine] = diffLines
+        if (codeElement === baseLine) {
+            return 'base'
+        }
+        if (codeElement === headLine) {
+            return 'head'
+        }
+
+        // Fallback: we can use head hovers for unchanged lines from base side.
+        return codeElement.classList.contains('removed-line') ? 'base' : 'head'
+    },
+    getLineElementFromLineNumber: newGetDiffLineElementFromLineNumber,
+    getCodeElementFromLineNumber: newGetDiffLineElementFromLineNumber,
+}

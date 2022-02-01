@@ -10,10 +10,11 @@ import (
 type Operations struct {
 	repoName           *observation.Operation
 	getJVMDependencies *observation.Operation
+	getNPMDependencies *observation.Operation
 }
 
-func NewOperationsMetrics(observationContext *observation.Context) *metrics.OperationMetrics {
-	return metrics.NewOperationMetrics(
+func NewREDMetrics(observationContext *observation.Context) *metrics.REDMetrics {
+	return metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_dbstore",
 		metrics.WithLabels("op"),
@@ -21,7 +22,7 @@ func NewOperationsMetrics(observationContext *observation.Context) *metrics.Oper
 	)
 }
 
-func NewOperationsFromMetrics(observationContext *observation.Context, metrics *metrics.OperationMetrics) *Operations {
+func NewOperations(observationContext *observation.Context, metrics *metrics.REDMetrics) *Operations {
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.dbstore.%s", name),
@@ -33,5 +34,6 @@ func NewOperationsFromMetrics(observationContext *observation.Context, metrics *
 	return &Operations{
 		repoName:           op("RepoName"),
 		getJVMDependencies: op("GetJVMDependencies"),
+		getNPMDependencies: op("GetNPMDependencies"),
 	}
 }

@@ -49,6 +49,29 @@ func NewMockInsightMetadataStore() *MockInsightMetadataStore {
 	}
 }
 
+// NewStrictMockInsightMetadataStore creates a new mock of the
+// InsightMetadataStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockInsightMetadataStore() *MockInsightMetadataStore {
+	return &MockInsightMetadataStore{
+		GetDirtyQueriesFunc: &InsightMetadataStoreGetDirtyQueriesFunc{
+			defaultHook: func(context.Context, *types.InsightSeries) ([]*types.DirtyQuery, error) {
+				panic("unexpected invocation of MockInsightMetadataStore.GetDirtyQueries")
+			},
+		},
+		GetDirtyQueriesAggregatedFunc: &InsightMetadataStoreGetDirtyQueriesAggregatedFunc{
+			defaultHook: func(context.Context, string) ([]*types.DirtyQueryAggregate, error) {
+				panic("unexpected invocation of MockInsightMetadataStore.GetDirtyQueriesAggregated")
+			},
+		},
+		GetMappedFunc: &InsightMetadataStoreGetMappedFunc{
+			defaultHook: func(context.Context, InsightQueryArgs) ([]types.Insight, error) {
+				panic("unexpected invocation of MockInsightMetadataStore.GetMapped")
+			},
+		},
+	}
+}
+
 // NewMockInsightMetadataStoreFrom creates a new mock of the
 // MockInsightMetadataStore interface. All methods delegate to the given
 // implementation, unless overwritten.

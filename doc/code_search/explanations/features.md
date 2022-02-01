@@ -124,10 +124,10 @@ Search contexts help you search the code you care about on Sourcegraph. A search
 
 Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
-**Sourcegraph cloud** currently supports two pre-set search contexts: 
+**Sourcegraph Cloud** currently supports two pre-set search contexts: 
 
-- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph cloud.
-- The global context, `context:global`, which includes all repositories on Sourcegraph cloud.
+- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph Cloud.
+- The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
 
 If no search context is specified, `context:global` is used.
 

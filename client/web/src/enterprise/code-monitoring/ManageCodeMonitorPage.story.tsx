@@ -4,11 +4,10 @@ import React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { AuthenticatedUser } from '../../auth'
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
-import { mockCodeMonitor } from './testing/util'
+import { mockCodeMonitor, mockUser } from './testing/util'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/ManageCodeMonitorPage', module).addParameters({
     design: {
@@ -19,38 +18,35 @@ const { add } = storiesOf('web/enterprise/code-monitoring/ManageCodeMonitorPage'
 })
 
 add('Example', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <ManageCodeMonitorPage
                 {...props}
-                authenticatedUser={{ id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser}
+                authenticatedUser={{ ...mockUser, id: 'foobar', username: 'alice', email: 'alice@alice.com' }}
                 updateCodeMonitor={sinon.fake()}
                 fetchCodeMonitor={sinon.fake((id: string) => of(mockCodeMonitor))}
                 deleteCodeMonitor={sinon.fake((id: string) => NEVER)}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Disabled toggles', () => {
     const monitor = cloneDeep(mockCodeMonitor) // Deep clone so we can manipulate this object
     monitor.node.enabled = false
-    monitor.node.actions.enabled = false
     monitor.node.actions.nodes[0].enabled = false
 
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ManageCodeMonitorPage
                     {...props}
-                    authenticatedUser={
-                        { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser
-                    }
+                    authenticatedUser={{ ...mockUser, id: 'foobar', username: 'alice', email: 'alice@alice.com' }}
                     updateCodeMonitor={sinon.fake()}
                     fetchCodeMonitor={sinon.fake((id: string) => of(monitor))}
                     deleteCodeMonitor={sinon.fake((id: string) => NEVER)}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

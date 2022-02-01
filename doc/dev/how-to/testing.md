@@ -1,6 +1,10 @@
 # Testing
 
-_This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](../background-information/testing_principles.md)"._
+> NOTE: This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](../background-information/testing_principles.md)".
+
+<span class="virtual-br"></span>
+
+> NOTE: To learn more about our CI pipelines where these tests get run, please see "[Buildkite pipelines](../background-information/continuous_integration.md#buildkite-pipelines)".
 
 ## Backend tests
 
@@ -24,16 +28,82 @@ Test coverage from unit tests is tracked in [Codecov](https://codecov.io/gh/sour
 
 [React component snapshot tests](https://jestjs.io/docs/en/tutorial-react) are one way of testing React components. They make it easy to see when changes to a React component result in different output. Snapshots are files at `__snapshots__/MyComponent.test.tsx.snap` relative to the component's file, and they are committed (so that you can see the changes in `git diff` or when reviewing a PR).
 
+A typical snapshot test might look like this:
+
+```tsx
+    it('should render a link when provided with a href', () => {
+        const { asFragment } = render(<SpanOrLink href="https://example.com" />)
+        expect(asFragment()).toMatchSnapshot()
+    })
+```
+
 - See the [React component snapshot tests documentation](https://jestjs.io/docs/en/tutorial-react).
-- See [existing test files that use `react-test-renderer`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+react-test-renderer) for usage examples.
+- See [existing test files that use `React Testing Library`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+testing-library/react) for usage examples.
 - Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `yarn test --updateSnapshot`) to update all snapshot files. Be sure to review the diff!
+
+### Behavior tests
+
+Our behavior tests should simulate a typical user journey **as closely as possible**. We use [testing-library](https://testing-library.com/) to render and interact with our components.
+
+Here is an annotated example of a behavior test:
+
+```tsx
+    it('is possible for the user to update their username', () => {
+        render(<UserProfilePage />)
+
+        // Access the heading using its accessible role and check the DOM textContent
+        expect(screen.getByRole('heading')).toHaveTextContent('User Profile')
+
+        // Access the input using its accessible role and simulate a user typing in the field.
+        userEvent.type(screen.getByRole('textbox'), 'New username')
+
+        // Check the rendered output is correct and visible to the user
+        expect(screen.getByText('Your username is: New username')).toBeVisible()
+    })
+```
+
+Notice how this test doesn't assume anything about `UserProfilePage`. It just checks that it will render a valid heading, input field and some rendered output that can be updated by the user. We could completely refactor this component and, as long as the raw functionality remained the same, the test will still pass.
+
+For more documentation and examples of how to write these tests, please see the [testing-library docs](https://testing-library.com/docs/react-testing-library/intro/).
+
+#### Debugging behavior tests
+
+When running into problems with these tests, we have some useful utilities to help you debug them:
+
+**debug**
+
+This utility method can print the rendered DOM to the console.
+
+```tsx
+    it('this test is causing me problems', () => {
+        render(<UserProfilePage />)
+
+        // Lets print out the rendered output
+        screen.debug()
+    })
+```
+
+**logTestingPlaygroundURL**
+
+This utility method will let you print a URL that will visually render the DOM onto a webpage.
+
+```tsx
+    it('this test is causing me problems', () => {
+        render(<UserProfilePage />)
+
+        // Lets use the visual debugger
+        screen.logTestingPlaygroundURL()
+    })
+```
+
+This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element. 
 
 ## Browser-based tests
 
 Browser-based tests act like a user by opening a browser and clicking, typing, and navigating around in an automated fashion.
 We use [Puppeteer](https://pptr.dev/) to control the browser programmatically, while the test itself runs in the test runner [Mocha](https://mochajs.org/).
 
-We have two kinds of these tests in accordance with our [testing principles in the handbook](https://about.sourcegraph.com/handbook/engineering/testing#testing-pyramid).
+We have two kinds of these tests in accordance with our [testing principles in the handbook](../background-information/testing_principles.md#testing-pyramid).
 Please refer to the handbook for the trade-offs and use cases of each, and find specific instructions on how to run each further below.
 
 ### Debugging browser-based tests
@@ -95,7 +165,7 @@ Some common failure modes:
 - Node was detached from the DOM: components can change the DOM asynchronously, make sure to not rely on element handles.
 - Timing problems: Use `retry()` to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`).
 
-Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](https://about.sourcegraph.com/handbook/engineering/testing#flaky-tests).
+Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](../background-information/testing_principles.md#flaky-tests).
 
 #### Viewing browser-based tests live in CI
 
@@ -128,8 +198,8 @@ Test coverage from integration tests is tracked in [Codecov](https://codecov.io/
 To run integration tests for the web app:
 
 1. Run `yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
-  - Alternatively, `yarn build-web` will only build a bundle once.
-  - If you need to build an Enterprise bundle (to test Enterprise features such as Batch Changes), set `ENTERPRISE=1`
+    - Alternatively, `yarn build-web` will only build a bundle once.
+1. If you need to test Enterprise features such as Batch Changes, set `ENTERPRISE=1` when building.
 1. Run `yarn test-integration` in the repository root to run the tests.
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
@@ -303,6 +373,32 @@ Flakiness in snapshot tests can be caused by the search response time, order of 
 
 This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`. In simple cases, you can simply apply the `percy-hide` CSS class to the problematic element and it will be hidden from Percy.
 
+### Lighthouse tests
+
+We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
+
+
+#### Running the tests locally
+1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true yarn workspace @sourcegraph/web build`
+2. Run the Lighthouse CI tests. `yarn test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
+
+#### Running the tests in CI
+The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
+
+
+### Bundlesize
+
+We measure our generated production build through [Bundlesize](https://github.com/siddharthkp/bundlesize2). This is a tool which takes a series of code bundles and measures their size against a specified baseline. It will also compare against the `main` baseline and report the difference.
+
+**The Bundlesize check failed, what should I do?**
+
+If `Bundlesize` fails, it is likely because one of the generated bundles has gone over the maximum size we have set. This can be due to numerous reasons, to fix this you should check:
+
+1. That you are lazy-loading code where possible.
+2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an NPM dependency.
+
+If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
+
 ## Continuous Integration
 
 The test suite is exercised on every pull request. For the moment CI output
@@ -331,5 +427,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 For testing with a single Docker image, run something like
 
 ```
-IMAGE=sourcegraph/server:3.31.2 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.36.2 ./dev/run-server-image.sh
 ```

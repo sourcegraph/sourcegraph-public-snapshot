@@ -837,8 +837,8 @@ func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 }
 
 func TestScheduleInsertNew(t *testing.T) {
-	repo1 := types.RepoName{ID: 1, Name: "repo1"}
-	repo2 := types.RepoName{ID: 2, Name: "repo2"}
+	repo1 := types.MinimalRepo{ID: 1, Name: "repo1"}
+	repo2 := types.MinimalRepo{ID: 2, Name: "repo2"}
 
 	_, stop := startRecording()
 	defer stop()
@@ -855,13 +855,19 @@ func TestScheduleInsertNew(t *testing.T) {
 
 	// add everything to the scheduler for the distant future.
 	mockTime(defaultTime.Add(time.Hour))
-	s.schedule.insertNew([]types.RepoName{repo1})
+	s.schedule.insertNew([]types.MinimalRepo{repo1})
 	assertFront(repo1.Name)
 
 	// Add including old
 	mockTime(defaultTime)
-	s.schedule.insertNew([]types.RepoName{repo1, repo2})
+	s.schedule.insertNew([]types.MinimalRepo{repo1, repo2})
 	assertFront(repo2.Name)
+}
+
+type mockRandomGenerator struct{}
+
+func (m *mockRandomGenerator) Int63n(n int64) int64 {
+	return n / 2
 }
 
 func TestSchedule_updateInterval(t *testing.T) {
@@ -1030,6 +1036,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 
 			s := NewUpdateScheduler()
 			setupInitialSchedule(s, test.initialSchedule)
+			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			for _, call := range test.updateCalls {
 				mockTime(call.time)
@@ -1420,6 +1427,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			defer func() { requestRepoUpdate = nil }()
 
 			s := NewUpdateScheduler()
+			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			// unbuffer the channel
 			s.updateQueue.notifyEnqueue = make(chan struct{})

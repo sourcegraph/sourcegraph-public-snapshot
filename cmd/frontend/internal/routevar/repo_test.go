@@ -11,10 +11,7 @@ import (
 )
 
 func TestRepoPattern(t *testing.T) {
-	pat, err := regexp.Compile("^" + RepoPattern + "$")
-	if err != nil {
-		t.Fatal(err)
-	}
+	pat := regexp.MustCompile("^" + RepoPattern + "$")
 
 	tests := []struct {
 		input     string
@@ -62,10 +59,7 @@ func TestRepoPattern(t *testing.T) {
 }
 
 func TestRevPattern(t *testing.T) {
-	pat, err := regexp.Compile("^" + RevPattern + "$")
-	if err != nil {
-		t.Fatal(err)
-	}
+	pat := regexp.MustCompile("^" + RevPattern + "$")
 
 	tests := []struct {
 		input     string

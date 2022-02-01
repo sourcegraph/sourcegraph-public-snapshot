@@ -3,6 +3,7 @@ package oobmigration
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -27,6 +28,8 @@ type Migration struct {
 	NonDestructive bool
 	ApplyReverse   bool
 	Errors         []MigrationError
+	// Metadata can be used to store custom JSON data
+	Metadata json.RawMessage
 }
 
 // Complete returns true if the migration has 0 un-migrated record in whichever
@@ -77,6 +80,7 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 			&value.LastUpdated,
 			&value.NonDestructive,
 			&value.ApplyReverse,
+			&value.Metadata,
 			&dbutil.NullString{S: &message},
 			&created,
 		); err != nil {
@@ -169,6 +173,7 @@ SELECT
 	m.last_updated,
 	m.non_destructive,
 	m.apply_reverse,
+	m.metadata,
 	e.message,
 	e.created
 FROM out_of_band_migrations m
@@ -211,6 +216,7 @@ SELECT
 	m.last_updated,
 	m.non_destructive,
 	m.apply_reverse,
+	m.metadata,
 	e.message,
 	e.created
 FROM out_of_band_migrations m
@@ -241,6 +247,20 @@ func (s *Store) updateProgress(ctx context.Context, id int, progress float64, no
 const updateProgressQuery = `
 -- source: internal/oobmigration/store.go:UpdateProgress
 UPDATE out_of_band_migrations SET progress = %s, last_updated = %s WHERE id = %s AND progress != %s
+`
+
+// UpdateMetadata updates the metadata for the given migration.
+func (s *Store) UpdateMetadata(ctx context.Context, id int, meta json.RawMessage) error {
+	return s.updateMetadata(ctx, id, meta, time.Now())
+}
+
+func (s *Store) updateMetadata(ctx context.Context, id int, meta json.RawMessage, now time.Time) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(updateMetadataQuery, meta, now, id, meta))
+}
+
+const updateMetadataQuery = `
+-- source: internal/oobmigration/store.go:UpdateProgress
+UPDATE out_of_band_migrations SET metadata = %s, last_updated = %s WHERE id = %s AND metadata != %s
 `
 
 // MaxMigrationErrors is the maximum number of errors we'll track for a single migration before

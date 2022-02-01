@@ -2,7 +2,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { NEVER, of } from 'rxjs'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'

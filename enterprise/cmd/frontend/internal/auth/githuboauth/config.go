@@ -5,14 +5,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Init(db dbutil.DB) {
+func Init(db database.DB) {
 	const pkgName = "githuboauth"
-	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
-		_, problems := parseConfig(&cfg, db)
+	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
+		_, problems := parseConfig(cfg, db)
 		return problems
 	})
 	go func() {
@@ -36,8 +37,8 @@ type Provider struct {
 	providers.Provider
 }
 
-func parseConfig(cfg *conf.Unified, db dbutil.DB) (ps []Provider, problems conf.Problems) {
-	for _, pr := range cfg.AuthProviders {
+func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
+	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Github == nil {
 			continue
 		}

@@ -1,25 +1,28 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
+import { fromEvent } from 'rxjs'
+import { finalize, tap } from 'rxjs/operators'
 
+import { isErrorLike } from '@sourcegraph/common'
+import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage, AlertProps } from '@sourcegraph/wildcard'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
 import styles from './WebHoverOverlay.module.scss'
 
-const iconKindToAlertKind = {
+const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
     [NotificationType.Info]: 'secondary',
     [NotificationType.Error]: 'danger',
     [NotificationType.Warning]: 'warning',
 }
 
-const getAlertClassName: HoverOverlayProps['getAlertClassName'] = iconKind =>
-    `alert alert-${iconKindToAlertKind[iconKind]}`
+const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverThresholdProps> = props => {
+export const WebHoverOverlay: React.FunctionComponent<
+    HoverOverlayProps & HoverThresholdProps & { hoveredTokenElement?: HTMLElement; nav?: (url: string) => void }
+> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
@@ -50,15 +53,58 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
         }
     }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
 
+    useEffect(() => {
+        const token = props.hoveredTokenElement
+
+        const definitionAction =
+            Array.isArray(props.actionsOrError) &&
+            props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
+
+        const referenceAction =
+            Array.isArray(props.actionsOrError) &&
+            props.actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
+
+        const action = definitionAction || referenceAction
+        if (!action) {
+            return undefined
+        }
+        const url = urlForClientCommandOpen(action.action, props.location.hash)
+
+        if (!token || !url || !props.nav) {
+            return
+        }
+
+        const nav = props.nav
+
+        const oldCursor = token.style.cursor
+        token.style.cursor = 'pointer'
+
+        const subscription = fromEvent(token, 'click')
+            .pipe(
+                tap(() => {
+                    const selection = window.getSelection()
+                    if (selection !== null && selection.toString() !== '') {
+                        return
+                    }
+
+                    const actionType = action === definitionAction ? 'definition' : 'reference'
+                    props.telemetryService.log(`${actionType}HoverOverlay.click`)
+                    nav(url)
+                }),
+                finalize(() => (token.style.cursor = oldCursor))
+            )
+            .subscribe()
+
+        return () => subscription.unsubscribe()
+    }, [props.actionsOrError, props.hoveredTokenElement, props.location.hash, props.nav, props.telemetryService])
+
     return (
         <HoverOverlay
             {...propsToUse}
-            className={classNames('card', styles.webHoverOverlay)}
-            closeButtonClassName={classNames('btn btn-icon', styles.webHoverOverlayCloseButton)}
+            className={styles.webHoverOverlay}
             actionItemClassName="btn btn-sm btn-secondary border-0"
-            badgeClassName="badge badge-sm badge-secondary"
             onAlertDismissed={onAlertDismissed}
-            getAlertClassName={getAlertClassName}
+            getAlertVariant={getAlertVariant}
         />
     )
 }

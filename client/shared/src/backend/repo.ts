@@ -1,9 +1,10 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '../graphql/graphql'
-import * as GQL from '../graphql/schema'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+
 import { PlatformContext } from '../platform/context'
+import * as GQL from '../schema'
 import { memoizeObservable } from '../util/memoizeObservable'
 import { RepoSpec } from '../util/url'
 

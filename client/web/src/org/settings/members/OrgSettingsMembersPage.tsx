@@ -1,18 +1,18 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Container, PageHeader, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { queryGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { OrgAreaOrganizationFields } from '../../../graphql-operations'
@@ -22,21 +22,29 @@ import { OrgAreaPageProps } from '../../area/OrgArea'
 import { removeUserFromOrganization } from '../../backend'
 
 import { InviteForm } from './InviteForm'
+import styles from './OrgSettingsMembersPage.module.scss'
 
 interface UserNodeProps {
     /** The user to display in this list item. */
     node: GQL.IUser
 
     /** The organization being displayed. */
-    org: OrgAreaOrganizationFields
+    org: OrgAreaOrganization
 
     /** The currently authenticated user. */
     authenticatedUser: AuthenticatedUser | null
 
     /** Called when the user is updated by an action in this list item. */
-    onDidUpdate?: () => void
+    onDidUpdate?: (didRemoveSelf: boolean) => void
+    onRemoveOnlyMember?: () => void
     history: H.History
 }
+
+interface HasOneMember {
+    hasOneMember: boolean
+}
+
+type OrgAreaOrganization = OrgAreaOrganizationFields & HasOneMember
 
 interface UserNodeState {
     /** Undefined means in progress, null means done or not started. */
@@ -59,18 +67,24 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
         this.subscriptions.add(
             this.removes
                 .pipe(
-                    filter(() =>
-                        window.confirm(
+                    filter(() => {
+                        if (this.props.org.hasOneMember) {
+                            if (this.props.onRemoveOnlyMember) {
+                                this.props.onRemoveOnlyMember()
+                            }
+                            return false
+                        }
+                        return window.confirm(
                             this.isSelf ? 'Leave the organization?' : `Remove the user ${this.props.node.username}?`
                         )
-                    ),
+                    }),
                     switchMap(() =>
                         removeUserFromOrganization({ user: this.props.node.id, organization: this.props.org.id }).pipe(
                             catchError(error => [asError(error)]),
                             map(removalOrError => ({ removalOrError: removalOrError || null })),
                             tap(() => {
                                 if (this.props.onDidUpdate) {
-                                    this.props.onDidUpdate()
+                                    this.props.onDidUpdate(this.isSelf)
                                 }
                             }),
                             startWith<Pick<UserNodeState, 'removalOrError'>>({ removalOrError: undefined })
@@ -93,7 +107,10 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public render(): JSX.Element | null {
         const loading = this.state.removalOrError === undefined
         return (
-            <li className="user-node__container list-group-item" data-test-username={this.props.node.username}>
+            <li
+                className={classNames(styles.container, 'list-group-item')}
+                data-test-username={this.props.node.username}
+            >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <Link to={userURL(this.props.node.username)}>
@@ -108,14 +125,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     </div>
                     <div className="site-admin-detail-list__actions">
                         {this.props.authenticatedUser && this.props.org.viewerCanAdminister && (
-                            <button
-                                type="button"
-                                className="btn btn-secondary btn-sm site-admin-detail-list__action test-remove-org-member"
+                            <Button
+                                className="site-admin-detail-list__action test-remove-org-member"
                                 onClick={this.remove}
                                 disabled={loading}
+                                variant="secondary"
+                                size="sm"
                             >
                                 {this.isSelf ? 'Leave organization' : 'Remove from organization'}
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -133,13 +151,17 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     history: H.History
 }
 
-interface State {
+interface State extends HasOneMember {
     /**
      * Whether the viewer can administer this org. This is updated whenever a member is added or removed, so that
      * we can detect if the currently authenticated user is no longer able to administer the org (e.g., because
      * they removed themselves and they are not a site admin).
      */
     viewerCanAdminister: boolean
+    /**
+     * Whether the viewer is the only org member (and cannot delete their membership)
+     */
+    onlyMemberRemovalAttempted: boolean
 }
 
 /**
@@ -152,7 +174,11 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = { viewerCanAdminister: props.org.viewerCanAdminister }
+        this.state = {
+            viewerCanAdminister: props.org.viewerCanAdminister,
+            hasOneMember: false,
+            onlyMemberRemovalAttempted: false,
+        }
     }
 
     public componentDidMount(): void {
@@ -181,9 +207,15 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const nodeProps: Omit<UserNodeProps, 'node'> = {
-            org: { ...this.props.org, viewerCanAdminister: this.state.viewerCanAdminister },
+            org: {
+                ...this.props.org,
+                viewerCanAdminister: this.state.viewerCanAdminister,
+                hasOneMember: this.state.hasOneMember,
+            },
             authenticatedUser: this.props.authenticatedUser,
             onDidUpdate: this.onDidUpdateUser,
+            onRemoveOnlyMember: () => this.setState({ onlyMemberRemovalAttempted: true }),
+
             history: this.props.history,
         }
 
@@ -192,6 +224,9 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                 <PageTitle title={`Members - ${this.props.org.name}`} />
                 <PageHeader path={[{ text: 'Organization members' }]} headingElement="h2" className="mb-3" />
                 <Container>
+                    {this.state.onlyMemberRemovalAttempted && (
+                        <Alert variant="warning">You can’t remove the only member of an organization</Alert>
+                    )}
                     {this.state.viewerCanAdminister && (
                         <InviteForm
                             orgID={this.props.org.id}
@@ -218,7 +253,13 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidUpdateUser = (): void => this.userUpdates.next()
+    private onDidUpdateUser = (didRemoveSelf: boolean): void => {
+        if (didRemoveSelf) {
+            this.props.history.push('/user/settings')
+            return
+        }
+        this.userUpdates.next()
+    }
 
     private onDidUpdateOrganizationMembers = (): void => this.userUpdates.next()
 
@@ -246,15 +287,19 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
-                    this.setState({ viewerCanAdminister: false })
+                    this.setState({ viewerCanAdminister: false, hasOneMember: false })
                     throw createAggregateError(errors)
                 }
                 const org = data.node as GQL.IOrg
                 if (!org.members) {
-                    this.setState({ viewerCanAdminister: false })
+                    this.setState({ viewerCanAdminister: false, hasOneMember: false })
                     throw createAggregateError(errors)
                 }
-                this.setState({ viewerCanAdminister: org.viewerCanAdminister })
+                this.setState({
+                    viewerCanAdminister: org.viewerCanAdminister,
+                    hasOneMember: org.members.totalCount === 1,
+                    onlyMemberRemovalAttempted: false,
+                })
                 return org.members
             })
         )

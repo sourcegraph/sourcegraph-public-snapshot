@@ -4,7 +4,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 
 import { WebStory } from '../components/WebStory'
-import { ThemePreference } from '../theme'
+import { ThemePreference } from '../stores/themeState'
 
 import { UserNavItem } from './UserNavItem'
 
@@ -21,8 +21,6 @@ add(
                     {...webProps}
                     testIsOpen={true}
                     showRepositorySection={true}
-                    showSearchContext={true}
-                    showSearchContextManagement={true}
                     authenticatedUser={{
                         username: 'alice',
                         displayName: 'alice doe',
@@ -78,8 +76,6 @@ add(
                     {...webProps}
                     testIsOpen={true}
                     showRepositorySection={true}
-                    showSearchContext={true}
-                    showSearchContextManagement={true}
                     authenticatedUser={{
                         username: 'alice',
                         displayName: 'alice doe',

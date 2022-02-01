@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -94,7 +93,7 @@ func TestExtractCloneURL(t *testing.T) {
 				database.Mocks.ExternalServices.List = nil
 			})
 
-			have, err := extractCloneURL(context.Background(), &database.ExternalServiceStore{}, repo)
+			have, err := extractCloneURL(context.Background(), database.ExternalServices(nil), repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -186,7 +185,7 @@ func TestLoadExternalService(t *testing.T) {
 	})
 
 	// Expect the newest public external service with a token to be returned.
-	svc, err := loadExternalService(ctx, &database.ExternalServiceStore{}, database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
+	svc, err := loadExternalService(ctx, database.ExternalServices(nil), database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
@@ -197,7 +196,7 @@ func TestLoadExternalService(t *testing.T) {
 	// Now delete the global external services and expect the user owned external service to be returned.
 	delete(repo.Sources, withTokenNewer.URN())
 	delete(repo.Sources, withToken.URN())
-	svc, err = loadExternalService(ctx, &database.ExternalServiceStore{}, database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
+	svc, err = loadExternalService(ctx, database.ExternalServices(nil), database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
@@ -530,7 +529,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				database.Mocks.ExternalServices.List = nil
 			})
 
-			havePushConfig, haveErr := gitserverPushConfig(context.Background(), database.ExternalServices(&dbtesting.MockDB{}), repo, tt.authenticator)
+			havePushConfig, haveErr := gitserverPushConfig(context.Background(), database.ExternalServices(database.NewDB(nil)), repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}

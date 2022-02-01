@@ -6,16 +6,23 @@ import (
 	"math"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 var updateGolden = flag.Bool("update", false, "Updastdata goldens")
 
 func TestSearchProgress(t *testing.T) {
-	var timedout100 []Namer
-	for i := 0; i < 100; i++ {
-		r := repo{fmt.Sprintf("timedout-%d", i)}
-		timedout100 = append(timedout100, r)
+	namer := func(ids []api.RepoID) (names []api.RepoName) {
+		for _, id := range ids {
+			names = append(names, api.RepoName(fmt.Sprintf("repo-%d", id)))
+		}
+		return names
+	}
+
+	var timedout100 []api.RepoID
+	for id := api.RepoID(1); id <= 100; id++ {
+		timedout100 = append(timedout100, id)
 	}
 	cases := map[string]ProgressStats{
 		"empty": {},
@@ -40,9 +47,9 @@ func TestSearchProgress(t *testing.T) {
 			RepositoriesCount:   intPtr(5),
 			ExcludedArchived:    1,
 			ExcludedForks:       5,
-			Timedout:            []Namer{repo{"timedout-1"}},
-			Missing:             []Namer{repo{"missing-1"}, repo{"missing-2"}},
-			Cloning:             []Namer{repo{"cloning-1"}},
+			Timedout:            []api.RepoID{1},
+			Missing:             []api.RepoID{2, 3},
+			Cloning:             []api.RepoID{4},
 			LimitHit:            true,
 			SuggestedLimit:      1000,
 			DisplayLimit:        math.MaxInt32,
@@ -54,7 +61,7 @@ func TestSearchProgress(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := BuildProgressEvent(c)
+			got := BuildProgressEvent(c, namer)
 			got.DurationMs = 0 // clear out non-deterministic field
 			testutil.AssertGolden(t, "testdata/golden/"+t.Name()+".json", *updateGolden, got)
 		})
@@ -83,14 +90,6 @@ func TestNumber(t *testing.T) {
 			t.Errorf("number(%d) got %q want %q", n, got, want)
 		}
 	}
-}
-
-type repo struct {
-	name string
-}
-
-func (r repo) Name() string {
-	return r.name
 }
 
 func intPtr(i int) *int {

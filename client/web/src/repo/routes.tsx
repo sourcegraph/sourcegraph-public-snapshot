@@ -1,8 +1,10 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
     appendLineRangeQueryParameter,
     isLegacyFragment,
@@ -12,10 +14,13 @@ import {
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
-import { Settings } from '../schema/settings.schema'
-import { lazyComponent } from '../util/lazyComponent'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { OnboardingTourInfo } from '../onboarding-tour/OnboardingTourInfo'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
+import { InstallIntegrationsAlert } from './actions/InstallIntegrationsAlert'
+import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
+import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
@@ -49,7 +54,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec+',
         render: context => (
-            <div className="repo-revision-container">
+            <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCommitPage {...context} />
                 </RepositoryGitDataContainer>
@@ -60,7 +65,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     location={context.location}
                     telemetryService={context.telemetryService}
                 />
-            </div>
+            </RepoRevisionWrapper>
         ),
     },
     {
@@ -82,7 +87,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/compare/:spec*',
         render: context => (
-            <div className="repo-revision-container">
+            <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
@@ -93,7 +98,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     location={context.location}
                     telemetryService={context.telemetryService}
                 />
-            </div>
+            </RepoRevisionWrapper>
         ),
     },
     {
@@ -125,14 +130,12 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             repo,
             resolvedRev: { commitID, defaultBranch },
             match,
-            patternType,
-            setPatternType,
-            caseSensitive,
-            setCaseSensitivity,
-            versionContext,
             globbing,
+            featureFlags,
+            onExtensionAlertDismissed,
             ...context
-        }: RepoRevisionContainerContext &
+        }: FeatureFlagProps &
+            RepoRevisionContainerContext &
             RouteComponentProps<{
                 objectType: 'blob' | 'tree' | undefined
                 filePath: string | undefined
@@ -141,7 +144,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             // See https://github.com/sourcegraph/sourcegraph/issues/4408
             // and https://github.com/ReactTraining/history/issues/505
             const filePath = decodeURIComponent(match.params.filePath || '') // empty string is root
-
             // Redirect tree and blob routes pointing to the root to the repo page
             if (match.params.objectType && filePath.replace(/\/+$/g, '') === '') {
                 return <Redirect to={toRepoURL({ repoName: repo.name, revision: context.revision })} />
@@ -150,6 +152,9 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
 
             const mode = getModeFromPath(filePath)
+
+            const showOnboardingTour =
+                context.isSourcegraphDotCom && !context.authenticatedUser && featureFlags.get('getting-started-tour')
 
             // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
             const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)
@@ -182,14 +187,13 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             const repoRevisionProps = {
                 commitID,
                 filePath,
-                patternType,
-                setPatternType,
-                caseSensitive,
-                setCaseSensitivity,
-                versionContext,
                 globbing,
             }
 
+            const codeHostIntegrationMessaging: 'native-integration' | 'browser-extension' =
+                (!isErrorLike(context.settingsCascade.final) &&
+                    context.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+                'browser-extension'
             return (
                 <>
                     <RepoRevisionSidebar
@@ -200,28 +204,39 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                         className="repo-revision-container__sidebar"
                         isDir={objectType === 'tree'}
                         defaultBranch={defaultBranch || 'HEAD'}
+                        showOnboardingTour={showOnboardingTour}
                     />
                     {!hideRepoRevisionContent && (
                         // Add `.blob-status-bar__container` because this is the
                         // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
-                        <div className="repo-revision-container__content blob-status-bar__container">
+                        <BlobStatusBarContainer>
+                            {showOnboardingTour && <OnboardingTourInfo className="mr-3 mb-3" />}
                             <ErrorBoundary location={context.location}>
                                 {objectType === 'blob' ? (
-                                    <BlobPage
-                                        {...context}
-                                        {...repoRevisionProps}
-                                        repoID={repo.id}
-                                        repoName={repo.name}
-                                        mode={mode}
-                                        repoHeaderContributionsLifecycleProps={
-                                            context.repoHeaderContributionsLifecycleProps
-                                        }
-                                    />
+                                    <>
+                                        <InstallIntegrationsAlert
+                                            codeHostIntegrationMessaging={codeHostIntegrationMessaging}
+                                            externalURLs={repo.externalURLs}
+                                            className=""
+                                            onExtensionAlertDismissed={onExtensionAlertDismissed}
+                                        />
+                                        <BlobPage
+                                            {...context}
+                                            {...repoRevisionProps}
+                                            repoID={repo.id}
+                                            repoName={repo.name}
+                                            repoUrl={repo.url}
+                                            mode={mode}
+                                            repoHeaderContributionsLifecycleProps={
+                                                context.repoHeaderContributionsLifecycleProps
+                                            }
+                                        />
+                                    </>
                                 ) : (
                                     <TreePage {...context} {...repoRevisionProps} repo={repo} />
                                 )}
                             </ErrorBoundary>
-                        </div>
+                        </BlobStatusBarContainer>
                     )}
                     <ActionItemsBar
                         useActionItemsBar={context.useActionItemsBar}
@@ -266,7 +281,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             useBreadcrumb,
             setBreadcrumb,
             settingsCascade,
-            versionContext,
             repo,
             history,
             location,
@@ -290,7 +304,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     useBreadcrumb={useBreadcrumb}
                     setBreadcrumb={setBreadcrumb}
                     settingsCascade={settingsCascade}
-                    versionContext={versionContext}
                     repo={repo}
                     history={history}
                     location={location}

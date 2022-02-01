@@ -100,7 +100,7 @@ Hover results are attached to ranges or result sets via a _textDocument/hover_ e
 {"id": "15", "type": "edge", "label": "textDocument/hover", "outV": "11", "inV": "14"}
 ```
 
-The `contents` property of a hover result is composed of a list of segments which are formatted independently then concatenated. If a segment is a bare string, it is rendered as markdown. If it is a object indicating a language and a value, it will be formatted as code and highlighted based on the language identifier.
+The `contents` property of a hover result is composed of a list of segments which are formatted independently then concatenated. If a segment is a bare string, it is rendered as markdown. If it is an object indicating a language and a value, it will be formatted as code and highlighted based on the language identifier.
 
 Using result sets, our LSIF output can now be visualized as follows, and the hover text is now (indirectly) attached to both the definition and reference ranges defined earlier.
 
@@ -130,7 +130,7 @@ Finally, we fill out the relationships in the opposite direction. The definition
 {"id": "22", "type": "edge", "label": "item", "outV": "18", "inVs": ["5"], "document": "3", "property": "references"}
 ```
 
-Each item edge has a _document_ property that specifies the document that contains **all** of the `inVs` ranges. In cases where multiple ranges reference the same definiton from separate documents, multiple _item_ edges are necessary.
+Each item edge has a _document_ property that specifies the document that contains **all** of the `inVs` ranges. In cases where multiple ranges reference the same definition from separate documents, multiple _item_ edges are necessary.
 
 Our LSIF output can now be visualized as follows.
 
@@ -164,9 +164,9 @@ func constructMarkedString(s, comments, extra string) ([]protocol.MarkedString, 
 
 The call `doc.ToMarkdown(...)` refers to a function defined in a remote package. In order to support a remote jump-to-definition operation (assuming that the remote package has also been indexed), we need to give the definition a stable name that will be the same in both indexes, and we need to emit enough information to determine _in what remote index_ the definition lives.
 
-We create a _moniker_ vertex with a kind property specifying the direction of dependency (`import` for a remote definition and `export` for a definition that can be _used_ remotely in other indexes), a scheme property that indicates the source of the moniker, and an identifier property. Moniker identifiers should be unique within the specified scheme in a single LSIF index (such that a two monikers with the same scheme and identifier should refer to the same symbol), but is not necessarily unique across indexes.
+We create a _moniker_ vertex with a kind property specifying the direction of dependency (`import` for a remote definition and `export` for a definition that can be _used_ remotely in other indexes), a scheme property that indicates the source of the moniker, and an identifier property. Moniker identifiers should be unique within the specified scheme in a single LSIF index (such that two monikers with the same scheme and identifier should refer to the same symbol), but is not necessarily unique across indexes.
 
-We also create a _packageInformation_ vertex that specifies name, manager, and version properties. The value of the name and value properties should refer to the package dependency (in the case of an import moniker), or should refer to the package being provided by the project/document being indexed (in the case of an export moniker). The value fo the manager property should be the name of the package management system (e.g. npm, gomod, pip) providing the package.
+We also create a _packageInformation_ vertex that specifies name, manager, and version properties. The value of the name and value properties should refer to the package dependency (in the case of an import moniker), or should refer to the package being provided by the project/document being indexed (in the case of an export moniker). The value for the manager property should be the name of the package management system (e.g. npm, gomod, pip) providing the package.
 
 Monikers are attached to ranges or result sets via a _moniker_ edge, and package information vertices are attached to moniker vertices via a _packageInformation_ edge, as follows.
 
@@ -192,7 +192,7 @@ As an illustrative example, we suppose that the first pass of lsif-go outputs mo
 {"id": "3", "type": "edge", "label": "moniker", "outV": "1", "inV": "2"}
 ```
 
-The second pass then reads each moniker from the first pass, correlates the package from the moniker identifier, and outputs a _second_ moniker correlated with package information. Monikers can be attached to other monikers via a _nextMoniker_ edge. This forms a chain of monikers, each of which are atached (indirectly) to a range or set of ranges.
+The second pass then reads each moniker from the first pass, correlates the package from the moniker identifier, and outputs a _second_ moniker correlated with package information. Monikers can be attached to other monikers via a _nextMoniker_ edge. This forms a chain of monikers, each of which are attached (indirectly) to a range or set of ranges.
 
 ```json
 {"id": "100", "type": "vertex", "label": "moniker", "kind": "import", "scheme": "gomod", "identifier": "github.com/slimsag/godocmd:ToMarkdown"}

@@ -3,6 +3,8 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useState } from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import styles from './Collapsible.module.scss'
 
 interface Props {
@@ -89,13 +91,8 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                 )}
             >
                 {titleAtStart && titleNode}
-                <button
-                    type="button"
-                    className={classNames(
-                        'd-flex btn btn-icon',
-                        styles.expandBtn,
-                        wholeTitleClickable && 'stretched-link'
-                    )}
+                <Button
+                    className={classNames('d-flex btn-icon', styles.expandBtn, wholeTitleClickable && 'stretched-link')}
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >
@@ -104,7 +101,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     ) : (
                         <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                     )}
-                </button>
+                </Button>
                 {!titleAtStart && titleNode}
             </div>
             {isExpanded && children}

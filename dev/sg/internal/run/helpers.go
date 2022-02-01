@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
@@ -44,4 +45,8 @@ func BashInRoot(ctx context.Context, cmd string, env []string) (string, error) {
 	c := exec.CommandContext(ctx, "bash", "-c", cmd)
 	c.Env = env
 	return InRoot(c)
+}
+
+func TrimResult(s string, err error) (string, error) {
+	return strings.TrimSpace(s), err
 }

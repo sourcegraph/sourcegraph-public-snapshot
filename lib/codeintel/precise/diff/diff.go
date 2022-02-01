@@ -220,45 +220,56 @@ func diffLocations(builder *strings.Builder, old, new []precise.LocationData, pr
 
 func diffMonikers(
 	builder *strings.Builder,
-	old, new map[string]map[string][]precise.LocationData,
+	old, new map[string]map[string]map[string][]precise.LocationData,
 	prefix string,
 ) {
-	type schemeID struct {
+	type kindSchemeID struct {
+		kind   string
 		scheme string
 		id     string
 	}
-	schemeIDSet := make(map[schemeID]struct{})
-	for scheme, ids := range old {
-		for id := range ids {
-			schemeIDSet[schemeID{scheme: scheme, id: id}] = struct{}{}
+	kindSchemeIDSet := make(map[kindSchemeID]struct{})
+	for kind, schemeIds := range old {
+		for scheme, ids := range schemeIds {
+			for id := range ids {
+				kindSchemeIDSet[kindSchemeID{kind: kind, scheme: scheme, id: id}] = struct{}{}
+			}
 		}
 	}
-	for scheme, ids := range new {
-		for id := range ids {
-			schemeIDSet[schemeID{scheme: scheme, id: id}] = struct{}{}
+	for kind, schemeIds := range new {
+		for scheme, ids := range schemeIds {
+			for id := range ids {
+				kindSchemeIDSet[kindSchemeID{kind: kind, scheme: scheme, id: id}] = struct{}{}
+			}
 		}
 	}
 
-	var sortedSchemeIDs []schemeID
-	for schemeID := range schemeIDSet {
-		sortedSchemeIDs = append(sortedSchemeIDs, schemeID)
+	var sortedKindSchemeIDs []kindSchemeID
+	for schemeID := range kindSchemeIDSet {
+		sortedKindSchemeIDs = append(sortedKindSchemeIDs, schemeID)
 	}
-	sort.Slice(sortedSchemeIDs, func(i, j int) bool {
-		if sortedSchemeIDs[i].scheme < sortedSchemeIDs[j].scheme {
+	sort.Slice(sortedKindSchemeIDs, func(i, j int) bool {
+		if sortedKindSchemeIDs[i].kind < sortedKindSchemeIDs[j].kind {
 			return true
 		}
-		if sortedSchemeIDs[i].scheme > sortedSchemeIDs[j].scheme {
+		if sortedKindSchemeIDs[i].kind > sortedKindSchemeIDs[j].kind {
 			return false
 		}
-		return sortedSchemeIDs[i].id < sortedSchemeIDs[j].id
+		if sortedKindSchemeIDs[i].scheme < sortedKindSchemeIDs[j].scheme {
+			return true
+		}
+		if sortedKindSchemeIDs[i].scheme > sortedKindSchemeIDs[j].scheme {
+			return false
+		}
+		return sortedKindSchemeIDs[i].id < sortedKindSchemeIDs[j].id
 	})
 
-	for _, schemeID := range sortedSchemeIDs {
+	for _, kindSchemeID := range sortedKindSchemeIDs {
 		diffLocations(
 			builder,
-			old[schemeID.scheme][schemeID.id],
-			new[schemeID.scheme][schemeID.id],
-			fmt.Sprintf("%v%v:%v -> ", prefix, schemeID.scheme, schemeID.id),
+			old[kindSchemeID.kind][kindSchemeID.scheme][kindSchemeID.id],
+			new[kindSchemeID.kind][kindSchemeID.scheme][kindSchemeID.id],
+			fmt.Sprintf("%v%v:%v:%v -> ", prefix, kindSchemeID.kind, kindSchemeID.scheme, kindSchemeID.id),
 		)
 	}
 }

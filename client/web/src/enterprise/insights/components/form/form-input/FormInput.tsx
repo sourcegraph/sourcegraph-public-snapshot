@@ -1,16 +1,17 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-import { useAutoFocus } from '@sourcegraph/wildcard'
+import { useAutoFocus, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import styles from './FormInput.module.scss'
-import { ForwardReferenceComponent } from './types'
 
 interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'title'> {
     /** Title of input. */
     title?: ReactNode
+
+    subtitle?: ReactNode
     /** Description block for field. */
     description?: ReactNode
     /** Custom class name for root label element. */
@@ -39,6 +40,7 @@ const FormInput = forwardRef((props, reference) => {
         as: Component = 'input',
         type = 'text',
         title,
+        subtitle,
         description,
         className,
         inputClassName,
@@ -57,19 +59,21 @@ const FormInput = forwardRef((props, reference) => {
     useAutoFocus({ autoFocus, reference: localReference })
 
     return (
-        <label className={classnames('w-100', className)}>
+        <label className={classNames('w-100', className)}>
             {title && <div className="mb-2">{title}</div>}
+
+            {subtitle}
 
             <LoaderInput className="d-flex" loading={loading}>
                 <Component
                     type={type}
-                    className={classnames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
+                    className={classNames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
                         'is-valid': valid,
                         'is-invalid': !!error || errorInputState,
                     })}
                     {...otherProps}
-                    autoFocus={autoFocus}
                     ref={mergedReference}
+                    autoFocus={autoFocus}
                 />
 
                 {inputSymbol}
@@ -81,7 +85,7 @@ const FormInput = forwardRef((props, reference) => {
                 </small>
             )}
             {!error && description && (
-                <small className={classnames('text-muted', 'form-text', styles.description)}>{description}</small>
+                <small className={classNames('text-muted', 'form-text', styles.description)}>{description}</small>
             )}
         </label>
     )

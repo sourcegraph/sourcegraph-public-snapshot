@@ -107,7 +107,7 @@ func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
 		}
 	}
 
-	return workerutil.NewMetrics(observationContext, "repo_updater_external_service_syncer", nil)
+	return workerutil.NewMetrics(observationContext, "repo_updater_external_service_syncer")
 }
 
 func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {

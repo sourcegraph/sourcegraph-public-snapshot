@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/awskms"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cache"
@@ -51,8 +52,8 @@ func Init(ctx context.Context) error {
 		mu.Unlock()
 	}
 
-	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
-		if _, err := NewRing(ctx, cfg.EncryptionKeys); err != nil {
+	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
+		if _, err := NewRing(ctx, cfg.SiteConfig().EncryptionKeys); err != nil {
 			return conf.Problems{conf.NewSiteProblem(fmt.Sprintf("Invalid encryption.keys config: %s", err))}
 		}
 		return nil
@@ -106,6 +107,13 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 		}
 	}
 
+	if keyConfig.WebhookLogKey != nil {
+		r.WebhookLogKey, err = NewKey(ctx, keyConfig.WebhookLogKey, keyConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &r, nil
 }
 
@@ -113,6 +121,7 @@ type Ring struct {
 	BatchChangesCredentialKey encryption.Key
 	ExternalServiceKey        encryption.Key
 	UserExternalAccountKey    encryption.Key
+	WebhookLogKey             encryption.Key
 }
 
 func NewKey(ctx context.Context, k *schema.EncryptionKey, config *schema.EncryptionKeys) (encryption.Key, error) {

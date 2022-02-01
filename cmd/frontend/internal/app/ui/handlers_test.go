@@ -18,12 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
@@ -38,7 +36,11 @@ func TestRedirects(t *testing.T) {
 	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation, userAgent string) {
 		t.Helper()
 
-		db := new(dbtesting.MockDB)
+		gss := database.NewMockGlobalStateStore()
+		gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+
+		db := database.NewMockDB()
+		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		InitRouter(db, nil)
 		rw := httptest.NewRecorder()
@@ -119,17 +121,17 @@ func TestNewCommon_repo_error(t *testing.T) {
 		code int
 	}{{
 		name: "cloning",
-		err:  &vcs.RepoNotExistError{CloneInProgress: true},
+		err:  &gitdomain.RepoNotExistError{CloneInProgress: true},
 		code: 200,
 	}, {
 		name: "repo-404",
-		err:  &vcs.RepoNotExistError{Repo: "repo-404"},
+		err:  &gitdomain.RepoNotExistError{Repo: "repo-404"},
 		want: "repository does not exist: repo-404",
 		code: 404,
 	}, {
 		name: "rev-404",
 		rev:  "@marco",
-		err:  &gitserver.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
+		err:  &gitdomain.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
 		want: "revision not found: rev-404@marco",
 		code: 404,
 	}, {
@@ -170,12 +172,18 @@ func TestNewCommon_repo_error(t *testing.T) {
 
 			code := 200
 			got := ""
-			serveError := func(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
+			serveError := func(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int) {
 				got = err.Error()
 				code = statusCode
 			}
 
-			_, err = newCommon(httptest.NewRecorder(), req, "test", index, serveError)
+			gss := database.NewMockGlobalStateStore()
+			gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+
+			db := database.NewMockDB()
+			db.GlobalStateFunc.SetDefaultReturn(gss)
+
+			_, err = newCommon(httptest.NewRecorder(), req, db, "test", index, serveError)
 			if err != nil {
 				if got != "" || code != 200 {
 					t.Fatal("serveError called and error returned from newCommon")
@@ -404,7 +412,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r)
+			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r, database.NewMockDB())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -424,8 +432,10 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 
 func init() {
 	globals.ConfigurationServerFrontendOnly = &conf.Server{}
-	globalstatedb.Mock.Get = func(ctx context.Context) (*globalstatedb.State, error) {
-		return &globalstatedb.State{SiteID: "a"}, nil
-	}
-	siteid.Init()
+	gss := database.NewMockGlobalStateStore()
+	gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+
+	db := database.NewMockDB()
+	db.GlobalStateFunc.SetDefaultReturn(gss)
+	siteid.Init(db)
 }

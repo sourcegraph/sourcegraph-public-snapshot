@@ -1,10 +1,10 @@
 import { ListboxOption } from '@reach/listbox'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 
 import { RealInsightDashboard } from '../../../../../../../core/types'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
-import { Badge } from '../badge/Badge'
+import { InsightsBadge } from '../insights-badge/InsightsBadge'
 import { TruncatedText } from '../trancated-text/TrancatedText'
 
 import styles from './SelectOption.module.scss'
@@ -29,11 +29,11 @@ export const SelectOption: React.FunctionComponent<SelectOptionProps> = props =>
     const { value, label, badge, className } = props
 
     return (
-        <ListboxOption className={classnames(styles.option, className)} value={value}>
+        <ListboxOption className={classNames(styles.option, className)} value={value}>
             <TruncatedText title={label} className={styles.text}>
                 {label}
             </TruncatedText>
-            {badge && <Badge value={badge} className={styles.badge} />}
+            {badge && <InsightsBadge value={badge} className={styles.badge} />}
         </ListboxOption>
     )
 }

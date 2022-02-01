@@ -4,6 +4,7 @@ import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchChangeFields, ChangesetsStatsFields, DiffStatFields } from '../../../graphql-operations'
@@ -26,14 +27,17 @@ interface BatchChangeStatsCardProps {
     className?: string
 }
 
+// Rounds percent down to the nearest integer (you don't say 1/50/100% complete until at
+// least 1/50/100% is actually completed).
+const formatDisplayPercent = (percent: number): string => `${Math.floor(percent)}%`
+
 export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardProps> = ({
     stats,
     diff,
     closedAt,
     className,
 }) => {
-    const percentComplete =
-        stats.total === 0 ? 0 : (((stats.closed + stats.merged + stats.deleted) / stats.total) * 100).toFixed(0)
+    const percentComplete = stats.total === 0 ? 0 : ((stats.closed + stats.merged + stats.deleted) / stats.total) * 100
     const isCompleted = stats.closed + stats.merged + stats.deleted === stats.total
     let BatchChangeStatusIcon = ProgressCheckIcon
     if (isCompleted) {
@@ -57,7 +61,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
                         />
                     </h1>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>
-                        {percentComplete}% complete
+                        {formatDisplayPercent(percentComplete)} complete
                     </span>
                 </div>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-3')} />
@@ -102,7 +106,9 @@ export const BatchChangeStatsTotalAction: React.FunctionComponent<{ count: numbe
         )}
     >
         <span className={styles.batchChangeStatsCardChangesetsPill}>
-            <span className="badge badge-pill badge-secondary">{count}</span>
+            <Badge variant="secondary" pill={true}>
+                {count}
+            </Badge>
         </span>
         <span className="text-muted">{pluralize('Changeset', count)}</span>
     </div>

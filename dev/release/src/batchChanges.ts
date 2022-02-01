@@ -6,7 +6,7 @@ import YAML from 'yaml'
 import { CreatedChangeset } from './github'
 import { readLine, cacheFolder } from './util'
 
-// https://about.sourcegraph.com/handbook/engineering/deployments/instances#k8s-sgdev-org
+// https://handbook.sourcegraph.com/engineering/deployments/instances#k8s-sgdev-org
 const DEFAULT_SRC_ENDPOINT = 'https://k8s.sgdev.org'
 
 interface SourcegraphCLIConfig {

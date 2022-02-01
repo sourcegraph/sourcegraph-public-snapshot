@@ -1,5 +1,7 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { PropsWithChildren, ReactNode, RefObject } from 'react'
+
+import styles from './FormGroup.module.scss'
 
 interface FormGroupProps {
     /** Name attr value for root fieldset element. */
@@ -40,11 +42,11 @@ export const FormGroup: React.FunctionComponent<PropsWithChildren<FormGroupProps
     return (
         <fieldset ref={innerRef} name={name} className={className}>
             <legend className="d-flex flex-column mb-3">
-                <div className={classnames(labelClassName, 'font-weight-bold')}>{title}</div>
+                <div className={classNames(labelClassName, styles.label)}>{title}</div>
 
                 {/* Since safari doesn't support flex column on legend element we have to set d-block*/}
                 {/* explicitly */}
-                {subtitle && <small className="d-block text-muted">{subtitle}</small>}
+                {subtitle && <span className={classNames('d-block text-muted', styles.description)}>{subtitle}</span>}
                 {error && (
                     <small role="alert" className="d-block text-danger">
                         {error}

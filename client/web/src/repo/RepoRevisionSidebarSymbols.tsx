@@ -1,186 +1,147 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
 import * as React from 'react'
-import { NavLink } from 'react-router-dom'
-import { Observable, Subject } from 'rxjs'
-import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-
-import { requestGraphQL } from '../backend/graphql'
-import { FilteredConnection } from '../components/FilteredConnection'
+import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
-    Scalars,
-    SymbolConnectionFields,
-    SymbolNodeFields,
-    SymbolsResult,
-    SymbolsVariables,
-} from '../graphql-operations'
+    ConnectionForm,
+    ConnectionList,
+    ConnectionContainer,
+    ConnectionLoading,
+    ConnectionSummary,
+    ConnectionError,
+    SummaryContainer,
+    ShowMoreButton,
+} from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import { useDebounce } from '@sourcegraph/wildcard'
+
+import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
-function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
-    const current = parseBrowserRepoURL(H.createPath(currentLocation))
-    const symbol = parseBrowserRepoURL(symbolLocation)
-    return (
-        current.repoName === symbol.repoName &&
-        current.revision === symbol.revision &&
-        current.filePath === symbol.filePath &&
-        isEqual(current.position, symbol.position)
-    )
-}
-
-const symbolIsActiveTrue = (): boolean => true
-const symbolIsActiveFalse = (): boolean => false
+import styles from './RepoRevisionSidebarSymbols.module.scss'
 
 interface SymbolNodeProps {
     node: SymbolNodeFields
-    location: H.Location
+    onHandleClick: () => void
+    isActive: boolean
 }
 
-const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }) => {
-    const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
+const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, onHandleClick, isActive }) => {
+    const isActiveFunc = (): boolean => isActive
     return (
-        <li className="repo-revision-sidebar-symbols-node">
+        <li className={styles.repoRevisionSidebarSymbolsNode}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
-                className="repo-revision-sidebar-symbols-node__link test-symbol-link"
-                activeClassName="repo-revision-sidebar-symbols-node__link--active"
+                className={classNames('test-symbol-link', styles.link)}
+                activeClassName={styles.linkActive}
+                onClick={onHandleClick}
             >
                 <SymbolIcon kind={node.kind} className="icon-inline mr-1 test-symbol-icon" />
-                <span className="repo-revision-sidebar-symbols-node__name test-symbol-name">{node.name}</span>
+                <span className={classNames('test-symbol-name', styles.name)}>{node.name}</span>
                 {node.containerName && (
-                    <span className="repo-revision-sidebar-symbols-node__container-name">
+                    <span className={styles.containerName}>
                         <small>{node.containerName}</small>
                     </span>
                 )}
-                <span className="repo-revision-sidebar-symbols-node__path">
-                    <small>{node.location.resource.path}</small>
-                </span>
             </NavLink>
         </li>
     )
 }
 
-class FilteredSymbolsConnection extends FilteredConnection<SymbolNodeFields, Pick<SymbolNodeProps, 'location'>> {}
+export const SYMBOLS_QUERY = gql`
+    query Symbols($repo: ID!, $revision: String!, $first: Int, $query: String, $includePatterns: [String!]) {
+        node(id: $repo) {
+            __typename
+            ... on Repository {
+                commit(rev: $revision) {
+                    symbols(first: $first, query: $query, includePatterns: $includePatterns) {
+                        ...SymbolConnectionFields
+                    }
+                }
+            }
+        }
+    }
 
-interface Props extends Partial<RevisionSpec> {
+    fragment SymbolConnectionFields on SymbolConnection {
+        __typename
+        pageInfo {
+            hasNextPage
+        }
+        nodes {
+            ...SymbolNodeFields
+        }
+    }
+
+    fragment SymbolNodeFields on Symbol {
+        __typename
+        name
+        containerName
+        kind
+        language
+        location {
+            resource {
+                path
+            }
+            range {
+                start {
+                    line
+                    character
+                }
+                end {
+                    line
+                    character
+                }
+            }
+        }
+        url
+    }
+`
+
+const BATCH_COUNT = 100
+
+export interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
     repoID: Scalars['ID']
-    history: H.History
-    location: H.Location
     /** The path of the file or directory currently shown in the content area */
     activePath: string
+    onHandleSymbolClick: () => void
 }
 
-export class RepoRevisionSidebarSymbols extends React.PureComponent<Props> {
-    private componentUpdates = new Subject<Props>()
+export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSidebarSymbolsProps> = ({
+    repoID,
+    revision = '',
+    activePath,
+    onHandleSymbolClick,
+}) => {
+    const location = useLocation()
+    const [searchValue, setSearchValue] = useState('')
+    const query = useDebounce(searchValue, 200)
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public render(): JSX.Element | null {
-        return (
-            <FilteredSymbolsConnection
-                className="repo-revision-sidebar-symbols h-100"
-                compact={true}
-                noun="symbol"
-                pluralNoun="symbols"
-                queryConnection={this.fetchSymbols}
-                nodeComponent={SymbolNode}
-                nodeComponentProps={{ location: this.props.location }}
-                defaultFirst={100}
-                useURLQuery={false}
-                history={this.props.history}
-                location={this.props.location}
-            />
-        )
-    }
-
-    private fetchSymbols = (args: { first?: number; query?: string }): Observable<SymbolConnectionFields> =>
-        this.componentUpdates.pipe(
-            startWith(this.props),
-            map(({ repoID, revision, activePath }) => ({ repoID, revision, activePath })),
-            distinctUntilChanged((a, b) => isEqual(a, b)),
-            switchMap(({ repoID, revision, activePath }) =>
-                fetchSymbols(repoID, revision || '', {
-                    ...args,
-                    // `includePatterns` expects regexes, so first escape the path.
-                    includePatterns: [escapeRegExp(activePath)],
-                })
-            )
-        )
-}
-
-/**
- * Fetches symbols.
- */
-function fetchSymbols(
-    repo: Scalars['ID'],
-    revision: string,
-    args: { first?: number; query?: string; includePatterns?: string[] }
-): Observable<SymbolConnectionFields> {
-    return requestGraphQL<SymbolsResult, SymbolsVariables>(
-        gql`
-            query Symbols($repo: ID!, $revision: String!, $first: Int, $query: String, $includePatterns: [String!]) {
-                node(id: $repo) {
-                    __typename
-                    ... on Repository {
-                        commit(rev: $revision) {
-                            symbols(first: $first, query: $query, includePatterns: $includePatterns) {
-                                ...SymbolConnectionFields
-                            }
-                        }
-                    }
-                }
-            }
-
-            fragment SymbolConnectionFields on SymbolConnection {
-                pageInfo {
-                    hasNextPage
-                }
-                nodes {
-                    ...SymbolNodeFields
-                }
-            }
-
-            fragment SymbolNodeFields on Symbol {
-                name
-                containerName
-                kind
-                language
-                location {
-                    resource {
-                        path
-                    }
-                    range {
-                        start {
-                            line
-                            character
-                        }
-                        end {
-                            line
-                            character
-                        }
-                    }
-                }
-                url
-            }
-        `,
-        {
-            repo,
+    const { connection, error, loading, hasNextPage, fetchMore } = useConnection<
+        SymbolsResult,
+        SymbolsVariables,
+        SymbolNodeFields
+    >({
+        query: SYMBOLS_QUERY,
+        variables: {
+            query,
+            first: BATCH_COUNT,
+            repo: repoID,
             revision,
-            first: args.first ?? null,
-            query: args.query ?? null,
-            includePatterns: args.includePatterns ?? null,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
+            // `includePatterns` expects regexes, so first escape the path.
+            includePatterns: [escapeRegExp(activePath)],
+        },
+        getConnection: result => {
+            const { node } = dataOrThrowErrors(result)
+
             if (!node) {
-                throw new Error(`Node ${repo} not found`)
+                throw new Error(`Node ${repoID} not found`)
             }
             if (node.__typename !== 'Repository') {
                 throw new Error(`Node is a ${node.__typename}, not a Repository`)
@@ -188,7 +149,69 @@ function fetchSymbols(
             if (!node.commit?.symbols?.nodes) {
                 throw new Error('Could not resolve commit symbols for repository')
             }
+
             return node.commit.symbols
-        })
+        },
+        options: {
+            fetchPolicy: 'cache-first',
+        },
+    })
+
+    const summary = connection && (
+        <ConnectionSummary
+            connection={connection}
+            first={BATCH_COUNT}
+            noun="symbol"
+            pluralNoun="symbols"
+            hasNextPage={hasNextPage}
+            connectionQuery={query}
+            compact={true}
+        />
+    )
+
+    const currentLocation = parseBrowserRepoURL(H.createPath(location))
+    const isSymbolActive = (symbolUrl: string): boolean => {
+        const symbolLocation = parseBrowserRepoURL(symbolUrl)
+        return (
+            currentLocation.repoName === symbolLocation.repoName &&
+            currentLocation.revision === symbolLocation.revision &&
+            currentLocation.filePath === symbolLocation.filePath &&
+            isEqual(currentLocation.position, symbolLocation.position)
+        )
+    }
+
+    return (
+        <ConnectionContainer className={classNames('h-100', styles.repoRevisionSidebarSymbols)} compact={true}>
+            <ConnectionForm
+                inputValue={searchValue}
+                onInputChange={event => setSearchValue(event.target.value)}
+                inputPlaceholder="Search symbols..."
+                compact={true}
+                formClassName={styles.form}
+            />
+            <SummaryContainer compact={true} className={styles.summaryContainer}>
+                {query && summary}
+            </SummaryContainer>
+            {error && <ConnectionError errors={[error.message]} compact={true} />}
+            {connection && (
+                <ConnectionList compact={true}>
+                    {connection.nodes.map((node, index) => (
+                        <SymbolNode
+                            key={index}
+                            node={node}
+                            onHandleClick={onHandleSymbolClick}
+                            isActive={isSymbolActive(node.url)}
+                        />
+                    ))}
+                </ConnectionList>
+            )}
+            {loading && <ConnectionLoading compact={true} />}
+            {!loading && connection && (
+                <SummaryContainer compact={true} className={styles.summaryContainer}>
+                    {!query && summary}
+                    {hasNextPage && <ShowMoreButton compact={true} onClick={fetchMore} />}
+                </SummaryContainer>
+            )}
+        </ConnectionContainer>
     )
 }

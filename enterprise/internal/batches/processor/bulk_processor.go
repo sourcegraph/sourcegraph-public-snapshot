@@ -113,8 +113,8 @@ func (b *bulkProcessor) comment(ctx context.Context, job *btypes.ChangesetJob) e
 		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobCommentPayload{}, job.Payload)
 	}
 	cs := &sources.Changeset{
-		Changeset: b.ch,
-		Repo:      b.repo,
+		Changeset:  b.ch,
+		TargetRepo: b.repo,
 	}
 	return b.css.CreateComment(ctx, cs, typedPayload.Message)
 }
@@ -162,8 +162,8 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 	}
 
 	cs := &sources.Changeset{
-		Changeset: b.ch,
-		Repo:      b.repo,
+		Changeset:  b.ch,
+		TargetRepo: b.repo,
 	}
 	if err := b.css.MergeChangeset(ctx, cs, typedPayload.Squash); err != nil {
 		return err
@@ -191,8 +191,8 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 
 func (b *bulkProcessor) closeChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
 	cs := &sources.Changeset{
-		Changeset: b.ch,
-		Repo:      b.repo,
+		Changeset:  b.ch,
+		TargetRepo: b.repo,
 	}
 	if err := b.css.CloseChangeset(ctx, cs); err != nil {
 		return err

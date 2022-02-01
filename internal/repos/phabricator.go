@@ -10,6 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -228,7 +229,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s *Store) {
 func updatePhabRepos(ctx context.Context, repos []*types.Repo) error {
 	for _, r := range repos {
 		repo := r.Metadata.(*phabricator.Repo)
-		err := api.InternalClient.PhabricatorRepoCreate(
+		err := internalapi.Client.PhabricatorRepoCreate(
 			ctx,
 			r.Name,
 			repo.Callsign,

@@ -1,9 +1,14 @@
 package auth
 
 import (
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"time"
+
+	"github.com/cockroachdb/errors"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // OAuthBearerToken implements OAuth Bearer Token authentication for extsvc
@@ -47,5 +52,59 @@ func (token *OAuthBearerTokenWithSSH) SSHPublicKey() string {
 
 func (token *OAuthBearerTokenWithSSH) Hash() string {
 	shaSum := sha256.Sum256([]byte(token.Token + token.PrivateKey + token.Passphrase + token.PublicKey))
+	return hex.EncodeToString(shaSum[:])
+}
+
+// oauthBearerTokenWithGitHubApp implements OAuth Bearer Token authentication for
+// GitHub Apps.
+type oauthBearerTokenWithGitHubApp struct {
+	appID  string
+	key    *rsa.PrivateKey
+	rawKey []byte
+}
+
+// NewOAuthBearerTokenWithGitHubApp constructs a new OAuth Bearer Token
+// authenticator for GitHub Apps using given appID and private key.
+func NewOAuthBearerTokenWithGitHubApp(appID string, privateKey []byte) (Authenticator, error) {
+	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "parse private key")
+	}
+	return &oauthBearerTokenWithGitHubApp{
+		appID:  appID,
+		key:    key,
+		rawKey: privateKey,
+	}, nil
+}
+
+// Authenticate is a modified version of
+// https://github.com/bradleyfalzon/ghinstallation/blob/24e56b3fb7669f209134a01eff731d7e2ef72a5c/appsTransport.go#L66.
+func (token *oauthBearerTokenWithGitHubApp) Authenticate(r *http.Request) error {
+	// The payload computation is following GitHub App's Ruby example shown in
+	// https://docs.github.com/en/developers/apps/building-github-apps/authenticating-with-github-apps#authenticating-as-a-github-app.
+	//
+	// NOTE: GitHub rejects expiry and issue timestamps that are not an integer,
+	// while the jwt-go library serializes to fractional timestamps. Truncate them
+	// before passing to jwt-go.
+	iss := time.Now().Add(-time.Minute).Truncate(time.Second)
+	exp := iss.Add(10 * time.Minute)
+	claims := &jwt.StandardClaims{
+		IssuedAt:  iss.Unix(),
+		ExpiresAt: exp.Unix(),
+		Issuer:    token.appID,
+	}
+	bearer := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+
+	signedString, err := bearer.SignedString(token.key)
+	if err != nil {
+		return errors.Wrap(err, "sign JWT")
+	}
+
+	r.Header.Set("Authorization", "Bearer "+signedString)
+	return nil
+}
+
+func (token *oauthBearerTokenWithGitHubApp) Hash() string {
+	shaSum := sha256.Sum256(token.rawKey)
 	return hex.EncodeToString(shaSum[:])
 }

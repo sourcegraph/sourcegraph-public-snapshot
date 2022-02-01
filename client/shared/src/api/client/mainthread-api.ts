@@ -3,10 +3,11 @@ import { Subscription, from, Observable, Subject } from 'rxjs'
 import { publishReplay, refCount, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
+import { asError } from '@sourcegraph/common'
+
 import { registerBuiltinClientCommands } from '../../commands/commands'
 import { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
-import { asError } from '../../util/errors'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
 import { proxySubscribable } from '../extension/api/common'
 import { NotificationType, PlainNotification } from '../extension/extensionHostApi'

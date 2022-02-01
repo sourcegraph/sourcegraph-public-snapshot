@@ -78,6 +78,7 @@ export function setupExtensionMocking({
             // Mutate mock data objects
             extensionSettings[id] = true
             extensionsResult.extensionRegistry.extensions.nodes.push({
+                id,
                 extensionID: id,
                 manifest: {
                     jsonFields: extensionManifest,

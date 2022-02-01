@@ -10,22 +10,19 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestReferenceCountMigrator(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := dbstore.NewWithDB(db, &observation.TestContext)
 	migrator := NewReferenceCountMigrator(store, 75)
 
 	n := 150
-	expectedNumReferences := make([]int, 0, n)
+	expectedReferenceCounts := make([]int, 0, n)
 	for i := 0; i < n; i++ {
-		expectedNumReferences = append(expectedNumReferences, n-i-1)
+		expectedReferenceCounts = append(expectedReferenceCounts, n-i-1)
 	}
 
 	assertProgress := func(expectedProgress float64) {
@@ -33,16 +30,6 @@ func TestReferenceCountMigrator(t *testing.T) {
 			t.Fatalf("unexpected error querying progress: %s", err)
 		} else if progress != expectedProgress {
 			t.Errorf("unexpected progress. want=%.2f have=%.2f", expectedProgress, progress)
-		}
-	}
-
-	assertNumReferences := func(expectedNumReferences []int) {
-		query := sqlf.Sprintf(`SELECT u.num_references FROM lsif_uploads u WHERE u.num_references IS NOT NULL ORDER BY u.id`)
-
-		if numReferences, err := basestore.ScanInts(store.Query(context.Background(), query)); err != nil {
-			t.Fatalf("unexpected error querying uploads: %s", err)
-		} else if diff := cmp.Diff(expectedNumReferences, numReferences); diff != "" {
-			t.Errorf("unexpected num references (-want +got):\n%s", diff)
 		}
 	}
 
@@ -84,13 +71,13 @@ func TestReferenceCountMigrator(t *testing.T) {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
 	assertProgress(0.5)
-	assertNumReferences(expectedNumReferences[:n/2])
+	assertReferenceCounts(t, store, expectedReferenceCounts[:n/2])
 
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
 	assertProgress(1)
-	assertNumReferences(expectedNumReferences)
+	assertReferenceCounts(t, store, expectedReferenceCounts)
 
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
@@ -101,4 +88,14 @@ func TestReferenceCountMigrator(t *testing.T) {
 		t.Fatalf("unexpected error performing down migration: %s", err)
 	}
 	assertProgress(0)
+}
+
+func assertReferenceCounts(t *testing.T, store *dbstore.Store, expectedReferenceCounts []int) {
+	query := sqlf.Sprintf(`SELECT u.reference_count FROM lsif_uploads u WHERE u.reference_count IS NOT NULL ORDER BY u.id`)
+
+	if referenceCounts, err := basestore.ScanInts(store.Query(context.Background(), query)); err != nil {
+		t.Fatalf("unexpected error querying uploads: %s", err)
+	} else if diff := cmp.Diff(expectedReferenceCounts, referenceCounts); diff != "" {
+		t.Errorf("unexpected reference counts (-want +got):\n%s", diff)
+	}
 }

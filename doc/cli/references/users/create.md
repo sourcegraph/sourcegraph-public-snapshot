@@ -11,6 +11,7 @@
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
 | `-reset-password-url` | Print the reset password URL to manually send to the new user. | `false` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
+| `-user-agent-telemetry` | Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph | `true` |
 | `-username` | The new user's username. (required) |  |
 
 
@@ -30,6 +31,8 @@ Usage of 'src users create':
     	Print the reset password URL to manually send to the new user.
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
+  -user-agent-telemetry
+    	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -username string
     	The new user's username. (required)
 

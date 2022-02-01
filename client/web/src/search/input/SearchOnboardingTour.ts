@@ -1,27 +1,25 @@
 /**
  * This file contains utility functions for the search onboarding tour.
  */
+import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
+import { QueryState } from '@sourcegraph/search'
+import { MonacoQueryInputProps } from '@sourcegraph/search-ui/src/input/MonacoQueryInput'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 
-import { daysActiveCount } from '../../marketing/util'
 import { eventLogger } from '../../tracking/eventLogger'
-import { isMacPlatform } from '../../util'
-import { QueryState } from '../helpers'
 
-import { MonacoQueryInputProps } from './MonacoQueryInput'
+import styles from './SearchOnboardingTour.module.scss'
 import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
-
-export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
-export const HAS_COMPLETED_TOUR_KEY = 'has-completed-onboarding-tour'
 
 const tourOptions: Shepherd.Tour.TourOptions = {
     ...defaultTourOptions,
@@ -45,11 +43,11 @@ function generateStep(options: { tour: Shepherd.Tour; stepNumber: number; conten
     const close = document.createElement('div')
     close.className = 'd-flex align-items-center'
     close.innerHTML = `
-        <div class="tour-card__separator"></div>
-        <div class="tour-card__close">${closeIconSvg}</div>
-    `
+         <div class=${styles.separator}></div>
+         <div class=${styles.close}>${closeIconSvg}</div>
+     `
     element.append(close)
-    element.querySelector('.tour-card__close')?.addEventListener('click', () => {
+    element.querySelector(`.${styles.close}`)?.addEventListener('click', () => {
         options.tour.cancel()
         eventLogger.log('CloseOnboardingTourClicked', { stage: options.stepNumber }, { stage: options.stepNumber })
     })
@@ -63,6 +61,7 @@ const closeIconSvg =
 /**
  * Generates the content for the first step in the tour.
  *
+ * @param tour the Shepherd tour to attach the step to
  * @param languageButtonHandler the handler for the "search a language" button.
  * @param repositoryButtonHandler the handler for the "search a repository" button.
  */
@@ -74,10 +73,10 @@ function generateStep1(
     const content = document.createElement('div')
     content.className = 'd-flex align-items-center'
     content.innerHTML = `
-        <div class="tour-card__title">Get started</div>
-        <button class="btn btn-link p-0 tour-card__link tour-language-button">Search a language</button>
-        <button class="btn btn-link p-0 tour-card__link tour-repo-button">Search a repository</button>
-    `
+         <div class=${styles.title}>Get started</div>
+         <button type="button" data-testid="tour-language-button" class="btn btn-link p-0 ${styles.link} tour-language-button">Search a language</button>
+         <button type="button" data-testid="tour-repo-button" class="btn btn-link p-0 ${styles.link} tour-repo-button">Search a repository</button>
+     `
     content.querySelector('.tour-language-button')?.addEventListener('click', () => {
         languageButtonHandler()
         eventLogger.log('OnboardingTourLanguageOptionClicked')
@@ -168,14 +167,17 @@ const generateStepContent = (title: string, description: string): HTMLElement =>
     const element = document.createElement('div')
     element.className = 'd-flex align-items-center'
     element.innerHTML = `
-        <div class="tour-card__title">${title}</div>
-        <div class="tour-card__description text-monospace">${description}</div>
-    `
+         <div class=${styles.title}>${title}</div>
+         <div class="${styles.description} text-monospace">${description}</div>
+     `
     return element
 }
 
-const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions, 'setQueryState'>): Tour => {
-    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
+const useTourWithSteps = ({
+    setQueryState,
+    stepsContainer,
+}: Pick<UseSearchOnboardingTourOptions, 'setQueryState' | 'stepsContainer'>): Tour => {
+    const tour = useMemo(() => new Shepherd.Tour({ ...tourOptions, stepsContainer }), [stepsContainer])
     useEffect(() => {
         tour.addSteps([
             {
@@ -191,9 +193,10 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                         tour.show('filter-repository')
                     }
                 ),
-                classes: 'tour-card tour-card--arrow-left-up',
+                // "tour-card" class usages are kept for testing in `search-onboarding.test.ts` since we can't add attributes into step elements
+                classes: classNames(styles.tourCard, styles.tourCardArrowLeftUp, 'tour-card'),
                 attachTo: {
-                    element: '.search-page__input-container',
+                    element: '[data-search-page-input-container]',
                     on: 'bottom',
                 },
                 popperOptions: {
@@ -212,9 +215,9 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                         eventLogger.log('ViewedOnboardingTourFilterLangStep')
                     },
                 },
-                classes: 'tour-card tour-card--arrow-left-down',
+                classes: classNames(styles.tourCard, styles.tourCardArrowLeftDown, 'tour-card'),
                 attachTo: {
-                    element: '.search-page__input-container',
+                    element: '[data-search-page-input-container]',
                     on: 'top',
                 },
                 popperOptions: {
@@ -233,9 +236,9 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                         eventLogger.log('ViewedOnboardingTourFilterRepoStep')
                     },
                 },
-                classes: 'tour-card tour-card--arrow-left-down',
+                classes: classNames(styles.tourCard, styles.tourCardArrowLeftDown, 'tour-card'),
                 attachTo: {
-                    element: '.search-page__input-container',
+                    element: '[data-search-page-input-container]',
                     on: 'top',
                 },
                 popperOptions: {
@@ -254,9 +257,9 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                         eventLogger.log('ViewedOnboardingTourAddQueryTermStep')
                     },
                 },
-                classes: 'tour-card tour-card--arrow-left-up',
+                classes: classNames(styles.tourCard, styles.tourCardArrowLeftUp, 'tour-card'),
                 attachTo: {
-                    element: '.search-page__input-container',
+                    element: '[data-search-page-input-container]',
                     on: 'bottom',
                 },
                 popperOptions: {
@@ -275,15 +278,15 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                         eventLogger.log('ViewedOnboardingTourSubmitSearchStep')
                     },
                 },
-                classes: 'tour-card tour-card--arrow-right-down',
+                classes: classNames(styles.tourCard, styles.tourCardArrowRightDown, 'tour-card'),
                 attachTo: {
-                    element: '.search-button__btn',
+                    element: '[data-search-button]',
                     on: 'top',
                 },
                 popperOptions: {
                     modifiers: [{ name: 'offset', options: { offset: [-140, 8] } }],
                 },
-                advanceOn: { selector: '.search-button__btn', event: 'click' },
+                advanceOn: { selector: '[data-search-button]', event: 'click' },
             },
         ])
     }, [tour, setQueryState])
@@ -308,6 +311,11 @@ interface UseSearchOnboardingTourOptions {
     queryState: QueryState
     history: H.History
     location: H.Location
+
+    /**
+     * HTML element where the steps should be attached to
+     */
+    stepsContainer?: HTMLElement
 }
 
 /**
@@ -322,7 +330,6 @@ interface UseSearchOnboardingTourReturnValue
      * (`false` on the search homepage when the tour is active).
      */
     shouldFocusQueryInput: boolean
-    isSearchOnboardingTourVisible: boolean
 }
 
 /**
@@ -335,14 +342,16 @@ export const useSearchOnboardingTour = ({
     showOnboardingTour,
     queryState,
     setQueryState,
+    stepsContainer,
 }: UseSearchOnboardingTourOptions): UseSearchOnboardingTourReturnValue => {
-    const tour = useTourWithSteps({ setQueryState })
+    const tour = useTourWithSteps({ setQueryState, stepsContainer })
     // True when the user has manually cancelled the tour
-    const [hasCancelledTour, setHasCancelledTour] = useLocalStorage(HAS_CANCELLED_TOUR_KEY, false)
-    // True when the user has completed the tour on the search results page
-    const [, setHasCompletedTour] = useLocalStorage(HAS_COMPLETED_TOUR_KEY, false)
+    const [hasCancelledTour, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled', false)
+    const [daysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)
+
     const shouldShowTour = useMemo(() => showOnboardingTour && daysActiveCount === 1 && !hasCancelledTour, [
         showOnboardingTour,
+        daysActiveCount,
         hasCancelledTour,
     ])
 
@@ -353,21 +362,16 @@ export const useSearchOnboardingTour = ({
         }
     }, [shouldShowTour, tour])
 
-    // Hook into Tour cancellation and completion events.
+    // Hook into Tour cancellation event.
     useEffect(() => {
         const onCancelled = (): void => {
             setHasCancelledTour(true)
         }
-        const onCompleted = (): void => {
-            setHasCompletedTour(true)
-        }
         tour.on('cancel', onCancelled)
-        tour.on('complete', onCompleted)
         return () => {
             tour.off('cancel', onCancelled)
-            tour.off('complete', onCompleted)
         }
-    }, [tour, setHasCompletedTour, setHasCancelledTour])
+    }, [tour, setHasCancelledTour])
 
     // 'Complete' tour on unmount.
     useEffect(
@@ -424,6 +428,5 @@ export const useSearchOnboardingTour = ({
         onFocus,
         onSuggestionsInitialized,
         shouldFocusQueryInput: !shouldShowTour,
-        isSearchOnboardingTourVisible: shouldShowTour,
     }
 }

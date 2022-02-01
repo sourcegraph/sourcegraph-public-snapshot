@@ -24,6 +24,10 @@ func (r *CodeIntelligenceRangeResolver) References(ctx context.Context) (gql.Loc
 	return NewLocationConnectionResolver(r.r.References, nil, r.locationResolver), nil
 }
 
+func (r *CodeIntelligenceRangeResolver) Implementations(ctx context.Context) (gql.LocationConnectionResolver, error) {
+	return NewLocationConnectionResolver(r.r.Implementations, nil, r.locationResolver), nil
+}
+
 func (r *CodeIntelligenceRangeResolver) Hover(ctx context.Context) (gql.HoverResolver, error) {
 	return NewHoverResolver(r.r.HoverText, convertRange(r.r.Range)), nil
 }

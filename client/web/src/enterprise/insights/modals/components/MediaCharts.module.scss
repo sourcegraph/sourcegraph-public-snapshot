@@ -1,0 +1,17 @@
+.chart {
+    --red: var(--oc-red-7);
+    --pink: var(--oc-pink-7);
+    --blue: var(--oc-blue-7);
+    --dark-blue: var(--oc-indigo-7);
+    --green: var(--oc-teal-7);
+    --light-green: var(--oc-green-7);
+    --orange: var(--oc-orange-7);
+
+    background-color: var(--color-bg-1);
+    width: 100%;
+    height: 100%;
+
+    rect {
+        fill: var(--border-color-2);
+    }
+}

@@ -3,14 +3,13 @@ import React, { useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith, tap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { RadioButton, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 
 import { ProductPlanPrice } from './ProductPlanPrice'
 
@@ -75,7 +74,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
     return (
         <div className={classNames('product-plan-form-control', className)}>
             {plans === LOADING ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : isErrorLike(plans) ? (
                 <ErrorAlert error={plans.message} />
             ) : (
@@ -83,9 +82,8 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                     <div className="list-group">
                         {plans.map((plan, index) => (
                             <div key={plan.billingPlanID} className="list-group-item p-0">
-                                <label className="p-3 mb-0 d-flex" htmlFor={`product-plan-form-control__plan${index}`}>
-                                    <input
-                                        type="radio"
+                                <div className="p-3 mb-0 d-flex">
+                                    <RadioButton
                                         name="product-plan-form-control__plan"
                                         className="mr-2"
                                         id={`product-plan-form-control__plan${index}`}
@@ -94,14 +92,16 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                                         required={true}
                                         disabled={disableInputs}
                                         checked={plan.billingPlanID === value}
+                                        label={
+                                            <div>
+                                                <strong>{plan.name}</strong>
+                                                <div className="text-muted">
+                                                    <ProductPlanPrice plan={plan} />
+                                                </div>
+                                            </div>
+                                        }
                                     />
-                                    <div>
-                                        <strong>{plan.name}</strong>
-                                        <div className="text-muted">
-                                            <ProductPlanPrice plan={plan} />
-                                        </div>
-                                    </div>
-                                </label>
+                                </div>
                             </div>
                         ))}
                     </div>

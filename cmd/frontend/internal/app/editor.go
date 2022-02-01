@@ -16,17 +16,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplicit bool) (string, error) {
+func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev string, beExplicit bool) (string, error) {
 	if beExplicit {
 		return "@" + rev, nil
 	}
 	if rev == "HEAD" {
 		return "", nil // Detached head state
 	}
-	repo, err := backend.Repos.GetByName(ctx, repoName)
+	repos := backend.NewRepos(db.Repos())
+	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
 		// exist (unlikely) or that the user is not logged in (most likely). In
@@ -38,11 +39,11 @@ func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplici
 	// If we are on the default branch we want to return a clean URL without a
 	// branch. If we fail its best to return the full URL and allow the
 	// front-end to inform them of anything that is wrong.
-	defaultBranchCommitID, err := backend.Repos.ResolveRev(ctx, repo, "")
+	defaultBranchCommitID, err := repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return "@" + rev, nil
 	}
-	branchCommitID, err := backend.Repos.ResolveRev(ctx, repo, rev)
+	branchCommitID, err := repos.ResolveRev(ctx, repo, rev)
 	if err != nil {
 		return "@" + rev, nil
 	}
@@ -54,7 +55,7 @@ func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplici
 
 // editorRequest represents the parameters to a Sourcegraph "open file", "search", etc. editor request.
 type editorRequest struct {
-	db dbutil.DB
+	db database.DB
 
 	// Fields that are required in all requests.
 	editor  string // editor name, e.g. "Atom", "Sublime", etc.
@@ -188,7 +189,7 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	if inputRev == "" {
 		inputRev, beExplicit = of.branch, false
 	}
-	rev, err := editorRev(ctx, repoName, inputRev, beExplicit)
+	rev, err := editorRev(ctx, r.db, repoName, inputRev, beExplicit)
 	if err != nil {
 		return "", err
 	}
@@ -216,7 +217,7 @@ func (r *editorRequest) redirectURL(ctx context.Context) (string, error) {
 }
 
 // parseEditorRequest parses an editor request from the search query values.
-func parseEditorRequest(db dbutil.DB, q url.Values) (*editorRequest, error) {
+func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
 	v := &editorRequest{
 		db:                db,
 		editor:            q.Get("editor"),
@@ -270,7 +271,7 @@ func parseEditorRequest(db dbutil.DB, q url.Values) (*editorRequest, error) {
 	return v, nil
 }
 
-func serveEditor(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveEditor(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		editorRequest, err := parseEditorRequest(db, r.URL.Query())
 		if err != nil {

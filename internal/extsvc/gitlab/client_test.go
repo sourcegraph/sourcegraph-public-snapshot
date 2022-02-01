@@ -14,10 +14,9 @@ import (
 )
 
 func TestGetAuthenticatedUserOAuthScopes(t *testing.T) {
-	provider := createTestProvider(t)
-	// We expect the GitLab token stored in 1Password under gitlab@sourcegraph.com
-	token := os.Getenv("GITLAB_TOKEN")
-	client := provider.GetOAuthClient(token)
+	// To update this test's fixtures, use the GitLab token stored in
+	// 1Password under gitlab@sourcegraph.com.
+	client := createTestClient(t)
 	ctx := context.Background()
 	have, err := client.GetAuthenticatedUserOAuthScopes(ctx)
 	if err != nil {
@@ -40,6 +39,12 @@ func createTestProvider(t *testing.T) *ClientProvider {
 	baseURL, _ := url.Parse("https://gitlab.com/")
 	provider := NewClientProvider(baseURL, doer)
 	return provider
+}
+
+func createTestClient(t *testing.T) *Client {
+	t.Helper()
+	token := os.Getenv("GITLAB_TOKEN")
+	return createTestProvider(t).GetOAuthClient(token)
 }
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")

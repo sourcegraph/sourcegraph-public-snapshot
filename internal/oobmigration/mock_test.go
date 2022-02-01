@@ -44,6 +44,28 @@ func NewMockMigrator() *MockMigrator {
 	}
 }
 
+// NewStrictMockMigrator creates a new mock of the Migrator interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockMigrator() *MockMigrator {
+	return &MockMigrator{
+		DownFunc: &MigratorDownFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockMigrator.Down")
+			},
+		},
+		ProgressFunc: &MigratorProgressFunc{
+			defaultHook: func(context.Context) (float64, error) {
+				panic("unexpected invocation of MockMigrator.Progress")
+			},
+		},
+		UpFunc: &MigratorUpFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockMigrator.Up")
+			},
+		},
+	}
+}
+
 // NewMockMigratorFrom creates a new mock of the MockMigrator interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockMigratorFrom(i Migrator) *MockMigrator {
@@ -401,6 +423,28 @@ func NewMockStoreIface() *MockStoreIface {
 		UpdateProgressFunc: &StoreIfaceUpdateProgressFunc{
 			defaultHook: func(context.Context, int, float64) error {
 				return nil
+			},
+		},
+	}
+}
+
+// NewStrictMockStoreIface creates a new mock of the storeIface interface.
+// All methods panic on invocation, unless overwritten.
+func NewStrictMockStoreIface() *MockStoreIface {
+	return &MockStoreIface{
+		AddErrorFunc: &StoreIfaceAddErrorFunc{
+			defaultHook: func(context.Context, int, string) error {
+				panic("unexpected invocation of MockStoreIface.AddError")
+			},
+		},
+		ListFunc: &StoreIfaceListFunc{
+			defaultHook: func(context.Context) ([]Migration, error) {
+				panic("unexpected invocation of MockStoreIface.List")
+			},
+		},
+		UpdateProgressFunc: &StoreIfaceUpdateProgressFunc{
+			defaultHook: func(context.Context, int, float64) error {
+				panic("unexpected invocation of MockStoreIface.UpdateProgress")
 			},
 		},
 	}

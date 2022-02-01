@@ -49,7 +49,7 @@ export class ScreenshotVerifier {
     ): Promise<void> {
         if (waitForSelectorToBeVisibleTimeout > 0) {
             await this.driver.page.waitForFunction(
-                selector => {
+                (selector: string) => {
                     const element = document.querySelector<Element>(selector)
                     if (!element) {
                         return false

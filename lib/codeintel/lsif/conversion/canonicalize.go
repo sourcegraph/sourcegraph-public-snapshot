@@ -45,6 +45,7 @@ func canonicalizeDocuments(state *State) {
 
 			canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, documentID, canonicalID)
 			canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, documentID, canonicalID)
+			canonicalizeDocumentsInDefinitionReferences(state, state.ImplementationData, documentID, canonicalID)
 
 			// Remove non-canonical document
 			delete(state.DocumentData, documentID)
@@ -162,6 +163,9 @@ func mergeNextResultSetData(state *State, itemID int, item ResultSet, nextID int
 	if item.ReferenceResultID == 0 {
 		item = item.SetReferenceResultID(nextItem.ReferenceResultID)
 	}
+	if item.ImplementationResultID == 0 {
+		item = item.SetImplementationResultID(nextItem.ImplementationResultID)
+	}
 	if item.HoverResultID == 0 {
 		item = item.SetHoverResultID(nextItem.HoverResultID)
 	}
@@ -182,6 +186,9 @@ func mergeNextRangeData(state *State, itemID int, item Range, nextID int, nextIt
 	}
 	if item.ReferenceResultID == 0 {
 		item = item.SetReferenceResultID(nextItem.ReferenceResultID)
+	}
+	if item.ImplementationResultID == 0 {
+		item = item.SetImplementationResultID(nextItem.ImplementationResultID)
 	}
 	if item.HoverResultID == 0 {
 		item = item.SetHoverResultID(nextItem.HoverResultID)

@@ -1,30 +1,32 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import {
+    Container,
+    ProductStatusBadge,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Link,
+    Alert,
+} from '@sourcegraph/wildcard'
 
-import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
-import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
+import { FeedbackPrompt } from '../../nav/Feedback'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
@@ -33,14 +35,17 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
 import { fetchDocumentationPage, fetchDocumentationPathInfo, GQLDocumentationNode, isExcluded, Tag } from './graphql'
+import styles from './RepositoryDocumentationPage.module.scss'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="repository-docs-page__error alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
+    <Alert className="m-2" variant="danger">
+        Error: {upperFirst(error.message)}
+    </Alert>
 )
 
 const PageNotFound: React.FunctionComponent = () => (
-    <div className="repository-docs-page__not-found">
+    <div>
         <MapSearchIcon className="icon-inline" /> Page not found
     </div>
 )
@@ -50,8 +55,7 @@ interface Props
         Partial<RevisionSpec>,
         ResolvedRevisionSpec,
         BreadcrumbSetters,
-        SettingsCascadeProps,
-        VersionContextProps {
+        SettingsCascadeProps {
     repo: RepositoryFields
     history: H.History
     location: H.Location
@@ -181,7 +185,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     }, [onlyPathID])
 
     return (
-        <div className="repository-docs-page">
+        <div className={styles.repositoryDocsPage}>
             {page !== LOADING && !isErrorLike(page) ? (
                 <PageTitle
                     title={
@@ -194,27 +198,34 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     }
                 />
             ) : null}
-            {loading ? <LoadingSpinner className="icon-inline m-1" /> : null}
+            {loading ? <LoadingSpinner className="m-1" /> : null}
             {error && error.message === 'page not found' ? <PageNotFound /> : null}
             {error && (error.message === 'no LSIF data' || error.message === 'no LSIF documentation') ? (
-                <div className="repository-docs-page__container">
-                    <div className="repository-docs-page__container-content">
+                <div className={styles.container}>
+                    <div className={styles.containerContent}>
                         <div className="d-flex float-right">
-                            <a
-                                // eslint-disable-next-line react/jsx-no-target-blank
+                            <Button
                                 target="_blank"
                                 rel="noopener"
                                 href="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                className="mr-1 btn btn-sm text-decoration-none btn-link btn-outline-secondary"
+                                className="mr-1 text-decoration-none btn-link"
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                                as="a"
                             >
                                 Learn more
-                            </a>
+                            </Button>
                             <FeedbackPrompt routes={routes} />
                         </div>
                         <h1>
-                            <BookOpenVariantIcon className="icon-inline mr-1" />
+                            <BookOpenBlankVariantIcon className="icon-inline mr-1" />
                             API docs
-                            <Badge status="experimental" className="text-uppercase ml-2" />
+                            <ProductStatusBadge
+                                status="experimental"
+                                className="text-uppercase ml-2"
+                                linkToDocs={true}
+                            />
                         </h1>
                         <p>API documentation generated for all your code</p>
                         <Container>
@@ -261,11 +272,11 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                         activePathID={visiblePathID || pagePathID}
                         depth={0}
                     />
-                    <div className="repository-docs-page__container" ref={containerReference}>
+                    <div className={styles.container} ref={containerReference}>
                         <div
                             className={classNames(
-                                'repository-docs-page__container-content',
-                                sidebarVisible && 'repository-docs-page__container-content--sidebar-visible'
+                                styles.containerContent,
+                                sidebarVisible && styles.containerContentSidebarVisible
                             )}
                         >
                             {/*

@@ -16,7 +16,6 @@ import (
 	"github.com/uber/jaeger-client-go"
 	nettrace "golang.org/x/net/trace"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -38,15 +37,15 @@ func IDFromSpan(span opentracing.Span) string {
 	return spanCtx.TraceID().String()
 }
 
-// URL returns a trace URL for the given trace ID
-func URL(traceID string) string {
+// URL returns a trace URL for the given trace ID at the given external URL.
+func URL(traceID, externalURL string) string {
 	if traceID == "" {
 		return ""
 	}
 
 	if os.Getenv("ENABLE_GRAFANA_CLOUD_TRACE_URL") != "true" {
 		// We proxy jaeger so we can construct URLs to traces.
-		return strings.TrimSuffix(conf.Get().ExternalURL, "/") + "/-/debug/jaeger/trace/" + traceID
+		return strings.TrimSuffix(externalURL, "/") + "/-/debug/jaeger/trace/" + traceID
 	}
 
 	return "https://sourcegraph.grafana.net/explore?orgId=1&left=" + url.QueryEscape(fmt.Sprintf(
@@ -140,6 +139,15 @@ func (t *Trace) LazyPrintf(format string, a ...interface{}) {
 // as well as the nettrace.Trace.
 func (t *Trace) LogFields(fields ...log.Field) {
 	t.span.LogFields(fields...)
+	t.trace.LazyLog(fieldsStringer(fields), false)
+}
+
+// TagFields adds fields to the opentracing.Span as tags
+// as well as as logs to the nettrace.Trace.
+func (t *Trace) TagFields(fields ...log.Field) {
+	for _, field := range fields {
+		t.span.SetTag(field.Key(), field.Value())
+	}
 	t.trace.LazyLog(fieldsStringer(fields), false)
 }
 

@@ -13,13 +13,19 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -29,8 +35,15 @@ import (
 const addr = ":3189"
 
 // Start runs the worker. This method does not return.
-func Start(additionalJobs map[string]Job) {
-	jobs := map[string]Job{}
+func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) {
+	registerMigrations := composeRegisterMigrations(migrators.RegisterOSSMigrations, registerEnterpriseMigrations)
+
+	builtins := map[string]job.Job{
+		"webhook-log-janitor":    webhooks.NewJanitor(),
+		"out-of-band-migrations": migrations.NewMigrator(registerMigrations),
+	}
+
+	jobs := map[string]job.Job{}
 	for name, job := range builtins {
 		jobs[name] = job
 	}
@@ -50,8 +63,8 @@ func Start(additionalJobs map[string]Job) {
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	if err := keyring.Init(context.Background()); err != nil {
 		log.Fatalf("Failed to intialise keyring: %v", err)
@@ -91,7 +104,7 @@ func Start(additionalJobs map[string]Job) {
 // loadConfigs calls Load on the configs of each of the jobs registered in this binary.
 // All configs will be loaded regardless if they would later be validated - this is the
 // best place we have to manipulate the environment before the call to env.Lock.
-func loadConfigs(jobs map[string]Job) {
+func loadConfigs(jobs map[string]job.Job) {
 	// Load the worker config
 	config.names = jobNames(jobs)
 	config.Load()
@@ -107,7 +120,7 @@ func loadConfigs(jobs map[string]Job) {
 // mustValidateConfigs calls Validate on the configs of each of the jobs that will be run
 // by this instance of the worker. If any config has a validation error, a fatal log message
 // will be emitted.
-func mustValidateConfigs(jobs map[string]Job) {
+func mustValidateConfigs(jobs map[string]job.Job) {
 	validationErrors := map[string][]error{}
 	if err := config.Validate(); err != nil {
 		log.Fatalf("Failed to load configuration: %s", err)
@@ -147,7 +160,7 @@ func mustValidateConfigs(jobs map[string]Job) {
 // the jobs that will be run by this instance of the worker. Since these metrics are summed
 // over all instances (and we don't change the jobs that are registered to a running worker),
 // we only need to emit an initial count once.
-func emitJobCountMetrics(jobs map[string]Job) {
+func emitJobCountMetrics(jobs map[string]job.Job) {
 	gauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_worker_jobs",
 		Help: "Total number of jobs running in the worker.",
@@ -167,7 +180,7 @@ func emitJobCountMetrics(jobs map[string]Job) {
 // mustCreateBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
 // If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
 // of background routines from each job will be returned.
-func mustCreateBackgroundRoutines(jobs map[string]Job) []goroutine.BackgroundRoutine {
+func mustCreateBackgroundRoutines(jobs map[string]job.Job) []goroutine.BackgroundRoutine {
 	var (
 		allRoutines  []goroutine.BackgroundRoutine
 		descriptions []string
@@ -198,7 +211,7 @@ type routinesResult struct {
 // runRoutinesConcurrently returns a channel that will be populated with the return value of
 // the Routines function from each given job. Each function is called concurrently. If an
 // error occurs in one function, the context passed to all its siblings will be canceled.
-func runRoutinesConcurrently(jobs map[string]Job) chan routinesResult {
+func runRoutinesConcurrently(jobs map[string]job.Job) chan routinesResult {
 	results := make(chan routinesResult, len(jobs))
 	defer close(results)
 
@@ -236,7 +249,7 @@ func runRoutinesConcurrently(jobs map[string]Job) chan routinesResult {
 }
 
 // jobNames returns an ordered slice of keys from the given map.
-func jobNames(jobs map[string]Job) []string {
+func jobNames(jobs map[string]job.Job) []string {
 	names := make([]string, 0, len(jobs))
 	for name := range jobs {
 		names = append(names, name)
@@ -244,4 +257,18 @@ func jobNames(jobs map[string]Job) []string {
 	sort.Strings(names)
 
 	return names
+}
+
+func composeRegisterMigrations(fns ...func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	return func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+		for _, fn := range fns {
+			if fn != nil {
+				if err := fn(db, outOfBandMigrationRunner); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}
 }

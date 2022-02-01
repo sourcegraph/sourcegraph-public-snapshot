@@ -60,7 +60,12 @@ func TestOrganization(t *testing.T) {
 				t.Fatalf("QuickLinks mismatch (-want +got):\n%s", diff)
 			}
 		}
-
+		// Removing all members from an organization is not allowed - add a new user to the organization to verify cascading settings below
+		cleanup, err := createOrganizationUser(orgID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer cleanup(t)
 		// Remove authenticate user (gqltest-admin) from organization (gqltest-org) should
 		// no longer get cascaded settings from this organization.
 		err = client.RemoveUserFromOrganization(client.AuthenticatedUserID(), orgID)
@@ -167,4 +172,20 @@ func TestOrganization(t *testing.T) {
 			t.Fatal(err, "lastOrgs:", lastOrgs)
 		}
 	})
+}
+
+func createOrganizationUser(orgID string) (func(*testing.T), error) {
+	const tmpUserName = "gqltest-org-user-tmp"
+	tmpUserID, err := client.CreateUser(tmpUserName, tmpUserName+"@sourcegraph.com")
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.AddUserToOrganization(orgID, tmpUserName)
+	return func(t *testing.T) {
+		err := client.DeleteUser(tmpUserID, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}, err
 }

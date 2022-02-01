@@ -2,8 +2,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 
 import {
@@ -93,7 +93,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof _queryExternalChangesetWi
     })
 
 add('List of batch changes', () => (
-    <EnterpriseWebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
+    <WebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
         {props => (
             <BatchChangeRepoPage
                 {...props}
@@ -103,11 +103,11 @@ add('List of batch changes', () => (
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('No batch changes', () => (
-    <EnterpriseWebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
+    <WebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
         {props => (
             <BatchChangeRepoPage
                 {...props}
@@ -116,5 +116,5 @@ add('No batch changes', () => (
                 queryRepoBatchChanges={queryNone}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

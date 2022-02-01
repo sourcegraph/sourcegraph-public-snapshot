@@ -1,4 +1,4 @@
-version: 1
+version: 2
 snapshot:
   widths:
     - 1920 # Full-width browser window
@@ -10,3 +10,5 @@ snapshot:
     .percy-inactive-element {
       pointer-events: none !important;
     }
+discovery:
+  disable-cache: true

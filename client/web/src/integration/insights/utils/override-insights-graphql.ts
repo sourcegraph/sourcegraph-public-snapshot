@@ -48,6 +48,19 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
 
     testContext.overrideGraphQL({
         ...commonWebGraphQlResults,
+        // Mock temporary settings cause code insights beta modal UI relies on this handler to show/hide
+        // modal UI on all code insights related pages.
+        GetTemporarySettings: () => ({
+            temporarySettings: {
+                __typename: 'TemporarySettings',
+                contents: JSON.stringify({
+                    'user.daysActiveCount': 1,
+                    'user.lastDayActive': new Date().toDateString(),
+                    'search.usedNonGlobalContext': true,
+                    'insights.freeBetaAccepted': true,
+                }),
+            },
+        }),
         Insights: () => ({ insights: { nodes: [] } }),
         CurrentAuthState: () => ({
             currentUser: {
@@ -60,6 +73,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 displayName: null,
                 siteAdmin: true,
                 tags: [],
+                tosAccepted: true,
                 url: '/users/test',
                 settingsURL: '/users/test/settings',
                 organizations: {

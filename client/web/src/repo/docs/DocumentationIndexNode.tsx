@@ -5,13 +5,14 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
+import styles from './DocumentationIndexNode.module.scss'
 import { DocumentationNodeChild, GQLDocumentationNode, isExcluded, Tag } from './graphql'
 
 /**
@@ -154,17 +155,25 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
             >
                 <span
                     className={classNames(
-                        'd-flex align-items-center text-nowrap documentation-index-node-row',
-                        (styleAsActive || styleAsExpandable) && 'documentation-index-node-row--shift-left'
+                        'd-flex align-items-center text-nowrap',
+                        styles.documentationIndexNodeRow,
+                        (styleAsActive || styleAsExpandable) && styles.documentationIndexNodeRowShiftLeft
                     )}
                 >
                     {styleAsActive && (
-                        <CircleMediumIcon className="d-flex flex-shrink-0 mr-1 icon-inline documentation-index-node-active-circle" />
+                        <CircleMediumIcon
+                            className={classNames(
+                                'd-flex flex-shrink-0 mr-1 icon-inline',
+                                styles.documentationIndexNodeActiveCircle
+                            )}
+                        />
                     )}
                     {styleAsExpandable && (
-                        <button
-                            type="button"
-                            className="d-flex flex-shrink-0 mr-1 btn btn-icon documentation-index-node-expand-button"
+                        <Button
+                            className={classNames(
+                                'd-flex flex-shrink-0 mr-1 btn-icon',
+                                styles.documentationIndexNodeExpandButton
+                            )}
                             aria-label={expanded ? 'Collapse section' : 'Expand section'}
                             onClick={toggleExpanded}
                         >
@@ -174,7 +183,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                                 <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                             )}
                             {node.detail.value === '' && <strong id={'index-' + hash}>{node.label.value}</strong>}
-                        </button>
+                        </Button>
                     )}
                     {node.detail.value !== '' && (
                         <Link id={'index-' + hash} to={thisPage} onClick={scrollToFast} className="pr-3">

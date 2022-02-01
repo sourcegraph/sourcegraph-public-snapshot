@@ -4,10 +4,9 @@ import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'

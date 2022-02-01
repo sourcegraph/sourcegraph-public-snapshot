@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"container/list"
 	"context"
 	"encoding/json"
 	"flag"
@@ -25,8 +26,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -464,27 +464,33 @@ func makeSingleCommitRepo(cmd func(string, ...string) string) string {
 	return cmd("git", "rev-parse", "HEAD")
 }
 
-func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *Server {
-	return &Server{
+func makeTestServer(ctx context.Context, repoDir, remote string, db database.DB) *Server {
+	s := &Server{
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
 		DB:               db,
+		CloneQueue:       NewCloneQueue(list.New()),
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
 		rpsLimiter:       rate.NewLimiter(rate.Inf, 10),
 	}
+
+	s.StartClonePipeline(ctx)
+	return s
 }
 
 func TestCloneRepo(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := dbtesting.GetDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -578,10 +584,12 @@ func TestCloneRepo(t *testing.T) {
 }
 
 func TestHandleRepoUpdate(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := dbtesting.GetDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -604,7 +612,6 @@ func TestHandleRepoUpdate(t *testing.T) {
 	reposDir := t.TempDir()
 
 	s := makeTestServer(ctx, reposDir, remote, db)
-	s.ctx = context.Background()
 
 	// We need some of the side effects here
 	_ = s.Handler()
@@ -633,8 +640,10 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt")
+
 	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -661,7 +670,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// We expect an error
-	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -887,8 +896,10 @@ func TestHostnameMatch(t *testing.T) {
 }
 
 func TestSyncRepoState(t *testing.T) {
-	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	db := database.NewDB(dbtest.NewDB(t))
 	remoteDir := t.TempDir()
 
 	cmd := func(name string, arg ...string) string {
@@ -908,7 +919,6 @@ func TestSyncRepoState(t *testing.T) {
 
 	s := makeTestServer(ctx, reposDir, remoteDir, db)
 	s.Hostname = hostname
-	s.ctx = ctx
 
 	dbRepo := &types.Repo{
 		Name:        repoName,

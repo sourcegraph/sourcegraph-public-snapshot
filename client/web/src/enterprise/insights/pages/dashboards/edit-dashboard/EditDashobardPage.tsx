@@ -1,32 +1,31 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState } from 'react'
+import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
-import { Link } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
+import { asError } from '@sourcegraph/common'
+import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
-import { Settings } from '../../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../components'
-import { getSubjectDashboardByID } from '../../../hooks/use-dashboards/utils'
-import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
-import { InsightsDashboardCreationContent } from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
-import { useDashboardSettings } from '../creation/hooks/use-dashboard-settings'
+import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
+import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { CustomInsightDashboard, isVirtualDashboard } from '../../../core/types'
+import { isBuiltInInsightDashboard } from '../../../core/types/dashboard/real-dashboard'
+import { isGlobalSubject, SupportedInsightSubject } from '../../../core/types/subjects'
+import {
+    DashboardCreationFields,
+    InsightsDashboardCreationContent,
+} from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 
 import styles from './EditDashboardPage.module.scss'
-import { useUpdateDashboardCallback } from './hooks/use-update-dashboard'
 
-interface EditDashboardPageProps extends SettingsCascadeProps<Settings>, PlatformContextProps<'updateSettings'> {
+interface EditDashboardPageProps {
     dashboardId: string
-
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
 }
 
@@ -34,71 +33,75 @@ interface EditDashboardPageProps extends SettingsCascadeProps<Settings>, Platfor
  * Displays the edit (configure) dashboard page.
  */
 export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> = props => {
-    const { dashboardId, settingsCascade, authenticatedUser, platformContext } = props
+    const { dashboardId, authenticatedUser } = props
     const history = useHistory()
-    const subjects = useInsightSubjects({ settingsCascade })
 
-    const [previousDashboard] = useState(() => {
-        const subjects = settingsCascade.subjects
-        const configureSubject = subjects?.find(
-            ({ settings }) => settings && !isErrorLike(settings) && !!settings['insights.dashboards']?.[dashboardId]
+    const { getDashboardById, getDashboardSubjects, updateDashboard } = useContext(CodeInsightsBackendContext)
+
+    // Load edit dashboard information
+    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
+
+    const dashboard = useObservable(
+        useMemo(
+            () => getDashboardById({ dashboardId }),
+            // Load only on first render to avoid UI flashing after settings update
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            [dashboardId]
         )
+    )
 
-        if (!configureSubject || !configureSubject.settings || isErrorLike(configureSubject.settings)) {
-            return undefined
-        }
+    // Loading state
+    if (subjects === undefined || dashboard === undefined) {
+        return <LoadingSpinner />
+    }
 
-        const { subject, settings } = configureSubject
-
-        return getSubjectDashboardByID(subject, settings, dashboardId)
-    })
-
-    const dashboardInitialValues = useMemo(() => {
-        if (!previousDashboard) {
-            return undefined
-        }
-
-        const dashboardOwnerID = previousDashboard.owner.id
-
-        return {
-            name: previousDashboard.title,
-            visibility: dashboardOwnerID,
-        }
-    }, [previousDashboard])
-
-    const finalDashboardSettings = useDashboardSettings({
-        settingsCascade,
-
-        // Final settings used below as a store of all existing dashboards
-        // Usually we have a validation step for the title of dashboard because
-        // users can't have two dashboards with the same name/id. In edit mode
-        // we should allow users to have insight with id (camelCase(dashboard name))
-        // which already exists in the settings. For turning off this id/title
-        // validation we remove current dashboard from the final settings.
-        excludeDashboardIds: [dashboardId],
-    })
-
-    const handleSubmit = useUpdateDashboardCallback({ authenticatedUser, platformContext, previousDashboard })
-    const handleCancel = (): void => history.goBack()
-
-    if (!previousDashboard) {
+    // In case if we got null that means we couldn't find this dashboard
+    if (dashboard === null || isVirtualDashboard(dashboard) || isBuiltInInsightDashboard(dashboard)) {
         return (
             <HeroPage
                 icon={MapSearchIcon}
                 title="Oops, we couldn't find the dashboard"
                 subtitle={
                     <span>
-                        We couldn't find that dashboard. Try to find the dashboard with ID:{' '}
-                        <code className="badge badge-secondary">{dashboardId}</code> in your{' '}
-                        <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
+                        We couldn't find that dashboard. Try to find the dashboard with ID:
+                        <Badge variant="secondary" as="code">
+                            {dashboardId}
+                        </Badge>{' '}
+                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                     </span>
                 }
             />
         )
     }
 
+    const handleSubmit = async (dashboardValues: DashboardCreationFields): Promise<SubmissionErrors> => {
+        if (!dashboard) {
+            return
+        }
+
+        const { name, visibility, type } = dashboardValues
+
+        try {
+            const updatedDashboard = await updateDashboard({
+                previousDashboard: dashboard,
+                nextDashboardInput: {
+                    name,
+                    visibility,
+                    type,
+                },
+            }).toPromise()
+
+            history.push(`/insights/dashboards/${updatedDashboard.id}`)
+        } catch (error) {
+            return { [FORM_ERROR]: asError(error) }
+        }
+
+        return
+    }
+    const handleCancel = (): void => history.goBack()
+
     return (
-        <Page className={classnames('col-8', styles.page)}>
+        <Page className={classNames('col-8', styles.page)}>
             <PageTitle title="Configure dashboard" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
@@ -116,8 +119,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
             <Container className="mt-4">
                 <InsightsDashboardCreationContent
-                    initialValues={dashboardInitialValues}
-                    dashboardsSettings={finalDashboardSettings}
+                    initialValues={getDashboardInitialValues(dashboard, subjects)}
                     subjects={subjects}
                     onSubmit={handleSubmit}
                 >
@@ -140,7 +142,8 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                                 label={formAPI.submitting ? 'Saving' : 'Save changes'}
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="btn btn-primary ml-2 mb-2"
+                                className="ml-2 mb-2"
+                                variant="primary"
                             />
                         </>
                     )}
@@ -148,4 +151,29 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             </Container>
         </Page>
     )
+}
+
+function getDashboardInitialValues(
+    dashboard: CustomInsightDashboard,
+    subjects: SupportedInsightSubject[]
+): DashboardCreationFields | undefined {
+    if (dashboard.owner) {
+        return { name: dashboard.title, visibility: dashboard.owner.id }
+    }
+
+    if (dashboard.grants) {
+        const { users, organizations, global } = dashboard.grants
+        const globalSubject = subjects.find(isGlobalSubject)
+
+        if (global && globalSubject) {
+            return { name: dashboard.title, visibility: globalSubject.id }
+        }
+
+        return {
+            name: dashboard.title,
+            visibility: users[0] ?? organizations[0] ?? 'unkown',
+        }
+    }
+
+    return
 }

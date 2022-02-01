@@ -2,8 +2,9 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import sinon from 'sinon'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
+import codeMonitorFormStyles from './CodeMonitorForm.module.scss'
 import { FormTriggerArea } from './FormTriggerArea'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', module).addParameters({
@@ -19,7 +20,7 @@ const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', modul
 })
 
 add('Open, empty query', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <FormTriggerArea
                 {...props}
@@ -28,13 +29,16 @@ add('Open, empty query', () => (
                 onQueryChange={sinon.fake()}
                 setTriggerCompleted={sinon.fake()}
                 startExpanded={true}
+                cardBtnClassName={codeMonitorFormStyles.cardButton}
+                cardLinkClassName={codeMonitorFormStyles.cardLink}
+                cardClassName={codeMonitorFormStyles.card}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Open, partially valid query', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <FormTriggerArea
                 {...props}
@@ -43,13 +47,16 @@ add('Open, partially valid query', () => (
                 onQueryChange={sinon.fake()}
                 setTriggerCompleted={sinon.fake()}
                 startExpanded={true}
+                cardBtnClassName={codeMonitorFormStyles.cardButton}
+                cardLinkClassName={codeMonitorFormStyles.cardLink}
+                cardClassName={codeMonitorFormStyles.card}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Open, fully valid query', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <FormTriggerArea
                 {...props}
@@ -58,7 +65,10 @@ add('Open, fully valid query', () => (
                 onQueryChange={sinon.fake()}
                 setTriggerCompleted={sinon.fake()}
                 startExpanded={true}
+                cardBtnClassName={codeMonitorFormStyles.cardButton}
+                cardLinkClassName={codeMonitorFormStyles.cardLink}
+                cardClassName={codeMonitorFormStyles.card}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

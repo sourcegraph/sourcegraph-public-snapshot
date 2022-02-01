@@ -14,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 var (
@@ -26,7 +26,7 @@ var (
 
 // Init reads (or generates) the site ID. This func must be called exactly once before
 // Get can be called.
-func Init() {
+func Init(db database.DB) {
 	if inited {
 		panic("siteid: already initialized")
 	}
@@ -41,7 +41,7 @@ func Init() {
 		// if it doesn't yet exist.)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		globalState, err := globalstatedb.Get(ctx)
+		globalState, err := db.GlobalState().Get(ctx)
 		if err != nil {
 			fatalln("Error initializing global state:", err)
 		}

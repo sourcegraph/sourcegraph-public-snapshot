@@ -1,14 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Markdown render 1`] = `
-<span>
-  <strong>
-    a
-  </strong>
-  bc
-  <strong>
-    ab
-  </strong>
-  cabc
-</span>
+<DocumentFragment>
+  <span>
+    <strong>
+      a
+    </strong>
+    bc
+    <strong>
+      ab
+    </strong>
+    cabc
+  </span>
+</DocumentFragment>
 `;

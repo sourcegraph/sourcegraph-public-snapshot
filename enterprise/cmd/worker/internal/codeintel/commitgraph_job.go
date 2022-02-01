@@ -7,7 +7,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -18,7 +19,7 @@ import (
 
 type commitGraphJob struct{}
 
-func NewCommitGraphJob() shared.Job {
+func NewCommitGraphJob() job.Job {
 	return &commitGraphJob{}
 }
 
@@ -33,7 +34,7 @@ func (j *commitGraphJob) Routines(ctx context.Context) ([]goroutine.BackgroundRo
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db, err := shared.InitDatabase()
+	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}

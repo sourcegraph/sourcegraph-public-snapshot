@@ -3,12 +3,11 @@ import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -36,7 +35,7 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) 
                 <RepoLink repoName={node.name} to={node.url} />
                 {node.mirrorInfo.cloneInProgress && (
                     <small className="ml-2 text-success">
-                        <LoadingSpinner className="icon-inline" /> Cloning
+                        <LoadingSpinner /> Cloning
                     </small>
                 )}
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
@@ -50,18 +49,20 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) 
             </div>
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <Link className="btn btn-sm btn-secondary" to={node.url}>
+                    <Button to={node.url} variant="secondary" size="sm" as={Link}>
                         <CloudDownloadIcon className="icon-inline" /> Clone now
-                    </Link>
+                    </Button>
                 )}{' '}
                 {
-                    <Link
-                        className="btn btn-secondary btn-sm"
+                    <Button
                         to={`/${node.name}/-/settings`}
                         data-tooltip="Repository settings"
+                        variant="secondary"
+                        size="sm"
+                        as={Link}
                     >
                         <SettingsIcon className="icon-inline" /> Settings
-                    </Link>
+                    </Button>
                 }{' '}
             </div>
         </div>
@@ -140,10 +141,10 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
         <div className="site-admin-repositories-page">
             <PageTitle title="Repositories - Admin" />
             {showRepositoriesAddedBanner && (
-                <p className="alert alert-success">
+                <Alert variant="success" as="p">
                     Updating repositories. It may take a few moments to clone and index each repository. Repository
                     statuses are displayed below.
-                </p>
+                </Alert>
             )}
             <h2>Repositories</h2>
             <p>

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { formatUserCount } from '../../../productSubscription/helpers'
 

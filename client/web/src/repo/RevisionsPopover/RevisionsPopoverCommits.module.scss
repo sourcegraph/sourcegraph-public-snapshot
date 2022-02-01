@@ -1,0 +1,11 @@
+.link {
+    display: flex;
+}
+
+.message {
+    flex: 1 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    padding: 0 0.5rem 0;
+}

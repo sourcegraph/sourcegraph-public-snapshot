@@ -27,6 +27,8 @@ If you encounter performance or instability issues with Sourcegraph, we may ask 
 
 The metrics dump includes non-sensitive aggregate statistics of Sourcegraph like CPU & memory usage, number of successful and error requests between Sourcegraph services, and more. It does NOT contain sensitive information like code, repository names, user names, etc.
 
+In the process of troubleshooting, we may also ask that you perform other tasks from the command line to help us assist you. Our [command line generator](https://sourcegraph.github.io/support-generator/) is a tool we've created to help users generate commands for various functions (i.e. retrieving logs from specific containers, port forwarding, checking dirty databases, etc.).
+
 #### Docker Compose deployments
 
 To create a metrics dump from a docker-compose deployment, follow these steps:

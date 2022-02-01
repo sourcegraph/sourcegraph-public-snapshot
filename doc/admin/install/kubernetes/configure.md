@@ -56,7 +56,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
   ```bash
-  export SOURCEGRAPH_VERSION="v3.31.2"
+  export SOURCEGRAPH_VERSION="v3.36.2"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
 
@@ -67,7 +67,7 @@ Some of the following instructions require cluster access. Ensure you can [acces
 To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](./index.md#kustomize) and [overlays](./index.md#overlays).
 This means that you define your customizations as patches, and generate a manifest from our provided manifests to [apply](./operations.md#applying-manifests).
 
-In general, we recommend that customizations works like this:
+In general, we recommend that customizations work like this:
 
 1. [Create, customize, and apply overlays](#overlays) for your deployment
 2. Ensure the services came up correctly, then commit all the customizations to the new branch
@@ -155,6 +155,31 @@ This overlay adds a namespace declaration to all the manifests.
   kubectl get pods -A
   ```
 
+#### Storageclass
+
+By default Sourcegraph is configured to use a storage class called `sourcegraph`. If you wish to use an alternate name, you can use this overlay to change all `storageClass` references in the manifests. 
+
+You need to create the storageclass if it doesn't exist yet. See [these docs](#configure-a-storage-class) for more instructions.
+
+1. To use it, update the following two files, `replace-storageclass-name-pvc.yaml` and `replace-storageclass-name-sts.yaml` in the `deploy-sourcegraph/overlays/storageclass` directory with your storageclass name.
+
+1. To generate to the cluster, execute the following command:
+```shell script
+./overlay-generate-cluster.sh storageclass generated-cluster
+```
+
+1. After executing the script you can apply the generated manifests from the `generated-cluster` directory:
+
+```shell script
+kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+
+1. Ensure the persistent volumes have been created in the correct storage class by running the following command and inspecting the output: 
+
+```shell script
+kubectl get pvc
+```
+
 #### Non-privileged create cluster overlay
 
 This kustomization is for Sourcegraph installations in clusters with security restrictions. It runs all containers as a non root users, as well removing cluster roles and cluster role bindings and does all the rolebinding in a namespace. It configures Prometheus to work in the namespace and not require ClusterRole wide privileges when doing service discovery for scraping targets. It also disables cAdvisor.
@@ -232,6 +257,8 @@ kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort
 minikube service list
 ```
 
+> NOTE: For Mac Users, run `minikube service sourcegraph -n ns-sourcegraph` to open the newly deployed Sourcegraph in your browser
+
 To tear it down:
 
 ```sh
@@ -304,7 +331,7 @@ See [the official documentation](https://kubernetes.io/docs/tasks/administer-clu
 
 ### Google Cloud Platform (GCP)
 
-#### Kubernetes 1.18 and higher
+#### Kubernetes 1.19 and higher
 
 1. Please read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
 
@@ -329,28 +356,9 @@ volumeBindingMode: WaitForFirstConsumer
 
 [Additional documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver).
 
-#### Kubernetes 1.17 and below
-
-```yaml
-# base/sourcegraph.StorageClass.yaml
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: sourcegraph
-  labels:
-    deploy: sourcegraph
-provisioner: kubernetes.io/gce-pd
-parameters:
-  type: pd-ssd # This configures SSDs (recommended).
-reclaimPolicy: Retain
-allowVolumeExpansion: true
-```
-
-[Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#gce-pd).
-
 ### Amazon Web Services (AWS)
 
-#### Kubernetes 1.17 and higher
+#### Kubernetes 1.19 and higher
 
 1. Follow the [official instructions](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
 
@@ -375,29 +383,9 @@ allowVolumeExpansion: true
 
 [Additional documentation](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html).
 
-#### Kubernetes 1.16 and below
-
-
-```yaml
-# base/sourcegraph.StorageClass.yaml
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: sourcegraph
-  labels:
-    deploy: sourcegraph
-provisioner: kubernetes.io/aws-ebs
-parameters:
-  type: gp2 # This configures SSDs (recommended).
-reclaimPolicy: Retain
-allowVolumeExpansion: true
-```
-
-[Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs).
-
 ### Azure
 
-#### Kubernetes 1.18 and higher
+#### Kubernetes 1.19 and higher
 
 > WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact
 
@@ -425,25 +413,6 @@ allowVolumeExpansion: true
 
 [Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers).
 
-#### Kubernetes 1.17 and below
-
-
-```yaml
-# base/sourcegraph.StorageClass.yaml
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: sourcegraph
-  labels:
-    deploy: sourcegraph
-provisioner: kubernetes.io/azure-disk
-parameters:
-  storageaccounttype: Premium_LRS # This configures SSDs (recommended). A Premium VM is required.
-reclaimPolicy: Retain
-allowVolumeExpansion: true
-```
-
-[Additional documentation](https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-disk).
 
 ### Other cloud providers
 
@@ -461,27 +430,6 @@ allowVolumeExpansion: true
 # SSDs are highly recommended!
 # provisioner:
 # parameters:
-```
-
-### Using a storage class with an alternate name
-
-If you wish to use a different storage class for Sourcegraph, then you need to update all persistent volume claims with the name of the desired storage class. Convenience script:
-
-```bash
-#!/usr/bin/env bash
-
-# This script requires https://github.com/mikefarah/yq v4 or greater
-
-# Set SC to your storage class name
-SC=
-
-PVC=()
-STS=()
-mapfile -t PVC < <(fd --absolute-path --extension yaml "PersistentVolumeClaim" base)
-mapfile -t STS < <(fd --absolute-path --extension yaml "StatefulSet" base)
-
-for p in "${PVC[@]}"; do yq eval -i ".spec.storageClassName|=\"$SC\"" "$p"; done
-for s in "${STS[@]}"; do yq eval -i ".spec.volumeClaimTemplates.[].spec.storageClassName|=\"$SC\"" "$s"; done
 ```
 
 ## Configure network access
@@ -658,7 +606,7 @@ spec:
 
 ## Configure external databases
 
-We recommend utilizing an external database when deploying Sourcegraph to provide the most resilient and performant backend for your deployment. For more information on the specific requirements for Sourcgraph databases, see [this guide](../../postgres.md).
+We recommend utilizing an external database when deploying Sourcegraph to provide the most resilient and performant backend for your deployment. For more information on the specific requirements for Sourcegraph databases, see [this guide](../../postgres.md).
 
 Simply edit the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, PGUSER, [etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) in [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml) to point to your existing PostgreSQL instance.
 
@@ -758,6 +706,34 @@ If you want to specify a custom Redis server, you'll need specify the correspond
 
 - `sourcegraph-frontend`
 - `repo-updater`
+
+## Connect to an external Jaeger instance
+
+If you have an existing Jaeger instance you would like to connect Sourcegraph to (instead of running the Jaeger instance inside the Sourcegraph cluster), do:
+
+1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
+1. Update the Jaeger agent containers to point to your Jaeger collector.
+   1. Find all instances of Jaeger agent (`grep -R 'jaegertracing/jaeger-agent'`).
+   1. Update the `args` field of the Jaeger agent container configuration to point to the external
+      collector. E.g.,
+      ```
+      args:
+        - --reporter.grpc.host-port=external-jaeger-collector-host:14250
+        - --reporter.type=grpc
+      ```
+1. Apply these changes to the cluster.
+
+### Disable Jaeger entirely
+
+To disable Jaeger entirely, do:
+
+1. Update the Sourcegraph [site
+   configuration](https://docs.sourcegraph.com/admin/config/site_config) to remove the
+   `observability.tracing` field.
+1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
+1. Remove the jaeger agent containers from each `*.Deployment.yaml` and `*.StatefulSet.yaml` file.
+1. Apply these changes to the cluster.
+
 ## Install without cluster-wide RBAC
 
 Sourcegraph communicates with the Kubernetes API for service discovery. It also has some janitor DaemonSets that clean up temporary cache data. To do that we need to create RBAC resources.
@@ -819,6 +795,10 @@ data:
 
     # ...
 ```
+
+## Outbound Traffic
+
+When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or VPC it may be necessary to expose ports for outbound network traffic. Sourcegraph must open port 443 for outbound traffic to codehosts, and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with Sourcegraph.com. Port 22 must also be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your organization's security requirements.
 
 ## Troubleshooting
 

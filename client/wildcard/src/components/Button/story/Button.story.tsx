@@ -1,5 +1,5 @@
 import { boolean, select } from '@storybook/addon-knobs'
-import { Meta } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
@@ -11,7 +11,7 @@ import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
 
 import { ButtonVariants } from './ButtonVariants'
 
-const Story: Meta = {
+const config: Meta = {
     title: 'wildcard/Button',
 
     decorators: [
@@ -22,6 +22,9 @@ const Story: Meta = {
 
     parameters: {
         component: Button,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',
@@ -31,9 +34,9 @@ const Story: Meta = {
     },
 }
 
-export default Story
+export default config
 
-export const Simple = () => (
+export const Simple: Story = () => (
     <Button
         variant={select('Variant', BUTTON_VARIANTS, 'primary')}
         size={select('Size', BUTTON_SIZES, undefined)}
@@ -44,8 +47,8 @@ export const Simple = () => (
     </Button>
 )
 
-export const AllButtons = () => (
-    <>
+export const AllButtons: Story = () => (
+    <div className="pb-3">
         <h1>Buttons</h1>
         <h2>Variants</h2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
@@ -63,7 +66,6 @@ export const AllButtons = () => (
         <Button
             variant="secondary"
             as="a"
-            // @ts-expect-error (providing `as` changes possible props)
             href="https://example.com"
             target="_blank"
             rel="noopener noreferrer"
@@ -73,5 +75,13 @@ export const AllButtons = () => (
         </Button>
         <p>Buttons can be made to look like links.</p>
         <ButtonVariants variants={['link']} />
-    </>
+        <h2>Tooltips</h2>
+        <p>Buttons can have tooltips.</p>
+        <Button variant="primary" className="mr-3" data-tooltip="Some extra context on the button.">
+            Enabled
+        </Button>
+        <Button variant="primary" disabled={true} data-tooltip="Some extra context on why the button is disabled.">
+            Disabled
+        </Button>
+    </div>
 )

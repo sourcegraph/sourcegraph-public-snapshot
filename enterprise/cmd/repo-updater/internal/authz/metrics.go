@@ -7,6 +7,10 @@ import (
 
 // The metrics that are exposed to Prometheus.
 var (
+	metricsOutdatedPerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "src_repoupdater_perms_syncer_outdated_perms",
+		Help: "The number of records that have outdated permissions",
+	}, []string{"type"})
 	metricsNoPerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_perms_syncer_no_perms",
 		Help: "The number of records that do not have any permissions",

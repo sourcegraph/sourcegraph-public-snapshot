@@ -1,6 +1,7 @@
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { ExtensionsAreaRoute } from '../../extensions/ExtensionsArea'
 import { extensionsAreaRoutes } from '../../extensions/routes'
-import { lazyComponent } from '../../util/lazyComponent'
 
 export const enterpriseExtensionsAreaRoutes: readonly ExtensionsAreaRoute[] = [
     extensionsAreaRoutes[0],

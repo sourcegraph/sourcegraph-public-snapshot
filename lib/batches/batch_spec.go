@@ -70,9 +70,22 @@ type WorkspaceConfiguration struct {
 }
 
 type OnQueryOrRepository struct {
-	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
-	Repository                string `json:"repository,omitempty" yaml:"repository"`
-	Branch                    string `json:"branch,omitempty" yaml:"branch"`
+	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
+	Repository                string   `json:"repository,omitempty" yaml:"repository"`
+	Branch                    string   `json:"branch,omitempty" yaml:"branch"`
+	Branches                  []string `json:"branches,omitempty" yaml:"branches"`
+}
+
+var ErrConflictingBranches = NewValidationError(errors.New("both branch and branches specified"))
+
+func (oqor *OnQueryOrRepository) GetBranches() ([]string, error) {
+	if oqor.Branch != "" {
+		if len(oqor.Branches) > 0 {
+			return nil, ErrConflictingBranches
+		}
+		return []string{oqor.Branch}, nil
+	}
+	return oqor.Branches, nil
 }
 
 type Step struct {
@@ -129,7 +142,8 @@ func ParseBatchSpec(data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error)
 func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
 	var spec BatchSpec
 	if err := yaml.UnmarshalValidate(schema, data, &spec); err != nil {
-		if multiErr, ok := err.(*multierror.Error); ok {
+		var multiErr *multierror.Error
+		if errors.As(err, &multiErr) {
 			var newMultiError *multierror.Error
 
 			for _, e := range multiErr.Errors {

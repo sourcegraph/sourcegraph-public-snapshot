@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff"
 )
 
@@ -177,7 +177,7 @@ func queryBundle(bundle *precise.GroupedBundleDataMaps, path string, line, chara
 			if idx >= 10 {
 				fmt.Printf("Abridging monikers...\n")
 			}
-			fmt.Printf("Moniker:      %v:%v:%v\n", moniker.Scheme, moniker.Identifier, moniker.Kind)
+			fmt.Printf("Moniker:      %v:%v:%v:%v\n", moniker.Kind, moniker.Scheme, moniker.Identifier, moniker.Kind)
 		}
 
 		fmt.Printf("Hover data:\n\n%v\n\n", result.Hover)

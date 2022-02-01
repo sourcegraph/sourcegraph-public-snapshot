@@ -29,6 +29,18 @@ func NewMockCommandRunner() *MockCommandRunner {
 	}
 }
 
+// NewStrictMockCommandRunner creates a new mock of the commandRunner
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockCommandRunner() *MockCommandRunner {
+	return &MockCommandRunner{
+		RunCommandFunc: &CommandRunnerRunCommandFunc{
+			defaultHook: func(context.Context, command, *Logger) error {
+				panic("unexpected invocation of MockCommandRunner.RunCommand")
+			},
+		},
+	}
+}
+
 // surrogateMockCommandRunner is a copy of the commandRunner interface (from
 // the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command).

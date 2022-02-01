@@ -1,9 +1,8 @@
 import { mapValues } from 'lodash'
 
-import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
+import { Context, Expression, parse, parseTemplate } from '@sourcegraph/template-parser'
 
-import { Context } from './context/context'
-import { Expression, parse, parseTemplate } from './context/expr/evaluator'
+import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
 
 /**
  * Merges the contributions.
@@ -108,7 +107,11 @@ export function evaluateContributions<T>(context: Context<T>, contributions: Con
         menus:
             contributions.menus &&
             mapValues(contributions.menus, (menuItems): Evaluated<MenuItemContribution>[] | undefined =>
-                menuItems?.map(menuItem => ({ ...menuItem, when: menuItem.when && !!menuItem.when.exec(context) }))
+                menuItems?.map(menuItem => ({
+                    ...menuItem,
+                    when: menuItem.when && !!menuItem.when.exec(context),
+                    disabledWhen: menuItem.disabledWhen && !!menuItem.disabledWhen.exec(context),
+                }))
             ),
         actions: evaluateActionContributions<T>(context, contributions.actions),
     }
@@ -124,6 +127,7 @@ function evaluateActionContributions<T>(
     return actions?.map(action => ({
         ...action,
         title: action.title?.exec(context),
+        disabledTitle: action.disabledTitle?.exec(context),
         category: action.category?.exec(context),
         description: action.description?.exec(context),
         iconURL: action.iconURL?.exec(context),
@@ -153,6 +157,8 @@ export function parseContributionExpressions(contributions: Raw<Contributions>):
                 menuItems?.map(menuItem => ({
                     ...menuItem,
                     when: typeof menuItem.when === 'string' ? parse<boolean>(menuItem.when) : undefined,
+                    disabledWhen:
+                        typeof menuItem.disabledWhen === 'string' ? parse<boolean>(menuItem.disabledWhen) : undefined,
                 }))
             ),
         actions: contributions && parseActionContributionExpressions(contributions.actions),
@@ -169,6 +175,7 @@ function parseActionContributionExpressions(actions: Raw<Contributions['actions'
     return actions?.map(action => ({
         ...action,
         title: maybe(action.title, parseTemplate),
+        disabledTitle: maybe(action.disabledTitle, parseTemplate),
         category: maybe(action.category, parseTemplate),
         description: maybe(action.description, parseTemplate),
         iconURL: maybe(action.iconURL, parseTemplate),

@@ -5,7 +5,7 @@ import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { DetachChangesetsModal } from './DetachChangesetsModal'
 
@@ -19,7 +19,7 @@ const detachAction = () => {
 }
 
 add('Confirmation', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <DetachChangesetsModal
                 {...props}
@@ -31,5 +31,5 @@ add('Confirmation', () => (
                 detachChangesets={detachAction}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

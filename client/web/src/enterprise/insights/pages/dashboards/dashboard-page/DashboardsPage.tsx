@@ -3,24 +3,17 @@ import React, { useEffect } from 'react'
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
 
-import { FeedbackBadge } from '../../../../../components/FeedbackBadge'
 import { Page } from '../../../../../components/Page'
-import { Settings } from '../../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../components'
-import { InsightsDashboardType } from '../../../core/types'
+import { BetaFeedbackPanel } from '../../../components/beta-feedback-panel/BetaFeedbackPanel'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../core/types/dashboard/virtual-dashboard'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
-export interface DashboardsPageProps
-    extends PlatformContextProps<'updateSettings'>,
-        TelemetryProps,
-        SettingsCascadeProps<Settings> {
+export interface DashboardsPageProps extends TelemetryProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -34,7 +27,7 @@ export interface DashboardsPageProps
  * Displays insights dashboard page - dashboard selector and grid of dashboard insights.
  */
 export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = props => {
-    const { dashboardID, settingsCascade, telemetryService, platformContext } = props
+    const { dashboardID, telemetryService } = props
     const { url } = useRouteMatch()
 
     useEffect(() => {
@@ -48,39 +41,54 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fallback on
         // built-in "All insights" dashboard
-        return <Redirect to={`${url}/${InsightsDashboardType.All}`} />
+        return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
     }
 
     return (
         <div className="w-100">
             <Page>
                 <PageHeader
-                    annotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-                    path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
+                    annotation={<BetaFeedbackPanel />}
+                    path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
                     actions={
                         <>
-                            <Link to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
+                            <Button
+                                to="/insights/add-dashboard"
+                                className="mr-2"
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                            >
                                 <PlusIcon className="icon-inline" /> Create new dashboard
-                            </Link>
-                            <Link
+                            </Button>
+                            <Button
                                 to={`/insights/create?dashboardId=${dashboardID}`}
-                                className="btn btn-secondary"
                                 onClick={handleAddMoreInsightClick}
+                                variant="secondary"
+                                as={Link}
                             >
                                 <PlusIcon className="icon-inline" /> Create new insight
-                            </Link>
+                            </Button>
                         </>
                     }
                     className="mb-3"
                 />
 
-                <DashboardsContent
-                    platformContext={platformContext}
-                    telemetryService={telemetryService}
-                    settingsCascade={settingsCascade}
-                    dashboardID={dashboardID}
-                />
+                <DashboardPageContent telemetryService={telemetryService} dashboardID={dashboardID} />
             </Page>
         </div>
     )
+}
+
+export const DashboardPageContent: React.FunctionComponent<DashboardsPageProps> = props => {
+    const { dashboardID, telemetryService } = props
+    const { url } = useRouteMatch()
+
+    if (!dashboardID) {
+        // In case if url doesn't have a dashboard id we should fallback on
+        // built-in "All insights" dashboard
+        return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
+    }
+
+    return <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
 }

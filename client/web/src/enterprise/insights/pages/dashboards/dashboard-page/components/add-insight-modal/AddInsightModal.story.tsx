@@ -1,11 +1,13 @@
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { Settings } from '../../../../../../../schema/settings.schema'
-import { InsightsDashboardType, SettingsBasedInsightDashboard } from '../../../../../core/types'
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsSettingsCascadeBackend } from '../../../../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { InsightsDashboardType, InsightsDashboardScope, CustomInsightDashboard } from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
 
@@ -17,8 +19,9 @@ const { add } = storiesOf('web/insights/AddInsightModal', module)
         },
     })
 
-const dashboard: SettingsBasedInsightDashboard = {
-    type: InsightsDashboardType.Personal,
+const dashboard: CustomInsightDashboard = {
+    type: InsightsDashboardType.Custom,
+    scope: InsightsDashboardScope.Personal,
     id: '001',
     settingsKey: 'testDashboard',
     title: 'Test dashboard',
@@ -109,19 +112,13 @@ const SETTINGS_CASCADE: SettingsCascadeOrError<Settings> = {
     },
 }
 
+const codeInsightsBackend = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASCADE, {} as any)
 add('AddInsightModal', () => {
     const [open, setOpen] = useState<boolean>(true)
 
     return (
-        <>
-            {open && (
-                <AddInsightModal
-                    platformContext={{} as any}
-                    settingsCascade={SETTINGS_CASCADE}
-                    dashboard={dashboard}
-                    onClose={() => setOpen(false)}
-                />
-            )}
-        </>
+        <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
+            {open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}
+        </CodeInsightsBackendContext.Provider>
     )
 })

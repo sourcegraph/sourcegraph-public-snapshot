@@ -5,13 +5,14 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	"github.com/google/zoekt/rpc"
-
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -23,11 +24,30 @@ var (
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
 
+	indexedEndpointsOnce sync.Once
+	indexedEndpoints     *endpoint.Map
+
 	indexedSearchOnce sync.Once
-	indexedSearch     *backend.Zoekt
+	indexedSearch     zoekt.Streamer
 
 	indexersOnce sync.Once
 	indexers     *backend.Indexers
+
+	indexedListTTL = func() time.Duration {
+		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
+		if ttl == 0 {
+			if envvar.SourcegraphDotComMode() {
+				ttl = 30 * time.Second
+			} else {
+				ttl = 5 * time.Second
+			}
+		}
+		return ttl
+	}()
+
+	indexedDialer = backend.NewCachedZoektDialer(func(endpoint string) zoekt.Streamer {
+		return backend.NewCachedSearcher(indexedListTTL, backend.ZoektDial(endpoint))
+	})
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -41,40 +61,39 @@ func SearcherURLs() *endpoint.Map {
 	return searcherURLs
 }
 
-func Indexed() *backend.Zoekt {
+func IndexedEndpoints() *endpoint.Map {
+	indexedEndpointsOnce.Do(func() {
+		if addr := zoektAddr(os.Environ()); addr != "" {
+			indexedEndpoints = endpoint.New(addr)
+		}
+	})
+	return indexedEndpoints
+}
+
+func Indexed() zoekt.Streamer {
+	if !conf.SearchIndexEnabled() {
+		return nil
+	}
+
 	indexedSearchOnce.Do(func() {
-		var client zoekt.Streamer
-		if indexers := Indexers(); indexers.Enabled() {
-			client = backend.NewMeteredSearcher(
+		if eps := IndexedEndpoints(); eps != nil {
+			indexedSearch = backend.NewCachedSearcher(indexedListTTL, backend.NewMeteredSearcher(
 				"", // no hostname means its the aggregator
 				&backend.HorizontalSearcher{
-					Map:  indexers.Map,
-					Dial: backend.ZoektDial,
-				})
-		} else if addr := zoektAddr(os.Environ()); addr != "" {
-			client = backend.ZoektDial(addr)
+					Map:  eps,
+					Dial: indexedDialer,
+				}))
 		}
-
-		indexedSearch = &backend.Zoekt{Client: client}
-
-		conf.Watch(func() {
-			indexedSearch.SetEnabled(conf.SearchIndexEnabled())
-		})
 	})
+
 	return indexedSearch
 }
 
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
-		if addr := zoektAddr(os.Environ()); addr != "" {
-			indexers = &backend.Indexers{
-				Map:     endpoint.New(addr),
-				Indexed: reposAtEndpoint,
-			}
-		} else {
-			indexers = &backend.Indexers{
-				Map: nil,
-			}
+		indexers = &backend.Indexers{
+			Map:     IndexedEndpoints(),
+			Indexed: reposAtEndpoint(indexedDialer),
 		}
 	})
 	return indexers
@@ -105,18 +124,15 @@ func getEnv(environ []string, key string) (string, bool) {
 	return "", false
 }
 
-func reposAtEndpoint(ctx context.Context, endpoint string) map[string]struct{} {
-	cl := rpc.Client(endpoint)
-	defer cl.Close()
+func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) map[uint32]*zoekt.MinimalRepoListEntry {
+	return func(ctx context.Context, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry {
+		cl := dial(endpoint)
 
-	resp, err := cl.List(ctx, &query.Const{Value: true}, nil)
-	if err != nil {
-		return map[string]struct{}{}
-	}
+		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+		if err != nil {
+			return map[uint32]*zoekt.MinimalRepoListEntry{}
+		}
 
-	set := make(map[string]struct{}, len(resp.Repos))
-	for _, r := range resp.Repos {
-		set[r.Repository.Name] = struct{}{}
+		return resp.Minimal
 	}
-	return set
 }

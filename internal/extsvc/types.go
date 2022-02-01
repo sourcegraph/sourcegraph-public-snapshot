@@ -83,6 +83,8 @@ const (
 	KindPerforce        = "PERFORCE"
 	KindPhabricator     = "PHABRICATOR"
 	KindJVMPackages     = "JVMPACKAGES"
+	KindPagure          = "PAGURE"
+	KindNPMPackages     = "NPMPACKAGES"
 	KindOther           = "OTHER"
 )
 
@@ -122,6 +124,12 @@ const (
 	// TypeJVMPackages is the (api.ExternalRepoSpec).ServiceType value for Maven packages (Java/JVM ecosystem libraries).
 	TypeJVMPackages = "jvmPackages"
 
+	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
+	TypePagure = "pagure"
+
+	// TypeNPMPackages is the (api.ExternalRepoSpec).ServiceType value for NPM packages (JavaScript/TypeScript ecosystem libraries).
+	TypeNPMPackages = "npmPackages"
+
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
 
@@ -150,6 +158,8 @@ func KindToType(kind string) string {
 		return TypePerforce
 	case KindJVMPackages:
 		return TypeJVMPackages
+	case KindPagure:
+		return TypePagure
 	case KindOther:
 		return TypeOther
 	default:
@@ -179,6 +189,8 @@ func TypeToKind(t string) string {
 		return KindPhabricator
 	case TypeJVMPackages:
 		return KindJVMPackages
+	case TypePagure:
+		return KindPagure
 	case TypeOther:
 		return KindOther
 	default:
@@ -191,6 +203,7 @@ var (
 	bbsLower = strings.ToLower(TypeBitbucketServer)
 	bbcLower = strings.ToLower(TypeBitbucketCloud)
 	jvmLower = strings.ToLower(TypeJVMPackages)
+	npmLower = strings.ToLower(TypeNPMPackages)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -215,6 +228,10 @@ func ParseServiceType(s string) (string, bool) {
 		return TypePhabricator, true
 	case jvmLower:
 		return TypeJVMPackages, true
+	case npmLower:
+		return TypeNPMPackages, true
+	case TypePagure:
+		return TypePagure, true
 	case TypeOther:
 		return TypeOther, true
 	default:
@@ -244,6 +261,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindPhabricator, true
 	case KindJVMPackages:
 		return KindJVMPackages, true
+	case KindPagure:
+		return KindPagure, true
 	case KindOther:
 		return KindOther, true
 	default:
@@ -285,6 +304,10 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.PhabricatorConnection{}
 	case KindJVMPackages:
 		cfg = &schema.JVMPackagesConnection{}
+	case KindPagure:
+		cfg = &schema.PagureConnection{}
+	case KindNPMPackages:
+		cfg = &schema.NPMPackagesConnection{}
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
@@ -325,6 +348,8 @@ func ExtractToken(config string, kind string) (string, error) {
 	case *schema.BitbucketServerConnection:
 		return c.Token, nil
 	case *schema.PhabricatorConnection:
+		return c.Token, nil
+	case *schema.PagureConnection:
 		return c.Token, nil
 	default:
 		return "", errors.Errorf("unable to extract token for service kind %q", kind)
@@ -410,6 +435,14 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 			rlc.IsDefault = false
 		}
 		rlc.BaseURL = "maven"
+	case *schema.PagureConnection:
+		// 8/s is the default limit we enforce
+		rlc.Limit = rate.Limit(8)
+		if c != nil && c.RateLimit != nil {
+			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+			rlc.IsDefault = false
+		}
+		rlc.BaseURL = c.Url
 	default:
 		return rlc, ErrRateLimitUnsupported{codehostKind: kind}
 	}
@@ -507,6 +540,10 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		return c.P4Port, nil
 	case *schema.JVMPackagesConnection:
 		return KindJVMPackages, nil
+	case *schema.NPMPackagesConnection:
+		return KindNPMPackages, nil
+	case *schema.PagureConnection:
+		rawURL = c.Url
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}

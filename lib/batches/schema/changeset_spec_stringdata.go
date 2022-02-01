@@ -10,6 +10,8 @@ const ChangesetSpecJSON = `{
   "type": "object",
   "oneOf": [
     {
+      "title": "ExistingChangesetSpec",
+      "type": "object",
       "properties": {
         "baseRepository": {
           "type": "string",
@@ -26,6 +28,8 @@ const ChangesetSpecJSON = `{
       "additionalProperties": false
     },
     {
+      "title": "BranchChangesetSpec",
+      "type": "object",
       "properties": {
         "baseRepository": {
           "type": "string",

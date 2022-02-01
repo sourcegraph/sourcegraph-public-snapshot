@@ -1,0 +1,38 @@
+@import '@reach/dialog/styles.css';
+
+[data-reach-dialog-overlay] {
+    background-color: var(--modal-bg);
+}
+
+[data-reach-dialog-content] {
+    background-color: var(--color-bg-1);
+}
+
+.modal {
+    background-color: var(--color-bg-1);
+    width: 32rem;
+    max-width: 100vw;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+/*
+ * Positions
+ */
+.center,
+.top-third {
+    transform: translate(-50%, -50%);
+    position: absolute;
+    top: 50%;
+    margin: 0;
+    left: 50%;
+}
+
+.top-third {
+    top: 33%;
+}
+
+.full {
+    width: 100%;
+}

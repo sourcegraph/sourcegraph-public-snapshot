@@ -17,14 +17,14 @@ import (
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.
 type HandlerMetrics struct {
-	ServeHTTP *metrics.OperationMetrics
+	ServeHTTP *metrics.REDMetrics
 }
 
 // NewHandlerMetrics returns HandlerMetrics that need to be registered
 // in a Prometheus registry.
 func NewHandlerMetrics() HandlerMetrics {
 	return HandlerMetrics{
-		ServeHTTP: &metrics.OperationMetrics{
+		ServeHTTP: &metrics.REDMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Name: "src_repoupdater_http_handler_duration_seconds",
 				Help: "Time spent handling an HTTP request",

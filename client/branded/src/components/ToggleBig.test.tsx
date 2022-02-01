@@ -1,4 +1,5 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
@@ -6,21 +7,21 @@ import { ToggleBig } from './ToggleBig'
 
 describe('ToggleBig', () => {
     test('value is false', () => {
-        expect(mount(<ToggleBig value={false} />)).toMatchSnapshot()
+        expect(render(<ToggleBig value={false} />).asFragment()).toMatchSnapshot()
     })
 
     test('value is true', () => {
-        expect(mount(<ToggleBig value={true} />)).toMatchSnapshot()
+        expect(render(<ToggleBig value={true} />).asFragment()).toMatchSnapshot()
     })
 
     test('disabled', () => {
         const onToggle = sinon.spy(() => undefined)
-        const component = mount(<ToggleBig onToggle={onToggle} disabled={true} />)
+        const { asFragment } = render(<ToggleBig onToggle={onToggle} disabled={true} />)
+        userEvent.click(screen.getByRole('switch'))
 
-        component.find('[role="switch"]').simulate('click')
         sinon.assert.notCalled(onToggle)
-        expect(component).toMatchSnapshot()
+        expect(asFragment()).toMatchSnapshot()
     })
 
-    test('className', () => expect(mount(<ToggleBig className="c" />)).toMatchSnapshot())
+    test('className', () => expect(render(<ToggleBig className="c" />).asFragment()).toMatchSnapshot())
 })

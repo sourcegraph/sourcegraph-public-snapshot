@@ -1,7 +1,6 @@
+import { isErrorLike } from '@sourcegraph/common'
+import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-
-import { SettingsExperimentalFeatures } from '../../schema/settings.schema'
 
 /**
  * Code insights display location setting to check setting for particular view
@@ -30,7 +29,7 @@ export function isCodeInsightsEnabled(
     const viewsKeys = Object.keys(views) as (keyof CodeInsightsDisplayLocation)[]
     const experimentalFeatures: SettingsExperimentalFeatures = final?.experimentalFeatures ?? {}
 
-    if (!experimentalFeatures.codeInsights) {
+    if (experimentalFeatures.codeInsights === false) {
         return false
     }
 

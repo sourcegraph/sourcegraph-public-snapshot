@@ -15,14 +15,14 @@ type Store struct {
 	operations *Operations
 }
 
-func NewWithDB(db dbutil.DB, observationContext *observation.Context, metrics *metrics.OperationMetrics) *Store {
+func NewWithDB(db dbutil.DB, observationContext *observation.Context, metrics *metrics.REDMetrics) *Store {
 	if metrics == nil {
-		metrics = NewOperationsMetrics(observationContext)
+		metrics = NewREDMetrics(observationContext)
 	}
 
 	return &Store{
 		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
-		operations: NewOperationsFromMetrics(observationContext, metrics),
+		operations: NewOperations(observationContext, metrics),
 	}
 }
 

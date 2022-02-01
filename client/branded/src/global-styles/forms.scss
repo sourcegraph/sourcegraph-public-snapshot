@@ -11,7 +11,7 @@
     --input-focus-box-shadow: var(--focus-box-shadow);
 
     // Checkbox margins
-    --form-check-input-margin-y: 0.3rem;
+    --form-check-input-margin-y: 0.2rem;
 }
 
 .theme-dark {
@@ -27,7 +27,7 @@
     --input-focus-box-shadow: var(--focus-box-shadow);
 
     // Checkbox margins
-    --form-check-input-margin-y: 0.3rem;
+    --form-check-input-margin-y: 0.2rem;
 }
 
 // Prevent Firefox's default red outline for inputs
@@ -64,6 +64,17 @@
 }
 .invalid-feedback {
     color: var(--danger);
+}
+.form-check {
+    > label,
+    > input:not(:disabled) {
+        cursor: pointer;
+    }
+
+    .form-check-input[disabled] ~ .form-check-label,
+    .form-check-input:disabled ~ .form-check-label {
+        cursor: default;
+    }
 }
 .form-check-input {
     ~ .field-message,

@@ -11,14 +11,25 @@ describe('getInsightDataFromQuery', () => {
     })
 
     describe('should return correct insight values ', () => {
-        it('with repo: and "test" pattern query', () => {
+        it('removes context from the query', () => {
             const queryString = 'context:global test repo:^github\\.com/sourcegraph/sourcegraph$  patterntype:literal'
 
             const result = getInsightDataFromQuery(queryString)
 
             expect(result).toStrictEqual({
                 repositories: ['^github\\.com/sourcegraph/sourcegraph$'],
-                seriesQuery: 'context:global test patterntype:literal',
+                seriesQuery: 'test patterntype:literal',
+            })
+        })
+
+        it('with repo: and "test" pattern query', () => {
+            const queryString = 'test repo:^github\\.com/sourcegraph/sourcegraph$  patterntype:literal'
+
+            const result = getInsightDataFromQuery(queryString)
+
+            expect(result).toStrictEqual({
+                repositories: ['^github\\.com/sourcegraph/sourcegraph$'],
+                seriesQuery: 'test patterntype:literal',
             })
         })
 
@@ -30,7 +41,7 @@ describe('getInsightDataFromQuery', () => {
 
             expect(result).toStrictEqual({
                 repositories: ['^github\\.com/sourcegraph/sourcegraph$', '^github\\.com/sourcegraph/about'],
-                seriesQuery: 'context:global test patterntype:literal',
+                seriesQuery: 'test patterntype:literal',
             })
         })
 
@@ -42,7 +53,7 @@ describe('getInsightDataFromQuery', () => {
 
             expect(result).toStrictEqual({
                 repositories: ['^github\\.com/sourcegraph/sourcegraph$|^github\\.com/sourcegraph/about'],
-                seriesQuery: 'context:global test patterntype:literal',
+                seriesQuery: 'test patterntype:literal',
             })
         })
 
@@ -54,7 +65,7 @@ describe('getInsightDataFromQuery', () => {
 
             expect(result).toStrictEqual({
                 repositories: ['^github\\.com/sourcegraph/sourcegraph$'],
-                seriesQuery: 'context:global "repo: " patterntype:literal',
+                seriesQuery: '"repo: " patterntype:literal',
             })
         })
     })

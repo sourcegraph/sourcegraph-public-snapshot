@@ -13,6 +13,7 @@ For both features labeled `Beta` and those labeled `Experimental`, Sourcegraph w
 - The feature is undergoing active development and your [feedback](mailto:feedback@sourcegraph.com) is especially appreciated
 - The feature may have bugs
 - The feature may be changed, deprecated, or removed
+- The feature is excluded from our [Support SLAs](https://handbook.sourcegraph.com/support#slas)
 - The feature may have an additional cost to use once it becomes generally available 
 - Any documentation for the feature will explicitly note the feature is in beta or experimental mode
 

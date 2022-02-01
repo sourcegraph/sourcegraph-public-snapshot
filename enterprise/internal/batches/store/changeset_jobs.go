@@ -35,9 +35,9 @@ var changesetJobInsertColumns = []string{
 	"updated_at",
 }
 
-// ChangesetJobColumns are used by the changeset job related Store methods to query
+// changesetJobColumns are used by the changeset job related Store methods to query
 // and create changeset jobs.
-var ChangesetJobColumns = SQLColumns{
+var changesetJobColumns = SQLColumns{
 	"changeset_jobs.id",
 	"changeset_jobs.bulk_group",
 	"changeset_jobs.user_id",
@@ -107,8 +107,10 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 		ctx,
 		s.Handle().DB(),
 		"changeset_jobs",
+		batch.MaxNumPostgresParameters,
 		changesetJobInsertColumns,
-		ChangesetJobColumns,
+		"",
+		changesetJobColumns,
 		func(rows *sql.Rows) error {
 			i++
 			return scanChangesetJob(cs[i], rows)
@@ -131,7 +133,7 @@ func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (
 
 	q := getChangesetJobQuery(&opts)
 	var c btypes.ChangesetJob
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanChangesetJob(&c, sc)
 	})
 	if err != nil {
@@ -162,12 +164,12 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetJobsQueryFmtstr,
-		sqlf.Join(ChangesetJobColumns.ToSqlf(), ", "),
+		sqlf.Join(changesetJobColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-func scanChangesetJob(c *btypes.ChangesetJob, s scanner) error {
+func scanChangesetJob(c *btypes.ChangesetJob, s dbutil.Scanner) error {
 	var raw json.RawMessage
 	if err := s.Scan(
 		&c.ID,
@@ -208,7 +210,7 @@ func scanChangesetJob(c *btypes.ChangesetJob, s scanner) error {
 	return json.Unmarshal(raw, &c.Payload)
 }
 
-func ScanFirstChangesetJob(rows *sql.Rows, err error) (*btypes.ChangesetJob, bool, error) {
+func scanFirstChangesetJob(rows *sql.Rows, err error) (*btypes.ChangesetJob, bool, error) {
 	jobs, err := scanChangesetJobs(rows, err)
 	if err != nil || len(jobs) == 0 {
 		return nil, false, err
@@ -223,7 +225,7 @@ func scanChangesetJobs(rows *sql.Rows, queryErr error) ([]*btypes.ChangesetJob, 
 
 	var jobs []*btypes.ChangesetJob
 
-	return jobs, scanAll(rows, func(sc scanner) (err error) {
+	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
 		var j btypes.ChangesetJob
 		if err = scanChangesetJob(&j, sc); err != nil {
 			return err

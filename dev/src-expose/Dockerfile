@@ -1,4 +1,4 @@
-FROM sourcegraph/alpine-3.12:99212_2021-06-14_51f6e1e@sha256:0b98031f67bda9b088421f137a1d7d959b44ad360175cfac59c4d6ccd19a4e57
+FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -9,7 +9,6 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# hadolint ignore=DL3018
 RUN apk add --no-cache git
 
 # Ensures that a directory with the correct permissions exist in the image. Without this, in Docker Compose

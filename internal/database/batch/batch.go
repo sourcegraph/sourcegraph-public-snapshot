@@ -23,6 +23,7 @@ type Inserter struct {
 	batch            []interface{}
 	queryPrefix      string
 	querySuffix      string
+	onConflictSuffix string
 	returningSuffix  string
 	returningScanner ReturningScanner
 }
@@ -33,8 +34,8 @@ type ReturningScanner func(rows *sql.Rows) error
 // column names, then reads from the given channel as if they specify values for a single row.
 // The inserter will be flushed and any error that occurred during insertion or flush will be
 // returned.
-func InsertValues(ctx context.Context, db dbutil.DB, tableName string, columnNames []string, values <-chan []interface{}) error {
-	return WithInserter(ctx, db, tableName, columnNames, func(inserter *Inserter) error {
+func InsertValues(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, columnNames []string, values <-chan []interface{}) error {
+	return WithInserter(ctx, db, tableName, maxNumParameters, columnNames, func(inserter *Inserter) error {
 	outer:
 		for {
 			select {
@@ -65,10 +66,11 @@ func WithInserter(
 	ctx context.Context,
 	db dbutil.DB,
 	tableName string,
+	maxNumParameters int,
 	columnNames []string,
 	f func(inserter *Inserter) error,
 ) (err error) {
-	inserter := NewInserter(ctx, db, tableName, columnNames...)
+	inserter := NewInserter(ctx, db, tableName, maxNumParameters, columnNames...)
 	return with(ctx, inserter, f)
 }
 
@@ -81,12 +83,14 @@ func WithInserterWithReturn(
 	ctx context.Context,
 	db dbutil.DB,
 	tableName string,
+	maxNumParameters int,
 	columnNames []string,
+	onConflictClause string,
 	returningColumnNames []string,
 	returningScanner ReturningScanner,
 	f func(inserter *Inserter) error,
 ) (err error) {
-	inserter := NewInserterWithReturn(ctx, db, tableName, columnNames, returningColumnNames, returningScanner)
+	inserter := NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, onConflictClause, returningColumnNames, returningScanner)
 	return with(ctx, inserter, f)
 }
 
@@ -102,8 +106,8 @@ func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) er
 
 // NewInserter creates a new batch inserter using the given database handle, table name,
 // and column names. For performance and atomicity, handle should be a transaction.
-func NewInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) *Inserter {
-	return NewInserterWithReturn(ctx, db, tableName, columnNames, nil, nil)
+func NewInserter(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, columnNames ...string) *Inserter {
+	return NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, "", nil, nil)
 }
 
 // NewInserterWithReturn creates a new batch inserter using the given database handle, table
@@ -116,14 +120,17 @@ func NewInserterWithReturn(
 	ctx context.Context,
 	db dbutil.DB,
 	tableName string,
+	maxNumParameters int,
 	columnNames []string,
+	onConflictClause string,
 	returningColumnNames []string,
 	returningScanner ReturningScanner,
 ) *Inserter {
 	numColumns := len(columnNames)
-	maxBatchSize := getMaxBatchSize(numColumns)
+	maxBatchSize := getMaxBatchSize(numColumns, maxNumParameters)
 	queryPrefix := makeQueryPrefix(tableName, columnNames)
-	querySuffix := makeQuerySuffix(numColumns)
+	querySuffix := makeQuerySuffix(numColumns, maxNumParameters)
+	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
 	returningSuffix := makeReturningSuffix(returningColumnNames)
 
 	return &Inserter{
@@ -133,6 +140,7 @@ func NewInserterWithReturn(
 		batch:            make([]interface{}, 0, maxBatchSize),
 		queryPrefix:      queryPrefix,
 		querySuffix:      querySuffix,
+		onConflictSuffix: onConflictSuffix,
 		returningSuffix:  returningSuffix,
 		returningScanner: returningScanner,
 	}
@@ -207,16 +215,20 @@ func (i *Inserter) makeQuery(numValues int) string {
 	suffixLength := numTuples*sizeOfTuple + numTuples - 1
 
 	// Construct the query
-	return i.queryPrefix + i.querySuffix[:suffixLength] + i.returningSuffix
+	return i.queryPrefix + i.querySuffix[:suffixLength] + i.onConflictSuffix + i.returningSuffix
 }
 
-// maxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
+// MaxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
 // in a single insert statement.
-const maxNumParameters = 32767
+const MaxNumPostgresParameters = 32767
+
+// MaxNumSQLiteParameters is the maximum number of placeholder variables allowed by SQLite
+// in a single insert statement.
+const MaxNumSQLiteParameters = 999
 
 // getMaxBatchSize returns the number of rows that can be inserted into a single table with the
 // given number of columns via a single insert statement.
-func getMaxBatchSize(numColumns int) int {
+func getMaxBatchSize(numColumns, maxNumParameters int) int {
 	return (maxNumParameters / numColumns) * numColumns
 }
 
@@ -244,7 +256,7 @@ var querySuffixCacheMutex sync.Mutex
 // substring index is efficient.
 //
 // This method is memoized.
-func makeQuerySuffix(numColumns int) string {
+func makeQuerySuffix(numColumns, maxNumParameters int) string {
 	querySuffixCacheMutex.Lock()
 	defer querySuffixCacheMutex.Unlock()
 	if cache, ok := querySuffixCache[numColumns]; ok {
@@ -272,12 +284,23 @@ func makeQuerySuffix(numColumns int) string {
 	return querySuffix
 }
 
+// makeOnConflictSuffix creates a ON CONFLICT ... clause of the batch inserter statement, if
+// any on conflict command was supplied to the batch inserter.
+func makeOnConflictSuffix(command string) string {
+	if command == "" {
+		return ""
+	}
+
+	// Command assumed to be full clause
+	return fmt.Sprintf(" %s", command)
+}
+
 // makeReturningSuffix creates a RETURNING ... clause of the batch insert statement, if any
-// returning column names were supplied to the batcher inserter.
+// returning column names were supplied to the batch inserter.
 func makeReturningSuffix(columnNames []string) string {
 	if len(columnNames) == 0 {
 		return ""
 	}
 
-	return fmt.Sprintf("RETURNING %s", strings.Join(columnNames, ", "))
+	return fmt.Sprintf(" RETURNING %s", strings.Join(columnNames, ", "))
 }

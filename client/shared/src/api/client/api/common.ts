@@ -4,7 +4,8 @@ import { from, Observable, observable as symbolObservable, Subscription } from '
 import { mergeMap, finalize } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 
-import { asError } from '../../../util/errors'
+import { asError } from '@sourcegraph/common'
+
 import { ProxySubscribable } from '../../extension/api/common'
 import { isPromiseLike, syncRemoteSubscription } from '../../util'
 

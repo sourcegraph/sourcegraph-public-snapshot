@@ -3,9 +3,10 @@ import { BehaviorSubject, combineLatest, from, Observable, Subscription } from '
 import { catchError, concatMap, distinctUntilChanged, map, tap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
-import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { hashCode } from '../../util/hashCode'
 import { memoizeObservable } from '../../util/memoizeObservable'
 import { wrapRemoteObservable } from '../client/api/common'

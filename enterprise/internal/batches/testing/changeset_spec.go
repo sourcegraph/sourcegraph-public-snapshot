@@ -88,7 +88,7 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 }
 
 type CreateChangesetSpecer interface {
-	CreateChangesetSpec(ctx context.Context, changesetSpec *btypes.ChangesetSpec) error
+	CreateChangesetSpec(ctx context.Context, changesetSpecs ...*btypes.ChangesetSpec) error
 }
 
 func CreateChangesetSpec(

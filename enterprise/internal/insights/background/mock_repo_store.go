@@ -32,6 +32,18 @@ func NewMockRepoStore() *MockRepoStore {
 	}
 }
 
+// NewStrictMockRepoStore creates a new mock of the RepoStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockRepoStore() *MockRepoStore {
+	return &MockRepoStore{
+		GetByNameFunc: &RepoStoreGetByNameFunc{
+			defaultHook: func(context.Context, api.RepoName) (*types.Repo, error) {
+				panic("unexpected invocation of MockRepoStore.GetByName")
+			},
+		},
+	}
+}
+
 // NewMockRepoStoreFrom creates a new mock of the MockRepoStore interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {

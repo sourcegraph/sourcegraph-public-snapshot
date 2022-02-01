@@ -14,7 +14,7 @@ type operations struct {
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_autoindex_enqueuer",
 		metrics.WithLabels("op"),

@@ -2,14 +2,14 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "code_intel_auto_index.schema.json#",
   "title": "CodeIntelAutoIndex",
-  "description": "Configuration settings for repository code intel auto indexing.",
+  "description": "Configuration settings for repository code intel auto-indexing.",
   "allowComments": true,
   "definitions": {
     "docker_step": {
       "type": "object",
       "properties": {
         "root": {
-          "description": "The working directly within the docker container.",
+          "description": "The working directory within the Docker container.",
           "type": "string"
         },
         "image": {

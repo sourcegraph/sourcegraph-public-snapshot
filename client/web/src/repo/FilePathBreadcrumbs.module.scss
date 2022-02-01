@@ -1,0 +1,21 @@
+.file-path-breadcrumbs {
+    display: flex;
+    min-width: 0;
+    overflow: hidden;
+    align-items: center;
+    white-space: nowrap;
+
+    .part {
+        /* Ensure focus shadow is not clipped by overflow: hidden */
+        margin: 0.125rem;
+    }
+
+    .part-directory {
+        flex: 1 1 1em;
+        min-width: 1em;
+        max-width: fit-content;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+    }
+}

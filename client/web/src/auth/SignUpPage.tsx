@@ -1,9 +1,10 @@
 import classNames from 'classnames'
 import React, { useEffect } from 'react'
-import { Link, Redirect, useLocation } from 'react-router-dom'
+import { Redirect, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -14,11 +15,12 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { SourcegraphIcon } from './icons'
-import { getReturnTo } from './SignInSignUpCommon'
+import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
+import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
-interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
+export interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -31,6 +33,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     context,
     isLightTheme,
     telemetryService,
+    featureFlags,
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
@@ -66,13 +69,27 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             // if sign up is successful and enablePostSignupFlow feature is ON -
             // redirect user to the /post-sign-up page
             if (context.experimentalFeatures.enablePostSignupFlow) {
-                window.location.replace(new URL('/welcome', window.location.href).pathname)
+                window.location.replace(new URL(maybeAddPostSignUpRedirect(), window.location.href).pathname)
             } else {
                 window.location.replace(getReturnTo(location))
             }
 
             return Promise.resolve()
         })
+
+    if (query.get('editor') === 'vscode') {
+        return (
+            <VsCodeSignUpPage
+                source={query.get('src')}
+                onSignUp={handleSignUp}
+                isLightTheme={isLightTheme}
+                showEmailForm={query.has(ShowEmailFormQueryParameter)}
+                context={context}
+                telemetryService={telemetryService}
+                featureFlags={featureFlags}
+            />
+        )
+    }
 
     if (context.sourcegraphDotComMode) {
         return (
@@ -83,6 +100,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
+                featureFlags={featureFlags}
             />
         )
     }
@@ -101,7 +119,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 body={
                     <div className={classNames('pb-5', signInSignUpCommonStyles.signupPageContainer)}>
                         {context.sourcegraphDotComMode && <p className="pt-1 pb-2">Start searching public code now</p>}
-                        <SignUpForm context={context} onSignUp={handleSignUp} />
+                        <SignUpForm featureFlags={featureFlags} context={context} onSignUp={handleSignUp} />
                         <p className="mt-3">
                             Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                         </p>

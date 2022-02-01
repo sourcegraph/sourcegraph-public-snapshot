@@ -11,6 +11,11 @@ import (
 
 type GitFunc func(args ...string) (string, error)
 
+// GitGetChildren lists all the children under the givem directories for the given commit.
+//
+// NOTE: A copy of this function was added to
+// sourcegraph/sourcegraph/internal/vcs/git called ListDirectoryChildren as we
+// don't want to rely on this package from there.
 func GitGetChildren(gitFunc GitFunc, commit string, dirnames []string) (map[string][]string, error) {
 	out, err := gitFunc(
 		append(

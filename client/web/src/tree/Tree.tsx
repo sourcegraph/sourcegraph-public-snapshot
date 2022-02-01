@@ -7,15 +7,17 @@ import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo, formatSearchParameters } from '@sourcegraph/shared/src/util/url'
 
 import { dirname } from '../util/path'
 
+import styles from './Tree.module.scss'
 import { TreeRoot } from './TreeRoot'
 import { getDomElement, scrollIntoView } from './util'
 
-interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
+interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     history: H.History
     location: H.Location
     scrollRootSelector?: string
@@ -303,7 +305,13 @@ export class Tree extends React.PureComponent<Props, State> {
              * We should not be stealing focus here, we should let the user focus on the actual items listed.
              * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
              */
-            <div className="tree" tabIndex={0} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
+            <div
+                data-testid="tree"
+                className={styles.tree}
+                tabIndex={0}
+                onKeyDown={this.onKeyDown}
+                ref={this.setTreeElement}
+            >
                 <TreeRoot
                     ref={reference => {
                         if (reference) {
@@ -332,6 +340,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     sizeKey={this.props.sizeKey}
                     extensionsController={this.props.extensionsController}
                     isLightTheme={this.props.isLightTheme}
+                    telemetryService={this.props.telemetryService}
                 />
             </div>
         )

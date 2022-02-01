@@ -1,12 +1,12 @@
 import { proxy, Remote } from 'comlink'
 import { noop, sortBy } from 'lodash'
-import { BehaviorSubject, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, EMPTY, ReplaySubject } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
+import { asError } from '@sourcegraph/common'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 
-import { asError } from '../../util/errors'
 import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
@@ -81,7 +81,7 @@ export function createExtensionAPIFactory(
             return state.roots.value
         },
         get versionContext() {
-            return state.versionContext
+            return undefined
         },
         get searchContext() {
             return state.searchContext
@@ -90,7 +90,7 @@ export function createExtensionAPIFactory(
         openedTextDocuments: state.openedTextDocuments.asObservable(),
         onDidChangeRoots: state.roots.pipe(mapTo(undefined)),
         rootChanges: state.rootChanges.asObservable(),
-        versionContextChanges: state.versionContextChanges.asObservable(),
+        versionContextChanges: EMPTY,
         searchContextChanges: state.searchContextChanges.asObservable(),
     }
 
@@ -182,6 +182,7 @@ export function createExtensionAPIFactory(
                 content: '',
                 component: null,
                 priority: 0,
+                selector: null,
             })
 
             const panelView: sourcegraph.PanelView = {
@@ -208,6 +209,12 @@ export function createExtensionAPIFactory(
                 },
                 set priority(priority: number) {
                     panelViewData.next({ ...panelViewData.value, priority })
+                },
+                get selector() {
+                    return panelViewData.value.selector
+                },
+                set selector(selector: sourcegraph.DocumentSelector | null) {
+                    panelViewData.next({ ...panelViewData.value, selector })
                 },
                 unsubscribe: () => {
                     subscription.unsubscribe()

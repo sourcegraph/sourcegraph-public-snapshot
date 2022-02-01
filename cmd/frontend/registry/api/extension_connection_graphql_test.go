@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestRegistryExtensionConnectionResolver(t *testing.T) {
@@ -21,7 +21,7 @@ func TestRegistryExtensionConnectionResolver(t *testing.T) {
 		return ids
 	}
 
-	ListLocalRegistryExtensions = func(context.Context, dbutil.DB, graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error) {
+	ListLocalRegistryExtensions = func(context.Context, database.DB, graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error) {
 		return nil, nil
 	}
 	defer func() {

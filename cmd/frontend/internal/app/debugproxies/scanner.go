@@ -1,6 +1,7 @@
 package debugproxies
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -70,9 +71,12 @@ func StartClusterScanner(consumer ScanConsumer) error {
 // Runs the k8s.Watch endpoints event loop, and triggers a rescan of cluster when something changes with endpoints.
 // Before spinning in the loop does an initial scan.
 func (cs *clusterScanner) runEventLoop() {
-	cs.scanCluster()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cs.scanCluster(ctx)
 	for {
-		ok, err := cs.watchEndpointEvents()
+		ok, err := cs.watchEndpointEvents(ctx)
 		if ok {
 			log15.Debug("ephemeral kubernetes endpoint watch error. Will start loop again in 5s", "endpoint", "/-/debug", "error", err)
 		} else {
@@ -84,10 +88,9 @@ func (cs *clusterScanner) runEventLoop() {
 
 // watchEndpointEvents uses the k8s watch API operation to watch for endpoint events. Spins forever unless an error
 // occurs that would necessitate creating a new watcher. The caller will then call again creating the new watcher.
-func (cs *clusterScanner) watchEndpointEvents() (bool, error) {
-
+func (cs *clusterScanner) watchEndpointEvents(ctx context.Context) (bool, error) {
 	// TODO(Dax): Rewrite this to used NewSharedInformerFactory from k8s/client-go
-	watcher, err := cs.client.Endpoints(cs.namespace).Watch(metav1.ListOptions{})
+	watcher, err := cs.client.Endpoints(cs.namespace).Watch(ctx, metav1.ListOptions{})
 	if err != nil {
 		return false, errors.Errorf("k8s client.Watch error: %w", err)
 	}
@@ -105,16 +108,16 @@ func (cs *clusterScanner) watchEndpointEvents() (bool, error) {
 			return true, errors.New("error event")
 		}
 
-		cs.scanCluster()
+		cs.scanCluster(ctx)
 	}
 }
 
 // scanCluster looks for endpoints belonging to services that have annotation sourcegraph.prometheus/scrape=true.
 // It derives the appropriate port from the prometheus.io/port annotation.
-func (cs *clusterScanner) scanCluster() {
+func (cs *clusterScanner) scanCluster(ctx context.Context) {
 
 	// Get services from the current namespace
-	services, err := cs.client.Services(cs.namespace).List(metav1.ListOptions{})
+	services, err := cs.client.Services(cs.namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		log15.Error("k8s failed to list services", "error", err)
 	}
@@ -142,7 +145,7 @@ func (cs *clusterScanner) scanCluster() {
 			}
 		}
 
-		endpoints, err := cs.client.Endpoints(cs.namespace).Get(svcName, metav1.GetOptions{})
+		endpoints, err := cs.client.Endpoints(cs.namespace).Get(ctx, svcName, metav1.GetOptions{})
 		if err != nil {
 			log15.Error("k8s failed to get endpoints", "error", err)
 			return

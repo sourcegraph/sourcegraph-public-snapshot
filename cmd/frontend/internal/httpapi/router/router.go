@@ -26,10 +26,6 @@ const (
 	GitLabWebhooks          = "gitlab.webhooks"
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 
-	SavedQueriesListAll    = "internal.saved-queries.list-all"
-	SavedQueriesGetInfo    = "internal.saved-queries.get-info"
-	SavedQueriesSetInfo    = "internal.saved-queries.set-info"
-	SavedQueriesDeleteInfo = "internal.saved-queries.delete-info"
 	SettingsGetForSubject  = "internal.settings.get-for-subject"
 	OrgsListUsers          = "internal.orgs.list-users"
 	OrgsGetByName          = "internal.orgs.get-by-name"
@@ -50,7 +46,6 @@ const (
 	ReposInventory         = "internal.repos.inventory"
 	ReposList              = "internal.repos.list"
 	ReposIndex             = "internal.repos.index"
-	ReposListEnabled       = "internal.repos.list-enabled"
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
@@ -97,10 +92,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
-	base.Path("/saved-queries/list-all").Methods("POST").Name(SavedQueriesListAll)
-	base.Path("/saved-queries/get-info").Methods("POST").Name(SavedQueriesGetInfo)
-	base.Path("/saved-queries/set-info").Methods("POST").Name(SavedQueriesSetInfo)
-	base.Path("/saved-queries/delete-info").Methods("POST").Name(SavedQueriesDeleteInfo)
 	base.Path("/settings/get-for-subject").Methods("POST").Name(SettingsGetForSubject)
 	base.Path("/orgs/list-users").Methods("POST").Name(OrgsListUsers)
 	base.Path("/orgs/get-by-name").Methods("POST").Name(OrgsGetByName)
@@ -122,7 +113,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
-	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)

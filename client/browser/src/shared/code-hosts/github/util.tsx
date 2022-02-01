@@ -1,4 +1,4 @@
-import { RawRepoSpec } from '@sourcegraph/shared/src/util/url'
+import { RawRepoSpec, RepoSpec } from '@sourcegraph/shared/src/util/url'
 
 import { DiffResolvedRevisionSpec } from '../../repo'
 import { RepoURLParseError } from '../shared/errors'
@@ -225,6 +225,7 @@ export function getFilePath(): string {
 }
 
 type GitHubURL = RawRepoSpec &
+    RepoSpec &
     (
         | { pageType: 'commit' | 'pull' | 'compare' | 'other' }
         | {
@@ -251,7 +252,8 @@ export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> 
     if (!user || !ghRepoName) {
         throw new RepoURLParseError(`Could not parse repoName from GitHub url: ${location.href}`)
     }
-    const rawRepoName = `${host}/${user}/${ghRepoName}`
+    const repoName = `${user}/${ghRepoName}`
+    const rawRepoName = `${host}/${repoName}`
     switch (pageType) {
         case 'blob':
         case 'tree':
@@ -259,12 +261,13 @@ export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> 
                 pageType,
                 rawRepoName,
                 revisionAndFilePath: decodeURIComponent(rest.join('/')),
+                repoName,
             }
         case 'pull':
         case 'commit':
         case 'compare':
-            return { pageType, rawRepoName }
+            return { pageType, rawRepoName, repoName }
         default:
-            return { pageType: 'other', rawRepoName }
+            return { pageType: 'other', rawRepoName, repoName }
     }
 }

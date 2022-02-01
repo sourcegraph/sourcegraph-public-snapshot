@@ -1,121 +1,93 @@
-import classNames from 'classnames'
-import { range } from 'lodash'
-import EmoticonIcon from 'mdi-react/EmoticonIcon'
-import React, { useState } from 'react'
-import { useHistory } from 'react-router'
+import React, { useEffect, useState } from 'react'
 
-import { AuthenticatedUser } from '../auth'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { Checkbox } from '@sourcegraph/wildcard'
+
 import { eventLogger } from '../tracking/eventLogger'
 
+import { SurveyRatingRadio } from './SurveyRatingRadio'
 import { Toast } from './Toast'
-import toastStyles from './Toast.module.scss'
-import { daysActiveCount } from './util'
 
-const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
-
-interface SurveyCTAProps {
-    ariaLabelledby?: string
-    className?: string
-    score?: number
-    onChange?: (score: number) => void
-    openSurveyInNewTab?: boolean
-    'aria-labelledby'?: string
+interface SurveyToastProps {
+    /**
+     * For Storybook only
+     */
+    forceVisible?: boolean
 }
 
-export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
-    const history = useHistory()
-    const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
+export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVisible }) => {
+    const [shouldPermanentlyDismiss, setShouldPermanentlyDismiss] = useState(false)
+    const [temporarilyDismissed, setTemporarilyDismissed] = useTemporarySetting(
+        'npsSurvey.hasTemporarilyDismissed',
+        false
+    )
+    const [permanentlyDismissed, setPermanentlyDismissed] = useTemporarySetting(
+        'npsSurvey.hasPermanentlyDismissed',
+        false
+    )
+    const [daysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)
 
-    const handleFocus = (index: number): void => {
-        setFocusedIndex(index)
-    }
+    const loadingTemporarySettings =
+        temporarilyDismissed === undefined || permanentlyDismissed === undefined || daysActiveCount === undefined
 
-    const handleBlur = (): void => {
-        setFocusedIndex(null)
-    }
+    /**
+     * We show a toast notification if:
+     * 1. User has not recently dismissed the notification
+     * 2. User has not permanently dismissed the notification
+     * 3. User has been active for exactly 3 days OR it has been 30 days since they were last shown the notification
+     */
+    const shouldShow =
+        !loadingTemporarySettings && !temporarilyDismissed && !permanentlyDismissed && daysActiveCount % 30 === 3
 
-    const handleChange = (score: number): void => {
-        eventLogger.log('SurveyButtonClicked', { score }, { score })
-        history.push(`/survey/${score}`)
+    const visible = forceVisible || shouldShow
 
-        if (props.onChange) {
-            props.onChange(score)
+    useEffect(() => {
+        if (visible) {
+            eventLogger.log('SurveyReminderViewed')
         }
+    }, [visible])
+
+    useEffect(() => {
+        if (!loadingTemporarySettings && daysActiveCount % 30 === 0) {
+            // Reset toast dismissal 3 days before it will be shown
+            setTemporarilyDismissed(false)
+        }
+    }, [loadingTemporarySettings, daysActiveCount, setTemporarilyDismissed])
+
+    const handleDismiss = (): void => {
+        if (shouldPermanentlyDismiss) {
+            setPermanentlyDismissed(shouldPermanentlyDismiss)
+        } else {
+            setTemporarilyDismissed(true)
+        }
+    }
+
+    if (!visible) {
+        return null
     }
 
     return (
-        <fieldset aria-labelledby={props.ariaLabelledby} className={props.className} onBlur={handleBlur}>
-            {range(0, 11).map(score => {
-                const pressed = score === props.score
-                const focused = score === focusedIndex
-
-                return (
-                    <label
-                        key={score}
-                        className={classNames('btn btn-primary', toastStyles.ratingBtn, {
-                            active: pressed,
-                            focus: focused,
-                        })}
-                    >
-                        <input
-                            type="radio"
-                            name="survey-score"
-                            value={score}
-                            onChange={() => handleChange(score)}
-                            onFocus={() => handleFocus(score)}
-                            className={toastStyles.ratingRadio}
-                        />
-
-                        {score}
-                    </label>
-                )
-            })}
-        </fieldset>
+        <Toast
+            title="Tell us what you think"
+            subtitle={
+                <span id="survey-toast-scores">How likely is it that you would recommend Sourcegraph to a friend?</span>
+            }
+            cta={
+                <SurveyRatingRadio
+                    onChange={handleDismiss}
+                    openSurveyInNewTab={true}
+                    ariaLabelledby="survey-toast-scores"
+                />
+            }
+            footer={
+                <Checkbox
+                    id="survey-toast-refuse"
+                    label="Don't show this again"
+                    checked={shouldPermanentlyDismiss}
+                    onChange={event => setShouldPermanentlyDismiss(event.target.checked)}
+                />
+            }
+            onDismiss={handleDismiss}
+        />
     )
-}
-
-interface Props {
-    authenticatedUser: AuthenticatedUser | null
-}
-
-interface State {
-    visible: boolean
-}
-
-export class SurveyToast extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props)
-        this.state = {
-            visible: localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && daysActiveCount % 30 === 3,
-        }
-        if (this.state.visible) {
-            eventLogger.log('SurveyReminderViewed')
-        } else if (daysActiveCount % 30 === 0) {
-            // Reset toast dismissal 3 days before it will be shown
-            localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'false')
-        }
-    }
-
-    public render(): JSX.Element | null {
-        if (!this.state.visible) {
-            return null
-        }
-
-        return (
-            <Toast
-                icon={<EmoticonIcon className="icon-inline" />}
-                title="Tell us what you think"
-                subtitle="How likely is it that you would recommend Sourcegraph to a friend?"
-                cta={<SurveyCTA onChange={this.onChangeScore} openSurveyInNewTab={true} />}
-                onDismiss={this.onDismiss}
-            />
-        )
-    }
-
-    private onChangeScore = (): void => this.onDismiss()
-
-    private onDismiss = (): void => {
-        localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'true')
-        this.setState({ visible: false })
-    }
 }

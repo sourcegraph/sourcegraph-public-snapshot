@@ -1,17 +1,18 @@
 import React, { useCallback } from 'react'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
 import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { codeHostExternalServices } from '../../../components/externalServices/externalServices'
 import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { SourcegraphContext } from '../../../jscontext'
+import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
+import { CodeHostListItem } from './CodeHostListItem'
 
 export interface UserCodeHosts {
     user: AuthenticatedUser
@@ -23,7 +24,6 @@ export interface UserCodeHosts {
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
-type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
 const cloudSupportedServices = {
@@ -93,8 +93,9 @@ export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
             <ul className="list-group">
                 {Object.entries(cloudSupportedServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                     authProvidersByKind[kind] ? (
-                        <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
+                        <CodeHostListItem key={id}>
                             <CodeHostItem
+                                owner={{ id: user.id, type: 'user' }}
                                 service={services[kind]}
                                 kind={kind}
                                 name={defaultDisplayName}
@@ -104,7 +105,7 @@ export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
                                 onDidRemove={removeService(kind)}
                                 onDidError={onDidError}
                             />
-                        </li>
+                        </CodeHostListItem>
                     ) : null
                 )}
             </ul>

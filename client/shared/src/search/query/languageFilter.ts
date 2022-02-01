@@ -54,7 +54,7 @@ export const POPULAR_LANGUAGES: string[] = [
  * The whole list was extracted from
  * https://github.com/go-enry/go-enry/blob/master/data/alias.go via
  *
-   curl "https://raw.githubusercontent.com/go-enry/go-enry/$(grep go-enry go.mod|cut -d ' ' -f 2)/data/alias.go" \
+   curl "https://raw.githubusercontent.com/go-enry/go-enry/$(grep go-enry/go-enry go.mod|cut -d ' ' -f 2)/data/alias.go" \
    | awk -F : '/^var LanguageByAliasMap/ { MATCH=1; next } /^}/ { exit } MATCH==1 { gsub(/^ +/, "", $2); print $2 }' \
    | sort | uniq
  *

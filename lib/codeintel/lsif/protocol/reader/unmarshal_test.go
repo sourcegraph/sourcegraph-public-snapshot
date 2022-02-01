@@ -58,6 +58,40 @@ func TestUnmarshalEdge(t *testing.T) {
 	}
 }
 
+func TestUnmarshalEdgeWithShard(t *testing.T) {
+	edge, err := unmarshalEdge(NewInterner(), []byte(`{"id": "35", "type": "edge", "label": "item", "outV": "12", "inVs": ["07"], "shard": "03"}`))
+	if err != nil {
+		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
+	}
+
+	expectedEdge := Edge{
+		OutV:     12,
+		InV:      0,
+		InVs:     []int{7},
+		Document: 3,
+	}
+	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
+		t.Errorf("unexpected edge (-want +got):\n%s", diff)
+	}
+}
+
+func TestUnmarshalEdgeWithShardNumeric(t *testing.T) {
+	edge, err := unmarshalEdge(NewInterner(), []byte(`{"id": 35, "type": "edge", "label": "item", "outV": 12, "inVs": [7], "shard": 3}`))
+	if err != nil {
+		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
+	}
+
+	expectedEdge := Edge{
+		OutV:     12,
+		InV:      0,
+		InVs:     []int{7},
+		Document: 3,
+	}
+	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
+		t.Errorf("unexpected edge (-want +got):\n%s", diff)
+	}
+}
+
 func TestUnmarshalEdgeNumericIDs(t *testing.T) {
 	edge, err := unmarshalEdge(NewInterner(), []byte(`{"id": 35, "type": "edge", "label": "item", "outV": 12, "inVs": [7], "document": 3}`))
 	if err != nil {

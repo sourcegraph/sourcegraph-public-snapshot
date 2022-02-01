@@ -3,9 +3,8 @@ import React, { useMemo } from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { DiffStat } from '@sourcegraph/web/src/components/diff/DiffStat'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { Page } from '../../../components/Page'

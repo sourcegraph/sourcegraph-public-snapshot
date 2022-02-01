@@ -5,22 +5,21 @@ import { throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { Config } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-
+import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     GitHubAuthProvider,
     GitLabAuthProvider,
     OpenIDConnectAuthProvider,
     SAMLAuthProvider,
     SiteConfiguration,
-} from '../../schema/site.schema'
+} from '@sourcegraph/shared/src/schema/site.schema'
+import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
+import { Config } from '@sourcegraph/shared/src/testing/config'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import {
     deleteUser,
@@ -279,7 +278,7 @@ export async function login(
         await loginToAuthProvider()
         try {
             await driver.page.waitForFunction(
-                url => document.location.href === url,
+                (url: string) => document.location.href === url,
                 { timeout: 5 * 1000 },
                 sourcegraphBaseUrl + '/search'
             )

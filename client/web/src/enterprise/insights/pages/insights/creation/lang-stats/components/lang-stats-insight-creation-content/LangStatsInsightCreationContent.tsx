@@ -1,19 +1,17 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-
+import styles from '../../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
+import { useAsyncInsightTitleValidator } from '../../../../../../components/form/hooks/use-async-insight-title-validator'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
-import { useInsightTitleValidator } from '../../../../../../components/form/hooks/useInsightTitleValidator'
-import { InsightTypePrefix } from '../../../../../../core/types'
+import { createRequiredValidator } from '../../../../../../components/form/validators'
 import { isUserSubject, SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
 
-import styles from './LangStatsInsightCreationContent.module.scss'
 import { repositoriesFieldValidator, repositoryFieldAsyncValidator, thresholdFieldValidator } from './validators'
 
 const INITIAL_VALUES: LangStatsCreationFormFields = {
@@ -22,6 +20,7 @@ const INITIAL_VALUES: LangStatsCreationFormFields = {
     threshold: 3,
     visibility: 'personal',
 }
+const titleRequiredValidator = createRequiredValidator('Title is a required field.')
 
 export interface LangStatsInsightCreationContentProps {
     /**
@@ -30,19 +29,14 @@ export interface LangStatsInsightCreationContentProps {
      * validation on form fields immediately.
      */
     mode?: 'creation' | 'edit'
-    /** Final settings cascade. Used for title field validation. */
-    settings?: Settings | null
 
     subjects?: SupportedInsightSubject[]
-
-    /** Initial value for all form fields. */
     initialValues?: Partial<LangStatsCreationFormFields>
-    /** Custom class name for root form element. */
     className?: string
-    /** Submit handler for form element. */
+
     onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    /** Cancel handler. */
     onCancel?: () => void
+
     /** Change handlers is called every time when user changed any field within the form. */
     onChange?: (event: FormChangeEvent<LangStatsCreationFormFields>) => void
 }
@@ -50,7 +44,6 @@ export interface LangStatsInsightCreationContentProps {
 export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
     const {
         mode = 'creation',
-        settings,
         subjects = [],
         initialValues = {},
         className,
@@ -71,8 +64,10 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
         touched: mode === 'edit',
     })
 
-    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useInsightTitleValidator({ settings, insightType: InsightTypePrefix.langStats })
+    const asyncTitleValidator = useAsyncInsightTitleValidator({
+        mode,
+        initialTitle: formAPI.initialValues.title,
+    })
 
     const repository = useField({
         name: 'repository',
@@ -85,7 +80,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     const title = useField({
         name: 'title',
         formApi: formAPI,
-        validators: { sync: titleValidator },
+        validators: { sync: titleRequiredValidator, async: asyncTitleValidator },
     })
 
     const threshold = useField({
@@ -100,9 +95,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
-    const allFieldsForPreviewAreValid =
-        repository.meta.validState === 'VALID' ||
-        (repository.meta.validState === 'CHECKING' && threshold.meta.validState === 'VALID')
+    const allFieldsForPreviewAreValid = repository.meta.validState === 'VALID' && threshold.meta.validState === 'VALID'
 
     const handleFormReset = (): void => {
         // TODO [VK] Change useForm API in order to implement form.reset method.
@@ -117,7 +110,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     const hasFilledValue = values.repository !== '' || values.title !== ''
 
     return (
-        <div data-testid="code-stats-insight-creation-page-content" className={classnames(styles.content, className)}>
+        <div data-testid="code-stats-insight-creation-page-content" className={classNames(styles.content, className)}>
             <LangStatsInsightCreationForm
                 mode={mode}
                 innerRef={ref}

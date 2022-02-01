@@ -3,9 +3,10 @@ import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, Badge } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -27,7 +28,7 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="mr-2">
                         <strong>{this.props.node.displayName}</strong>{' '}
-                        <span className="badge badge-secondary">{this.props.node.serviceType}</span>
+                        <Badge variant="secondary">{this.props.node.serviceType}</Badge>
                         <br />
                         {(this.props.node.serviceID || this.props.node.clientID) && (
                             <small className="text-muted">
@@ -39,9 +40,9 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
                     {authExp && (
                         <div className="text-nowrap">
                             {this.props.node.authenticationURL && (
-                                <a className="btn btn-secondary" href={this.props.node.authenticationURL}>
+                                <Button href={this.props.node.authenticationURL} variant="secondary" as="a">
                                     Authenticate
-                                </a>
+                                </Button>
                             )}
                         </div>
                     )}

@@ -38,6 +38,10 @@ var GitoliteSchemaJSON string
 //go:embed jvm-packages.schema.json
 var JVMPackagesSchemaJSON string
 
+// NPMPackagesSchemaJSON is the content of the file "npm-packages.schema.json".
+//go:embed npm-packages.schema.json
+var NPMPackagesSchemaJSON string
+
 // OtherExternalServiceSchemaJSON is the content of the file "other_external_service.schema.json".
 //go:embed other_external_service.schema.json
 var OtherExternalServiceSchemaJSON string
@@ -49,6 +53,10 @@ var PerforceSchemaJSON string
 // PhabricatorSchemaJSON is the content of the file "phabricator.schema.json".
 //go:embed phabricator.schema.json
 var PhabricatorSchemaJSON string
+
+// PagureSchemaJSON is the content of the file "pagure.schema.json".
+//go:embed pagure.schema.json
+var PagureSchemaJSON string
 
 // SettingsSchemaJSON is the content of the file "settings.schema.json".
 //go:embed settings.schema.json

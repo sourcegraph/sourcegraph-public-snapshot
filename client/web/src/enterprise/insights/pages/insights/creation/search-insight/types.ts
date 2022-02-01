@@ -4,7 +4,6 @@ import { SearchBasedInsightSeries } from '../../../../core/types/insight/search-
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 
 export interface EditableDataSeries extends SearchBasedInsightSeries {
-    id: string
     valid: boolean
     edit: boolean
 }

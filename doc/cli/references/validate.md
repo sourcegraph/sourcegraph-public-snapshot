@@ -11,6 +11,7 @@
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
 | `-secrets` | Path to a file containing key=value lines. The key value pairs will be added to the script context |  |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
+| `-user-agent-telemetry` | Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph | `true` |
 
 
 ## Usage
@@ -29,6 +30,8 @@ Usage of 'src validate validate':
     	Path to a file containing key=value lines. The key value pairs will be added to the script context
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
+  -user-agent-telemetry
+    	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 'src validate' is a tool that validates a Sourcegraph instance.
 
 EXPERIMENTAL: 'validate' is an experimental command in the 'src' tool.

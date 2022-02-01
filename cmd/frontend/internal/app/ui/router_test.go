@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -26,8 +26,7 @@ func init() {
 }
 
 func TestRouter(t *testing.T) {
-	db := new(dbtesting.MockDB)
-	InitRouter(db, nil)
+	InitRouter(database.NewMockDB(), nil)
 	router := Router()
 	tests := []struct {
 		path      string
@@ -212,8 +211,7 @@ func TestRouter(t *testing.T) {
 }
 
 func TestRouter_RootPath(t *testing.T) {
-	db := new(dbtesting.MockDB)
-	InitRouter(db, nil)
+	InitRouter(database.NewMockDB(), nil)
 	router := Router()
 
 	tests := []struct {

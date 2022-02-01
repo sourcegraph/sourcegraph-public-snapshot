@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -20,7 +19,7 @@ var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolve
 
 // repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
 type repositoryConnectionResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	ids *roaring.Bitmap
 
 	first int32
@@ -58,8 +57,8 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		// TODO(asdine): GetByIDs now returns the complete repo information rather that only a subset.
-		// Ensure this doesn't have an impact on performance and switch to using ListRepoNames if needed.
-		r.repos, r.err = database.GlobalRepos.GetByIDs(ctx, repoIDs...)
+		// Ensure this doesn't have an impact on performance and switch to using ListMinimalRepos if needed.
+		r.repos, r.err = r.db.Repos().GetByIDs(ctx, repoIDs...)
 		if r.err != nil {
 			return
 		}

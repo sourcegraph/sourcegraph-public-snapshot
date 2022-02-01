@@ -1,9 +1,10 @@
+import { render } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
-import renderer from 'react-test-renderer'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { AuthenticatedUser } from '../auth'
 import { FeatureFlagName } from '../featureFlags/featureFlags'
@@ -33,8 +34,8 @@ describe('SignUpPage', () => {
 
     it('renders sign up page (server)', () => {
         expect(
-            renderer
-                .create(
+            render(
+                <MockedTestProvider mocks={[]}>
                     <MemoryRouter>
                         <SignUpPage
                             {...commonProps}
@@ -49,15 +50,15 @@ describe('SignUpPage', () => {
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
                     </MemoryRouter>
-                )
-                .toJSON()
+                </MockedTestProvider>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     it('renders sign up page (cloud)', () => {
         expect(
-            renderer
-                .create(
+            render(
+                <MockedTestProvider mocks={[]}>
                     <MemoryRouter>
                         <SignUpPage
                             {...commonProps}
@@ -72,8 +73,8 @@ describe('SignUpPage', () => {
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
                     </MemoryRouter>
-                )
-                .toJSON()
+                </MockedTestProvider>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -87,8 +88,8 @@ describe('SignUpPage', () => {
         } as AuthenticatedUser
 
         expect(
-            renderer
-                .create(
+            render(
+                <MockedTestProvider mocks={[]}>
                     <MemoryRouter>
                         <SignUpPage
                             {...commonProps}
@@ -103,8 +104,8 @@ describe('SignUpPage', () => {
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
                     </MemoryRouter>
-                )
-                .toJSON()
+                </MockedTestProvider>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })

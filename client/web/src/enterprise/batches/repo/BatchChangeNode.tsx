@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useEffect } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { RepoBatchChange } from '../../../graphql-operations'
@@ -44,9 +44,17 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                         {node.changesets.totalCount} changesets total (showing first {MAX_CHANGESETS_COUNT})
                     </span>
                 </small>
-                <Link className="d-block btn btn-sm btn-link" to={node.url} target="_blank" rel="noopener noreferrer">
+                <Button
+                    className="d-block"
+                    to={node.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="link"
+                    size="sm"
+                    as={Link}
+                >
                     See all
-                </Link>
+                </Button>
             </div>
         ) : null
 

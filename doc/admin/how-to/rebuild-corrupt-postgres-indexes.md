@@ -35,7 +35,7 @@ Terminate existing client connections first. This will also terminate your own c
 
 ```sql
 select pg_terminate_backend(pg_stat_activity.pid)
-from pg_stat_activity where datname = 'sg'
+from pg_stat_activity where datname = 'sg';
 ```
 
 With a Postgres client connected to the database, we now start by re-indexing system catalog indexes which may have been affected.

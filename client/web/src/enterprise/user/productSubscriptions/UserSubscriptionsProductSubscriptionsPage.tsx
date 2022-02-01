@@ -1,12 +1,11 @@
 import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
@@ -80,14 +79,9 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Subscriptions' }]}
-                actions={
-                    <Link to={`${props.match.path}/new`} className="btn btn-primary text-nowrap">
-                        New subscription
-                    </Link>
-                }
                 description={
                     <>
-                        Purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
+                        Contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
                         <a href="https://about.sourcegraph.com/pricing">pricing</a> for more information.
                     </>
                 }

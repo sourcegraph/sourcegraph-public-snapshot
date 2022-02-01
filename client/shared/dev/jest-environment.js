@@ -12,7 +12,7 @@
  */
 const { TextEncoder } = require('util')
 
-const { JestFakeTimers } = require('@jest/fake-timers')
+const { ModernFakeTimers } = require('@jest/fake-timers')
 const { Crypto } = require('@peculiar/webcrypto')
 const { ModuleMocker } = require('jest-mock')
 const { installCommonGlobals } = require('jest-util')
@@ -81,7 +81,7 @@ class JSDOMEnvironment {
       idToRef: id => id,
       refToId: reference => reference,
     }
-    this.fakeTimers = new JestFakeTimers({
+    this.fakeTimers = new ModernFakeTimers({
       config,
       global,
       moduleMocker: this.moduleMocker,
@@ -126,7 +126,8 @@ class JSDOMEnvironment {
   }
   runScript(script) {
     if (this.dom) {
-      return this.dom.runVMScript(script)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
+      return script.runInContext(this.dom.getInternalVMContext())
     }
     return null
   }

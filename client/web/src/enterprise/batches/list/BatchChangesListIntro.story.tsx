@@ -2,7 +2,7 @@ import { radios } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
@@ -29,8 +29,8 @@ function stateToInput(state: LicensingState): boolean | undefined {
 
 for (const state of Object.values(LicensingState)) {
     add(state, () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {() => <BatchChangesListIntro licensed={stateToInput(radios('licensed', LicensingState, state))} />}
-        </EnterpriseWebStory>
+        </WebStory>
     ))
 }

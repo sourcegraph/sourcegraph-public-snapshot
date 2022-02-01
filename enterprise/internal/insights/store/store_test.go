@@ -30,7 +30,7 @@ func TestSeriesPoints(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
 
-	postgres := dbtest.NewDB(t, "")
+	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(timescale, permStore, clock)
 
@@ -139,7 +139,7 @@ func TestCountData(t *testing.T) {
 	clock := timeutil.Now
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtest.NewDB(t, "")
+	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(timescale, permStore, clock)
 
@@ -237,7 +237,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 	clock := timeutil.Now
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtest.NewDB(t, "")
+	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(timescale, permStore, clock)
 
@@ -341,7 +341,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 	clock := timeutil.Now
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtest.NewDB(t, "")
+	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(timescale, permStore, clock)
 
@@ -407,7 +407,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 	clock := timeutil.Now
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtest.NewDB(t, "")
+	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(timescale, permStore, clock)
 
@@ -473,7 +473,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	clock := timeutil.Now
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtest.NewDB(t, "")
+	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(timescale, permStore, clock)
 

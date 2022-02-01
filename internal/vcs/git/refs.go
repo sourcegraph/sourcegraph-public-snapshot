@@ -14,10 +14,11 @@ import (
 	"github.com/rainycape/unidecode"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // HumanReadableBranchName returns a human readable branch name from the
@@ -65,7 +66,7 @@ type Branch struct {
 	Head api.CommitID `json:"Head,omitempty"`
 	// Commit optionally contains commit information for this branch's head commit.
 	// It is populated if IncludeCommit option is set.
-	Commit *Commit `json:"Commit,omitempty"`
+	Commit *gitdomain.Commit `json:"Commit,omitempty"`
 	// Counts optionally contains the commit counts relative to specified branch.
 	Counts *BehindAhead `json:"Counts,omitempty"`
 }
@@ -180,7 +181,7 @@ func ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (
 
 		branch := &Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = getCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{})
+			branch.Commit, err = getCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, err
 			}
@@ -257,7 +258,7 @@ func ListTags(ctx context.Context, repo api.RepoName) ([]*Tag, error) {
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) {
+		if gitdomain.IsRepoNotExist(err) {
 			return nil, err
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
@@ -319,7 +320,7 @@ func showRef(ctx context.Context, repo api.RepoName, args ...string) ([]Ref, err
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) {
+		if gitdomain.IsRepoNotExist(err) {
 			return nil, err
 		}
 		// Exit status of 1 and no output means there were no

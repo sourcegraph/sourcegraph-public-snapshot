@@ -5,15 +5,18 @@ import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
+import { Context } from '@sourcegraph/template-parser'
+import { useObservable } from '@sourcegraph/wildcard'
+
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { Context, ContributionScope } from '../api/extension/api/context/context'
+import { ContributionScope } from '../api/extension/api/context/context'
 import { Contributions, Evaluated } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { useObservable } from '../util/useObservable'
 
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps } from './ActionsContainer'
+import styles from './ActionsNavItems.module.scss'
 
 export interface ActionNavItemsClassProps {
     /**
@@ -105,7 +108,7 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
                     {...props}
                     variant="actionItem"
                     iconClassName={props.actionItemIconClass}
-                    className={classNames('actions-nav-items__action-item', props.actionItemClass)}
+                    className={classNames(styles.actionItem, props.actionItemClass)}
                     pressedClassName={props.actionItemPressedClass}
                 />
             </li>

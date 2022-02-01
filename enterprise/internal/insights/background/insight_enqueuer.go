@@ -27,7 +27,7 @@ import (
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
 func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"insights_enqueuer",
 		metrics.WithCountHelp("Total number of insights enqueuer executions"),
@@ -67,7 +67,7 @@ func discoverAndEnqueueInsights(
 
 	log15.Info("enqueuing indexed insight recordings")
 	// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
-	recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now()})
+	recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now(), GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for recordings")
 	}
@@ -77,7 +77,7 @@ func discoverAndEnqueueInsights(
 	}
 
 	log15.Info("enqueuing indexed insight snapshots")
-	snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now()})
+	snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now(), GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for snapshots")
 	}
@@ -127,6 +127,7 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 			multi = multierror.Append(multi, errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID))
 			continue // might as well try the other insights and just skip this one
 		}
+		log15.Info("queued global search for insight recording", "series_id", series.SeriesID)
 	}
 
 	return multi

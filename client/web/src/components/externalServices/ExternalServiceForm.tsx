@@ -2,15 +2,15 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback } from 'react'
 
+import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Button, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ErrorAlert, ErrorMessage } from '../alerts'
 
 import { AddExternalServiceOptions } from './externalServices'
 
@@ -65,10 +65,10 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
         <Form className="external-service-form" onSubmit={onSubmit}>
             {error && <ErrorAlert error={error} />}
             {warning && (
-                <div className="alert alert-warning">
+                <Alert variant="warning">
                     <h4>Warning</h4>
                     <ErrorMessage error={warning} />
-                </div>
+                </Alert>
             )}
             {hideDisplayNameField || (
                 <div className="form-group">
@@ -112,17 +112,18 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
                     <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
                 </p>
             </div>
-            <button
+            <Button
                 type="submit"
                 className={classNames(
-                    'btn btn-primary mb-3',
+                    'mb-3',
                     mode === 'create' ? 'test-add-external-service-button' : 'test-update-external-service-button'
                 )}
                 disabled={loading}
+                variant="primary"
             >
-                {loading && <LoadingSpinner className="icon-inline" />}
+                {loading && <LoadingSpinner />}
                 {submitName ?? (mode === 'edit' ? 'Update repositories' : 'Add repositories')}
-            </button>
+            </Button>
         </Form>
     )
 }

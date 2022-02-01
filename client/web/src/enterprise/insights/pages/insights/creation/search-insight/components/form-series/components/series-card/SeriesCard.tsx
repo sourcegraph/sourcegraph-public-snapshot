@@ -1,9 +1,9 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { ReactElement } from 'react'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button, Card } from '@sourcegraph/wildcard'
 
-import { DEFAULT_ACTIVE_COLOR } from '../../../form-color-input/FormColorInput'
+import { DEFAULT_DATA_SERIES_COLOR } from '../../../../constants'
 
 import styles from './SeriesCard.module.scss'
 
@@ -32,26 +32,27 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
         isRemoveSeriesAvailable,
         name,
         query,
-        stroke: color = DEFAULT_ACTIVE_COLOR,
+        stroke: color = DEFAULT_DATA_SERIES_COLOR,
         className,
         onEdit,
         onRemove,
     } = props
 
     return (
-        <li
+        <Card
+            as="li"
             data-testid="series-card"
             aria-label={`${name} data series`}
-            className={classnames(styles.card, className, 'card d-flex flex-row p-3')}
+            className={classNames(styles.card, className, 'd-flex flex-row p-3')}
         >
             <div className={styles.cardInfo}>
-                <div className={classnames('mb-1 ', styles.cardTitle)}>
+                <div className={classNames('mb-1 ', styles.cardTitle)}>
                     {/* eslint-disable-next-line react/forbid-dom-props */}
                     <div data-testid="series-color-mark" style={{ color }} className={styles.cardColorMark} />
                     <span
                         data-testid="series-name"
                         title={name}
-                        className={classnames(styles.cardName, 'ml-1 font-weight-bold')}
+                        className={classNames(styles.cardName, 'ml-1 font-weight-bold')}
                     >
                         {name}
                     </span>
@@ -86,6 +87,6 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
                     Remove
                 </Button>
             </div>
-        </li>
+        </Card>
     )
 }

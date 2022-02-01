@@ -1,7 +1,9 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
+
+import styles from './LoaderInput.module.scss'
 
 /** Takes loading prop, input component as child */
 
@@ -12,8 +14,8 @@ interface Props {
 }
 
 export const LoaderInput: React.FunctionComponent<Props> = ({ loading, children, className }) => (
-    <div className={classNames('loader-input__container', className)}>
+    <div className={classNames(styles.container, className)}>
         {children}
-        {loading && <LoadingSpinner className="loader-input__spinner" />}
+        {loading && <LoadingSpinner inline={false} className={styles.spinner} />}
     </div>
 )

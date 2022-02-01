@@ -8,17 +8,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type MockRepos struct {
 	Get          func(v0 context.Context, id api.RepoID) (*types.Repo, error)
 	GetByName    func(v0 context.Context, name api.RepoName) (*types.Repo, error)
 	List         func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
-	GetCommit    func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
+	GetCommit    func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
 	ResolveRev   func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 	GetInventory func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 }
@@ -102,14 +101,14 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
 		}
-		return "", &gitserver.RevisionNotFoundError{Repo: repo.Name, Spec: rev}
+		return "", &gitdomain.RevisionNotFoundError{Repo: repo.Name, Spec: rev}
 	}
 	return
 }
 
-func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *git.Commit) (called *bool) {
+func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *gitdomain.Commit) (called *bool) {
 	called = new(bool)
-	s.GetCommit = func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error) {
+	s.GetCommit = func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error) {
 		*called = true
 		return commit, nil
 	}

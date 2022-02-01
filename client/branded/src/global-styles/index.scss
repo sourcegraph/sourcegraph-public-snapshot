@@ -26,20 +26,6 @@ $border-color: var(--border-color);
 $link-color: var(--link-color);
 $link-hover-color: var(--link-hover-color);
 
-// Badges
-
-$badge-font-size: var(--badge-font-size);
-$badge-font-weight: var(--badge-font-weight);
-$badge-padding-y: var(--badge-padding-y);
-$badge-padding-x: var(--badge-padding-x);
-$badge-border-radius: var(--badge-border-radius);
-
-// Tooltips
-
-$tooltip-bg: var(--tooltip-bg);
-$tooltip-opacity: 1;
-$tooltip-font-size: 0.75rem;
-
 // Forms
 
 $form-check-input-margin-y: var(--form-check-input-margin-y);
@@ -96,15 +82,11 @@ $dropdown-padding-y: $dropdown-item-padding-y;
 $table-cell-padding: 0.625rem;
 $table-border-color: var(--border-color);
 
-// Progress
-$progress-height: auto;
-
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
 // Disable transitions
 $input-transition: none;
-$badge-transition: none; // Avoids setting transitions on badges that aren't links
 
 // Spacer
 $spacer: 1rem;
@@ -120,13 +102,10 @@ $spacer: 1rem;
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/grid';
-@import 'bootstrap/scss/progress';
-@import 'bootstrap/scss/tooltip';
 @import 'bootstrap/scss/transitions';
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
-@import 'bootstrap/scss/button-group';
 
 // Modified in `./forms.scss`
 @import 'bootstrap/scss/forms';
@@ -139,10 +118,7 @@ $spacer: 1rem;
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
 @import './background';
-@import './badge';
-@import './card';
 @import './dropdown';
-@import './modal';
 @import './meter';
 @import './popover';
 @import './nav';
@@ -151,12 +127,11 @@ $spacer: 1rem;
 @import './tables';
 @import './code';
 @import './buttons';
-@import './alert';
+@import './button-group';
 @import './forms';
 @import './highlight';
 @import './tabs';
-@import './tooltips';
-@import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
+@import './progress';
 
 * {
     box-sizing: border-box;

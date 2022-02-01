@@ -1,10 +1,10 @@
 []*types.DirtyQueryAggregate{
-	&types.DirtyQueryAggregate{
+	{
 		Count:   2,
 		ForTime: time.Time{ext: 63713451905},
 		Reason:  "reason1",
 	},
-	&types.DirtyQueryAggregate{
+	{
 		Count:   1,
 		ForTime: time.Time{ext: 63713538305},
 		Reason:  "reason2",

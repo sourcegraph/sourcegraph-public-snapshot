@@ -1,9 +1,9 @@
+import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 import CogsIcon from 'mdi-react/CogsIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import EarthIcon from 'mdi-react/EarthIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import UsersIcon from 'mdi-react/UsersIcon'
 
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
@@ -66,7 +66,7 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
 export const usersGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Users & auth',
-        icon: UsersIcon,
+        icon: AccountMultipleIcon,
     },
     items: [
         {

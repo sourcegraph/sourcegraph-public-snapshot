@@ -7,16 +7,15 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // organizationInvitationResolver implements the GraphQL type OrganizationInvitation.
 type organizationInvitationResolver struct {
-	db dbutil.DB
+	db database.DB
 	v  *database.OrgInvitation
 }
 
-func orgInvitationByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*organizationInvitationResolver, error) {
+func orgInvitationByID(ctx context.Context, db database.DB, id graphql.ID) (*organizationInvitationResolver, error) {
 	orgInvitationID, err := unmarshalOrgInvitationID(id)
 	if err != nil {
 		return nil, err
@@ -24,7 +23,7 @@ func orgInvitationByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*organ
 	return orgInvitationByIDInt64(ctx, db, orgInvitationID)
 }
 
-func orgInvitationByIDInt64(ctx context.Context, db dbutil.DB, id int64) (*organizationInvitationResolver, error) {
+func orgInvitationByIDInt64(ctx context.Context, db database.DB, id int64) (*organizationInvitationResolver, error) {
 	orgInvitation, err := database.OrgInvitations(db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err

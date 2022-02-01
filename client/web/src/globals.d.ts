@@ -8,9 +8,6 @@ interface PageError {
 interface Window {
     pageError?: PageError
     context: import('./jscontext').SourcegraphContext
-    MonacoEnvironment: {
-        getWorkerUrl(moduleId: string, label: string): string
-    }
 }
 
 declare module '*.scss' {

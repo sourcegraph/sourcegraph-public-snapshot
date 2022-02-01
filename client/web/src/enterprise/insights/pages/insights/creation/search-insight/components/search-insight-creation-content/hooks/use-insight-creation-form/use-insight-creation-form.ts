@@ -1,8 +1,11 @@
-import { Settings } from '../../../../../../../../../../schema/settings.schema'
+import { useContext } from 'react'
+
+import { useAsyncInsightTitleValidator } from '../../../../../../../../components/form/hooks/use-async-insight-title-validator'
 import { useField, useFieldAPI } from '../../../../../../../../components/form/hooks/useField'
 import { Form, FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../../../components/form/hooks/useForm'
-import { useInsightTitleValidator } from '../../../../../../../../components/form/hooks/useInsightTitleValidator'
-import { InsightTypePrefix } from '../../../../../../../../core/types'
+import { createRequiredValidator } from '../../../../../../../../components/form/validators'
+import { CodeInsightsBackendContext } from '../../../../../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsGqlBackend } from '../../../../../../../../core/backend/gql-api/code-insights-gql-backend'
 import { isUserSubject, SupportedInsightSubject } from '../../../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries, InsightStep } from '../../../../types'
 import { INITIAL_INSIGHT_VALUES } from '../../initial-insight-values'
@@ -13,41 +16,18 @@ import {
     seriesRequired,
 } from '../../validators'
 
+const titleRequiredValidator = createRequiredValidator('Title is a required field.')
+
 export interface UseInsightCreationFormProps {
-    /**
-     * Final (merged) settings cascade  objects
-     */
-    settings?: Settings | null
-
-    /**
-     * List of all supportable insight subjects
-     */
+    mode: 'creation' | 'edit'
     subjects?: SupportedInsightSubject[]
-
-    /**
-     * Initial value for all form fields
-     */
     initialValue?: Partial<CreateInsightFormFields>
-
-    /**
-     * Set initial touched state for all form fields.
-     */
-    touched?: boolean
-
-    /**
-     * Submit handler for form element.
-     */
     onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-
-    /**
-     * Change handlers is called every time when user changed any field within the form.
-     */
     onChange?: (event: FormChangeEvent<CreateInsightFormFields>) => void
 }
 
 export interface InsightCreationForm {
     form: Form<CreateInsightFormFields>
-
     title: useFieldAPI<string>
     repositories: useFieldAPI<string>
     visibility: useFieldAPI<string>
@@ -58,23 +38,28 @@ export interface InsightCreationForm {
 }
 
 /**
- * Hooks absorbs all insight creation form logic (field state managements, validations, fields dependencies)
+ * Hooks absorbs all insight creation form logic (field state managements,
+ * validations, fields dependencies)
  */
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
-    const { subjects = [], initialValue = {}, touched, settings, onSubmit, onChange } = props
+    const { mode, subjects = [], initialValue = {}, onSubmit, onChange } = props
+    const isEdit = mode === 'edit'
+    const api = useContext(CodeInsightsBackendContext)
 
-    // Calculate initial value for visibility settings
-    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
+    // We have to know about what exactly api we use to be able switch our UI properly.
+    // TODO [VK]: Remove this condition rendering when we deprecate setting-based api
+    const isGqlBackend = api instanceof CodeInsightsGqlBackend
 
     const form = useForm<CreateInsightFormFields>({
         initialValues: {
             ...INITIAL_INSIGHT_VALUES,
-            visibility: userSubjectID,
+            // Calculate initial value for visibility settings
+            visibility: subjects.find(isUserSubject)?.id ?? '',
             ...initialValue,
         },
         onSubmit,
         onChange,
-        touched,
+        touched: isEdit,
     })
 
     const allReposMode = useField({
@@ -84,20 +69,22 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
             // Reset form values in case if All repos mode was activated
             if (checked) {
                 repositories.input.onChange('')
-                step.input.onChange('weeks')
-                stepValue.input.onChange('2')
+                step.input.onChange('months')
+                stepValue.input.onChange('1')
             }
         },
     })
 
     const isAllReposMode = allReposMode.input.value
+    const asyncTitleValidator = useAsyncInsightTitleValidator({
+        mode,
+        initialTitle: form.formAPI.initialValues.title,
+    })
 
-    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useInsightTitleValidator({ settings, insightType: InsightTypePrefix.search })
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
-        validators: { sync: titleValidator },
+        validators: { sync: titleRequiredValidator, async: asyncTitleValidator },
     })
 
     const repositories = useField({
@@ -125,7 +112,7 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
     const step = useField({
         name: 'step',
         formApi: form.formAPI,
-        disabled: isAllReposMode,
+        disabled: isGqlBackend ? false : isAllReposMode,
     })
     const stepValue = useField({
         name: 'stepValue',
@@ -134,7 +121,7 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
             // Turn off any validations if we are in all repos mode
             sync: !isAllReposMode ? requiredStepValueField : undefined,
         },
-        disabled: isAllReposMode,
+        disabled: isGqlBackend ? false : isAllReposMode,
     })
 
     return {

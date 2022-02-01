@@ -15,7 +15,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"go.uber.org/automaxprocs/maxprocs"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -53,7 +53,7 @@ func ServiceName(s string) Option {
 	}
 }
 
-func Init(options ...Option) {
+func Init(c conftypes.WatchableSiteConfig, options ...Option) {
 	opts := &Options{}
 	for _, setter := range options {
 		setter(opts)
@@ -62,7 +62,7 @@ func Init(options ...Option) {
 		opts.serviceName = env.MyName
 	}
 
-	initTracer(opts.serviceName)
+	initTracer(opts.serviceName, c)
 }
 
 type jaegerOpts struct {
@@ -73,7 +73,7 @@ type jaegerOpts struct {
 }
 
 // initTracer is a helper that should be called exactly once (from Init).
-func initTracer(serviceName string) {
+func initTracer(serviceName string, c conftypes.WatchableSiteConfig) {
 	globalTracer := newSwitchableTracer()
 	opentracing.SetGlobalTracer(globalTracer)
 
@@ -89,8 +89,8 @@ func initTracer(serviceName string) {
 	}
 
 	// Watch loop
-	go conf.Watch(func() {
-		siteConfig := conf.Get()
+	go c.Watch(func() {
+		siteConfig := c.SiteConfig()
 
 		// Set sampling strategy
 		samplingStrategy := ot.TraceNone

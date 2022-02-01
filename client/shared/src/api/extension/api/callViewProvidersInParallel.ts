@@ -2,8 +2,9 @@ import { from, Observable, of } from 'rxjs'
 import { catchError, defaultIfEmpty, map, mergeMap, scan, startWith, switchMap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
-import { asError, ErrorLike } from '../../../util/errors'
-import { allOf, isDefined, isExactly, isNot, property } from '../../../util/types'
+import { asError, ErrorLike, isDefined } from '@sourcegraph/common'
+
+import { allOf, isExactly, isNot, property } from '../../../util/types'
 import { ContributableViewContainer } from '../../protocol'
 import { RegisteredViewProvider, ViewContexts, ViewProviderResult } from '../extensionHostApi'
 

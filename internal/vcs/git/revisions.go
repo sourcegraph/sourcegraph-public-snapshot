@@ -5,12 +5,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/cockroachdb/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // IsAbsoluteRevision checks if the revision is a git OID SHA string.
@@ -47,18 +50,29 @@ type ResolveRevisionOptions struct {
 	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
 }
 
+var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_resolve_revision_total",
+	Help: "The number of times we call internal/vcs/git/ResolveRevision",
+}, []string{"ensure_revision"})
+
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 // used.
 //
 // Error cases:
-// * Repo does not exist: vcs.RepoNotExistError
-// * Commit does not exist: RevisionNotFoundError
-// * Empty repository: RevisionNotFoundError
+// * Repo does not exist: gitdomain.RepoNotExistError
+// * Commit does not exist: gitdomain.RevisionNotFoundError
+// * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
 func ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
 	if Mocks.ResolveRevision != nil {
 		return Mocks.ResolveRevision(spec, opt)
 	}
+
+	labelEnsureRevisionValue := "true"
+	if opt.NoEnsureRevision {
+		labelEnsureRevisionValue = "false"
+	}
+	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)
@@ -93,26 +107,16 @@ func ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt Re
 	return runRevParse(ctx, cmd, spec)
 }
 
-type BadCommitError struct {
-	Spec   string
-	Commit api.CommitID
-	Repo   api.RepoName
-}
-
-func (e BadCommitError) Error() string {
-	return fmt.Sprintf("ResolveRevision: got bad commit %q for repo %q at revision %q", e.Commit, e.Repo, e.Spec)
-}
-
 // runRevParse sends the git rev-parse command to gitserver. It interprets
 // missing revision responses and converts them into RevisionNotFoundError.
 func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.CommitID, error) {
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) {
+		if gitdomain.IsRepoNotExist(err) {
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
+			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
 		}
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
 	}
@@ -123,9 +127,9 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
+			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
 		}
-		return "", BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo}
+		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo}
 	}
 	return commit, nil
 }

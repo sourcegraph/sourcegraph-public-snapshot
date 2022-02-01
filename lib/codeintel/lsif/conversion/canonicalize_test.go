@@ -158,10 +158,11 @@ func TestCanonicalizeResultSets(t *testing.T) {
 				DocumentationResultID: 2006,
 			},
 			5004: {
-				DefinitionResultID:    2006,
-				ReferenceResultID:     2007,
-				HoverResultID:         0,
-				DocumentationResultID: 2009,
+				DefinitionResultID:     2006,
+				ReferenceResultID:      2007,
+				HoverResultID:          0,
+				DocumentationResultID:  2009,
+				ImplementationResultID: 2010,
 			},
 			5005: {
 				DefinitionResultID:    0,
@@ -189,10 +190,11 @@ func TestCanonicalizeResultSets(t *testing.T) {
 	expectedState := &State{
 		ResultSetData: map[int]ResultSet{
 			5001: {
-				DefinitionResultID:    2006,
-				ReferenceResultID:     2007,
-				HoverResultID:         2008,
-				DocumentationResultID: 2009,
+				DefinitionResultID:     2006,
+				ReferenceResultID:      2007,
+				HoverResultID:          2008,
+				DocumentationResultID:  2009,
+				ImplementationResultID: 2010,
 			},
 			5002: {
 				DefinitionResultID:    2001,
@@ -207,10 +209,11 @@ func TestCanonicalizeResultSets(t *testing.T) {
 				DocumentationResultID: 2006,
 			},
 			5004: {
-				DefinitionResultID:    2006,
-				ReferenceResultID:     2007,
-				HoverResultID:         2008,
-				DocumentationResultID: 2009,
+				DefinitionResultID:     2006,
+				ReferenceResultID:      2007,
+				HoverResultID:          2008,
+				DocumentationResultID:  2009,
+				ImplementationResultID: 2010,
 			},
 			5005: {
 				DefinitionResultID:    0,
