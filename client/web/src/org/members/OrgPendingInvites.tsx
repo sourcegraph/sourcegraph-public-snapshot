@@ -1,18 +1,16 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { InviteMemberModal } from './InviteMemberModal'
+import { IModalInviteResult, InvitedNotification, InviteMemberModal } from './InviteMemberModal'
 import { gql, useQuery } from '@apollo/client'
 import { OrganizationMembersResult, OrganizationMembersVariables } from '../../graphql-operations'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-// import { AddUserToOrgModal } from './addUserToOrgModal'
 
-interface Props
-    extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
+interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
 
 const ORG_MEMBERS_QUERY = gql`
     query OrganizationMembers($id: ID!) {
@@ -36,22 +34,31 @@ const ORG_MEMBERS_QUERY = gql`
 /**
  * The organization members list page.
  */
-export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
-    org,
-    onOrganizationUpdate,
-    authenticatedUser,
-    isSourcegraphDotCom,
-}) => {
+export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
+    const orgId = org.id
     useEffect(() => {
-        eventLogger.logViewEvent('OrgPendingInvites', { orgId: org.id })
-    }, [org.id])
+        eventLogger.logViewEvent('OrgPendingInvites', { orgId })
+    }, [orgId])
 
-    const { data, loading, error } = useQuery<OrganizationMembersResult, OrganizationMembersVariables>(
+    const [invite, setInvite] = useState<IModalInviteResult>()
+    const { data, loading, error, refetch } = useQuery<OrganizationMembersResult, OrganizationMembersVariables>(
         ORG_MEMBERS_QUERY,
         {
-            variables: { id: org.id },
+            variables: { id: orgId },
         }
     )
+
+    const onInviteSent = useCallback(
+        async (result: IModalInviteResult) => {
+            setInvite(result)
+            await refetch({ id: orgId })
+        },
+        [setInvite, orgId]
+    )
+
+    const onInviteSentMessageDismiss = useCallback(() => {
+        setInvite(undefined)
+    }, [setInvite])
 
     const viewerCanAddUserToOrganization = !!authenticatedUser && authenticatedUser.siteAdmin
 
@@ -59,11 +66,20 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
         <>
             <div className="org-pendinginvites-page">
                 <PageTitle title={`${org.name} pending invites`} />
+                {invite && (
+                    <InvitedNotification
+                        orgName={org.name}
+                        username={invite.username}
+                        onDismiss={onInviteSentMessageDismiss}
+                        invitationURL={invite.inviteResult.inviteUserToOrganization.invitationURL}
+                    />
+                )}
                 <div className="d-flex flex-0 justify-content-between align-items-center mb-3">
                     <PageHeader path={[{ text: 'Pending Invites' }]} headingElement="h2" />
                     <div>
-                        {/* {viewerCanAddUserToOrganization && !isSourcegraphDotCom && <AddUserToOrgModal orgName={org.name} orgId={org.id} />} */}
-                        {viewerCanAddUserToOrganization && <InviteMemberModal orgName={org.name} orgId={org.id} />}
+                        {viewerCanAddUserToOrganization && (
+                            <InviteMemberModal orgName={org.name} orgId={org.id} onInviteSent={onInviteSent} />
+                        )}
                     </div>
                 </div>
 

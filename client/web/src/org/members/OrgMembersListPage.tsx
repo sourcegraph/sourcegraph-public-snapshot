@@ -1,18 +1,18 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { InviteMemberModal } from './InviteMemberModal'
+import { IModalInviteResult, InvitedNotification, InviteMemberModal } from './InviteMemberModal'
 import { gql, useQuery } from '@apollo/client'
 import { OrganizationMembersResult, OrganizationMembersVariables } from '../../graphql-operations'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { AddUserToOrgModal } from './addUserToOrgModal'
+import { AddMemberNotification, AddMemberToOrgModal } from './AddMemberToOrgModal'
+import styles from './OrgMembersListPage.module.scss'
 
-interface Props
-    extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
+interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
 
 const ORG_MEMBERS_QUERY = gql`
     query OrganizationMembers($id: ID!) {
@@ -36,22 +36,43 @@ const ORG_MEMBERS_QUERY = gql`
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({
-    org,
-    onOrganizationUpdate,
-    authenticatedUser,
-    isSourcegraphDotCom,
-}) => {
-    useEffect(() => {
-        eventLogger.logViewEvent('OrgMembersListV2', { orgId: org.id })
-    }, [org.id])
+export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser, isSourcegraphDotCom }) => {
+    const [invite, setInvite] = useState<IModalInviteResult>()
+    const [member, setMemberAdded] = useState<string>()
 
-    const { data, loading, error } = useQuery<OrganizationMembersResult, OrganizationMembersVariables>(
+    const { data, loading, error, refetch } = useQuery<OrganizationMembersResult, OrganizationMembersVariables>(
         ORG_MEMBERS_QUERY,
         {
             variables: { id: org.id },
         }
     )
+
+    useEffect(() => {
+        eventLogger.logViewEvent('OrgMembersListV2', { orgId: org.id })
+    }, [org.id])
+
+    const onInviteSent = useCallback(
+        (result: IModalInviteResult) => {
+            setInvite(result)
+        },
+        [setInvite]
+    )
+
+    const onInviteSentMessageDismiss = useCallback(() => {
+        setInvite(undefined)
+    }, [setInvite])
+
+    const onMemberAdded = useCallback(
+        async (username: string) => {
+            setMemberAdded(username)
+            await refetch({ id: org.id })
+        },
+        [setMemberAdded]
+    )
+
+    const onMemberAddedtMessageDismiss = useCallback(() => {
+        setMemberAdded(undefined)
+    }, [setMemberAdded])
 
     const viewerCanAddUserToOrganization = !!authenticatedUser && authenticatedUser.siteAdmin
 
@@ -59,14 +80,34 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
         <>
             <div className="org-members-page">
                 <PageTitle title={`${org.name} Members`} />
-                <div className="d-flex flex-0 justify-content-between align-items-center mb-3">
-                    <PageHeader path={[{ text: 'Organization Members' }]} headingElement="h2" />
-                    <div>
-                        {viewerCanAddUserToOrganization && isSourcegraphDotCom && (
-                            <AddUserToOrgModal orgName={org.name} orgId={org.id} />
-                        )}
-                        {viewerCanAddUserToOrganization && <InviteMemberModal orgName={org.name} orgId={org.id} />}
-                    </div>
+                {invite && (
+                    <InvitedNotification
+                        orgName={org.name}
+                        username={invite.username}
+                        onDismiss={onInviteSentMessageDismiss}
+                        invitationURL={invite.inviteResult.inviteUserToOrganization.invitationURL}
+                    />
+                )}
+                {member && (
+                    <AddMemberNotification
+                        orgName={org.name}
+                        username={member}
+                        onDismiss={onMemberAddedtMessageDismiss}
+                    />
+                )}
+                <div className="d-flex flex-0 justify-content-end align-items-center mb-3 flex-wrap">
+                    <PageHeader
+                        path={[{ text: 'Organization Members' }]}
+                        headingElement="h2"
+                        className={styles.membersListHeader}
+                    />
+
+                    {viewerCanAddUserToOrganization && isSourcegraphDotCom && (
+                        <AddMemberToOrgModal orgName={org.name} orgId={org.id} onMemberAdded={onMemberAdded} />
+                    )}
+                    {viewerCanAddUserToOrganization && (
+                        <InviteMemberModal orgName={org.name} orgId={org.id} onInviteSent={onInviteSent} />
+                    )}
                 </div>
 
                 <Container>

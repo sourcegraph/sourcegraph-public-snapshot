@@ -1,8 +1,8 @@
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback, useState } from 'react'
-import { Button, Input, Modal } from '@sourcegraph/wildcard'
+import React, { useCallback, useEffect, useState } from 'react'
+import { Alert, Button, Input, Modal } from '@sourcegraph/wildcard'
 import styles from './InviteMemberModal.module.scss'
 import { eventLogger } from '../../tracking/eventLogger'
 import { gql, useMutation } from '@apollo/client'
@@ -18,13 +18,14 @@ const ADD_USERNAME_OR_EMAIL_TO_ORG = gql`
     }
 `
 
-export interface AddUserToOrgModalProps {
+export interface AddMemberToOrgModalProps {
     orgName: string
     orgId: string
+    onMemberAdded: (username: string) => void
 }
 
-export const AddUserToOrgModal: React.FunctionComponent<AddUserToOrgModalProps> = props => {
-    const { orgName, orgId } = props
+export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalProps> = props => {
+    const { orgName, orgId, onMemberAdded } = props
 
     const [username, setUsername] = useState('')
     const [modalOpened, setModalOpened] = React.useState(false)
@@ -38,10 +39,25 @@ export const AddUserToOrgModal: React.FunctionComponent<AddUserToOrgModalProps> 
         setModalOpened(false)
     }, [setModalOpened])
 
-    const [addUserToOrganization, { loading, error }] = useMutation<
+    const [addUserToOrganization, { data, loading, error }] = useMutation<
         AddUserToOrganizationResult,
         AddUserToOrganizationVariables
     >(ADD_USERNAME_OR_EMAIL_TO_ORG)
+
+    useEffect(() => {
+        if (data) {
+            eventLogger.log('OrgMemberAdded')
+            onMemberAdded(username)
+            setUsername('')
+            setModalOpened(false)
+        }
+    }, [data])
+
+    useEffect(() => {
+        if (error) {
+            eventLogger.log('AddOrgMemberFailed')
+        }
+    }, [error])
 
     const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setUsername(event.currentTarget.value)
@@ -100,3 +116,26 @@ export const AddUserToOrgModal: React.FunctionComponent<AddUserToOrgModalProps> 
         </>
     )
 }
+
+interface AddMemberNotificationProps {
+    username: string
+    orgName: string
+    onDismiss: () => void
+    className?: string
+}
+
+export const AddMemberNotification: React.FunctionComponent<AddMemberNotificationProps> = ({
+    className,
+    username,
+    orgName,
+    onDismiss,
+}) => (
+    <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
+        <div className={styles.message}>
+            <strong>{`You succesfully added ${username} to ${orgName}`}</strong>
+        </div>
+        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
+            <CloseIcon className="icon-inline" />
+        </Button>
+    </Alert>
+)
