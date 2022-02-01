@@ -650,14 +650,6 @@ func boolPtr(value bool) *bool {
 	return &value
 }
 
-func truncateLogs(t *testing.T, ctx context.Context, store *Store) {
-	t.Helper()
-
-	if err := store.Exec(ctx, sqlf.Sprintf(`TRUNCATE migration_logs`)); err != nil {
-		t.Fatalf("unexpected error truncating logs: %s", err)
-	}
-}
-
 func assertLogs(t *testing.T, ctx context.Context, store *Store, expectedLogs []migrationLog) {
 	t.Helper()
 
