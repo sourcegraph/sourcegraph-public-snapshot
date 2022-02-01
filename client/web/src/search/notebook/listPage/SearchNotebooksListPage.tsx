@@ -185,7 +185,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                                 role="button"
                                 onClick={event => {
                                     event.preventDefault()
-                                    onSelectTab('starred', 'SearchNotebooksExploreNotebooksTabClick')
+                                    onSelectTab('starred', 'SearchNotebooksStarredNotebooksTabClick')
                                 }}
                                 className={classNames('nav-link', selectedTab === 'starred' && 'active')}
                             >
@@ -214,16 +214,20 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                 </div>
                 {selectedTab === 'my' && authenticatedUser && (
                     <SearchNotebooksList
+                        logEventName="MyNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         filters={filters}
                         creatorUserID={authenticatedUser.id}
+                        telemetryService={telemetryService}
                     />
                 )}
                 {selectedTab === 'starred' && authenticatedUser && (
                     <SearchNotebooksList
+                        logEventName="StarredNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         starredByUserID={authenticatedUser.id}
                         filters={filters}
+                        telemetryService={telemetryService}
                     />
                 )}
                 {(selectedTab === 'my' || selectedTab === 'starred') && !authenticatedUser && (
@@ -235,7 +239,14 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                         }
                     />
                 )}
-                {selectedTab === 'explore' && <SearchNotebooksList fetchNotebooks={fetchNotebooks} filters={filters} />}
+                {selectedTab === 'explore' && (
+                    <SearchNotebooksList
+                        logEventName="ExploreNotebooks"
+                        fetchNotebooks={fetchNotebooks}
+                        filters={filters}
+                        telemetryService={telemetryService}
+                    />
+                )}
             </Page>
         </div>
     )
