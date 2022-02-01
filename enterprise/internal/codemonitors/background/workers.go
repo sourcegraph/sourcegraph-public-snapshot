@@ -186,12 +186,6 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		return errors.Wrap(err, "run search")
 	}
 
-	if len(results.Results) > 0 {
-		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
-		if err != nil {
-			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
-		}
-	}
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, err)
 	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
@@ -203,6 +197,13 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, results.Results)
 	if err != nil {
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
+	}
+
+	if len(results.Results) > 0 {
+		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
+		if err != nil {
+			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
+		}
 	}
 	return nil
 }
