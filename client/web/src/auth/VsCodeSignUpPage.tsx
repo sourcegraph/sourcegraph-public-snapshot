@@ -1,11 +1,10 @@
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -148,13 +147,13 @@ export const VsCodeSignUpPage: React.FunctionComponent<Props> = ({
                     {renderAuthMethod()}
                     <small className="text-muted">
                         By registering, you agree to our{' '}
-                        <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                        <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
                             Terms of Service
-                        </Link>{' '}
+                        </a>{' '}
                         and{' '}
-                        <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                        <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
                             Privacy Policy
-                        </Link>
+                        </a>
                         .
                     </small>
                     <hr className={styles.separator} />

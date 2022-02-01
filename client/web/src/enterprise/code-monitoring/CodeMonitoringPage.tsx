@@ -121,8 +121,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         <div className="nav nav-tabs">
                             <div className="nav-item">
                                 {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <Link
-                                    to=""
+                                <a
+                                    href=""
                                     onClick={event => {
                                         event.preventDefault()
                                         setCurrentTab('list')
@@ -133,12 +133,12 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <span className="text-content" data-tab-content="Code monitors">
                                         Code monitors
                                     </span>
-                                </Link>
+                                </a>
                             </div>
                             <div className="nav-item">
                                 {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <Link
-                                    to=""
+                                <a
+                                    href=""
                                     onClick={event => {
                                         event.preventDefault()
                                         setCurrentTab('getting-started')
@@ -149,7 +149,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <span className="text-content" data-tab-content="Getting started">
                                         Getting started
                                     </span>
-                                </Link>
+                                </a>
                             </div>
                         </div>
                     </div>

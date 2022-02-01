@@ -1,7 +1,5 @@
 import * as React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
-
 interface FeedbackTextProps {
     /**
      * @default "Questions/feedback?"
@@ -17,17 +15,17 @@ interface FeedbackTextProps {
 export const FeedbackText: React.FunctionComponent<FeedbackTextProps> = ({ className, footerText, headerText }) => (
     <p className={className}>
         {headerText || 'Questions/feedback?'} Contact us at{' '}
-        <Link to="https://twitter.com/sourcegraph" target="_blank" rel="noopener noreferrer">
+        <a href="https://twitter.com/sourcegraph" target="_blank" rel="noopener noreferrer">
             @sourcegraph
-        </Link>{' '}
+        </a>{' '}
         or{' '}
-        <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
+        <a href="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
             support@sourcegraph.com
-        </Link>
+        </a>
         , or file issues on our{' '}
-        <Link to="https://github.com/sourcegraph/issues/issues" target="_blank" rel="noopener noreferrer">
+        <a href="https://github.com/sourcegraph/issues/issues" target="_blank" rel="noopener noreferrer">
             public issue tracker
-        </Link>
+        </a>
         . {footerText}
     </p>
 )

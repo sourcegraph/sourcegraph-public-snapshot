@@ -31,7 +31,6 @@ exports[`NewProductSubscriptionPaymentSection downgrade to existing subscription
       >
         Self-service downgrades are not yet supported. 
         <a
-          class=""
           href="mailto:sales@sourcegraph.com?subject=Downgrade%20subscription%20s"
         >
           Contact sales

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Container, CardBody, Card, Link } from '@sourcegraph/wildcard'
+import { Container, CardBody, Card } from '@sourcegraph/wildcard'
 
 import styles from './GettingStarted.module.scss'
 
@@ -61,12 +61,12 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                         <FindReplaceIcon className="mr-3" />
                         <div>
                             <h4>
-                                <Link
-                                    to="https://docs.sourcegraph.com/batch_changes/tutorials/search_and_replace_specific_terms"
+                                <a
+                                    href="https://docs.sourcegraph.com/batch_changes/tutorials/search_and_replace_specific_terms"
                                     rel="noopener"
                                 >
                                     Finding and replacing exclusionary terms
-                                </Link>
+                                </a>
                             </h4>
                             <p className="text-muted mb-0">
                                 A Sourcegraph query plus a simple <code>sed</code> command creates changesets required
@@ -82,18 +82,18 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                         <RefactorCombyIcon className="mr-3" />
                         <div>
                             <h4>
-                                <Link
-                                    to="https://docs.sourcegraph.com/batch_changes/tutorials/updating_go_import_statements"
+                                <a
+                                    href="https://docs.sourcegraph.com/batch_changes/tutorials/updating_go_import_statements"
                                     rel="noopener"
                                 >
                                     Refactoring with language aware search
-                                </Link>
+                                </a>
                             </h4>
                             <p className="text-muted mb-0">
                                 Using{' '}
-                                <Link to="https://comby.dev/" rel="noopener">
+                                <a href="https://comby.dev/" rel="noopener">
                                     Comby's
-                                </Link>{' '}
+                                </a>{' '}
                                 language-aware structural search to refactor Go statements to a semantically equivalent,
                                 but clearer execution.
                             </p>
@@ -103,9 +103,9 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
             </div>
             <div className="col-12 mb-4 text-right">
                 <p>
-                    <Link to="https://docs.sourcegraph.com/batch_changes/tutorials" rel="noopener">
+                    <a href="https://docs.sourcegraph.com/batch_changes/tutorials" rel="noopener">
                         More tutorials
-                    </Link>
+                    </a>
                 </p>
             </div>
         </div>
@@ -116,9 +116,9 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                     <strong>Quickstart</strong>
                 </p>
                 <p>Create your first Sourcegraph batch change in 10 minutes or less.</p>
-                <Link to="https://docs.sourcegraph.com/batch_changes/quickstart" rel="noopener">
+                <a href="https://docs.sourcegraph.com/batch_changes/quickstart" rel="noopener">
                     Batch Changes quickstart
-                </Link>
+                </a>
             </div>
             <div className="col-12 col-md-4 mt-3">
                 <p>
@@ -126,27 +126,27 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                 </p>
                 <p>
                     Learn about the batch spec{' '}
-                    <Link
-                        to="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
+                    <a
+                        href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
                         rel="noopener"
                     >
                         YAML reference
-                    </Link>
+                    </a>
                     , its powerful{' '}
-                    <Link to="https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating">
+                    <a href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating">
                         templating language
-                    </Link>
+                    </a>
                     ,{' '}
-                    <Link
-                        to="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes"
+                    <a
+                        href="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes"
                         rel="noopener"
                     >
                         permissions
-                    </Link>{' '}
+                    </a>{' '}
                     and more in the{' '}
-                    <Link to="https://docs.sourcegraph.com/batch_changes" rel="noopener">
+                    <a href="https://docs.sourcegraph.com/batch_changes" rel="noopener">
                         Batch Changes documentation
-                    </Link>
+                    </a>
                     .
                 </p>
             </div>
@@ -160,9 +160,9 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                             View the product marketing page for a high-level overview of benefits and customer use
                             cases.
                         </p>
-                        <Link to="https://about.sourcegraph.com/batch-changes" rel="noopener">
+                        <a href="https://about.sourcegraph.com/batch-changes" rel="noopener">
                             Batch Changes marketing page
-                        </Link>
+                        </a>
                     </CardBody>
                 </Card>
             </div>

@@ -87,13 +87,18 @@ describe('Search Stack', () => {
         })
 
         it('redirects to entries', () => {
-            renderSearchStack()
+            const result = renderSearchStack()
             userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
 
             const entryLinks = screen.queryAllByRole('link')
 
-            expect(entryLinks[0]).toHaveAttribute('href', '/search?q=TODO&patternType=literal')
-            expect(entryLinks[1]).toHaveAttribute('href', '/test@master/-/blob/path/to/file')
+            userEvent.click(entryLinks[0])
+            expect(result.history.location.pathname).toMatchInlineSnapshot('"/search"')
+            expect(result.history.location.search).toMatchInlineSnapshot('"?q=TODO&patternType=literal"')
+
+            userEvent.click(entryLinks[1])
+            expect(result.history.location.pathname).toMatchInlineSnapshot('"/test@master/-/blob/path/to/file"')
+            expect(result.history.location.search).toMatchInlineSnapshot('""')
         })
 
         it('creates notebooks', () => {

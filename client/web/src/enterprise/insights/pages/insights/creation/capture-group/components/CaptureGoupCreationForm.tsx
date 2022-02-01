@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Link } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
@@ -91,13 +91,13 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 
                     <small className="w-100 mt-2 text-muted">
                         This feature is actively in development. Read about the{' '}
-                        <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             beta limitations here.
-                        </Link>
+                        </a>
                     </small>
                 </label>
             </FormGroup>
@@ -110,13 +110,13 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                 subtitle={
                     <>
                         Generated dynamically for each unique value from the regular expression capture group.{' '}
-                        <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
                             target="_blank"
                             rel="noopener"
                         >
                             Learn more.
-                        </Link>
+                        </a>
                     </>
                 }
             >
@@ -143,21 +143,21 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 
                     <small className="mt-3">
                         Explore{' '}
-                        <Link
-                            to="https://docs.sourcegraph.com/code_insights/references/common_use_cases#automatic-version-and-pattern-tracking"
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/references/common_use_cases#automatic-version-and-pattern-tracking"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             example queries
-                        </Link>{' '}
+                        </a>{' '}
                         and learn more about{' '}
-                        <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             automatically generated data series
-                        </Link>
+                        </a>
                     </small>
                 </Card>
             </FormGroup>
@@ -224,13 +224,13 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = props => (
     <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
         Search query must contain a properly formatted regular expression with at least one{' '}
-        <Link
-            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
+        <a
+            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
             target="_blank"
             rel="noopener"
         >
             capture group.
-        </Link>{' '}
+        </a>{' '}
         The capture group cannot match file or repository names, it can match only the file contents.
     </small>
 )

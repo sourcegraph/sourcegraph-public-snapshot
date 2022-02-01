@@ -4,7 +4,6 @@ import * as React from 'react'
 import { Controller as ClientController } from '@sourcegraph/shared/src/extensions/controller'
 import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Link } from '@sourcegraph/wildcard'
 
 import { ShortcutProvider } from './ShortcutProvider'
 
@@ -17,7 +16,7 @@ interface Props extends PlatformContextProps<'sideloadedExtensionURL' | 'setting
 const makeExtensionLink = (sourcegraphURL: string): React.FunctionComponent<{ id: string }> => props => {
     const extensionURL = new URL(sourcegraphURL)
     extensionURL.pathname = `extensions/${props.id}`
-    return <Link to={extensionURL.href}>{props.id}</Link>
+    return <a href={extensionURL.href}>{props.id}</a>
 }
 
 /**

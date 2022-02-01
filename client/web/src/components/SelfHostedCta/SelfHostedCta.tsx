@@ -4,7 +4,6 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
-import { Link } from '@sourcegraph/wildcard'
 
 export interface SelfHostedCtaProps extends TelemetryProps {
     className?: string
@@ -48,22 +47,22 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
 
                 <ul>
                     <li>
-                        <Link
+                        <a
                             onClick={gettingStartedCTAOnClick}
-                            to="https://docs.sourcegraph.com/admin/install"
+                            href="https://docs.sourcegraph.com/admin/install"
                             {...linkProps}
                         >
                             Learn how to install
-                        </Link>
+                        </a>
                     </li>
                     <li>
-                        <Link
+                        <a
                             onClick={selfVsCloudDocumentsLinkOnClick}
-                            to="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud#who-is-sourcegraph-cloud-for-why-should-i-use-this-over-sourcegraph-self-hosted"
+                            href="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud#who-is-sourcegraph-cloud-for-why-should-i-use-this-over-sourcegraph-self-hosted"
                             {...linkProps}
                         >
                             Self-hosted vs. cloud features
-                        </Link>
+                        </a>
                     </li>
                 </ul>
             </div>
@@ -72,14 +71,14 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
                 <h3 className="pr-3">Need help getting started?</h3>
 
                 <div>
-                    <Link
+                    <a
                         onClick={helpGettingStartedCTAOnClick}
-                        to=" https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct?utm_campaign=inproduct-talktoadev&utm_medium=direct_traffic&utm_source=inproduct-talktoadev&utm_term=null&utm_content=talktoadevform"
+                        href=" https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct?utm_campaign=inproduct-talktoadev&utm_medium=direct_traffic&utm_source=inproduct-talktoadev&utm_term=null&utm_content=talktoadevform"
                         {...linkProps}
                     >
                         Speak to an engineer
                         <ArrowRightIcon className="icon-inline ml-2" />
-                    </Link>
+                    </a>
                 </div>
             </MarketingBlock>
         </div>

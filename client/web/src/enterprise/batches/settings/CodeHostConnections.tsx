@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 
-import { Container, Link } from '@sourcegraph/wildcard'
+import { Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import {
@@ -74,13 +74,9 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
             />
             <p className="mb-0">
                 Code host not present? Site admins can add a code host in{' '}
-                <Link
-                    to="https://docs.sourcegraph.com/admin/external_service"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <a href="https://docs.sourcegraph.com/admin/external_service" target="_blank" rel="noopener noreferrer">
                     the manage repositories settings
-                </Link>
+                </a>
                 .
             </p>
         </Container>

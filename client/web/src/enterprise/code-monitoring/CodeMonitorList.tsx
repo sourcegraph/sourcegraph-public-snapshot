@@ -117,7 +117,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                 </div>
             </div>
             <div className="mt-5">
-                We want to hear your feedback! <Link to="mailto:feedback@sourcegraph.com">Share your thoughts</Link>
+                We want to hear your feedback! <a href="mailto:feedback@sourcegraph.com">Share your thoughts</a>
             </div>
         </>
     )

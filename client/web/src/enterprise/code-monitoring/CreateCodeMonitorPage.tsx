@@ -2,7 +2,7 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { Observable } from 'rxjs'
 
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -71,13 +71,13 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
-                        <Link
-                            to="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                        <a
+                            href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
                             target="_blank"
                             rel="noopener"
                         >
                             Learn more
-                        </Link>
+                        </a>
                     </>
                 }
             />

@@ -85,13 +85,13 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                     description={
                         <span className="text-muted">
                             Search code you care about with search contexts.{' '}
-                            <Link
-                                to="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
+                            <a
+                                href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 Learn more
-                            </Link>
+                            </a>
                         </span>
                     }
                     className="mb-3"
@@ -100,8 +100,8 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                     <div className="nav nav-tabs">
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <Link
-                                to=""
+                            <a
+                                href=""
                                 role="button"
                                 onClick={onSelectSearchContextsList}
                                 className={classNames('nav-link', selectedTab === 'list' && 'active')}
@@ -109,7 +109,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 <span className="text-content" data-tab-content="Your search contexts">
                                     Your search contexts
                                 </span>
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 </div>

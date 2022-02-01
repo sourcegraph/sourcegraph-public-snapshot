@@ -1,8 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
-
 import { Breadcrumbs } from './Breadcrumbs'
 import { WebStory } from './WebStory'
 
@@ -20,20 +18,20 @@ add(
                     breadcrumbs={[
                         {
                             depth: 0,
-                            breadcrumb: { key: 'home', element: <Link to="/">Home</Link>, divider: null },
+                            breadcrumb: { key: 'home', element: <a href="/">Home</a>, divider: null },
                         },
                         {
                             depth: 1,
-                            breadcrumb: { key: 'repo_area', element: <Link to="/">Repositories</Link> },
+                            breadcrumb: { key: 'repo_area', element: <a href="/">Repositories</a> },
                         },
                         {
                             depth: 2,
                             breadcrumb: {
                                 key: 'repo',
                                 element: (
-                                    <Link to="/">
+                                    <a href="/">
                                         sourcegraph/<span className="font-weight-medium">sourcegraph</span>
-                                    </Link>
+                                    </a>
                                 ),
                             },
                         },
@@ -47,14 +45,14 @@ add(
                         },
                         {
                             depth: 4,
-                            breadcrumb: { key: 'directory1', element: <Link to="/">path</Link> },
+                            breadcrumb: { key: 'directory1', element: <a href="/">path</a> },
                         },
                         {
                             depth: 5,
                             breadcrumb: {
                                 key: 'directory2',
                                 divider: <span className="mx-1">/</span>,
-                                element: <Link to="/">to</Link>,
+                                element: <a href="/">to</a>,
                             },
                         },
                         {
@@ -62,7 +60,7 @@ add(
                             breadcrumb: {
                                 key: 'fileName',
                                 divider: <span className="mx-1">/</span>,
-                                element: <Link to="/">file.tsx</Link>,
+                                element: <a href="/">file.tsx</a>,
                             },
                         },
                     ]}

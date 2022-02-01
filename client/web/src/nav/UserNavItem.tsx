@@ -191,14 +191,14 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                     {props.themePreference === ThemePreference.System && !supportsSystemTheme && (
                         <div className="text-wrap">
                             <small>
-                                <Link
-                                    to="https://caniuse.com/#feat=prefers-color-scheme"
+                                <a
+                                    href="https://caniuse.com/#feat=prefers-color-scheme"
                                     className="text-warning"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
                                     Your browser does not support the system theme.
-                                </Link>
+                                </a>
                             </small>
                         </div>
                     )}
@@ -231,25 +231,25 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 </button>
 
                 {props.authenticatedUser.session?.canSignOut && (
-                    <Link to="/-/sign-out" className="dropdown-item">
+                    <a href="/-/sign-out" className="dropdown-item">
                         Sign out
-                    </Link>
+                    </a>
                 )}
                 <DropdownItem divider={true} />
                 {props.showDotComMarketing && (
-                    <Link to="https://about.sourcegraph.com" target="_blank" rel="noopener" className="dropdown-item">
+                    <a href="https://about.sourcegraph.com" target="_blank" rel="noopener" className="dropdown-item">
                         About Sourcegraph <OpenInNewIcon className="icon-inline" />
-                    </Link>
+                    </a>
                 )}
                 {codeHostIntegrationMessaging === 'browser-extension' && (
-                    <Link
-                        to="https://docs.sourcegraph.com/integration/browser_extension"
+                    <a
+                        href="https://docs.sourcegraph.com/integration/browser_extension"
                         target="_blank"
                         rel="noopener"
                         className="dropdown-item"
                     >
                         Browser extension <OpenInNewIcon className="icon-inline" />
-                    </Link>
+                    </a>
                 )}
             </DropdownMenu>
         </ButtonDropdown>
