@@ -1198,13 +1198,13 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 }
 
 // evaluate evaluates all expressions of a search query.
-func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
 		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJob(ctx, r.stream, job)
+		return r.evaluateJob(ctx, stream, job)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -1399,7 +1399,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 				// If a predicate filter generated a new plan, evaluate that plan.
 				newResult, err = r.resultsRecursive(ctx, predicatePlan)
 			} else {
-				newResult, err = r.evaluate(ctx, q)
+				newResult, err = r.evaluate(ctx, r.stream, q)
 			}
 
 			if err != nil || newResult == nil {
