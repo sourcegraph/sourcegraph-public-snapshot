@@ -323,6 +323,7 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		Repo:           repo,
 		DiffPreview:    diffPreview,
 		MessagePreview: messagePreview,
+		ModifiedFiles:  in.ModifiedFiles,
 	}
 }
 
