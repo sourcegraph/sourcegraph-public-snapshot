@@ -324,7 +324,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 	if err := dfs(root, nil); err != nil {
 		return nil, err
 	}
-	for len(order) < len(migrationDefinitions) {
+	if len(order) < len(migrationDefinitions) {
 		// We didn't visit every node, but we also do not have more than one root. There necessarily
 		// exists a cycle that we didn't enter in the traversal from our root. Continue the traversal
 		// starting from each unvisited node until we return a cycle.
