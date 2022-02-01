@@ -297,30 +297,6 @@ func TestWrappedUp(t *testing.T) {
 		truncateLogs(t, ctx, store)
 	})
 
-	t.Run("unexpected version", func(t *testing.T) {
-		expectedErrorMessage := "expected schema to have version 17, but has version 16"
-
-		definition := definition.Definition{
-			ID: 18,
-			UpQuery: sqlf.Sprintf(`
-				-- Does not actually run
-			`),
-		}
-		f := func() error {
-			return store.Up(ctx, definition)
-		}
-		if err := store.WithMigrationLog(ctx, definition, true, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
-			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
-		}
-
-		// Version, dirty status unchanged
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 16 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 16, false, version, dirty, ok, err)
-		}
-
-		assertLogs(t, ctx, store, nil)
-	})
-
 	t.Run("query failure", func(t *testing.T) {
 		expectedErrorMessage := "SQL Error"
 
@@ -358,30 +334,6 @@ func TestWrappedUp(t *testing.T) {
 		})
 		assertVersions(t, ctx, store, nil, nil, []int{17})
 		truncateLogs(t, ctx, store)
-	})
-
-	t.Run("dirty", func(t *testing.T) {
-		expectedErrorMessage := "dirty database"
-
-		definition := definition.Definition{
-			ID: 17,
-			UpQuery: sqlf.Sprintf(`
-				-- Does not actually run
-			`),
-		}
-		f := func() error {
-			return store.Up(ctx, definition)
-		}
-		if err := store.WithMigrationLog(ctx, definition, true, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
-			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
-		}
-
-		// Version, dirty status unchanged
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 17 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 17, true, version, dirty, ok, err)
-		}
-
-		assertLogs(t, ctx, store, nil)
 	})
 }
 
@@ -458,30 +410,6 @@ func TestWrappedDown(t *testing.T) {
 		truncateLogs(t, ctx, store)
 	})
 
-	t.Run("unexpected version", func(t *testing.T) {
-		expectedErrorMessage := "expected schema to have version 12, but has version 13"
-
-		definition := definition.Definition{
-			ID: 12,
-			DownQuery: sqlf.Sprintf(`
-				-- Does not actually run
-			`),
-		}
-		f := func() error {
-			return store.Down(ctx, definition)
-		}
-		if err := store.WithMigrationLog(ctx, definition, false, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
-			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
-		}
-
-		// Version, dirty status unchanged
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 13 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 13, false, version, dirty, ok, err)
-		}
-
-		assertLogs(t, ctx, store, nil)
-	})
-
 	t.Run("query failure", func(t *testing.T) {
 		expectedErrorMessage := "SQL Error"
 
@@ -514,30 +442,6 @@ func TestWrappedDown(t *testing.T) {
 		})
 		assertVersions(t, ctx, store, nil, nil, []int{13})
 		truncateLogs(t, ctx, store)
-	})
-
-	t.Run("dirty", func(t *testing.T) {
-		expectedErrorMessage := "dirty database"
-
-		definition := definition.Definition{
-			ID: 12,
-			DownQuery: sqlf.Sprintf(`
-				-- Does not actually run
-			`),
-		}
-		f := func() error {
-			return store.Down(ctx, definition)
-		}
-		if err := store.WithMigrationLog(ctx, definition, false, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
-			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
-		}
-
-		// Version, dirty status unchanged
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 12 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 12, true, version, dirty, ok, err)
-		}
-
-		assertLogs(t, ctx, store, nil)
 	})
 }
 
