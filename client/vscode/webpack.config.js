@@ -111,7 +111,7 @@ const webviewConfig = {
   },
   resolve: {
     alias: {
-      // '../documentation/ModalVideo': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'ModalVideo'), // For NoResultsPage
+      path: require.resolve('path-browserify'),
     },
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],

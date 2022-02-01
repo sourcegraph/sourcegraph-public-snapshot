@@ -115,7 +115,7 @@ export function activate(context: vscode.ExtensionContext): void {
         setSidebarQueryState: sidebarQueryState => sidebarQueryStates.next(sidebarQueryState),
     }
 
-    registerWebviews({ context, extensionCoreAPI, initializedPanelIDs, sourcegraphSettings })
+    // Also initializes code intel.
+    registerWebviews({ context, extensionCoreAPI, initializedPanelIDs, sourcegraphSettings, fs })
     // TODO: registerCodeSharingCommands()
-    // TODO: registerCodeIntel()
 }

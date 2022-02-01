@@ -1,6 +1,7 @@
 import { GraphQLResult } from '@sourcegraph/http-client'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ProxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
+import { ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchMatch, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
@@ -49,15 +50,13 @@ export interface ExtensionCoreAPI {
     setSidebarQueryState: (queryState: VSCEQueryState) => void
 }
 
-// Data flows one way for now (one sidebar <-> one panel UX),
-// but these APIs are in place in case we implement a one sidebar <-> many panels UX
 export interface SearchPanelAPI {
-    // TODO remove once other methods are implemented
     ping: () => ProxySubscribable<'pong'>
 }
 
-export interface SearchSidebarAPI extends Pick<FlatExtensionHostAPI, 'addTextDocumentIfNotExists'> {
-    // TODO remove once other methods are implemented
+export interface SearchSidebarAPI
+    extends Pick<FlatExtensionHostAPI, 'addTextDocumentIfNotExists' | 'getDefinition' | 'getHover' | 'getReferences'> {
     ping: () => ProxySubscribable<'pong'>
-    // TODO: ExtensionHostAPI methods
+
+    addViewerIfNotExists: (viewer: ViewerData) => Promise<ViewerId>
 }

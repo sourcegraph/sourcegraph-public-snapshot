@@ -1,3 +1,5 @@
+import '../platform/polyfills'
+
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
@@ -24,11 +26,15 @@ const vsCodeApi = window.acquireVsCodeApi()
 
 const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 
-const searchSidebarAPI = createSearchSidebarAPI()
-Comlink.expose(searchSidebarAPI, expose)
 export const extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI> = Comlink.wrap(proxy)
 
 const platformContext = createPlatformContext(extensionCoreAPI)
+
+const searchSidebarAPI = createSearchSidebarAPI({
+    platformContext,
+    instanceURL: document.documentElement.dataset.instanceUrl!,
+})
+Comlink.expose(searchSidebarAPI, expose)
 
 setLinkComponent(AnchorLink)
 
