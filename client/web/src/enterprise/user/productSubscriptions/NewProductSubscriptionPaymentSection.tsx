@@ -11,7 +11,7 @@ import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -119,13 +119,13 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                         {previewInvoice.isDowngradeRequiringManualIntervention ? (
                             <Alert className="mb-2" variant="danger">
                                 Self-service downgrades are not yet supported.{' '}
-                                <Link
-                                    to={mailtoSales({
+                                <a
+                                    href={mailtoSales({
                                         subject: `Downgrade subscription ${subscriptionID!}`,
                                     })}
                                 >
                                     Contact sales
-                                </Link>{' '}
+                                </a>{' '}
                                 for help.
                             </Alert>
                         ) : (

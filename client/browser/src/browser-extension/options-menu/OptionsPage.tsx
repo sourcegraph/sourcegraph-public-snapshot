@@ -12,7 +12,7 @@ import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'
 import styles from './OptionsPage.module.scss'
@@ -95,9 +95,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             </section>
             <section className={styles.section}>
                 Get code intelligence tooltips while browsing and reviewing code on your code host.{' '}
-                <Link to="https://docs.sourcegraph.com/integration/browser_extension#features" {...NEW_TAB_LINK_PROPS}>
+                <a href="https://docs.sourcegraph.com/integration/browser_extension#features" {...NEW_TAB_LINK_PROPS}>
                     Learn more
-                </Link>{' '}
+                </a>{' '}
                 about the extension and compatible code hosts.
             </section>
             <section className={classNames('border-0', styles.section)}>
@@ -120,13 +120,13 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
             <section className={styles.section}>
-                <Link
-                    to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
+                <a
+                    href="https://docs.sourcegraph.com/integration/browser_extension#privacy"
                     {...NEW_TAB_LINK_PROPS}
                     className="d-block mb-1"
                 >
                     <small>How do we keep your code private?</small> <OpenInNewIcon size="0.75rem" className="ml-2" />
-                </Link>
+                </a>
                 <p className="mb-0">
                     <Button
                         className="p-0 shadow-none font-weight-normal"
@@ -143,16 +143,16 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             </section>
             <section className="d-flex">
                 <div className={styles.splitSectionPart}>
-                    <Link to="https://sourcegraph.com/search" {...NEW_TAB_LINK_PROPS}>
+                    <a href="https://sourcegraph.com/search" {...NEW_TAB_LINK_PROPS}>
                         <EarthIcon className="icon-inline mr-2" />
                         Sourcegraph Cloud
-                    </Link>
+                    </a>
                 </div>
                 <div className={styles.splitSectionPart}>
-                    <Link to="https://docs.sourcegraph.com" {...NEW_TAB_LINK_PROPS}>
+                    <a href="https://docs.sourcegraph.com" {...NEW_TAB_LINK_PROPS}>
                         <BookOpenPageVariantIcon className="icon-inline mr-2" />
                         Documentation
-                    </Link>
+                    </a>
                 </div>
             </section>
         </OptionsPageContainer>
@@ -195,9 +195,9 @@ const PrivateRepositoryAlert: React.FunctionComponent = () => (
         </p>
         <ol>
             <li className="mb-2">
-                <Link to="https://docs.sourcegraph.com/" rel="noopener" target="_blank">
+                <a href="https://docs.sourcegraph.com/" rel="noopener" target="_blank">
                     Install and configure Sourcegraph
-                </Link>
+                </a>
                 . Skip this step if you already have a private Sourcegraph instance.
             </li>
             <li className="mb-2">Click the Sourcegraph icon in the browser toolbar to bring up this popup again.</li>
@@ -323,9 +323,9 @@ export const SourcegraphURLForm: React.FunctionComponent<SourcegraphURLFormProps
                         ) : urlState.reason === URL_AUTH_ERROR ? (
                             <>
                                 Authentication to Sourcegraph failed.{' '}
-                                <Link to={urlState.value} {...NEW_TAB_LINK_PROPS}>
+                                <a href={urlState.value} {...NEW_TAB_LINK_PROPS}>
                                     Sign in to your instance
-                                </Link>{' '}
+                                </a>{' '}
                                 to continue
                             </>
                         ) : urlInputReference.current?.validity.typeMismatch ? (

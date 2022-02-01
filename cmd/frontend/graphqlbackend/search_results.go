@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -1825,7 +1826,31 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 	}()
 
 	agg := run.NewAggregator(stream)
-	err = job.Run(ctx, db, agg)
+	stream = agg
+
+	var (
+		mu   sync.Mutex
+		errs = &multierror.Error{}
+	)
+
+	checker := authz.DefaultSubRepoPermsChecker
+	if authz.SubRepoEnabled(checker) {
+		// Wrap the aggregator stream in a stream that filters out
+		// any matches that should be blocked by sub-repo permissions
+		stream = streaming.StreamFunc(func(event streaming.SearchEvent) {
+			var filterErr error
+			event.Results, filterErr = applySubRepoFiltering(ctx, checker, event.Results)
+			if filterErr != nil {
+				mu.Lock()
+				errs = multierror.Append(filterErr)
+				mu.Unlock()
+			}
+
+			agg.Send(event)
+		})
+	}
+
+	errs = multierror.Append(job.Run(ctx, db, stream))
 	matches, common, matchCount := agg.Get()
 
 	ao := alert.Observer{
@@ -1833,8 +1858,8 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 		SearchInputs: searchInputs,
 		HasResults:   matchCount > 0,
 	}
-	if err != nil {
-		ao.Error(ctx, err)
+	if errs.Len() > 0 {
+		ao.Error(ctx, errs)
 	}
 	alert, err := ao.Done(&common)
 
@@ -1845,6 +1870,64 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 		Stats:   common,
 		Alert:   alert,
 	}, err
+}
+
+// applySubRepoFiltering filters a set of matches using the provided
+// authz.SubRepoPermissionChecker
+func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return matches, nil
+	}
+
+	a := actor.FromContext(ctx)
+	errs := &multierror.Error{}
+
+	// Filter matches in place
+	filtered := matches[:0]
+
+	for _, m := range matches {
+		switch mm := m.(type) {
+		case *result.FileMatch:
+			repo := mm.Repo.Name
+			matchedPath := mm.Path
+
+			content := authz.RepoContent{
+				Repo: repo,
+				Path: matchedPath,
+			}
+			perms, err := authz.ActorPermissions(ctx, checker, a, content)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+
+			if perms.Include(authz.Read) {
+				filtered = append(filtered, m)
+			}
+		case *result.CommitMatch:
+			allowed, err := authz.CanReadAllPaths(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+			if allowed {
+				filtered = append(filtered, m)
+			}
+		case *result.RepoMatch:
+			// Repo filtering is taking care of by our usual repo filtering logic
+			filtered = append(filtered, m)
+		}
+
+	}
+
+	if errs.Len() == 0 {
+		return filtered, nil
+	}
+
+	// We don't want to return sensitive authz information or excluded paths to the
+	// user so we'll return generic error and log something more specific.
+	log15.Warn("Applying sub-repo permissions to search results", "error", errs)
+	return filtered, errors.New("subRepoFilterFunc")
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err

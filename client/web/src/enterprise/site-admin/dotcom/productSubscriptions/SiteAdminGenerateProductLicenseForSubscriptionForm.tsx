@@ -10,7 +10,7 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Alert, Button, useEventObservable, Link } from '@sourcegraph/wildcard'
+import { Alert, Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
@@ -157,9 +157,9 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         </datalist>
                         <small className="form-text text-muted">
                             Tags restrict a license. Please refer to{' '}
-                            <Link to="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer">
+                            <a href="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer">
                                 How to create a license key for a new prospect or new customer
-                            </Link>{' '}
+                            </a>{' '}
                             for a complete guide.
                         </small>
                         <small className="form-text text-muted mt-2">

@@ -2,11 +2,12 @@ import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import React, { useEffect, useRef, useState } from 'react'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useOnClickOutside } from '@sourcegraph/wildcard'
 
 import styles from './NotebookTitle.module.scss'
 
-export interface NotebookTitleProps {
+export interface NotebookTitleProps extends TelemetryProps {
     title: string
     viewerCanManage: boolean
     onUpdateTitle: (title: string) => void
@@ -16,6 +17,7 @@ export const NotebookTitle: React.FunctionComponent<NotebookTitleProps> = ({
     title: initialTitle,
     viewerCanManage,
     onUpdateTitle,
+    telemetryService,
 }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [title, setTitle] = useState(initialTitle)
@@ -28,6 +30,7 @@ export const NotebookTitle: React.FunctionComponent<NotebookTitleProps> = ({
     }
 
     const updateTitle = (): void => {
+        telemetryService.log('SearchNotebookTitleUpdated')
         setIsEditing(false)
         onUpdateTitle(title)
     }

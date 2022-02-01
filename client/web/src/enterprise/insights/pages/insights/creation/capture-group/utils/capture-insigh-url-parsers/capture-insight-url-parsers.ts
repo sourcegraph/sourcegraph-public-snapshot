@@ -1,6 +1,6 @@
 import { CaptureGroupFormFields } from '../../types'
 
-type CaptureInsightUrlValues = Omit<CaptureGroupFormFields, 'step' | 'stepValue'>
+export type CaptureInsightUrlValues = Omit<CaptureGroupFormFields, 'step' | 'stepValue'>
 
 export function encodeCaptureInsightURL(values: Partial<CaptureInsightUrlValues>): string {
     const parameters = new URLSearchParams()

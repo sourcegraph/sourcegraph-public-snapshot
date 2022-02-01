@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Button, TextArea, Link } from '@sourcegraph/wildcard'
+import { Button, TextArea } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -65,9 +65,9 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
             />
             {showInstructionsLink && (
                 <p>
-                    <Link to={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">
+                    <a href={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">
                         Configuration instructions
-                    </Link>
+                    </a>
                 </p>
             )}
         </>

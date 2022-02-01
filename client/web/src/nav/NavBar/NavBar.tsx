@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
@@ -128,9 +128,9 @@ export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, chi
 
     if (external) {
         return (
-            <Link to={to as string} rel="noreferrer noopener" target="_blank" className={navItemStyles.link}>
+            <a href={to as string} rel="noreferrer noopener" target="_blank" className={navItemStyles.link}>
                 {content}
-            </Link>
+            </a>
         )
     }
 

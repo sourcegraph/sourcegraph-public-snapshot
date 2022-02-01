@@ -332,9 +332,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             <small className="text-muted">
                 {' '}
                 What other events would you like to monitor?{' '}
-                <Link to="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
+                <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
-                </Link>
+                </a>
             </small>
         </>
     )

@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
-// eslint-disable-next-line no-restricted-imports
 import { Link } from 'react-router-dom'
 
 import { useWildcardTheme } from '../../../hooks/useWildcardTheme'

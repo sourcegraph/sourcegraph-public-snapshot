@@ -8,7 +8,7 @@ import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, Button, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { Container, Button, useEventObservable, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -168,13 +168,13 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                         <small className="text-muted">
                             Give it a short, descriptive name to reference events on Sourcegraph and in notifications.
                             Do not include{' '}
-                            <Link
-                                to="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
+                            <a
+                                href="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
                                 target="_blank"
                                 rel="noopener"
                             >
                                 confidential information
-                            </Link>
+                            </a>
                             .
                         </small>
                     </div>

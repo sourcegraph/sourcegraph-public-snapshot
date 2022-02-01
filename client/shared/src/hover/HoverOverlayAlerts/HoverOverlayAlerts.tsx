@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { HoverAlert } from 'sourcegraph'
 
-import { Link, Alert } from '@sourcegraph/wildcard'
+import { Alert } from '@sourcegraph/wildcard'
 
 import { NotificationType } from '../../api/extension/extensionHostApi'
 import { renderMarkdown } from '../../util/markdown'
@@ -77,9 +77,9 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
                         <div className={classNames(hoverOverlayStyle.alertDismiss)}>
                             {/* Ideally this should a <button> but we can't guarantee we have the .btn-link class here. */}
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <Link to="" onClick={createAlertDismissedHandler(type)} role="button">
+                            <a href="" onClick={createAlertDismissedHandler(type)} role="button">
                                 <small>Dismiss</small>
-                            </Link>
+                            </a>
                         </div>
                     )}
                 </Alert>

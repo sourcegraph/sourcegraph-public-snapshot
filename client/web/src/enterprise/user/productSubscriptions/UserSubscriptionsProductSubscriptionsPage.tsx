@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, Button, Link } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -79,15 +79,10 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Subscriptions' }]}
-                actions={
-                    <Button to={`${props.match.path}/new`} className="text-nowrap" variant="primary" as={Link}>
-                        New subscription
-                    </Button>
-                }
                 description={
                     <>
-                        Purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
-                        <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
+                        Contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
+                        <a href="https://about.sourcegraph.com/pricing">pricing</a> for more information.
                     </>
                 }
                 className="mb-3"

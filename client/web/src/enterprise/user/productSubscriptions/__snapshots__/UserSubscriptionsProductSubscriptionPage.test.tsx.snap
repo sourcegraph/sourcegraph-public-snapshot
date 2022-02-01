@@ -45,7 +45,6 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
         >
           No billing information is associated with this subscription. 
           <a
-            class=""
             href="mailto:sales@sourcegraph.com?subject=Billing%20for%20subscription%20undefined"
           >
             Contact sales

@@ -31,6 +31,10 @@ type CommitMatch struct {
 	// MessagePreview and DiffPreview are mutually exclusive. Only one should be set
 	MessagePreview *MatchedString
 	DiffPreview    *MatchedString
+
+	// ModifiedFiles will include the list of files modified in the commit when
+	// sub-repo permissions filtering has been enabled.
+	ModifiedFiles []string
 }
 
 func (c *CommitMatch) Body() MatchedString {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { Button, ProductStatusBadge, Popover, PopoverTrigger, PopoverContent, Link } from '@sourcegraph/wildcard'
+import { Button, ProductStatusBadge, Popover, PopoverTrigger, PopoverContent } from '@sourcegraph/wildcard'
 
 import { FeedbackPromptContent } from '../../../../nav/Feedback'
 
@@ -11,9 +11,9 @@ export const BetaFeedbackPanel: React.FunctionComponent = () => {
 
     return (
         <div className="d-flex align-items-center">
-            <Link to="https://docs.sourcegraph.com/code_insights#code-insights-beta" target="_blank" rel="noopener">
+            <a href="https://docs.sourcegraph.com/code_insights#code-insights-beta" target="_blank" rel="noopener">
                 <ProductStatusBadge status="beta" className="text-uppercase" />
-            </Link>
+            </a>
 
             <Popover isOpen={isVisible} onOpenChange={event => setVisibility(event.isOpen)}>
                 <PopoverTrigger as={Button} variant="link" size="sm">

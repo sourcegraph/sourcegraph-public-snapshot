@@ -16,7 +16,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, useLocalStorage, useEventObservable, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useLocalStorage, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -133,9 +133,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                 <h2>Publish new release</h2>
                 <p>
                     Use the{' '}
-                    <Link to="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
+                    <a href="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
                         <code>src</code> CLI tool
-                    </Link>{' '}
+                    </a>{' '}
                     to publish a new release:
                 </p>
                 <pre>

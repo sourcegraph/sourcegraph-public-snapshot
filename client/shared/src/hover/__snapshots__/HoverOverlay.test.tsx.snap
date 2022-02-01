@@ -283,7 +283,6 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
           class="alertDismiss"
         >
           <a
-            class=""
             href=""
             role="button"
           >

@@ -9,6 +9,7 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { setLinkComponent } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'
@@ -54,6 +55,8 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
+    setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
+    afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
     beforeEach(() => {
         useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
     })

@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import React from 'react'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Link } from '@sourcegraph/wildcard'
 
 /**
  * Displays an inline list of email addresses for an account.
@@ -16,7 +15,7 @@ export const AccountEmailAddresses: React.FunctionComponent<{
                 key={index}
                 className={classNames('text-nowrap d-inline-block mr-2', !verified && 'text-muted font-italic')}
             >
-                <Link to={`mailto:${email}`}>{email}</Link> {verified ? '(verified)' : '(unverified)'}
+                <a href={`mailto:${email}`}>{email}</a> {verified ? '(verified)' : '(unverified)'}
             </span>
         ))}
     </>

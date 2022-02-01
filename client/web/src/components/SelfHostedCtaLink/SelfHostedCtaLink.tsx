@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/wildcard'
 
 import styles from './SelfHostedCtaLink.module.scss'
 
@@ -28,9 +27,9 @@ export const SelfHostedCtaLink: React.FunctionComponent<SelfHostedCtaLinkProps> 
         <div className={classNames(styles.container, className)}>
             <span className={contentClassName}>
                 Get Sourcegraph for teams via our{' '}
-                <Link onClick={gettingStartedCTAOnClick} to="https://docs.sourcegraph.com/admin/install" {...linkProps}>
+                <a onClick={gettingStartedCTAOnClick} href="https://docs.sourcegraph.com/admin/install" {...linkProps}>
                     self-hosted installation
-                </Link>
+                </a>
                 .
             </span>
         </div>
