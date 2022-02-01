@@ -42,6 +42,7 @@ export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarPr
     }
 
     const onRecentRepositoryClick = (query: string): void => {
+        platformContext.telemetryService.log('VSCERecentRepositoryClick')
         extensionCoreAPI
             .streamSearch(query, {
                 // Debt: using defaults here. The saved search should override these, though.

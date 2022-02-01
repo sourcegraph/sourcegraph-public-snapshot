@@ -80,6 +80,15 @@
         padding: 0.125rem;
     }
 
+    &__file-list {
+        list-style-type: none;
+        max-height: 10rem;
+        overflow: auto;
+        // Negative margin and positive padding allows focus rings to not be cut off by overflow:auto
+        margin: 0 -0.125rem;
+        padding: 0.125rem;
+    }
+
     &__cta {
         list-style-type: none;
         overflow: auto;
