@@ -104,9 +104,9 @@ func migrationAddExec(ctx context.Context, args []string) error {
 	}
 
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files created"))
-	block.Writef("Up migration: %s", upFile)
-	block.Writef("Down migration: %s", downFile)
-	block.Writef("Metadata: %s", metadataFile)
+	block.Writef("Up query file: %s", upFile)
+	block.Writef("Down query file: %s", downFile)
+	block.Writef("Metadata file: %s", metadataFile)
 	block.Close()
 
 	return nil
