@@ -57,7 +57,7 @@ type Key struct {
 	// AuthorDate is the date a commit was authored if this key is for
 	// a commit match.
 	//
-	// TODO(@camdencheek): this should probably use committer date,
+	// NOTE(@camdencheek): this should probably use committer date,
 	// but the CommitterField on our CommitMatch type is possibly null,
 	// so using AuthorDate here preserves previous sorting behavior.
 	AuthorDate *time.Time
