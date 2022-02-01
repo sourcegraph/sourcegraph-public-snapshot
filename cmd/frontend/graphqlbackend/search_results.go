@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"path"
 	"regexp"
 	"sort"
 	"strconv"
