@@ -2,8 +2,6 @@ package runner
 
 import (
 	"fmt"
-
-	"github.com/inconshreveable/log15"
 )
 
 type Options struct {
@@ -47,7 +45,7 @@ func desugarOperation(schemaContext schemaContext, operation MigrationOperation)
 func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) MigrationOperation {
 	leafVersions := extractIDs(schemaContext.schema.Definitions.Leaves())
 
-	log15.Info(
+	logger.Info(
 		"Desugaring `upgrade` to `targeted up` operation",
 		"schema", operation.SchemaName,
 		"leafVersions", leafVersions,
@@ -96,7 +94,7 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 		}
 	}
 
-	log15.Info(
+	logger.Info(
 		"Desugaring `revert` to `targeted down` operation",
 		"schema", operation.SchemaName,
 		"appliedLeafVersions", leafVersions,

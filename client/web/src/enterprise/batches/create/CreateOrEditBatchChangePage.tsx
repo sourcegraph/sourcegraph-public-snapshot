@@ -14,7 +14,6 @@ import {
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { PageHeader, Button, Container, Input, LoadingSpinner, FeedbackBadge } from '@sourcegraph/wildcard'
 
@@ -318,15 +317,15 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
 
     const buttons = (
         <>
-            <ButtonTooltip
+            <Button
                 className="mb-2"
                 variant="primary"
                 onClick={executeBatchSpec}
                 disabled={disableExecution}
-                tooltip={executionTooltip}
+                data-tooltip={executionTooltip}
             >
                 Run batch spec
-            </ButtonTooltip>
+            </Button>
             <BatchSpecDownloadLink name="new-batch-spec" originalInput={code} isLightTheme={isLightTheme}>
                 or download for src-cli
             </BatchSpecDownloadLink>

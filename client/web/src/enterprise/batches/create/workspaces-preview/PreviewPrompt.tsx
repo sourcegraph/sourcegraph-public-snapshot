@@ -2,8 +2,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-
-import { ButtonTooltip } from '../../../../components/ButtonTooltip'
+import { Button } from '@sourcegraph/wildcard'
 
 import styles from './PreviewPrompt.module.scss'
 import { PreviewPromptIcon } from './PreviewPromptIcon'
@@ -44,16 +43,16 @@ interface PreviewPromptProps {
  */
 export const PreviewPrompt: React.FunctionComponent<PreviewPromptProps> = ({ preview, disabled, form }) => {
     const previewButton = (
-        <ButtonTooltip
+        <Button
             className="mb-2"
             variant="success"
             disabled={!!disabled}
-            tooltip={typeof disabled === 'string' ? disabled : undefined}
+            data-tooltip={typeof disabled === 'string' ? disabled : undefined}
             onClick={preview}
         >
             <SearchIcon className="icon-inline mr-1" />
             Preview workspaces
-        </ButtonTooltip>
+        </Button>
     )
 
     switch (form) {

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -155,7 +154,7 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 		return schemaVersion{}, err
 	}
 
-	log15.Info(
+	logger.Info(
 		"Checked current version",
 		"schema", schemaName,
 		"appliedVersions", appliedVersions,

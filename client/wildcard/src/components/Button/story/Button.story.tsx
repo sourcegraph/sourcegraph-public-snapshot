@@ -48,7 +48,7 @@ export const Simple: Story = () => (
 )
 
 export const AllButtons: Story = () => (
-    <>
+    <div className="pb-3">
         <h1>Buttons</h1>
         <h2>Variants</h2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
@@ -75,5 +75,13 @@ export const AllButtons: Story = () => (
         </Button>
         <p>Buttons can be made to look like links.</p>
         <ButtonVariants variants={['link']} />
-    </>
+        <h2>Tooltips</h2>
+        <p>Buttons can have tooltips.</p>
+        <Button variant="primary" className="mr-3" data-tooltip="Some extra context on the button.">
+            Enabled
+        </Button>
+        <Button variant="primary" disabled={true} data-tooltip="Some extra context on why the button is disabled.">
+            Disabled
+        </Button>
+    </div>
 )

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
@@ -124,7 +123,7 @@ func (r *Runner) applyMigrations(
 			return nil
 		}
 
-		log15.Info(
+		logger.Info(
 			"Applying migrations",
 			"schema", schemaContext.schema.Name,
 			"up", up,
@@ -167,7 +166,7 @@ func (r *Runner) applyMigration(
 ) error {
 	up := operation.Type == MigrationOperationTypeTargetedUp
 
-	log15.Info(
+	logger.Info(
 		"Applying migration",
 		"schema", schemaContext.schema.Name,
 		"migrationID", definition.ID,
@@ -216,7 +215,7 @@ pollIndexStatusLoop:
 			return false, errors.Wrap(err, "failed to query state of index")
 		}
 
-		log15.Info(
+		logger.Info(
 			"Checked progress of index creation",
 			append(
 				[]interface{}{
@@ -306,7 +305,7 @@ pollIndexStatusLoop:
 			}
 		)
 
-		log15.Info(
+		logger.Info(
 			"Creating index concurrently",
 			"schema", schemaContext.schema.Name,
 			"migrationID", definition.ID,
@@ -357,7 +356,7 @@ func filterAppliedDefinitions(
 }
 
 // renderIndexStatus returns a slice of interface pairs describing the given index status for use in a
-// call to log15. If the index is currently being created, the progress of the create operation will be
+// call to logger. If the index is currently being created, the progress of the create operation will be
 // summarized.
 func renderIndexStatus(progress storetypes.IndexStatus) (logPairs []interface{}) {
 	if progress.Phase == nil {
