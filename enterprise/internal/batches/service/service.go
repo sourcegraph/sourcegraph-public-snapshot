@@ -67,6 +67,7 @@ type operations struct {
 	executeBatchSpec                     *observation.Operation
 	cancelBatchSpec                      *observation.Operation
 	replaceBatchSpecInput                *observation.Operation
+	upsertBatchSpecInput                 *observation.Operation
 	retryBatchSpecWorkspaces             *observation.Operation
 	retryBatchSpecExecution              *observation.Operation
 	createChangesetSpec                  *observation.Operation
@@ -117,6 +118,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			executeBatchSpec:                     op("ExecuteBatchSpec"),
 			cancelBatchSpec:                      op("CancelBatchSpec"),
 			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
+			upsertBatchSpecInput:                 op("UpsertBatchSpecInput"),
 			retryBatchSpecWorkspaces:             op("RetryBatchSpecWorkspaces"),
 			retryBatchSpecExecution:              op("RetryBatchSpecExecution"),
 			createChangesetSpec:                  op("CreateChangesetSpec"),
@@ -588,6 +590,79 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		spec:             newSpec,
 		allowUnsupported: opts.AllowUnsupported,
 		allowIgnored:     opts.AllowIgnored,
+		noCache:          opts.NoCache,
+	})
+}
+
+type UpsertBatchSpecInputOpts = CreateBatchSpecFromRawOpts
+
+func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpecInputOpts) (spec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.upsertBatchSpecInput.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Bool("allowIgnored", opts.AllowIgnored),
+		log.Bool("allowUnsupported", opts.AllowUnsupported),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+	spec.NamespaceOrgID = opts.NamespaceOrgID
+	spec.NamespaceUserID = opts.NamespaceUserID
+	actor := actor.FromContext(ctx)
+	spec.UserID = actor.UID
+
+	// Start transaction.
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Figure out if there's a pre-existing batch spec to replace.
+	old, err := s.store.GetNewestBatchSpec(ctx, store.GetNewestBatchSpecOpts{
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID,
+		Name:            spec.Spec.Name,
+	})
+	if err != nil && err != store.ErrNoResults {
+		return nil, err
+	}
+
+	if err == nil {
+		// We're replacing an old batch spec.
+		//
+		// TODO: lifted from ReplaceBatchSpecInput(); consider refactoring into a
+		// common function.
+
+		// Delete the previous batch spec, which should delete
+		// - batch_spec_resolution_jobs
+		// - batch_spec_workspaces
+		// - changeset_specs
+		// associated with it
+		if err := tx.DeleteBatchSpec(ctx, old.ID); err != nil {
+			return nil, err
+		}
+
+		// We keep the RandID so the user-visible GraphQL ID is stable
+		spec.RandID = old.RandID
+
+		spec.NamespaceOrgID = old.NamespaceOrgID
+		spec.NamespaceUserID = old.NamespaceUserID
+		spec.UserID = old.UserID
+	}
+
+	return spec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
+		spec:             spec,
+		allowIgnored:     opts.AllowIgnored,
+		allowUnsupported: opts.AllowUnsupported,
 		noCache:          opts.NoCache,
 	})
 }
