@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useMemo, useState } from 'react'
 import { Form } from 'reactstrap'
 
@@ -84,15 +85,15 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     }
 
     const renderCommon = (content: JSX.Element): JSX.Element => (
-        <div>
+        <div className={classNames(styles.ctaContainer)}>
             {stateStatus === 'search-home' && (
-                <>
+                <div>
                     <h5 className="mt-3 mb-2">Welcome!</h5>
-                    <p>
+                    <p className={classNames(styles.ctaParagraph)}>
                         The Sourcegraph extension allows you to search millions of open source repositories without
                         cloning them to your local machine.
                     </p>
-                    <p>
+                    <p className={classNames(styles.ctaParagraph)}>
                         Developers at some of the world’s best software companies use Sourcegraph to onboard to new code
                         bases, find examples, research errors, and resolve incidents.
                     </p>
@@ -110,7 +111,7 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                             Sourcegraph VS Code extension
                         </a>
                     </div>
-                </>
+                </div>
             )}
             <Form onSubmit={validateAccessToken} className={styles.formContainer}>
                 <h5 className="mb-2">Search your private code</h5>
@@ -122,7 +123,7 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     if (!hasAccount) {
         return renderCommon(
             <>
-                <p>
+                <p className={classNames(styles.ctaParagraph)}>
                     Create an account to enhance search across your private repositories: search multiple repos & commit
                     history, monitor, save searches and more.
                 </p>
@@ -138,8 +139,10 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
 
     return renderCommon(
         <>
-            <p>Sign in by entering an access token created through your user settings on {instanceHostname}.</p>
-            <p>
+            <p className={classNames(styles.ctaParagraph)}>
+                Sign in by entering an access token created through your user settings on {instanceHostname}.
+            </p>
+            <p className={classNames(styles.ctaParagraph)}>
                 See our{' '}
                 <a
                     href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token"

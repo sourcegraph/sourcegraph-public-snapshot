@@ -1,3 +1,15 @@
 .form-container {
     margin-top: 2.5rem;
 }
+
+.cta-container {
+    letter-spacing: 0.5px;
+    font-size: var(--vscode-editor-font-size) !important;
+    color: var(--vscode-foreground);
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.cta-paragraph {
+    margin-bottom: 1rem;
+}

@@ -303,20 +303,30 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     // Debt: this event handler is called for a file match (w/ index)
                     // and bubbles up to its container (w/o index).
                     // We can't just stop propogation, so may want to introduce a separate callback.
-                    if (typeof matchIndex === 'number') {
-                        const { lineNumber, offsetAndLengths } = result.lineMatches[matchIndex]
+                    const index = matchIndex || 0
+                    if (typeof index === 'number') {
+                        const { lineNumber, offsetAndLengths } = result.lineMatches[index]
                         const [start] = offsetAndLengths[0]
 
                         const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
                             revision: result.commit,
                             path: result.path,
                             position: {
-                                line: lineNumber - 1, // Convert to 1-based
+                                line: lineNumber,
                                 character: start,
                             },
                         })
 
                         const uri = sourcegraphUri.uri + sourcegraphUri.positionSuffix()
+
+                        // Log View Event to sync search history
+                        platformContext.telemetryService.logViewEvent(
+                            'Blob',
+                            null,
+                            authenticatedUser !== null,
+                            sourcegraphUri.uri.replace('sourcegraph://', 'https://')
+                        )
+
                         extensionCoreAPI.openSourcegraphFile(uri).catch(error => {
                             console.error('Error opening Sourcegraph file', error)
                         })
