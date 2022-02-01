@@ -2,7 +2,9 @@ import { Observable } from 'rxjs'
 import * as vscode from 'vscode'
 
 import { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
+import { initializeCodeIntel } from '../code-intel/initialize'
 import { ExtensionCoreAPI } from '../contract'
+import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 
 import { initializeSearchPanelWebview, initializeSearchSidebarWebview } from './initialize'
 
@@ -15,11 +17,13 @@ export function registerWebviews({
     extensionCoreAPI,
     initializedPanelIDs,
     sourcegraphSettings,
+    fs,
 }: {
     context: vscode.ExtensionContext
     extensionCoreAPI: ExtensionCoreAPI
     initializedPanelIDs: Observable<string>
     sourcegraphSettings: ReturnType<typeof initializeSourcegraphSettings>
+    fs: SourcegraphFileSystemProvider
 }): void {
     // TODO if remote files are open from previous session, we need
     // to focus search sidebar to activate code intel (load extension host),
@@ -77,7 +81,7 @@ export function registerWebviews({
             {
                 // This typically will be called only once since `retainContextWhenHidden` is set to `true`.
                 resolveWebviewView: (webviewView, _context, _token) => {
-                    initializeSearchSidebarWebview({
+                    const { searchSidebarAPI } = initializeSearchSidebarWebview({
                         extensionUri: context.extensionUri,
                         extensionCoreAPI,
                         webviewView,
@@ -85,6 +89,8 @@ export function registerWebviews({
                     searchSidebarWebviewView = webviewView
                     // Initialize search panel.
                     openSearchPanelCommand()
+
+                    initializeCodeIntel({ context, fs, searchSidebarAPI })
 
                     // Bring search panel back if it was previously closed on sidebar visibility change
                     webviewView.onDidChangeVisibility(() => {

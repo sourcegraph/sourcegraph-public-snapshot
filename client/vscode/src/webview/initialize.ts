@@ -4,6 +4,7 @@ import { filter, first } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
 import { ExtensionCoreAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
+import { endpointSetting } from '../settings/endpointSetting'
 
 import { createEndpointsForWebview } from './comlink/extensionEndpoint'
 
@@ -124,35 +125,29 @@ export function initializeSearchSidebarWebview({
     // Expose the Sourcegraph VS Code Extension API to the Webview.
     Comlink.expose(extensionCoreAPI, expose)
 
-    // Specific scripts to run using nonce
-    const nonce = getNonce()
-
     // Apply Content-Security-Policy
-    // panel.webview.cspSource comes from the webview object
     // debt: load codicon ourselves.
     webviewView.webview.html = `<!DOCTYPE html>
-    <html lang="en" data-panel-id="${panelId}">
+    <html lang="en" data-panel-id="${panelId}" data-instance-url=${endpointSetting()}>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style nonce="${nonce}">
+        <style>
             @font-face {
                 font-family: 'codicon';
                 src: url(${codiconFontSource.toString()})
             }
         </style>
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-webview: vscode-resource: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
-        webviewView.webview.cspSource
-    } vscode-resource: http: 'unsafe-inline' https: data:; connect-src 'self' http: https:; font-src ${
-        webviewView.webview.cspSource
-    };">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: vscode-webview: data: https:; script-src blob: vscode-webview: https:; style-src data: vscode-resource: ${
+            webviewView.webview.cspSource
+        } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: vscode-webview: https:;">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
     </head>
     <body class="search-sidebar">
         <div id="root" />
-        <script nonce="${nonce}" src="${scriptSource.toString()}"></script>
+        <script src="${scriptSource.toString()}"></script>
     </body>
     </html>`
 
