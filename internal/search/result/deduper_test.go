@@ -62,8 +62,8 @@ func TestDeduper(t *testing.T) {
 
 	cases := []struct {
 		name     string
-		input    []Match
-		expected []Match
+		input    Matches
+		expected Matches
 	}{
 		{
 			name: "no dups",

@@ -165,17 +165,12 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		subRepoPermsPermissionsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(took)
 	}()
 
-	// Always default to not providing any permissions
-	perms = None
-
 	if s.permissionsGetter == nil {
-		err = errors.New("PermissionsGetter is nil")
-		return
+		return None, errors.New("PermissionsGetter is nil")
 	}
 
 	if userID == 0 {
-		err = &ErrUnauthenticated{}
-		return
+		return None, &ErrUnauthenticated{}
 	}
 
 	// An empty path is equivalent to repo permissions so we can assume it has
@@ -205,7 +200,7 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	// preference to exclusion.
 	for _, rule := range rules.excludes {
 		if rule.Match(toMatch) {
-			return
+			return None, nil
 		}
 	}
 	for _, rule := range rules.includes {
@@ -299,7 +294,6 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 	if !SubRepoEnabled(s) {
 		return Read, nil
 	}
-
 	if a.IsInternal() {
 		return Read, nil
 	}
@@ -317,6 +311,37 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 // SubRepoEnabled takes a SubRepoPermissionChecker and returns true if the checker is not nil and is enabled
 func SubRepoEnabled(checker SubRepoPermissionChecker) bool {
 	return checker != nil && checker.Enabled()
+}
+
+// CanReadAllPaths returns true if the actor can read all paths.
+func CanReadAllPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string) (bool, error) {
+	if !SubRepoEnabled(checker) {
+		return true, nil
+	}
+	a := actor.FromContext(ctx)
+	if a.IsInternal() {
+		return true, nil
+	}
+	if !a.IsAuthenticated() {
+		return false, &ErrUnauthenticated{}
+	}
+
+	c := RepoContent{
+		Repo: repo,
+	}
+
+	for _, p := range paths {
+		c.Path = p
+		perms, err := checker.Permissions(ctx, a.UID, c)
+		if err != nil {
+			return false, err
+		}
+		if !perms.Include(Read) {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 // FilterActorPaths will filter the given list of paths for the given actor

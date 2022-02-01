@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -82,4 +83,17 @@ func (l *LazyCommit) RefNames() []string {
 
 func (l *LazyCommit) SourceRefs() []string {
 	return strings.Split(string(l.RawCommit.SourceRefs), ", ")
+}
+
+func (l *LazyCommit) ModifiedFiles() []string {
+	files := make([]string, 0, len(l.RawCommit.ModifiedFiles))
+	for _, b := range l.RawCommit.ModifiedFiles {
+		f := strings.TrimSpace(string(b))
+		if len(b) == 0 {
+			// Filter out empty strings
+			continue
+		}
+		files = append(files, f)
+	}
+	return files
 }

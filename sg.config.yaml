@@ -10,6 +10,8 @@ env:
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
+  # Set this to true to show an iTerm link to the file:line where the log message came from
+  SRC_LOG_SOURCE_LINK: false
   SRC_GIT_SERVER_1: 127.0.0.1:3178
   SRC_GIT_SERVERS: 127.0.0.1:3178
 

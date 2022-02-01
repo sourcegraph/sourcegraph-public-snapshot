@@ -20,6 +20,9 @@ const config: Meta = {
 
     parameters: {
         component: Label,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',

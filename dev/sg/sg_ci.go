@@ -388,6 +388,9 @@ func printBuildOverview(build *buildkite.Build) {
 	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
 	stdout.Out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>",
 		*build.Commit, *build.Message, build.Author.Name, build.Author.Email)
+	if build.PullRequest != nil {
+		stdout.Out.Writef("PR:\t\thttps://github.com/sourcegraph/sourcegraph/pull/%s", *build.PullRequest.ID)
+	}
 }
 
 func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
@@ -435,6 +438,13 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
 		case "waiting", "blocked", "scheduled", "assigned":
 			style = output.StyleSuggestion
+		case "broken":
+			// State 'broken' happens when a conditional is not met, namely the 'if' block
+			// on a job. Why is it 'broken' and not 'skipped'? We don't think it be like
+			// this, but it do. Anyway, we pretend it was skipped and treat it as such.
+			// https://buildkite.com/docs/pipelines/conditionals#conditionals-and-the-broken-state
+			*job.State = "skipped"
+			fallthrough
 		case "skipped", "not_run":
 			style = output.StyleReset
 		case "running":

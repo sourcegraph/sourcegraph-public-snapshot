@@ -1021,8 +1021,9 @@ type MountedEncryptionKey struct {
 }
 
 // NPMPackagesConnection description: Configuration for a connection to an NPM packages repository.
-// TODO: [npm-package-support-credentials] Add a credential field to NPMConfig.
 type NPMPackagesConnection struct {
+	// Credentials description: Access token for logging into the NPM registry.
+	Credentials string `json:"credentials,omitempty"`
 	// Dependencies description: An array of "(@scope/)?packageName@version" strings specifying which NPM packages to mirror on Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the NPM registry.
