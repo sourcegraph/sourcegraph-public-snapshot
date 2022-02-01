@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
 import {
@@ -36,14 +36,27 @@ interface NavDropdownProps {
 export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, mobileHomeItem, items }) => {
     const location = useLocation()
     const history = useHistory()
+    const menuListReference = useRef<HTMLDivElement | null>(null)
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const handleKeyDown = (event: React.KeyboardEvent): void => {
         // Don't toggle dropdown with Enter key; instead, navigate to the home item of the dropdown.
         // This matches the behavior of the rest of the nav items.
-        if (event.type === 'keydown' && event.key === 'Enter') {
-            history.push(toggleItem.path)
-            return
+        if (event.type === 'keydown') {
+            switch (event.key) {
+                case 'Enter': {
+                    history.push(toggleItem.path)
+                    return
+                }
+                case 'ArrowDown': {
+                    if (!isDropdownOpen) {
+                        setIsDropdownOpen(true)
+                    } else {
+                        menuListReference.current?.focus()
+                    }
+                    return
+                }
+            }
         }
 
         setIsDropdownOpen(false)
@@ -115,7 +128,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                 closeDropdown()
                             }
                         }}
-                        hidden={!isDropdownOpen}
+                        ref={menuListReference}
                     >
                         {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
                         <MenuLink
