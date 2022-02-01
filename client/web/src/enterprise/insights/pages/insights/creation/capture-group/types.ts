@@ -1,4 +1,4 @@
-import { InsightStep } from '../search-insight/types'
+import { InsightStep } from '../search-insight'
 
 export interface CaptureGroupFormFields {
     /**

@@ -9,6 +9,7 @@ import React, { useCallback, useState } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Menu,
     MenuButton,
@@ -17,6 +18,7 @@ import {
     Button,
     useEventObservable,
     MenuList,
+    MenuHeader,
     Position,
 } from '@sourcegraph/wildcard'
 
@@ -30,7 +32,7 @@ import {
 import { DeleteNotebookModal } from './DeleteNotebookModal'
 import styles from './SearchNotebookPageHeaderActions.module.scss'
 
-export interface SearchNotebookPageHeaderActionsProps {
+export interface SearchNotebookPageHeaderActionsProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     notebookId: string
     viewerCanManage: boolean
@@ -54,6 +56,7 @@ export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNote
     viewerHasStarred,
     createNotebookStar,
     deleteNotebookStar,
+    telemetryService,
 }) => (
     <div className="d-flex align-items-center">
         <NotebookStarsButton
@@ -63,17 +66,25 @@ export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNote
             viewerHasStarred={viewerHasStarred}
             createNotebookStar={createNotebookStar}
             deleteNotebookStar={deleteNotebookStar}
+            telemetryService={telemetryService}
         />
         <NotebookVisibilityDropdown
             isPublic={isPublic}
             viewerCanManage={viewerCanManage}
             onUpdateVisibility={onUpdateVisibility}
+            telemetryService={telemetryService}
         />
-        {viewerCanManage && <NotebookSettingsDropdown notebookId={notebookId} deleteNotebook={deleteNotebook} />}
+        {viewerCanManage && (
+            <NotebookSettingsDropdown
+                notebookId={notebookId}
+                deleteNotebook={deleteNotebook}
+                telemetryService={telemetryService}
+            />
+        )}
     </div>
 )
 
-interface NotebookSettingsDropdownProps {
+interface NotebookSettingsDropdownProps extends TelemetryProps {
     notebookId: string
     deleteNotebook: typeof _deleteNotebook
 }
@@ -81,6 +92,7 @@ interface NotebookSettingsDropdownProps {
 const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdownProps> = ({
     notebookId,
     deleteNotebook,
+    telemetryService,
 }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
@@ -106,12 +118,13 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
                 isOpen={showDeleteModal}
                 toggleDeleteModal={toggleDeleteModal}
                 deleteNotebook={deleteNotebook}
+                telemetryService={telemetryService}
             />
         </>
     )
 }
 
-interface NotebookVisibilityDropdownProps {
+interface NotebookVisibilityDropdownProps extends TelemetryProps {
     isPublic: boolean
     viewerCanManage: boolean
     onUpdateVisibility: (isPublic: boolean) => void
@@ -121,15 +134,17 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
     isPublic: initialIsPublic,
     onUpdateVisibility,
     viewerCanManage,
+    telemetryService,
 }) => {
     const [isPublic, setIsPublic] = useState(initialIsPublic)
 
     const updateVisibility = useCallback(
         (isPublic: boolean) => {
+            telemetryService.log(`SearchNotebookSet${isPublic ? 'Public' : 'Private'}Visibility`)
             onUpdateVisibility(isPublic)
             setIsPublic(isPublic)
         },
-        [onUpdateVisibility, setIsPublic]
+        [onUpdateVisibility, setIsPublic, telemetryService]
     )
 
     return (
@@ -146,9 +161,7 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
                 )}
             </MenuButton>
             <MenuList position={Position.bottomEnd}>
-                <MenuItem disabled={true} onSelect={noop}>
-                    Change notebook visibility
-                </MenuItem>
+                <MenuHeader>Change notebook visibility</MenuHeader>
                 <MenuDivider />
                 <MenuItem onSelect={() => updateVisibility(false)} className={styles.visibilityDropdownItem}>
                     <div>
@@ -171,7 +184,7 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
     )
 }
 
-interface NotebookStarsButtonProps {
+interface NotebookStarsButtonProps extends TelemetryProps {
     notebookId: string
     disabled: boolean
     starsCount: number
@@ -187,6 +200,7 @@ const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = (
     viewerHasStarred: initialViewerHasStarred,
     createNotebookStar,
     deleteNotebookStar,
+    telemetryService,
 }) => {
     const [starsCount, setStarsCount] = useState(initialStarsCount)
     const [viewerHasStarred, setViewerHasStarred] = useState(initialViewerHasStarred)
@@ -197,6 +211,7 @@ const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = (
                 viewerHasStarred.pipe(
                     // Immediately update the UI.
                     tap(viewerHasStarred => {
+                        telemetryService.log(`SearchNotebook${viewerHasStarred ? 'Remove' : 'Add'}Star`)
                         if (viewerHasStarred) {
                             setStarsCount(starsCount => starsCount - 1)
                             setViewerHasStarred(() => false)
@@ -214,7 +229,14 @@ const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = (
                         return []
                     })
                 ),
-            [deleteNotebookStar, notebookId, createNotebookStar, initialStarsCount, initialViewerHasStarred]
+            [
+                deleteNotebookStar,
+                notebookId,
+                createNotebookStar,
+                initialStarsCount,
+                initialViewerHasStarred,
+                telemetryService,
+            ]
         )
     )
 

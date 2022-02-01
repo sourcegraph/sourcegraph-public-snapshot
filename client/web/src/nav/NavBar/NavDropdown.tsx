@@ -92,7 +92,6 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                 history.push(toggleItem.path)
                             }
                         }}
-                        onFocus={() => setIsDropdownOpen(true)}
                         onKeyDown={handleKeyDown}
                     >
                         <span className={navItemStyles.linkContent}>

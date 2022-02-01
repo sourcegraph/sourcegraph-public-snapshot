@@ -6,12 +6,13 @@ import {
     SearchBackendBasedInsight,
     SearchBasedExtensionInsightSettings,
     SearchBasedInsight,
+    SearchBasedInsightSeries,
     SearchBasedInsightConfiguration,
     SearchExtensionBasedInsight,
 } from './search-insight'
 
 export * from './common'
-export type { SearchBasedInsight, LangStatsInsight, CaptureGroupInsight }
+export type { SearchBasedInsight, SearchBasedInsightSeries, LangStatsInsight, CaptureGroupInsight }
 
 /**
  * Main insight model. Union of all different insights by execution type (backend, runtime)

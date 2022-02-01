@@ -71,7 +71,7 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 		Url: "https://src.fedoraproject.org",
 	}
 	npmPackagesConfig := schema.NPMPackagesConnection{
-		// TODO: [npm-package-support-credentials] Add a credential field here
+		Credentials:  "npm credentials!",
 		Dependencies: []string{"placeholder"},
 	}
 	otherConfig := schema.OtherExternalServiceConnection{

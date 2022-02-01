@@ -190,7 +190,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                                 <div className="text-wrap">
                                     <small>
                                         <AnchorLink
-                                            to="https://cAnchorLinkniuse.com/#feat=prefers-color-scheme"
+                                            to="https://caniuse.com/#feat=prefers-color-scheme"
                                             className="text-warning"
                                             target="_blank"
                                             rel="noopener noreferrer"

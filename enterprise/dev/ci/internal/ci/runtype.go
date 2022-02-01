@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -109,5 +110,5 @@ func (t RunType) String() string {
 	case BackendIntegrationTests:
 		return "Backend integration tests"
 	}
-	panic("Run type does not have a full name defined")
+	panic(fmt.Sprintf("Run type %d does not have a full name defined", t))
 }

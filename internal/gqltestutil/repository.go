@@ -47,11 +47,11 @@ query Repositories {
 	return nil
 }
 
-// WaitForReposToBeIndex waits (up to 30 seconds) for all repositories
+// WaitForReposToBeIndexed waits (up to 30 seconds) for all repositories
 // in the list to be indexed.
 //
 // This method requires the authenticated user to be a site admin.
-func (c *Client) WaitForReposToBeIndex(repos ...string) error {
+func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
 	timeout := 180 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()

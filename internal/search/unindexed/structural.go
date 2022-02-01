@@ -111,28 +111,28 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 	}
 
 	// For structural search with default limits we retry if we get no results.
-	fileMatches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
-		return streamStructuralSearch(ctx, args, repos, stream)
-	})
+	agg := streaming.NewAggregatingStream()
+	err := streamStructuralSearch(ctx, args, repos, agg)
 
-	if len(fileMatches) == 0 && err == nil {
+	event := agg.Get()
+	if len(event.Results) == 0 && err == nil {
 		// retry structural search with a higher limit.
-		fileMatches, stats, err = streaming.CollectStream(func(stream streaming.Sender) error {
-			return retryStructuralSearch(ctx, args, repos, stream)
-		})
+		agg := streaming.NewAggregatingStream()
+		err := retryStructuralSearch(ctx, args, repos, agg)
 		if err != nil {
 			return err
 		}
 
-		if len(fileMatches) == 0 {
+		event = agg.Get()
+		if len(event.Results) == 0 {
 			// Still no results? Give up.
 			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-			stats.IsLimitHit = false // Ensure we don't display "Show more".
+			event.Stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}
 
-	matches := make([]result.Match, 0, len(fileMatches))
-	for _, fm := range fileMatches {
+	matches := make([]result.Match, 0, len(event.Results))
+	for _, fm := range event.Results {
 		if _, ok := fm.(*result.FileMatch); !ok {
 			return errors.Errorf("StructuralSearch failed to convert results")
 		}
@@ -141,7 +141,7 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 
 	stream.Send(streaming.SearchEvent{
 		Results: matches,
-		Stats:   stats,
+		Stats:   event.Stats,
 	})
 	return err
 }

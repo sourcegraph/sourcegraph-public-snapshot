@@ -51,7 +51,7 @@ export interface TabListProps extends ReachTabListProps {
 
 export interface TabProps extends ReachTabProps {}
 export interface TabPanelsProps extends ReachTabPanelsProps {}
-export interface TabPanelProps extends ReachTabPanelProps {}
+export interface TabPanelProps extends ReachTabPanelProps, React.HTMLAttributes<HTMLDivElement> {}
 
 /**
  *
@@ -102,7 +102,12 @@ export const TabPanels: React.FunctionComponent<TabPanelsProps> = ({ children })
     </ReachTabPanels>
 )
 
-export const TabPanel: React.FunctionComponent = ({ children }) => {
+export const TabPanel: React.FunctionComponent<TabPanelProps> = ({ children, ...otherProps }) => {
     const shouldRender = useShouldPanelRender(children)
-    return <ReachTabPanel data-testid="wildcard-tab-panel">{shouldRender ? children : null}</ReachTabPanel>
+
+    return shouldRender ? (
+        <ReachTabPanel data-testid="wildcard-tab-panel" {...otherProps}>
+            {children}
+        </ReachTabPanel>
+    ) : null
 }

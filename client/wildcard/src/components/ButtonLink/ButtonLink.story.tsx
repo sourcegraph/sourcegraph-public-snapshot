@@ -21,6 +21,9 @@ const Config: Meta = {
 
     parameters: {
         component: ButtonLink,
+        chromatic: {
+            enableDarkMode: true,
+        },
     },
 }
 

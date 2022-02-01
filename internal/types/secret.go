@@ -109,8 +109,7 @@ func redactionInfo(cfg interface{}) ([]jsonStringField, error) {
 		}
 		return []jsonStringField{}, nil
 	case *schema.NPMPackagesConnection:
-		// TODO: [npm-package-support-credentials] Redact credentials here.
-		return []jsonStringField{}, nil
+		return []jsonStringField{{[]string{"credentials"}, &cfg.Credentials}}, nil
 	case *schema.OtherExternalServiceConnection:
 		return []jsonStringField{{[]string{"url"}, &cfg.Url}}, nil
 	default:

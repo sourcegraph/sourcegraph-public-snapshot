@@ -73,7 +73,7 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                         @{org.name}
                     </MenuItem>
                 ))}
-                {true && (
+                {authenticatedUser.siteAdmin && (
                     <>
                         <MenuDivider />
                         <MenuItem onSelect={() => setSelectedNamespace({ id: null, type: 'global-owner', name: '' })}>
