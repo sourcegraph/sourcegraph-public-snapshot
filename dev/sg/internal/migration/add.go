@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
 
-const metadataTemplate = `name: %s
+const metadataFileTemplate = `name: %s
 parents: [%s]
 `
 
@@ -66,7 +66,7 @@ func Add(database db.Database, migrationName string) (up, down, metadata string,
 	contents := map[string]string{
 		upPath:       upMigrationFileTemplate,
 		downPath:     downMigrationFileTemplate,
-		metadataPath: fmt.Sprintf(metadataTemplate, migrationName, strings.Join(intsToStrings(parents), ", ")),
+		metadataPath: fmt.Sprintf(metadataFileTemplate, migrationName, strings.Join(intsToStrings(parents), ", ")),
 	}
 	if err := writeMigrationFiles(contents); err != nil {
 		return "", "", "", err

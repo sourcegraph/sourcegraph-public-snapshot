@@ -60,7 +60,6 @@ func Squash(database db.Database, commit string) error {
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
 	defer block.Close()
 
-	// Write the replacement migration pair
 	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, newRoot)
 	if err != nil {
 		return err

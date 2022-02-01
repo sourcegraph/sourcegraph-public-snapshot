@@ -17,7 +17,7 @@ func DownTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command 
 	var (
 		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s downto", commandName), flag.ExitOnError)
 		schemaNameFlag = flagSet.String("db", "", `The target schema to migrate.`)
-		targetsFlag    = flagSet.String("target", "", "Revert all children of the given target. Comma-separated values are accepted. ")
+		targetsFlag    = flagSet.String("target", "", "Revert all children of the given target. Comma-separated values are accepted.")
 	)
 
 	exec := func(ctx context.Context, args []string) error {
