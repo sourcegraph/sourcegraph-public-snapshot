@@ -1277,15 +1277,11 @@ func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolv
 }
 
 func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
+	stream := r.stream
 	if !query.IsStreamingCompatible(r.Plan) {
-		// The query is not streaming compatible, but we still want to
-		// use the streaming endpoint. Run a batch search then send the
-		// results back on the stream.
-		endpoint := r.stream
-		r.stream = nil // Disables streaming: backends may not use the endpoint.
 		srr, err := r.resultsBatch(ctx)
 		if srr != nil {
-			endpoint.Send(streaming.SearchEvent{
+			stream.Send(streaming.SearchEvent{
 				Results: srr.Matches,
 				Stats:   srr.Stats,
 			})
@@ -1295,9 +1291,9 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 	if sp, _ := r.Plan.ToParseTree().StringValue(query.FieldSelect); sp != "" {
 		// Ensure downstream events sent on the stream are processed by `select:`.
 		selectPath, _ := filter.SelectPathFromString(sp) // Invariant: error already checked
-		r.stream = streaming.WithSelect(r.stream, selectPath)
+		stream = streaming.WithSelect(stream, selectPath)
 	}
-	sr, err := r.resultsRecursive(ctx, r.stream, r.Plan)
+	sr, err := r.resultsRecursive(ctx, stream, r.Plan)
 	srr := r.resultsToResolver(sr)
 	return srr, err
 }
