@@ -1,0 +1,185 @@
+// stylelint-disable selector-no-qualifying-type
+
+//
+// Base styles
+//
+
+.theme-light {
+    --input-group-addon-color: var(--gray-08);
+    --input-group-addon-bg: var(--gray-03);
+    --input-group-addon-border-color: var(--gray-03);
+}
+
+.theme-dark {
+    --input-group-addon-color: var(--gray-01);
+    --input-group-addon-bg: var(--gray-08);
+    --input-group-addon-border-color: var(--gray-08);
+}
+
+:root {
+    --border-radius: 3px;
+    --enable-rounded: true;
+    --input-border-width: 1px;
+    --input-border-radius: 3px;
+    --input-padding-y: 0.375rem;
+    --input-padding-x: 0.75rem;
+    --input-font-size: 1rem; // Assumes the browser default, typically `16px`
+    --font-weight-normal: 400;
+    --input-line-height: 1.5;
+}
+
+.input-group {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap; // For form validation feedback
+    align-items: stretch;
+    width: 100%;
+
+    > .form-control,
+    > .form-control-plaintext,
+    > .custom-select,
+    > .custom-file {
+        position: relative; // For focus state's z-index
+        flex: 1 1 auto;
+        width: 1%;
+        min-width: 0; // https://stackoverflow.com/questions/36247140/why-dont-flex-items-shrink-past-content-size
+        margin-bottom: 0;
+
+        + .form-control,
+        + .custom-select,
+        + .custom-file {
+            margin-left: calc(-1 * var(--input-border-width));
+        }
+    }
+
+    // Bring the "active" form control to the top of surrounding elements
+    > .form-control:focus,
+    > .custom-select:focus,
+    > .custom-file .custom-file-input:focus ~ .custom-file-label {
+        z-index: 3;
+    }
+
+    // Bring the custom file input above the label
+    > .custom-file .custom-file-input:focus {
+        z-index: 4;
+    }
+
+    > .form-control,
+    > .custom-select {
+        &:not(:last-child) {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        &:not(:first-child) {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    }
+
+    // Custom file inputs have more complex markup, thus requiring different
+    // border-radius overrides.
+    > .custom-file {
+        display: flex;
+        align-items: center;
+
+        &:not(:last-child) .custom-file-label,
+        &:not(:last-child) .custom-file-label::after {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        &:not(:first-child) .custom-file-label {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    }
+}
+
+// Prepend and append
+//
+// While it requires one extra layer of HTML for each, dedicated prepend and
+// append elements allow us to 1) be less clever, 2) simplify our selectors, and
+// 3) support HTML5 form validation.
+
+.input-group-prepend,
+.input-group-append {
+    display: flex;
+
+    // Ensure buttons are always above inputs for more visually pleasing borders.
+    // This isn't needed for `.input-group-text` since it shares the same border-color
+    // as our inputs.
+    .btn {
+        position: relative;
+        z-index: 2;
+
+        &:focus {
+            z-index: 3;
+        }
+    }
+
+    .btn + .btn,
+    .btn + .input-group-text,
+    .input-group-text + .input-group-text,
+    .input-group-text + .btn {
+        margin-left: calc(-1 * var(--input-border-width));
+    }
+}
+
+.input-group-prepend {
+    margin-right: calc(-1 * var(--input-border-width));
+}
+.input-group-append {
+    margin-left: calc(-1 * var(--input-border-width));
+}
+
+// Textual addons
+//
+// Serves as a catch-all element for any text or radio/checkbox input you wish
+// to prepend or append to an input.
+
+.input-group-text {
+    display: flex;
+    align-items: center;
+    padding: var(--input-padding-y) var(--input-padding-x);
+    margin-bottom: 0; // Allow use of <label> elements by overriding our default margin-bottom
+    font-size: var(--input-font-size);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--input-line-height);
+    color: var(--input-group-addon-color);
+    text-align: center;
+    white-space: nowrap;
+    background-color: var(--input-group-addon-bg);
+    border: var(--input-border-width) solid var(--input-group-addon-border-color);
+    border-radius: var(--input-border-radius);
+
+    // Nuke default margins from checkboxes and radios to vertically center within.
+    input[type='radio'],
+    input[type='checkbox'] {
+        margin-top: 0;
+    }
+}
+
+// Prepend and append rounded corners
+//
+// These rulesets must come after the sizing ones to properly override sm and lg
+// border-radius values when extending. They're more specific than we'd like
+// with the `.input-group >` part, but without it, we cannot override the sizing.
+
+.input-group > .input-group-prepend > .btn,
+.input-group > .input-group-prepend > .input-group-text,
+.input-group > .input-group-append:not(:last-child) > .btn,
+.input-group > .input-group-append:not(:last-child) > .input-group-text,
+.input-group > .input-group-append:last-child > .btn:not(:last-child):not(.dropdown-toggle),
+.input-group > .input-group-append:last-child > .input-group-text:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group > .input-group-append > .btn,
+.input-group > .input-group-append > .input-group-text,
+.input-group > .input-group-prepend:not(:first-child) > .btn,
+.input-group > .input-group-prepend:not(:first-child) > .input-group-text,
+.input-group > .input-group-prepend:first-child > .btn:not(:first-child),
+.input-group > .input-group-prepend:first-child > .input-group-text:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}

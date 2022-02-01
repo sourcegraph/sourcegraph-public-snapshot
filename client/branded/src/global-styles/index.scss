@@ -110,7 +110,6 @@ $spacer: 1rem;
 // Modified in `./forms.scss`
 @import 'bootstrap/scss/forms';
 @import 'bootstrap/scss/custom-forms';
-@import 'bootstrap/scss/input-group';
 
 // Global styles provided by @reach packages. Should be imported once in the global scope.
 @import '@reach/tabs/styles';
@@ -128,6 +127,7 @@ $spacer: 1rem;
 @import './code';
 @import './buttons';
 @import './button-group';
+@import './input_group';
 @import './forms';
 @import './highlight';
 @import './tabs';
