@@ -35,7 +35,7 @@
       {
         "command": "sourcegraph.search",
         "category": "Sourcegraph",
-        "title": "Open Sourcegraph Search Tab",
+        "title": "Search with Sourcegraph",
         "icon": {
           "light": "images/logo.svg",
           "dark": "images/logo.svg"
@@ -46,14 +46,20 @@
         "category": "Sourcegraph",
         "title": "Open File in Sourcegraph Web",
         "icon": {
-          "light": "images/logo.svg",
-          "dark": "images/logo.svg"
+          "light": "images/logomark_dark.svg",
+          "dark": "images/logomark_light.svg"
         }
       },
       {
         "command": "sourcegraph.copyFileLink",
         "category": "Sourcegraph",
         "title": "Copy Sourcegraph File Link"
+      },
+      {
+        "command": "sourcegraph.gitClone",
+        "category": "Sourcegraph",
+        "title": "Clone Remote Repo",
+        "icon": "$(cloud-download)"
       }
     ],
     "viewsContainers": {
@@ -137,6 +143,14 @@
         {
           "command": "sourcegraph.search",
           "group": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.openInBrowser",
+          "group": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.copyFileLink",
+          "group": "sourcegraph"
         }
       ],
       "view/item/context": [
@@ -144,7 +158,12 @@
       "editor/title": [
         {
           "command": "sourcegraph.openInBrowser",
-          "when": "sourcegraph.canFocusActiveDocument",
+          "when": "resourceScheme == sourcegraph && editorReadonly",
+          "group": "navigation"
+        },
+        {
+          "command": "sourcegraph.gitClone",
+          "when": "resourceScheme == sourcegraph && editorReadonly",
           "group": "navigation"
         }
       ]

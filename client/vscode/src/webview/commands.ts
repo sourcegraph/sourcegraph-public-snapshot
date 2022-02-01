@@ -124,6 +124,22 @@ export function registerWebviews({
             { webviewOptions: { retainContextWhenHidden: true } }
         )
     )
+
+    // Clone Remote Git Repos Locally using VS Code Git API
+    // https://github.com/microsoft/vscode/issues/48428
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.gitClone', async () => {
+            const editor = vscode.window.activeTextEditor
+            if (!editor) {
+                throw new Error('No active editor')
+            }
+            const uri = editor.document.uri.path
+            const gitUrl = `https:/${uri.split('@')[0]}.git`
+            const vsCodeCloneUrl = `vscode://vscode.git/clone?url=${gitUrl}`
+            await vscode.env.openExternal(vscode.Uri.parse(vsCodeCloneUrl))
+            // vscode://vscode.git/clone?url=${gitUrl}
+        })
+    )
 }
 
 function openSearchPanelCommand(): void {
