@@ -12,7 +12,7 @@ export const AppRouterContainer: React.FunctionComponent<AppRouterContainerProps
     ...rest
 }) => (
     <ElementScroller scrollKey="app-router-container">
-        <div className={classNames(styles.appRouterContainer, className)} {...rest}>
+        <div data-layout={true} className={classNames(styles.appRouterContainer, className)} {...rest}>
             {children}
         </div>
     </ElementScroller>

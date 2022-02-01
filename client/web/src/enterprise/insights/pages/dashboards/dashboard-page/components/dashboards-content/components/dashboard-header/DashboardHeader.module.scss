@@ -1,0 +1,25 @@
+
+
+.header {
+    top: 0;
+    position: sticky;
+    padding: 0.5rem 0;
+    z-index: 1;
+    background-color: var(--body-bg);
+
+    &--sticked {
+        background-color: var(--color-bg-1);
+
+        &::after {
+            display: block;
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin-left: -100vw;
+            margin-right: -100vw;
+            border-bottom: 1px solid var(--border-color-2);
+        }
+    }
+}
