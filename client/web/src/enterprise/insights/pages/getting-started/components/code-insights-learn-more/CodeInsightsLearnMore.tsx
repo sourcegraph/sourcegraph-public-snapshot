@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { Button, Popover, PopoverContent, PopoverTrigger } from '@sourcegraph/wildcard'
+import { Button, Link, Popover, PopoverContent, PopoverTrigger } from '@sourcegraph/wildcard'
 
 import { FeedbackPromptContent } from '../../../../../../nav/Feedback'
 
@@ -19,9 +19,9 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                     <p className="text-muted mb-2">
                         Get started and create your first code insight in 5 minutes or less.
                     </p>
-                    <a href="/help/code_insights" rel="noopener noreferrer" target="_blank">
+                    <Link to="/help/code_insights" rel="noopener noreferrer" target="_blank">
                         Code Insights Docs
-                    </a>
+                    </Link>
                 </article>
 
                 <article>
@@ -30,13 +30,13 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                         Track versions of languages, packages, terraform, docker images, or anything else that can be
                         captured with a regular expression capture group.
                     </p>
-                    <a
-                        href="/help/code_insights/explanations/automatically_generated_data_series"
+                    <Link
+                        to="/help/code_insights/explanations/automatically_generated_data_series"
                         rel="noopener noreferrer"
                         target="_blank"
                     >
                         Automatically generated data series
-                    </a>
+                    </Link>
                 </article>
 
                 <article>
