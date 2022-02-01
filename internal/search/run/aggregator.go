@@ -18,7 +18,7 @@ type Aggregator struct {
 	parentStream streaming.Sender
 
 	mu         sync.Mutex
-	results    []result.Match
+	results    result.Matches
 	stats      streaming.Stats
 	matchCount int
 }
@@ -26,7 +26,7 @@ type Aggregator struct {
 // Get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int) {
+func (a *Aggregator) Get() (result.Matches, streaming.Stats, int) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.results, a.stats, a.matchCount

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -1454,7 +1453,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 	matches := dedup.Results()
 	if len(matches) > 0 {
-		sortResults(matches)
+		sort.Sort(matches)
 	}
 
 	var alert *search.Alert
@@ -1864,7 +1863,7 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 	}
 	alert, err := ao.Done(&common)
 
-	sortResults(matches)
+	sort.Sort(matches)
 
 	return &SearchResults{
 		Matches: matches,
@@ -1952,75 +1951,6 @@ type SearchResultResolver interface {
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
 
 	ResultCount() int32
-}
-
-// compareFileLengths sorts file paths such that they appear earlier if they
-// match file: patterns in the query exactly.
-func compareFileLengths(left, right string, exactFilePatterns map[string]struct{}) bool {
-	_, aMatch := exactFilePatterns[path.Base(left)]
-	_, bMatch := exactFilePatterns[path.Base(right)]
-	if aMatch || bMatch {
-		if aMatch && bMatch {
-			// Prefer shorter file names (ie root files come first)
-			if len(left) != len(right) {
-				return len(left) < len(right)
-			}
-			return left < right
-		}
-		// Prefer exact match
-		return aMatch
-	}
-	return left < right
-}
-
-func compareDates(left, right *time.Time) bool {
-	if left == nil || right == nil {
-		return left != nil // Place the value that is defined first.
-	}
-	return left.After(*right)
-}
-
-// compareSearchResults sorts repository matches, file matches, and commits.
-// Repositories and filenames are sorted alphabetically. As a refinement, if any
-// filename matches a value in a non-empty set exactFilePatterns, then such
-// filenames are listed earlier.
-//
-// Commits are sorted by date. Commits are not associated with searchrepos, and
-// will always list after repository or file match results, if any.
-func compareSearchResults(left, right result.Match, exactFilePatterns map[string]struct{}) bool {
-	sortKeys := func(match result.Match) (string, string, *time.Time) {
-		switch r := match.(type) {
-		case *result.RepoMatch:
-			return string(r.Name), "", nil
-		case *result.FileMatch:
-			return string(r.Repo.Name), r.Path, nil
-		case *result.CommitMatch:
-			// Commits are relatively sorted by date, and after repo
-			// or path names. We use ~ as the key for repo and
-			// paths,lexicographically last in ASCII.
-			return "~", "~", &r.Commit.Author.Date
-		}
-		// Unreachable.
-		panic("unreachable: compareSearchResults expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
-	}
-
-	arepo, afile, adate := sortKeys(left)
-	brepo, bfile, bdate := sortKeys(right)
-
-	if arepo == brepo {
-		if len(exactFilePatterns) == 0 {
-			if afile != bfile {
-				return afile < bfile
-			}
-			return compareDates(adate, bdate)
-		}
-		return compareFileLengths(afile, bfile, exactFilePatterns)
-	}
-	return arepo < brepo
-}
-
-func sortResults(results []result.Match) {
-	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j], nil) })
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
