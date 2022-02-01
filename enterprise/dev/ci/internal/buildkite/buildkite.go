@@ -132,13 +132,19 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Plugins: make([]map[string]interface{}, 0, 0),
 	}
 	for _, opt := range BeforeEveryStepOpts {
-		opt(step)
+		if opt != nil {
+			opt(step)
+		}
 	}
 	for _, opt := range opts {
-		opt(step)
+		if opt != nil {
+			opt(step)
+		}
 	}
 	for _, opt := range AfterEveryStepOpts {
-		opt(step)
+		if opt != nil {
+			opt(step)
+		}
 	}
 
 	if step.Key == "" {
