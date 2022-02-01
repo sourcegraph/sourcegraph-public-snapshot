@@ -13,6 +13,9 @@ const config: Meta = {
     decorators: [decorator],
     parameters: {
         component: CtaAlert,
+        chromatic: {
+            enableDarkMode: true,
+        },
     },
 }
 

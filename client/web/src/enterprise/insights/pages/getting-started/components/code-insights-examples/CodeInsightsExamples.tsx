@@ -3,19 +3,35 @@ import classNames from 'classnames'
 import React from 'react'
 import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
-import * as View from '../../../../views'
-import { LegendBlock, LegendItem } from '../../../../views'
+import { Button, Link } from '@sourcegraph/wildcard'
+
+import * as View from '../../../../../../views'
+import { LegendBlock, LegendItem } from '../../../../../../views'
 import {
     getLineStroke,
     LineChart,
-} from '../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
+} from '../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
+import { encodeCaptureInsightURL } from '../../../insights/creation/capture-group'
+import { DATA_SERIES_COLORS, encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
 
 import styles from './CodeInsightsExamples.module.scss'
 
-export const CodeInsightsExamples: React.FunctionComponent = () => (
-    <section className={styles.section}>
-        <CodeInsightSearchExample className={styles.card} />
-        <CodeInsightCaptureExample className={styles.card} />
+export interface CodeInsightsExamples extends React.HTMLAttributes<HTMLElement> {}
+
+export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamples> = props => (
+    <section {...props}>
+        <h2>Example insights</h2>
+        <p className="text-muted">
+            We've created a few common simple insights to show you what the tool can do.{' '}
+            <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
+                Explore more use cases.
+            </Link>
+        </p>
+
+        <div className={styles.section}>
+            <CodeInsightSearchExample className={styles.card} />
+            <CodeInsightCaptureExample className={styles.card} />
+        </div>
     </section>
 )
 
@@ -25,6 +41,7 @@ interface ExampleCardProps {
 
 interface SeriesWithQuery extends LineChartSeries<any> {
     query: string
+    name: string
 }
 
 type Content = Omit<LineChartContentType<any, string>, 'chart' | 'series'> & { series: SeriesWithQuery[] }
@@ -43,13 +60,13 @@ const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
         {
             dataKey: 'a',
             name: 'A metric',
-            stroke: 'var(--blue)',
+            stroke: DATA_SERIES_COLORS.BLUE,
             query: 'file:README archived:no fork:no',
         },
         {
             dataKey: 'b',
             name: 'B metric',
-            stroke: 'var(--warning)',
+            stroke: DATA_SERIES_COLORS.ORANGE,
             query: '-file:README archived:no fork:no',
         },
     ],
@@ -60,7 +77,13 @@ const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
     },
 }
 
-export const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = props => {
+const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
+    title: 'Repos with READMEs / without READMEs',
+    allRepos: true,
+    series: SEARCH_INSIGHT_EXAMPLES_DATA.series,
+})
+
+const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = props => {
     const { className } = props
 
     return (
@@ -68,6 +91,17 @@ export const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps>
             title="Repos with READMEs / without READMEs"
             subtitle={<InlineCodeBlock className="mt-1">All repositories</InlineCodeBlock>}
             className={classNames(className)}
+            actions={
+                <Button
+                    as={Link}
+                    variant="link"
+                    size="sm"
+                    className={styles.actionLink}
+                    to={`/insights/create/search?${SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                >
+                    Use as template
+                </Button>
+            }
         >
             <div className={styles.chart}>
                 <ParentSize>
@@ -119,13 +153,30 @@ const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
     },
 }
 
-export const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
+const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
+    title: 'Node.js versions (present or most popular)',
+    repositories: 'github.com/awesomeOrg/examplerepo',
+    groupSearchQuery: 'nvm install ([0-9]+\\.[0-9]+) archived:no fork:no',
+})
+
+const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
     const { className } = props
 
     return (
         <View.Root
             title="Node.js versions (present or most popular)"
             subtitle={<InlineCodeBlock className="mt-1">repo:github.com/awesomeOrg/examplerepo</InlineCodeBlock>}
+            actions={
+                <Button
+                    as={Link}
+                    variant="link"
+                    size="sm"
+                    className={styles.actionLink}
+                    to={`/insights/create/capture-group?${CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                >
+                    Use as template
+                </Button>
+            }
             className={classNames(className)}
         >
             <div className={styles.captureGroup}>

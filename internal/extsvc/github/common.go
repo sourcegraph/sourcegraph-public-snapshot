@@ -1480,6 +1480,7 @@ var (
 		return url
 	}()
 
+	// The metric generated here will be named as "src_github_requests_total".
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
 )
 

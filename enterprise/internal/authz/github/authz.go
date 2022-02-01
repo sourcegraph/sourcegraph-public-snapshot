@@ -20,6 +20,7 @@ import (
 func NewAuthzProviders(
 	conns []*types.GitHubConnection,
 	authProviders []schema.AuthProviders,
+	enableGithubInternalRepoVisibility bool,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Auth providers (i.e. login mechanisms)
 	githubAuthProviders := make(map[string]*schema.GitHubAuthProvider)
@@ -47,6 +48,11 @@ func NewAuthzProviders(
 		} else if p == nil {
 			continue
 		}
+
+		// We want to make the feature flag available to the GitHub provider, but at the same time
+		// also not use the global conf.SiteConfig which is discouraged and could cause race
+		// conditions. As a result, we use a temporary hack by setting this on the provider for now.
+		p.enableGithubInternalRepoVisibility = enableGithubInternalRepoVisibility
 
 		// Permissions require a corresponding GitHub OAuth provider. Without one, repos
 		// with restricted permissions will not be visible to non-admins.
