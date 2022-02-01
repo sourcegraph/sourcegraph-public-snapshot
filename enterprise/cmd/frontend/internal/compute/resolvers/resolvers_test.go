@@ -28,7 +28,7 @@ func TestToResultResolverList(t *testing.T) {
 			matches,
 			database.NewMockDB(),
 		)
-		var results []string
+		results := make([]string, 0, len(resolvers))
 		for _, r := range resolvers {
 			if rr, ok := r.ToComputeMatchContext(); ok {
 				matches := rr.Matches()
