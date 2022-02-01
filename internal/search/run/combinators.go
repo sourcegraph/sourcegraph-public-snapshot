@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // NewJobWithOptional creates a combinator job from a required job and an
@@ -36,7 +37,13 @@ func (r *JobWithOptional) Name() string {
 	return fmt.Sprintf("JobWithOptional{Required: %s, Optional: %s}", r.required.Name(), r.optional.Name())
 }
 
-func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "JobWithOptional", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -54,6 +61,7 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 	if err := requiredGroup.Wait(); err != nil {
 		errs = multierror.Append(errs, err)
 	}
+	tr.LazyPrintf("required group completed")
 
 	// Give optional searches some minimum budget in case required searches return quickly.
 	// Cancel all remaining searches after this minimum budget.
@@ -64,6 +72,7 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 	if err := optionalGroup.Wait(); err != nil {
 		errs = multierror.Append(errs, err)
 	}
+	tr.LazyPrintf("optional group completed")
 
 	return errs.ErrorOrNil()
 }
@@ -91,7 +100,13 @@ func (p ParallelJob) Name() string {
 	return fmt.Sprintf("ParallelJob{%s}", strings.Join(childNames, ", "))
 }
 
-func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "ParallelJob", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	var g multierror.Group
 	for _, job := range p {
 		job := job
@@ -119,7 +134,13 @@ type TimeoutJob struct {
 	timeout time.Duration
 }
 
-func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "TimeoutJob", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
 	defer cancel()
 
@@ -149,7 +170,13 @@ type LimitJob struct {
 	limit int
 }
 
-func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) error {
+func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "LimitJob", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
 	defer cancel()
 
