@@ -172,15 +172,13 @@ export const ReferencesList: React.FunctionComponent<
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
-
     const [filter, setFilter] = useState<string | undefined>(undefined)
-
     const debouncedFilter = useDebounce(filter, 250)
-    console.log(debouncedFilter)
+
+    const [hoverMarkdown, setHoverMarkdown] = useState<string | undefined>(undefined)
 
     useEffect(() => {
         setActiveLocation(undefined)
-        console.log('set filter to undefined')
         setFilter(undefined)
     }, [props.hoveredToken])
 
@@ -189,7 +187,6 @@ export const ReferencesList: React.FunctionComponent<
     const onReferenceClick = (location: Location | undefined): void => {
         if (location) {
             history.push(location.url)
-            console.log('pushing new location', location.url)
         }
         setActiveLocation(location)
     }
@@ -197,8 +194,17 @@ export const ReferencesList: React.FunctionComponent<
     return (
         <div className={classNames('align-items-stretch', styles.referencesList)}>
             <div className={classNames('px-0', styles.sideReferences)}>
+                {hoverMarkdown && (
+                    <>
+                        <Markdown
+                            className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
+                            dangerousInnerHTML={renderMarkdown(hoverMarkdown)}
+                        />
+                        <hr />
+                    </>
+                )}
                 <input
-                    className="form-control w-90"
+                    className="form-control px-2 mt-4"
                     type="text"
                     placeholder="Filter by filename..."
                     value={filter === undefined ? '' : filter}
@@ -210,8 +216,8 @@ export const ReferencesList: React.FunctionComponent<
                     {...props}
                     activeLocation={activeLocation}
                     setActiveLocation={onReferenceClick}
+                    setHoverMarkdown={setHoverMarkdown}
                     filter={debouncedFilter}
-                    setFilter={setFilter}
                 />
             </div>
             {activeLocation !== undefined && (
@@ -234,7 +240,7 @@ export const SideReferences: React.FunctionComponent<
         setActiveLocation: (location: Location | undefined) => void
         activeLocation: Location | undefined
         filter: string | undefined
-        setFilter: (filter: string | undefined) => void
+        setHoverMarkdown: (hoverMarkdown: string | undefined) => void
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
 > = props => {
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
@@ -290,17 +296,14 @@ export const SideReferences: React.FunctionComponent<
     }
 
     const hover = data.repository.commit?.blob?.lsif?.hover
+    if (hover) {
+        props.setHoverMarkdown(hover.markdown.text)
+    }
 
     return (
         <>
-            {hover && (
-                <Markdown
-                    className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
-                    dangerousInnerHTML={renderMarkdown(hover.markdown.text)}
-                />
-            )}
             <CardHeader>
-                <h4 className="py-1">Definitions</h4>
+                <h4 className="py-1 mb-0">Definitions</h4>
             </CardHeader>
             {definitions.length > 0 ? (
                 <LocationsList
@@ -315,7 +318,7 @@ export const SideReferences: React.FunctionComponent<
                 </p>
             )}
             <CardHeader>
-                <h4 className="py-1">References</h4>
+                <h4 className="py-1 mb-0">References</h4>
             </CardHeader>
             {references.length > 0 ? (
                 <LocationsList
