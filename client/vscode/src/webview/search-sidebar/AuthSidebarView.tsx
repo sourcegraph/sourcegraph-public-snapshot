@@ -31,9 +31,6 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     const signUpURL = useMemo(() => new URL('sign-up?editor=vscode', instanceURL).href, [instanceURL])
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
 
-    const ctaButtonClassName = 'btn btn-primary font-weight-normal w-100 my-1 border-0'
-    const buttonLinkClassName = 'btn btn-sm btn-link d-block pl-0'
-
     const validateAccessToken: React.FormEventHandler<HTMLFormElement> = (event): void => {
         event.preventDefault()
         if (state !== 'validating') {
@@ -88,7 +85,9 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
         <div className={classNames(styles.ctaContainer)}>
             {stateStatus === 'search-home' && (
                 <div>
-                    <h5 className="mt-3 mb-2">Welcome!</h5>
+                    <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
+                        <h5 className="flex-grow-1">Welcome</h5>
+                    </button>
                     <p className={classNames(styles.ctaParagraph)}>
                         The Sourcegraph extension allows you to search millions of open source repositories without
                         cloning them to your local machine.
@@ -97,7 +96,7 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                         Developers at some of the world’s best software companies use Sourcegraph to onboard to new code
                         bases, find examples, research errors, and resolve incidents.
                     </p>
-                    <div>
+                    <div className={classNames(styles.ctaParagraph)}>
                         <p className="mb-0">Learn more:</p>
                         <a href="http://sourcegraph.com/" className="my-0" onClick={() => onLinkClick('Sourcegraph')}>
                             Sourcegraph.com
@@ -113,8 +112,10 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                     </div>
                 </div>
             )}
-            <Form onSubmit={validateAccessToken} className={styles.formContainer}>
-                <h5 className="mb-2">Search your private code</h5>
+            <Form onSubmit={validateAccessToken}>
+                <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
+                    <h5 className="flex-grow-1">Search your private code</h5>
+                </button>
                 {content}
             </Form>
         </div>
@@ -127,12 +128,14 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                     Create an account to enhance search across your private repositories: search multiple repos & commit
                     history, monitor, save searches and more.
                 </p>
-                <button type="button" onClick={onSignUpClick} className={ctaButtonClassName}>
-                    Create an account
-                </button>
-                <button type="button" onClick={() => setHasAccount(true)} className={buttonLinkClassName}>
+                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                    <button type="button" onClick={onSignUpClick} className={classNames('btn my-1', styles.ctaButton)}>
+                        Create an account
+                    </button>
+                </p>
+                <a onClick={() => setHasAccount(true)} className={classNames(styles.ctaParagraph)} href="/">
                     Have an account?
-                </button>
+                </a>
             </>
         )
     }
@@ -157,24 +160,32 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                     Unable to verify your access token for {instanceHostname}. Please try again with a new access token.
                 </Alert>
             )}
-            <LoaderInput loading={state === 'validating'}>
-                <input
-                    className="input form-control mb-1"
-                    type="text"
-                    name="token"
-                    required={true}
-                    autoFocus={true}
-                    spellCheck={false}
+            <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                <LoaderInput loading={state === 'validating'}>
+                    <input
+                        className={classNames('input form-control', styles.ctaInput)}
+                        type="text"
+                        name="token"
+                        required={true}
+                        autoFocus={true}
+                        spellCheck={false}
+                        disabled={state === 'validating'}
+                        placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
+                    />
+                </LoaderInput>
+            </p>
+            <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                <button
+                    type="submit"
                     disabled={state === 'validating'}
-                    placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
-                />
-            </LoaderInput>
-            <button type="submit" disabled={state === 'validating'} className={ctaButtonClassName}>
-                Enter access token
-            </button>
-            <button type="button" onClick={onSignUpClick} className={buttonLinkClassName}>
+                    className={classNames('btn my-1', styles.ctaButton)}
+                >
+                    Enter access token
+                </button>
+            </p>
+            <a href="/" className={classNames(styles.ctaParagraph)} onClick={onSignUpClick}>
                 Create an account
-            </button>
+            </a>
         </>
     )
 }
