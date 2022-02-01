@@ -14,6 +14,7 @@ import { ExtensionCoreAPI } from './contract'
 import { openSourcegraphUriCommand } from './file-system/commands'
 import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
+import { initializeCodeSharingCommands } from './link-commands/initialize'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
 import { endpointSetting } from './settings/endpointSetting'
@@ -116,6 +117,13 @@ export function activate(context: vscode.ExtensionContext): void {
     }
 
     // Also initializes code intel.
-    registerWebviews({ context, extensionCoreAPI, initializedPanelIDs, sourcegraphSettings, fs })
-    // TODO: registerCodeSharingCommands()
+    registerWebviews({
+        context,
+        extensionCoreAPI,
+        initializedPanelIDs,
+        sourcegraphSettings,
+        fs,
+        instanceURL: initialInstanceURL,
+    })
+    initializeCodeSharingCommands({ context })
 }
