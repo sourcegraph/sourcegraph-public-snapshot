@@ -32,7 +32,8 @@ export interface SourcegraphVSCodeExtensionAPI
     // Shared methods
     requestGraphQL: (request: string, variables: any) => Promise<GraphQLResult<any>>
     getSettings: () => ProxySubscribable<SettingsCascadeOrError<Settings>>
-    logVsceEvent: (variables: UserEventVariables) => Promise<void>
+    // User Event Logger / Telemetry
+    logVsceEvents: (variables: UserEventVariables) => void
     // For search webview
     panelInitialized: (panelId: string) => void
     // Get User Settings, including hostname, token, corsUrl, authUser info, platform name

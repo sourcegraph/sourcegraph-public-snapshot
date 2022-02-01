@@ -110,6 +110,8 @@
 }
 
 :global(.monaco-mouse-cursor-text) {
+    font-family: var(--vscode-editor-font-family) !important;
+    color: var(--vscode-editor-foreground) !important;
     /* Hack: remove focus ring around Monaco editor cursor */
     &:focus-within,
     &:focus-visible {
@@ -128,11 +130,11 @@
     }
 
     :global(.theme-light) & {
-        --homepage-card-color: var(--color-bg-1);
+        --homepage-card-color: var(--vscode-input-background);
     }
 
     :global(.theme-dark) & {
-        --homepage-card-color: var(--color-bg-2);
+        --homepage-card-color: var(--vscode-input-background);
     }
 
     --home-marketing-drop: 0 4px 16px -6px rgba(46, 34, 119, 0.1);
@@ -221,7 +223,7 @@
     &:hover {
         .search-example-icon {
             color: var(--vscode-button-secondaryHoverBackground) !important;
-            background-color: var(--vscode-button-foreground) !important;
+            background-color: var(--vscode-textLink-foreground) !important;
         }
     }
 }
@@ -232,12 +234,12 @@
     align-items: center;
     border-top-left-radius: var(--border-radius);
     border-bottom-left-radius: var(--border-radius);
-    color: var(--vscode-button-foreground) !important;
+    color: var(--vscode-textLink-foreground) !important;
     // background-color: var(--vscode-button-background) !important;
 
     &:hover {
         color: var(--vscode-button-secondaryHoverBackground) !important;
-        background-color: var(--vscode-button-foreground) !important;
+        background-color: var(--vscode-textLink-foreground) !important;
     }
 }
 .search-example-query-wrapper {
@@ -246,7 +248,7 @@
 }
 .search-example-query {
     padding: 0 0.75rem;
-    border-left: 1px solid var(--border-color);
+    border-left: 1px solid var(--vscode-input-border);
     min-height: 1.5rem;
 }
 .cta-card {

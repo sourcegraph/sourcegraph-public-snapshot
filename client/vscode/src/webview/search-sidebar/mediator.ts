@@ -38,21 +38,20 @@ export function createSearchSidebarMediator(disposables: vscode.Disposable[]): S
     // First panel + sidebar initialization order isn't deterministic, so wait
     // for both to be initialized to reveal the sidebar.
     const subscription = activeSearchWebviewPanel.subscribe(searchPanel => {
-        if (searchPanel) {
+        if (!searchPanel) {
             vscode.commands.executeCommand('sourcegraph.searchSidebar.focus').then(
                 () => {},
                 error => {
                     console.error(error)
                 }
             )
-        } else {
-            vscode.commands.executeCommand('sourcegraph.search').then(
-                () => {},
-                error => {
-                    console.error(error)
-                }
-            )
         }
+        vscode.commands.executeCommand('sourcegraph.search').then(
+            () => {},
+            error => {
+                console.error(error)
+            }
+        )
     })
 
     disposables.push({ dispose: () => subscription.unsubscribe() })

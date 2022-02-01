@@ -168,19 +168,17 @@ export class EventLogger implements TelemetryService {
         this.logUserEvent(eventAction, eventProperties, publicArgument, uri)
     }
 
-    private logUserEvent(event: string, eventProperties?: unknown, publicArgument?: unknown, uri?: string): void {
+    private logUserEvent(eventName: string, eventProperties?: unknown, publicArgument?: unknown, uri?: string): void {
         const userEventVariables = {
-            name: event,
+            event: eventName,
             userCookieID: this.getAnonymousUserID(),
-            cohortID: this.getCohortID() || null,
             referrer: this.getReferrer(),
             url: uri || '',
             source: EventSource.CODEHOSTINTEGRATION,
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
             publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
-            deviceID: this.getDeviceID(),
+            deviceID: this.getAnonymousUserID(),
             eventID: this.getEventID(),
-            insertID: this.getInsertID(),
         }
         this.logging(userEventVariables)
             .then(() => {})
@@ -188,6 +186,6 @@ export class EventLogger implements TelemetryService {
     }
 
     private async logging(userEventVariables: UserEventVariables): Promise<void> {
-        await this.sourcegraphVSCodeExtensionAPI.logVsceEvent(userEventVariables)
+        await this.sourcegraphVSCodeExtensionAPI.logVsceEvents(userEventVariables)
     }
 }

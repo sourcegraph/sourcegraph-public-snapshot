@@ -59,7 +59,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     const selectedSearchContextSpec = useQueryState(({ state }) => state.selectedSearchContextSpec)
     const [fullQuery, setFullQuery] = useState<string | undefined>(undefined)
     // User Settings
-    const [instanceHostname, setInstanceHostname] = useState<string>('')
+    const [instanceHostname, setInstanceHostname] = useState<string>('https://sourcegraph.com/')
     const [validAccessToken, setValidAccessToken] = useState<boolean | undefined>(undefined)
     const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
     // Local History
@@ -361,14 +361,14 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     ])
     // Log Search to User Event Logs to sync Search History
     useEffect(() => {
+        setLoading(true)
         if (queryToRun.query && validAccessToken && fullQuery) {
-            setLoading(true)
             let queryString = `${queryToRun.query}${caseSensitive ? ' case:yes' : ''}`
             if (selectedSearchContextSpec) {
                 queryString = appendContextFilter(queryString, selectedSearchContextSpec)
             }
             const metrics = queryString ? collectMetrics(queryString) : undefined
-            const isSourcegraphDotCom = instanceHostname.startsWith('https://sourcegraph.com')
+            const isSourcegraphDotCom = instanceHostname.startsWith('sourcegraph.com')
             platformContext.telemetryService.log(
                 'SearchResultsQueried',
                 {
@@ -423,7 +423,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             className={
                 !queryToRun.query
                     ? classNames('d-flex flex-column align-items-center px-4', styles.searchPage)
-                    : classNames('d-flex flex-column align-items-center')
+                    : classNames('w-100')
             }
         >
             {!queryToRun.query && (
@@ -452,48 +452,58 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                     <div className={classNames(styles.logoText)}>Search your code and 2M+ open source repositories</div>
                 </>
             )}
-            <div className={classNames('flex-grow-0', styles.searchContainer, styles.searchContainerWithContentBelow)}>
-                <Form className="d-flex my-2" onSubmit={onSubmit}>
-                    {/* TODO temporary settings provider w/ mock in memory storage */}
-                    <SearchBox
-                        isSourcegraphDotCom={instanceHostname.startsWith('https://sourcegraph.com')}
-                        // Platform context props
-                        platformContext={platformContext}
-                        telemetryService={platformContext.telemetryService}
-                        // Search context props
-                        searchContextsEnabled={true}
-                        showSearchContext={true}
-                        showSearchContextManagement={true}
-                        hasUserAddedExternalServices={false}
-                        hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
-                        defaultSearchContextSpec={DEFAULT_SEARCH_CONTEXT_SPEC}
-                        // TODO store search context in vs code settings?
-                        setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                        selectedSearchContextSpec={selectedSearchContextSpec}
-                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                        fetchSearchContexts={fetchSearchContexts}
-                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                        // Case sensitivity props
-                        caseSensitive={caseSensitive}
-                        setCaseSensitivity={searchActions.setCaseSensitivity}
-                        // Pattern type props
-                        patternType={patternType}
-                        setPatternType={searchActions.setPatternType}
-                        // Misc.
-                        isLightTheme={theme === 'theme-light'}
-                        authenticatedUser={authenticatedUser} // Used for search context CTA, which we won't show here.
-                        queryState={queryState}
-                        onChange={searchActions.setQuery}
-                        onSubmit={onSubmit}
-                        autoFocus={true}
-                        fetchSuggestions={fetchSuggestions}
-                        settingsCascade={sourcegraphSettings}
-                        globbing={globbing}
-                        // TODO(tj): instead of cssvar, can pipe in font settings from extension
-                        // to be able to pass it to Monaco!
-                        className={classNames(styles.withEditorFont, 'flex-shrink-past-contents')}
-                    />
-                </Form>
+            <div
+                className={
+                    queryToRun.query
+                        ? classNames('w-100')
+                        : classNames('flex-grow-0', styles.searchContainer, styles.searchContainerWithContentBelow)
+                }
+            >
+                {!loading && (
+                    <Form className="d-flex my-2 searchbox" onSubmit={onSubmit}>
+                        <SearchBox
+                            isSourcegraphDotCom={
+                                instanceHostname.startsWith('sourcegraph.com') ||
+                                instanceHostname.startsWith('https://sourcegraph.com')
+                            }
+                            // Platform context props
+                            platformContext={platformContext}
+                            telemetryService={platformContext.telemetryService}
+                            // Search context props
+                            searchContextsEnabled={true}
+                            showSearchContext={true}
+                            showSearchContextManagement={true}
+                            hasUserAddedExternalServices={false}
+                            hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
+                            defaultSearchContextSpec={DEFAULT_SEARCH_CONTEXT_SPEC}
+                            // TODO store search context in vs code settings?
+                            setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                            selectedSearchContextSpec={selectedSearchContextSpec}
+                            fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                            fetchSearchContexts={fetchSearchContexts}
+                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                            // Case sensitivity props
+                            caseSensitive={caseSensitive}
+                            setCaseSensitivity={searchActions.setCaseSensitivity}
+                            // Pattern type props
+                            patternType={patternType}
+                            setPatternType={searchActions.setPatternType}
+                            // Misc.
+                            isLightTheme={theme === 'theme-light'}
+                            authenticatedUser={authenticatedUser} // Used for search context CTA, which we won't show here.
+                            queryState={queryState}
+                            onChange={searchActions.setQuery}
+                            onSubmit={onSubmit}
+                            autoFocus={true}
+                            fetchSuggestions={fetchSuggestions}
+                            settingsCascade={sourcegraphSettings}
+                            globbing={globbing}
+                            // TODO(tj): instead of cssvar, can pipe in font settings from extension
+                            // to be able to pass it to Monaco!
+                            className={classNames(styles.withEditorFont, 'flex-shrink-past-contents')}
+                        />
+                    </Form>
+                )}
                 {!queryToRun.query && (
                     <div className="flex-grow-1">
                         <HomePanels

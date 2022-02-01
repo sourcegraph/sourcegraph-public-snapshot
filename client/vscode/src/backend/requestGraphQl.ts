@@ -1,14 +1,16 @@
+import { EMPTY, Subject } from 'rxjs'
+import { bufferTime, catchError, concatMap } from 'rxjs/operators'
 import vscode from 'vscode'
 
 import { checkOk, isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import { GRAPHQL_URI } from '@sourcegraph/shared/src/graphql/constants'
-import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { EventLogsDataResult, UserEventVariables } from '../graphql-operations'
+import { Exact, Maybe, UserEventVariables } from '../graphql-operations'
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointSetting, endpointCorsSetting } from '../settings/endpointSetting'
-import { currentAuthStateQuery, logEventsQuery } from '../webview/search-panel/queries'
+import { currentAuthStateQuery } from '../webview/search-panel/queries'
 
 let invalidated = false
 
@@ -116,12 +118,49 @@ export interface SourcegraphVsceUserSettingProps {
     platform: string
 }
 
-export const logEvent = async (userEventVariables: UserEventVariables): Promise<void> => {
-    const userEvent = await requestGraphQLFromVSCode<EventLogsDataResult, UserEventVariables>(
-        logEventsQuery,
-        userEventVariables
-    )
-    if (userEvent.data) {
-        return
+export type LogEventsVariables = Exact<{
+    events: Maybe<UserEventVariables[]>
+}>
+// Log events in batches.
+const events = new Subject<UserEventVariables>()
+
+export const logEventsMutation = gql`
+    mutation LogEvents($events: [Event!]) {
+        logEvents(events: $events) {
+            alwaysNil
+        }
     }
+`
+events
+    .pipe(
+        bufferTime(1000),
+        concatMap(events => {
+            if (events.length > 0) {
+                const test = requestGraphQLFromVSCode<LogEventsResult, LogEventsVariables>(logEventsMutation, {
+                    events,
+                })
+                    .then(response => console.log(response))
+                    .catch(error => console.error(error))
+
+                return test
+            }
+            return EMPTY
+        }),
+        catchError(error => {
+            console.error('Error logging events:', error)
+            return []
+        })
+    )
+    // eslint-disable-next-line rxjs/no-ignored-subscription
+    .subscribe()
+
+/**
+ * Log a raw user action (used to allow site admins on a Sourcegraph instance
+ * to see a count of unique users on a daily, weekly, and monthly basis).
+ *
+ * When invoked on a non-Sourcegraph.com instance, this data is stored in the
+ * instance's database, and not sent to Sourcegraph.com.
+ */
+export function logEvents(eventVariable: UserEventVariables): void {
+    events.next(eventVariable)
 }

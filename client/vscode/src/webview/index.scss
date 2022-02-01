@@ -46,8 +46,34 @@ code {
     color: var(--vscode-editor-foreground) !important;
 }
 
-input {
+input,
+textarea,
+.card {
     background-color: var(--vscode-input-background) !important;
+}
+
+// Override search box background color to VS Code
+.searchbox {
+    textarea {
+    }
+    div[class^='SearchBox-module__search-box__focus-container'] {
+        background-color: var(--vscode-input-background) !important;
+        &:focus-within {
+            border: 1px solid var(--vscode-textLink-foreground) !important;
+        }
+    }
+    .flex-shrink-past-contents,
+    .monaco-editor-background {
+        background-color: var(--vscode-input-background) !important;
+    }
+    .test-search-button {
+        color: var(--vscode-button-secondaryHoverBackground) !important;
+        background-color: var(--vscode-textLink-foreground) !important;
+        &:hover {
+            background-color: var(--vscode-textLink-foreground) !important;
+            opacity: 80%;
+        }
+    }
 }
 
 a,
@@ -59,8 +85,13 @@ a,
     background-color: var(--vscode-button-background) !important;
     color: var(--vscode-button-foreground) !important;
 
+    // &:active,
+    // &:focus {
+    //     box-shadow: 0 0 0 2px var(--vscode-textLink-foreground) !important;
+    //     border-color: var(--vscode-button-hoverBackground) !important;
+    // }
     &:hover {
-        background-color: var(--vscode-button-hoverBackground) !important;
+        box-shadow: 0 0 0 2px var(--vscode-textLink-foreground) !important;
     }
 }
 
@@ -71,10 +102,6 @@ a,
 .description-text {
     color: var(--vscode-descriptionForeground) !important;
     font-size: var(--vscode-editor-font-size) !important;
-}
-
-.textarea {
-    background-color: var(--vscode-input-background) !important;
 }
 
 .cta-card {
@@ -126,6 +153,10 @@ a,
     td {
         color: var(--vscode-editorLineNumber-activeForeground) !important;
     }
+}
+
+.line {
+    color: var(--vscode-editorLineNumber-activeForeground) !important;
 }
 
 .result-container {

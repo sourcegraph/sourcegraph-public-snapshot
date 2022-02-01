@@ -69,11 +69,8 @@ export const AnchorLink: React.FunctionComponent<LinkProps> = ({ to, children, .
 export function checkLink(uri: string): string {
     // Private instance user are required to provide access token
     // This is for users who has not provide an access token and is using dotcom by default
-    if (uri.startsWith('/sign-up?')) {
-        return 'https://sourcegraph.com/sign-up?editor=vscode'
-    }
-    if (uri.endsWith('/contexts')) {
-        return 'https://sourcegraph.com/contexts?editor=vscode'
+    if (uri.startsWith('/sign-up?') || uri.endsWith('/contexts') || uri.startsWith('/help')) {
+        return `https://sourcegraph.com${uri}?editor=vscode`
     }
     if (uri.startsWith('https://')) {
         return uri

@@ -8,7 +8,7 @@ import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { LocalStorageService } from '../localStorageService'
 
-import { invalidateClient, requestGraphQLFromVSCode, currentUserSettings, logEvent } from './backend/requestGraphQl'
+import { invalidateClient, requestGraphQLFromVSCode, currentUserSettings, logEvents } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/settings'
 import { toSourcegraphLanguage } from './code-intel/languages'
 import { SourcegraphDefinitionProvider } from './code-intel/SourcegraphDefinitionProvider'
@@ -94,13 +94,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
                         repoName: fs.sourcegraphUri(vsceUri).repositoryName.split('@')[0],
                     })
                     const userEventVariables = {
-                        name: 'ViewBlob',
+                        event: 'ViewBlob',
                         userCookieID: storageManager.getValue('sourcegraphAnonymousUid'),
                         source: EventSource.CODEHOSTINTEGRATION,
                         url: `${sgUri.replace('sourcegraph://', 'https://')}`,
-                        argument: preString,
+                        referrer: 'VSCE',
+                        publicArgument: preString,
                     }
-                    await logEvent(userEventVariables)
+                    logEvents(userEventVariables)
                 }
             }
         })
@@ -260,7 +261,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     const sourcegraphVSCodeExtensionAPI: SourcegraphVSCodeExtensionAPI = {
         requestGraphQL: requestGraphQLFromVSCode,
-        logVsceEvent: (variables: UserEventVariables) => logEvent(variables),
+        logVsceEvents: (variables: UserEventVariables) => logEvents(variables),
         getSettings: () => proxySubscribable(sourcegraphSettings.settings),
         ping: () => proxySubscribable(of('pong')),
         observeActiveWebviewQueryState: searchSidebarMediator.observeActiveWebviewQueryState,

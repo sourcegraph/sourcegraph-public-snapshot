@@ -47,7 +47,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
                 {examples.map(example => (
                     <div key={example.query} className="search-example-card-wrapper">
                         <Link
-                            to={example.to}
+                            to=""
                             className={classNames('card', styles.searchExampleCard)}
                             onClick={searchExampleClicked(example.trackEventName, example.query)}
                         >
