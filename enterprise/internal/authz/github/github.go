@@ -26,7 +26,7 @@ type Provider struct {
 	// groupsCache may be nil if group caching is disabled (negative TTL)
 	groupsCache *cachedGroups
 
-	// enableGithubInternalRepoVisibility is a feature flag to optionally impelement a fix for
+	// enableGithubInternalRepoVisibility is a feature flag to optionally enable a fix for
 	// internal repos on GithHub Enterprise. At the moment we do not handle internal repos
 	// explicitly and allow all org members to read it irrespective of repo permissions. We have
 	// this as a temporary feature flag here to guard against any regressions. This will go away as
