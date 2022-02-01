@@ -14,10 +14,12 @@ import (
 	"os/signal"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jackc/pgx/v4"
@@ -914,6 +916,31 @@ func removeEntry(s []int, val int) (result []int) {
 		}
 	}
 	return result
+}
+
+func checkCommandOutputVersion(cmd string, versionConstraint string) func(context.Context) error {
+	r := regexp.MustCompile(`v?(\d+\.\d+\.\d+)`)
+
+	return func(ctx context.Context) error {
+		c, err := semver.NewConstraint(versionConstraint)
+		if err != nil {
+			return err
+		}
+		out, _ := combinedSourceExec(ctx, cmd)
+		matches := r.FindStringSubmatch(string(out))
+		if len(matches) < 2 {
+			return errors.Newf("cannot find version string in %q", string(out))
+		}
+		version, err := semver.NewVersion(matches[1])
+		if err != nil {
+			return errors.Newf("cannot decode version in %q: %w", matches[1], err)
+		}
+
+		if !c.Check(version) {
+			return errors.Newf("version %q from %q does not match constraint %q", matches[1], cmd, versionConstraint)
+		}
+		return nil
+	}
 }
 
 func checkCommandOutputContains(cmd, contains string) func(context.Context) error {
