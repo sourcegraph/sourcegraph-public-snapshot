@@ -35,9 +35,9 @@ export const CodeInsightsTemplates: React.FunctionComponent<React.HTMLAttributes
         <h2>Templates</h2>
         <p className="text-muted">
             Some of the most popular{' '}
-            <a href="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
+            <Link to="/help/code_insights/references/common_use_cases" rel="noopener noreferrer" target="_blank">
                 use cases
-            </a>
+            </Link>
             , collected from our beta customers.
         </p>
 
