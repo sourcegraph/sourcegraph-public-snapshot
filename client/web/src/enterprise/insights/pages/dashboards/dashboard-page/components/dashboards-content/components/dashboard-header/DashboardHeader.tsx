@@ -1,4 +1,4 @@
-import classNames from 'classnames';
+import classNames from 'classnames'
 import React, { useEffect, useRef } from 'react'
 
 import styles from './DashboardHeader.module.scss'
@@ -22,10 +22,9 @@ export const DashboardHeader: React.FunctionComponent<React.HTMLAttributes<HTMLE
         // Based on the solution from the following stackoverflow thread
         // https://stackoverflow.com/questions/16302483/event-to-detect-when-positionsticky-is-triggered
         const observer = new IntersectionObserver(
-            ([entry]) =>
-                        entry.target.classList.toggle(styles.headerSticked, entry.intersectionRatio < 1),
+            ([entry]) => entry.target.classList.toggle(styles.headerSticked, entry.intersectionRatio < 1),
             { root, rootMargin: '-1px 0px 0px 0px', threshold: [1] }
-        );
+        )
 
         observer.observe(element)
 
@@ -34,7 +33,7 @@ export const DashboardHeader: React.FunctionComponent<React.HTMLAttributes<HTMLE
 
     return (
         <header ref={reference} {...props} className={classNames(props.className, styles.header)}>
-            { children }
+            {children}
         </header>
     )
 }
