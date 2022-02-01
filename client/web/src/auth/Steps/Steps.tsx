@@ -127,12 +127,12 @@ export const StepPanels: React.FunctionComponent = ({ children }) => {
     const childrenArray = React.Children.toArray(children)
     const indexArray = current - 1
 
-    if (childrenArray.length !== state.totalSteps) {
-        throw new Error('StepPanels must include as many steps as defined by totalSteps')
-    }
-
     if (!children) {
         throw new Error('StepPanels must include at least one child')
+    }
+
+    if (childrenArray.length !== state.totalSteps) {
+        throw new Error('StepPanels must include as many steps as defined by totalSteps')
     }
 
     if (indexArray < 0 || current > childrenArray.length) {
