@@ -570,21 +570,9 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Delete the previous batch spec, which should delete
-	// - batch_spec_resolution_jobs
-	// - batch_spec_workspaces
-	// - changeset_specs
-	// associated with it
-	if err := tx.DeleteBatchSpec(ctx, batchSpec.ID); err != nil {
+	if err = replaceBatchSpec(ctx, tx, batchSpec, newSpec); err != nil {
 		return nil, err
 	}
-
-	// We keep the RandID so the user-visible GraphQL ID is stable
-	newSpec.RandID = batchSpec.RandID
-
-	newSpec.NamespaceOrgID = batchSpec.NamespaceOrgID
-	newSpec.NamespaceUserID = batchSpec.NamespaceUserID
-	newSpec.UserID = batchSpec.UserID
 
 	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             newSpec,
@@ -605,13 +593,13 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 
 	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "parsing batch spec")
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "checking namespace access")
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
@@ -621,7 +609,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	// Start transaction.
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "starting transaction")
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -633,30 +621,14 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 		Name:            spec.Spec.Name,
 	})
 	if err != nil && err != store.ErrNoResults {
-		return nil, err
+		return nil, errors.Wrap(err, "checking for a previous batch spec")
 	}
 
 	if err == nil {
 		// We're replacing an old batch spec.
-		//
-		// TODO: lifted from ReplaceBatchSpecInput(); consider refactoring into a
-		// common function.
-
-		// Delete the previous batch spec, which should delete
-		// - batch_spec_resolution_jobs
-		// - batch_spec_workspaces
-		// - changeset_specs
-		// associated with it
-		if err := tx.DeleteBatchSpec(ctx, old.ID); err != nil {
-			return nil, err
+		if err = replaceBatchSpec(ctx, tx, old, spec); err != nil {
+			return nil, errors.Wrap(err, "replacing the previous batch spec")
 		}
-
-		// We keep the RandID so the user-visible GraphQL ID is stable
-		spec.RandID = old.RandID
-
-		spec.NamespaceOrgID = old.NamespaceOrgID
-		spec.NamespaceUserID = old.NamespaceUserID
-		spec.UserID = old.UserID
 	}
 
 	return spec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
@@ -665,6 +637,31 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 		allowUnsupported: opts.AllowUnsupported,
 		noCache:          opts.NoCache,
 	})
+}
+
+// replaceBatchSpec removes a previous batch spec and copies its random ID,
+// namespace, and user IDs to the new spec.
+//
+// Callers are otherwise responsible for newSpec containing expected values,
+// such as the name.
+func replaceBatchSpec(ctx context.Context, tx *store.Store, oldSpec, newSpec *btypes.BatchSpec) error {
+	// Delete the previous batch spec, which should delete
+	// - batch_spec_resolution_jobs
+	// - batch_spec_workspaces
+	// - changeset_specs
+	// associated with it
+	if err := tx.DeleteBatchSpec(ctx, oldSpec.ID); err != nil {
+		return err
+	}
+
+	// We keep the RandID so the user-visible GraphQL ID is stable
+	newSpec.RandID = oldSpec.RandID
+
+	newSpec.NamespaceOrgID = oldSpec.NamespaceOrgID
+	newSpec.NamespaceUserID = oldSpec.NamespaceUserID
+	newSpec.UserID = oldSpec.UserID
+
+	return nil
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
