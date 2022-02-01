@@ -1550,7 +1550,27 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 	tr.LazyPrintf("job name: %s", job.Name())
 
 	start := time.Now()
-	rr, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
+	agg := run.NewAggregator(r.stream)
+	err = job.Run(ctx, r.db, agg)
+	matches, common, matchCount := agg.Get()
+
+	ao := alert.Observer{
+		Db:           r.db,
+		SearchInputs: r.SearchInputs,
+		HasResults:   matchCount > 0,
+	}
+	if err != nil {
+		ao.Error(ctx, err)
+	}
+	alert, err := ao.Done()
+
+	sort.Sort(matches)
+
+	rr := &SearchResults{
+		Matches: matches,
+		Stats:   common,
+		Alert:   alert,
+	}
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1558,7 +1578,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *Searc
 	// progress notifications work, but this is the third attempt at trying to
 	// fix this behaviour so we are accepting that.
 	if errors.Is(err, context.DeadlineExceeded) {
-		if rr == nil || !rr.Stats.Status.Any(search.RepoStatusTimedout) {
+		if !rr.Stats.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
 			return alertToSearchResults(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)), nil
@@ -1822,41 +1842,6 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 	}
 	args.ResultTypes = rts
 	return args
-}
-
-// doResults returns the results of running a search job.
-// Partial results AND an error may be returned.
-func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.DB, stream streaming.Sender, job run.Job) (res *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "doResults", searchInputs.OriginalQuery)
-	defer func() {
-		tr.SetError(err)
-		if res != nil {
-			tr.LazyPrintf("matches=%d %s", len(res.Matches), &res.Stats)
-		}
-		tr.Finish()
-	}()
-
-	agg := run.NewAggregator(stream)
-	err = job.Run(ctx, db, agg)
-	matches, common, matchCount := agg.Get()
-
-	ao := alert.Observer{
-		Db:           db,
-		SearchInputs: searchInputs,
-		HasResults:   matchCount > 0,
-	}
-	if err != nil {
-		ao.Error(ctx, err)
-	}
-	alert, err := ao.Done()
-
-	sort.Sort(matches)
-
-	return &SearchResults{
-		Matches: matches,
-		Stats:   common,
-		Alert:   alert,
-	}, err
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
