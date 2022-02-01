@@ -33,7 +33,7 @@ interface CodeHostItemProps {
     onDidAdd?: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
-    useGitHubApp: boolean
+    useGitHubApp?: boolean
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
@@ -50,7 +50,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     isUpdateModalOpen,
     toggleUpdateModal,
     onDidUpsert,
-    useGitHubApp,
+    useGitHubApp = false,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
@@ -82,7 +82,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     }
 
     const isUserOwner = owner.type === 'user'
-    const connectAction = useGitHubApp ? toGitHubApp : isUserOwner ? toAuthProvider : toggleAddConnectionModal
+    const connectAction = isUserOwner ? toAuthProvider : toggleAddConnectionModal
     const updateAction = isUserOwner ? toAuthProvider : toggleUpdateModal
 
     return (
@@ -148,7 +148,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             variant="primary"
                         />
                     ) : (
-                        <Button onClick={connectAction} variant="primary">
+                        <Button onClick={useGitHubApp ? toGitHubApp : connectAction} variant="primary">
                             Connect
                         </Button>
                     )

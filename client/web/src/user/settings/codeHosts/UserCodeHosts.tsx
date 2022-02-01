@@ -104,7 +104,6 @@ export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
                                 icon={icon}
                                 onDidRemove={removeService(kind)}
                                 onDidError={onDidError}
-                                useGitHubApp={false}
                             />
                         </CodeHostListItem>
                     ) : null

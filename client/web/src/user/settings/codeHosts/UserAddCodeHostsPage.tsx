@@ -288,13 +288,16 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [authProvidersByKind]
     )
 
-    const { data } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(GET_ORG_FEATURE_FLAG_VALUE, {
-        variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
-        // Cache this data but always re-request it in the background when we revisit
-        // this page to pick up newer changes.
-        fetchPolicy: 'cache-and-network',
-        skip: !(owner.type === 'org'),
-    })
+    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        GET_ORG_FEATURE_FLAG_VALUE,
+        {
+            variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            skip: !(owner.type === 'org'),
+        }
+    )
 
     const useGitHubApp = data?.organizationFeatureFlagValue || false
 
@@ -330,22 +333,26 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                             authProvidersByKind[kind] ? (
                                 <CodeHostListItem key={id}>
-                                    <CodeHostItem
-                                        owner={owner}
-                                        service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
-                                        kind={kind}
-                                        name={defaultDisplayName}
-                                        isTokenUpdateRequired={isTokenUpdateRequired[kind]}
-                                        navigateToAuthProvider={navigateToAuthProvider}
-                                        icon={icon}
-                                        isUpdateModalOpen={isUpdateModalOpen}
-                                        toggleUpdateModal={toggleUpdateModal}
-                                        onDidUpsert={handleServiceUpsert}
-                                        onDidAdd={addNewService}
-                                        onDidRemove={removeService(kind)}
-                                        onDidError={handleError}
-                                        useGitHubApp={useGitHubApp && kind === ExternalServiceKind.GITHUB}
-                                    />
+                                    {kind === ExternalServiceKind.GITHUB && loading ? (
+                                        <LoadingSpinner />
+                                    ) : (
+                                        <CodeHostItem
+                                            owner={owner}
+                                            service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
+                                            kind={kind}
+                                            name={defaultDisplayName}
+                                            isTokenUpdateRequired={isTokenUpdateRequired[kind]}
+                                            navigateToAuthProvider={navigateToAuthProvider}
+                                            icon={icon}
+                                            isUpdateModalOpen={isUpdateModalOpen}
+                                            toggleUpdateModal={toggleUpdateModal}
+                                            onDidUpsert={handleServiceUpsert}
+                                            onDidAdd={addNewService}
+                                            onDidRemove={removeService(kind)}
+                                            onDidError={handleError}
+                                            useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
+                                        />
+                                    )}
                                 </CodeHostListItem>
                             ) : null
                         )}
