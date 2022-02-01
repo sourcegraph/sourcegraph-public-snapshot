@@ -1,7 +1,7 @@
 import React, { FormEventHandler, RefObject, useContext } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker, VisibilityPicker } from '../../../../../../components/creation-ui-kit'
@@ -135,13 +135,13 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
                     <small className="w-100 mt-2 text-muted">
                         This feature is actively in development. Read about the{' '}
-                        <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             beta limitations here.
-                        </Link>
+                        </a>
                     </small>
                 </label>
 

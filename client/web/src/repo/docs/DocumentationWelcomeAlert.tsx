@@ -3,7 +3,7 @@ import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
-import { CardBody, Card, Link } from '@sourcegraph/wildcard'
+import { CardBody, Card } from '@sourcegraph/wildcard'
 
 import styles from './DocumentationWelcomeAlert.module.scss'
 
@@ -22,13 +22,14 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
                     <li>Use the navbar on the left to navigate all the API documentation for this repository.</li>
                     <li>Only the Go programming language is supported at this time.</li>
                     <li>
-                        <Link
+                        <a
+                            // eslint-disable-next-line react/jsx-no-target-blank
                             target="_blank"
                             rel="noopener"
-                            to="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                            href="https://docs.sourcegraph.com/code_intelligence/apidocs"
                         >
                             Learn more
-                        </Link>
+                        </a>
                     </li>
                 </ul>
             </CardBody>

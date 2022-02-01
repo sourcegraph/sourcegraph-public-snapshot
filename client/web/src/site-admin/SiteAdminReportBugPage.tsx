@@ -5,7 +5,7 @@ import { RouteComponentProps } from 'react-router'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
@@ -108,18 +108,18 @@ export const SiteAdminReportBugPage: React.FunctionComponent<Props> = ({ isLight
             <PageTitle title="Report a bug - Admin" />
             <h2>Report a bug</h2>
             <p>
-                <Link
+                <a
                     target="_blank"
                     rel="noopener noreferrer"
-                    to="https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title="
+                    href="https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title="
                 >
                     Create an issue on the public issue tracker
-                </Link>
+                </a>
                 , and include a description of the bug along with the info below (with secrets redacted). If the report
                 contains sensitive information that should not be public, email the report to{' '}
-                <Link target="_blank" rel="noopener noreferrer" to="mailto:support@sourcegraph.com">
+                <a target="_blank" rel="noopener noreferrer" href="mailto:support@sourcegraph.com">
                     support@sourcegraph.com
-                </Link>{' '}
+                </a>{' '}
                 instead.
             </p>
             <Alert variant="warning">

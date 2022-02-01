@@ -6,7 +6,7 @@ import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { PageHeader, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -95,9 +95,9 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
-                        <Link to="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
+                        <a href="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
                             Learn more
-                        </Link>
+                        </a>
                     </>
                 }
             />

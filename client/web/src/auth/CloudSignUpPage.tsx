@@ -185,13 +185,13 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
 
                     <small className="text-muted">
                         By registering, you agree to our{' '}
-                        <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                        <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
                             Terms of Service
-                        </Link>{' '}
+                        </a>{' '}
                         and{' '}
-                        <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                        <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
                             Privacy Policy
-                        </Link>
+                        </a>
                         .
                     </small>
 

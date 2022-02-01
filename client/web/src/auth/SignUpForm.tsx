@@ -16,7 +16,7 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -237,10 +237,10 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                                 />
                                 Try Sourcegraph Enterprise free for{' '}
                                 <span className="text-nowrap">
-                                    30 days{' '}
-                                    <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
+                                    30 days {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                                    <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
                                         <HelpCircleOutlineIcon className="icon-inline" />
-                                    </Link>
+                                    </a>
                                 </span>
                             </label>
                         </div>
@@ -285,14 +285,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 {!experimental && (
                     <p className="mt-3 mb-0">
                         <small className="form-text text-muted">
-                            By signing up, you agree to our{' '}
-                            <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                            By signing up, you agree to our {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                            <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
                                 Terms of Service
-                            </Link>{' '}
-                            and{' '}
-                            <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                            </a>{' '}
+                            and {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                            <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
                                 Privacy Policy
-                            </Link>
+                            </a>
                             .
                         </small>
                     </p>

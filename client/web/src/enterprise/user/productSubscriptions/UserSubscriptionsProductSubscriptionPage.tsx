@@ -108,13 +108,13 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                             <>
                                 <ProductSubscriptionBilling productSubscription={productSubscription} />
                                 <CardFooter>
-                                    <Link
-                                        to={mailtoSales({
+                                    <a
+                                        href={mailtoSales({
                                             subject: `Change payment method for subscription ${productSubscription.name}`,
                                         })}
                                     >
                                         Contact sales
-                                    </Link>{' '}
+                                    </a>{' '}
                                     to change your payment method.
                                 </CardFooter>
                             </>
@@ -122,13 +122,13 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                             <CardBody>
                                 <span className="text-muted ">
                                     No billing information is associated with this subscription.{' '}
-                                    <Link
-                                        to={mailtoSales({
+                                    <a
+                                        href={mailtoSales({
                                             subject: `Billing for subscription ${productSubscription.name}`,
                                         })}
                                     >
                                         Contact sales
-                                    </Link>{' '}
+                                    </a>{' '}
                                     for help.
                                 </span>
                             </CardBody>

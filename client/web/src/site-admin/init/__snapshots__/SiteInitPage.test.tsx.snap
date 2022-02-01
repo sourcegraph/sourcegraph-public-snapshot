@@ -131,7 +131,6 @@ exports[`SiteInitPage normal 1`] = `
             >
               By signing up, you agree to our 
               <a
-                class=""
                 href="https://about.sourcegraph.com/terms"
                 rel="noopener"
                 target="_blank"
@@ -140,7 +139,6 @@ exports[`SiteInitPage normal 1`] = `
               </a>
                and 
               <a
-                class=""
                 href="https://about.sourcegraph.com/privacy"
                 rel="noopener"
                 target="_blank"
