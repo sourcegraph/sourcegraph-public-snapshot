@@ -1,3 +1,4 @@
+import isChromatic from 'chromatic/isChromatic'
 const incrementedLocalStorageKeys = new Map<string, number>()
 
 /**
@@ -5,8 +6,13 @@ const incrementedLocalStorageKeys = new Map<string, number>()
  * If the function is called in the same instance of this module over and over again, it'll keep returning
  * the same value (e.g. 0 after first initialization)
  * This is useful for incrementing a counter at each hard page load, but not at soft (React-level) reloads.
+ *
+ * It always returns `false` when running on Chromatic
  */
 export function usePersistentCadence(localStorageKey: string, cadence: number): boolean {
+    if (isChromatic()) {
+        return false
+    }
     if (!incrementedLocalStorageKeys.has(localStorageKey)) {
         const pageViewCount = parseInt(localStorage.getItem(localStorageKey) || '', 10) || 0
         localStorage.setItem(localStorageKey, (pageViewCount + 1).toString())

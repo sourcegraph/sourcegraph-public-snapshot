@@ -19,7 +19,9 @@ func TestNewAuthzProviders(t *testing.T) {
 					Authorization: nil,
 				},
 			}},
-			[]schema.AuthProviders{})
+			[]schema.AuthProviders{},
+			false,
+		)
 		if len(providers) != 0 {
 			t.Fatalf("unexpected providers: %+v", providers)
 		}
@@ -43,7 +45,9 @@ func TestNewAuthzProviders(t *testing.T) {
 				Github: &schema.GitHubAuthProvider{
 					Url: "https://github.com",
 				},
-			}})
+			}},
+			false,
+		)
 		if len(providers) != 1 || providers[0] == nil {
 			t.Fatal("expected a provider")
 		}
@@ -67,7 +71,9 @@ func TestNewAuthzProviders(t *testing.T) {
 				[]schema.AuthProviders{{
 					// falls back to schema.DefaultGitHubURL
 					Github: &schema.GitHubAuthProvider{},
-				}})
+				}},
+				false,
+			)
 			if len(providers) != 1 || providers[0] == nil {
 				t.Fatal("expected a provider")
 			}
@@ -94,7 +100,9 @@ func TestNewAuthzProviders(t *testing.T) {
 						Url:                        "https://github.com",
 						AllowGroupsPermissionsSync: false,
 					},
-				}})
+				}},
+				false,
+			)
 			if len(providers) != 1 || providers[0] == nil {
 				t.Fatal("expected a provider")
 			}
@@ -128,7 +136,9 @@ func TestNewAuthzProviders(t *testing.T) {
 						Url:                        "https://github.com",
 						AllowGroupsPermissionsSync: true,
 					},
-				}})
+				}},
+				false,
+			)
 			if len(providers) != 1 || providers[0] == nil {
 				t.Fatal("expected a provider")
 			}

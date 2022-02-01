@@ -52,7 +52,7 @@ func NewNPMPackagesSyncer(
 ) *NPMPackagesSyncer {
 	var client = customClient
 	if client == nil {
-		client = npm.NewHTTPClient(connection.Registry, connection.RateLimit)
+		client = npm.NewHTTPClient(connection.Registry, connection.RateLimit, connection.Credentials)
 	}
 	return &NPMPackagesSyncer{connection, dbStore, client}
 }

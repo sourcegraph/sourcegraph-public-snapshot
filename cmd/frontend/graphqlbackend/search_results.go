@@ -126,7 +126,9 @@ func (c *SearchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryReso
 }
 
 func (c *SearchResultsResolver) IndexUnavailable() bool {
-	return c.Stats.IsIndexUnavailable
+	// This used to return c.Stats.IsIndexUnavailable, but it was never set,
+	// so would always return false
+	return false
 }
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
@@ -386,7 +388,7 @@ var (
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, si *run.SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer tr.Finish()
 	var types []string
@@ -454,7 +456,9 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
+			wg.Add(1)
 			go func() {
+				defer wg.Done()
 				err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
@@ -1219,7 +1223,9 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	elapsed := time.Since(start)
 	if srr != nil {
 		srr.elapsed = elapsed
-		LogSearchLatency(ctx, r.db, r.SearchInputs, srr.ElapsedMilliseconds())
+		var wg sync.WaitGroup
+		LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
+		defer wg.Wait()
 	}
 
 	var status, alertType string

@@ -32,7 +32,7 @@ export function decodeSearchInsightUrl(queryParameters: string): CreateInsightFo
 
 type UnsupportedValues = 'series' | 'step' | 'visibility' | 'stepValue'
 
-interface SearchInsightURLValues extends Omit<CreateInsightFormFields, UnsupportedValues> {
+export interface SearchInsightURLValues extends Omit<CreateInsightFormFields, UnsupportedValues> {
     series: (Omit<SearchBasedInsightSeries, 'id'> & { id?: string })[]
 }
 

@@ -82,7 +82,7 @@ func validateSchema(db *sql.DB, schema *schemas.Schema, validateOnly bool, obser
 			Operations: []runner.MigrationOperation{
 				{
 					SchemaName: schema.Name,
-					Up:         true,
+					Type:       runner.MigrationOperationTypeUpgrade,
 				},
 			},
 		})

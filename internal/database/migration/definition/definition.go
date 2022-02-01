@@ -9,12 +9,12 @@ import (
 )
 
 type Definition struct {
-	ID           int
-	UpFilename   string
-	UpQuery      *sqlf.Query
-	DownFilename string
-	DownQuery    *sqlf.Query
-	Parents      []int
+	ID                        int
+	UpQuery                   *sqlf.Query
+	DownQuery                 *sqlf.Query
+	Parents                   []int
+	IsCreateIndexConcurrently bool
+	IndexMetadata             *IndexMetadata
 }
 
 type IndexMetadata struct {
@@ -46,14 +46,6 @@ func (ds *Definitions) All() []Definition {
 	definitions := make([]Definition, len(ds.definitions))
 	copy(definitions, ds.definitions)
 	return ds.definitions
-}
-
-func (ds *Definitions) Count() int {
-	return len(ds.definitions)
-}
-
-func (ds *Definitions) First() int {
-	return ds.definitions[0].ID
 }
 
 func (ds *Definitions) GetByID(id int) (Definition, bool) {
