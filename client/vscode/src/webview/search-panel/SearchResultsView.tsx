@@ -199,7 +199,8 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         extensionCoreAPI.copyLink(new URL(path, instanceURL).href).catch(error => {
             console.error('Error copying search link to clipboard:', error)
         })
-    }, [context, instanceURL, extensionCoreAPI])
+        platformContext.telemetryService.log('VSCEShareLinkClick')
+    }, [context, instanceURL, extensionCoreAPI, platformContext])
 
     const fullQuery = useMemo(
         () =>
@@ -216,7 +217,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         (event?: React.FormEvent): void => {
             event?.preventDefault()
             platformContext.telemetryService.log(
-                'VSCESearchPageClicked',
+                'VSCECreateAccountBannerClick',
                 { campaign: 'Sign up link' },
                 { campaign: 'Sign up link' }
             )
@@ -233,7 +234,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     extensionCoreAPI.openLink(commitURL.href).catch(error => {
                         console.error('Error opening commit in browser', error)
                     })
-                    return
+                    break
                 }
                 case 'path': {
                     const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
@@ -243,7 +244,16 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     extensionCoreAPI.openSourcegraphFile(sourcegraphUri.uri).catch(error => {
                         console.error('Error opening Sourcegraph file', error)
                     })
-                    return
+                    // Log View Event to sync search history
+                    const repoName = result.repository
+                    const filePath = result.path
+                    platformContext.telemetryService.logViewEvent(
+                        'Blob',
+                        { repoName, filePath },
+                        authenticatedUser !== null,
+                        sourcegraphUri.uri.replace('sourcegraph://', 'https://')
+                    )
+                    break
                 }
                 case 'repo': {
                     setRepoToShow(result)
@@ -251,7 +261,14 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     extensionCoreAPI.openSourcegraphFile(`sourcegraph://${host}/${result.repository}`).catch(error => {
                         console.error('Error opening Sourcegraph repository', error)
                     })
-                    return
+                    // Log View Event to sync search history
+                    platformContext.telemetryService.logViewEvent(
+                        'Repository',
+                        null,
+                        authenticatedUser !== null,
+                        `https://${host}/${result.repository}`
+                    )
+                    break
                 }
                 case 'symbol': {
                     // Debt: this event handler is called for a file match (w/ index)
@@ -280,7 +297,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                         })
                     }
 
-                    return
+                    break
                 }
                 case 'content': {
                     // Debt: this event handler is called for a file match (w/ index)
@@ -304,11 +321,11 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                             console.error('Error opening Sourcegraph file', error)
                         })
                     }
-                    return
+                    break
                 }
             }
         },
-        [extensionCoreAPI, instanceURL]
+        [authenticatedUser, extensionCoreAPI, instanceURL, platformContext.telemetryService]
     )
 
     const clearRepositoryToShow = (): void => setRepoToShow(null)

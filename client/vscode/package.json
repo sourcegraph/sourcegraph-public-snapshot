@@ -60,6 +60,11 @@
         "category": "Sourcegraph",
         "title": "Clone Remote Repo",
         "icon": "$(cloud-download)"
+      },
+      {
+        "command": "sourcegraph.selectionSearchWeb",
+        "category": "Sourcegraph",
+        "title": "Search Selection in Sourcegraph Web"
       }
     ],
     "viewsContainers": {
@@ -123,7 +128,7 @@
           "string"
         ],
         "default": "",
-        "description": "Will always open files on Sourcegraph web at this default branch."
+        "description": "Always open local files on Sourcegraph web at this default branch."
       }
     },
     "keybindings": [
@@ -136,20 +141,30 @@
         "command": "sourcegraph.openInBrowser",
         "key": "alt+a",
         "mac": "option+a"
+      },
+      {
+        "command": "sourcegraph.selectionSearchWeb",
+        "key": "alt+s",
+        "mac": "option+s"
       }
     ],
     "menus": {
       "editor/context": [
-        {
-          "command": "sourcegraph.search",
-          "group": "sourcegraph"
-        },
         {
           "command": "sourcegraph.openInBrowser",
           "group": "sourcegraph"
         },
         {
           "command": "sourcegraph.copyFileLink",
+          "group": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.selectionSearchWeb",
+          "group": "sourcegraph",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "sourcegraph.search",
           "group": "sourcegraph"
         }
       ],

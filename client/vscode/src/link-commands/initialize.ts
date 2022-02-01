@@ -31,7 +31,7 @@ export function initializeCodeSharingCommands({ context }: { context: vscode.Ext
             }
             const uri = `${instanceUrl}/search?q=context:global+${encodeURIComponent(
                 selectedQuery
-            )}&patternType=literal`
+            )}&patternType=literal${vsceUtms}`
             await vscode.env.openExternal(vscode.Uri.parse(uri))
         })
     )

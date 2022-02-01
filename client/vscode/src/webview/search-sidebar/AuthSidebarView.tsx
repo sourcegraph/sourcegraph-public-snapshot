@@ -132,8 +132,14 @@ export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
         <>
             <p>Sign in by entering an access token created through your user settings on {instanceHostname}.</p>
             <p>
-                See our <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">user docs</a> for a
-                video guide on how to create an access token.
+                See our{' '}
+                <a
+                    href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token"
+                    onClick={() => platformContext.telemetryService.log('VSCESidebarCreateToken')}
+                >
+                    user docs
+                </a>{' '}
+                for a video guide on how to create an access token.
             </p>
             {state === 'failure' && (
                 <Alert variant="danger">
