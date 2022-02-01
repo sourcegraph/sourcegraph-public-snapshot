@@ -7,6 +7,7 @@ import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 
 import { ExtensionCoreAPI } from '../contract'
 import { VSCEStateMachine } from '../state'
+import { focusSearchPanel } from '../webview/commands'
 
 export function createStreamSearch({
     context,
@@ -37,6 +38,9 @@ export function createStreamSearch({
                 searchPatternType: options.patternType,
             },
         })
+        // Focus search panel if not already focused
+        // (in case e.g. user initiates search from search sidebar when panel is hidden).
+        focusSearchPanel()
 
         previousSearchSubscription = aggregateStreamingSearch(
             of(appendContextFilter(query, stateMachine.state.context.selectedSearchContextSpec)),

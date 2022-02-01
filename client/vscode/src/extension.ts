@@ -11,6 +11,9 @@ import { initializeSearchContexts } from './backend/searchContexts'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
 import { createStreamSearch } from './backend/streamSearch'
 import { ExtensionCoreAPI } from './contract'
+import { openSourcegraphUriCommand } from './file-system/commands'
+import { initializeSourcegraphFileSystem } from './file-system/initialize'
+import { SourcegraphUri } from './file-system/SourcegraphUri'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
 import { endpointSetting } from './settings/endpointSetting'
@@ -73,24 +76,14 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     )
 
-    // Add state to VS Code context to be used in context keys.
-    // Used e.g. by file tree view to only be visible in `remote-browsing` state.
-    const subscription = stateMachine.observeState().subscribe(state => {
-        vscode.commands.executeCommand('setContext', 'sourcegraph.state', state.status).then(
-            () => {},
-            () => {}
-        )
-    })
-    context.subscriptions.push({
-        dispose: () => subscription.unsubscribe(),
-    })
-
     // For search panel webview to signal that it is ready for messages.
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
 
     // Used to observe search box query state from sidebar
     const sidebarQueryStates = new ReplaySubject<VSCEQueryState>(1)
+
+    const { fs } = initializeSourcegraphFileSystem({ context, initialInstanceURL })
 
     const streamSearch = createStreamSearch({ context, stateMachine, sourcegraphURL: initialInstanceURL })
 
@@ -105,6 +98,7 @@ export function activate(context: vscode.ExtensionContext): void {
         // `useObservable` hook. Add `usePromise`s hook to fix.
         getAuthenticatedUser: () => proxySubscribable(authenticatedUser),
         getInstanceURL: () => proxySubscribable(of(initialInstanceURL)),
+        openSourcegraphFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
         openLink: (uri: string) => vscode.env.openExternal(vscode.Uri.parse(uri)),
         copyLink: (uri: string) =>
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),

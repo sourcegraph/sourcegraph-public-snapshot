@@ -3,8 +3,10 @@ import {
     encodeRepoRevision,
     LineOrPositionOrRange,
     lprToRange,
+    ParsedRepoRevision,
     ParsedRepoURI,
     parseQueryAndHash,
+    parseRepoRevision,
     RepoDocumentation,
     RepoFile,
     toPositionHashComponent,
@@ -132,27 +134,4 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
         }
     }
     return { repoName, revision, rawRevision, commitID, filePath, commitRange, position, range }
-}
-
-/** The results of parsing a repo-revision string like "my/repo@my/revision". */
-export interface ParsedRepoRevision {
-    repoName: string
-
-    /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
-    revision?: string
-
-    /** The raw revision (e.g., "my%23branch" in "my/repo@my%23branch"). */
-    rawRevision?: string
-}
-
-/**
- * Parses a repo-revision string like "my/repo@my/revision" to the repo and revision components.
- */
-export function parseRepoRevision(repoRevision: string): ParsedRepoRevision {
-    const [repository, revision] = repoRevision.split('@', 2) as [string, string | undefined]
-    return {
-        repoName: decodeURIComponent(repository),
-        revision: revision && decodeURIComponent(revision),
-        rawRevision: revision,
-    }
 }
