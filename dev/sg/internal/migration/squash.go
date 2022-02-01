@@ -32,7 +32,17 @@ const (
 )
 
 func Squash(database db.Database, commit string) error {
-	newRoot, ok, err := selectNewRootMigration(database, commit)
+	fs, err := database.FS()
+	if err != nil {
+		return err
+	}
+
+	ds, err := definition.ReadDefinitions(fs)
+	if err != nil {
+		return err
+	}
+
+	newRoot, ok, err := selectNewRootMigration(database, ds, commit)
 	if err != nil {
 		return err
 	}
@@ -86,17 +96,7 @@ func Squash(database db.Database, commit string) error {
 // migrations of the schema at the given commit. This ensures that whenever we squash migrations,
 // we do so between a portion of the graph with a single entry and a single exit, which can
 // be easily collapsible into one file that can replace an existing migration node in-place.
-func selectNewRootMigration(database db.Database, commit string) (int, bool, error) {
-	fs, err := database.FS()
-	if err != nil {
-		return 0, false, err
-	}
-
-	ds, err := definition.ReadDefinitions(fs)
-	if err != nil {
-		return 0, false, err
-	}
-
+func selectNewRootMigration(database db.Database, ds *definition.Definitions, commit string) (int, bool, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
 	output, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
