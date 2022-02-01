@@ -35,7 +35,25 @@
       {
         "command": "sourcegraph.search",
         "category": "Sourcegraph",
-        "title": "Open Sourcegraph Search Tab"
+        "title": "Open Sourcegraph Search Tab",
+        "icon": {
+          "light": "images/logo.svg",
+          "dark": "images/logo.svg"
+        }
+      },
+      {
+        "command": "sourcegraph.openInBrowser",
+        "category": "Sourcegraph",
+        "title": "Open File in Sourcegraph Web",
+        "icon": {
+          "light": "images/logo.svg",
+          "dark": "images/logo.svg"
+        }
+      },
+      {
+        "command": "sourcegraph.copyFileLink",
+        "category": "Sourcegraph",
+        "title": "Copy Sourcegraph File Link"
       }
     ],
     "viewsContainers": {
@@ -86,6 +104,20 @@
           "default": "",
           "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens"
         }
+      },
+      "sourcegraph.remoteUrlReplacements": {
+        "type": [
+          "object"
+        ],
+        "default": {},
+        "description": "For each item in this object, replace key with value in the remote url."
+      },
+      "sourcegraph.defaultBranch": {
+        "type": [
+          "string"
+        ],
+        "default": "",
+        "description": "Will always open files on Sourcegraph web at this default branch."
       }
     },
     "keybindings": [
@@ -93,12 +125,28 @@
         "command": "sourcegraph.search",
         "key": "ctrl+shift+8",
         "mac": "cmd+shift+8"
+      },
+      {
+        "command": "sourcegraph.openInBrowser",
+        "key": "alt+a",
+        "mac": "option+a"
       }
     ],
     "menus": {
       "editor/context": [
+        {
+          "command": "sourcegraph.search",
+          "group": "sourcegraph"
+        }
       ],
       "view/item/context": [
+      ],
+      "editor/title": [
+        {
+          "command": "sourcegraph.openInBrowser",
+          "when": "sourcegraph.canFocusActiveDocument",
+          "group": "navigation"
+        }
       ]
     }
   },
@@ -113,5 +161,4 @@
     "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
   }
-
 }
