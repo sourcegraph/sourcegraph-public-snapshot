@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
@@ -56,10 +56,8 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                 <SidebarGroupHeader label="Categories" />
                 {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
                     <Button
-                        className={classNames(
-                            'text-left sidebar__link--inactive d-flex w-100',
-                            selectedCategory === category && 'btn-primary'
-                        )}
+                        className="text-left sidebar__link--inactive d-flex w-100"
+                        variant={selectedCategory === category ? 'primary' : undefined}
                         data-test-extension-category={category}
                         key={category}
                         onClick={() => onSelectCategory(category)}
@@ -72,9 +70,9 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
             <hr className={classNames('my-3', styles.divider)} />
 
             <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="ml-2">
-                <DropdownToggle className="btn-sm" caret={true} color="outline-secondary">
+                <Button caret={true} color="outline-secondary" size="sm" as={DropdownToggle}>
                     {enablementFilterToLabel[enablementFilter]}
-                </DropdownToggle>
+                </Button>
                 <DropdownMenu>
                     <DropdownItem onClick={showAll} disabled={enablementFilter === 'all'}>
                         Show all
@@ -121,14 +119,14 @@ const ExtensionSidenavBanner: React.FunctionComponent = () => (
         <h4 className="mt-2 font-weight-bold">Create custom extensions!</h4>
         <small>
             You can improve your workflow by creating custom extensions. See{' '}
-            <a
-                href="https://docs.sourcegraph.com/extensions/authoring"
+            <Link
+                to="https://docs.sourcegraph.com/extensions/authoring"
                 // eslint-disable-next-line react/jsx-no-target-blank
                 target="_blank"
                 rel="noreferrer"
             >
                 Sourcegraph Docs
-            </a>{' '}
+            </Link>{' '}
             for details about writing and publishing.
         </small>
     </div>

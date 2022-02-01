@@ -126,6 +126,30 @@ func Zoekt() *monitoring.Container {
 					},
 					{
 						{
+							Name:        "repos_stopped_tracking_total_aggregate",
+							Description: "the number of repositories we stopped tracking over 5m (aggregate)",
+							Query:       `sum(increase(index_num_stopped_tracking_total[5m]))`,
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("dropped").Unit(monitoring.Number).With(func(observable monitoring.Observable, panel *sdk.Panel) {
+								panel.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "Repositories we stop tracking are soft-deleted during the next cleanup job.",
+						},
+						{
+							Name:        "repos_stopped_tracking_total_per_instance",
+							Description: "the number of repositories we stopped tracking over 5m (per instance)",
+							Query:       "sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number).With(func(observable monitoring.Observable, panel *sdk.Panel) {
+								panel.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "Repositories we stop tracking are soft-deleted during the next cleanup job.",
+						},
+					},
+					{
+						{
 							Name:              "average_resolve_revision_duration",
 							Description:       "average resolve revision duration over 5m",
 							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,

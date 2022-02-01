@@ -12,8 +12,8 @@ import {
     repositoriesFieldValidator,
     requiredStepValueField,
 } from '../../search-insight/components/search-insight-creation-content/validators'
-import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
+import { searchQueryValidator } from '../utils/search-query-validator'
 
 import { CaptureGroupCreationForm } from './CaptureGoupCreationForm'
 import { CaptureGroupCreationLivePreview } from './CaptureGroupCreationLivePreview'

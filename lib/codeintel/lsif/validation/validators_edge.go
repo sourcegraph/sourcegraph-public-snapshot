@@ -33,7 +33,7 @@ func validateItemEdge(ctx *ValidationContext, lineContext lsifReader.LineContext
 
 // makeGenericEdgeValidator returns an ElementValidator that ensures the edge's outV property
 // refers to a vertex with one of the given out labels, and the edge's inV/inVs properties refers
-// to vertices with with one of the given in labels.
+// to vertices with one of the given in labels.
 func makeGenericEdgeValidator(outLabels, inLabels []string) ElementValidator {
 	outValidator := func(ctx *ValidationContext, edgeContext, outContext lsifReader.LineContext) bool {
 		return validateLabels(ctx, edgeContext, outContext, outLabels)

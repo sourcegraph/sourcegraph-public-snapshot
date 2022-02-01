@@ -221,7 +221,6 @@ const SelectBox: React.FunctionComponent<{
         <InputTooltip
             id={`select-changeset-${isPublishableResult.changesetSpecID}`}
             type="checkbox"
-            className="btn"
             checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
             onChange={toggleSelected}
             tooltip="Click to select changeset for bulk-modifying the publication state"
@@ -230,7 +229,6 @@ const SelectBox: React.FunctionComponent<{
         <InputTooltip
             id="select-changeset-hidden"
             type="checkbox"
-            className="btn"
             checked={false}
             disabled={true}
             tooltip={isPublishableResult.reason}
@@ -295,8 +293,8 @@ const ExpandedSection: React.FunctionComponent<
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a
-                            href=""
+                        <Link
+                            to=""
                             role="button"
                             onClick={onSelectDiff}
                             className={classNames(
@@ -318,12 +316,12 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </a>
+                        </Link>
                     </li>
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a
-                            href=""
+                        <Link
+                            to=""
                             role="button"
                             onClick={onSelectDescription}
                             className={classNames(
@@ -345,12 +343,12 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </a>
+                        </Link>
                     </li>
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <a
-                            href=""
+                        <Link
+                            to=""
                             role="button"
                             onClick={onSelectCommits}
                             className={classNames(
@@ -374,7 +372,7 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </a>
+                        </Link>
                     </li>
                 </ul>
             </div>

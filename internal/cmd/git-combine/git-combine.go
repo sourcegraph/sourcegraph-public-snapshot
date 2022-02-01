@@ -26,10 +26,14 @@ import (
 
 // Options are configurables for Combine.
 type Options struct {
-	// Limit is the maximum number of commits we import from each remote. The
-	// memory usage of Combine is based on the number of unseen commits per
-	// remote. Limit is useful to specify when importing a large new upstream.
+	// Limit is the maximum number of commits we import in total. Limit is
+	// useful to specify when creating a new combined repo.
 	Limit int
+
+	// LimitRemote is the maximum number of commits we import from each remote. The
+	// memory usage of Combine is based on the number of unseen commits per
+	// remote. LimitRemote is useful to specify when importing a large new upstream.
+	LimitRemote int
 
 	Logger *log.Logger
 }
@@ -37,6 +41,10 @@ type Options struct {
 func (o *Options) SetDefaults() {
 	if o.Limit == 0 {
 		o.Limit = math.MaxInt
+	}
+
+	if o.LimitRemote == 0 {
+		o.LimitRemote = o.Limit
 	}
 
 	if o.Logger == nil {
@@ -115,7 +123,7 @@ func Combine(path string, opt Options) error {
 
 		seen := recentRootTrees[remote]
 
-		for i := 0; i < opt.Limit; i++ {
+		for i := 0; i < opt.LimitRemote; i++ {
 			commit, err := iter.Next()
 			if err == io.EOF {
 				break
@@ -138,6 +146,17 @@ func Combine(path string, opt Options) error {
 	sort.Slice(commits, func(i, j int) bool {
 		return commits[i].Committer.When.Before(commits[j].Committer.When)
 	})
+
+	if len(commits) > opt.Limit {
+		// We only take the last Limit commits. But we want to ensure we are
+		// using the latest treehash for each dir, so we need to walk over the
+		// commits we are cutting out first.
+		cut := len(commits) - opt.Limit
+		for _, commit := range commits[:cut] {
+			rootTree[commit.dir] = commit.TreeHash
+		}
+		commits = commits[cut:]
+	}
 
 	for i, commit := range commits {
 		// This is the important line, "/dir" will now be the code (tree) for
@@ -354,7 +373,21 @@ func sanitizeSignature(sig object.Signature) object.Signature {
 func sanitizeMessage(dir string, commit *object.Commit) string {
 	// There are lots of things that could link to other artificats in the
 	// commit message. So we play it safe and just remove the message.
-	return fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, commitTitle(commit), commit.Hash)
+	title := commitTitle(commit)
+
+	// vscode seems to often include URLs to issues and ping users in commit
+	// titles. I am guessing this is due to its tiny box for creating commit
+	// messages. This leads to github crosslinking to megarepo. Lets naively
+	// sanitize.
+	for _, bad := range []string{"@", "http://", "https://"} {
+		if i := strings.Index(title, bad); i >= 0 {
+			title = title[:i]
+		}
+	}
+
+	title = strings.TrimSpace(title)
+
+	return fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, title, commit.Hash)
 }
 
 func commitTitle(commit *object.Commit) string {
@@ -363,6 +396,21 @@ func commitTitle(commit *object.Commit) string {
 		title = title[:idx]
 	}
 	return strings.TrimSpace(title)
+}
+
+func hasRemote(path, remote string) (bool, error) {
+	r, err := git.PlainOpen(path)
+	if err != nil {
+		return false, err
+	}
+
+	conf, err := r.Config()
+	if err != nil {
+		return false, err
+	}
+
+	_, ok := conf.Remotes[remote]
+	return ok, nil
 }
 
 func getGitDir() (string, error) {
@@ -427,7 +475,11 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 			return nil
 		}
 
-		if err := runGit(dir, "push", "origin"); err != nil {
+		if hasOrigin, err := hasRemote(dir, "origin"); err != nil {
+			return err
+		} else if !hasOrigin {
+			opt.Logger.Printf("skipping push since remote origin is missing")
+		} else if err := runGit(dir, "push", "origin"); err != nil {
 			return err
 		}
 
@@ -441,12 +493,14 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 
 func main() {
 	daemon := flag.Bool("daemon", false, "run in daemon mode. This mode loops on fetch, combine, push.")
-	limit := flag.Int("limit", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
+	limitRemote := flag.Int("limit-remote", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
+	limit := flag.Int("limit", 0, "limits the number of commits imported in total. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
 
 	flag.Parse()
 
 	opt := Options{
-		Limit: *limit,
+		Limit:       *limit,
+		LimitRemote: *limitRemote,
 	}
 
 	gitDir, err := getGitDir()

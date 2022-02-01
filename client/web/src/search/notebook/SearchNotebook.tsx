@@ -12,7 +12,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useEventObservable } from '@sourcegraph/wildcard'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -298,15 +298,16 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     return (
         <div className={styles.searchNotebook}>
             <div className="pb-1">
-                <button
-                    className="btn btn-primary mr-2 btn-sm"
-                    type="button"
+                <Button
+                    className="mr-2"
+                    variant="primary"
+                    size="sm"
                     onClick={runAllBlocks}
                     disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                 >
                     <PlayCircleOutlineIcon className="icon-inline mr-1" />
                     <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
-                </button>
+                </Button>
             </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>

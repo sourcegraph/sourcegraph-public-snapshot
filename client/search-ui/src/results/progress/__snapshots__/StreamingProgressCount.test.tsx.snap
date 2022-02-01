@@ -149,6 +149,7 @@ exports[`StreamingProgressCount should render correctly when a trace url is prov
     class="d-flex ml-2"
   >
     <a
+      class=""
       href="https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg"
     >
       <svg

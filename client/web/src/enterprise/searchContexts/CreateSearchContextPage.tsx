@@ -15,7 +15,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -72,13 +72,13 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                             <span className="text-muted">
                                 A search context represents a group of repositories at specified branches or revisions
                                 that will be targeted by search queries.{' '}
-                                <a
-                                    href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
+                                <Link
+                                    to="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
                                     Learn more
-                                </a>
+                                </Link>
                             </span>
                         }
                         className="mb-3"

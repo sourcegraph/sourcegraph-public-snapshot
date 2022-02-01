@@ -8,7 +8,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { Container, PageHeader, useObservable, CardBody, Card } from '@sourcegraph/wildcard'
+import { Container, PageHeader, useObservable, CardBody, Card, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -261,8 +261,8 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
             <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                 <li className="nav-item">
                     {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                    <a
-                        href=""
+                    <Link
+                        to=""
                         onClick={onSelectBatchChanges}
                         className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
                         role="button"
@@ -270,12 +270,12 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
                         <span className="text-content" data-tab-content="All batch changes">
                             All batch changes
                         </span>
-                    </a>
+                    </Link>
                 </li>
                 <li className="nav-item">
                     {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                    <a
-                        href=""
+                    <Link
+                        to=""
                         onClick={onSelectGettingStarted}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
                         role="button"
@@ -284,7 +284,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
                         <span className="text-content" data-tab-content="Getting started">
                             Getting started
                         </span>
-                    </a>
+                    </Link>
                 </li>
             </ul>
         </div>
@@ -298,9 +298,9 @@ const GettingStartedFooter: React.FunctionComponent<{}> = () => (
                 <CardBody className="text-center">
                     <p>Create your first batch change</p>
                     <h2 className="mb-0">
-                        <a href="https://docs.sourcegraph.com/batch_changes/quickstart" target="_blank" rel="noopener">
+                        <Link to="https://docs.sourcegraph.com/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
-                        </a>
+                        </Link>
                     </h2>
                 </CardBody>
             </Card>
