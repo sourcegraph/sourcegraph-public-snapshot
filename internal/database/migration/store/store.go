@@ -357,7 +357,7 @@ func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, u
 	defer func() { err = tx.Done(err) }()
 
 	targetVersion := definitionVersion
-	if up {
+	if !up {
 		targetVersion--
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
