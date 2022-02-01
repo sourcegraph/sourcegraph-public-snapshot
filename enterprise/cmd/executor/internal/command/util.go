@@ -38,7 +38,7 @@ func quoteEnv(env []string) []string {
 	for i, e := range env {
 		if strings.Contains(e, " ") {
 			elems := strings.SplitN(e, "=", 2)
-			quotedEnv[i] = fmt.Sprintf(`%s="%s"`, elems[0], elems[1])
+			quotedEnv[i] = fmt.Sprintf(`%s=%q`, elems[0], elems[1])
 		} else {
 			quotedEnv[i] = e
 		}
