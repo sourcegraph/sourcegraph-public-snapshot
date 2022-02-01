@@ -347,6 +347,11 @@ func TracedTransportOpt(cli *http.Client) error {
 // MeteredTransportOpt returns an opt that wraps an existing http.Transport of a http.Client with
 // metrics collection.
 func MeteredTransportOpt(subsystem string) Opt {
+	// This will generate a metric of the following format:
+	// src_$subsystem_requests_total
+	//
+	// For example, if the subsystem is set to "internal", the metric being generated will be named
+	// src_internal_requests_total
 	meter := metrics.NewRequestMeter(
 		subsystem,
 		"Total number of requests sent to "+subsystem,

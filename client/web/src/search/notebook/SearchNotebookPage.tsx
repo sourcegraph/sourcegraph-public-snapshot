@@ -187,6 +187,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                                             title={notebookOrError.title}
                                             viewerCanManage={notebookOrError.viewerCanManage}
                                             onUpdateTitle={onUpdateTitle}
+                                            telemetryService={props.telemetryService}
                                         />
                                     ),
                                 },
@@ -203,6 +204,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                                     viewerHasStarred={notebookOrError.viewerHasStarred}
                                     createNotebookStar={createNotebookStar}
                                     deleteNotebookStar={deleteNotebookStar}
+                                    telemetryService={props.telemetryService}
                                 />
                             }
                         />

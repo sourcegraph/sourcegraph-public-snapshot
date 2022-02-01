@@ -1,14 +1,15 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useEventObservable, Modal, Button, Alert } from '@sourcegraph/wildcard'
 
 import { deleteNotebook as _deleteNotebook } from './backend'
 
-interface DeleteNotebookProps {
+interface DeleteNotebookProps extends TelemetryProps {
     notebookId: string
     isOpen: boolean
     toggleDeleteModal: () => void
@@ -22,7 +23,13 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> =
     deleteNotebook,
     isOpen,
     toggleDeleteModal,
+    telemetryService,
 }) => {
+    useEffect(() => {
+        if (isOpen) {
+            telemetryService.log('SearchNotebookDeleteModalOpened')
+        }
+    }, [isOpen, telemetryService])
     const deleteLabelId = 'deleteNotebookId'
     const history = useHistory()
 
@@ -30,6 +37,7 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> =
         useCallback(
             (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 click.pipe(
+                    tap(() => telemetryService.log('SearchNotebookDeleteButtonClicked')),
                     mergeMap(() =>
                         deleteNotebook(notebookId).pipe(
                             tap(() => {
@@ -40,7 +48,7 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookProps> =
                         )
                     )
                 ),
-            [deleteNotebook, history, notebookId]
+            [deleteNotebook, history, notebookId, telemetryService]
         )
     )
 
