@@ -1844,7 +1844,7 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 	if err != nil {
 		ao.Error(ctx, err)
 	}
-	alert, err := ao.Done(&common)
+	alert, err := ao.Done()
 
 	sort.Sort(matches)
 
