@@ -6,6 +6,12 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../"
 set -eu
 
+MIGRATION_STAGING=$(mktemp -d -t sgdockerbuild_XXXXXXX)
+cleanup() {
+  rm -rf "$MIGRATION_STAGING"
+}
+trap cleanup EXIT
+
 # `disable_test ${path} ${prefix}` rewrites `func ${prefix}` to `func _${prefix}`
 # in the given Go test file. This will return 1 if there was a matching test and
 # return 0 otherwise.
@@ -87,27 +93,47 @@ echo "Sourcegraph instances deployed at the previous release."
 echo ""
 
 PROTECTED_FILES=(
-  ./migrations
   ./dev/ci/go-test.sh
   ./dev/ci/go-backcompat
   ./.buildkite/hooks
 )
 
+# Rewrite the current migrations into a temporary folder that we can force
+# apply over old code. This rewrites the migrations into several different
+# formats for the next few releases.
+#
+# - "flat" should be used for testing pre-3.37 branch cut, and
+# - "dirs" should be used for testing post-3.37 branch cut but for code that
+# does not yet understand non-linear migration definitions.
+#
+# I hope we can deprecate both formats at the same time without having to use
+# "flat" followed by "dirs".
+#
+# Future code should be able to leave this alone and simply checkout the
+# migration defintions as-is; however we've been incrementally relaxing some
+# constraints, so we need to be cautious here for the next month or so.
+MIGRATION_FORMAT="flat"
+go run ./dev/ci/go-backcompat/reorganize.go "${MIGRATION_STAGING}"
+
 # Check out the previous code then immediately restore whatever
-# the current version of the protected files are. Between these
-# two commands, we want to ensure that any renames or deletions
-# of migration files (which happens on reverts with migrations)
-# do not stick around after our checkout. We ensure this is the
-# case by removing all migration state from the checkout we're
-# only using for unit tests.
+# the current version of the protected files are.
 git checkout "${latest_minor_release_tag}"
-rm -rf ./migrations
 git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
 
-# If we checkout a version that has flat-file migration definitions
-# we will not be able to load the definitions for the test. This
-# line can be removed once we no longer jump back before this change.
-./dev/ci/go-backcompat/reorganize_migrations.sh
+for schema in frontend codeintel codeinsights; do
+  # Force apply newer schema definitions
+  rm -rf "./migrations/${schema}"
+  mv "${MIGRATION_STAGING}/${MIGRATION_FORMAT}/${schema}" "./migrations/${schema}"
+done
+
+# go-test.sh requires python 3.10.0 to calculate the api key value for
+# BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY, but not all versions
+# we check out are guaranteed to have this dependency.
+#
+# Add it by force here.
+#
+# TODO: Remove this once no longer relevant (post-3.37 branch cut)
+grep -qxF 'python 3.10.0' ./.tool-versions || echo 'python 3.10.0' >>./.tool-versions
 
 # If migration files have been renamed or deleted between these commits
 # (which historically we've done in response to reverted migrations), we
