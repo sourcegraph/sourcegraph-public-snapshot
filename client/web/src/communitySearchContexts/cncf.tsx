@@ -1,7 +1,5 @@
 import React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
-
 import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
 import { CommunitySearchContextMetadata } from './types'
 
@@ -12,9 +10,9 @@ export const cncf: CommunitySearchContextMetadata = {
     description: (
         <>
             Search the{' '}
-            <Link to="https://landscape.cncf.io/project=hosted" target="_blank" rel="noopener noreferrer">
+            <a href="https://landscape.cncf.io/project=hosted" target="_blank" rel="noopener noreferrer">
                 CNCF projects
-            </Link>
+            </a>
         </>
     ),
     examples: [],

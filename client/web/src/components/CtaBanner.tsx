@@ -37,6 +37,7 @@ export const CtaBanner: React.FunctionComponent<Props> = ({
             <p className={bodyTextClassName}>{bodyText}</p>
             <Button
                 href={href}
+                // eslint-disable-next-line react/jsx-no-target-blank
                 target="_blank"
                 rel="noreferrer"
                 onClick={onClick}

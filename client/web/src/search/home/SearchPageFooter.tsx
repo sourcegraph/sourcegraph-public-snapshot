@@ -86,21 +86,21 @@ export const SearchPageFooter: React.FunctionComponent<
                         <ul className="list-unstyled">
                             {section.links.map(link => (
                                 <li key={link.name}>
-                                    <Link
-                                        to={link.to}
+                                    <a
+                                        href={link.to}
                                         onClick={() => logLinkClicked(link.eventName ?? link.name)}
                                         className={styles.link}
                                     >
                                         {link.name}
-                                    </Link>
+                                    </a>
                                 </li>
                             ))}
                         </ul>
                     </li>
                 ))}
                 <li>
-                    <Link
-                        to="https://info.sourcegraph.com/dev-tool-time"
+                    <a
+                        href="https://info.sourcegraph.com/dev-tool-time"
                         className={styles.devToolTimeWrapper}
                         onClick={logDevelopmentToolTimeClicked}
                     >
@@ -113,7 +113,7 @@ export const SearchPageFooter: React.FunctionComponent<
                             <h2 className={styles.linkSectionHeading}>Dev tool time</h2>
                             <div>The show where developers talk about dev tools, productivity hacks, and more.</div>
                         </div>
-                    </Link>
+                    </a>
                 </li>
             </ul>
         </footer>

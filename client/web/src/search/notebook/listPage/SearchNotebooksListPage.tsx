@@ -164,8 +164,8 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     <div className="nav nav-tabs">
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <Link
-                                to=""
+                            <a
+                                href=""
                                 role="button"
                                 onClick={event => {
                                     event.preventDefault()
@@ -176,12 +176,12 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                                 <span className="text-content" data-tab-content="My Notebooks">
                                     My Notebooks
                                 </span>
-                            </Link>
+                            </a>
                         </div>
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <Link
-                                to=""
+                            <a
+                                href=""
                                 role="button"
                                 onClick={event => {
                                     event.preventDefault()
@@ -192,12 +192,12 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                                 <span className="text-content" data-tab-content="Starred Notebooks">
                                     Starred Notebooks
                                 </span>
-                            </Link>
+                            </a>
                         </div>
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <Link
-                                to=""
+                            <a
+                                href=""
                                 role="button"
                                 onClick={event => {
                                     event.preventDefault()
@@ -208,7 +208,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                                 <span className="text-content" data-tab-content="Explore Notebooks">
                                     Explore Notebooks
                                 </span>
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 </div>

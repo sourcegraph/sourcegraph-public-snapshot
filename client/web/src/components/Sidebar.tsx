@@ -23,7 +23,7 @@ export const SidebarNavItem: React.FunctionComponent<{
 
     if (source === 'server') {
         return (
-            <Button as="a" href={to} className={classNames(buttonClassNames, className)}>
+            <Button as="a" href={to} className={buttonClassNames}>
                 {children}
             </Button>
         )

@@ -16,16 +16,16 @@ module.exports = {
       },
       rules: {
         'react/forbid-elements': [
-          'error',
+          'off', // Currently disabled until first `<Button />` component is migrated: https://github.com/sourcegraph/codemod/issues/31
           {
             forbid: [
               {
-                element: 'textarea',
-                message: 'Use the <TextArea /> component from @sourcegraph/wildcard instead.',
+                element: 'button',
+                message: 'Use the <Button /> component from @sourcegraph/wildcard instead.',
               },
               {
-                element: 'a',
-                message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
+                element: 'textarea',
+                message: 'Use the <TextArea /> component from @sourcegraph/wildcard instead.',
               },
             ],
           },
@@ -37,18 +37,6 @@ module.exports = {
               {
                 className: 'badge',
                 message: 'Use the <Badge /> component from @sourcegraph/wildcard instead.',
-              },
-            ],
-          },
-        ],
-        'no-restricted-imports': [
-          'error',
-          {
-            paths: [
-              {
-                name: 'react-router-dom',
-                importNames: ['Link'],
-                message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
               },
             ],
           },

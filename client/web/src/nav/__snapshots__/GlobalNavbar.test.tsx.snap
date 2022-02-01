@@ -108,14 +108,14 @@ exports[`GlobalNavbar default 1`] = `
             >
               <a
                 class="dropdown-item showOnTouchScreen"
-                href="/search"
+                to="/search"
               >
                 Search home
               </a>
               <a
                 class="dropdown-item"
-                href="/contexts"
                 role="menuitem"
+                to="/contexts"
               >
                 Contexts
               </a>
@@ -208,7 +208,7 @@ exports[`GlobalNavbar default 1`] = `
       >
         <a
           class="link"
-          href="https://about.sourcegraph.com"
+          to="https://about.sourcegraph.com"
         >
           About 
           <span
@@ -224,7 +224,7 @@ exports[`GlobalNavbar default 1`] = `
         <div>
           <a
             class="btn btn-outline-secondary btn-sm mr-1"
-            href="/sign-in"
+            to="/sign-in"
           >
             Log in
           </a>
@@ -370,14 +370,14 @@ exports[`GlobalNavbar low-profile 1`] = `
             >
               <a
                 class="dropdown-item showOnTouchScreen"
-                href="/search"
+                to="/search"
               >
                 Search home
               </a>
               <a
                 class="dropdown-item"
-                href="/contexts"
                 role="menuitem"
+                to="/contexts"
               >
                 Contexts
               </a>
@@ -470,7 +470,7 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <a
           class="link"
-          href="https://about.sourcegraph.com"
+          to="https://about.sourcegraph.com"
         >
           About 
           <span
@@ -486,7 +486,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         <div>
           <a
             class="btn btn-outline-secondary btn-sm mr-1"
-            href="/sign-in"
+            to="/sign-in"
           >
             Log in
           </a>

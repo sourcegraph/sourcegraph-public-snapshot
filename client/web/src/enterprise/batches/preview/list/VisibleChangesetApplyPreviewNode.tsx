@@ -293,8 +293,8 @@ const ExpandedSection: React.FunctionComponent<
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <Link
-                            to=""
+                        <a
+                            href=""
                             role="button"
                             onClick={onSelectDiff}
                             className={classNames(
@@ -316,12 +316,12 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </Link>
+                        </a>
                     </li>
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <Link
-                            to=""
+                        <a
+                            href=""
                             role="button"
                             onClick={onSelectDescription}
                             className={classNames(
@@ -343,12 +343,12 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </Link>
+                        </a>
                     </li>
                     <li className="nav-item">
                         {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                        <Link
-                            to=""
+                        <a
+                            href=""
                             role="button"
                             onClick={onSelectCommits}
                             className={classNames(
@@ -372,7 +372,7 @@ const ExpandedSection: React.FunctionComponent<
                                     />
                                 </small>
                             )}
-                        </Link>
+                        </a>
                     </li>
                 </ul>
             </div>

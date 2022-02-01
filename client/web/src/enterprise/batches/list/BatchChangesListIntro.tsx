@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { CardBody, Card, Link } from '@sourcegraph/wildcard'
+import { CardBody, Card } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 
@@ -49,7 +49,7 @@ const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
                         up to five changesets without a license.
                     </p>
                     <p className="mb-0">
-                        <Link to="https://about.sourcegraph.com/contact/sales/">Contact sales</Link> to obtain a trial
+                        <a href="https://about.sourcegraph.com/contact/sales/">Contact sales</a> to obtain a trial
                         license.
                     </p>
                 </div>

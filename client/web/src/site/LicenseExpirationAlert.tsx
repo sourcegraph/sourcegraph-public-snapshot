@@ -32,8 +32,8 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
             <span className="underline">Renew now</span>
         </Link>
         &nbsp;or&nbsp;
-        <Link className="site-alert__link" to="https://about.sourcegraph.com/contact">
+        <a className="site-alert__link" href="https://about.sourcegraph.com/contact">
             <span className="underline">contact Sourcegraph</span>
-        </Link>
+        </a>
     </DismissibleAlert>
 )
