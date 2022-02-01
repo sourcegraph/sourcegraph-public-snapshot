@@ -1270,7 +1270,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	sr, err := r.resultsRecursive(ctx, r.stream, r.Plan)
+	sr, err := r.resultsRecursive(ctx, nil, r.Plan)
 	srr := r.resultsToResolver(sr)
 	r.logBatch(ctx, srr, start, err)
 	return srr, err
