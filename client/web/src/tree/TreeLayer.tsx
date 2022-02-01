@@ -17,14 +17,15 @@ import { FileDecoration } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 
 import { getFileDecorations } from '../backend/features'
-import { TreeFields } from '../graphql-operations'
-import { fetchTreeEntries } from '../repo/backend'
+import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerCell, TreeLayerTable, TreeRowAlert } from './components'
@@ -112,6 +113,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     commitID: props.commitID,
                     filePath: props.parentPath || '',
                     first: maxEntries,
+                    requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
                 }).pipe(
                     catchError(error => [asError(error)]),
                     share()
@@ -174,6 +176,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             commitID: this.props.commitID,
                             filePath: path,
                             first: maxEntries,
+                            requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
                         }).pipe(catchError(error => [asError(error)]))
                     )
                 )

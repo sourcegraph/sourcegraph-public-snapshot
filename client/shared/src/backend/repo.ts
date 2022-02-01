@@ -1,12 +1,14 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
+import { TreeEntriesResult, TreeFields } from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
 import * as GQL from '../schema'
 import { memoizeObservable } from '../util/memoizeObservable'
-import { RepoSpec } from '../util/url'
+import { AbsoluteRepoFile, makeRepoURI, RepoSpec } from '../util/url'
 
 import { CloneInProgressError, RepoNotFoundError } from './errors'
 
@@ -46,4 +48,58 @@ export const resolveRawRepoName = memoizeObservable(
             })
         ),
     ({ repoName }) => repoName
+)
+
+export const fetchTreeEntries = memoizeObservable(
+    ({
+        requestGraphQL,
+        ...args
+    }: AbsoluteRepoFile & { first?: number } & Pick<PlatformContext, 'requestGraphQL'>): Observable<TreeFields> =>
+        requestGraphQL<TreeEntriesResult>({
+            request: gql`
+                query TreeEntries(
+                    $repoName: String!
+                    $revision: String!
+                    $commitID: String!
+                    $filePath: String!
+                    $first: Int
+                ) {
+                    repository(name: $repoName) {
+                        commit(rev: $commitID, inputRevspec: $revision) {
+                            tree(path: $filePath) {
+                                ...TreeFields
+                            }
+                        }
+                    }
+                }
+                fragment TreeFields on GitTree {
+                    isRoot
+                    url
+                    entries(first: $first, recursiveSingleChild: true) {
+                        ...TreeEntryFields
+                    }
+                }
+                fragment TreeEntryFields on TreeEntry {
+                    name
+                    path
+                    isDirectory
+                    url
+                    submodule {
+                        url
+                        commit
+                    }
+                    isSingleChild
+                }
+            `,
+            variables: args,
+            mightContainPrivateInfo: true,
+        }).pipe(
+            map(({ data, errors }) => {
+                if (errors || !data?.repository?.commit?.tree) {
+                    throw createAggregateError(errors)
+                }
+                return data.repository.commit.tree
+            })
+        ),
+    ({ first, requestGraphQL, ...args }) => `${makeRepoURI(args)}:first-${String(first)}`
 )

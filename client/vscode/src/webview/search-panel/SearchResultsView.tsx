@@ -15,7 +15,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { appendContextFilter, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
-import { LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -29,6 +29,7 @@ import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchPageCta } from './components/SearchCta'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
 import styles from './index.module.scss'
+import { RepoView } from './RepoView'
 
 export interface SearchResultsViewProps extends WebviewPageProps {
     context: SearchResultsState['context']
@@ -44,6 +45,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     instanceURL,
 }) => {
     const [userQueryState, setUserQueryState] = useState<QueryState>(context.submittedSearchQueryState.queryState)
+    const [repoToShow, setRepoToShow] = useState<RepositoryMatch | null>(null)
 
     const onChange = useCallback(
         (newState: QueryState) => {
@@ -87,6 +89,9 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         setUserQueryState(context.submittedSearchQueryState.queryState)
         // It's a whole new object on each state update, so we need
         // to compare (alternatively, construct full query TODO)
+
+        // Clear repo view
+        setRepoToShow(null)
     }, [context.submittedSearchQueryState.queryState])
 
     const onSubmit = useCallback(
@@ -120,6 +125,9 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     // TODO surface error to users
                     console.error('Error updating sidebar query state from panel', error)
                 })
+
+            // Clear repo view
+            setRepoToShow(null)
         },
         [userQueryState.query, context.submittedSearchQueryState, extensionCoreAPI]
     )
@@ -238,7 +246,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     return
                 }
                 case 'repo': {
-                    // TODO: repo page, add to file tree as well.
+                    setRepoToShow(result)
 
                     extensionCoreAPI.openSourcegraphFile(`sourcegraph://${host}/${result.repository}`).catch(error => {
                         console.error('Error opening Sourcegraph repository', error)
@@ -303,6 +311,8 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         [extensionCoreAPI, instanceURL]
     )
 
+    const clearRepositoryToShow = (): void => setRepoToShow(null)
+
     return (
         <div className={styles.resultsViewLayout}>
             {/* eslint-disable-next-line react/forbid-elements */}
@@ -346,69 +356,85 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     autoFocus={true}
                 />
             </form>
-            <div className={styles.resultsViewScrollContainer}>
-                {!authenticatedUser && (
-                    <SearchPageCta
-                        icon={<SearchBetaIcon />}
-                        ctaTitle="Sign up to add your public and private repositories and access other features"
-                        ctaDescription="Do all the things editors can’t: search multiple repos & commit history, monitor, save searches and more."
-                        buttonText="Create a free account"
-                        onClickAction={onSignUpClick}
-                    />
-                )}
-                <SearchResultsInfoBar
-                    onShareResultsClick={onShareResultsClick}
-                    showSavedSearchForm={showSavedSearchForm}
-                    setShowSavedSearchForm={setShowSavedSearchForm}
-                    extensionCoreAPI={extensionCoreAPI}
-                    patternType={context.submittedSearchQueryState.searchPatternType}
-                    authenticatedUser={authenticatedUser}
-                    platformContext={platformContext}
-                    stats={
-                        <StreamingProgress
-                            progress={context.searchResults?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
-                            state={context.searchResults?.state || 'loading'}
-                            onSearchAgain={onSearchAgain}
-                            showTrace={false}
+
+            {!repoToShow ? (
+                <div className={styles.resultsViewScrollContainer}>
+                    {!authenticatedUser && (
+                        <SearchPageCta
+                            icon={<SearchBetaIcon />}
+                            ctaTitle="Sign up to add your public and private repositories and access other features"
+                            ctaDescription="Do all the things editors can’t: search multiple repos & commit history, monitor, save searches and more."
+                            buttonText="Create a free account"
+                            onClickAction={onSignUpClick}
                         />
-                    }
-                    allExpanded={allExpanded}
-                    onExpandAllResultsToggle={onExpandAllResultsToggle}
-                />
-                {authenticatedUser && showSavedSearchForm && (
-                    <SavedSearchCreateForm
+                    )}
+                    <SearchResultsInfoBar
+                        onShareResultsClick={onShareResultsClick}
+                        showSavedSearchForm={showSavedSearchForm}
+                        setShowSavedSearchForm={setShowSavedSearchForm}
+                        extensionCoreAPI={extensionCoreAPI}
+                        patternType={context.submittedSearchQueryState.searchPatternType}
                         authenticatedUser={authenticatedUser}
-                        submitLabel="Add saved search"
-                        title="Add saved search"
-                        fullQuery={fullQuery}
-                        onComplete={() => setShowSavedSearchForm(false)}
                         platformContext={platformContext}
+                        stats={
+                            <StreamingProgress
+                                progress={
+                                    context.searchResults?.progress || { durationMs: 0, matchCount: 0, skipped: [] }
+                                }
+                                state={context.searchResults?.state || 'loading'}
+                                onSearchAgain={onSearchAgain}
+                                showTrace={false}
+                            />
+                        }
+                        allExpanded={allExpanded}
+                        onExpandAllResultsToggle={onExpandAllResultsToggle}
+                    />
+                    {authenticatedUser && showSavedSearchForm && (
+                        <SavedSearchCreateForm
+                            authenticatedUser={authenticatedUser}
+                            submitLabel="Add saved search"
+                            title="Add saved search"
+                            fullQuery={fullQuery}
+                            onComplete={() => setShowSavedSearchForm(false)}
+                            platformContext={platformContext}
+                            instanceURL={instanceURL}
+                        />
+                    )}
+                    <StreamingSearchResultsList
+                        isLightTheme={theme === 'theme-light'}
+                        settingsCascade={settingsCascade}
+                        telemetryService={platformContext.telemetryService}
+                        allExpanded={allExpanded}
+                        // Debt: dotcom prop used only for "run search" link
+                        // for search examples. Fix on VSCE.
+                        isSourcegraphDotCom={false}
+                        searchContextsEnabled={true}
+                        showSearchContext={true}
+                        platformContext={platformContext}
+                        results={context.searchResults ?? undefined}
+                        authenticatedUser={authenticatedUser}
+                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
+                        executedQuery={context.submittedSearchQueryState.queryState.query}
+                        resultClassName="mr-0"
+                        // TODO "no results" video thumbnail assets
+                        // In build, copy ui/assets/img folder to dist/
+                        assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
+                        ModalVideo={ModalVideo}
+                        onResultSelect={onResultSelect}
+                    />
+                </div>
+            ) : (
+                <div className={styles.resultsViewScrollContainer}>
+                    <RepoView
+                        extensionCoreAPI={extensionCoreAPI}
+                        platformContext={platformContext}
+                        onBackToSearchResults={clearRepositoryToShow}
+                        repositoryMatch={repoToShow}
+                        setQueryState={setUserQueryState}
                         instanceURL={instanceURL}
                     />
-                )}
-                <StreamingSearchResultsList
-                    isLightTheme={theme === 'theme-light'}
-                    settingsCascade={settingsCascade}
-                    telemetryService={platformContext.telemetryService}
-                    allExpanded={allExpanded}
-                    // Debt: dotcom prop used only for "run search" link
-                    // for search examples. Fix on VSCE.
-                    isSourcegraphDotCom={false}
-                    searchContextsEnabled={true}
-                    showSearchContext={true}
-                    platformContext={platformContext}
-                    results={context.searchResults ?? undefined}
-                    authenticatedUser={authenticatedUser}
-                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
-                    executedQuery={context.submittedSearchQueryState.queryState.query}
-                    resultClassName="mr-0"
-                    // TODO "no results" video thumbnail assets
-                    // In build, copy ui/assets/img folder to dist/
-                    assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
-                    ModalVideo={ModalVideo}
-                    onResultSelect={onResultSelect}
-                />
-            </div>
+                </div>
+            )}
         </div>
     )
 }

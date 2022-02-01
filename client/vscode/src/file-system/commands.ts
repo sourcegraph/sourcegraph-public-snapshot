@@ -12,7 +12,6 @@ export async function openSourcegraphUriCommand(fs: SourcegraphFileSystemProvide
         const metadata = await fs.repositoryMetadata(uri.repositoryName)
         uri = uri.withRevision(metadata?.defaultBranch || 'HEAD')
     }
-    console.log({ uri })
     const textDocument = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri.uri))
     const selection = getSelection(uri, textDocument)
     await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', true)
