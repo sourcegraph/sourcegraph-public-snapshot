@@ -40,7 +40,7 @@ func desugarOperation(schemaContext schemaContext, operation MigrationOperation)
 	return operation, nil
 }
 
-// desugarUpgrade converts an "upgrade" operation into a targeted "upto" operation. We only need to
+// desugarUpgrade converts an "upgrade" operation into a targeted up operation. We only need to
 // identify the leaves of the current schema definition to run everything defined.
 func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
 	leafVersions := extractIDs(schemaContext.schema.Definitions.Leaves())
@@ -61,14 +61,14 @@ func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (
 	}, nil
 }
 
-// desugarRevert converts a "revert" operation into a targeted "down" operation. A revert operation
+// desugarRevert converts a "revert" operation into a targeted down operation. A revert operation
 // is primarily meant to support "undo" capability in local development when testing a single migration
 // (or linear chain of migrations).
 //
 // This function selects to undo the migration that has no applied children. Repeated application of the
 // revert operation should "pop" off the last migration applied. This function will give up if the revert
 // is ambiguous, which can happen once a migration with multiple parents has been reverted. More complex
-// down migrations can be run with an explicit "down" operation.
+// down migrations can be run with an targeeted down operation.
 func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
 	definitions := schemaContext.schema.Definitions
 	leafVersions := []int{schemaContext.initialSchemaVersion.version}
@@ -79,7 +79,7 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 		"appliedLeafVersions", leafVersions,
 	)
 
-	// We want to revert leafVersions[0], so we need to migrate "down" its parents.
+	// We want to revert leafVersions[0], so we need to migrate "down" to its parents.
 	// That operation will undo any applied proper descendants of this parent set, which
 	// should consist of exactly this target version.
 	definition, ok := definitions.GetByID(leafVersions[0])
