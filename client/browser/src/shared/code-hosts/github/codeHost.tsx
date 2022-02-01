@@ -544,7 +544,7 @@ function enhanceSearchPage(sourcegraphURL: string): void {
                 className={classNames('btn', 'm-auto', styles.sourcegraphIconButton, className)}
                 iconClassName={classNames(styles.icon)}
                 href={sourcegraphSearchURL.href}
-                onFocus={event => {
+                onClick={event => {
                     let searchQuery = ''
                     const queryParameters = getSearchQuery().filter(Boolean)
 
@@ -557,7 +557,9 @@ function enhanceSearchPage(sourcegraphURL: string): void {
                     }
 
                     // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be corretly parsed by sourcegraph search page.
-                    event.target.href = `${sourcegraphSearchURL.href}${searchQuery ? `?q=${searchQuery}` : ''}`
+                    ;(event.target as HTMLAnchorElement).href = `${sourcegraphSearchURL.href}${
+                        searchQuery ? `?q=${searchQuery}` : ''
+                    }`
                 }}
             />,
             container

@@ -3,10 +3,7 @@ import * as React from 'react'
 import { SourcegraphIcon } from '@sourcegraph/wildcard'
 
 export interface SourcegraphIconButtonProps
-    extends Pick<
-        JSX.IntrinsicElements['a'],
-        'href' | 'title' | 'rel' | 'className' | 'onClick' | 'onFocus' | 'target'
-    > {
+    extends Pick<JSX.IntrinsicElements['a'], 'href' | 'title' | 'rel' | 'className' | 'onClick' | 'target'> {
     /** CSS class applied to the icon */
     iconClassName?: string
     /** Text label shown next to the button */
@@ -24,7 +21,6 @@ export const SourcegraphIconButton: React.FunctionComponent<SourcegraphIconButto
     className,
     href,
     onClick,
-    onFocus,
     rel,
     target,
     title,
@@ -38,7 +34,6 @@ export const SourcegraphIconButton: React.FunctionComponent<SourcegraphIconButto
         title={title}
         aria-label={ariaLabel}
         onClick={onClick}
-        onFocus={onFocus}
         data-testid={dataTestId}
     >
         <SourcegraphIcon className={iconClassName} /> {label}
