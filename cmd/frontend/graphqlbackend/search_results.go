@@ -1270,7 +1270,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	sr, err := r.resultsRecursive(ctx, r.Plan)
+	sr, err := r.resultsRecursive(ctx, r.stream, r.Plan)
 	srr := r.resultsToResolver(sr)
 	r.logBatch(ctx, srr, start, err)
 	return srr, err
@@ -1297,7 +1297,7 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		selectPath, _ := filter.SelectPathFromString(sp) // Invariant: error already checked
 		r.stream = streaming.WithSelect(r.stream, selectPath)
 	}
-	sr, err := r.resultsRecursive(ctx, r.Plan)
+	sr, err := r.resultsRecursive(ctx, r.stream, r.Plan)
 	srr := r.resultsToResolver(sr)
 	return srr, err
 }
@@ -1340,7 +1340,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 	}
 }
 
-func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (_ *SearchResults, err error) {
+func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
@@ -1374,8 +1374,6 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 			defer sem.Release(1)
 
 			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
-				// Disable streaming for subqueries so we can use
-				// the results rather than sending them back to the caller
 				orig := r.stream
 				r.stream = nil
 				defer func() { r.stream = orig }()
@@ -1384,7 +1382,9 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 				if err != nil {
 					return nil, err
 				}
-				return r.resultsRecursive(ctx, plan)
+				// Pass a nil stream for subqueries so we can use
+				// the results rather than sending them back to the caller
+				return r.resultsRecursive(ctx, nil, plan)
 			})
 			if errors.Is(err, ErrPredicateNoResults) {
 				return nil
@@ -1397,9 +1397,9 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 			var newResult *SearchResults
 			if predicatePlan != nil {
 				// If a predicate filter generated a new plan, evaluate that plan.
-				newResult, err = r.resultsRecursive(ctx, predicatePlan)
+				newResult, err = r.resultsRecursive(ctx, stream, predicatePlan)
 			} else {
-				newResult, err = r.evaluate(ctx, r.stream, q)
+				newResult, err = r.evaluate(ctx, stream, q)
 			}
 
 			if err != nil || newResult == nil {
