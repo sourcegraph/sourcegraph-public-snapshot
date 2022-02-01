@@ -1,9 +1,18 @@
+import React, { useState, useCallback, useEffect } from 'react'
 import * as uuid from 'uuid'
-import React, { useRef, useState, useEffect, useCallback } from 'react'
 
 const HUBSPOT_EXTERNAL_SCRIPT = '//js.hsforms.net/forms/v2.js'
 
 let globalHubSpotScriptInsertedPromise: null | Promise<void> = null
+
+interface WindowWithHubspot extends Window {
+    readonly hbspt: {
+        forms: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            create(options: any): void
+        }
+    }
+}
 
 // All available options can be found in the HubSpot documentation.
 //
@@ -34,24 +43,25 @@ export function useHubSpotForm(config: HubSpotConfig): React.ReactNode {
             globalHubSpotScriptInsertedPromise.then(onLoad, onError)
             return
         }
-
         globalHubSpotScriptInsertedPromise = new Promise((resolve, reject) => {
             const script = document.createElement('script')
             script.src = HUBSPOT_EXTERNAL_SCRIPT
             script.async = true
             script.addEventListener('load', () => resolve())
-            script.addEventListener('error', () => reject())
+            script.addEventListener('error', () => reject(new Error('Error loading script tag')))
             document.body.append(script)
         })
         globalHubSpotScriptInsertedPromise.then(onLoad, onError)
-    }, [])
+    }, [onLoad, onError])
 
     useEffect(() => {
         if (isScriptLoaded && !isFormRendered) {
-            window.hbspt.forms.create({ ...config, target: `#hs-${containerId}` })
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const windowWithHubspot: WindowWithHubspot = window as any
+            windowWithHubspot.hbspt.forms.create({ ...config, target: `#hs-${containerId}` })
             setIsFormRendered(true)
         }
-    }, [isScriptLoaded, isFormRendered, config])
+    }, [isScriptLoaded, isFormRendered, config, containerId])
 
     return <div id={`hs-${containerId}`} />
 }
