@@ -354,6 +354,7 @@ func NewSchema(
 	searchContexts SearchContextsResolver,
 	orgRepositoryResolver OrgRepositoryResolver,
 	notebooks NotebooksResolver,
+	compute ComputeResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -443,7 +444,11 @@ func NewSchema(
 		}
 	}
 
-	schemas = append(schemas, computeSchema)
+	if compute != nil {
+		EnterpriseResolvers.computeResolver = compute
+		resolver.ComputeResolver = compute
+		schemas = append(schemas, computeSchema)
+	}
 
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
