@@ -236,6 +236,8 @@ func graphqlUserID(id int32) graphql.ID {
 }
 
 func TestQueryMonitor(t *testing.T) {
+	t.Skip("Flake: https://github.com/sourcegraph/sourcegraph/issues/30477")
+
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
@@ -609,6 +611,8 @@ query($userName: String!, $actionCursor: String!){
 `
 
 func TestEditCodeMonitor(t *testing.T) {
+	t.Skip("Flake: https://github.com/sourcegraph/sourcegraph/issues/30477")
+
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
