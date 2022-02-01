@@ -20,8 +20,6 @@ import { ContextInvalidatedSidebarView } from './ContextInvalidatedSidebarView'
 import { HistoryHomeSidebar } from './HistorySidebarView'
 import { SearchSidebarView } from './SearchSidebarView'
 
-// TODO: load extension host
-
 const vsCodeApi = window.acquireVsCodeApi()
 
 const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
