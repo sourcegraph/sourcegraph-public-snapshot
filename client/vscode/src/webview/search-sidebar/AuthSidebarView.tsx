@@ -10,13 +10,18 @@ import { WebviewPageProps } from '../platform/context'
 
 import styles from './AuthSidebarView.module.scss'
 
+interface AuthSidebarViewProps extends WebviewPageProps {
+    stateStatus: string
+}
+
 /**
  * Rendered by sidebar in search-home state when user doesn't have a valid access token.
  */
-export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
+export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     instanceURL,
     extensionCoreAPI,
     platformContext,
+    stateStatus,
 }) => {
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
 
@@ -80,30 +85,33 @@ export const AuthSidebarView: React.FunctionComponent<WebviewPageProps> = ({
 
     const renderCommon = (content: JSX.Element): JSX.Element => (
         <div>
-            <h5 className="mt-3 mb-2">Welcome!</h5>
-            <p>
-                The Sourcegraph extension allows you to search millions of open source repositories without cloning them
-                to your local machine.
-            </p>
-            <p>
-                Developers at some of the world’s best software companies use Sourcegraph to onboard to new code bases,
-                find examples, research errors, and resolve incidents.
-            </p>
-            <div>
-                <p className="mb-0">Learn more:</p>
-                <a href="http://sourcegraph.com/" className="my-0" onClick={() => onLinkClick('Sourcegraph')}>
-                    Sourcegraph.com
-                </a>
-                <br />
-                <a
-                    href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"
-                    className="my-0"
-                    onClick={() => onLinkClick('Extension')}
-                >
-                    Sourcegraph VS Code extension
-                </a>
-            </div>
-
+            {stateStatus === 'search-home' && (
+                <>
+                    <h5 className="mt-3 mb-2">Welcome!</h5>
+                    <p>
+                        The Sourcegraph extension allows you to search millions of open source repositories without
+                        cloning them to your local machine.
+                    </p>
+                    <p>
+                        Developers at some of the world’s best software companies use Sourcegraph to onboard to new code
+                        bases, find examples, research errors, and resolve incidents.
+                    </p>
+                    <div>
+                        <p className="mb-0">Learn more:</p>
+                        <a href="http://sourcegraph.com/" className="my-0" onClick={() => onLinkClick('Sourcegraph')}>
+                            Sourcegraph.com
+                        </a>
+                        <br />
+                        <a
+                            href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"
+                            className="my-0"
+                            onClick={() => onLinkClick('Extension')}
+                        >
+                            Sourcegraph VS Code extension
+                        </a>
+                    </div>
+                </>
+            )}
             <Form onSubmit={validateAccessToken} className={styles.formContainer}>
                 <h5 className="mb-2">Search your private code</h5>
                 {content}
