@@ -956,7 +956,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 
 	checker := authz.DefaultSubRepoPermsChecker
 	if authz.SubRepoEnabled(checker) {
-		job = subrepoperms.NewSubRepoPermsFilterJob(job)
+		job = subrepoperms.NewFilterJob(job)
 	}
 
 	return job, nil

@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-// NewSubRepoPermsFilterJob creates a job that filters the streamed results
+// NewFilterJob creates a job that filters the streamed results
 // of its child job using the default authz.DefaultSubRepoPermsChecker.
-func NewSubRepoPermsFilterJob(child run.Job) run.Job {
+func NewFilterJob(child run.Job) run.Job {
 	return &subRepoPermsFilterJob{child: child}
 }
 
