@@ -62,6 +62,12 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"compute":        compute.Init,
 }
 
+var codeIntelConfig = &codeintel.Config{}
+
+func init() {
+	codeIntelConfig.Load()
+}
+
 func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
@@ -79,8 +85,6 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	codeIntelConfig := &codeintel.Config{}
-	codeIntelConfig.Load()
 	if err := codeIntelConfig.Validate(); err != nil {
 		log.Fatalf("failed to load codeintel config: %s", err)
 	}

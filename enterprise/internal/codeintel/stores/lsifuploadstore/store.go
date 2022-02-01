@@ -7,9 +7,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
-func New(ctx context.Context, observationContext *observation.Context) (uploadstore.Store, error) {
-	conf := &Config{}
+var conf = &Config{}
+
+func init() {
 	conf.Load()
+}
+
+func New(ctx context.Context, observationContext *observation.Context) (uploadstore.Store, error) {
 	if err := conf.Validate(); err != nil {
 		return nil, err
 	}
@@ -33,6 +37,5 @@ func New(ctx context.Context, observationContext *observation.Context) (uploadst
 		},
 	}
 
-	uploadstore.CreateLazy(ctx, c, uploadstore.NewOperations(observationContext, "codeintel", "uploadstore"))
-	return nil, nil
+	return uploadstore.CreateLazy(ctx, c, uploadstore.NewOperations(observationContext, "codeintel", "uploadstore"))
 }

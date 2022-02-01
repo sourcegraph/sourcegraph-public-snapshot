@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	*env.BaseConfig
+	env.BaseConfig
 
 	Backend      string
 	ManageBucket bool
