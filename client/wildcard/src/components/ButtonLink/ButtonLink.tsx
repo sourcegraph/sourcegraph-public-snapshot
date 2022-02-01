@@ -1,47 +1,47 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import { noop } from 'lodash'
-import React, { AnchorHTMLAttributes } from 'react'
+import React from 'react'
 import { Key } from 'ts-key-enum'
 
 import { isDefined } from '@sourcegraph/common'
 
+import { ForwardReferenceComponent } from '../../types'
 import { Button, ButtonProps } from '../Button'
 import { Link, AnchorLink } from '../Link'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
 
-export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
-    Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> & {
-        /** The link destination URL. */
-        to?: H.LocationDescriptor
+export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> & {
+    /** The link destination URL. */
+    to?: H.LocationDescriptor
 
-        /**
-         * Called when the user clicks or presses enter on this element.
-         */
-        onSelect?: (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
+    /**
+     * Called when the user clicks or presses enter on this element.
+     */
+    onSelect?: (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
 
-        /** A tooltip to display when the user hovers or focuses this element. */
-        ['data-tooltip']?: string
+    /** A tooltip to display when the user hovers or focuses this element. */
+    ['data-tooltip']?: string
 
-        /**
-         * If given, the element is treated as a toggle with the boolean indicating its state.
-         * Applies `aria-pressed`.
-         */
-        pressed?: boolean
+    /**
+     * If given, the element is treated as a toggle with the boolean indicating its state.
+     * Applies `aria-pressed`.
+     */
+    pressed?: boolean
 
-        disabledClassName?: string
+    disabledClassName?: string
 
-        ['data-content']?: string
+    ['data-content']?: string
 
-        id?: string
+    id?: string
 
-        disabled?: boolean
+    disabled?: boolean
 
-        /** Override default tab index */
-        tabIndex?: number
-    }
+    /** Override default tab index */
+    tabIndex?: number
+}
 
 /**
  * A component that is displayed in the same way, regardless of whether it's a link (with a
@@ -49,7 +49,7 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
  *
  * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = React.forwardRef((props, reference) => {
+export const ButtonLink = React.forwardRef((props, reference) => {
     const {
         className,
         to,
@@ -120,4 +120,4 @@ export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = React.forwar
             {children}
         </Button>
     )
-})
+}) as ForwardReferenceComponent<'a', ButtonLinkProps>
