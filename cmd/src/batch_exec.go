@@ -170,7 +170,7 @@ func executeBatchSpecInWorkspaces(ctx context.Context, ui *ui.JSONLines, opts ex
 func loadWorkspaceExecutionInput(file string) (batcheslib.WorkspacesExecutionInput, error) {
 	var input batcheslib.WorkspacesExecutionInput
 
-	f, err := batchOpenFileFlag(&file)
+	f, err := batchOpenFileFlag(file)
 	if err != nil {
 		return input, err
 	}

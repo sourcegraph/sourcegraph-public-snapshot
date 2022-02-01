@@ -19,9 +19,11 @@ func init() {
 
 Usage:
 
-    src batch validate -f FILE
+    src batch validate [-f] FILE
 
 Examples:
+
+    $ src batch validate batch.spec.yaml
 
     $ src batch validate -f batch.spec.yaml
 
@@ -29,7 +31,7 @@ Examples:
 
 	flagSet := flag.NewFlagSet("validate", flag.ExitOnError)
 	apiFlags := api.NewFlags(flagSet)
-	fileFlag := flagSet.String("f", "", "The batch spec file to read.")
+	fileFlag := flagSet.String("f", "", "The batch spec file to read, or - to read from standard input.")
 
 	var (
 		allowUnsupported bool
@@ -68,7 +70,12 @@ Examples:
 			return err
 		}
 
-		if _, _, err := parseBatchSpec(fileFlag, svc); err != nil {
+		file, err := getBatchSpecFile(flagSet, fileFlag)
+		if err != nil {
+			return err
+		}
+
+		if _, _, err := parseBatchSpec(file, svc); err != nil {
 			ui.ParsingBatchSpecFailure(err)
 			return err
 		}

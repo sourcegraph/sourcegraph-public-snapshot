@@ -18,11 +18,14 @@ Sourcegraph instance, ready to be previewed and applied.
 
 Usage:
 
-    src batch preview -f FILE [command options]
+    src batch preview [command options] [-f FILE]
+    src batch preview [command options] FILE
 
 Examples:
 
     $ src batch preview -f batch.spec.yaml
+
+    $ src batch preview batch.spec.yaml
 
 `
 
@@ -34,8 +37,9 @@ Examples:
 			return err
 		}
 
-		if len(flagSet.Args()) != 0 {
-			return cmderrors.Usage("additional arguments not allowed")
+		file, err := getBatchSpecFile(flagSet, &flags.file)
+		if err != nil {
+			return err
 		}
 
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
@@ -49,14 +53,14 @@ Examples:
 			execUI = &ui.TUI{Out: out}
 		}
 
-		err := executeBatchSpec(ctx, execUI, executeBatchSpecOpts{
+		if err = executeBatchSpec(ctx, execUI, executeBatchSpecOpts{
 			flags:  flags,
 			client: cfg.apiClient(flags.api, flagSet.Output()),
+			file:   file,
 
 			// Do not apply the uploaded batch spec
 			applyBatchSpec: false,
-		})
-		if err != nil {
+		}); err != nil {
 			return cmderrors.ExitCode(1, nil)
 		}
 

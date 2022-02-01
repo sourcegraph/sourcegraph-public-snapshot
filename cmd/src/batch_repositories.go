@@ -21,9 +21,11 @@ apply to.
 
 Usage:
 
-    src batch repositories -f FILE
+    src batch repositories [-f] FILE
 
 Examples:
+
+    $ src batch repositories batch.spec.yaml
 
     $ src batch repositories -f batch.spec.yaml
 
@@ -32,7 +34,7 @@ Examples:
 	flagSet := flag.NewFlagSet("repositories", flag.ExitOnError)
 
 	var (
-		fileFlag = flagSet.String("f", "", "The batch spec file to read.")
+		fileFlag = flagSet.String("f", "", "The batch spec file to read, or - to read from standard input.")
 		apiFlags = api.NewFlags(flagSet)
 	)
 
@@ -67,8 +69,13 @@ Examples:
 			return err
 		}
 
+		var file string
+		if fileFlag != nil {
+			file = *fileFlag
+		}
+
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-		spec, _, err := parseBatchSpec(fileFlag, svc)
+		spec, _, err := parseBatchSpec(file, svc)
 		if err != nil {
 			ui := &ui.TUI{Out: out}
 			ui.ParsingBatchSpecFailure(err)
