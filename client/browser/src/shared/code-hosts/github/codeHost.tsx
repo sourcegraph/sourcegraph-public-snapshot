@@ -449,9 +449,9 @@ function enhanceSearchPage(sourcegraphURL: string): void {
         /* Search results page */
 
         /* 
-            Separate search form is rendered for screen sizes xs-md, so we add a Sourcegraph button 
+            Separate search form is visible for screen sizes xs-md, so we add a Sourcegraph button 
             next to form submit button and track search query changes from the corresponding form input.
-            On screen sizes smaller than md search input is visible (without Github *Submit* and *Search on Sourcegraph* buttons.
+            On screen sizes smaller than md Github *Submit* and *Search on Sourcegraph* buttons are hidden while search input remains visible.
         */
 
         const pageSearchForm = document.querySelector<HTMLFormElement>('.application-main form.js-site-search-form')
@@ -471,7 +471,7 @@ function enhanceSearchPage(sourcegraphURL: string): void {
         }
 
         /* 
-            On screen sizes lg and larger separate search form is not rendered, so we add a Sourcegraph button 
+            On screen sizes lg and larger separate search form is hidden, so we add a Sourcegraph button 
             next to search results header container and track search query changes from search input in header.
         */
 
