@@ -103,18 +103,15 @@ func toLspRange(r compute.Range) lsp.Range {
 func (c *computeTextResolver) Repository() *gql.RepositoryResolver { return c.repository }
 
 func (c *computeTextResolver) Commit() *string {
-	value := c.commit
-	return &value
+	return &c.commit
 }
 
 func (c *computeTextResolver) Path() *string {
-	value := c.path
-	return &value
+	return &c.path
 }
 
 func (c *computeTextResolver) Kind() *string {
-	value := c.t.Kind
-	return &value
+	return &c.t.Kind
 }
 func (c *computeTextResolver) Value() string { return c.t.Value }
 
@@ -138,7 +135,7 @@ func (r *computeResultResolver) ToComputeText() (gql.ComputeTextResolver, bool) 
 }
 
 func toComputeMatchContextResolver(mc *compute.MatchContext, repository *gql.RepositoryResolver, path, commit string) *computeMatchContextResolver {
-	var computeMatches []gql.ComputeMatchResolver
+	computeMatches := make([]gql.ComputeMatchResolver, 0, len(mc.Matches))
 	for _, m := range mc.Matches {
 		mCopy := m
 		computeMatches = append(computeMatches, &computeMatchResolver{m: &mCopy})
