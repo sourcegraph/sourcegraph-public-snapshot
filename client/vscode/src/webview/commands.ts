@@ -1,16 +1,19 @@
 import { Observable } from 'rxjs'
 import * as vscode from 'vscode'
 
+import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+
 import { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
 import { initializeCodeIntel } from '../code-intel/initialize'
 import { ExtensionCoreAPI } from '../contract'
 import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
+import { SearchPatternType } from '../graphql-operations'
 
 import { initializeSearchPanelWebview, initializeSearchSidebarWebview } from './initialize'
 
 // Track current active webview panel to make sure only one panel exists at a time
-let currentSearchPanel: vscode.WebviewPanel | undefined
-let searchSidebarWebviewView: vscode.WebviewView | undefined
+let currentSearchPanel: vscode.WebviewPanel | 'initializing' | undefined
+let searchSidebarWebviewView: vscode.WebviewView | 'initializing' | undefined
 
 export function registerWebviews({
     context,
@@ -18,30 +21,38 @@ export function registerWebviews({
     initializedPanelIDs,
     sourcegraphSettings,
     fs,
+    instanceURL,
 }: {
     context: vscode.ExtensionContext
     extensionCoreAPI: ExtensionCoreAPI
     initializedPanelIDs: Observable<string>
     sourcegraphSettings: ReturnType<typeof initializeSourcegraphSettings>
     fs: SourcegraphFileSystemProvider
+    instanceURL: string
 }): void {
     // TODO if remote files are open from previous session, we need
-    // to focus search sidebar to activate code intel (load extension host),
-    // and to do that we need to make sourcegraph:// file opening an activation event.
+    // to focus search sidebar to activate code intel (load extension host)
 
     // Open Sourcegraph search tab on `sourcegraph.search` command.
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.search', async () => {
+            // If text selected, submit search for it. Capture selection first.
+            const activeEditor = vscode.window.activeTextEditor
+            const selection = activeEditor?.selection
+            const selectedQuery = activeEditor?.document.getText(selection)
+
             // Focus search sidebar in case this command was the activation event,
             // as opposed to visibiilty of sidebar.
             if (!searchSidebarWebviewView) {
                 focusSearchSidebar()
             }
 
-            if (currentSearchPanel) {
+            if (currentSearchPanel && currentSearchPanel !== 'initializing') {
                 currentSearchPanel.reveal()
-            } else {
+            } else if (!currentSearchPanel) {
                 sourcegraphSettings.refreshSettings()
+
+                currentSearchPanel = 'initializing'
 
                 const { webviewPanel } = await initializeSearchPanelWebview({
                     extensionUri: context.extensionUri,
@@ -67,9 +78,19 @@ export function registerWebviews({
                     currentSearchPanel = undefined
                     // Ideally focus last used sidebar tab on search panel close. In lieu of that (for v1),
                     // just focus the file explorer if the search sidebar is currently focused.
-                    if (searchSidebarWebviewView?.visible) {
+                    if (searchSidebarWebviewView !== 'initializing' && searchSidebarWebviewView?.visible) {
                         focusFileExplorer()
                     }
+                })
+            }
+
+            if (selectedQuery) {
+                extensionCoreAPI.streamSearch(selectedQuery, {
+                    patternType: SearchPatternType.literal,
+                    caseSensitive: false,
+                    version: LATEST_VERSION,
+                    trace: undefined,
+                    sourcegraphURL: instanceURL,
                 })
             }
         })
@@ -124,7 +145,9 @@ function focusSearchSidebar(): void {
 }
 
 export function focusSearchPanel(): void {
-    currentSearchPanel?.reveal()
+    if (currentSearchPanel && currentSearchPanel !== 'initializing') {
+        currentSearchPanel.reveal()
+    }
 }
 
 function focusFileExplorer(): void {
