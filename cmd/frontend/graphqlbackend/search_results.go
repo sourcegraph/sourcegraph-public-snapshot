@@ -980,7 +980,7 @@ func intersect(left, right *SearchResults) *SearchResults {
 // and likely yields fewer than N results). If the intersection does not yield N
 // results, and is not exhaustive for every expression, we rerun the search by
 // doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
 	start := time.Now()
 
 	// Invariant: this function is only reachable from callers that
@@ -1022,7 +1022,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 	var exhausted bool
 	for {
 		q = q.MapCount(tryCount)
-		result, err = r.evaluatePatternExpression(ctx, r.stream, q.MapPattern(operands[0]))
+		result, err = r.evaluatePatternExpression(ctx, stream, q.MapPattern(operands[0]))
 		if err != nil {
 			return nil, err
 		}
@@ -1044,7 +1044,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			default:
 			}
 
-			termResult, err = r.evaluatePatternExpression(ctx, r.stream, q.MapPattern(term))
+			termResult, err = r.evaluatePatternExpression(ctx, stream, q.MapPattern(term))
 			if err != nil {
 				return nil, err
 			}
@@ -1173,7 +1173,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream s
 
 		switch term.Kind {
 		case query.And:
-			return r.evaluateAnd(ctx, q)
+			return r.evaluateAnd(ctx, stream, q)
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
