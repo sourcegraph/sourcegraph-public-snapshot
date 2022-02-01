@@ -2,6 +2,7 @@ package compression
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -58,6 +59,14 @@ func TestFilterFrames(t *testing.T) {
 			maxHistorical.Add(time.Second * 500), maxHistorical.Add(time.Second * 1000), "fedcba",
 		}}
 
+		oldest := toTime("2019-01-01") // sufficiently old to be before all of the inputs (non-relevant)
+		commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+			RepoId:          1,
+			Enabled:         true,
+			LastIndexedAt:   toTime("2021-01-01"),
+			OldestIndexedAt: &oldest,
+		}, nil)
+
 		got := commitFilter.FilterFrames(ctx, input, 1)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
@@ -73,10 +82,12 @@ func TestFilterFrames(t *testing.T) {
 			toTime("2020-07-01"), toTime("2020-08-01"), "111222333",
 		}}
 
+		oldest := toTime("2019-01-01") // sufficiently old to be before all of the inputs (non-relevant)
 		commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
-			RepoId:        1,
-			Enabled:       true,
-			LastIndexedAt: toTime("2021-01-01"),
+			RepoId:          1,
+			Enabled:         true,
+			LastIndexedAt:   toTime("2021-01-01"),
+			OldestIndexedAt: &oldest,
 		}, nil)
 
 		// The middle commit will actually be the first one to call Get
@@ -126,10 +137,12 @@ func TestFilterFrames(t *testing.T) {
 				toTime("2021-08-01"), toTime("2021-08-15"), "aug",
 			},
 		}
+		oldest := toTime("2019-01-01") // sufficiently old to be before all of the inputs (non-relevant)
 		commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
-			RepoId:        1,
-			Enabled:       true,
-			LastIndexedAt: toTime("2021-09-01"),
+			RepoId:          1,
+			Enabled:         true,
+			LastIndexedAt:   toTime("2021-09-01"),
+			OldestIndexedAt: &oldest,
 		}, nil)
 
 		commitStore.GetFunc.PushReturn([]CommitStamp{
@@ -173,16 +186,93 @@ func TestFilterFrames(t *testing.T) {
 			toTime("2020-07-01"), toTime("2020-08-01"), "111222333",
 		}}
 
+		oldest := toTime("2019-01-01") // sufficiently old to be before all of the inputs (non-relevant)
 		commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
-			RepoId:        1,
-			Enabled:       true,
-			LastIndexedAt: toTime("2020-06-02"),
+			RepoId:          1,
+			Enabled:         true,
+			LastIndexedAt:   toTime("2020-06-02"),
+			OldestIndexedAt: &oldest,
 		}, nil)
 
 		commitStore.GetFunc.PushReturn([]CommitStamp{}, nil)
 		got := commitFilter.FilterFrames(ctx, input, 1)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
+
+	t.Run("metadata indicates the index is empty (no commits are indexed)", func(t *testing.T) {
+		commitStore := NewMockCommitStore()
+		commitFilter.store = commitStore
+		input := []types.Frame{{
+			toTime("2020-05-01"), toTime("2020-06-01"), "abcdef",
+		}, {
+			toTime("2020-06-01"), toTime("2020-07-01"), "fedcba",
+		}, {
+			toTime("2020-07-01"), toTime("2020-08-01"), "111222333",
+		}}
+
+		commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+			RepoId:          1,
+			Enabled:         true,
+			LastIndexedAt:   toTime("2020-09-02"),
+			OldestIndexedAt: nil, // this means no commits are in the index!
+		}, nil)
+
+		got := commitFilter.FilterFrames(ctx, input, 1)
+		autogold.Want("metadata indicates the index is empty (no commits are indexed)", "[{ 2020-05-01 00:00:00 +0000 UTC []},{ 2020-06-01 00:00:00 +0000 UTC []},{ 2020-07-01 00:00:00 +0000 UTC []}]").Equal(t, planToString(got), autogold.ExportedOnly())
+	})
+
+	t.Run("not enough history is indexed (oldest is after all commits)", func(t *testing.T) {
+		commitStore := NewMockCommitStore()
+		commitFilter.store = commitStore
+		input := []types.Frame{{
+			toTime("2020-05-01"), toTime("2020-06-01"), "abcdef",
+		}, {
+			toTime("2020-06-01"), toTime("2020-07-01"), "fedcba",
+		}, {
+			toTime("2020-07-01"), toTime("2020-08-01"), "111222333",
+		}}
+
+		oldest := toTime("2020-07-02")
+		commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+			RepoId:          1,
+			Enabled:         true,
+			LastIndexedAt:   toTime("2020-09-02"),
+			OldestIndexedAt: &oldest,
+		}, nil)
+
+		got := commitFilter.FilterFrames(ctx, input, 1)
+		autogold.Want("not enough history is indexed (oldest is after all commits)", "[{ 2020-05-01 00:00:00 +0000 UTC []},{ 2020-06-01 00:00:00 +0000 UTC []},{ 2020-07-01 00:00:00 +0000 UTC []}]").Equal(t, planToString(got), autogold.ExportedOnly())
+	})
+
+	t.Run("not enough history is indexed (oldest is in the commit range)", func(t *testing.T) {
+		commitStore := NewMockCommitStore()
+		commitFilter.store = commitStore
+		// in this test we should be able to compress the last commit. The first will always add (it's the first),
+		// the second will fail to compress because the oldest commit falls inside the frame, the last commit
+		// should compress into the second recording.
+		input := []types.Frame{{
+			toTime("2020-05-01"), toTime("2020-06-01"), "abcdef",
+		}, {
+			toTime("2020-06-01"), toTime("2020-07-01"), "fedcba",
+		}, {
+			toTime("2020-07-01"), toTime("2020-08-01"), "111222333",
+		}}
+
+		oldest := toTime("2020-06-02")
+		commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+			RepoId:          1,
+			Enabled:         true,
+			LastIndexedAt:   toTime("2020-09-02"),
+			OldestIndexedAt: &oldest,
+		}, nil)
+
+		got := commitFilter.FilterFrames(ctx, input, 1)
+		autogold.Want("not enough history is indexed (oldest is in the commit range)", "[{ 2020-05-01 00:00:00 +0000 UTC []},{ 2020-06-01 00:00:00 +0000 UTC [2020-07-01 00:00:00 +0000 UTC]}]").Equal(t, planToString(got), autogold.ExportedOnly())
+	})
+}
+
+func planToString(plan BackfillPlan) string {
+	return fmt.Sprintf("%v", plan)
 }
 
 func toTime(date string) time.Time {
