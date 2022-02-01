@@ -21,6 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
+func WantsStatelessBuild() bool {
+	return os.Getenv("WANT_STATELESS") != ""
+}
+
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
 // main CI cases, which are defined in the main switch statement in the function.
 func GeneratePipeline(c Config) (*bk.Pipeline, error) {

@@ -2,7 +2,11 @@ package ci
 
 import "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 
-func cacheYarn() buildkite.StepOpt {
+func withYarnCache() buildkite.StepOpt {
+	if !WantsStatelessBuild() {
+		return nil
+	}
+
 	return buildkite.Cache(&buildkite.CacheOptions{
 		ID:          "node_modules",
 		Key:         "cache-node_modules-{{ checksum 'yarn.lock' }}",
