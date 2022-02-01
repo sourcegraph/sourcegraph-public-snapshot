@@ -250,6 +250,40 @@ func TestWrappedUp(t *testing.T) {
 		t.Fatalf("unexpected error setting initial version: %s", err)
 	}
 
+	// Seed a few migrations
+	for _, id := range []int{13, 14, 15} {
+		definition := definition.Definition{
+			ID:      id,
+			UpQuery: sqlf.Sprintf(`-- No-op`),
+		}
+		f := func() error {
+			return store.Up(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, true, f); err != nil {
+			t.Fatalf("unexpected error running migration: %s", err)
+		}
+	}
+
+	logs := []migrationLog{
+		{
+			Schema:  "test_migrations_table",
+			Version: 13,
+			Up:      true,
+			Success: boolPtr(true),
+		},
+		{
+			Schema:  "test_migrations_table",
+			Version: 14,
+			Up:      true,
+			Success: boolPtr(true),
+		}, {
+			Schema:  "test_migrations_table",
+			Version: 15,
+			Up:      true,
+			Success: boolPtr(true),
+		},
+	}
+
 	t.Run("success", func(t *testing.T) {
 		definition := definition.Definition{
 			ID: 16,
@@ -260,7 +294,6 @@ func TestWrappedUp(t *testing.T) {
 					seed_type text,
 					bark_type text
 				);
-
 				INSERT INTO test_trees VALUES
 					('oak', 'broad', 'regular', 'strong'),
 					('birch', 'narrow', 'regular', 'flaky'),
@@ -280,21 +313,14 @@ func TestWrappedUp(t *testing.T) {
 			t.Fatalf("migration query did not succeed; unexpected bark type. want=%s have=%s", "flaky", barkType)
 		}
 
-		// Version set to migration ID; not dirty
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 16 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 16, false, version, dirty, ok, err)
-		}
-
-		assertLogs(t, ctx, store, []migrationLog{
-			{
-				Schema:  "test_migrations_table",
-				Version: 16,
-				Up:      true,
-				Success: boolPtr(true),
-			},
+		logs = append(logs, migrationLog{
+			Schema:  "test_migrations_table",
+			Version: 16,
+			Up:      true,
+			Success: boolPtr(true),
 		})
-		assertVersions(t, ctx, store, []int{16}, nil, nil)
-		truncateLogs(t, ctx, store)
+		assertLogs(t, ctx, store, logs)
+		assertVersions(t, ctx, store, []int{13, 14, 15, 16}, nil, nil)
 	})
 
 	t.Run("query failure", func(t *testing.T) {
@@ -315,25 +341,18 @@ func TestWrappedUp(t *testing.T) {
 		f := func() error {
 			return store.Up(ctx, definition)
 		}
-		if err := store.WithMigrationLog(ctx, definition, true, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
+		if err := store.WithMigrationLog(ctx, definition, true, f); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 
-		// Version set to migration ID; dirty
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 17 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 17, true, version, dirty, ok, err)
-		}
-
-		assertLogs(t, ctx, store, []migrationLog{
-			{
-				Schema:  "test_migrations_table",
-				Version: 17,
-				Up:      true,
-				Success: boolPtr(false),
-			},
+		logs = append(logs, migrationLog{
+			Schema:  "test_migrations_table",
+			Version: 17,
+			Up:      true,
+			Success: boolPtr(false),
 		})
-		assertVersions(t, ctx, store, nil, nil, []int{17})
-		truncateLogs(t, ctx, store)
+		assertLogs(t, ctx, store, logs)
+		assertVersions(t, ctx, store, []int{13, 14, 15, 16}, nil, []int{17})
 	})
 }
 
@@ -374,6 +393,41 @@ func TestWrappedDown(t *testing.T) {
 		t.Fatalf("unexpected error inserting into test table: %s", err)
 	}
 
+	// Seed a few migrations
+	for _, id := range []int{12, 13, 14} {
+		definition := definition.Definition{
+			ID:      id,
+			UpQuery: sqlf.Sprintf(`-- No-op`),
+		}
+		f := func() error {
+			return store.Up(ctx, definition)
+		}
+		if err := store.WithMigrationLog(ctx, definition, true, f); err != nil {
+			t.Fatalf("unexpected error running migration: %s", err)
+		}
+	}
+
+	logs := []migrationLog{
+		{
+			Schema:  "test_migrations_table",
+			Version: 12,
+			Up:      true,
+			Success: boolPtr(true),
+		},
+		{
+			Schema:  "test_migrations_table",
+			Version: 13,
+			Up:      true,
+			Success: boolPtr(true),
+		},
+		{
+			Schema:  "test_migrations_table",
+			Version: 14,
+			Up:      true,
+			Success: boolPtr(true),
+		},
+	}
+
 	t.Run("success", func(t *testing.T) {
 		definition := definition.Definition{
 			ID: 14,
@@ -389,25 +443,18 @@ func TestWrappedDown(t *testing.T) {
 		}
 
 		// note: this query succeeded twice earlier
-		if err := store.Exec(ctx, testQuery); err == nil || !strings.HasPrefix(err.Error(), "SQL Error") {
+		if err := store.Exec(ctx, testQuery); err == nil || !strings.Contains(err.Error(), "SQL Error") {
 			t.Fatalf("migration query did not succeed; expected missing table. want=%q have=%q", "SQL Error", err)
 		}
 
-		// Version set to migration ID; not dirty
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 13 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 13, false, version, dirty, ok, err)
-		}
-
-		assertLogs(t, ctx, store, []migrationLog{
-			{
-				Schema:  "test_migrations_table",
-				Version: 14,
-				Up:      false,
-				Success: boolPtr(true),
-			},
+		logs = append(logs, migrationLog{
+			Schema:  "test_migrations_table",
+			Version: 14,
+			Up:      false,
+			Success: boolPtr(true),
 		})
-		assertVersions(t, ctx, store, nil, nil, nil)
-		truncateLogs(t, ctx, store)
+		assertLogs(t, ctx, store, logs)
+		assertVersions(t, ctx, store, []int{12, 13}, nil, nil)
 	})
 
 	t.Run("query failure", func(t *testing.T) {
@@ -423,25 +470,18 @@ func TestWrappedDown(t *testing.T) {
 		f := func() error {
 			return store.Down(ctx, definition)
 		}
-		if err := store.WithMigrationLog(ctx, definition, false, f); err == nil || !strings.HasPrefix(err.Error(), expectedErrorMessage) {
+		if err := store.WithMigrationLog(ctx, definition, false, f); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
 			t.Fatalf("unexpected error want=%q have=%q", expectedErrorMessage, err)
 		}
 
-		// Version set to migration ID; dirty
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 12 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 12, true, version, dirty, ok, err)
-		}
-
-		assertLogs(t, ctx, store, []migrationLog{
-			{
-				Schema:  "test_migrations_table",
-				Version: 13,
-				Up:      false,
-				Success: boolPtr(false),
-			},
+		logs = append(logs, migrationLog{
+			Schema:  "test_migrations_table",
+			Version: 13,
+			Up:      false,
+			Success: boolPtr(false),
 		})
-		assertVersions(t, ctx, store, nil, nil, []int{13})
-		truncateLogs(t, ctx, store)
+		assertLogs(t, ctx, store, logs)
+		assertVersions(t, ctx, store, []int{12}, nil, []int{13})
 	})
 }
 
