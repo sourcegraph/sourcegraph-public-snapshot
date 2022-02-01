@@ -45,6 +45,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -955,7 +956,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 
 	checker := authz.DefaultSubRepoPermsChecker
 	if authz.SubRepoEnabled(checker) {
-		job = run.NewSubRepoPermsFilterJob(job)
+		job = subrepoperms.NewSubRepoPermsFilterJob(job)
 	}
 
 	return job, nil
