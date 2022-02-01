@@ -177,7 +177,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	}
 
 	// Create file matches from partitioned symbols
-	matches := make([]result.Match, 0, len(symbolsByPath))
+	matches := make(result.Matches, 0, len(symbolsByPath))
 	for path, symbols := range symbolsByPath {
 		file := result.File{
 			Path:     path,
@@ -201,7 +201,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	}
 
 	// Make the results deterministic
-	sort.Sort(result.Matches(matches))
+	sort.Sort(matches)
 	return matches, err
 }
 

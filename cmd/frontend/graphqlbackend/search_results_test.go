@@ -565,121 +565,51 @@ func TestCompareSearchResults(t *testing.T) {
 	}
 
 	tests := []struct {
-		name              string
-		a                 *result.FileMatch
-		b                 *result.FileMatch
-		exactFilePatterns map[string]struct{}
-		aIsLess           bool
+		name    string
+		a       *result.FileMatch
+		b       *result.FileMatch
+		aIsLess bool
 	}{
 		{
-			name:              "prefer exact match",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           false,
+			name:    "alphabetical order",
+			a:       makeResult("arepo", "afile"),
+			b:       makeResult("arepo", "bfile"),
+			aIsLess: true,
 		},
 		{
-			name:              "reverse a and b",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("arepo", "afile"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
+			name:    "same length, different files",
+			a:       makeResult("arepo", "bfile"),
+			b:       makeResult("arepo", "afile"),
+			aIsLess: false,
 		},
 		{
-			name:              "alphabetical order if exactFilePatterns is empty",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "file"),
-			exactFilePatterns: map[string]struct{}{},
-			aIsLess:           true,
+			name:    "different repo, no exact patterns",
+			a:       makeResult("arepo", "file"),
+			b:       makeResult("brepo", "afile"),
+			aIsLess: true,
 		},
 		{
-			name:              "alphabetical order if exactFilePatterns is nil",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "bfile"),
-			exactFilePatterns: nil,
-			aIsLess:           true,
+			name:    "repo matches only",
+			a:       makeResult("arepo", ""),
+			b:       makeResult("brepo", ""),
+			aIsLess: true,
 		},
 		{
-			name:              "same length, different files",
-			a:                 makeResult("arepo", "bfile"),
-			b:                 makeResult("arepo", "afile"),
-			exactFilePatterns: nil,
-			aIsLess:           false,
+			name:    "repo match and file match, same repo",
+			a:       makeResult("arepo", "file"),
+			b:       makeResult("arepo", ""),
+			aIsLess: false,
 		},
 		{
-			name:              "exact matches with different length",
-			a:                 makeResult("arepo", "adir1/file"),
-			b:                 makeResult("arepo", "dir1/file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           false,
-		},
-		{
-			name:              "exact matches with same length",
-			a:                 makeResult("arepo", "dir2/file"),
-			b:                 makeResult("arepo", "dir1/file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           false,
-		},
-		{
-			name:              "no match",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "bfile"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
-		},
-		{
-			name:              "different repo, 1 exact match",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("brepo", "afile"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
-		},
-		{
-			name:              "different repo, no exact patterns",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("brepo", "afile"),
-			exactFilePatterns: nil,
-			aIsLess:           true,
-		},
-		{
-			name:              "different repo, 2 exact matches",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("brepo", "file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
-		},
-		{
-			name:              "repo matches only",
-			a:                 makeResult("arepo", ""),
-			b:                 makeResult("brepo", ""),
-			exactFilePatterns: nil,
-			aIsLess:           true,
-		},
-		{
-			name:              "repo match and file match, same repo",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("arepo", ""),
-			exactFilePatterns: nil,
-			aIsLess:           false,
-		},
-		{
-			name:              "repo match and file match, different repos",
-			a:                 makeResult("arepo", ""),
-			b:                 makeResult("brepo", "file"),
-			exactFilePatterns: nil,
-			aIsLess:           true,
-		},
-		{
-			name:              "prefer repo matches",
-			a:                 makeResult("arepo", ""),
-			b:                 makeResult("brepo", "file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
+			name:    "repo match and file match, different repos",
+			a:       makeResult("arepo", ""),
+			b:       makeResult("brepo", "file"),
+			aIsLess: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run("test", func(t *testing.T) {
-			if got := compareSearchResults(tt.a, tt.b, tt.exactFilePatterns); got != tt.aIsLess {
+			if got := tt.a.Key().Less(tt.b.Key()); got != tt.aIsLess {
 				t.Errorf("compareSearchResults() = %v, aIsLess %v", got, tt.aIsLess)
 			}
 		})
