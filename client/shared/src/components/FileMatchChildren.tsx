@@ -41,9 +41,14 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
+    /**
+     * Called when the file's search result is selected.
+     * If it is a line match, it is called
+     * with the index of the selected match.
+     */
+    onSelect: (index?: number) => void
 }
 
 /**
@@ -244,7 +249,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
      * text to be different from what is in the file/search result.
      */
     const navigateToFile = useCallback(
-        (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void => {
+        (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>, index: number): void => {
             // Testing for text selection is only necessary for mouse/click
             // events. Middle-click (event.button === 1) is already handled in the `onMouseUp` callback.
             if (
@@ -256,6 +261,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 const href = event.currentTarget.getAttribute('data-href')
                 if (!event.defaultPrevented && href) {
                     event.preventDefault()
+                    props.onSelect(index)
                     if (props.openInNewTab || event.ctrlKey || event.metaKey || event.shiftKey) {
                         openLinkInNewTab(href, event, 'primary')
                     } else {
@@ -264,7 +270,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 }
             }
         },
-        [props.openInNewTab, history]
+        [props.openInNewTab, props.onSelect, history]
     )
 
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
@@ -287,6 +293,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
                     {...openInNewTabProps}
+                    onClick={() => props.onSelect()}
                 >
                     <SymbolIcon kind={symbol.kind} className="mr-1" />
                     <code>
@@ -313,9 +320,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     styles.item,
                                     styles.itemClickable
                                 )}
-                                onClick={navigateToFile}
+                                onClick={event => navigateToFile(event, index)}
                                 onMouseUp={navigateToFileOnMiddleMouseButtonClick}
-                                onKeyDown={navigateToFile}
+                                onKeyDown={event => navigateToFile(event, index)}
                                 data-testid="file-match-children-item"
                                 tabIndex={0}
                                 role="link"

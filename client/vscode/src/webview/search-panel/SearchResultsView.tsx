@@ -215,6 +215,22 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         [platformContext.telemetryService]
     )
 
+    const onResultSelect = useCallback((result: SearchMatch, matchIndex?: number) => {
+        switch (result.type) {
+            case 'commit': {
+            }
+            case 'path': {
+            }
+            case 'repo': {
+            }
+            case 'symbol': {
+            }
+            case 'content': {
+            }
+        }
+        console.log('result selected!!', { result })
+    }, [])
+
     return (
         <div className={styles.resultsViewLayout}>
             {/* eslint-disable-next-line react/forbid-elements */}
@@ -318,6 +334,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     // In build, copy ui/assets/img folder to dist/
                     assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
                     ModalVideo={ModalVideo}
+                    onResultSelect={onResultSelect}
                 />
             </div>
         </div>
