@@ -49,7 +49,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 }
 
 // runSchema applies (or unapplies) the set of migrations required to fulfill the given operation. This
-// method will attempt to coordinate with with other concurrently running instances and may block while
+// method will attempt to coordinate with other concurrently running instances and may block while
 // attempting to acquire a lock. An error is returned only if user intervention is deemed a necessity,
 // the "dirty database" condition, or on context cancellation.
 func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, schemaContext schemaContext) error {

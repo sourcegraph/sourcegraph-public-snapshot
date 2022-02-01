@@ -54,11 +54,11 @@ func (s *memoryStore) Down(ctx context.Context, migration definition.Definition)
 	return s.exec(ctx, migration, migration.DownQuery)
 }
 
-func (s *memoryStore) WithMigrationLog(ctx context.Context, migration definition.Definition, up bool, f func() error) error {
+func (s *memoryStore) WithMigrationLog(_ context.Context, _ definition.Definition, _ bool, f func() error) error {
 	return f()
 }
 
-func (s *memoryStore) IndexStatus(ctx context.Context, tableName, indexName string) (storetypes.IndexStatus, bool, error) {
+func (s *memoryStore) IndexStatus(_ context.Context, _, _ string) (storetypes.IndexStatus, bool, error) {
 	return storetypes.IndexStatus{}, false, nil
 }
 

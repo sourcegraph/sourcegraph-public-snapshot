@@ -37,8 +37,8 @@ const downMigrationFileTemplate = `BEGIN;
 COMMIT;
 `
 
-// Add creates a new up/down migration file pair for the given database and returns the
-// names of the new files. If there was an error, the filesystem should remain unmodified.
+// Add creates a new directory with stub migration files in the given schema and returns the
+// names of the newly created files. If there was an error, the filesystem is rolled-back.
 func Add(database db.Database, migrationName string) (up, down, metadata string, _ error) {
 	fs, err := database.FS()
 	if err != nil {
