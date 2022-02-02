@@ -27,7 +27,7 @@ const PLATFORM_CONTEXT = {
 
 const codeInsightsBackend = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASCADE_MOCK, PLATFORM_CONTEXT)
 
-add('Page', () => (
+add('InsightsDashboardCreationPage', () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
         <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
     </CodeInsightsBackendContext.Provider>
