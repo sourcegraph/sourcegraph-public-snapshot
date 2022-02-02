@@ -18,6 +18,12 @@ func TestComputeRunType(t *testing.T) {
 		args args
 		want RunType
 	}{{
+		name: "pull request by default",
+		args: args{
+			branch: "some-random-feature-branch",
+		},
+		want: PullRequest,
+	}, {
 		name: "main",
 		args: args{
 			branch: "main",
