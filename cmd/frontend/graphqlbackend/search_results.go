@@ -985,7 +985,6 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 	operands := q.Pattern.(query.Operator).Operands
 
 	var (
-		err        error
 		result     *SearchResults
 		termResult *SearchResults
 	)
@@ -1020,14 +1019,15 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 	for {
 		q = q.MapCount(tryCount)
 		agg := streaming.NewAggregatingStream()
-		result, err = r.evaluatePatternExpression(ctx, agg, q.MapPattern(operands[0]))
+		alert, err := r.evaluatePatternExpression(ctx, agg, q.MapPattern(operands[0]))
 		if err != nil {
 			return nil, err
 		}
-		if result == nil {
-			return nil, nil
+		result = &SearchResults{
+			Matches: agg.Results,
+			Stats:   agg.Stats,
+			Alert:   alert,
 		}
-		result.Matches, result.Stats = agg.Results, agg.Stats
 
 		if len(result.Matches) == 0 {
 			// result might contain an alert.
@@ -1045,14 +1045,15 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 			}
 
 			termAgg := streaming.NewAggregatingStream()
-			termResult, err = r.evaluatePatternExpression(ctx, termAgg, q.MapPattern(term))
+			termAlert, err := r.evaluatePatternExpression(ctx, termAgg, q.MapPattern(term))
 			if err != nil {
 				return nil, err
 			}
-			if termResult == nil {
-				return nil, nil
+			termResult = &SearchResults{
+				Matches: termAgg.Results,
+				Stats:   termAgg.Stats,
+				Alert:   termAlert,
 			}
-			termResult.Matches, termResult.Stats = termAgg.Results, termAgg.Stats
 
 			if len(termResult.Matches) == 0 {
 				// termResult might contain an alert.
@@ -1119,11 +1120,15 @@ func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender
 			defer sem.Release(1)
 
 			agg := streaming.NewAggregatingStream()
-			new, err := r.evaluatePatternExpression(ctx, agg, q.MapPattern(term))
-			if err != nil || new == nil {
+			alert, err := r.evaluatePatternExpression(ctx, agg, q.MapPattern(term))
+			if err != nil {
 				return err
 			}
-			new.Matches, new.Stats = agg.Results, agg.Stats
+			new := &SearchResults{
+				Matches: agg.Results,
+				Stats:   agg.Stats,
+				Alert:   alert,
+			}
 
 			mu.Lock()
 			defer mu.Unlock()
@@ -1173,38 +1178,34 @@ func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
-func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
-			return &SearchResults{}, nil
+			return nil, nil
 		}
 
 		switch term.Kind {
 		case query.And:
-			alert, err := r.evaluateAnd(ctx, stream, q)
-			return &SearchResults{Alert: alert}, err
+			return r.evaluateAnd(ctx, stream, q)
 		case query.Or:
-			alert, err := r.evaluateOr(ctx, stream, q)
-			return &SearchResults{Alert: alert}, err
+			return r.evaluateOr(ctx, stream, q)
 		case query.Concat:
 			job, err := r.toSearchJob(q.ToParseTree())
 			if err != nil {
-				return &SearchResults{}, err
+				return nil, err
 			}
-			alert, err := r.evaluateJob(ctx, stream, job)
-			return &SearchResults{Alert: alert}, err
+			return r.evaluateJob(ctx, stream, job)
 		}
 	case query.Pattern:
 		job, err := r.toSearchJob(q.ToParseTree())
 		if err != nil {
-			return &SearchResults{}, err
+			return nil, err
 		}
-		alert, err := r.evaluateJob(ctx, stream, job)
-		return &SearchResults{Alert: alert}, err
+		return r.evaluateJob(ctx, stream, job)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
-		return &SearchResults{}, nil
+		return nil, nil
 	}
 	// Unreachable.
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
@@ -1220,7 +1221,8 @@ func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, 
 		alert, err := r.evaluateJob(ctx, stream, job)
 		return &SearchResults{Alert: alert}, err
 	}
-	return r.evaluatePatternExpression(ctx, stream, q)
+	alert, err := r.evaluatePatternExpression(ctx, stream, q)
+	return &SearchResults{Alert: alert}, err
 }
 
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
