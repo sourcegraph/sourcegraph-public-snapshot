@@ -1568,14 +1568,14 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	tr.LazyPrintf("job name: %s", job.Name())
 
 	start := time.Now()
-	agg := run.NewAggregator(stream)
-	err = job.Run(ctx, r.db, agg)
-	common, matchCount := agg.Get()
+	countingStream := streaming.NewResultCountingStream(stream)
+	statsObserver := streaming.NewStatsObservingStream(countingStream)
+	err = job.Run(ctx, r.db, statsObserver)
 
 	ao := alert.Observer{
 		Db:           r.db,
 		SearchInputs: r.SearchInputs,
-		HasResults:   matchCount > 0,
+		HasResults:   countingStream.Count() > 0,
 	}
 	if err != nil {
 		ao.Error(ctx, err)
@@ -1588,7 +1588,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	// progress notifications work, but this is the third attempt at trying to
 	// fix this behaviour so we are accepting that.
 	if errors.Is(err, context.DeadlineExceeded) {
-		if !common.Status.Any(search.RepoStatusTimedout) {
+		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
 			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
