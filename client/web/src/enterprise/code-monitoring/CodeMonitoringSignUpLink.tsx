@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button } from '@sourcegraph/wildcard'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -14,14 +14,13 @@ export const CodeMonitorSignUpLink: React.FunctionComponent<{
         eventLogger.log(eventName)
     }
     return (
-        <Button
+        <ButtonLink
             onClick={onClick}
-            href={buildGetStartedURL('code-monitoring', '/code-monitoring/new')}
+            to={buildGetStartedURL('code-monitoring', '/code-monitoring/new')}
             className={className}
             variant="primary"
-            as="a"
         >
             {text}
-        </Button>
+        </ButtonLink>
     )
 }

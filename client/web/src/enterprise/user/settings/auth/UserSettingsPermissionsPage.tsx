@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 
-import { Container, PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -35,9 +35,9 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{
                 description={
                     <>
                         Learn more about{' '}
-                        <a href="/help/admin/repo/permissions#background-permissions-syncing">
+                        <Link to="/help/admin/repo/permissions#background-permissions-syncing">
                             background permissions syncing
-                        </a>
+                        </Link>
                         .
                     </>
                 }

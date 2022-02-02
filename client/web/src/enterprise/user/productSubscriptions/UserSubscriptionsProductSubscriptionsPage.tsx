@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -82,7 +82,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 description={
                     <>
                         Contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
-                        <a href="https://about.sourcegraph.com/pricing">pricing</a> for more information.
+                        <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
                     </>
                 }
                 className="mb-3"

@@ -5,7 +5,7 @@ import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import { OnboardingTourLanguage, useOnboardingTourState } from '../stores/onboardingTourState'
 
@@ -100,15 +100,14 @@ const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryServic
                 on your private code.
             </p>
             <div className="d-flex flex-column">
-                <Button
+                <ButtonLink
                     className="align-self-start mb-2"
-                    href={buildGetStartedURL('onboarding-tour')}
+                    to={buildGetStartedURL('onboarding-tour')}
                     onClick={onGetStarted}
                     variant="primary"
-                    as="a"
                 >
                     Get started
-                </Button>
+                </ButtonLink>
                 <Button variant="link" size="sm" className="align-self-start text-left pl-0" onClick={restart}>
                     Restart
                 </Button>
