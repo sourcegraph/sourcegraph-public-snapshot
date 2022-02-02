@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { Select } from '@sourcegraph/wildcard'
 
 import styles from './NamespaceSelector.module.scss'
 
@@ -39,22 +40,18 @@ export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> 
     )
 
     return (
-        <div className="form-group">
-            <label className="text-nowrap mb-2" htmlFor={NAMESPACE_SELECTOR_ID}>
-                <strong>Namespace:</strong>
-            </label>
-            <select
-                className={classNames(styles.namespaceSelector, 'form-control')}
-                id={NAMESPACE_SELECTOR_ID}
-                value={selectedNamespace}
-                onChange={onSelectNamespace}
-            >
-                {namespaces.map(namespace => (
-                    <option key={namespace.id} value={namespace.id}>
-                        {getNamespaceDisplayName(namespace)}
-                    </option>
-                ))}
-            </select>
-        </div>
+        <Select
+            label={<strong className="text-nowrap mb-2">Namespace:</strong>}
+            selectClassName={classNames(styles.namespaceSelector, 'form-control')}
+            id={NAMESPACE_SELECTOR_ID}
+            value={selectedNamespace}
+            onChange={onSelectNamespace}
+        >
+            {namespaces.map(namespace => (
+                <option key={namespace.id} value={namespace.id}>
+                    {getNamespaceDisplayName(namespace)}
+                </option>
+            ))}
+        </Select>
     )
 }

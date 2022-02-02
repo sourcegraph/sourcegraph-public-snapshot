@@ -20,6 +20,10 @@ module.exports = {
           {
             forbid: [
               {
+                element: 'select',
+                message: 'Use the <Select /> component from @sourcegraph/wildcard instead.',
+              },
+              {
                 element: 'button',
                 message: 'Use the <Button /> component from @sourcegraph/wildcard instead.',
               },

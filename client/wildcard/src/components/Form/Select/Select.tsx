@@ -18,10 +18,14 @@ export type SelectProps = AccessibleFieldProps<React.SelectHTMLAttributes<HTMLSe
          * Optional size modifier to render a smaller or larger <select> variant
          */
         selectSize?: typeof SELECT_SIZES[number]
+        /* *
+         * Custom class name for select element.
+         */
+        selectClassName?: string
     }
 
 /**
- * Returns the Boostrap specific style to differentiate between native and custom <select> styles.
+ * Returns the Bootstrap specific style to differentiate between native and custom <select> styles.
  */
 export const getSelectStyles = ({
     isCustomStyle,
@@ -43,15 +47,15 @@ export const getSelectStyles = ({
  * Please note that this component takes <option> elements as children. This is to easily support advanced functionality such as usage of <optgroup>.
  */
 export const Select: React.FunctionComponent<SelectProps> = React.forwardRef(
-    ({ children, className, message, isValid, isCustomStyle, selectSize, ...props }, reference) => (
-        <div className="form-group">
+    ({ children, className, selectClassName, message, isValid, isCustomStyle, selectSize, ...props }, reference) => (
+        <div className={classNames('form-group', className)}>
             {'label' in props && <FormFieldLabel htmlFor={props.id}>{props.label}</FormFieldLabel>}
             <select
                 ref={reference}
                 className={classNames(
                     getSelectStyles({ isCustomStyle, selectSize }),
                     getValidStyle(isValid),
-                    className
+                    selectClassName
                 )}
                 {...props}
             >

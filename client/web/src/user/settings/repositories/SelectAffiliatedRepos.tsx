@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, S
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageSelector, RadioButton } from '@sourcegraph/wildcard'
+import { Container, PageSelector, RadioButton, Select } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
 import { useSteps } from '../../../auth/Steps'
@@ -350,8 +350,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         <div className="w-100 d-inline-flex justify-content-between flex-row mt-3">
             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                 <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
-                <select
-                    className="form-control"
+                <Select
                     name="code-host"
                     aria-label="select code host type"
                     onChange={event => setCodeHostFilter(event.target.value)}
@@ -360,7 +359,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     {externalServices?.map(value => (
                         <option key={value.id} value={value.id} label={value.displayName} />
                     ))}
-                </select>
+                </Select>
             </div>
             <FilterInput
                 className="form-control"

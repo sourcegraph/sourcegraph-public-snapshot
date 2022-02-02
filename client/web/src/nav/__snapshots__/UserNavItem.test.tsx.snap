@@ -90,25 +90,30 @@ exports[`UserNavItem simple 1`] = `
           >
             Theme
           </div>
-          <select
-            class="custom-select custom-select-sm test-theme-toggle"
+          <div
+            class="form-group mb-0 flex-1"
           >
-            <option
-              value="light"
+            <select
+              aria-label=""
+              class="custom-select custom-select-sm test-theme-toggle"
             >
-              Light
-            </option>
-            <option
-              value="dark"
-            >
-              Dark
-            </option>
-            <option
-              value="system"
-            >
-              System
-            </option>
-          </select>
+              <option
+                value="light"
+              >
+                Light
+              </option>
+              <option
+                value="dark"
+              >
+                Dark
+              </option>
+              <option
+                value="system"
+              >
+                System
+              </option>
+            </select>
+          </div>
         </div>
       </div>
       <div

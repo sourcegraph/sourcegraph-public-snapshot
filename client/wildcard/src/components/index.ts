@@ -28,7 +28,8 @@ export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReas
  * `export type` is required to avoid Webpack warnings.
  */
 export type { AlertProps, AlertLinkProps } from './Alert'
+export type { PopoverOpenEvent } from './Popover'
+export type { SelectProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
 export type { LinkProps } from './Link'
-export type { PopoverOpenEvent } from './Popover'
