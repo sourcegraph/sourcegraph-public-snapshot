@@ -1019,13 +1019,17 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 	var exhausted bool
 	for {
 		q = q.MapCount(tryCount)
-		result, err = r.evaluatePatternExpression(ctx, stream, q.MapPattern(operands[0]))
+		agg := streaming.NewAggregatingStream()
+		result, err = r.evaluatePatternExpression(ctx, agg, q.MapPattern(operands[0]))
 		if err != nil {
 			return nil, err
 		}
 		if result == nil {
 			return &SearchResults{}, nil
 		}
+		result.Matches = agg.Results
+		result.Stats = agg.Stats
+
 		if len(result.Matches) == 0 {
 			// result might contain an alert.
 			return result, nil
@@ -1041,13 +1045,17 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 			default:
 			}
 
-			termResult, err = r.evaluatePatternExpression(ctx, stream, q.MapPattern(term))
+			termAgg := streaming.NewAggregatingStream()
+			termResult, err = r.evaluatePatternExpression(ctx, termAgg, q.MapPattern(term))
 			if err != nil {
 				return nil, err
 			}
 			if termResult == nil {
 				return &SearchResults{}, nil
 			}
+			termResult.Matches = termAgg.Results
+			termResult.Stats = termAgg.Stats
+
 			if len(termResult.Matches) == 0 {
 				// termResult might contain an alert.
 				return termResult, nil
@@ -1069,7 +1077,14 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 			return alertToSearchResults(search.AlertForCappedAndExpression()), nil
 		}
 	}
+
 	result.Stats.IsLimitHit = !exhausted
+	if stream != nil {
+		stream.Send(streaming.SearchEvent{
+			Results: result.Matches,
+			Stats:   result.Stats,
+		})
+	}
 	return result, nil
 }
 
@@ -1108,10 +1123,13 @@ func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender
 
 			defer sem.Release(1)
 
-			new, err := r.evaluatePatternExpression(ctx, stream, q.MapPattern(term))
+			agg := streaming.NewAggregatingStream()
+			new, err := r.evaluatePatternExpression(ctx, agg, q.MapPattern(term))
 			if err != nil || new == nil {
 				return err
 			}
+			new.Matches = agg.Results
+			new.Stats = agg.Stats
 
 			mu.Lock()
 			defer mu.Unlock()
@@ -1153,11 +1171,20 @@ func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender
 		alert = alerts[0]
 	}
 
-	return &SearchResults{
+	sr := &SearchResults{
 		Matches: dedup.Results(),
 		Stats:   stats,
 		Alert:   alert,
-	}, nil
+	}
+
+	if stream != nil {
+		stream.Send(streaming.SearchEvent{
+			Results: sr.Matches,
+			Stats:   sr.Stats,
+		})
+	}
+
+	return sr, nil
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
@@ -1267,7 +1294,11 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	sr, err := r.resultsRecursive(ctx, nil, r.Plan)
+	agg := streaming.NewAggregatingStream()
+	sr, err := r.resultsRecursive(ctx, agg, r.Plan)
+	sr.Matches = agg.Results
+	sr.Stats = agg.Stats
+
 	srr := r.resultsToResolver(sr)
 	r.logBatch(ctx, srr, start, err)
 	return srr, err
@@ -1371,9 +1402,15 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.
 				if err != nil {
 					return nil, err
 				}
-				// Pass a nil stream for subqueries so we can use
-				// the results rather than sending them back to the caller
-				return r.resultsRecursive(ctx, nil, plan)
+
+				agg := streaming.NewAggregatingStream()
+				sr, err := r.resultsRecursive(ctx, agg, plan)
+				if err != nil {
+					return &SearchResults{}, err
+				}
+				sr.Matches = agg.Results
+				sr.Stats = agg.Stats
+				return sr, nil
 			})
 			if errors.Is(err, ErrPredicateNoResults) {
 				return nil
