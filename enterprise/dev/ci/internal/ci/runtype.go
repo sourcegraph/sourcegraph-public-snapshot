@@ -9,19 +9,20 @@ import (
 // RunType indicates the type of this run. Each CI pipeline can only be a single run type.
 type RunType int
 
-// RunTypes should be defined by order of precedence.
 const (
+	// RunTypes should be defined by order of precedence.
+
 	PullRequest RunType = iota // pull request build
 
-	// Browser extensions - must be first because they take precedence
+	// Nightly builds - must be first because they take precedence
 
+	BextNightly // browser extension nightly build
+
+	// Release branches
+
+	TaggedRelease     // semver-tagged release
+	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
-	BextNightly       // browser extension nightly build
-
-	// Releases
-
-	TaggedRelease // semver-tagged release
-	ReleaseBranch // release branch build
 
 	// Main branches
 
@@ -66,11 +67,6 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 // Matcher returns the requirements for a build to be considered of this RunType.
 func (t RunType) Matcher() *RunTypeMatcher {
 	switch t {
-	case BextReleaseBranch:
-		return &RunTypeMatcher{
-			Branch:      "bext/release",
-			BranchExact: true,
-		}
 	case BextNightly:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
@@ -86,6 +82,11 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch:       `^[0-9]+\.[0-9]+$`,
 			BranchRegexp: true,
+		}
+	case BextReleaseBranch:
+		return &RunTypeMatcher{
+			Branch:      "bext/release",
+			BranchExact: true,
 		}
 
 	case MainBranch:
@@ -127,27 +128,32 @@ func (t RunType) Matcher() *RunTypeMatcher {
 func (t RunType) String() string {
 	switch t {
 	case PullRequest:
-		return "PullRequest"
-	case MainBranch:
-		return "MainBranch"
-	case MainDryRun:
-		return "MainDryRun"
-	case TaggedRelease:
-		return "TaggedRelease"
-	case ReleaseBranch:
-		return "ReleaseBranch"
-	case BextReleaseBranch:
-		return "Browser Extension Release Build"
+		return "Pull request"
+
 	case BextNightly:
-		return "Browser Extension Nightly Release Build"
+		return "Browser extension nightly release build"
+
+	case TaggedRelease:
+		return "Tagged release"
+	case ReleaseBranch:
+		return "Release branch"
+	case BextReleaseBranch:
+		return "Browser extension release build"
+
+	case MainBranch:
+		return "Main branch"
+	case MainDryRun:
+		return "Main dry run"
+
 	case ImagePatch:
-		return "Patched Image"
+		return "Patch image"
 	case ImagePatchNoTest:
-		return "Patched image without testing"
+		return "Patch image without testing"
 	case CandidatesNoTest:
 		return "Build all candidates without testing"
 	case ExecutorPatchNoTest:
-		return "Build executor without test"
+		return "Build executor without testing"
+
 	case BackendIntegrationTests:
 		return "Backend integration tests"
 	}
