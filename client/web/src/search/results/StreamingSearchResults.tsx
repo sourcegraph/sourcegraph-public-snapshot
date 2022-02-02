@@ -33,6 +33,10 @@ import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
 import { OnboardingTourInfo } from '../../onboarding-tour/OnboardingTourInfo'
 import { BrowserExtensionAlert } from '../../repo/actions/BrowserExtensionAlert'
 import { IDEExtensionAlert } from '../../repo/actions/IdeExtensionAlert'
+import {
+    HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
+    HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY,
+} from '../../repo/actions/InstallIntegrationsAlert'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
@@ -93,11 +97,11 @@ function useCtaAlert(
         false
     )
     const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useLocalStorage<boolean>(
-        'StreamingSearchResults.hasDismissedBrowserExtensionAlert',
+        HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
         false
     )
     const [hasDismissedIDEExtensionAlert, setHasDismissedIDEExtensionAlert] = useLocalStorage<boolean>(
-        'StreamingSearchResults.hasDismissedIDEExtensionAlert',
+        HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY,
         false
     )
     const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)

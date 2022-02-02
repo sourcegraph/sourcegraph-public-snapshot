@@ -23,8 +23,8 @@ interface InstallIntegrationsAlertProps
 const CADENCE_KEY = 'InstallIntegrationsAlert.pageViews'
 const DISPLAY_CADENCE = 6
 const IDE_CTA_CADENCE_SHIFT = 3
-const HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY = 'hasDismissedBrowserExtensionAlert'
-const HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY = 'hasDismissedIdeExtensionAlert'
+export const HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY = 'hasDismissedBrowserExtensionAlert'
+export const HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY = 'hasDismissedIdeExtensionAlert'
 
 type CtaToDisplay = 'browser' | 'ide'
 
