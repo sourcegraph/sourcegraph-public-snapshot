@@ -43,8 +43,8 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
+import { CoolCodeIntel } from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalCodeIntel } from './global/GlobalCodeIntel'
 import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
 import styles from './Layout.module.scss'
@@ -299,7 +299,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
-            <GlobalCodeIntel
+            <CoolCodeIntel
                 {...props}
                 {...themeProps}
                 onHoverToken={onHoverToken}
