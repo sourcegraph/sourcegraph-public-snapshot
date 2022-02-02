@@ -71,32 +71,37 @@ const TestBackendInsight: React.FunctionComponent = () => (
     />
 )
 
-add('Backend Insight Card', () => (
-    <CodeInsightsBackendContext.Provider value={mockInsightAPI()}>
-        <TestBackendInsight />
-    </CodeInsightsBackendContext.Provider>
-))
-
-add('Backend Insight Card with delay API', () => (
-    <CodeInsightsBackendContext.Provider value={mockInsightAPI({ delayAmount: 2000 })}>
-        <TestBackendInsight />
-    </CodeInsightsBackendContext.Provider>
-))
-
-add('Backend Insight Card backfilling data', () => (
-    <CodeInsightsBackendContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: true })}>
-        <TestBackendInsight />
-    </CodeInsightsBackendContext.Provider>
-))
-
-add('Backend Insight Card no data', () => (
-    <CodeInsightsBackendContext.Provider value={mockInsightAPI({ hasData: false })}>
-        <TestBackendInsight />
-    </CodeInsightsBackendContext.Provider>
-))
-
-add('Backend Insight Card insight syncing', () => (
-    <CodeInsightsBackendContext.Provider value={mockInsightAPI({ throwProcessingError: true })}>
-        <TestBackendInsight />
-    </CodeInsightsBackendContext.Provider>
+add('BackendInsight', () => (
+    <section>
+        <article>
+            <h2>Card</h2>
+            <CodeInsightsBackendContext.Provider value={mockInsightAPI()}>
+                <TestBackendInsight />
+            </CodeInsightsBackendContext.Provider>
+        </article>
+        <article className="mt-3">
+            <h2>Card with delay API</h2>
+            <CodeInsightsBackendContext.Provider value={mockInsightAPI({ delayAmount: 2000 })}>
+                <TestBackendInsight />
+            </CodeInsightsBackendContext.Provider>
+        </article>
+        <article className="mt-3">
+            <h2>Card backfilling data</h2>
+            <CodeInsightsBackendContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: true })}>
+                <TestBackendInsight />
+            </CodeInsightsBackendContext.Provider>
+        </article>
+        <article className="mt-3">
+            <h2>Card no data</h2>
+            <CodeInsightsBackendContext.Provider value={mockInsightAPI({ hasData: false })}>
+                <TestBackendInsight />
+            </CodeInsightsBackendContext.Provider>
+        </article>
+        <article className="mt-3">
+            <h2>Card insight syncing</h2>
+            <CodeInsightsBackendContext.Provider value={mockInsightAPI({ throwProcessingError: true })}>
+                <TestBackendInsight />
+            </CodeInsightsBackendContext.Provider>
+        </article>
+    </section>
 ))
