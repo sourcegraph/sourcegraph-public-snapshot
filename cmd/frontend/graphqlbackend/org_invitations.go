@@ -60,6 +60,7 @@ type inviteUserToOrganizationResult struct {
 
 type orgInvitationClaims struct {
 	InvitationID int64 `json:"invite_ID"`
+	SenderID     int32 `json:"sender_id"`
 	jwt.StandardClaims
 }
 
@@ -73,13 +74,13 @@ func (r *schemaResolver) InvitationByJWT(ctx context.Context, args *struct {
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
+	if !orgInvitationConfigDefined() {
+		return nil, errors.Newf("signing key not provided, cannot validate JWT on invitation URL. Please add organizationInvitations signingKey to site configuration.")
+	}
 	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Validate the alg is what we expect
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.Newf("Unexpected signing method: %v", token.Header["alg"])
-		}
-		if !orgInvitationConfigDefined() {
-			return nil, errors.Newf("signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration.")
 		}
 
 		return []byte(conf.SiteConfig().OrganizationInvitations.SigningKey), nil
@@ -90,7 +91,7 @@ func (r *schemaResolver) InvitationByJWT(ctx context.Context, args *struct {
 	}
 
 	if claims, ok := token.Claims.(*orgInvitationClaims); ok && token.Valid {
-		invite, err := database.OrgInvitations(r.db).GetPendingByID(ctx, claims.InvitationID) //(ctx, r.db, claims.InvitationID)
+		invite, err := r.db.OrgInvitations().GetPendingByID(ctx, claims.InvitationID) //(ctx, r.db, claims.InvitationID)
 		if err != nil {
 			return nil, err
 		}
@@ -123,11 +124,11 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	}
 
 	// Create the invitation.
-	org, err := database.Orgs(r.db).GetByID(ctx, orgID)
+	org, err := r.db.Orgs().GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
-	sender, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	sender, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +136,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	if err != nil {
 		return nil, err
 	}
-	invitation, err := database.OrgInvitations(r.db).Create(ctx, orgID, sender.ID, recipient.ID)
+	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipient.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -191,14 +192,14 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 
 	// 🚨 SECURITY: This fails if the org invitation's recipient is not the one given (or if the
 	// invitation is otherwise invalid), so we do not need to separately perform that check.
-	orgID, err := database.OrgInvitations(r.db).Respond(ctx, id, a.UID, accept)
+	orgID, err := r.db.OrgInvitations().Respond(ctx, id, a.UID, accept)
 	if err != nil {
 		return nil, err
 	}
 
 	if accept {
 		// The recipient accepted the invitation.
-		if _, err := database.OrgMembers(r.db).Create(ctx, orgID, a.UID); err != nil {
+		if _, err := r.db.OrgMembers().Create(ctx, orgID, a.UID); err != nil {
 			return nil, err
 		}
 
@@ -240,15 +241,15 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 		return nil, errors.New("unable to send notification for invitation because sending emails is not enabled")
 	}
 
-	org, err := database.Orgs(r.db).GetByID(ctx, orgInvitation.v.OrgID)
+	org, err := r.db.Orgs().GetByID(ctx, orgInvitation.v.OrgID)
 	if err != nil {
 		return nil, err
 	}
-	sender, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	sender, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
-	recipientEmail, recipientEmailVerified, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, orgInvitation.v.RecipientUserID)
+	recipientEmail, recipientEmailVerified, err := r.db.UserEmails().GetPrimaryEmail(ctx, orgInvitation.v.RecipientUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +284,7 @@ func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args 
 		return nil, err
 	}
 
-	if err := database.OrgInvitations(r.db).Revoke(ctx, orgInvitation.v.ID); err != nil {
+	if err := r.db.OrgInvitations().Revoke(ctx, orgInvitation.v.ID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -323,7 +324,7 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipi
 	}
 	config := conf.SiteConfig().OrganizationInvitations
 
-	expiryTime := config.ExpiryTime
+	expiryTime := time.Duration(config.ExpiryTime)
 	if expiryTime == 0 {
 		expiryTime = 48 // default expiry time is 2 days
 	}
@@ -332,10 +333,11 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipi
 		StandardClaims: jwt.StandardClaims{
 			Audience:  aud,
 			Issuer:    globals.ExternalURL().String(),
-			ExpiresAt: time.Now().Add(time.Duration(config.ExpiryTime) * time.Hour).Unix(), // TODO: store expiry in DB
+			ExpiresAt: time.Now().Add(expiryTime * time.Hour).Unix(), // TODO: store expiry in DB
 			Subject:   strconv.FormatInt(int64(orgID), 10),
 		},
 		InvitationID: invitationID,
+		SenderID:     senderID,
 	})
 
 	// Sign and get the complete encoded token as a string using the secret

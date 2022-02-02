@@ -1219,7 +1219,9 @@ type OrganizationInvitations struct {
 	// SigningKey description: HMAC Signing key to sign a JWT token, which is attached to each invitation URL. Can be any string.
 	// More documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC
 	//
-	// If not provided, creating an invitation to an organization will fail with an error.
+	// If not provided, will fall back to legacy invitation to an organization.
+	//
+	// The legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.
 	SigningKey string `json:"signingKey"`
 }
 
