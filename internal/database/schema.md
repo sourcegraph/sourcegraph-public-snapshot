@@ -1605,24 +1605,33 @@ Foreign-key constraints:
 
 # Table "public.notebooks"
 ```
-     Column      |           Type           | Collation | Nullable |                                              Default                                              
------------------+--------------------------+-----------+----------+---------------------------------------------------------------------------------------------------
- id              | bigint                   |           | not null | nextval('notebooks_id_seq'::regclass)
- title           | text                     |           | not null | 
- blocks          | jsonb                    |           | not null | '[]'::jsonb
- public          | boolean                  |           | not null | 
- creator_user_id | integer                  |           |          | 
- created_at      | timestamp with time zone |           | not null | now()
- updated_at      | timestamp with time zone |           | not null | now()
- blocks_tsvector | tsvector                 |           |          | generated always as (jsonb_to_tsvector('english'::regconfig, blocks, '["string"]'::jsonb)) stored
+      Column       |           Type           | Collation | Nullable |                                              Default                                              
+-------------------+--------------------------+-----------+----------+---------------------------------------------------------------------------------------------------
+ id                | bigint                   |           | not null | nextval('notebooks_id_seq'::regclass)
+ title             | text                     |           | not null | 
+ blocks            | jsonb                    |           | not null | '[]'::jsonb
+ public            | boolean                  |           | not null | 
+ creator_user_id   | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ blocks_tsvector   | tsvector                 |           |          | generated always as (jsonb_to_tsvector('english'::regconfig, blocks, '["string"]'::jsonb)) stored
+ namespace_user_id | integer                  |           |          | 
+ namespace_org_id  | integer                  |           |          | 
+ updater_user_id   | integer                  |           |          | 
 Indexes:
     "notebooks_pkey" PRIMARY KEY, btree (id)
     "notebooks_blocks_tsvector_idx" gin (blocks_tsvector)
+    "notebooks_namespace_org_id_idx" btree (namespace_org_id)
+    "notebooks_namespace_user_id_idx" btree (namespace_user_id)
     "notebooks_title_trgm_idx" gin (title gin_trgm_ops)
 Check constraints:
     "blocks_is_array" CHECK (jsonb_typeof(blocks) = 'array'::text)
+    "notebooks_has_max_1_namespace" CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
     "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "notebooks_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE SET NULL DEFERRABLE
+    "notebooks_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "notebooks_updater_user_id_fkey" FOREIGN KEY (updater_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
     TABLE "notebook_stars" CONSTRAINT "notebook_stars_notebook_id_fkey" FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE
 
@@ -1736,6 +1745,7 @@ Referenced by:
     TABLE "external_services" CONSTRAINT "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "notebooks" CONSTRAINT "notebooks_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE SET NULL DEFERRABLE
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "org_stats" CONSTRAINT "org_stats_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
@@ -2437,6 +2447,8 @@ Referenced by:
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "notebook_stars" CONSTRAINT "notebook_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "notebooks" CONSTRAINT "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "notebooks" CONSTRAINT "notebooks_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "notebooks" CONSTRAINT "notebooks_updater_user_id_fkey" FOREIGN KEY (updater_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
