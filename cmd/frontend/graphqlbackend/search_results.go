@@ -1079,13 +1079,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 	}
 
 	result.Stats.IsLimitHit = !exhausted
-	if stream != nil {
-		stream.Send(streaming.SearchEvent{
-			Results: result.Matches,
-			Stats:   result.Stats,
-		})
-	}
-	return result, nil
+	stream.Send(streaming.SearchEvent{
+		Results: result.Matches,
+		Stats:   result.Stats,
+	})
+	return &SearchResults{Alert: result.Alert}, nil
 }
 
 // evaluateOr performs set union on result sets. It collects results for all
@@ -1171,20 +1169,12 @@ func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender
 		alert = alerts[0]
 	}
 
-	sr := &SearchResults{
-		Matches: dedup.Results(),
+	stream.Send(streaming.SearchEvent{
+		Results: dedup.Results(),
 		Stats:   stats,
-		Alert:   alert,
-	}
+	})
 
-	if stream != nil {
-		stream.Send(streaming.SearchEvent{
-			Results: sr.Matches,
-			Stats:   sr.Stats,
-		})
-	}
-
-	return sr, nil
+	return &SearchResults{Alert: alert}, nil
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
