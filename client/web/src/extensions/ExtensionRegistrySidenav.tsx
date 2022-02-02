@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
@@ -119,14 +119,14 @@ const ExtensionSidenavBanner: React.FunctionComponent = () => (
         <h4 className="mt-2 font-weight-bold">Create custom extensions!</h4>
         <small>
             You can improve your workflow by creating custom extensions. See{' '}
-            <a
-                href="https://docs.sourcegraph.com/extensions/authoring"
+            <Link
+                to="https://docs.sourcegraph.com/extensions/authoring"
                 // eslint-disable-next-line react/jsx-no-target-blank
                 target="_blank"
                 rel="noreferrer"
             >
                 Sourcegraph Docs
-            </a>{' '}
+            </Link>{' '}
             for details about writing and publishing.
         </small>
     </div>

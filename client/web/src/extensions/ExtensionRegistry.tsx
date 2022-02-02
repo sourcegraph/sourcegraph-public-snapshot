@@ -12,7 +12,7 @@ import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { AlertLink, useLocalStorage, useEventObservable, Alert } from '@sourcegraph/wildcard'
+import { AlertLink, useLocalStorage, useEventObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import {
@@ -388,18 +388,22 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 <hr className="mt-5" />
                                 <div className="my-4 justify-content-center">
                                     You may use the Sourcegraph.com extension registry only with Sourcegraph{' '}
-                                    <a href="https://about.sourcegraph.com/pricing/">
+                                    <Link to="https://about.sourcegraph.com/pricing/">
                                         self-hosted or managed instances
-                                    </a>
-                                    , <a href="http://sourcegraph.com/">Sourcegraph.com</a>, and Sourcegraph's{' '}
-                                    <a href="https://docs.sourcegraph.com/integration/browser_extension">
+                                    </Link>
+                                    , <Link to="http://sourcegraph.com/">Sourcegraph.com</Link>, and Sourcegraph's{' '}
+                                    <Link to="https://docs.sourcegraph.com/integration/browser_extension">
                                         browser extensions
-                                    </a>{' '}
+                                    </Link>{' '}
                                     and{' '}
-                                    <a href="https://docs.sourcegraph.com/integration/editor">editor integrations</a>.
-                                    You may not use the Sourcegraph.com extension registry with Sourcegraph OSS. Learn
+                                    <Link to="https://docs.sourcegraph.com/integration/editor">
+                                        editor integrations
+                                    </Link>
+                                    . You may not use the Sourcegraph.com extension registry with Sourcegraph OSS. Learn
                                     more about the Sourcegraph.com extension registry and administration options in our{' '}
-                                    <a href="https://docs.sourcegraph.com/admin/extensions">extensions documentation</a>
+                                    <Link to="https://docs.sourcegraph.com/admin/extensions">
+                                        extensions documentation
+                                    </Link>
                                     .
                                 </div>
                             </>

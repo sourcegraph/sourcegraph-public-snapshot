@@ -1,7 +1,7 @@
 import { gql, useMutation } from '@apollo/client'
 import React, { useCallback, useState } from 'react'
 
-import { Alert } from '@sourcegraph/wildcard'
+import { Link, Alert, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 
@@ -54,13 +54,13 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                             <label className="form-check-label">
                                 <input type="checkbox" className="form-check-input" onChange={onAgreeChanged} /> I agree
                                 to Sourcegraph's{' '}
-                                <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                                <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
                                     Terms of Service
-                                </a>{' '}
+                                </Link>{' '}
                                 and{' '}
-                                <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                                <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
                                     Privacy Policy
-                                </a>{' '}
+                                </Link>{' '}
                                 (required)
                             </label>
                         </div>
@@ -75,8 +75,8 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                     />
                 </form>
                 <p className="mt-5">
-                    If you do not agree, <a href="/-/sign-out">sign out</a> and contact your site admin to have your
-                    account deleted.
+                    If you do not agree, <AnchorLink to="/-/sign-out">sign out</AnchorLink> and contact your site admin
+                    to have your account deleted.
                 </p>
                 {error && (
                     <Alert className="mt-4" variant="danger">

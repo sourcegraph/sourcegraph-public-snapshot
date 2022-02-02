@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Button, Card } from '@sourcegraph/wildcard'
+import { Button, Card, Link } from '@sourcegraph/wildcard'
 
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
@@ -189,13 +189,13 @@ const QueryFieldDescription: React.FunctionComponent<{ isSearchQueryDisabled: bo
             <>
                 We don't yet allow editing queries for insights over all repos. To change the query, make a new insight.
                 This is a known{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                <Link
+                    to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     beta limitation
-                </a>
+                </Link>
             </>
         )}
     </span>
