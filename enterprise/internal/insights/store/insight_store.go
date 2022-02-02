@@ -121,12 +121,21 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		limit = sqlf.Sprintf("LIMIT %d", args.Limit)
 	}
 
-	q := sqlf.Sprintf(getInsightsVisibleToUserSql,
+	q := sqlf.Sprintf(getInsightIdsVisibleToUserSql,
 		visibleDashboardsQuery(args.UserID, args.OrgID),
 		visibleViewsQuery(args.UserID, args.OrgID),
 		sqlf.Join(preds, "AND"),
 		limit)
+	insightIds, err := scanInsightViewIds(s.Query(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+	insightIdElems := make([]*sqlf.Query, 0, len(insightIds))
+	for _, id := range insightIds {
+		insightIdElems = append(insightIdElems, sqlf.Sprintf("%s", id))
+	}
 
+	q = sqlf.Sprintf(getInsightsWithSeriesSql, sqlf.Join(insightIdElems, ","))
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -221,7 +230,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	}
 
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].ViewID < results[j].ViewID
+		return results[i].UniqueID < results[j].UniqueID
 	})
 	return results
 }
@@ -376,6 +385,25 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			return []types.InsightSeries{}, err
 		}
 		results = append(results, temp)
+	}
+	return results, nil
+}
+
+func scanInsightViewIds(rows *sql.Rows, queryErr error) (_ []string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]string, 0)
+	for rows.Next() {
+		var temp types.InsightViewSeries
+		if err := rows.Scan(
+			&temp.UniqueID,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, temp.UniqueID)
 	}
 	return results, nil
 }
@@ -863,7 +891,22 @@ from insight_series
 WHERE %s
 `
 
-const getInsightsVisibleToUserSql = `
+const getInsightIdsVisibleToUserSql = `
+SELECT DISTINCT iv.unique_id
+FROM insight_view iv
+JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
+JOIN insight_series i ON ivs.insight_series_id = i.id
+WHERE (iv.id IN (SELECT insight_view_id
+			 FROM dashboard db
+			 JOIN dashboard_insight_view div ON db.id = div.dashboard_id
+				 WHERE deleted_at IS NULL AND db.id IN (%s))
+   OR iv.id IN (%s))
+AND %s
+ORDER BY iv.unique_id
+%s
+`
+
+const getInsightsWithSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetAllInsights
 SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
@@ -871,22 +914,10 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
 FROM insight_view iv
-JOIN (
-	SELECT DISTINCT iv.unique_id
-	FROM insight_view iv
-	JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
-	JOIN insight_series i ON ivs.insight_series_id = i.id
-	WHERE (iv.id IN (SELECT insight_view_id
-				 FROM dashboard db
-				 JOIN dashboard_insight_view div ON db.id = div.dashboard_id
-					 WHERE deleted_at IS NULL AND db.id IN (%s))
-	   OR iv.id IN (%s))
-	AND %s
-	ORDER BY iv.unique_id
-	%s
-) permissions on permissions.unique_id = iv.unique_id
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
-JOIN insight_series i ON ivs.insight_series_id = i.id;
+JOIN insight_series i ON ivs.insight_series_id = i.id
+WHERE iv.unique_id IN (%s)
+ORDER BY iv.unique_id
 `
 
 const countSeriesReferencesSql = `
