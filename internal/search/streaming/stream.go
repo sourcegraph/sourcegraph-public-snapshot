@@ -132,18 +132,14 @@ func NewAggregatingStream() *aggregatingStream {
 
 type aggregatingStream struct {
 	sync.Mutex
-	event SearchEvent
+	SearchEvent
 }
 
 func (c *aggregatingStream) Send(event SearchEvent) {
 	c.Lock()
-	c.event.Results = append(c.event.Results, event.Results...)
-	c.event.Stats.Update(&event.Stats)
+	c.Results = append(c.Results, event.Results...)
+	c.Stats.Update(&event.Stats)
 	c.Unlock()
-}
-
-func (c *aggregatingStream) Get() SearchEvent {
-	return c.event
 }
 
 func NewNullStream() Sender {

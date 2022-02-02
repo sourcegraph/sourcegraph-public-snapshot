@@ -71,13 +71,12 @@ func SearchFilesInRepos(ctx context.Context, zoektArgs zoektutil.IndexedSearchRe
 func SearchFilesInReposBatch(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, searcherOnly bool) ([]*result.FileMatch, streaming.Stats, error) {
 	agg := streaming.NewAggregatingStream()
 	err := SearchFilesInRepos(ctx, zoektArgs, searcherArgs, searcherOnly, agg)
-	event := agg.Get()
 
-	fms, fmErr := matchesToFileMatches(event.Results)
+	fms, fmErr := matchesToFileMatches(agg.Results)
 	if fmErr != nil && err == nil {
 		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
 	}
-	return fms, event.Stats, err
+	return fms, agg.Stats, err
 }
 
 var mockSearchFilesInRepo func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error)

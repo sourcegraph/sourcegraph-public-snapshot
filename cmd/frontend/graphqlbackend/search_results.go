@@ -1751,8 +1751,8 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err // do not cache errors.
 		}
 		v = r.resultsToResolver(&SearchResults{
-			Matches: agg.Get().Results,
-			Stats:   agg.Get().Stats,
+			Matches: agg.Results,
+			Stats:   agg.Stats,
 		})
 		if v.MatchCount() > 0 {
 			break
