@@ -84,6 +84,21 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 	}
 
 	callback := func(schemaVersion schemaVersion) error {
+		if !upgradingToLatest {
+			// Check if another instance changed the schema version before we acquired the
+			// lock. If we're not migrating to the latest schema, concurrent migrations may
+			// have unexpected behavior. We'll early exit here.
+			if schemaVersion.version != schemaContext.initialSchemaVersion.version {
+				return errMigrationContention
+			}
+		}
+		if schemaVersion.dirty {
+			// The store layer will refuse to alter a dirty database. We'll return an error
+			// here instead of from the store as we can provide a bit instruction to the user
+			// at this point.
+			return errDirtyDatabase
+		}
+
 		targetVersion := operation.TargetVersion
 		gatherDefinitions := schemaContext.schema.Definitions.UpTo
 		if operation.Type != MigrationOperationTypeTargetedUp {
