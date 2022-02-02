@@ -8,7 +8,6 @@ import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { HoveredToken } from '@sourcegraph/codeintellify'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
@@ -25,6 +24,7 @@ import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
 import { toTreeURL } from '../../util/url'
@@ -59,7 +59,8 @@ interface Props
         BreadcrumbSetters,
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        GlobalCoolCodeIntelProps {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
@@ -68,7 +69,6 @@ interface Props
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     repoUrl: string
-    onHoverToken: (hoverToken: HoveredToken) => void
 }
 
 export const BlobPage: React.FunctionComponent<Props> = props => {
@@ -358,8 +358,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     isLightTheme={isLightTheme}
                     telemetryService={props.telemetryService}
                     location={props.location}
-                    onHoverToken={props.onHoverToken}
                     disableStatusBar={false}
+                    onTokenClick={props.onTokenClick}
+                    coolCodeIntelEnabled={props.coolCodeIntelEnabled}
                 />
             )}
         </>

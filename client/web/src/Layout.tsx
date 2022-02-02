@@ -3,7 +3,6 @@ import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-r
 import { Observable } from 'rxjs'
 
 import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
-import { HoveredToken } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
@@ -20,13 +19,7 @@ import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/que
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
-import {
-    FileSpec,
-    parseQueryAndHash,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
-} from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
@@ -43,7 +36,7 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
-import { CoolCodeIntel } from './global/CoolCodeIntel'
+import { CoolCodeIntel, CoolHoveredToken, isCoolCodeIntelEnabled } from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
@@ -196,9 +189,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     //     setTosAccepted(true)
     // }, [])
 
-    const [hoveredToken, onHoverToken] = useState<
-        HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
-    >()
+    // Experimental reference panel
+    const [clickedToken, onTokenClick] = useState<CoolHoveredToken>()
+    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -219,7 +212,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform,
-        onHoverToken,
+        // Experimental reference panel
+        coolCodeIntelEnabled,
+        onTokenClick: coolCodeIntelEnabled ? onTokenClick : undefined,
     }
 
     return (
@@ -302,9 +297,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <CoolCodeIntel
                 {...props}
                 {...themeProps}
-                onHoverToken={onHoverToken}
-                hoveredToken={hoveredToken}
-                showPanel={true}
+                coolCodeIntelEnabled={coolCodeIntelEnabled}
+                onTokenClick={onTokenClick}
+                hoveredToken={clickedToken}
             />
         </div>
     )

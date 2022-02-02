@@ -28,6 +28,7 @@ export interface Settings {
         fuzzyFinder?: boolean
         fuzzyFinderCaseInsensitiveFileCountThreshold?: number
         clientSearchResultRanking?: string
+        coolCodeIntel?: boolean
     }
     [key: string]: any
 
