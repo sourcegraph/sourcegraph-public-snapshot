@@ -43,7 +43,6 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
               <button
                 aria-label="Close"
                 class="btn btnIcon"
-                data-dismiss="modal"
                 type="button"
               >
                 <svg

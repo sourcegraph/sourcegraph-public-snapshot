@@ -13,6 +13,7 @@ import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
+
 type CodeMonitorFilter = 'all' | 'user'
 
 interface CodeMonitorListProps
@@ -116,7 +117,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                 </div>
             </div>
             <div className="mt-5">
-                We want to hear your feedback! <a href="mailto:feedback@sourcegraph.com">Share your thoughts</a>
+                We want to hear your feedback! <Link to="mailto:feedback@sourcegraph.com">Share your thoughts</Link>
             </div>
         </>
     )

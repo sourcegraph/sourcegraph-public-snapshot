@@ -3,6 +3,6 @@
     padding: 0;
 }
 .alert-danger-icon {
-    // To overide secondary icon fill color
+    // To overide secondary icon fill color, can be removed within DropdownToggle migrations.
     fill: var(--danger) !important;
 }
