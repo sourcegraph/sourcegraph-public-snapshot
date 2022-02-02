@@ -977,7 +977,7 @@ func intersect(left, right *SearchResults) *SearchResults {
 // and likely yields fewer than N results). If the intersection does not yield N
 // results, and is not exhaustive for every expression, we rerun the search by
 // doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
 	start := time.Now()
 
 	// Invariant: this function is only reachable from callers that
@@ -1025,13 +1025,13 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 			return nil, err
 		}
 		if result == nil {
-			return &SearchResults{}, nil
+			return nil, nil
 		}
 		result.Matches, result.Stats = agg.Results, agg.Stats
 
 		if len(result.Matches) == 0 {
 			// result might contain an alert.
-			return result, nil
+			return result.Alert, nil
 		}
 		exhausted = !result.Stats.IsLimitHit
 		for _, term := range operands[1:] {
@@ -1040,7 +1040,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertToSearchResults(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)), nil
+				return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
 			default:
 			}
 
@@ -1050,13 +1050,13 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 				return nil, err
 			}
 			if termResult == nil {
-				return &SearchResults{}, nil
+				return nil, nil
 			}
 			termResult.Matches, termResult.Stats = termAgg.Results, termAgg.Stats
 
 			if len(termResult.Matches) == 0 {
 				// termResult might contain an alert.
-				return termResult, nil
+				return termResult.Alert, nil
 			}
 			exhausted = exhausted && !termResult.Stats.IsLimitHit
 			result = intersect(result, termResult)
@@ -1072,7 +1072,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertToSearchResults(search.AlertForCappedAndExpression()), nil
+			return search.AlertForCappedAndExpression(), nil
 		}
 	}
 	result.Stats.IsLimitHit = !exhausted
@@ -1080,7 +1080,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 		Results: result.Matches,
 		Stats:   result.Stats,
 	})
-	return result, nil
+	return result.Alert, nil
 }
 
 // evaluateOr performs set union on result sets. It collects results for all
@@ -1188,7 +1188,8 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream s
 
 		switch term.Kind {
 		case query.And:
-			return r.evaluateAnd(ctx, stream, q)
+			alert, err := r.evaluateAnd(ctx, stream, q)
+			return &SearchResults{Alert: alert}, err
 		case query.Or:
 			return r.evaluateOr(ctx, stream, q)
 		case query.Concat:
