@@ -44,10 +44,9 @@ const (
 )
 
 func computeRunType(tag, branch string, env map[string]string) RunType {
-	for rt := PullRequest + 1; rt < None; rt += 1 {
-		reqs := rt.Matcher()
-		if reqs.Matches(tag, branch, env) {
-			return rt
+	for runType := PullRequest + 1; runType < None; runType += 1 {
+		if runType.Matcher().Matches(tag, branch, env) {
+			return runType
 		}
 	}
 	// RunType is PullRequest by default
