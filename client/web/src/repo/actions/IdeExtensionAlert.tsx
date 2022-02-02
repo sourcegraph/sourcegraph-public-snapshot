@@ -22,7 +22,7 @@ export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, o
             cta={{
                 label: 'Learn more about IDE extensions',
                 href:
-                    'https://docs.sourcegraph.com/integration/editor?utm_medium=inproduct&utm_source=search&utm_campaign=inproduct-cta&utm_term=null',
+                    'https://docs.sourcegraph.com/integration/editor?utm_medium=inproduct&utm_source=search-results&utm_campaign=inproduct-cta&utm_term=null',
                 onClick: onIDEExtensionClick,
             }}
             icon={
