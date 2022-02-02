@@ -77,6 +77,10 @@ func TestSearch(t *testing.T) {
 		testListingSearchContexts(t, client)
 	})
 
+	t.Run("code monitors", func(t *testing.T) {
+		testCodeMonitors(t, client)
+	})
+
 	t.Run("graphql", func(t *testing.T) {
 		testSearchClient(t, client)
 	})
@@ -1492,4 +1496,58 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	if resultSecondPage.Nodes[0].Spec != "SearchContext4" {
 		t.Fatalf("expected second page search context spec to be SearchContext4, got %s", resultSecondPage.Nodes[0].Spec)
 	}
+}
+
+func testCodeMonitors(t *testing.T, client *gqltestutil.Client) {
+	repo1, err := client.Repository("github.com/sgtest/java-langserver")
+	require.NoError(t, err)
+	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+	require.NoError(t, err)
+
+	// Create a code monitor
+	scName := "TestCodeMonitorAuth" + strconv.Itoa(int(rand.Int31()))
+	scID, err := client.CreateSearchContext(
+		gqltestutil.CreateSearchContextInput{Name: scName, Description: "test description", Public: true},
+		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+			{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+		},
+	)
+	require.NoError(t, err)
+	defer client.DeleteSearchContext(scID)
+
+	// Retrieve the search context and check that it has the correct fields
+	resultContext, err := client.GetSearchContext(scID)
+	require.NoError(t, err)
+	require.Equal(t, scName, resultContext.Spec)
+	require.Equal(t, "test description", resultContext.Description)
+
+	// Update the search context
+	updatedSCName := "TestUpdated" + strconv.Itoa(int(rand.Int31()))
+	scID, err = client.UpdateSearchContext(
+		scID,
+		gqltestutil.UpdateSearchContextInput{
+			Name:        updatedSCName,
+			Public:      false,
+			Description: "Updated description",
+		},
+		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+		},
+	)
+	require.NoError(t, err)
+
+	// Retrieve the search context and check that it has the updated fields
+	resultContext, err = client.GetSearchContext(scID)
+	require.NoError(t, err)
+	require.Equal(t, updatedSCName, resultContext.Spec)
+	require.Equal(t, "Updated description", resultContext.Description)
+
+	// Delete the context
+	err = client.DeleteSearchContext(scID)
+	require.NoError(t, err)
+
+	// Check that retrieving the deleted search context fails
+	_, err = client.GetSearchContext(scID)
+	require.Error(t, err)
 }
