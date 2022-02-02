@@ -4,7 +4,8 @@ import { catchError, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { CreateNotebookBlockInput } from '../../graphql-operations'
@@ -26,7 +27,7 @@ function deserializeBlocks(serializedBlocks: string): CreateNotebookBlockInput[]
     })
 }
 
-export const CreateNotebookPage: React.FunctionComponent = () => {
+export const CreateNotebookPage: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
     const notebookOrError = useObservable(
         useMemo(() => {
             const serializedBlocks = location.hash.trim().slice(1)
@@ -39,6 +40,7 @@ export const CreateNotebookPage: React.FunctionComponent = () => {
     )
 
     if (notebookOrError && !isErrorLike(notebookOrError) && notebookOrError !== LOADING) {
+        telemetryService.log('SearchNotebookCreated')
         return <Redirect to={PageRoutes.Notebook.replace(':id', notebookOrError.id)} />
     }
 
@@ -50,9 +52,9 @@ export const CreateNotebookPage: React.FunctionComponent = () => {
                 </div>
             )}
             {isErrorLike(notebookOrError) && (
-                <div className="alert alert-danger">
+                <Alert variant="danger">
                     Error while creating the notebook: <strong>{notebookOrError.message}</strong>
-                </div>
+                </Alert>
             )}
         </Page>
     )

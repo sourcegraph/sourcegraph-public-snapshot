@@ -5,6 +5,7 @@ import sinon from 'sinon'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
+import { PlatformContext } from '../platform/context'
 import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
 
 export const RESULT: ContentMatch = {
@@ -320,4 +321,8 @@ export const extensionsController: Controller = {
     ),
     commandErrors: EMPTY,
     unsubscribe: noop,
+}
+
+export const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'requestGraphQL'> = {
+    requestGraphQL: () => EMPTY,
 }

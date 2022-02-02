@@ -4,17 +4,24 @@ import { Form } from 'reactstrap'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
+import {
+    SearchContextInputProps,
+    CaseSensitivityProps,
+    SearchPatternTypeProps,
+    SubmitSearchParameters,
+    canSubmitSearch,
+} from '@sourcegraph/search'
+import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
-import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { Settings } from '../../schema/settings.schema'
 import {
     useExperimentalFeatures,
     useNavbarQueryState,
@@ -22,8 +29,7 @@ import {
     setSearchPatternType,
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
-import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
-import { SearchBox } from '../input/SearchBox'
+import { submitSearch } from '../helpers'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
 
@@ -36,7 +42,7 @@ interface Props
         ActivationProps,
         KeyboardShortcutsProps,
         TelemetryProps,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps {
     authenticatedUser: AuthenticatedUser | null
@@ -146,6 +152,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
                         autoFocus={props.showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
+                        isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />

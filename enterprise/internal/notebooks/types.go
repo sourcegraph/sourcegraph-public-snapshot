@@ -54,3 +54,9 @@ type Notebook struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
+
+type NotebookStar struct {
+	NotebookID int64
+	UserID     int32
+	CreatedAt  time.Time
+}

@@ -1,8 +1,7 @@
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps/context'
@@ -40,11 +39,11 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
                     </Button>
                 )}
                 <LoaderButton
-                    type="button"
                     alwaysShowLabel={true}
                     label={currentStep.isLastStep ? 'Start searching' : 'Continue'}
-                    className="btn btn-primary float-right ml-2"
+                    className="float-right ml-2"
                     disabled={!currentStep.isComplete}
+                    variant="primary"
                     onClick={event => {
                         if (currentStep.isLastStep) {
                             onFinish(event, { eventName: 'StartSearching_Clicked' })

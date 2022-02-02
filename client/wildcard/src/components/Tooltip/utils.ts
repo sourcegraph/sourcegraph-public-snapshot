@@ -6,43 +6,24 @@ import styles from './Tooltip.module.scss'
 /**
  * Find the nearest ancestor element to e that contains a tooltip.
  */
-export const getSubject = (element: HTMLElement | null): HTMLElement | undefined => {
-    while (element) {
-        if (element === document.body) {
-            break
-        }
-        if (element.hasAttribute(Tooltip.SUBJECT_ATTRIBUTE)) {
-            // If e is not actually attached to the DOM, then abort.
-            if (!document.body.contains(element)) {
-                return undefined
-            }
-            return element
-        }
-        element = element.parentElement
-    }
-    return undefined
-}
-
-export const getContent = (subject: HTMLElement): string | undefined => {
-    if (!document.body.contains(subject)) {
-        return undefined
-    }
-    return subject.getAttribute(Tooltip.SUBJECT_ATTRIBUTE) || undefined
-}
-
-export const getPlacement = (subject: HTMLElement): Popper.Placement | undefined => {
-    if (!document.body.contains(subject)) {
-        return undefined
+export const getSubject = (element: HTMLElement | null): HTMLElement | null => {
+    // If element is not actually attached to the DOM, then abort.
+    if (!element || !document.body.contains(element)) {
+        return null
     }
 
-    return (subject.getAttribute(Tooltip.PLACEMENT_ATTRIBUTE) as Popper.Placement) || undefined
+    return element.closest<HTMLElement>(`[${Tooltip.SUBJECT_ATTRIBUTE}]`)
 }
+
+export const getContent = (subject: HTMLElement): string | undefined =>
+    subject.getAttribute(Tooltip.SUBJECT_ATTRIBUTE) || undefined
+
+export const getPlacement = (subject: HTMLElement): Popper.Placement | undefined =>
+    (subject.getAttribute(Tooltip.PLACEMENT_ATTRIBUTE) as Popper.Placement) || undefined
 
 export const getDelay = (subject: HTMLElement): number | undefined => {
-    if (!document.body.contains(subject)) {
-        return undefined
-    }
     const dataDelay = subject.getAttribute(Tooltip.DELAY_ATTRIBUTE)
+
     return dataDelay ? parseInt(dataDelay, 10) : undefined
 }
 

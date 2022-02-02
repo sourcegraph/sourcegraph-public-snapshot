@@ -19,23 +19,28 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type CommitSearch struct {
-	Query         gitprotocol.Node
-	RepoOpts      search.RepoOptions
-	Diff          bool
-	HasTimeFilter bool
-	Limit         int
-
-	Db database.DB
-
-	IsRequired bool
+	Query                gitprotocol.Node
+	RepoOpts             search.RepoOptions
+	Diff                 bool
+	HasTimeFilter        bool
+	Limit                int
+	CodeMonitorID        *int64
+	IncludeModifiedFiles bool
 }
 
-func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	if err := j.ExpandUsernames(ctx, j.Db); err != nil {
+func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "CommitSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := j.ExpandUsernames(ctx, db); err != nil {
 		return err
 	}
 
@@ -50,7 +55,8 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 	}
 
 	var repoRevs []*search.RepositoryRevisions
-	err := repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.Resolver{DB: db, Opts: j.RepoOpts}
+	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
 		if repoRevs = page.RepoRevs; page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
 		}
@@ -70,11 +76,12 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 		}
 
 		args := &protocol.SearchRequest{
-			Repo:        repoRev.Repo.Name,
-			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
-			Query:       j.Query,
-			IncludeDiff: j.Diff,
-			Limit:       j.Limit,
+			Repo:                 repoRev.Repo.Name,
+			Revisions:            searchRevsToGitserverRevs(repoRev.Revs),
+			Query:                j.Query,
+			IncludeDiff:          j.Diff,
+			Limit:                j.Limit,
+			IncludeModifiedFiles: j.IncludeModifiedFiles,
 		}
 
 		onMatches := func(in []protocol.CommitMatch) {
@@ -107,10 +114,6 @@ func (j CommitSearch) Name() string {
 		return "Diff"
 	}
 	return "Commit"
-}
-
-func (j CommitSearch) Required() bool {
-	return j.IsRequired
 }
 
 func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
@@ -301,24 +304,11 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 }
 
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
-	var (
-		markdown       result.MatchedString
-		diffPreview    *result.MatchedString
-		messagePreview *result.MatchedString
-	)
-
+	var diffPreview, messagePreview *result.MatchedString
 	if diff {
 		diffPreview = &in.Diff
-		markdown = result.MatchedString{
-			Content:       "```diff\n" + in.Diff.Content + "\n```",
-			MatchedRanges: in.Diff.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```diff\n")}),
-		}
 	} else {
 		messagePreview = &in.Message
-		markdown = result.MatchedString{
-			Content:       "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```",
-			MatchedRanges: in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}),
-		}
 	}
 
 	return &result.CommitMatch{
@@ -338,9 +328,9 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 			Parents: in.Parents,
 		},
 		Repo:           repo,
-		MessagePreview: messagePreview,
 		DiffPreview:    diffPreview,
-		Body:           markdown,
+		MessagePreview: messagePreview,
+		ModifiedFiles:  in.ModifiedFiles,
 	}
 }
 

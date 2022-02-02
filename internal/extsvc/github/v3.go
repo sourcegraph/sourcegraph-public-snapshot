@@ -672,19 +672,27 @@ func (c *V3Client) ListTopicsOnRepository(ctx context.Context, ownerAndName stri
 
 // ListInstallationRepositories lists repositories on which the authenticated
 // GitHub App has been installed.
-func (c *V3Client) ListInstallationRepositories(ctx context.Context) ([]*Repository, error) {
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#list-repositories-accessible-to-the-app-installation
+func (c *V3Client) ListInstallationRepositories(ctx context.Context, page int) (
+	repos []*Repository,
+	hasNextPage bool,
+	rateLimitCost int,
+	err error,
+) {
 	type response struct {
 		Repositories []restRepository `json:"repositories"`
 	}
 	var resp response
-	if err := c.requestGet(ctx, "installation/repositories", &resp); err != nil {
-		return nil, err
+	path := fmt.Sprintf("installation/repositories?page=%d&per_page=100", page)
+	if err = c.requestGet(ctx, path, &resp); err != nil {
+		return nil, false, 1, err
 	}
-	repos := make([]*Repository, 0, len(resp.Repositories))
+	repos = make([]*Repository, 0, len(resp.Repositories))
 	for _, restRepo := range resp.Repositories {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
-	return repos, nil
+	return repos, len(repos) > 0, 1, nil
 }
 
 // listRepositories is a generic method that unmarshals the given
@@ -728,10 +736,23 @@ func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string) (*
 }
 
 // GetAppInstallation gets information of a GitHub App installation.
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
 func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64) (*github.Installation, error) {
 	var ins github.Installation
 	if err := c.requestGet(ctx, fmt.Sprintf("app/installations/%d", installationID), &ins); err != nil {
 		return nil, err
 	}
 	return &ins, nil
+}
+
+// CreateAppInstallationAccessToken creates an access token for the installation.
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#create-an-installation-access-token-for-an-app
+func (c *V3Client) CreateAppInstallationAccessToken(ctx context.Context, installationID int64) (*github.InstallationToken, error) {
+	var token github.InstallationToken
+	if err := c.requestPost(ctx, fmt.Sprintf("/app/installations/%d/access_tokens", installationID), nil, &token); err != nil {
+		return nil, err
+	}
+	return &token, nil
 }

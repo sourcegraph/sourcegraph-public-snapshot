@@ -80,6 +80,8 @@ export interface CodeInsightsBackend {
 
     findInsightByName: (input: FindInsightByNameInput) => Observable<Insight | null>
 
+    hasInsights: () => Observable<boolean>
+
     createInsight: (input: InsightCreateInput) => Observable<unknown>
 
     updateInsight: (event: InsightUpdateInput) => Observable<unknown>

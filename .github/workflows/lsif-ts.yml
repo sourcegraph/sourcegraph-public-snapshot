@@ -21,6 +21,8 @@ jobs:
           - client/browser
           - client/build-config
           - client/shared
+          - client/search
+          - client/search-ui
           - client/web
           - client/wildcard
           - client/common

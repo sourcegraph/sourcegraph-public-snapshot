@@ -1,10 +1,9 @@
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { authenticatedUser } from '../../../auth'
 import { BatchChangeFields } from '../../../graphql-operations'
@@ -51,7 +50,7 @@ export const WebhookAlert: React.FunctionComponent<Props> = ({
     const SITE_ADMIN_CONFIG_DOC_URL = 'https://docs.sourcegraph.com/batch_changes/how-tos/site_admin_configuration'
 
     return (
-        <DismissibleAlert className="alert-warning" partialStorageKey={id}>
+        <DismissibleAlert variant="warning" partialStorageKey={id}>
             <div>
                 <h4>Changeset information may not be up to date</h4>
                 <p className={styles.blurb}>

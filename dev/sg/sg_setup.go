@@ -424,6 +424,7 @@ If you used another method, make sure psql is available.`,
 	},
 	{
 		name:               "Setup proxy for local development",
+		autoFixing:         true,
 		requiresRepository: true,
 		dependencies: []*dependency{
 			{
@@ -726,8 +727,10 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 	case 1:
 		err = fixCategoryManually(ctx, categoryIdx, category)
 	case 2:
-		stdout.Out.ClearScreen()
-		err = fixCategoryAutomatically(ctx, category)
+		if category.autoFixing {
+			stdout.Out.ClearScreen()
+			err = fixCategoryAutomatically(ctx, category)
+		}
 	case 3:
 		return nil
 	}

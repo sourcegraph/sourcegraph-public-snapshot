@@ -22,6 +22,11 @@ const decorator: DecoratorFn = story => (
 const config: Meta = {
     title: 'browser/Options/OptionsPageAdvancedSettings',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+        },
+    },
 }
 
 export default config

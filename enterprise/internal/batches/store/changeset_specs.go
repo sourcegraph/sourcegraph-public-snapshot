@@ -34,6 +34,7 @@ var changesetSpecInsertColumns = []string{
 	"diff_stat_deleted",
 	"created_at",
 	"updated_at",
+	"fork_namespace",
 
 	// `external_id`, `head_ref`, `title` are (for now) write-only columns that
 	// contain normalized data from `spec` and are used for JOINs and WHERE
@@ -57,6 +58,7 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.diff_stat_deleted",
 	"changeset_specs.created_at",
 	"changeset_specs.updated_at",
+	"changeset_specs.fork_namespace",
 }
 
 // CreateChangesetSpec creates the given ChangesetSpecs.
@@ -112,6 +114,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.DiffStatDeleted,
 				c.CreatedAt,
 				c.UpdatedAt,
+				c.ForkNamespace,
 				&dbutil.NullString{S: externalID},
 				&dbutil.NullString{S: headRef},
 				&dbutil.NullString{S: title},
@@ -521,6 +524,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&c.DiffStatDeleted,
 		&c.CreatedAt,
 		&c.UpdatedAt,
+		&c.ForkNamespace,
 	)
 
 	if err != nil {

@@ -1,10 +1,11 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { render, RenderResult, fireEvent } from '@testing-library/react'
+import { RenderResult, fireEvent } from '@testing-library/react'
 import { GraphQLError } from 'graphql'
 import React from 'react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { routes } from '../../routes'
@@ -32,7 +33,7 @@ describe('FeedbackPrompt', () => {
 
     describe('layout', () => {
         beforeEach(() => {
-            queries = render(
+            queries = renderWithRouter(
                 <MockedTestProvider>
                     <FeedbackPrompt routes={routes} />
                 </MockedTestProvider>
@@ -104,7 +105,7 @@ describe('FeedbackPrompt', () => {
             }
 
             beforeEach(async () => {
-                queries = render(
+                queries = renderWithRouter(
                     <MockedTestProvider mocks={[successMock]}>
                         <FeedbackPrompt routes={routes} />
                     </MockedTestProvider>
@@ -127,7 +128,7 @@ describe('FeedbackPrompt', () => {
                 },
             }
             beforeEach(async () => {
-                queries = render(
+                queries = renderWithRouter(
                     <MockedTestProvider mocks={[errorMock]}>
                         <FeedbackPrompt routes={routes} />
                     </MockedTestProvider>

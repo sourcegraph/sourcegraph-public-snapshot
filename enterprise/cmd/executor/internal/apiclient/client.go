@@ -44,8 +44,8 @@ type EndpointOptions struct {
 	// URL is the target request URL.
 	URL string
 
-	// Password is the basic-auth password to include with all requests.
-	Password string
+	// Token is the authorization token to include with all requests (via Authorization header).
+	Token string
 }
 
 func New(options Options, observationContext *observation.Context) *Client {
@@ -225,10 +225,11 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	return knownIDs, nil
 }
 
+const SchemeExecutorToken = "token-executor"
+
 func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Request, error) {
-	u, err := makeURL(
+	u, err := makeRelativeURL(
 		c.options.EndpointOptions.URL,
-		c.options.EndpointOptions.Password,
 		c.options.PathPrefix,
 		path,
 	)
@@ -236,17 +237,13 @@ func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Re
 		return nil, err
 	}
 
-	return MakeJSONRequest(method, u, payload)
-}
-
-func makeURL(base, password string, path ...string) (*url.URL, error) {
-	u, err := makeRelativeURL(base, path...)
+	r, err := MakeJSONRequest(method, u, payload)
 	if err != nil {
 		return nil, err
 	}
 
-	u.User = url.UserPassword("sourcegraph", password)
-	return u, nil
+	r.Header.Add("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, c.options.EndpointOptions.Token))
+	return r, nil
 }
 
 func makeRelativeURL(base string, path ...string) (*url.URL, error) {

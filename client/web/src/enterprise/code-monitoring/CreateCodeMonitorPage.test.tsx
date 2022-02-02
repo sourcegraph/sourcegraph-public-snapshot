@@ -1,10 +1,12 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import * as React from 'react'
 import { act } from 'react-dom/test-utils'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
+
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateCodeMonitorVariables } from '../../graphql-operations'
@@ -48,7 +50,7 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('createCodeMonitor is called on submit', () => {
-        render(<CreateCodeMonitorPage {...props} />)
+        renderWithRouter(<CreateCodeMonitorPage {...props} />)
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
         userEvent.click(screen.getByTestId('trigger-button'))
@@ -65,9 +67,9 @@ describe('CreateCodeMonitorPage', () => {
 
         userEvent.click(screen.getByTestId('submit-trigger'))
 
-        userEvent.click(screen.getByTestId('form-action-toggle-email-notification'))
+        userEvent.click(screen.getByTestId('form-action-toggle-email'))
 
-        userEvent.click(screen.getByTestId('submit-action'))
+        userEvent.click(screen.getByTestId('submit-action-email'))
 
         act(() => {
             clock.tick(600)
@@ -79,7 +81,7 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('createCodeMonitor is not called on submit when trigger or action is incomplete', () => {
-        render(<CreateCodeMonitorPage {...props} />)
+        renderWithRouter(<CreateCodeMonitorPage {...props} />)
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
         userEvent.click(screen.getByTestId('submit-monitor'))
@@ -104,8 +106,8 @@ describe('CreateCodeMonitorPage', () => {
         // Pressing enter still does not call createCodeMonitor
         sinon.assert.notCalled(props.createCodeMonitor)
 
-        userEvent.click(screen.getByTestId('form-action-toggle-email-notification'))
-        userEvent.click(screen.getByTestId('submit-action'))
+        userEvent.click(screen.getByTestId('form-action-toggle-email'))
+        userEvent.click(screen.getByTestId('submit-action-email'))
 
         act(() => {
             clock.tick(600)
@@ -118,8 +120,8 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('Actions area button is disabled while trigger is incomplete', () => {
-        render(<CreateCodeMonitorPage {...props} />)
-        const actionButton = screen.getByTestId('form-action-toggle-email-notification')
+        renderWithRouter(<CreateCodeMonitorPage {...props} />)
+        const actionButton = screen.getByTestId('form-action-toggle-email')
         expect(actionButton).toHaveClass('disabled')
     })
 })

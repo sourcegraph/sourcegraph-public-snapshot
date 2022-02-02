@@ -927,8 +927,8 @@ func NewMockGitHubClient() *MockGitHubClient {
 			},
 		},
 		ListInstallationRepositoriesFunc: &GitHubClientListInstallationRepositoriesFunc{
-			defaultHook: func(context.Context) ([]*github.Repository, error) {
-				return nil, nil
+			defaultHook: func(context.Context, int) ([]*github.Repository, bool, int, error) {
+				return nil, false, 0, nil
 			},
 		},
 	}
@@ -944,7 +944,7 @@ func NewStrictMockGitHubClient() *MockGitHubClient {
 			},
 		},
 		ListInstallationRepositoriesFunc: &GitHubClientListInstallationRepositoriesFunc{
-			defaultHook: func(context.Context) ([]*github.Repository, error) {
+			defaultHook: func(context.Context, int) ([]*github.Repository, bool, int, error) {
 				panic("unexpected invocation of MockGitHubClient.ListInstallationRepositories")
 			},
 		},
@@ -1081,24 +1081,24 @@ func (c GitHubClientGetRepositoryFuncCall) Results() []interface{} {
 // the ListInstallationRepositories method of the parent MockGitHubClient
 // instance is invoked.
 type GitHubClientListInstallationRepositoriesFunc struct {
-	defaultHook func(context.Context) ([]*github.Repository, error)
-	hooks       []func(context.Context) ([]*github.Repository, error)
+	defaultHook func(context.Context, int) ([]*github.Repository, bool, int, error)
+	hooks       []func(context.Context, int) ([]*github.Repository, bool, int, error)
 	history     []GitHubClientListInstallationRepositoriesFuncCall
 	mutex       sync.Mutex
 }
 
 // ListInstallationRepositories delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockGitHubClient) ListInstallationRepositories(v0 context.Context) ([]*github.Repository, error) {
-	r0, r1 := m.ListInstallationRepositoriesFunc.nextHook()(v0)
-	m.ListInstallationRepositoriesFunc.appendCall(GitHubClientListInstallationRepositoriesFuncCall{v0, r0, r1})
-	return r0, r1
+func (m *MockGitHubClient) ListInstallationRepositories(v0 context.Context, v1 int) ([]*github.Repository, bool, int, error) {
+	r0, r1, r2, r3 := m.ListInstallationRepositoriesFunc.nextHook()(v0, v1)
+	m.ListInstallationRepositoriesFunc.appendCall(GitHubClientListInstallationRepositoriesFuncCall{v0, v1, r0, r1, r2, r3})
+	return r0, r1, r2, r3
 }
 
 // SetDefaultHook sets function that is called when the
 // ListInstallationRepositories method of the parent MockGitHubClient
 // instance is invoked and the hook queue is empty.
-func (f *GitHubClientListInstallationRepositoriesFunc) SetDefaultHook(hook func(context.Context) ([]*github.Repository, error)) {
+func (f *GitHubClientListInstallationRepositoriesFunc) SetDefaultHook(hook func(context.Context, int) ([]*github.Repository, bool, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1107,7 +1107,7 @@ func (f *GitHubClientListInstallationRepositoriesFunc) SetDefaultHook(hook func(
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *GitHubClientListInstallationRepositoriesFunc) PushHook(hook func(context.Context) ([]*github.Repository, error)) {
+func (f *GitHubClientListInstallationRepositoriesFunc) PushHook(hook func(context.Context, int) ([]*github.Repository, bool, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1115,21 +1115,21 @@ func (f *GitHubClientListInstallationRepositoriesFunc) PushHook(hook func(contex
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GitHubClientListInstallationRepositoriesFunc) SetDefaultReturn(r0 []*github.Repository, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]*github.Repository, error) {
-		return r0, r1
+func (f *GitHubClientListInstallationRepositoriesFunc) SetDefaultReturn(r0 []*github.Repository, r1 bool, r2 int, r3 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]*github.Repository, bool, int, error) {
+		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GitHubClientListInstallationRepositoriesFunc) PushReturn(r0 []*github.Repository, r1 error) {
-	f.PushHook(func(context.Context) ([]*github.Repository, error) {
-		return r0, r1
+func (f *GitHubClientListInstallationRepositoriesFunc) PushReturn(r0 []*github.Repository, r1 bool, r2 int, r3 error) {
+	f.PushHook(func(context.Context, int) ([]*github.Repository, bool, int, error) {
+		return r0, r1, r2, r3
 	})
 }
 
-func (f *GitHubClientListInstallationRepositoriesFunc) nextHook() func(context.Context) ([]*github.Repository, error) {
+func (f *GitHubClientListInstallationRepositoriesFunc) nextHook() func(context.Context, int) ([]*github.Repository, bool, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1167,22 +1167,31 @@ type GitHubClientListInstallationRepositoriesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*github.Repository
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 int
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitHubClientListInstallationRepositoriesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitHubClientListInstallationRepositoriesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }

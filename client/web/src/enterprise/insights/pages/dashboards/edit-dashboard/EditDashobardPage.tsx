@@ -2,10 +2,9 @@ import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
-import { Link } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
-import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -109,13 +108,13 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
             <span className="text-muted d-block mt-2">
                 Dashboards group your insights and let you share them with others.{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
+                <Link
+                    to="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
                     target="_blank"
                     rel="noopener"
                 >
                     Learn more.
-                </a>
+                </Link>
             </span>
 
             <Container className="mt-4">
@@ -143,7 +142,8 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                                 label={formAPI.submitting ? 'Saving' : 'Save changes'}
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="btn btn-primary ml-2 mb-2"
+                                className="ml-2 mb-2"
+                                variant="primary"
                             />
                         </>
                     )}

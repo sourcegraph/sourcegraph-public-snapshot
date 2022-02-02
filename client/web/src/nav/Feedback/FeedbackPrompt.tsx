@@ -4,12 +4,11 @@ import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Button, FlexTextArea, LoadingSpinner, useAutoFocus, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, FlexTextArea, LoadingSpinner, useAutoFocus, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../components/alerts'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
 import { useRoutesMatch } from '../../hooks'
 import { LayoutRouteProps } from '../../routes'
@@ -189,14 +188,18 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
             className={styles.feedbackPrompt}
             group={false}
         >
-            <DropdownToggle
+            <Button
                 tag="button"
                 caret={false}
-                className={classNames('btn btn-sm btn-outline-secondary text-decoration-none', styles.toggle)}
+                className={classNames('text-decoration-none', styles.toggle)}
                 aria-label="Feedback"
+                variant="secondary"
+                outline={true}
+                size="sm"
+                as={DropdownToggle}
             >
                 <span>Feedback</span>
-            </DropdownToggle>
+            </Button>
             <DropdownMenu right={true} className={styles.menu}>
                 <FeedbackPromptContent productResearchEnabled={true} closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>

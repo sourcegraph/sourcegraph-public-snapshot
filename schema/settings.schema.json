@@ -38,6 +38,14 @@
             "pointer": true
           }
         },
+        "codeInsightsLandingPage": {
+          "description": "Enables code insights landing page layout.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeMonitoring": {
           "description": "Enables code monitoring.",
           "type": "boolean",
@@ -55,7 +63,7 @@
           }
         },
         "showCodeMonitoringTestEmailButton": {
-          "description": "Enables the 'Send test email' debugging button for code monitoring.",
+          "description": "REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -175,7 +183,7 @@
           }
         },
         "fuzzyFinder": {
-          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
+          "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
           "!go": {
             "pointer": true
@@ -210,6 +218,14 @@
           "type": "string",
           "default": "by-line-number",
           "examples": ["by-line-number", "by-zoekt-ranking"],
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeMonitoringWebHooks": {
+          "description": "Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.",
+          "type": "boolean",
+          "default": false,
           "!go": {
             "pointer": true
           }

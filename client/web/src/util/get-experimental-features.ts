@@ -1,7 +1,6 @@
 import { isErrorLike } from '@sourcegraph/common'
+import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-
-import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 
 /**
  * Returns experimentalFeatures from setting cascade.

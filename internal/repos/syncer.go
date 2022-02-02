@@ -441,6 +441,13 @@ func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
 	}
 }
 
+// ErrCloudDefaultSync is returned by SyncExternalService if an attempt to
+// sync a cloud default external service is done. We can't sync these external services
+// because their repos are added via the lazy-syncing mechanism on sourcegraph.com
+// instead of config (which is empty), so attempting to sync them would delete all of
+// the lazy-added repos.
+var ErrCloudDefaultSync = errors.New("cloud default external services can't be synced")
+
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
 // Deletes of repositories that were not sourced are done at the end.
@@ -460,6 +467,15 @@ func (s *Syncer) SyncExternalService(
 	svc, err = s.Store.ExternalServiceStore.GetByID(ctx, externalServiceID)
 	if err != nil {
 		return errors.Wrap(err, "fetching external services")
+	}
+
+	// We have fail-safes in place to prevent enqueuing sync jobs for cloud default
+	// external services, but in case those fail to prevent a sync for any reason,
+	// we have this additional check here. Cloud default external services have their
+	// repos added via the lazy-syncing mechanism on sourcegraph.com instead of config
+	// (which is empty), so attempting to sync them would delete all of the lazy-added repos.
+	if svc.CloudDefault {
+		return ErrCloudDefaultSync
 	}
 
 	// Unless our site config explicitly allows private code or the user has the

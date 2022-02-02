@@ -1089,6 +1089,55 @@ func testOrphanedRepo(store *repos.Store) func(*testing.T) {
 	}
 }
 
+func testCloudDefaultExternalServicesDontSync(store *repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		now := time.Now()
+
+		svc1 := &types.ExternalService{
+			Kind:         extsvc.KindGitHub,
+			DisplayName:  "Github - Test1",
+			Config:       `{"url": "https://github.com"}`,
+			CloudDefault: true,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		}
+
+		// setup services
+		if err := store.ExternalServiceStore.Upsert(ctx, svc1); err != nil {
+			t.Fatal(err)
+		}
+
+		githubRepo := &types.Repo{
+			Name:     "github.com/org/foo",
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "foo-external-12345",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}
+
+		syncer := &repos.Syncer{
+			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+				s := repos.NewFakeSource(svc1, nil, githubRepo)
+				return s, nil
+			},
+			Store: store,
+			Now:   time.Now,
+		}
+
+		have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second)
+		want := repos.ErrCloudDefaultSync
+
+		if have != want {
+			t.Fatalf("have err: %v, want %v", have, want)
+		}
+	}
+}
+
 func testConflictingSyncers(store *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())

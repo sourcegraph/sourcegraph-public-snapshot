@@ -1,6 +1,6 @@
 import { Point } from '../models/geometry/point'
 import { Rectangle } from '../models/geometry/rectangle'
-import { Constraint, Flipping, Overlapping, Position } from '../models/tether-models'
+import { Constraint, Flipping, Overlapping, Position, Strategy } from '../models/tether-models'
 
 export interface Tether {
     /** Reference on target HTML element in the DOM. */
@@ -39,8 +39,15 @@ export interface Tether {
      */
     overlapping?: Overlapping
 
-    /** A custom constrain element for the tooltip element position. */
+    /**
+     * A custom constrain element for the tooltip element position.
+     */
     constraint?: HTMLElement
+
+    /**
+     * Setups position strategy (Fixed or Absolute) to render the popover element.
+     */
+    strategy?: Strategy
 
     windowPadding?: Rectangle
     constraintPadding?: Rectangle
@@ -70,4 +77,7 @@ export interface TetherLayout {
 
     overflows: Constraint[]
     constraints: Constraint[]
+
+    strategy: Strategy
+    anchorOffset: Point
 }

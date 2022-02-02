@@ -88,7 +88,7 @@ add('Optimization signup', () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                featureFlags={new Map([['signup-optimization', true]])}
+                featureFlags={new Map([])}
             />
         )}
     </WebStory>

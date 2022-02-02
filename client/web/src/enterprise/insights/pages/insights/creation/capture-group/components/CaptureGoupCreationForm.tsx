@@ -1,10 +1,9 @@
 import classNames from 'classnames'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Card, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
@@ -12,9 +11,8 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
-import { LinkWithQuery } from '../../../../../components/link-with-query'
-import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
+import { searchQueryValidator } from '../utils/search-query-validator'
 
 import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfoBadge'
 import { CaptureGroupQueryInput } from './query-input/CaptureGroupQueryInput'
@@ -25,6 +23,7 @@ interface CaptureGroupCreationFormProps {
     form: Form<CaptureGroupFormFields>
     title: useFieldAPI<CaptureGroupFormFields['title']>
     repositories: useFieldAPI<CaptureGroupFormFields['repositories']>
+    allReposMode: useFieldAPI<CaptureGroupFormFields['allRepos']>
     step: useFieldAPI<CaptureGroupFormFields['step']>
     stepValue: useFieldAPI<CaptureGroupFormFields['stepValue']>
     query: useFieldAPI<CaptureGroupFormFields['groupSearchQuery']>
@@ -41,6 +40,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
         form,
         title,
         repositories,
+        allReposMode,
         query,
         step,
         stepValue,
@@ -79,22 +79,27 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     className="mb-0 d-flex flex-column"
                 />
 
-                <div className="d-flex mb-2 mt-3 align-items-start">
-                    <InformationOutlineIcon className="text-muted pr-2 h-auto flex-shrink-0" />
+                <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
+                    <input
+                        type="checkbox"
+                        {...allReposMode.input}
+                        value="all-repos-mode"
+                        checked={allReposMode.input.value}
+                    />
 
-                    <small className="text-muted">
-                        This type of insight can only run across specified repositories. To run your insight across all
-                        repositories, use <LinkWithQuery to="/insights/create/search">"Track" insight</LinkWithQuery>{' '}
-                        and define data series manually. Learn about the{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                    <span className="pl-2">Run your insight over all your repositories</span>
+
+                    <small className="w-100 mt-2 text-muted">
+                        This feature is actively in development. Read about the{' '}
+                        <Link
+                            to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            beta limitations.
-                        </a>
+                            beta limitations here.
+                        </Link>
                     </small>
-                </div>
+                </label>
             </FormGroup>
 
             <hr className="my-4 w-100" />
@@ -105,17 +110,17 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                 subtitle={
                     <>
                         Generated dynamically for each unique value from the regular expression capture group.{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                        <Link
+                            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
                             target="_blank"
                             rel="noopener"
                         >
                             Learn more.
-                        </a>
+                        </Link>
                     </>
                 }
             >
-                <div className="card card-body p-3">
+                <Card className="p-3">
                     <FormInput
                         title="Search query"
                         required={true}
@@ -138,23 +143,23 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 
                     <small className="mt-3">
                         Explore{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_insights/references/common_use_cases#automatic-version-and-pattern-tracking"
+                        <Link
+                            to="https://docs.sourcegraph.com/code_insights/references/common_use_cases#automatic-version-and-pattern-tracking"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             example queries
-                        </a>{' '}
+                        </Link>{' '}
                         and learn more about{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                        <Link
+                            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             automatically generated data series
-                        </a>
+                        </Link>
                     </small>
-                </div>
+                </Card>
             </FormGroup>
 
             <hr className="my-4 w-100" />
@@ -178,7 +183,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
-                    numberOfPoints={7}
+                    numberOfPoints={allReposMode.input.value ? 12 : 7}
                 />
             </FormGroup>
 
@@ -194,7 +199,8 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     disabled={submitting}
                     data-testid="insight-save-button"
-                    className="btn btn-primary mr-2 mb-2"
+                    className="mr-2 mb-2"
+                    variant="primary"
                 />
 
                 <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>
@@ -218,13 +224,13 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = props => (
     <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
         Search query must contain a properly formatted regular expression with at least one{' '}
-        <a
-            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
+        <Link
+            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
             target="_blank"
             rel="noopener"
         >
             capture group.
-        </a>{' '}
+        </Link>{' '}
         The capture group cannot match file or repository names, it can match only the file contents.
     </small>
 )

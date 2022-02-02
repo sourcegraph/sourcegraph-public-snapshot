@@ -90,7 +90,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
             </TreeLayerRowContents>
             {props.index === props.maxEntries - 1 && (
                 <TreeRowAlert
-                    className="alert-warning"
+                    variant="warning"
                     style={treePadding(props.depth, true, true)}
                     error="Too many entries. Use search to find a specific file."
                 />

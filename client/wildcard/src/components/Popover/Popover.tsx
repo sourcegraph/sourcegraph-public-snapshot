@@ -6,8 +6,8 @@ import React, {
     MutableRefObject,
     useCallback,
     useContext,
+    useEffect,
     useMemo,
-    useRef,
     useState,
 } from 'react'
 import FocusLock from 'react-focus-lock'
@@ -52,11 +52,15 @@ const DEFAULT_CONTEXT_VALUE: PopoverContextData = {
 
 const PopoverContext = createContext<PopoverContextData>(DEFAULT_CONTEXT_VALUE)
 
-interface PopoverProps {
+type PopoverControlledProps =
+    | { isOpen?: undefined; onOpenChange?: never }
+    | { isOpen: boolean; onOpenChange: (event: PopoverOpenEvent) => void }
+
+interface PopoverCommonProps {
     anchor?: MutableRefObject<HTMLElement | null>
-    isOpen?: boolean
-    onOpenChange?: (event: PopoverOpenEvent) => void
 }
+
+type PopoverProps = PopoverCommonProps & PopoverControlledProps
 
 export const Popover: React.FunctionComponent<PopoverProps> = props => {
     const { children, anchor, isOpen, onOpenChange = noop } = props
@@ -71,6 +75,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
         event => {
             if (!isControlled) {
                 setInternalOpen(event.isOpen)
+                return
             }
 
             onOpenChange(event)
@@ -114,6 +119,7 @@ export const PopoverTrigger = forwardRef((props, reference) => {
 interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marker'> {
     isOpen?: boolean
     focusLocked?: boolean
+    autoFocus?: boolean
 }
 
 export const PopoverContent = forwardRef((props, reference) => {
@@ -121,6 +127,7 @@ export const PopoverContent = forwardRef((props, reference) => {
         isOpen,
         children,
         focusLocked = true,
+        autoFocus = true,
         as: Component = 'div',
         role = 'dialog',
         'aria-modal': ariaModel = true,
@@ -128,9 +135,11 @@ export const PopoverContent = forwardRef((props, reference) => {
     } = props
 
     const { isOpen: isOpenContext, targetElement, anchor, setOpen } = useContext(PopoverContext)
+    const [focusLock, setFocusLock] = useState(false)
 
-    const localReference = useRef<HTMLDivElement>(null)
-    const mergeReference = useMergeRefs([localReference, reference])
+    const [tooltipElement, setTooltipElement] = useState<HTMLDivElement | null>(null)
+    const tooltipReferenceCallback = useCallbackRef<HTMLDivElement>(null, setTooltipElement)
+    const mergeReference = useMergeRefs([tooltipReferenceCallback, reference])
 
     // Catch any outside click of popover element
     useOnClickOutside(mergeReference, event => {
@@ -143,6 +152,24 @@ export const PopoverContent = forwardRef((props, reference) => {
 
     // Close popover on escape
     useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
+
+    // Native behavior of browsers about focus elements says - if element that gets focus
+    // is in outside of the visible area than browser should scroll to this element automatically.
+    // This logic breaks popover behavior by loosing scroll positions of the scroll container with
+    // target element. In order to preserve scroll we should adjust order of actions
+    // Render popover element in the DOM → Calculate and apply the right position for the popover →
+    // Enable focus lock (therefore autofocus first scrollable element within the popover content)
+    useEffect(() => {
+        if (tooltipElement && autoFocus && focusLocked) {
+            requestAnimationFrame(() => {
+                setFocusLock(true)
+            })
+        }
+
+        return () => {
+            setFocusLock(false)
+        }
+    }, [autoFocus, focusLocked, tooltipElement])
 
     if (!isOpenContext && !isOpen) {
         return null
@@ -158,7 +185,13 @@ export const PopoverContent = forwardRef((props, reference) => {
             aria-modal={ariaModel}
             className={classNames('dropdown-menu', otherProps.className)}
         >
-            {focusLocked ? <FocusLock returnFocus={true}>{children}</FocusLock> : children}
+            {focusLocked ? (
+                <FocusLock disabled={!focusLock} returnFocus={true}>
+                    {children}
+                </FocusLock>
+            ) : (
+                children
+            )}
         </FloatingPanel>
     )
 }) as ForwardReferenceComponent<'div', PopoverContentProps>

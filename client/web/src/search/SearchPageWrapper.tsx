@@ -1,8 +1,9 @@
 import React from 'react'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { LayoutRouteComponentProps } from '../routes'
 import { useNavbarQueryState } from '../stores'
-import { lazyComponent } from '../util/lazyComponent'
 
 const SearchPage = lazyComponent(() => import('./home/SearchPage'), 'SearchPage')
 const StreamingSearchResults = lazyComponent(() => import('./results/StreamingSearchResults'), 'StreamingSearchResults')

@@ -78,6 +78,8 @@ Use this to start your Sourcegraph environment!
 		}
 		sort.Strings(names)
 		fmt.Fprint(&out, strings.Join(names, "\n"))
+	} else {
+		fmt.Fprintf(&out, "\n%sNo commandsets found! Please change your current directory to the Sourcegraph repository.%s", output.StyleOrange, output.StyleReset)
 	}
 
 	return out.String()

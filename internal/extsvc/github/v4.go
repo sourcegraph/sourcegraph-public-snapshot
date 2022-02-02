@@ -588,3 +588,99 @@ func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*
 	// December 2021, so we have to fall back to the REST API.
 	return NewV3Client(c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
 }
+
+type RecentCommittersParams struct {
+	// Repository name
+	Name string
+	// Repository owner
+	Owner string
+	// After is the cursor to paginate from.
+	After Cursor
+	// First is the page size. Default to 100 if left zero.
+	First int
+}
+
+type RecentCommittersResults struct {
+	Nodes []struct {
+		Authors struct {
+			Nodes []struct {
+				Date      string
+				Email     string
+				Name      string
+				AvatarURL string
+			}
+		}
+	}
+	PageInfo struct {
+		HasNextPage bool
+		EndCursor   Cursor
+	}
+}
+
+// Lists recent committers for a repository.
+func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommittersParams) (*RecentCommittersResults, error) {
+	if params.First == 0 {
+		params.First = 100
+	}
+
+	query := `
+	  query($name: String!, $owner: String!, $after: String, $first: Int!) {
+		repository(name: $name, owner: $owner) {
+		  defaultBranchRef {
+			target {
+			  ... on Commit {
+				history(after: $after, first: $first) {
+				  pageInfo { hasNextPage, endCursor }
+				  nodes {
+					authors(first: 50) {
+					  nodes {
+						email
+						name
+						avatarUrl
+						date
+					  }
+					}
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  }
+	`
+
+	vars := map[string]interface{}{
+		"name":  params.Name,
+		"owner": params.Owner,
+		"first": params.First,
+	}
+	if params.After != "" {
+		vars["after"] = params.After
+	}
+
+	var result struct {
+		Repository struct {
+			DefaultBranchRef struct {
+				Target struct {
+					History RecentCommittersResults
+				}
+			}
+		}
+	}
+	err := c.requestGraphQL(ctx, query, vars, &result)
+	if err != nil {
+		var e graphqlErrors
+		if errors.As(err, &e) {
+			for _, err2 := range e {
+				if err2.Type == graphqlErrTypeNotFound {
+					log15.Warn("RecentCommitters: GitHub repository not found", "error", err2)
+					continue
+				}
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+	return &result.Repository.DefaultBranchRef.Target.History, nil
+}

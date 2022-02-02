@@ -142,7 +142,7 @@ This is done by selecting the relevant checkboxes when creating the token:
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/gitlab-token.png" alt="The GitLab token creation page, with the api, read_repository, and write_repository scopes selected">
 
-### Bitbucket Server
+### Bitbucket Server / Bitbucket Data Center
 
 Follow the steps to [create a personal access token](https://confluence.atlassian.com/bitbucketserver0516/personal-access-tokens-966061199.html?utm_campaign=in-app-help&utm_medium=in-app-help&utm_source=stash#Personalaccesstokens-Generatingpersonalaccesstokens) on Bitbucket.
 

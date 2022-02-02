@@ -11,6 +11,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -26,32 +27,62 @@ var (
 	checkDockerFlagSet  = flag.NewFlagSet("sg check docker", flag.ExitOnError)
 	checkClientFlagSet  = flag.NewFlagSet("sg check client", flag.ExitOnError)
 
-	scriptChecks = map[string][]checkScriptFn{
-		"urls": {
-			runCheckScript("Broken urls", "dev/check/broken-urls.bash"),
+	allCheckTargets = checkTargets{
+		{
+			Name:      "urls",
+			ShortHelp: "Check for broken urls in the codebase.",
+			FlagSet:   checkURLsFlagSet,
+			Checks: []checkScriptFn{
+				runCheckScript("Broken urls", "dev/check/broken-urls.bash"),
+			},
 		},
-		"go": {
-			runCheckScript("Go format", "dev/check/gofmt.sh"),
-			runCheckScript("Go generate", "dev/check/go-generate.sh"),
-			runCheckScript("Go lint", "dev/check/go-lint.sh"),
-			runCheckScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh"),
-			runCheckScript("Go enterprise imports in OSS", "dev/check/go-enterprise-import.sh"),
+		{
+			Name:      "go",
+			ShortHelp: "Check go code for linting errors, forbidden imports, generated files...",
+			FlagSet:   checkGoFlagSet,
+			Checks: []checkScriptFn{
+				runCheckScript("Go format", "dev/check/gofmt.sh"),
+				runCheckScript("Go generate", "dev/check/go-generate.sh"),
+				runCheckScript("Go lint", "dev/check/go-lint.sh"),
+				runCheckScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh"),
+				runCheckScript("Go enterprise imports in OSS", "dev/check/go-enterprise-import.sh"),
+			},
 		},
-		"docsite": {
-			runCheckScript("Docsite lint", "dev/check/docsite.sh"),
+		{
+			Name:      "docsite",
+			ShortHelp: "Check the code powering docs.sourcegraph.com for broken links and linting errors.",
+			FlagSet:   checkDocsiteFlagSet,
+			Checks: []checkScriptFn{
+				runCheckScript("Docsite lint", "dev/check/docsite.sh"),
+			},
 		},
-		"docker": {
-			runCheckScript("Docker forbidden alpine base images", "dev/check/no-alpine-guard.sh"),
+		{
+			Name:      "docker",
+			ShortHelp: "Check for forbidden docker base images",
+			FlagSet:   checkDockerFlagSet,
+			Checks: []checkScriptFn{
+				runCheckScript("Docker forbidden alpine base images", "dev/check/no-alpine-guard.sh"),
+			},
 		},
-		"client": {
-			runCheckScript("Typescript imports in OSS", "dev/check/ts-enterprise-import.sh"),
-			runCheckScript("Inline templates", "dev/check/template-inlines.sh"),
-			runCheckScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
-			runCheckScript("SVG Compression", "dev/check/svgo.sh"),
+		{
+			Name:      "client",
+			ShortHelp: "Check client code for linting errors, forbidden imports, ...",
+			FlagSet:   checkClientFlagSet,
+			Checks: []checkScriptFn{
+				runCheckScript("Typescript imports in OSS", "dev/check/ts-enterprise-import.sh"),
+				runCheckScript("Inline templates", "dev/check/template-inlines.sh"),
+				runCheckScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
+				runCheckScript("SVG Compression", "dev/check/svgo.sh"),
+			},
 		},
-		"shell": {
-			runCheckScript("Shell formatting", "dev/check/shfmt.sh"),
-			runCheckScript("Shell lint", "dev/check/shellcheck.sh"),
+		{
+			Name:      "shell",
+			ShortHelp: "Check shell code for linting errors, formatting, ...",
+			FlagSet:   checkShellFlagSet,
+			Checks: []checkScriptFn{
+				runCheckScript("Shell formatting", "dev/check/shfmt.sh"),
+				runCheckScript("Shell lint", "dev/check/shellcheck.sh"),
+			},
 		},
 	}
 )
@@ -61,7 +92,7 @@ var (
 		Name:       "check",
 		ShortUsage: "sg check [go|client|shell|docsite|docker|urls]",
 		ShortHelp:  "Run all checks on the codebase.",
-		LongHelp: `Run all checks on the codebase and display failures, if any. 
+		LongHelp: `Run all checks on the codebase and display failures, if any.
 Run sg check --help for a list of all checks.
 `,
 		FlagSet: checkFlagSet,
@@ -70,49 +101,12 @@ Run sg check --help for a list of all checks.
 				return errors.New("unrecognized command, please run sg check --help to list available checks")
 			}
 			var fns []checkScriptFn
-			for _, scriptFns := range scriptChecks {
-				fns = append(fns, scriptFns...)
+			for _, c := range allCheckTargets {
+				fns = append(fns, c.Checks...)
 			}
 			return runCheckScriptsAndReport(fns...)(ctx, args)
 		},
-		Subcommands: []*ffcli.Command{
-			{
-				Name:      "urls",
-				ShortHelp: "Check for broken urls in the codebase.",
-				FlagSet:   checkURLsFlagSet,
-				Exec:      runCheckScriptsAndReport(scriptChecks["urls"]...),
-			},
-			{
-				Name:      "go",
-				ShortHelp: "Check go code for linting errors, forbidden imports, generated files...",
-				FlagSet:   checkGoFlagSet,
-				Exec:      runCheckScriptsAndReport(scriptChecks["go"]...),
-			},
-			{
-				Name:      "docsite",
-				FlagSet:   checkDocsiteFlagSet,
-				ShortHelp: "Check the code powering docs.sourcegraph.com for broken links and linting errors.",
-				Exec:      runCheckScriptsAndReport(scriptChecks["docsite"]...),
-			},
-			{
-				Name:      "docker",
-				FlagSet:   checkDockerFlagSet,
-				ShortHelp: "Check for forbidden docker base images",
-				Exec:      runCheckScriptsAndReport(scriptChecks["docker"]...),
-			},
-			{
-				Name:      "client",
-				FlagSet:   checkClientFlagSet,
-				ShortHelp: "Check client code for linting errors, forbidden imports, ...",
-				Exec:      runCheckScriptsAndReport(scriptChecks["client"]...),
-			},
-			{
-				Name:      "shell",
-				FlagSet:   checkShellFlagSet,
-				ShortHelp: "Check shell code for linting errors, formatting, ...",
-				Exec:      runCheckScriptsAndReport(scriptChecks["shell"]...),
-			},
-		},
+		Subcommands: allCheckTargets.Commands(),
 	}
 )
 
@@ -202,4 +196,27 @@ func runCheckScript(header string, script string) checkScriptFn {
 			err:      err,
 		}
 	})
+}
+
+// checkTarget denotes a check that can be run by `sg check`
+type checkTarget struct {
+	Name      string
+	ShortHelp string
+	FlagSet   *flag.FlagSet
+	Checks    []checkScriptFn
+}
+
+type checkTargets []checkTarget
+
+// Commands converts all check targets to CLI commands
+func (cs checkTargets) Commands() (cmds []*ffcli.Command) {
+	for _, c := range cs {
+		cmds = append(cmds, &ffcli.Command{
+			Name:      c.Name,
+			ShortHelp: c.ShortHelp,
+			FlagSet:   checkURLsFlagSet,
+			Exec:      runCheckScriptsAndReport(c.Checks...),
+		})
+	}
+	return cmds
 }

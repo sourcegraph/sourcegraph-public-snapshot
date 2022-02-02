@@ -1,6 +1,7 @@
 import * as React from 'react'
 
-import { Link } from './Link'
+import { Link } from '@sourcegraph/wildcard'
+
 import { displayRepoName, splitPath } from './RepoFileLink'
 
 interface Props {

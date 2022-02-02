@@ -70,7 +70,45 @@ export function isVisible(element: HTMLElement | null): boolean {
 
         current = current.parentElement
     }
+
     return true
+}
+
+/**
+ * Returns offset of the element that is parent of the target element and at the same time
+ * creates another stacking context.
+ *
+ * ```
+ *   ┌────▲────────────────────────┐
+ *   │    │y                       │
+ *   ◀────╋━━stacking context━━━┓  │
+ *   │ x  ┃  ┌── ─── ─── ──┐    ┃  │
+ *   │    ┃   ┌ ─ ─ ─ ─ ─ ┐     ┃  │
+ *   │    ┃  │  ┌──────┐   │    ┃  │
+ *   │    ┃  ││ │Target│  ││    ┃  │
+ *   │    ┃  │  └──────┘   │    ┃  │
+ *   │    ┃   └ ─ ─ ─ ─ ─ ┘     ┃  │
+ *   │    ┃  └── ─── ─── ──┘    ┃  │
+ *   │    ┗━━━━━━━━━━━━━━━━━━━━━┛  │
+ *   └─────────────────────────────┘
+ * ```
+ */
+export function getAbsoluteAnchorOffset(element: HTMLElement): Point {
+    let current = element.parentElement
+
+    while (current) {
+        const styles = getComputedStyle(current)
+
+        if (styles.position !== 'static') {
+            const rectangle = current.getBoundingClientRect()
+
+            return createPoint(current.scrollLeft - rectangle.left, current.scrollTop - rectangle.top)
+        }
+
+        current = current.parentElement
+    }
+
+    return createPoint(0, 0)
 }
 
 export function setTransform(element: HTMLElement | null, angle: number, offset: Point): void {
@@ -88,13 +126,13 @@ export function setVisibility(element: HTMLElement | null, isVisible: boolean): 
     }
 }
 
-// ------------- Private API methods ---------------
-
-function setStyle(element: HTMLElement | null, key: string, value: string): void {
+export function setStyle(element: HTMLElement | null, key: string, value: string): void {
     if (element !== null && element.style.getPropertyValue(key) !== value) {
         element.style.setProperty(key, value)
     }
 }
+
+// ------------- Private API methods ---------------
 
 /**
  * Collect all elements by the root element and below that have scroll.

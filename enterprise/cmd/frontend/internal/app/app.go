@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -44,7 +45,7 @@ func Init(
 	}
 
 	dotcomConfig := conf.SiteConfig().Dotcom
-	if dotcomConfig == nil || dotcomConfig.GithubAppCloud == nil || dotcomConfig.GithubAppCloud.AppID == "" {
+	if !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
 		enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
@@ -76,6 +77,16 @@ func Init(
 	return nil
 }
 
+func checkIfOrgCanInstallGitHubApp(ctx context.Context, db database.DB, orgID int32) error {
+	enabled, err := db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, "github-app-cloud")
+	if err != nil {
+		return err
+	} else if !enabled {
+		return errors.New("Sourcegraph Cloud GitHub App setup is not enabled for the organization")
+	}
+	return nil
+}
+
 type githubClient interface {
 	GetAppInstallation(ctx context.Context, installationID int64) (*gogithub.Installation, error)
 }
@@ -93,6 +104,13 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`The "state" is not a valid graphql.ID of an organization`))
+			return
+		}
+
+		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 

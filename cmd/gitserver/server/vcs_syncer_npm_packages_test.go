@@ -16,10 +16,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages/npm"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -49,14 +50,18 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 
 	createMaliciousTgz(t, tgzPath)
 
-	s := NPMPackagesSyncer{
-		Config:  &schema.NPMPackagesConnection{Dependencies: []string{}},
-		DBStore: NewMockDBStore(),
-	}
+	s := NewNPMPackagesSyncer(
+		schema.NPMPackagesConnection{Dependencies: []string{}},
+		NewMockDBStore(),
+		nil,
+	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
-	err = s.commitTgz(ctx, reposource.NPMDependency{}, extractPath, tgzPath, s.Config)
-	assert.NotNil(t, err)
+	tgzFile, err := os.Open(tgzPath)
+	require.Nil(t, err)
+	defer func() { require.Nil(t, tgzFile.Close()) }()
+	err = s.commitTgz(ctx, reposource.NPMDependency{}, extractPath, tgzFile)
+	require.NotNil(t, err, "malicious tarball should not be committed successfully")
 
 	dirEntries, err := os.ReadDir(extractPath)
 	baseline := []string{"src"}
@@ -92,11 +97,14 @@ func TestNPMCloneCommand(t *testing.T) {
 	createTgz(t, tgzPath2, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
 	defer func() { assert.Nil(t, os.Remove(tgzPath2)) }()
 
-	npm.NPMBinary = npmScript(t, dir)
-	s := NPMPackagesSyncer{
-		Config:  &schema.NPMPackagesConnection{Dependencies: []string{}},
-		DBStore: NewMockDBStore(),
+	client := npmtest.MockClient{
+		TarballMap: map[string]string{exampleNPMVersionedPackage: tgzPath, exampleNPMVersionedPackage2: tgzPath2},
 	}
+	s := NewNPMPackagesSyncer(
+		schema.NPMPackagesConnection{Dependencies: []string{}},
+		NewMockDBStore(),
+		&client,
+	)
 	bareGitDirectory := path.Join(dir, "git")
 	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage})
 	checkSingleTag := func() {
@@ -149,7 +157,7 @@ func TestNPMCloneCommand(t *testing.T) {
 
 	// Now run the same tests with the database output instead.
 	mockStore := NewStrictMockDBStore()
-	s.DBStore = mockStore
+	s.dbStore = mockStore
 
 	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
 		{"example", exampleNPMVersion, 0},
@@ -171,52 +179,10 @@ func TestNPMCloneCommand(t *testing.T) {
 	checkTagRemoved()
 }
 
-func npmScript(t *testing.T, dir string) string {
-	t.Helper()
-	npmPath, err := os.OpenFile(path.Join(dir, "npm"), os.O_CREATE|os.O_RDWR, 07777)
-	assert.Nil(t, err)
-	defer func() { assert.Nil(t, npmPath.Close()) }()
-	script := fmt.Sprintf(`#!/usr/bin/env bash
-CLASSIFIER="$1"
-ARG="$2"
-if [[ "$CLASSIFIER" =~ "view" ]]; then
-  if [[ "$ARG" =~ "%[1]s" || "$ARG" =~ "%[2]s" ]]; then
-    echo "$ARG"
-  else
-    # Mimicking NPM's buggy behavior:
-    # https://github.com/npm/cli/issues/3184#issuecomment-963387099
-    exit 0
-  fi
-elif [[ "$CLASSIFIER" =~ "pack" ]]; then
-  # Copy tarball as it will be deleted after npm pack's output is parsed.
-  if [[ "$ARG" =~ "%[1]s" ]]; then
-    mkdir -p %[7]s
-    cp %[3]s %[5]s
-    echo "[{\"filename\": \"%[5]s\"}]"
-  elif [[ "$ARG" =~ "%[2]s" ]]; then
-    mkdir -p %[7]s
-    cp %[4]s %[6]s
-    echo "[{\"filename\": \"%[6]s\"}]"
-  fi
-else
-  echo "invalid arguments for fake npm script: $@"
-  exit 1
-fi
-`,
-		exampleNPMVersionedPackage, exampleNPMVersionedPackage2,
-		path.Join(dir, exampleTgz), path.Join(dir, exampleTgz2),
-		path.Join(dir, "tarballs", exampleTgz), path.Join(dir, "tarballs", exampleTgz2),
-		path.Join(dir, "tarballs"),
-	)
-	_, err = npmPath.WriteString(script)
-	assert.Nil(t, err)
-	return npmPath.Name()
-}
-
 func (s NPMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, dependencies []string) {
 	t.Helper()
 	packageURL := vcs.URL{URL: url.URL{Path: exampleNPMPackageURL}}
-	s.Config.Dependencies = dependencies
+	s.connection.Dependencies = dependencies
 	cmd, err := s.CloneCommand(context.Background(), &packageURL, bareGitDirectory)
 	assert.Nil(t, err)
 	assert.Nil(t, cmd.Run())
@@ -291,7 +257,10 @@ func TestDecompressTgz(t *testing.T) {
 			fileInfos = append(fileInfos, fileInfo{path: path, contents: []byte("x")})
 		}
 		createTgz(t, tgzPath, fileInfos)
-		assert.Nil(t, decompressTgz(tgzPath, dir))
+		tgzFile, err := os.Open(tgzPath)
+		require.Nil(t, err)
+		defer tgzFile.Close()
+		assert.Nil(t, decompressTgz(namedReadSeeker{tgzPath, tgzFile}, dir))
 		dirEntries, err := os.ReadDir(dir)
 		assert.Nil(t, err)
 		dirEntryNames := []string{}

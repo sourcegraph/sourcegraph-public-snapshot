@@ -1,6 +1,6 @@
 import '@sourcegraph/shared/src/polyfills'
 
-import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
+import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
 
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from '../../shared/code-hosts/phabricator/backend'
 import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'

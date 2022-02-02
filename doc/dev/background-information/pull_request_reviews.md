@@ -1,4 +1,4 @@
-# Pull request reviews
+# Pull request reviews <span class="badge badge-note">SOC2/GN-98</span> <span class="badge badge-note">SOC2/GN-104</span>
 
 Sourcegraph has a formal software development life cycle methodology and supporting procedures to help manage application and infrastructure changes.
 

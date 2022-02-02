@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Link } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
 import { BranchMerge } from '../../Branch'
@@ -55,7 +55,11 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                     {hasHeadReference(node) && (
                         <BranchMerge
                             baseRef={node.currentSpec.description.baseRef}
-                            forkNamespace={node.forkNamespace}
+                            forkTarget={
+                                node.forkNamespace
+                                    ? { pushUser: false, namespace: node.forkNamespace }
+                                    : node.currentSpec.forkTarget
+                            }
                             headRef={node.currentSpec.description.headRef}
                         />
                     )}

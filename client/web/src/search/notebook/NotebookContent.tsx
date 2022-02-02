@@ -1,6 +1,7 @@
 import { noop } from 'lodash'
 import React, { useMemo } from 'react'
 
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -8,7 +9,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchStreamingProps } from '..'
 import { fetchRepository, resolveRevision } from '../../repo/backend'
-import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
 import { SearchNotebook } from './SearchNotebook'
 

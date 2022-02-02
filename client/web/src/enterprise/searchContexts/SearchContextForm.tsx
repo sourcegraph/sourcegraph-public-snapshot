@@ -6,21 +6,22 @@ import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
     SearchPatternType,
 } from '@sourcegraph/shared/src/graphql-operations'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Container, Button, RadioButton, TextArea, useEventObservable } from '@sourcegraph/wildcard'
+import { Container, Button, RadioButton, TextArea, useEventObservable, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SearchContextProps } from '../../search'
-import { LazyMonacoQueryInput } from '../../search/input/LazyMonacoQueryInput'
 import { getExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
@@ -93,7 +94,8 @@ export interface SearchContextFormProps
     extends RouteComponentProps,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'deleteSearchContext'> {
+        Pick<SearchContextProps, 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     searchContext?: ISearchContext
     query?: string
     authenticatedUser: AuthenticatedUser
@@ -120,7 +122,14 @@ type RepositoriesParseResult =
       }
 
 export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
-    const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom } = props
+    const {
+        authenticatedUser,
+        onSubmit,
+        searchContext,
+        deleteSearchContext,
+        isSourcegraphDotCom,
+        platformContext,
+    } = props
     const history = useHistory()
     const experimentalFeatures = getExperimentalFeatures()
 
@@ -444,14 +453,15 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             deleteSearchContext={deleteSearchContext}
                             searchContext={searchContext}
                             toggleDeleteModal={toggleDeleteModal}
+                            platformContext={platformContext}
                         />
                     </>
                 )}
             </div>
             {isErrorLike(searchContextOrError) && (
-                <div className="alert alert-danger mt-2">
+                <Alert className="mt-2" variant="danger">
                     Failed to create search context: {searchContextOrError.message}
-                </div>
+                </Alert>
             )}
             <AwayPrompt
                 header="Discard unsaved changes?"

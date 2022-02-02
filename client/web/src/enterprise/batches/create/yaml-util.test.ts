@@ -128,9 +128,9 @@ on:
         expected: 0,
     },
 
-    // Spec with "repositoriesMatchingQuery" => append "-repo:"
+    // Spec with "repositoriesMatchingQuery" => append "-repo:" with escaped dot
     {
-        repo: 'repo1',
+        repo: 'github.com/repo1',
         branch: 'doesnt-matter',
         original: `name: hello-world
 on:
@@ -138,8 +138,23 @@ on:
 `,
         expected: `name: hello-world
 on:
-    - repositoriesMatchingQuery: file:README.md -repo:repo1
+    - repositoriesMatchingQuery: file:README.md -repo:github\\.com/repo1
 `,
+    },
+
+    // Spec with "repositoriesMatchingQuery" with the query captured in quotes => append
+    // "-repo:" without any escaping
+    {
+        repo: 'github.com/repo1',
+        branch: 'doesnt-matter',
+        original: `name: hello-world
+on:
+    - repositoriesMatchingQuery: "file:README.md"
+        `,
+        expected: `name: hello-world
+on:
+    - repositoriesMatchingQuery: "file:README.md -repo:github.com/repo1"
+        `,
     },
 
     // Spec with "repositoriesMatchingQuery" and multiple "repository" directives but repo

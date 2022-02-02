@@ -16,8 +16,23 @@
     text-overflow: ellipsis;
 }
 
-.right {
+.meta {
     font-size: 0.75rem;
-    margin-left: 1rem;
-    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.notebook-link {
+    font-size: 1rem;
+}
+
+.private-badge {
+    font-size: 0.625rem;
+}
+
+.notebook-star-icon-active {
+    color: var(--yellow);
+}
+
+.notebook-star-icon {
+    font-size: 1rem;
 }

@@ -1,7 +1,8 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
-import { AuthenticatedUser } from '../../../auth'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import {
     ListNotebooksResult,
@@ -14,17 +15,27 @@ import { fetchNotebooks as _fetchNotebooks } from '../backend'
 import { NotebookNode, NotebookNodeProps } from './NotebookNode'
 import styles from './SearchNotebooksList.module.scss'
 
-interface SearchNotebooksListProps {
+interface SearchNotebooksListProps extends TelemetryProps {
+    logEventName: string
     filters: FilteredConnectionFilter[]
-    authenticatedUser?: AuthenticatedUser | null
+    creatorUserID?: string
+    starredByUserID?: string
     fetchNotebooks: typeof _fetchNotebooks
 }
 
 export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListProps> = ({
+    logEventName,
     filters,
-    authenticatedUser,
+    creatorUserID,
+    starredByUserID,
     fetchNotebooks,
+    telemetryService,
 }) => {
+    useEffect(() => telemetryService.logViewEvent(`SearchNotebooksList${logEventName}`), [
+        logEventName,
+        telemetryService,
+    ])
+
     const queryConnection = useCallback(
         (args: Partial<ListNotebooksVariables>) => {
             const { orderBy, descending } = args as {
@@ -36,12 +47,13 @@ export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListPro
                 first: args.first ?? 10,
                 query: args.query ?? undefined,
                 after: args.after ?? undefined,
-                creatorUserID: authenticatedUser?.id,
+                creatorUserID,
+                starredByUserID,
                 orderBy,
                 descending,
             })
         },
-        [authenticatedUser, fetchNotebooks]
+        [creatorUserID, starredByUserID, fetchNotebooks]
     )
 
     const history = useHistory()

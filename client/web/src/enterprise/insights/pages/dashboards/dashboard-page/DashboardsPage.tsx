@@ -3,9 +3,8 @@ import React, { useEffect } from 'react'
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../components/Page'
 import { CodeInsightsIcon } from '../../../components'
@@ -75,8 +74,21 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                     className="mb-3"
                 />
 
-                <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
+                <DashboardPageContent telemetryService={telemetryService} dashboardID={dashboardID} />
             </Page>
         </div>
     )
+}
+
+export const DashboardPageContent: React.FunctionComponent<DashboardsPageProps> = props => {
+    const { dashboardID, telemetryService } = props
+    const { url } = useRouteMatch()
+
+    if (!dashboardID) {
+        // In case if url doesn't have a dashboard id we should fallback on
+        // built-in "All insights" dashboard
+        return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
+    }
+
+    return <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
 }

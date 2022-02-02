@@ -581,9 +581,9 @@ INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT %s
 WHERE NOT EXISTS (
 	SELECT
-	FROM external_service_sync_jobs j
-	JOIN external_services es ON es.id = j.external_service_id
-	WHERE j.external_service_id = %s
+	FROM external_services es
+	LEFT JOIN external_service_sync_jobs j ON es.id = j.external_service_id
+	WHERE es.id = %s
 	AND (
 		j.state IN ('queued', 'processing')
 		OR es.cloud_default

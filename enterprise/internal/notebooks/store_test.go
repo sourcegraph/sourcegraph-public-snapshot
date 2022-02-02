@@ -159,6 +159,18 @@ func TestConvertingToPostgresTextSearchQuery(t *testing.T) {
 	}
 }
 
+func createNotebookStars(ctx context.Context, store NotebooksStore, userID int32, notebookIDs ...int64) ([]*NotebookStar, error) {
+	stars := make([]*NotebookStar, 0, len(notebookIDs))
+	for _, id := range notebookIDs {
+		star, err := store.CreateNotebookStar(ctx, id, userID)
+		if err != nil {
+			return nil, err
+		}
+		stars = append(stars, star)
+	}
+	return stars, nil
+}
+
 func TestListingAndCountingNotebooks(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t)
@@ -192,6 +204,16 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 		{Title: "Notebook User2 Public", Blocks: NotebookBlocks{blocks[2], blocks[5]}, Public: true, CreatorUserID: user2.ID},
 		{Title: "Notebook User2 Private", Blocks: NotebookBlocks{blocks[3]}, Public: false, CreatorUserID: user2.ID},
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = createNotebookStars(internalCtx, n, user1.ID, createdNotebooks[0].ID, createdNotebooks[2].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = createNotebookStars(internalCtx, n, user2.ID, createdNotebooks[2].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -309,6 +331,22 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			wantNotebookIDs: []int64{createdNotebooks[2].ID, createdNotebooks[0].ID, createdNotebooks[1].ID},
 			wantCount:       3,
 		},
+		{
+			name:            "order by notebook stars descending",
+			userID:          user1.ID,
+			pageOpts:        ListNotebooksPageOptions{First: 2},
+			opts:            ListNotebooksOptions{OrderBy: NotebooksOrderByStarCount, OrderByDescending: true},
+			wantNotebookIDs: []int64{createdNotebooks[2].ID, createdNotebooks[0].ID},
+			wantCount:       3,
+		},
+		{
+			name:            "filter notebooks if user has starred them",
+			userID:          user1.ID,
+			pageOpts:        ListNotebooksPageOptions{First: 4},
+			opts:            ListNotebooksOptions{StarredByUserID: user1.ID},
+			wantNotebookIDs: []int64{createdNotebooks[0].ID, createdNotebooks[2].ID},
+			wantCount:       2,
+		},
 	}
 
 	for _, tt := range tests {
@@ -405,5 +443,139 @@ func TestNotebookPermissions(t *testing.T) {
 				t.Errorf("expected no error, got %+v", err)
 			}
 		})
+	}
+}
+
+func TestListingNotebookStars(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := database.Users(db)
+	n := Notebooks(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
+		{Title: "Notebook1", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user1.ID},
+		{Title: "Notebook2", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user2.ID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user1Stars, err := createNotebookStars(internalCtx, n, user1.ID, createdNotebooks[0].ID, createdNotebooks[1].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user2Stars, err := createNotebookStars(internalCtx, n, user2.ID, createdNotebooks[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name       string
+		notebookID int64
+		pageOpts   ListNotebookStarsPageOptions
+		wantStars  []*NotebookStar
+		wantCount  int64
+	}{
+		{
+			name:       "get first notebook first stars page",
+			notebookID: createdNotebooks[0].ID,
+			pageOpts:   ListNotebookStarsPageOptions{First: 2},
+			wantStars:  []*NotebookStar{user2Stars[0], user1Stars[0]},
+			wantCount:  2,
+		},
+		{
+			name:       "get first notebook second stars page",
+			notebookID: createdNotebooks[0].ID,
+			pageOpts:   ListNotebookStarsPageOptions{First: 1, After: 1},
+			wantStars:  []*NotebookStar{user1Stars[0]},
+			wantCount:  2,
+		},
+		{
+			name:       "get second notebook first stars page",
+			notebookID: createdNotebooks[1].ID,
+			pageOpts:   ListNotebookStarsPageOptions{First: 1},
+			wantStars:  []*NotebookStar{user1Stars[1]},
+			wantCount:  1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotStars, err := n.ListNotebookStars(internalCtx, tt.pageOpts, tt.notebookID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(tt.wantStars, gotStars) {
+				t.Fatalf("wanted %+v stars, got %+v", tt.wantStars, gotStars)
+			}
+
+			gotCountStars, err := n.CountNotebookStars(internalCtx, tt.notebookID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tt.wantCount != gotCountStars {
+				t.Fatalf("wanted %d stars count, got %d", tt.wantCount, gotCountStars)
+			}
+		})
+	}
+}
+
+func TestCreatingAndDeletingNotebookStars(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := database.Users(db)
+	n := Notebooks(db)
+
+	user, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
+		{Title: "Notebook", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user.ID},
+		{Title: "Notebook", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user.ID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Use the second notebook, so the user.ID and notebook.ID are different.
+	notebook := createdNotebooks[1]
+
+	_, err = n.CreateNotebookStar(internalCtx, notebook.ID, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// User cannot create multiple stars for the same notebook
+	_, err = n.CreateNotebookStar(internalCtx, notebook.ID, user.ID)
+	if err == nil {
+		t.Errorf("expected non-nil error, got nil")
+	}
+
+	_, err = n.GetNotebookStar(internalCtx, notebook.ID, user.ID)
+	if err != nil {
+		t.Errorf("expected to get notebook star, got %+v", err)
+	}
+
+	err = n.DeleteNotebookStar(internalCtx, notebook.ID, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = n.GetNotebookStar(internalCtx, notebook.ID, user.ID)
+	if err == nil {
+		t.Errorf("expected non-nil error, got nil")
 	}
 }

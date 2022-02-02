@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
+import { Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import { CloudSignUpSource } from '../../auth/CloudSignUpPage'
 
@@ -55,17 +55,17 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
 
     return (
         <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>
-            <DropdownToggle
-                className={classNames(
-                    'btn btn-sm btn-outline-secondary text-decoration-none',
-                    className,
-                    styles.toggle
-                )}
+            <Button
+                className={classNames('text-decoration-none', styles.toggle, className)}
                 nav={true}
                 caret={false}
+                variant="secondary"
+                outline={true}
+                size="sm"
+                as={DropdownToggle}
             >
                 {button}
-            </DropdownToggle>
+            </Button>
             <DropdownMenu right={true} className={styles.container}>
                 <div className="d-flex mb-3">
                     <div className="d-flex align-items-center mr-3">
@@ -78,14 +78,13 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                         <div className={classNames('text-muted', styles.copyText)}>{copyText}</div>
                     </div>
                 </div>
-                <Button
-                    to={`/sign-up?src=${source}&returnTo=${encodeURIComponent(returnTo)}`}
+                <ButtonLink
+                    to={buildGetStartedURL('search-dropdown-cta', returnTo)}
                     onClick={onClick}
                     variant="primary"
-                    as={Link}
                 >
-                    Sign up for Sourcegraph
-                </Button>
+                    Get started
+                </ButtonLink>
             </DropdownMenu>
         </ButtonDropdown>
     )

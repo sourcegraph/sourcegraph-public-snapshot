@@ -1,8 +1,8 @@
 import React, { FormEventHandler, RefObject, useContext } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker, VisibilityPicker } from '../../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
@@ -135,13 +135,13 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
                     <small className="w-100 mt-2 text-muted">
                         This feature is actively in development. Read about the{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                        <Link
+                            to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             beta limitations here.
-                        </a>
+                        </Link>
                     </small>
                 </label>
 
@@ -212,7 +212,8 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     type="submit"
                     disabled={submitting}
                     data-testid="insight-save-button"
-                    className="btn btn-primary mr-2 mb-2"
+                    className="mr-2 mb-2"
+                    variant="primary"
                 />
 
                 <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>

@@ -1,9 +1,10 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { OrgAreaPageProps, OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
-import { lazyComponent } from '../../util/lazyComponent'
 import { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
 import { CreateOrEditBatchChangePageProps } from '../batches/create/CreateOrEditBatchChangePage'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'

@@ -1,9 +1,9 @@
 import * as H from 'history'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchType } from '@sourcegraph/shared/src/search/stream'
 
 import { getSearchTypeFromQuery, toggleSearchType, toggleSubquery, submitSearch } from './helpers'
-import { SearchType } from './results/StreamingSearchResults'
 
 describe('search/helpers', () => {
     describe('submitSearch()', () => {

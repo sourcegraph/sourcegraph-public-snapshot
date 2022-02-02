@@ -1,12 +1,12 @@
 import classNames from 'classnames'
 import React, { useState, FunctionComponent, useCallback } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -93,7 +93,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
                     label="Save"
                     type="submit"
                     disabled={options.length === 1 || statusOrError === 'loading'}
-                    className="btn btn-primary"
+                    variant="primary"
                 />
             </Form>
             {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} />}

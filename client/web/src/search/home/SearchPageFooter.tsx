@@ -1,10 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
+import { Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 
@@ -86,21 +86,21 @@ export const SearchPageFooter: React.FunctionComponent<
                         <ul className="list-unstyled">
                             {section.links.map(link => (
                                 <li key={link.name}>
-                                    <a
-                                        href={link.to}
+                                    <Link
+                                        to={link.to}
                                         onClick={() => logLinkClicked(link.eventName ?? link.name)}
                                         className={styles.link}
                                     >
                                         {link.name}
-                                    </a>
+                                    </Link>
                                 </li>
                             ))}
                         </ul>
                     </li>
                 ))}
                 <li>
-                    <a
-                        href="https://info.sourcegraph.com/dev-tool-time"
+                    <Link
+                        to="https://info.sourcegraph.com/dev-tool-time"
                         className={styles.devToolTimeWrapper}
                         onClick={logDevelopmentToolTimeClicked}
                     >
@@ -113,7 +113,7 @@ export const SearchPageFooter: React.FunctionComponent<
                             <h2 className={styles.linkSectionHeading}>Dev tool time</h2>
                             <div>The show where developers talk about dev tools, productivity hacks, and more.</div>
                         </div>
-                    </a>
+                    </Link>
                 </li>
             </ul>
         </footer>

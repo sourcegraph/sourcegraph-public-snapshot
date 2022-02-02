@@ -47,11 +47,12 @@ interface CaptureGroupCreationLivePreviewProps {
     query: string
     stepValue: string
     step: InsightStep
+    isAllReposMode: boolean
     className?: string
 }
 
 export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGroupCreationLivePreviewProps> = props => {
-    const { disabled, repositories, query, stepValue, step, className } = props
+    const { disabled, repositories, query, stepValue, step, isAllReposMode, className } = props
     const { getCaptureInsightContent } = useContext(CodeInsightsBackendContext)
     const [dataOrError, setDataOrError] = useState<ChartContent | Error | undefined>()
 
@@ -73,7 +74,6 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
         setDataOrError(undefined)
 
         if (debouncedSettings.disabled) {
-            setDataOrError(undefined)
             return
         }
 
@@ -90,11 +90,26 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
 
     return (
         <LivePreviewContainer
-            dataOrError={dataOrError}
+            dataOrError={!disabled ? dataOrError : undefined}
             loading={!disabled && !dataOrError}
             disabled={disabled}
             defaultMock={DEFAULT_MOCK_CHART_CONTENT}
-            mockMessage=" The chart preview will be shown here once you have filled out the repositories and series field"
+            mockMessage={
+                isAllReposMode ? (
+                    <span> Live previews are currently not available for insights running over all repositories. </span>
+                ) : (
+                    <span>
+                        {' '}
+                        The chart preview will be shown here once you have filled out the repositories and series
+                        fields.
+                    </span>
+                )
+            }
+            description={
+                isAllReposMode
+                    ? 'Previews are only displayed only if you individually list up to 50 repositories.'
+                    : null
+            }
             className={className}
             chartContentClassName="pt-4"
             onUpdateClick={() => setLastPreviewVersion(version => version + 1)}

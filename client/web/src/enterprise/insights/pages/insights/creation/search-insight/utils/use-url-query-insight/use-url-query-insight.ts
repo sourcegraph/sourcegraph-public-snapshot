@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -95,7 +95,7 @@ export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightR
     const { getResolvedSearchRepositories } = useContext(CodeInsightsBackendContext)
     const [insightFormFields, setInsightFormFields] = useState<CreateInsightFormFields | ErrorLike | undefined>()
 
-    const query = new URLSearchParams(queryParameters).get('query')
+    const query = useMemo(() => new URLSearchParams(queryParameters).get('query'), [queryParameters])
 
     useEffect(() => {
         if (query === null) {

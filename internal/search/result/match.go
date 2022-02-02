@@ -1,6 +1,8 @@
 package result
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -10,7 +12,12 @@ import (
 // to ensure only those types implement Match.
 type Match interface {
 	ResultCount() int
+
+	// Limit truncates the match such that, after limiting,
+	// `Match.ResultCount() == limit`. It should never be called with
+	// `limit <= 0`, since a single match cannot be truncated to zero results.
 	Limit(int) int
+
 	Select(filter.SelectPath) Match
 	RepoName() types.MinimalRepo
 
@@ -47,6 +54,14 @@ type Key struct {
 	// Rev is the revision associated with the repo if it exists
 	Rev string
 
+	// AuthorDate is the date a commit was authored if this key is for
+	// a commit match.
+	//
+	// NOTE(@camdencheek): this should probably use committer date,
+	// but the CommitterField on our CommitMatch type is possibly null,
+	// so using AuthorDate here preserves previous sorting behavior.
+	AuthorDate *time.Time
+
 	// Commit is the commit hash of the commit the match belongs to.
 	// Empty if there is no commit associated with the match (e.g. RepoMatch)
 	Commit api.CommitID
@@ -69,6 +84,14 @@ func (k Key) Less(other Key) bool {
 		return k.Rev < other.Rev
 	}
 
+	if k.AuthorDate != nil && other.AuthorDate != nil {
+		return k.AuthorDate.Before(*other.AuthorDate)
+	} else if k.AuthorDate != nil {
+		return true
+	} else if other.AuthorDate != nil {
+		return false
+	}
+
 	if k.Commit != other.Commit {
 		return k.Commit < other.Commit
 	}
@@ -86,3 +109,24 @@ type Matches []Match
 func (m Matches) Len() int           { return len(m) }
 func (m Matches) Less(i, j int) bool { return m[i].Key().Less(m[j].Key()) }
 func (m Matches) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
+
+// Limit truncates the slice of matches such that, after limiting, `m.ResultCount() == limit`
+func (m *Matches) Limit(limit int) int {
+	for i, match := range *m {
+		if limit <= 0 {
+			*m = (*m)[:i]
+			return 0
+		}
+		limit = match.Limit(limit)
+	}
+	return limit
+}
+
+// ResultCount returns the sum of the result counts of each match in the slice
+func (m Matches) ResultCount() int {
+	count := 0
+	for _, match := range m {
+		count += match.ResultCount()
+	}
+	return count
+}

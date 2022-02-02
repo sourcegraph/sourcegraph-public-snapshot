@@ -54,7 +54,7 @@ func (c Command) Merge(other Command) Command {
 		merged.Env[k] = v
 	}
 
-	if !equal(merged.Watch, other.Watch) {
+	if !equal(merged.Watch, other.Watch) && len(other.Watch) != 0 {
 		merged.Watch = other.Watch
 	}
 

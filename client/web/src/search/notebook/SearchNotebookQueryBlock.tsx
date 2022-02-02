@@ -3,23 +3,26 @@ import { noop } from 'lodash'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback, useRef, useMemo } from 'react'
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
+import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { SearchContextProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
-import { useQueryDiagnostics } from '../useQueryIntelligence'
+import { useExperimentalFeatures } from '../../stores'
+import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
@@ -37,7 +40,8 @@ interface SearchNotebookQueryBlockProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         ThemeProps,
         SettingsCascadeProps,
-        TelemetryProps {
+        TelemetryProps,
+        PlatformContextProps<'requestGraphQL'> {
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     sourcegraphSearchLanguageId: string
@@ -61,6 +65,8 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     onSelectBlock,
     ...props
 }) => {
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const blockElement = useRef<HTMLDivElement>(null)
     const searchResults = useObservable(output ?? of(undefined))
@@ -123,6 +129,15 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
 
+    // Focus the query input when a new query block is added (the input is empty).
+    useEffect(() => {
+        if (editor && input.length === 0) {
+            editor.focus()
+        }
+        // Only run this hook for the initial input.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editor])
+
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
             {/* Notebook blocks are a form of specialized UI for which there are no good accesibility settings (role, aria-*)
@@ -184,6 +199,10 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             telemetryService={telemetryService}
                             settingsCascade={settingsCascade}
                             authenticatedUser={props.authenticatedUser}
+                            showSearchContext={showSearchContext}
+                            assetsRoot={window.context?.assetsRoot || ''}
+                            renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
+                            platformContext={props.platformContext}
                         />
                     </div>
                 )}

@@ -139,6 +139,7 @@ const batchChangeFragment = gql`
         }
 
         currentSpec {
+            id
             originalInput
             supersedingBatchSpec {
                 createdAt
@@ -268,6 +269,10 @@ export const externalChangesetFieldsFragment = gql`
                     baseRef
                     headRef
                 }
+            }
+            forkTarget {
+                pushUser
+                namespace
             }
         }
     }

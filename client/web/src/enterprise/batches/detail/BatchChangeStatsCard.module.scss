@@ -3,7 +3,7 @@
 .batch-change-stats-card {
     &__changesets-pill {
         // Should be the same height as plain mdi icons.
-        /* stylelint-disable declaration-property-unit-whitelist */
+        /* stylelint-disable declaration-property-unit-allowed-list */
         height: 24px;
     }
     &__completeness {

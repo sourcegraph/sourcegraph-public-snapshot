@@ -1,7 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
-import { Link } from 'react-router-dom'
 import { ListGroup, ListGroupItem } from 'reactstrap'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../batches'
 import { SidebarGroup, SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'

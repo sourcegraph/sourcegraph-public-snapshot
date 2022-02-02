@@ -3,6 +3,7 @@ import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
+import { CardBody, Card, Link } from '@sourcegraph/wildcard'
 
 import styles from './DocumentationWelcomeAlert.module.scss'
 
@@ -11,8 +12,8 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
         className={classNames('mt-3', styles.documentationWelcomeAlert)}
         partialStorageKey="apidocs-welcome"
     >
-        <div className="card">
-            <div className="card-body p-3">
+        <Card>
+            <CardBody>
                 <h1>
                     <BookOpenBlankVariantIcon className="icon-inline mr-2" />
                     API docs, for your code
@@ -21,17 +22,16 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
                     <li>Use the navbar on the left to navigate all the API documentation for this repository.</li>
                     <li>Only the Go programming language is supported at this time.</li>
                     <li>
-                        <a
-                            // eslint-disable-next-line react/jsx-no-target-blank
+                        <Link
                             target="_blank"
                             rel="noopener"
-                            href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                            to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                         >
                             Learn more
-                        </a>
+                        </Link>
                     </li>
                 </ul>
-            </div>
-        </div>
+            </CardBody>
+        </Card>
     </DismissibleAlert>
 )

@@ -3,10 +3,10 @@ import * as H from 'history'
 import * as React from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { SearchPatternTypeProps } from '../search'
 
 import styles from './SavedSearchModal.module.scss'
 

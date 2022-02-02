@@ -927,7 +927,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: mean_successful_sentinel_duration_1h30m
+## frontend: mean_successful_sentinel_duration_over_1h30m
 
 <p class="subtitle">mean successful sentinel search duration over 1h30m</p>
 
@@ -941,13 +941,13 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-successful-sentinel-duration-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-successful-sentinel-duration-over-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_mean_successful_sentinel_duration_1h30m",
-  "critical_frontend_mean_successful_sentinel_duration_1h30m"
+  "warning_frontend_mean_successful_sentinel_duration_over_1h30m",
+  "critical_frontend_mean_successful_sentinel_duration_over_1h30m"
 ]
 ```
 
@@ -955,7 +955,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: mean_sentinel_stream_latency_1h30m
+## frontend: mean_sentinel_stream_latency_over_1h30m
 
 <p class="subtitle">mean successful sentinel stream latency over 1h30m</p>
 
@@ -969,13 +969,13 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-sentinel-stream-latency-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-sentinel-stream-latency-over-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_mean_sentinel_stream_latency_1h30m",
-  "critical_frontend_mean_sentinel_stream_latency_1h30m"
+  "warning_frontend_mean_sentinel_stream_latency_over_1h30m",
+  "critical_frontend_mean_sentinel_stream_latency_over_1h30m"
 ]
 ```
 
@@ -983,7 +983,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: 90th_percentile_successful_sentinel_duration_1h30m
+## frontend: 90th_percentile_successful_sentinel_duration_over_1h30m
 
 <p class="subtitle">90th percentile successful sentinel search duration over 1h30m</p>
 
@@ -997,13 +997,13 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-successful-sentinel-duration-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-successful-sentinel-duration-over-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_90th_percentile_successful_sentinel_duration_1h30m",
-  "critical_frontend_90th_percentile_successful_sentinel_duration_1h30m"
+  "warning_frontend_90th_percentile_successful_sentinel_duration_over_1h30m",
+  "critical_frontend_90th_percentile_successful_sentinel_duration_over_1h30m"
 ]
 ```
 
@@ -1011,7 +1011,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: 90th_percentile_sentinel_stream_latency_1h30m
+## frontend: 90th_percentile_sentinel_stream_latency_over_1h30m
 
 <p class="subtitle">90th percentile successful sentinel stream latency over 1h30m</p>
 
@@ -1025,13 +1025,13 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-sentinel-stream-latency-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-sentinel-stream-latency-over-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_90th_percentile_sentinel_stream_latency_1h30m",
-  "critical_frontend_90th_percentile_sentinel_stream_latency_1h30m"
+  "warning_frontend_90th_percentile_sentinel_stream_latency_over_1h30m",
+  "critical_frontend_90th_percentile_sentinel_stream_latency_over_1h30m"
 ]
 ```
 

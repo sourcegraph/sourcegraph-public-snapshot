@@ -1,40 +1,80 @@
 import classNames from 'classnames'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import LockIcon from 'mdi-react/LockIcon'
+import StarIcon from 'mdi-react/StarIcon'
+import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Observable } from 'rxjs'
+import { catchError, switchMap, tap } from 'rxjs/operators'
 
-import { deleteNotebook as _deleteNotebook } from './backend'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
+
+import { AuthenticatedUser } from '../../auth'
+
+import {
+    deleteNotebook as _deleteNotebook,
+    createNotebookStar as _createNotebookStar,
+    deleteNotebookStar as _deleteNotebookStar,
+} from './backend'
 import { DeleteNotebookModal } from './DeleteNotebookModal'
 import styles from './SearchNotebookPageHeaderActions.module.scss'
 
-export interface SearchNotebookPageHeaderActionsProps {
+export interface SearchNotebookPageHeaderActionsProps extends TelemetryProps {
+    authenticatedUser: AuthenticatedUser | null
     notebookId: string
     viewerCanManage: boolean
     isPublic: boolean
     onUpdateVisibility: (isPublic: boolean) => void
     deleteNotebook: typeof _deleteNotebook
+    starsCount: number
+    viewerHasStarred: boolean
+    createNotebookStar: typeof _createNotebookStar
+    deleteNotebookStar: typeof _deleteNotebookStar
 }
 
 export const SearchNotebookPageHeaderActions: React.FunctionComponent<SearchNotebookPageHeaderActionsProps> = ({
+    authenticatedUser,
     notebookId,
     viewerCanManage,
     isPublic,
     onUpdateVisibility,
     deleteNotebook,
+    starsCount,
+    viewerHasStarred,
+    createNotebookStar,
+    deleteNotebookStar,
+    telemetryService,
 }) => (
     <div className="d-flex align-items-center">
+        <NotebookStarsButton
+            disabled={authenticatedUser === null}
+            notebookId={notebookId}
+            starsCount={starsCount}
+            viewerHasStarred={viewerHasStarred}
+            createNotebookStar={createNotebookStar}
+            deleteNotebookStar={deleteNotebookStar}
+            telemetryService={telemetryService}
+        />
         <NotebookVisibilityDropdown
             isPublic={isPublic}
             viewerCanManage={viewerCanManage}
             onUpdateVisibility={onUpdateVisibility}
+            telemetryService={telemetryService}
         />
-        {viewerCanManage && <NotebookSettingsDropdown notebookId={notebookId} deleteNotebook={deleteNotebook} />}
+        {viewerCanManage && (
+            <NotebookSettingsDropdown
+                notebookId={notebookId}
+                deleteNotebook={deleteNotebook}
+                telemetryService={telemetryService}
+            />
+        )}
     </div>
 )
 
-interface NotebookSettingsDropdownProps {
+interface NotebookSettingsDropdownProps extends TelemetryProps {
     notebookId: string
     deleteNotebook: typeof _deleteNotebook
 }
@@ -42,6 +82,7 @@ interface NotebookSettingsDropdownProps {
 const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdownProps> = ({
     notebookId,
     deleteNotebook,
+    telemetryService,
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => setIsOpen(previous => !previous), [setIsOpen])
@@ -52,9 +93,9 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
     return (
         <>
             <ButtonDropdown isOpen={isOpen} toggle={toggleOpen} group={false}>
-                <DropdownToggle className="btn btn-outline" tag="button">
+                <Button tag="button" outline={true} as={DropdownToggle}>
                     <DotsHorizontalIcon />
-                </DropdownToggle>
+                </Button>
                 <DropdownMenu right={true}>
                     <DropdownItem disabled={true}>Settings</DropdownItem>
                     <DropdownItem divider={true} />
@@ -68,12 +109,13 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
                 isOpen={showDeleteModal}
                 toggleDeleteModal={toggleDeleteModal}
                 deleteNotebook={deleteNotebook}
+                telemetryService={telemetryService}
             />
         </>
     )
 }
 
-interface NotebookVisibilityDropdownProps {
+interface NotebookVisibilityDropdownProps extends TelemetryProps {
     isPublic: boolean
     viewerCanManage: boolean
     onUpdateVisibility: (isPublic: boolean) => void
@@ -83,6 +125,7 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
     isPublic: initialIsPublic,
     onUpdateVisibility,
     viewerCanManage,
+    telemetryService,
 }) => {
     const [isPublic, setIsPublic] = useState(initialIsPublic)
     const [isOpen, setIsOpen] = useState(false)
@@ -90,19 +133,16 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
 
     const updateVisibility = useCallback(
         (isPublic: boolean) => {
+            telemetryService.log(`SearchNotebookSet${isPublic ? 'Public' : 'Private'}Visibility`)
             onUpdateVisibility(isPublic)
             setIsPublic(isPublic)
         },
-        [onUpdateVisibility, setIsPublic]
+        [onUpdateVisibility, setIsPublic, telemetryService]
     )
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleOpen} group={false}>
-            <DropdownToggle
-                className={classNames('btn', viewerCanManage && 'btn-outline')}
-                tag="button"
-                disabled={!viewerCanManage}
-            >
+            <Button tag="button" outline={viewerCanManage} disabled={!viewerCanManage} as={DropdownToggle}>
                 {isPublic ? (
                     <span>
                         <WebIcon className="icon-inline" /> Public
@@ -112,7 +152,7 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
                         <LockIcon className="icon-inline" /> Private
                     </span>
                 )}
-            </DropdownToggle>
+            </Button>
             <DropdownMenu right={true} className={styles.visibilityDropdownMenu}>
                 <DropdownItem disabled={true}>Change notebook visibility</DropdownItem>
                 <DropdownItem divider={true} />
@@ -134,5 +174,80 @@ const NotebookVisibilityDropdown: React.FunctionComponent<NotebookVisibilityDrop
                 </DropdownItem>
             </DropdownMenu>
         </ButtonDropdown>
+    )
+}
+
+interface NotebookStarsButtonProps extends TelemetryProps {
+    notebookId: string
+    disabled: boolean
+    starsCount: number
+    viewerHasStarred: boolean
+    createNotebookStar: typeof _createNotebookStar
+    deleteNotebookStar: typeof _deleteNotebookStar
+}
+
+const NotebookStarsButton: React.FunctionComponent<NotebookStarsButtonProps> = ({
+    notebookId,
+    disabled,
+    starsCount: initialStarsCount,
+    viewerHasStarred: initialViewerHasStarred,
+    createNotebookStar,
+    deleteNotebookStar,
+    telemetryService,
+}) => {
+    const [starsCount, setStarsCount] = useState(initialStarsCount)
+    const [viewerHasStarred, setViewerHasStarred] = useState(initialViewerHasStarred)
+
+    const [onStarToggle] = useEventObservable(
+        useCallback(
+            (viewerHasStarred: Observable<boolean>) =>
+                viewerHasStarred.pipe(
+                    // Immediately update the UI.
+                    tap(viewerHasStarred => {
+                        telemetryService.log(`SearchNotebook${viewerHasStarred ? 'Remove' : 'Add'}Star`)
+                        if (viewerHasStarred) {
+                            setStarsCount(starsCount => starsCount - 1)
+                            setViewerHasStarred(() => false)
+                        } else {
+                            setStarsCount(starsCount => starsCount + 1)
+                            setViewerHasStarred(() => true)
+                        }
+                    }),
+                    switchMap(viewerHasStarred =>
+                        viewerHasStarred ? deleteNotebookStar(notebookId) : createNotebookStar(notebookId)
+                    ),
+                    catchError(() => {
+                        setStarsCount(initialStarsCount)
+                        setViewerHasStarred(initialViewerHasStarred)
+                        return []
+                    })
+                ),
+            [
+                deleteNotebookStar,
+                notebookId,
+                createNotebookStar,
+                initialStarsCount,
+                initialViewerHasStarred,
+                telemetryService,
+            ]
+        )
+    )
+
+    return (
+        <Button
+            className="d-flex align-items-center"
+            outline={true}
+            disabled={disabled}
+            onClick={() => onStarToggle(viewerHasStarred)}
+        >
+            {viewerHasStarred ? (
+                <StarIcon
+                    className={classNames('icon-inline', styles.notebookStarIcon, styles.notebookStarIconActive)}
+                />
+            ) : (
+                <StarOutlineIcon className={classNames('icon-inline', styles.notebookStarIcon)} />
+            )}
+            <span className="ml-1">{starsCount}</span>
+        </Button>
     )
 }

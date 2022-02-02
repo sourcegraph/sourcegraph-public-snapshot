@@ -8,17 +8,17 @@ import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { ModalPage } from '../../../components/ModalPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -168,13 +168,13 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>
                         <div className="mb-3">
-                            <a target="_blank" rel="noopener" href="https://docs.sourcegraph.com/extensions/authoring">
+                            <Link target="_blank" rel="noopener" to="https://docs.sourcegraph.com/extensions/authoring">
                                 Learn more
-                            </a>{' '}
+                            </Link>{' '}
                             about authoring Sourcegraph extensions{' '}
-                            <a target="_blank" rel="noopener" href="https://docs.sourcegraph.com/extensions/authoring">
+                            <Link target="_blank" rel="noopener" to="https://docs.sourcegraph.com/extensions/authoring">
                                 <HelpCircleOutline className="icon-inline" />
-                            </a>
+                            </Link>
                         </div>
                         <Form onSubmit={this.onSubmit}>
                             <RegistryPublisherFormGroup

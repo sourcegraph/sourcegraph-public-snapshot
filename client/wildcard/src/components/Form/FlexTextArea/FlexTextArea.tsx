@@ -68,8 +68,7 @@ export const FlexTextArea = forwardRef((props: FlexTextAreaProps, reference: Ref
             target.scrollTop = target.scrollHeight
         }
 
-        target.rows = Math.min(currentRows, maxRows)
-        setRows(target.rows)
+        setRows(Math.min(currentRows, maxRows))
     }, [maxRows, minRows, value])
 
     return (

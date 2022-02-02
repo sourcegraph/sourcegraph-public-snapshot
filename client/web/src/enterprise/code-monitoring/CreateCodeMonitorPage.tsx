@@ -2,15 +2,16 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { Observable } from 'rxjs'
 
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
+import { CodeMonitorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
@@ -56,17 +57,7 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                 },
                 trigger: { query: codeMonitor.trigger.query },
 
-                actions: codeMonitor.actions.nodes.map(action => ({
-                    email:
-                        action.__typename === 'MonitorEmail'
-                            ? {
-                                  enabled: action.enabled,
-                                  priority: MonitorEmailPriority.NORMAL,
-                                  recipients: [authenticatedUser.id],
-                                  header: '',
-                              }
-                            : undefined,
-                })),
+                actions: convertActionsForCreate(codeMonitor.actions.nodes, authenticatedUser.id),
             })
         },
         [authenticatedUser.id, createCodeMonitor]
@@ -80,13 +71,13 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                        <Link
+                            to="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
                             target="_blank"
                             rel="noopener"
                         >
                             Learn more
-                        </a>
+                        </Link>
                     </>
                 }
             />

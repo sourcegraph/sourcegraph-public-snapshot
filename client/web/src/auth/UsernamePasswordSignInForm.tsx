@@ -1,11 +1,10 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'

@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { usePreviewRepositoryFilter } from '../hooks/usePreviewRepositoryFilter'
 
@@ -62,12 +62,12 @@ export const RepositoryPreview: FunctionComponent<RepositoryPreviewProps> = ({ p
                         </div>
 
                         {preview.totalMatches > preview.totalCount && (
-                            <div className="alert alert-danger">
+                            <Alert variant="danger">
                                 Each policy pattern can match a maximum of {preview.limit} repositories. There are{' '}
                                 {preview.totalMatches - preview.totalCount} additional repositories that match the
                                 filter not covered by this policy. Create a more constrained policy or increase the
                                 system limit.
-                            </div>
+                            </Alert>
                         )}
                     </>
                 )

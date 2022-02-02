@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-asdf install
 yarn
 yarn generate
 

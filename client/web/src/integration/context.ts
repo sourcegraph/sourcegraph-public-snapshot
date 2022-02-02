@@ -3,6 +3,7 @@ import path from 'path'
 
 import html from 'tagged-template-noop'
 
+import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import {
@@ -20,7 +21,7 @@ import { createJsContext } from './jscontext'
 
 export interface WebIntegrationTestContext
     extends IntegrationTestContext<
-        WebGraphQlOperations & SharedGraphQlOperations,
+        WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations,
         string & keyof (WebGraphQlOperations & SharedGraphQlOperations)
     > {
     /**

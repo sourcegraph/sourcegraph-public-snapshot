@@ -1,3 +1,4 @@
+import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { testUserID, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
@@ -8,7 +9,9 @@ import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 /**
  * Predefined results for GraphQL requests that are made on almost every page.
  */
-export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+export const commonWebGraphQlResults: Partial<
+    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
+> = {
     ...sharedGraphQlResults,
     CurrentAuthState: () => ({
         currentUser: {

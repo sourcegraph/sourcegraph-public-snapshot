@@ -45,7 +45,6 @@ func symbolSearchInRepos(
 	patternInfo *search.TextPatternInfo,
 	notSearcherOnly bool,
 	limit int,
-	cancel context.CancelFunc,
 	stream streaming.Sender,
 ) (err error) {
 	tr, ctx := trace.New(ctx, "Symbol search in repos", "")
@@ -53,6 +52,9 @@ func symbolSearchInRepos(
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	run := parallel.NewRun(conf.SearchSymbolsParallelism())
 
@@ -124,14 +126,11 @@ func Search(ctx context.Context, args *search.TextParameters, notSearcherOnly, g
 		tr.Finish()
 	}()
 
-	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
-	defer cancel()
-
 	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, globalSearch, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
-	return symbolSearchInRepos(ctx, request, args.PatternInfo, notSearcherOnly, limit, cancel, stream)
+	return symbolSearchInRepos(ctx, request, args.PatternInfo, notSearcherOnly, limit, stream)
 }
 
 func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
@@ -178,7 +177,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	}
 
 	// Create file matches from partitioned symbols
-	matches := make([]result.Match, 0, len(symbolsByPath))
+	matches := make(result.Matches, 0, len(symbolsByPath))
 	for path, symbols := range symbolsByPath {
 		file := result.File{
 			Path:     path,
@@ -202,7 +201,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	}
 
 	// Make the results deterministic
-	sort.Sort(result.Matches(matches))
+	sort.Sort(matches)
 	return matches, err
 }
 
@@ -417,14 +416,17 @@ type RepoSubsetSymbolSearch struct {
 	UseIndex          query.YesNoOnly
 	ContainsRefGlobs  bool
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
-
-	IsRequired bool
+	RepoOpts          search.RepoOptions
 }
 
-func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	ctx, stream, cancel := streaming.WithLimit(ctx, stream, s.Limit)
-	defer cancel()
+func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "RepoSubsetSymbolSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
+	repos := searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
 		if err != nil {
@@ -438,16 +440,12 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, stream streaming.Sende
 			}
 		}
 
-		return symbolSearchInRepos(ctx, request, s.PatternInfo, s.NotSearcherOnly, s.Limit, cancel, stream)
+		return symbolSearchInRepos(ctx, request, s.PatternInfo, s.NotSearcherOnly, s.Limit, stream)
 	})
 }
 
 func (*RepoSubsetSymbolSearch) Name() string {
 	return "RepoSubsetSymbol"
-}
-
-func (s *RepoSubsetSymbolSearch) Required() bool {
-	return s.IsRequired
 }
 
 type RepoUniverseSymbolSearch struct {
@@ -457,14 +455,14 @@ type RepoUniverseSymbolSearch struct {
 	Limit            int
 
 	RepoOptions search.RepoOptions
-	Db          database.DB
-
-	IsRequired bool
 }
 
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sender, _ searchrepos.Pager) error {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
-	defer cleanup()
+func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "RepoUniverseSymbolSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	userID := int32(0)
 
@@ -474,20 +472,16 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sen
 		}
 	}
 
-	userPrivateRepos := repos.PrivateReposForUser(ctx, s.Db, userID, s.RepoOptions)
+	userPrivateRepos := repos.PrivateReposForUser(ctx, db, userID, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}
 	// TODO(rvantonder): The `true` argument corresponds to notSearcherOnly,
 	// implied by global search. Separate the concerns in the symbol search
 	// function so that we don't need to pass this value.
-	return symbolSearchInRepos(ctx, request, s.PatternInfo, true, s.Limit, cleanup, stream)
+	return symbolSearchInRepos(ctx, request, s.PatternInfo, true, s.Limit, stream)
 }
 
 func (*RepoUniverseSymbolSearch) Name() string {
 	return "RepoUniverseSymbol"
-}
-
-func (s *RepoUniverseSymbolSearch) Required() bool {
-	return s.IsRequired
 }

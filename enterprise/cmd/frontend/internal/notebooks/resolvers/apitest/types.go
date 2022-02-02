@@ -34,3 +34,12 @@ type LineRange struct {
 	StartLine int32
 	EndLine   int32
 }
+
+type NotebookStar struct {
+	User      NotebookStarUser
+	CreatedAt string
+}
+
+type NotebookStarUser struct {
+	Username string
+}

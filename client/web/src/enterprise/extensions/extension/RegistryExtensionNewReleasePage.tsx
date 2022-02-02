@@ -6,6 +6,7 @@ import { of, Observable, concat, from } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, catchError, tap, concatMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
@@ -15,12 +16,11 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, useLocalStorage, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useLocalStorage, useEventObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -133,9 +133,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                 <h2>Publish new release</h2>
                 <p>
                     Use the{' '}
-                    <a href="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
+                    <Link to="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
                         <code>src</code> CLI tool
-                    </a>{' '}
+                    </Link>{' '}
                     to publish a new release:
                 </p>
                 <pre>

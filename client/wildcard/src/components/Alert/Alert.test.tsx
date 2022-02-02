@@ -9,7 +9,7 @@ describe('Alert', () => {
         const { container } = render(<Alert>Simple Alert</Alert>)
         expect(container.firstChild).toMatchInlineSnapshot(`
             <div
-              class="alert"
+              class=""
             >
               Simple Alert
             </div>

@@ -11,7 +11,7 @@ import (
 )
 
 type SearchEvent struct {
-	Results []result.Match
+	Results result.Matches
 	Stats   Stats
 }
 
@@ -26,25 +26,36 @@ type LimitStream struct {
 }
 
 func (s *LimitStream) Send(event SearchEvent) {
-	s.s.Send(event)
-
-	var count int64
-	for _, r := range event.Results {
-		count += int64(r.ResultCount())
-	}
+	count := int64(event.Results.ResultCount())
 
 	// Avoid limit checks if no change to result count.
 	if count == 0 {
+		s.s.Send(event)
 		return
 	}
 
-	old := s.remaining.Load()
-	s.remaining.Sub(count)
+	// Get the remaining count before and after sending this event
+	after := s.remaining.Sub(count)
+	before := after + count
 
-	// Only send IsLimitHit once. Can race with other sends and be sent
-	// multiple times, but this is fine. Want to avoid lots of noop events
-	// after the first IsLimitHit.
-	if old >= 0 && s.remaining.Load() < 0 {
+	// Check if the event needs truncating before being sent
+	if after < 0 {
+		limit := before
+		if before < 0 {
+			limit = 0
+		}
+		event.Results.Limit(int(limit))
+	}
+
+	// Send the maybe-truncated event. We want to always send the event
+	// even if we truncate it to zero results in case it has stats on it
+	// that we care about it.
+	s.s.Send(event)
+
+	// Send the IsLimitHit event and call cancel exactly once. This will
+	// only trigger when the result count of an event causes us to cross
+	// the zero-remaining threshold.
+	if after <= 0 && before > 0 {
 		s.s.Send(SearchEvent{Stats: Stats{IsLimitHit: true}})
 		s.cancel()
 	}
@@ -113,21 +124,24 @@ func (f StreamFunc) Send(se SearchEvent) {
 	f(se)
 }
 
-// CollectStream will call search and aggregates all events it sends. It then
-// returns the aggregate event and any error it returns.
-func CollectStream(search func(Sender) error) ([]result.Match, Stats, error) {
-	var (
-		mu      sync.Mutex
-		results []result.Match
-		stats   Stats
-	)
+// NewAggregatingStream returns a stream that collects all the events
+// sent to it. The aggregated event can be retrieved with Get().
+func NewAggregatingStream() *aggregatingStream {
+	return &aggregatingStream{}
+}
 
-	err := search(StreamFunc(func(event SearchEvent) {
-		mu.Lock()
-		results = append(results, event.Results...)
-		stats.Update(&event.Stats)
-		mu.Unlock()
-	}))
+type aggregatingStream struct {
+	sync.Mutex
+	event SearchEvent
+}
 
-	return results, stats, err
+func (c *aggregatingStream) Send(event SearchEvent) {
+	c.Lock()
+	c.event.Results = append(c.event.Results, event.Results...)
+	c.event.Stats.Update(&event.Stats)
+	c.Unlock()
+}
+
+func (c *aggregatingStream) Get() SearchEvent {
+	return c.event
 }

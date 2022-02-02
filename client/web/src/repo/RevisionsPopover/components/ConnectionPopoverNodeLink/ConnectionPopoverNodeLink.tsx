@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
-import { Link, LinkProps } from 'react-router-dom'
+
+import { Link, LinkProps } from '@sourcegraph/wildcard'
 
 import { GitReferenceNode, GitReferenceNodeProps } from '../../../GitReference'
 

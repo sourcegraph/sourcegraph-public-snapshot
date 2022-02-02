@@ -1,6 +1,8 @@
-import { render, RenderResult } from '@testing-library/react'
+import { RenderResult } from '@testing-library/react'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React from 'react'
+
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { PageHeader } from './PageHeader'
 
@@ -25,7 +27,7 @@ describe('PageHeader', () => {
     ]
 
     beforeEach(() => {
-        queries = render(<PageHeader path={breadcrumbs} />)
+        queries = renderWithRouter(<PageHeader path={breadcrumbs} />)
     })
 
     it('renders correctly', () => {

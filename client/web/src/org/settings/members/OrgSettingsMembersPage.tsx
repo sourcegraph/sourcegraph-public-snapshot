@@ -2,18 +2,17 @@ import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { queryGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { OrgAreaOrganizationFields } from '../../../graphql-operations'
@@ -226,7 +225,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                 <PageHeader path={[{ text: 'Organization members' }]} headingElement="h2" className="mb-3" />
                 <Container>
                     {this.state.onlyMemberRemovalAttempted && (
-                        <div className="alert alert-warning">You can’t remove the only member of an organization</div>
+                        <Alert variant="warning">You can’t remove the only member of an organization</Alert>
                     )}
                     {this.state.viewerCanAdminister && (
                         <InviteForm

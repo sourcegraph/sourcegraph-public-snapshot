@@ -8,7 +8,7 @@ import commandExists from 'command-exists'
 import execa from 'execa'
 import * as semver from 'semver'
 
-import { readLine, formatDate, timezoneLink, cacheFolder } from './util'
+import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL } from './util'
 const mkdtemp = promisify(original_mkdtemp)
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
@@ -118,6 +118,10 @@ const getTemplates = () => {
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED],
     }
     return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
+}
+
+function dateMarkdown(date: Date, name: string): string {
+    return `[${formatDate(date)}](${timezoneLink(date, name)})`
 }
 
 async function execTemplate(
@@ -633,6 +637,32 @@ export async function createTag(
     await execa('bash', ['-c', `git tag -a ${tag} -m ${tag} && ${finalizeTag}`], { stdio: 'inherit', cwd: workdir })
 }
 
-function dateMarkdown(date: Date, name: string): string {
-    return `[${formatDate(date)}](${timezoneLink(date, name)})`
+export async function createRelease(
+    octokit: Octokit,
+    { owner, repo, release }: { owner: string; repo: string; release: semver.SemVer },
+    dryRun?: boolean
+): Promise<string> {
+    const updateURL = 'https://docs.sourcegraph.com/admin/updates'
+    const releasePostURL = `https://about.sourcegraph.com/blog/release/${release.major}.${release.minor}`
+
+    const request: Octokit.RequestOptions & Octokit.ReposCreateReleaseParams = {
+        owner,
+        repo,
+        tag_name: `v${release.version}`,
+        name: `Sourcegraph ${release.version}`,
+        prerelease: false,
+        draft: false,
+        body: `Sourcegraph ${release.version} is now available!
+
+- [Changelog](${changelogURL(release.format())})
+- [Update](${updateURL})
+- [Release post](${releasePostURL}) (might not be available immediately upon release)
+`,
+    }
+    if (dryRun) {
+        console.log('Skipping GitHub release, parameters:', request)
+        return ''
+    }
+    const response = await octokit.repos.createRelease(request)
+    return response.data.html_url
 }

@@ -11,15 +11,14 @@ import { startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '..'
 import blockStyles from '../SearchNotebookBlock.module.scss'
 import { BlockMenuAction, SearchNotebookBlockMenu } from '../SearchNotebookBlockMenu'
-import { isSingleLineRange, serializeLineRange } from '../serialize'
+import { isSingleLineRange, parseFileBlockInput, serializeLineRange } from '../serialize'
 import { useBlockSelection } from '../useBlockSelection'
 import { useBlockShortcuts } from '../useBlockShortcuts'
 import { useCommonBlockMenuActions } from '../useCommonBlockMenuActions'
@@ -217,6 +216,35 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
         onRunBlock(id)
     }, [id, input, areInputsValid, onRunBlock])
 
+    const onFileURLPaste = useCallback(
+        (event: ClipboardEvent) => {
+            if (!isSelected || !showInputs || !event.clipboardData) {
+                return
+            }
+            const value = event.clipboardData.getData('text')
+            const parsedFileInput = parseFileBlockInput(value)
+            if (parsedFileInput.repositoryName.length === 0 || parsedFileInput.filePath.length === 0) {
+                return
+            }
+            setShowRevisionInput(parsedFileInput.revision.length > 0)
+            setShowLineRangeInput(!!parsedFileInput.lineRange)
+            if (parsedFileInput.lineRange) {
+                setLineRangeInput(serializeLineRange(parsedFileInput.lineRange))
+            }
+            setFileInput(parsedFileInput)
+        },
+        [showInputs, isSelected, setFileInput, setShowRevisionInput, setShowLineRangeInput, setLineRangeInput]
+    )
+
+    useEffect(() => {
+        // We need to add a global paste handler due to focus issues when adding a new block.
+        // When a new block is added, we focus it programmatically, but it does not receive the paste events.
+        // The user would have to click it manually before copying the file URL. That would result in a weird UX, so we
+        // need to handle the paste action globally.
+        document.addEventListener('paste', onFileURLPaste)
+        return () => document.removeEventListener('paste', onFileURLPaste)
+    }, [isSelected, onFileURLPaste])
+
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
             {/* See the explanation for the disable in markdown and query blocks. */}
@@ -287,7 +315,9 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                     </div>
                 )}
                 {blobLines && blobLines !== LOADING && isErrorLike(blobLines) && (
-                    <div className="alert alert-danger m-3">{blobLines.message}</div>
+                    <Alert className="m-3" variant="danger">
+                        {blobLines.message}
+                    </Alert>
                 )}
             </div>
             {(isSelected || !isOtherBlockSelected) && (

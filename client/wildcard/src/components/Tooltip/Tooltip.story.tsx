@@ -1,5 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -21,6 +21,9 @@ const config: Meta = {
 
     parameters: {
         component: Tooltip,
+        chromatic: {
+            enableDarkMode: true,
+        },
         design: {
             type: 'figma',
             name: 'Figma',
@@ -135,13 +138,17 @@ Pinned.parameters = {
 const ForceUpdateTooltip = () => {
     const [copied, setCopied] = useState<boolean>(false)
 
-    const onClick = () => {
-        setCopied(true)
+    useEffect(() => {
         TooltipController.forceUpdate()
+    }, [copied])
+
+    const onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
+        event.preventDefault()
+
+        setCopied(true)
 
         setTimeout(() => {
             setCopied(false)
-            TooltipController.forceUpdate()
         }, 1500)
     }
 

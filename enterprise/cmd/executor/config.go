@@ -17,28 +17,28 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	FrontendURL          string
-	FrontendPassword     string
-	QueueName            string
-	QueuePollInterval    time.Duration
-	MaximumNumJobs       int
-	FirecrackerImage     string
-	VMStartupScriptPath  string
-	VMPrefix             string
-	UseFirecracker       bool
-	FirecrackerNumCPUs   int
-	FirecrackerMemory    string
-	FirecrackerDiskSpace string
-	MaximumRuntimePerJob time.Duration
-	CleanupTaskInterval  time.Duration
-	NumTotalJobs         int
-	MaxActiveTime        time.Duration
-	WorkerHostname       string
+	FrontendURL                string
+	FrontendAuthorizationToken string
+	QueueName                  string
+	QueuePollInterval          time.Duration
+	MaximumNumJobs             int
+	FirecrackerImage           string
+	VMStartupScriptPath        string
+	VMPrefix                   string
+	UseFirecracker             bool
+	FirecrackerNumCPUs         int
+	FirecrackerMemory          string
+	FirecrackerDiskSpace       string
+	MaximumRuntimePerJob       time.Duration
+	CleanupTaskInterval        time.Duration
+	NumTotalJobs               int
+	MaxActiveTime              time.Duration
+	WorkerHostname             string
 }
 
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
-	c.FrontendPassword = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The password supplied to the frontend.")
+	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The authorization token supplied to the frontend.")
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
@@ -81,7 +81,7 @@ func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) a
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
-			c.FrontendPassword: "PASSWORD_REMOVED",
+			c.FrontendAuthorizationToken: "SECRET_REMOVED",
 		},
 	}
 }
@@ -131,7 +131,7 @@ func (c *Config) BaseClientOptions() apiclient.BaseClientOptions {
 
 func (c *Config) EndpointOptions() apiclient.EndpointOptions {
 	return apiclient.EndpointOptions{
-		URL:      c.FrontendURL,
-		Password: c.FrontendPassword,
+		URL:   c.FrontendURL,
+		Token: c.FrontendAuthorizationToken,
 	}
 }

@@ -19,6 +19,9 @@ const config: Meta = {
 
     parameters: {
         component: Icon,
+        chromatic: {
+            enableDarkMode: true,
+        },
     },
 }
 export default config

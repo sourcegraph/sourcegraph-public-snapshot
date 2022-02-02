@@ -33,5 +33,5 @@ func (s *DBStoreShim) Transact(ctx context.Context) (DBStore, error) {
 
 type GitHubClient interface {
 	GetRepository(ctx context.Context, owner string, name string) (*github.Repository, error)
-	ListInstallationRepositories(ctx context.Context) ([]*github.Repository, error)
+	ListInstallationRepositories(ctx context.Context, page int) ([]*github.Repository, bool, int, error)
 }

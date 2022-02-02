@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`RouterLink renders absolute URL correctly  1`] = `
+<DocumentFragment>
+  <a
+    class=""
+    href="https://sourcegraph.com"
+  >
+    SourceGraph
+  </a>
+</DocumentFragment>
+`;
+
+exports[`RouterLink renders router link correctly 1`] = `
+<DocumentFragment>
+  <a
+    class=""
+    href="/docs"
+  >
+    Link to docs
+  </a>
+</DocumentFragment>
+`;

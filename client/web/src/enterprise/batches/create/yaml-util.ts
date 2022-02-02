@@ -68,19 +68,20 @@ const appendExcludeRepoToQuery = (spec: string, ast: YAMLMap, repo: string): YAM
         return { spec, success: false, error: 'Non-scalar value found for "repositoriesMatchingQuery" key' }
     }
 
+    const isQuoted = queryValue.doubleQuoted || queryValue.singleQuoted || false
+
+    // If the value is not quoted, we need to escape characters
+    const excludeQualifierString = isQuoted ? ` -repo:${repo}` : ` -repo:${escapeRegExp(repo)}`
+    // If the value is quoted, we also need to shift the slice position so that the string
+    // is inserted inside of the quotes
+    const slicePosition = isQuoted ? queryValue.endPosition - 1 : queryValue.endPosition
+
     // Insert "-repo:" qualifier at the end of the query string
     // TODO: In the future this can be integrated into the batch spec under its own
     // "excludes" keyword instead.
-    // If the value is quoted, we need to move the addition to the string to _within_
-    // the string value.
-    let slicePosition = queryValue.endPosition
-    if (queryValue.doubleQuoted || queryValue.singleQuoted) {
-        slicePosition--
-    }
-    return {
-        success: true,
-        spec: spec.slice(0, slicePosition) + ` -repo:${escapeRegExp(repo)}` + spec.slice(slicePosition),
-    }
+    const newSpec = spec.slice(0, slicePosition) + excludeQualifierString + spec.slice(slicePosition)
+
+    return { success: true, spec: newSpec }
 }
 
 /**

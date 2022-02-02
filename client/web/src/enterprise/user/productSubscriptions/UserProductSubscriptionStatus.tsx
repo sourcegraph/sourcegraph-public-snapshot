@@ -2,7 +2,7 @@ import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 import React, { useState, useCallback } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, CardFooter, Link } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -44,15 +44,15 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
             }
             footer={
                 <>
-                    <div className="card-footer d-flex align-items-center justify-content-between flex-wrap">
+                    <CardFooter className="d-flex align-items-center justify-content-between flex-wrap">
                         <Button className="mr-4 my-1" onClick={toggleShowLicenseKey} variant="primary">
                             <KeyIcon className="icon-inline" /> {showLicenseKey ? 'Hide' : 'Reveal'} license key
                         </Button>
                         <div className="flex-fill" />
                         <div className="my-1" />
-                    </div>
+                    </CardFooter>
                     {showLicenseKey && (
-                        <div className="card-footer">
+                        <CardFooter>
                             <h3>License key</h3>
                             {licenseKey ? (
                                 <>
@@ -72,17 +72,17 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
                             ) : (
                                 <div className="text-muted">
                                     No license key found.{' '}
-                                    <a
-                                        href={mailtoSales({
+                                    <Link
+                                        to={mailtoSales({
                                             subject: `No license key for subscription ${subscriptionName}`,
                                         })}
                                     >
                                         Contact sales
-                                    </a>{' '}
+                                    </Link>{' '}
                                     for help.
                                 </div>
                             )}
-                        </div>
+                        </CardFooter>
                     )}
                 </>
             }

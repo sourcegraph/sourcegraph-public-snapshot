@@ -42,7 +42,7 @@ describe('Search contexts', () => {
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
-    const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations> = {
+    const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ViewerSettings: () => ({
             viewerSettings: {
                 __typename: 'SettingsCascade',

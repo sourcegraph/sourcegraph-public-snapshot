@@ -4,7 +4,9 @@ import React from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuPopover, MenuItems } from '.'
+import { Link } from '../Link'
+
+import { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList } from '.'
 
 const config: Meta = {
     title: 'wildcard/Menu',
@@ -17,6 +19,9 @@ const config: Meta = {
 
     parameters: {
         component: Menu,
+        chromatic: {
+            enableDarkMode: true,
+        },
     },
 }
 
@@ -27,16 +32,15 @@ export const MenuExample: Story = () => (
         <MenuButton variant="primary" outline={true}>
             Actions <span aria-hidden={true}>▾</span>
         </MenuButton>
-        <MenuPopover>
-            <MenuItems>
-                <MenuHeader>This is a menu</MenuHeader>
-                <MenuItem onSelect={() => alert('Clicked!')}>Click me</MenuItem>
-                <MenuItem onSelect={() => alert('Clicked!')}>Alternative action</MenuItem>
-                <MenuDivider />
-                <MenuLink as="a" href="https://www.example.com">
-                    Go somewhere
-                </MenuLink>
-            </MenuItems>
-        </MenuPopover>
+
+        <MenuList>
+            <MenuHeader>This is a menu</MenuHeader>
+            <MenuItem onSelect={() => alert('Clicked!')}>Click me</MenuItem>
+            <MenuItem onSelect={() => alert('Clicked!')}>Alternative action</MenuItem>
+            <MenuDivider />
+            <MenuLink as={Link} to="https://www.example.com">
+                Go somewhere
+            </MenuLink>
+        </MenuList>
     </Menu>
 )

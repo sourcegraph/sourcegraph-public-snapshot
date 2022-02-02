@@ -8,7 +8,7 @@ import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependSty
 import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
 // Add root Tooltip for Storybook
 // eslint-disable-next-line no-restricted-imports
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import webStyles from '../SourcegraphWebApp.scss'
 
@@ -38,14 +38,16 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
 
     return (
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
-            <MemoryRouter {...memoryRouterProps}>
-                <Tooltip />
-                <Children
-                    {...breadcrumbSetters}
-                    isLightTheme={isLightTheme}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
-            </MemoryRouter>
+            <WildcardThemeContext.Provider value={{ isBranded: true }}>
+                <MemoryRouter {...memoryRouterProps}>
+                    <Tooltip />
+                    <Children
+                        {...breadcrumbSetters}
+                        isLightTheme={isLightTheme}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                    />
+                </MemoryRouter>
+            </WildcardThemeContext.Provider>
         </MockedStoryProvider>
     )
 }

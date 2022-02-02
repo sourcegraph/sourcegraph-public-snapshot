@@ -59,7 +59,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,13 +153,13 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Non-created-from-raw, attached to batch change
-	batchSpec1, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, false)
+	batchSpec1, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +167,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	batchSpec1.NamespaceUserID = userID
 
 	// Non-created-from-raw, not attached to batch change
-	batchSpec2, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, false)
+	batchSpec2, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	batchSpec2.NamespaceUserID = userID
 
 	// created-from-raw, not attached to batch change
-	batchSpec3, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, false)
+	batchSpec3, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}

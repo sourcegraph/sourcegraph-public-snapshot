@@ -1,12 +1,15 @@
 import { formatISO } from 'date-fns'
-import escapeRegExp from 'lodash/escapeRegExp'
 import { LineChartContent } from 'sourcegraph'
 
-import { InsightDataSeries } from '../../../../../graphql-operations'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+
+import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
+import { PageRoutes } from '../../../../../routes.constants'
 import { SearchBasedBackendFilters, SearchBasedInsightSeries } from '../../types/insight/search-insight'
 
 interface SeriesDataset {
     dateTime: number
+
     [seriesKey: string]: number
 }
 
@@ -92,18 +95,13 @@ export function createLineChartContentFromIndexedSeries(
                         const previousPoint = points[index - 1]
                         const date = Date.parse(point.dateTime)
 
-                        // Link to diff search that explains what new cases were added between two data points
-                        const url = new URL('/search', window.location.origin)
-
                         // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
                         // They mark the same point in time, but using the user's timezone makes the date string
                         // easier to read (else the date component may be off by one day)
                         const after = previousPoint ? formatISO(Date.parse(previousPoint.dateTime)) : ''
                         const before = formatISO(date)
 
-                        const includeRepoFilter = filters.includeRepoRegexp
-                            ? `repo:${escapeRegExp(filters.includeRepoRegexp)}`
-                            : ''
+                        const includeRepoFilter = filters.includeRepoRegexp ? `repo:${filters.includeRepoRegexp}` : ''
 
                         const excludeRepoFilter = filters.excludeRepoRegexp ? `-repo:${filters.excludeRepoRegexp}` : ''
 
@@ -112,10 +110,9 @@ export function createLineChartContentFromIndexedSeries(
                         const beforeFilter = `before:${before}`
                         const dateFilters = `${afterFilter} ${beforeFilter}`
                         const diffQuery = `${repoFilter} type:diff ${dateFilters} ${definitionMap[line.seriesId].query}`
+                        const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
 
-                        url.searchParams.set('q', diffQuery)
-
-                        return [date, url.href]
+                        return [date, `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`]
                     })
             ),
         })),

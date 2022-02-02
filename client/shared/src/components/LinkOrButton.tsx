@@ -5,8 +5,7 @@ import React, { useCallback, AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
 
 import { isDefined } from '@sourcegraph/common'
-
-import { Link } from './Link'
+import { Link, AnchorLink } from '@sourcegraph/wildcard'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
@@ -117,9 +116,8 @@ export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = ({
             // Need empty href for styling reasons
             // Use onAuxClick so that middle-clicks are caught.
             // Ideally this should a <button> but we can't guarantee we have the .btn-link class here.
-            // eslint-disable-next-line jsx-a11y/anchor-is-valid
-            <a
-                href=""
+            <AnchorLink
+                to=""
                 {...commonProps}
                 onClick={onClickPreventDefault}
                 onAuxClick={onClickPreventDefault}
@@ -128,7 +126,7 @@ export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = ({
                 data-content={dataContent}
             >
                 {children}
-            </a>
+            </AnchorLink>
         )
     }
 

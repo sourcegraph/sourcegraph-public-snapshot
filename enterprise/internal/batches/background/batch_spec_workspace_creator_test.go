@@ -213,7 +213,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	}
 
 	createBatchSpec := func(t *testing.T, noCache bool) *btypes.BatchSpec {
-		batchSpec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpecYAML, false)
+		batchSpec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpecYAML)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -296,6 +296,7 @@ Foreign-key constraints:
  head_ref          | text                     |           |          | 
  title             | text                     |           |          | 
  external_id       | text                     |           |          | 
+ fork_namespace    | citext                   |           |          | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_external_id" btree (external_id)
@@ -577,14 +578,21 @@ Slack webhook actions configured on code monitors
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
  execution_logs    | json[]                   |           |          | 
+ search_results    | jsonb                    |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "search_results_is_array" CHECK (jsonb_typeof(search_results) = 'array'::text)
 Foreign-key constraints:
     "cm_trigger_jobs_query_fk" FOREIGN KEY (query) REFERENCES cm_queries(id) ON DELETE CASCADE
 Referenced by:
     TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
 
 ```
+
+**num_results**: DEPRECATED: replaced by len(search_results). Can be removed after version 3.37 release cut
+
+**results**: DEPRECATED: replaced by len(search_results) > 0. Can be removed after version 3.37 release cut
 
 # Table "public.cm_webhooks"
 ```
@@ -1579,6 +1587,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.notebook_stars"
+```
+   Column    |           Type           | Collation | Nullable | Default 
+-------------+--------------------------+-----------+----------+---------
+ notebook_id | integer                  |           | not null | 
+ user_id     | integer                  |           | not null | 
+ created_at  | timestamp with time zone |           | not null | now()
+Indexes:
+    "notebook_stars_pkey" PRIMARY KEY, btree (notebook_id, user_id)
+    "notebook_stars_user_id_idx" btree (user_id)
+Foreign-key constraints:
+    "notebook_stars_notebook_id_fkey" FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE
+    "notebook_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.notebooks"
 ```
      Column      |           Type           | Collation | Nullable |                                              Default                                              
@@ -1599,6 +1623,8 @@ Check constraints:
     "blocks_is_array" CHECK (jsonb_typeof(blocks) = 'array'::text)
 Foreign-key constraints:
     "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+Referenced by:
+    TABLE "notebook_stars" CONSTRAINT "notebook_stars_notebook_id_fkey" FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -1616,6 +1642,8 @@ Foreign-key constraints:
  response_type     | boolean                  |           |          | 
  revoked_at        | timestamp with time zone |           |          | 
  deleted_at        | timestamp with time zone |           |          | 
+ recipient_email   | citext                   |           |          | 
+ expires_at        | timestamp with time zone |           |          | 
 Indexes:
     "org_invitations_pkey" PRIMARY KEY, btree (id)
     "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
@@ -2407,6 +2435,7 @@ Referenced by:
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "notebook_stars" CONSTRAINT "notebook_stars_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "notebooks" CONSTRAINT "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)

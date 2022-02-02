@@ -1,8 +1,7 @@
 import React, { FC, useMemo } from 'react'
-import { Link } from 'react-router-dom'
 
 import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
-import { Badge, useObservable, Button } from '@sourcegraph/wildcard'
+import { Badge, useObservable, Button, Link } from '@sourcegraph/wildcard'
 
 import { queryRepoChangesetsStats as _queryRepoChangesetsStats } from './backend'
 import { BatchChangesIcon } from './icons'

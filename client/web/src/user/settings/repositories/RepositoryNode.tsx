@@ -9,7 +9,7 @@ import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback } from 'react'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Badge, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -119,9 +119,9 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
     return (
         <RepositoryNodeContainer as="tr">
             <td className="border-color">
-                <a
+                <Link
                     className={classNames('w-100 d-flex justify-content-between align-items-center', styles.link)}
-                    href={url}
+                    to={url}
                     onClick={handleOnClick}
                 >
                     <div className="d-flex align-items-center">
@@ -138,7 +138,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                         )}
                         <ChevronRightIcon className="icon-inline ml-2 text-primary" />
                     </div>
-                </a>
+                </Link>
             </td>
         </RepositoryNodeContainer>
     )

@@ -38,7 +38,7 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 
 	totalCount := 0
 
-	checkerEnabled := r.checker != nil && r.checker.Enabled()
+	checkerEnabled := authz.SubRepoEnabled(r.checker)
 	var a *actor.Actor
 	if checkerEnabled {
 		a = actor.FromContext(ctx)

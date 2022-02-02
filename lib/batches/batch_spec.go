@@ -133,7 +133,6 @@ type ParseBatchSpecOptions struct {
 	AllowArrayEnvironments bool
 	AllowTransformChanges  bool
 	AllowConditionalExec   bool
-	AllowFiles             bool
 }
 
 func ParseBatchSpec(data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
@@ -189,17 +188,6 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 			if step.IfCondition() != "" {
 				errs = multierror.Append(errs, NewValidationError(fmt.Errorf(
 					"step %d in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version",
-					i+1,
-				)))
-			}
-		}
-	}
-
-	if !opts.AllowFiles {
-		for i, step := range spec.Steps {
-			if len(step.Files) != 0 {
-				errs = multierror.Append(errs, NewValidationError(fmt.Errorf(
-					"step %d in batch spec uses the 'files' attribute to create files in the step container, which is not supported in this Batch Changes version",
 					i+1,
 				)))
 			}

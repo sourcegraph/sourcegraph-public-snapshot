@@ -17,7 +17,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -407,7 +406,7 @@ func (e *executor) changesetSource(ctx context.Context) (sources.ChangesetSource
 
 		// Set the remote repo, which may not be the same as the target repo if
 		// forking is enabled.
-		e.remoteRepo, e.cssErr = loadRemoteRepo(ctx, e.css, e.targetRepo, e.ch)
+		e.remoteRepo, e.cssErr = loadRemoteRepo(ctx, e.css, e.targetRepo, e.ch, e.spec)
 	})
 	return e.css, e.cssErr
 }
@@ -459,12 +458,18 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 
 var errChangesetSourceCannotFork = errors.New("forking is enabled, but the changeset source does not support forks")
 
-func loadRemoteRepo(ctx context.Context, css sources.ChangesetSource, targetRepo *types.Repo, ch *btypes.Changeset) (*types.Repo, error) {
-	// If forks are disabled _and_ we're not updating a changeset that was
-	// previously created using a fork, then we don't need to even check if the
-	// changeset source is forkable, let alone set up the remote repo: we can
-	// just return the target repo and be done with it.
-	if !conf.Get().BatchChangesEnforceForks && ch.ExternalForkNamespace == "" {
+func loadRemoteRepo(
+	ctx context.Context,
+	css sources.ChangesetSource,
+	targetRepo *types.Repo,
+	ch *btypes.Changeset,
+	spec *btypes.ChangesetSpec,
+) (*types.Repo, error) {
+	// If the changeset spec doesn't expect a fork _and_ we're not updating a
+	// changeset that was previously created using a fork, then we don't need to
+	// even check if the changeset source is forkable, let alone set up the
+	// remote repo: we can just return the target repo and be done with it.
+	if ch.ExternalForkNamespace == "" && (spec == nil || !spec.IsFork()) {
 		return targetRepo, nil
 	}
 
@@ -473,13 +478,18 @@ func loadRemoteRepo(ctx context.Context, css sources.ChangesetSource, targetRepo
 		return nil, errChangesetSourceCannotFork
 	}
 
-	// If we're updating an existing changeset, we should push/modify the same
-	// fork, even if the user credential would now fork into a different
-	// namespace.
 	if ch.ExternalForkNamespace != "" {
+		// If we're updating an existing changeset, we should push/modify the
+		// same fork, even if the user credential would now fork into a
+		// different namespace.
 		return fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
+	} else if namespace := spec.GetForkNamespace(); namespace != nil {
+		// If the changeset spec requires a specific fork namespace, then we
+		// should handle that here.
+		return fss.GetNamespaceFork(ctx, targetRepo, *namespace)
 	}
 
+	// Otherwise, we're pushing to a user fork.
 	return fss.GetUserFork(ctx, targetRepo)
 }
 
