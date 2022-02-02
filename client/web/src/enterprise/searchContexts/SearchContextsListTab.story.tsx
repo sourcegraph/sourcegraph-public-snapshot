@@ -15,9 +15,9 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
 
-const { add } = storiesOf('web/searchContexts/SearchContextsListTab', module)
+const { add } = storiesOf('web/enterprise/searchContexts/SearchContextsListTab', module)
     .addParameters({
-        chromatic: { viewports: [1200] },
+        chromatic: { viewports: [1200], disableSnapshot: false },
     })
     .addDecorator(story => (
         <div className="p-3 container" style={{ position: 'static' }}>

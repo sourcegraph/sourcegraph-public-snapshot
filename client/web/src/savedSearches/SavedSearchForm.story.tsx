@@ -7,7 +7,9 @@ import { SourcegraphContext } from '../jscontext'
 
 import { SavedSearchForm, SavedSearchFormProps } from './SavedSearchForm'
 
-const { add } = storiesOf('web/savedSearches/SavedSearchForm', module)
+const { add } = storiesOf('web/savedSearches/SavedSearchForm', module).addParameters({
+    chromatic: { disableSnapshot: false },
+})
 
 if (!window.context) {
     window.context = {} as SourcegraphContext & SuiteFunction
