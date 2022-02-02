@@ -388,6 +388,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               <a
                 class="btn btn-primary"
                 href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
+                tabindex="0"
               >
                 Get started
               </a>
@@ -489,6 +490,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               <a
                 class="btn btn-primary"
                 href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fsearch"
+                tabindex="0"
               >
                 Get started
               </a>
@@ -814,6 +816,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
               <a
                 class="btn btn-primary"
                 href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fcode-monitoring%2Fnew%3Ftrigger-query%3Dfoo%2Btype%253Adiff%2Bpatterntype%253Aliteral"
+                tabindex="0"
               >
                 Get started
               </a>
@@ -915,6 +918,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
               <a
                 class="btn btn-primary"
                 href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=search-dropdown-cta&utm_campaign=inproduct-cta&returnTo=%2Fsearch"
+                tabindex="0"
               >
                 Get started
               </a>

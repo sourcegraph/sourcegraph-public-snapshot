@@ -20,9 +20,13 @@ This guide documents how to deploy a new image of [executors](../../../admin/exe
 
     There are two steps with `executor-image` in here. The first one builds and uploads image. Second step releases it.
 
-    Try to find the image name, i.e. `executor-cc28c728e5-116966`
+    Try to find the GCP image name, i.e. `executor-cc28c728e5-116966`
 
-2. In the `infrastructure` repository, open `executors/gcp.tf` and update the image at the top in `gcp_executor_machine_image`.
+    Try to find the AWS AMI name, i.e. `ami-0fb21656aeba5eb7c`
+
+2. In the `infrastructure` repository:
+  * Open `executors/gcp.tf` and update the image at the top in `gcp_executor_machine_image`.
+  * open `executors/aws.tf` and update the image at the top in `aws_executor_ami`.
 3. Create a pull request with that change.
 4. Get approval for PR.
 5. In that PR branch, in the `executors` folder, run: `terraform apply`.

@@ -59,7 +59,7 @@ exports[`UserNavItem simple 1`] = `
       />
       <a
         class="dropdown-item"
-        href="#"
+        href="/"
       >
         Settings
       </a>

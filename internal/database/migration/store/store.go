@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -21,45 +22,6 @@ type Store struct {
 	*basestore.Store
 	schemaName string
 	operations *Operations
-}
-
-// IndexStatus describes the state of an index. Is{Valid,Ready,Live} is taken
-// from the `pg_index` system table. If the index is currently being created,
-// then the remaining reference fields will be populated describing the index
-// creation progress.
-type IndexStatus struct {
-	IsValid      bool
-	IsReady      bool
-	IsLive       bool
-	Phase        *string
-	LockersDone  *int
-	LockersTotal *int
-	BlocksDone   *int
-	BlocksTotal  *int
-	TuplesDone   *int
-	TuplesTotal  *int
-}
-
-// CreateIndexConcurrentlyPhases is an ordered list of phases that occur during
-// a CREATE INDEX CONCURRENTLY operation. The phase of an ongoing operation can
-// found in the system view `view pg_stat_progress_create_index` (since PG 12).
-//
-// If the phase value found in the system view may not match these values exactly
-// and may only indicate a prefix. The phase may have more specific information
-// following the initial phase description. Do not compare phase values exactly.
-//
-// See https://www.postgresql.org/docs/12/progress-reporting.html#CREATE-INDEX-PROGRESS-REPORTING.
-var CreateIndexConcurrentlyPhases = []string{
-	"initializing",
-	"waiting for writers before build",
-	"building index",
-	"waiting for writers before validation",
-	"index validation: scanning index",
-	"index validation: sorting tuples",
-	"index validation: scanning table",
-	"waiting for old snapshots",
-	"waiting for readers before marking dead",
-	"waiting for readers before dropping",
 }
 
 func NewWithDB(db dbutil.DB, migrationsTable string, operations *Operations) *Store {
@@ -287,7 +249,7 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 
 // IndexStatus returns an object describing the current validity status and creation progress of the
 // index with the given name. If the index does not exist, a false-valued flag is returned.
-func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ IndexStatus, _ bool, err error) {
+func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ storetypes.IndexStatus, _ bool, err error) {
 	ctx, endObservation := s.operations.indexStatus.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -455,9 +417,9 @@ func scanMigrationLogs(rows *sql.Rows, queryErr error) (_ []migrationLog, err er
 }
 
 // scanFirstIndexStatus scans a slice of index status objects from the return value of `*Store.query`.
-func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status IndexStatus, _ bool, err error) {
+func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status storetypes.IndexStatus, _ bool, err error) {
 	if queryErr != nil {
-		return IndexStatus{}, false, queryErr
+		return storetypes.IndexStatus{}, false, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
@@ -474,11 +436,11 @@ func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status IndexStatus, _
 			&status.TuplesDone,
 			&status.TuplesTotal,
 		); err != nil {
-			return IndexStatus{}, false, err
+			return storetypes.IndexStatus{}, false, err
 		}
 
 		return status, true, nil
 	}
 
-	return IndexStatus{}, false, nil
+	return storetypes.IndexStatus{}, false, nil
 }
