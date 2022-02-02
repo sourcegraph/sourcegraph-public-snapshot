@@ -14,17 +14,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	srr, err := srs.getResults(ctx)
+	matches, err := srs.getResults(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srs.sr.db, srr.Matches)
+	langs, err := searchResultsStatsLanguages(ctx, srs.sr.db, matches)
 	if err != nil {
 		return nil, err
 	}
@@ -36,21 +37,22 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 	return wrapped, nil
 }
 
-func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
+func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, error) {
 	srs.once.Do(func() {
 		job, err := srs.sr.toSearchJob(srs.sr.Query)
 		if err != nil {
-			srs.srsErr = err
+			srs.err = err
 			return
 		}
-		results, err := doResults(ctx, srs.sr.SearchInputs, srs.sr.db, srs.sr.stream, job)
+		agg := streaming.NewAggregatingStream()
+		err = job.Run(ctx, srs.sr.db, agg)
 		if err != nil {
-			srs.srsErr = err
+			srs.err = err
 			return
 		}
-		srs.srs = srs.sr.resultsToResolver(results)
+		srs.results = agg.Get().Results
 	})
-	return srs.srs, srs.srsErr
+	return srs.results, srs.err
 }
 
 func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []result.Match) ([]inventory.Lang, error) {
