@@ -1087,7 +1087,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 // expressions that are ORed together by searching for each subexpression. If
 // the maximum number of results are reached after evaluating a subexpression,
 // we shortcircuit and return results immediately.
-func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more operands.
 	operands := q.Pattern.(query.Operator).Operands
@@ -1165,17 +1165,11 @@ func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender
 		alert = alerts[0]
 	}
 
-	sr := &SearchResults{
-		Matches: dedup.Results(),
-		Stats:   stats,
-		Alert:   alert,
-	}
-
 	stream.Send(streaming.SearchEvent{
-		Results: sr.Matches,
-		Stats:   sr.Stats,
+		Results: dedup.Results(),
+		Stats:   stats,
 	})
-	return sr, nil
+	return alert, nil
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
@@ -1191,7 +1185,8 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream s
 			alert, err := r.evaluateAnd(ctx, stream, q)
 			return &SearchResults{Alert: alert}, err
 		case query.Or:
-			return r.evaluateOr(ctx, stream, q)
+			alert, err := r.evaluateOr(ctx, stream, q)
+			return &SearchResults{Alert: alert}, err
 		case query.Concat:
 			job, err := r.toSearchJob(q.ToParseTree())
 			if err != nil {
