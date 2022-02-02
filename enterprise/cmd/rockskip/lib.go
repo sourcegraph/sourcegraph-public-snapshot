@@ -444,21 +444,22 @@ func onVisit(db *sql.DB, repo string, maxRepos int) (locker.UnlockFunc, error) {
 		}
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Wrap(err, "commit transaction")
+	}
+
 	_, err = db.Exec(`SELECT pg_advisory_lock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 	if err != nil {
 		return nil, err
 	}
+
 	repoUnlock := func(err error) error {
 		_, err2 := db.Exec(`SELECT pg_advisory_unlock($1, $2)`, REPO_LOCKS_NAMESPACE, int32(fnv1.HashString32(repo)))
 		if err != nil || err2 != nil {
 			return multierror.Append(err, err2)
 		}
 		return nil
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return repoUnlock, errors.Wrap(err, "commit transaction")
 	}
 
 	return repoUnlock, nil
