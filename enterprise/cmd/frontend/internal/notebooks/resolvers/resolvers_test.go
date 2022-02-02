@@ -27,6 +27,9 @@ const notebookFields = `
 	creator {
 		username
 	}
+	updater {
+		username
+	}
 	createdAt
 	updatedAt
 	public
@@ -198,7 +201,7 @@ func testGetNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user 
 	var response struct{ Node notebooksapitest.Notebook }
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user.ID)), t, schema, input, &response, queryNotebook)
 
-	wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(createdNotebook, notebookGQLID, user.Username, true)
+	wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(createdNotebook, notebookGQLID, user.Username, user.Username, true)
 	compareNotebookAPIResponses(t, wantNotebookResponse, response.Node, false)
 }
 
@@ -250,7 +253,7 @@ func testCreateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 			}
 
 			if tt.wantErr == "" {
-				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(notebook, marshalNotebookID(notebook.ID), tt.creator.Username, true)
+				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(notebook, marshalNotebookID(notebook.ID), tt.creator.Username, tt.creator.Username, true)
 				compareNotebookAPIResponses(t, wantNotebookResponse, response.CreateNotebook, true)
 			}
 		})
@@ -265,69 +268,69 @@ func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 		name            string
 		publicNotebook  bool
 		creator         *types.User
+		updater         *types.User
 		namespaceUserID int32
 		namespaceOrgID  int32
-		updaterID       int32
 		wantErr         string
 	}{
 		{
 			name:            "user can update their own public notebook",
 			publicNotebook:  true,
 			creator:         user1,
+			updater:         user1,
 			namespaceUserID: user1.ID,
-			updaterID:       user1.ID,
 		},
 		{
 			name:            "user can update their own private notebook",
 			publicNotebook:  false,
 			creator:         user1,
+			updater:         user1,
 			namespaceUserID: user1.ID,
-			updaterID:       user1.ID,
 		},
 		{
 			name:           "user1 can update org public notebook",
 			publicNotebook: true,
 			creator:        user1,
+			updater:        user1,
 			namespaceOrgID: org.ID,
-			updaterID:      user1.ID,
 		},
 		{
 			name:           "user1 can update org private notebook",
 			publicNotebook: false,
 			creator:        user1,
+			updater:        user1,
 			namespaceOrgID: org.ID,
-			updaterID:      user1.ID,
 		},
 		{
 			name:            "user cannot update other users public notebooks",
 			publicNotebook:  true,
 			creator:         user1,
+			updater:         user2,
 			namespaceUserID: user1.ID,
-			updaterID:       user2.ID,
 			wantErr:         "user does not match the notebook user namespace",
 		},
 		{
 			name:            "user cannot update other users private notebooks",
 			publicNotebook:  false,
 			creator:         user1,
+			updater:         user2,
 			namespaceUserID: user1.ID,
-			updaterID:       user2.ID,
 			wantErr:         "notebook not found",
 		},
 		{
 			name:           "user2 cannot update org public notebook",
 			publicNotebook: true,
 			creator:        user1,
+			updater:        user2,
 			namespaceOrgID: org.ID,
-			updaterID:      user2.ID,
 			wantErr:        "user is not a member of the notebook organization namespace",
 		},
 		{
 			name:           "user2 cannot update org private notebook",
 			publicNotebook: false,
 			creator:        user1,
+			updater:        user2,
 			namespaceOrgID: org.ID,
-			updaterID:      user2.ID,
 			wantErr:        "notebook not found",
 		},
 	}
@@ -346,7 +349,7 @@ func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 
 			input := map[string]interface{}{"id": marshalNotebookID(createdNotebook.ID), "notebook": notebooksapitest.NotebookToAPIInput(updatedNotebook)}
 			var response struct{ UpdateNotebook notebooksapitest.Notebook }
-			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.updaterID)), t, schema, input, &response, updateNotebookMutation)
+			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.updater.ID)), t, schema, input, &response, updateNotebookMutation)
 
 			if tt.wantErr != "" && len(gotErrors) == 0 {
 				t.Fatal("expected error, got none")
@@ -357,7 +360,7 @@ func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 			}
 
 			if tt.wantErr == "" {
-				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(updatedNotebook, marshalNotebookID(updatedNotebook.ID), tt.creator.Username, tt.creator.ID == tt.updaterID)
+				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(updatedNotebook, marshalNotebookID(updatedNotebook.ID), tt.creator.Username, tt.updater.Username, tt.creator.ID == tt.updater.ID)
 				compareNotebookAPIResponses(t, wantNotebookResponse, response.UpdateNotebook, true)
 			}
 		})
@@ -648,6 +651,7 @@ func TestListNotebooks(t *testing.T) {
 					createdNotebook,
 					marshalNotebookID(createdNotebook.ID),
 					idToUsername[createdNotebook.CreatorUserID],
+					idToUsername[createdNotebook.UpdaterUserID],
 					createdNotebook.CreatorUserID == tt.viewerID,
 				)
 				compareNotebookAPIResponses(t, wantNotebookResponse, response.Notebooks.Nodes[idx], true)
