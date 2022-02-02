@@ -11,7 +11,7 @@ import 'storybook-addon-designs'
 
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
-import { TextArea, Button } from '@sourcegraph/wildcard'
+import { TextArea, Button, Link } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
@@ -149,26 +149,30 @@ export const Layout: Story = () => (
         <h2>Spacing</h2>
         <p>
             Use margin <code>m-*</code> and padding <code>p-*</code> utilities to align with the{' '}
-            <a
-                href="https://builttoadapt.io/intro-to-the-8-point-grid-system-d2573cde8632"
+            <Link
+                to="https://builttoadapt.io/intro-to-the-8-point-grid-system-d2573cde8632"
                 target="_blank"
                 rel="noopener noreferrer"
             >
                 8pt grid
-            </a>
+            </Link>
             . When hand-writing CSS, use <code>rem</code> units in multiples of <code>0.25</code>.
         </p>
 
         <h2>One-dimensional layout</h2>
         <p>
             Use{' '}
-            <a href="https://css-tricks.com/snippets/css/a-guide-to-flexbox/" target="_blank" rel="noopener noreferrer">
+            <Link
+                to="https://css-tricks.com/snippets/css/a-guide-to-flexbox/"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
                 Flexbox
-            </a>{' '}
+            </Link>{' '}
             for one-dimensional layouts (single rows or columns, with optional wrapping). You can use{' '}
-            <a href="https://getbootstrap.com/docs/4.5/utilities/flex/" target="_blank" rel="noopener noreferrer">
+            <Link to="https://getbootstrap.com/docs/4.5/utilities/flex/" target="_blank" rel="noopener noreferrer">
                 utility classes
-            </a>{' '}
+            </Link>{' '}
             for simple flexbox layouts.
         </p>
 
@@ -207,7 +211,7 @@ export const Layout: Story = () => (
 
         <h2>Two-dimensional layout</h2>
         <p>
-            Use <a href="https://learncssgrid.com/">CSS Grid</a> for complex two-dimensional layouts.
+            Use <Link to="https://learncssgrid.com/">CSS Grid</Link> for complex two-dimensional layouts.
         </p>
         <div
             className="p-2 border overflow-hidden"
@@ -240,7 +244,7 @@ export const ButtonGroups: Story = () => {
             <h1>Button groups</h1>
             <p>
                 Group a series of buttons together on a single line with the button group.{' '}
-                <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
+                <Link to="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</Link>
             </p>
 
             <h2>Example</h2>
@@ -369,7 +373,7 @@ export const InputGroups: Story = () => (
         <p>
             Easily extend form controls by adding text, buttons, or button groups on either side of textual inputs,
             custom selects, and custom file inputs.{' '}
-            <a href="https://getbootstrap.com/docs/4.5/components/input-group/">Bootstrap documentation</a>
+            <Link to="https://getbootstrap.com/docs/4.5/components/input-group/">Bootstrap documentation</Link>
         </p>
 
         <h2>Example</h2>
@@ -393,9 +397,9 @@ export const Forms: Story = () => (
         <h1>Forms</h1>
         <p>
             Forms are validated using native HTML validation. Submit the below form with invalid input to try it out.{' '}
-            <a href="https://getbootstrap.com/docs/4.5/components/forms/" target="_blank" rel="noopener noreferrer">
+            <Link to="https://getbootstrap.com/docs/4.5/components/forms/" target="_blank" rel="noopener noreferrer">
                 Bootstrap documentation
-            </a>
+            </Link>
         </p>
         <Form onSubmit={preventDefault}>
             <div className="form-group">
@@ -570,13 +574,13 @@ export const Meter: Story = () => {
             <h1>Meter</h1>
             <p>
                 The HTML{' '}
-                <a
-                    href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
+                <Link
+                    to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     <code>{'<meter>'}</code>
-                </a>{' '}
+                </Link>{' '}
                 element represents either a scalar value within a known range or a fractional value.
             </p>
             <h2>Examples</h2>
