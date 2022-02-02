@@ -42,8 +42,8 @@ import {
 } from '../graphql-operations'
 import { Blob, BlobProps } from '../repo/blob/Blob'
 
-import styles from './GlobalCodeIntel.module.scss'
-import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './GlobalCodeIntelQueries'
+import styles from './CoolCodeIntel.module.scss'
+import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
 
 const SHOW_COOL_CODEINTEL = localStorage.getItem('coolCodeIntel') !== null
 
@@ -53,7 +53,7 @@ interface CoolCodeIntelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 
     hoveredToken?: CoolHoveredToken
 }
 
-export const GlobalCodeIntel: React.FunctionComponent<
+export const CoolCodeIntel: React.FunctionComponent<
     {
         showPanel: boolean
     } & CoolCodeIntelProps
