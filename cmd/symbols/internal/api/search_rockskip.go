@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/sourcegraph/go-ctags"
 
@@ -73,9 +75,35 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig
 			return symbols, nil
 		}
 
-		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, parse, string(args.Repo), string(args.CommitID), maxRepos)
+		fmt.Println()
+		fmt.Println("🔵 Rockskip search", args.Repo, args.CommitID, args.Query)
+		defer func() {
+			if results == nil {
+				fmt.Println("🔴 Rockskip search failed")
+			} else {
+				fmt.Println("🔴 Rockskip search", len(*results))
+				for _, result := range *results {
+					fmt.Println("  -", result.Path+":"+fmt.Sprint(result.Line), result.Name)
+				}
+			}
+		}()
+
 		tasklog := rockskip.NewTaskLog()
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			for ctx.Err() == nil {
+				tasklog.Print()
+
+				select {
+				case <-ctx.Done():
+				case <-time.After(1 * time.Second):
+				}
+			}
+			tasklog.Print()
+		}()
+
 		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, tasklog, parse, string(args.Repo), string(args.CommitID), maxRepos)
+		cancel()
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Index")
 		}
