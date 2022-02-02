@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Container, Button } from '@sourcegraph/wildcard'
@@ -26,6 +26,7 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
         },
         [setSelectedSample, sample]
     )
+    console.log({ name: sample.name, active })
     return (
         <Button
             onClick={onClick}
@@ -51,6 +52,9 @@ const samples: Sample[] = [
 
 export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
+    useEffect(() => {
+        console.log(selectedSample.name)
+    }, [selectedSample.name])
 
     return (
         <>

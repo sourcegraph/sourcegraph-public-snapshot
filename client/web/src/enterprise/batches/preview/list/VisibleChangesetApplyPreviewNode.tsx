@@ -68,7 +68,8 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
     return (
         <>
             <Button
-                className="btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
+                variant="icon"
+                className="test-batches-expand-preview d-none d-sm-block mx-1"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >

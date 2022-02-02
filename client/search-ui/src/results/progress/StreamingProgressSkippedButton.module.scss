@@ -2,3 +2,7 @@
     width: 20rem;
     padding: 0;
 }
+.alert-danger-icon {
+    // To overide secondary icon fill color
+    fill: var(--danger) !important;
+}

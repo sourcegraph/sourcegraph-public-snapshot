@@ -13,7 +13,6 @@ import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
-
 type CodeMonitorFilter = 'all' | 'user'
 
 interface CodeMonitorListProps

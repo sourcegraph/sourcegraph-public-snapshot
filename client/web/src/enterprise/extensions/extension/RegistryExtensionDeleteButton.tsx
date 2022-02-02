@@ -7,7 +7,7 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup } from '@sourcegraph/wildcard'
 
 import { deleteRegistryExtensionWithConfirmation } from '../registry/backend'
 
@@ -73,7 +73,7 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
 
     public render(): JSX.Element | null {
         return (
-            <div className="btn-group" role="group">
+            <ButtonGroup>
                 <Button
                     onClick={this.deleteExtension}
                     disabled={this.props.disabled || this.state.deletionOrError === undefined}
@@ -87,7 +87,7 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                         <WarningIcon className="icon-inline" />
                     </Button>
                 )}
-            </div>
+            </ButtonGroup>
         )
     }
 
