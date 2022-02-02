@@ -81,22 +81,22 @@ func (r *Runner) runSchema(ctx context.Context, operation MigrationOperation, sc
 
 			return errDirtyDatabase
 		}
-  }
+	}
 
 	callback := func(schemaVersion schemaVersion) error {
 		targetVersion := operation.TargetVersion
-  	gatherDefinitions := schemaContext.schema.Definitions.UpTo
-  	if operation.Type != MigrationOperationTypeTargetedUp {
-  		gatherDefinitions = schemaContext.schema.Definitions.DownTo
-	  }
+		gatherDefinitions := schemaContext.schema.Definitions.UpTo
+		if operation.Type != MigrationOperationTypeTargetedUp {
+			gatherDefinitions = schemaContext.schema.Definitions.DownTo
+		}
 
-	  // Get the set of migrations that need to be applied or unapplied, depending on the migration direction.
-  	definitions, err := gatherDefinitions(schemaContext.initialSchemaVersion.version, targetVersion)
-  	if err != nil {
-  		return err
-  	}
+		// Get the set of migrations that need to be applied or unapplied, depending on the migration direction.
+		definitions, err := gatherDefinitions(schemaContext.initialSchemaVersion.version, targetVersion)
+		if err != nil {
+			return err
+		}
 
-    return r.applyMigrations(ctx, operation, schemaContext, definitions)
+		return r.applyMigrations(ctx, operation, schemaContext, definitions)
 	}
 
 	return r.withLockedSchemaState(ctx, schemaContext, callback)
