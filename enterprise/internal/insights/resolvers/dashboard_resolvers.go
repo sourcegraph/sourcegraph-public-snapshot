@@ -241,6 +241,10 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, errors.Wrap(err, "getUserPermissions")
 	}
+	hasPermissionToCreate := hasPermissionForGrants(dashboardGrants, userIds, orgIds)
+	if !hasPermissionToCreate {
+		return nil, errors.New("user does not have permission to create this dashboard")
+	}
 
 	dashboard, err := r.dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{
 		Dashboard: types.Dashboard{Title: args.Input.Title, Save: true},
@@ -319,6 +323,35 @@ func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) (
 		dashboardGrants = append(dashboardGrants, store.GlobalDashboardGrant())
 	}
 	return dashboardGrants, nil
+}
+
+// Checks that each grant is contained in the available user/org ids.
+func hasPermissionForGrants(dashboardGrants []store.DashboardGrant, userIds []int, orgIds []int) bool {
+	for _, dashboardGrant := range dashboardGrants {
+		if dashboardGrant.UserID != nil {
+			found := false
+			for _, userId := range userIds {
+				if userId == *dashboardGrant.UserID {
+					found = true
+				}
+				if !found {
+					return false
+				}
+			}
+		}
+		if dashboardGrant.OrgID != nil {
+			found := false
+			for _, orgId := range orgIds {
+				if orgId == *dashboardGrant.OrgID {
+					found = true
+				}
+				if !found {
+					return false
+				}
+			}
+		}
+	}
+	return true
 }
 
 func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
