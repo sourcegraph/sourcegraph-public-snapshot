@@ -1,7 +1,6 @@
 package ci
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -37,6 +36,9 @@ const (
 	// Special test branches
 
 	BackendIntegrationTests // run backend tests that are used on main
+
+	// None is a no-op, add all run types above this type.
+	None
 )
 
 func computeRunType(tag, branch string) RunType {
@@ -92,7 +94,7 @@ func (t RunType) String() string {
 	case MainBranch:
 		return "MainBranch"
 	case MainDryRun:
-		return "Main dry run"
+		return "MainDryRun"
 	case TaggedRelease:
 		return "TaggedRelease"
 	case ReleaseBranch:
@@ -100,15 +102,17 @@ func (t RunType) String() string {
 	case BextReleaseBranch:
 		return "Browser Extension Release Build"
 	case BextNightly:
-		return "Browser Extension Release Build"
+		return "Browser Extension Nightly Release Build"
 	case ImagePatch:
 		return "Patched Image"
 	case ImagePatchNoTest:
-		return "Patched Image without testing"
+		return "Patched image without testing"
 	case CandidatesNoTest:
-		return "Build All candidates without testing"
+		return "Build all candidates without testing"
+	case ExecutorPatchNoTest:
+		return "Build executor without test"
 	case BackendIntegrationTests:
 		return "Backend integration tests"
 	}
-	panic(fmt.Sprintf("Run type %d does not have a full name defined", t))
+	return ""
 }
