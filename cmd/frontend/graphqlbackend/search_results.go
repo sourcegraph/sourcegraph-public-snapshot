@@ -1212,17 +1212,15 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream s
 }
 
 // evaluate evaluates all expressions of a search query. The value of stream must be non-nil
-func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
 	if q.Pattern == nil {
 		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
 		if err != nil {
-			return &SearchResults{}, err
+			return nil, err
 		}
-		alert, err := r.evaluateJob(ctx, stream, job)
-		return &SearchResults{Alert: alert}, err
+		return r.evaluateJob(ctx, stream, job)
 	}
-	alert, err := r.evaluatePatternExpression(ctx, stream, q)
-	return &SearchResults{Alert: alert}, err
+	return r.evaluatePatternExpression(ctx, stream, q)
 }
 
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
@@ -1407,12 +1405,19 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.
 				// If a predicate filter generated a new plan, evaluate that plan.
 				newResult, err = r.resultsRecursive(ctx, stream, predicatePlan)
 			} else if stream != nil {
-				newResult, err = r.evaluate(ctx, stream, q)
+				var alert *search.Alert
+				alert, err = r.evaluate(ctx, stream, q)
+				newResult = &SearchResults{Alert: alert}
 			} else {
 				// Always pass a non-nil stream to evaluate
 				agg := streaming.NewAggregatingStream()
-				newResult, err = r.evaluate(ctx, agg, q)
-				newResult.Matches, newResult.Stats = agg.Results, agg.Stats
+				var alert *search.Alert
+				alert, err = r.evaluate(ctx, agg, q)
+				newResult = &SearchResults{
+					Matches: agg.Results,
+					Stats:   agg.Stats,
+					Alert:   alert,
+				}
 			}
 
 			if err != nil || newResult == nil {
