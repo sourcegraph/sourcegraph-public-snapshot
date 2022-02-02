@@ -29,8 +29,11 @@ type schemaContext struct {
 }
 
 type schemaVersion struct {
-	version int
-	dirty   bool
+	version         int
+	dirty           bool
+	appliedVersions []int
+	pendingVersions []int
+	failedVersions  []int
 }
 
 type visitFunc func(ctx context.Context, schemaContext schemaContext) error
@@ -150,16 +153,26 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 	if err != nil {
 		return schemaVersion{}, err
 	}
+	appliedVersions, pendingVersions, failedVersions, err := store.Versions(ctx)
+	if err != nil {
+		return schemaVersion{}, err
+	}
 
 	logger.Info(
 		"Checked current version",
 		"schema", schemaName,
 		"version", version,
 		"dirty", dirty,
+		"appliedVersions", appliedVersions,
+		"pendingVersions", pendingVersions,
+		"failedVersions", failedVersions,
 	)
 
 	return schemaVersion{
 		version,
 		dirty,
+		appliedVersions,
+		pendingVersions,
+		failedVersions,
 	}, nil
 }
