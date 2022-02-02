@@ -17,9 +17,9 @@ import {
     ProductStatusBadge,
     LoadingSpinner,
     useObservable,
-    Button,
     Link,
     Alert,
+    ButtonLink,
 } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -204,18 +204,17 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                 <div className={styles.container}>
                     <div className={styles.containerContent}>
                         <div className="d-flex float-right">
-                            <Button
+                            <ButtonLink
                                 target="_blank"
                                 rel="noopener"
-                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                                 className="mr-1 text-decoration-none btn-link"
                                 variant="secondary"
                                 outline={true}
                                 size="sm"
-                                as="a"
                             >
                                 Learn more
-                            </Button>
+                            </ButtonLink>
                             <FeedbackPrompt routes={routes} />
                         </div>
                         <h1>
