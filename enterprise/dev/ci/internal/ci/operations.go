@@ -51,6 +51,12 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 	if runAll || changedFiles.AffectsGraphQL() {
 		linterOps.Append(addGraphQLLint)
 	}
+	if runAll || changedFiles.AffectsFilesWithExt(".svg") {
+		linterOps.Append(addSVGLint)
+	}
+	if runAll || changedFiles.AffectsClient() {
+		linterOps.Append(addYarnDeduplicateLint)
+	}
 	if runAll || changedFiles.AffectsDockerfiles() {
 		linterOps.Append(addDockerfileLint)
 	}
@@ -143,6 +149,16 @@ func addPrettier(pipeline *bk.Pipeline) {
 func addGraphQLLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
 		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
+}
+
+func addSVGLint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: :compression: SVG lint",
+		bk.Cmd("dev/check/svgo.sh"))
+}
+
+func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: :yarn: Yarn deduplicate lint",
+		bk.Cmd("dev/check/yarn-deduplicate.sh"))
 }
 
 // Adds Typescript linting. (2x ~41s) + ~60s + ~137s + 7s

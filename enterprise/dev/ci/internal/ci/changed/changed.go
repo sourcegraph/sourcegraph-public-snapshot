@@ -51,6 +51,17 @@ func (c Files) AffectsTerraformFiles() bool {
 	return false
 }
 
+// AffectsFilesWithExt returns whether the changes affects files with the given extension.
+// Extension must be passed with the dot, eg: ".svg"
+func (c Files) AffectsFilesWithExt(ext string) bool {
+	for _, p := range c {
+		if strings.HasSuffix(p, ext) {
+			return true
+		}
+	}
+	return false
+}
+
 // AffectsGo returns whether the changes affects go files.
 func (c Files) AffectsGo() bool {
 	for _, p := range c {
