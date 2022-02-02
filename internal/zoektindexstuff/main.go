@@ -3,428 +3,388 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha1"
 	"encoding/json"
-	"flag"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
-	"math"
-	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"runtime"
 	"sort"
-	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/build"
 	wipindexserver "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver/wip"
-	"github.com/google/zoekt/debugserver"
-
-	"cloud.google.com/go/profiler"
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/keegancsmith/tmpfriend"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.uber.org/automaxprocs/maxprocs"
 )
 
-var (
-	metricResolveRevisionsDuration = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name:    "resolve_revisions_seconds",
-		Help:    "A histogram of latencies for resolving all repository revisions.",
-		Buckets: prometheus.ExponentialBuckets(1, 10, 6), // 1s -> 27min
-	})
+// TODO - get rid of this
+type Server struct{}
 
-	metricResolveRevisionDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "resolve_revision_seconds",
-		Help:    "A histogram of latencies for resolving a repository revision.",
-		Buckets: prometheus.ExponentialBuckets(.25, 2, 4), // 250ms -> 2s
-	}, []string{"success"}) // success=true|false
+type IndexArgs = wipindexserver.IndexArgs
 
-	metricGetIndexOptionsError = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "get_index_options_error_total",
-		Help: "The total number of times we failed to get index options for a repository.",
-	})
+type indexState string
 
-	metricIndexDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "index_repo_seconds",
-		Help:    "A histogram of latencies for indexing a repository.",
-		Buckets: prometheus.ExponentialBuckets(.1, 10, 7), // 100ms -> 27min
-	}, []string{
-		"state", // state is an indexState
-		"name",  // name of the repository that was indexed
-	})
-
-	metricFetchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "index_fetch_seconds",
-		Help:    "A histogram of latencies for fetching a repository.",
-		Buckets: []float64{.05, .1, .25, .5, 1, 2.5, 5, 10, 20, 30, 60, 180, 300, 600}, // 50ms -> 10 minutes
-	}, []string{
-		"success", // true|false
-		"name",    // the name of the repository that the commits were fetched from
-	})
-
-	metricIndexIncrementalIndexState = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "index_incremental_index_state",
-		Help: "A count of the state on disk vs what we want to build. See zoekt/build.IndexState.",
-	}, []string{"state"}) // state is build.IndexState
-
-	metricNumIndexed = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "index_num_indexed",
-		Help: "Number of indexed repos by code host",
-	})
-
-	metricNumAssigned = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "index_num_assigned",
-		Help: "Number of repos assigned to this indexer by code host",
-	})
-
-	metricFailingTotal = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "index_failing_total",
-		Help: "Counts failures to index (indexing activity, should be used with rate())",
-	})
-
-	metricIndexingTotal = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "index_indexing_total",
-		Help: "Counts indexings (indexing activity, should be used with rate())",
-	})
+const (
+	indexStateFail        indexState = "fail"
+	indexStateSuccess     indexState = "success"
+	indexStateSuccessMeta indexState = "success_meta" // We only updated metadata
+	indexStateNoop        indexState = "noop"         // We didn't need to update index
+	indexStateEmpty       indexState = "empty"        // index is empty (empty repo)
 )
 
-// set of repositories that we want to capture separate indexing metrics for
-var reposWithSeparateIndexingMetrics = make(map[string]struct{})
+// Index starts an index job for repo name at commit.
+func (s *Server) Index(args *IndexArgs) (state indexState, err error) {
+	// tr := trace.New("index", args.Name)
 
-var debug = log.New(ioutil.Discard, "", log.LstdFlags)
+	// defer func() {
+	// 	if err != nil {
+	// 		tr.SetError()
+	// 		tr.LazyPrintf("error: %v", err)
+	// 		state = indexStateFail
+	// 		// TODO
+	// 		// metricFailingTotal.Inc()
+	// 	}
+	// 	tr.LazyPrintf("state: %s", state)
+	// 	tr.Finish()
+	// }()
 
-func batched(slice []uint32, size int) <-chan []uint32 {
-	c := make(chan []uint32)
-	go func() {
-		for len(slice) > 0 {
-			if size > len(slice) {
-				size = len(slice)
+	// tr.LazyPrintf("branches: %v", args.Branches)
+
+	if len(args.Branches) == 0 {
+		return indexStateEmpty, createEmptyShard(args)
+	}
+
+	reason := "forced"
+	if args.Incremental {
+		bo := args.BuildOptions()
+		bo.SetDefaults()
+		incrementalState := bo.IndexState()
+		reason = string(incrementalState)
+		// TODO
+		// metricIndexIncrementalIndexState.WithLabelValues(string(incrementalState)).Inc()
+		switch incrementalState {
+		case build.IndexStateEqual:
+			// debug.Printf("%s index already up to date", args.String())
+			return indexStateNoop, nil
+
+		case build.IndexStateMeta:
+			log.Printf("updating index.meta %s", args.String())
+
+			if err := mergeMeta(bo); err != nil {
+				log.Printf("falling back to full update: failed to update index.meta %s: %s", args.String(), err)
+			} else {
+				return indexStateSuccessMeta, nil
 			}
-			c <- slice[:size]
-			slice = slice[size:]
+
+		case build.IndexStateCorrupt:
+			log.Printf("falling back to full update: corrupt index: %s", args.String())
 		}
-		close(c)
-	}()
-	return c
-}
-
-func listIndexed(indexDir string) []uint32 {
-	index := wipindexserver.GetShards(indexDir)
-	metricNumIndexed.Set(float64(len(index)))
-	repoIDs := make([]uint32, 0, len(index))
-	for id := range index {
-		repoIDs = append(repoIDs, id)
-	}
-	sort.Slice(repoIDs, func(i, j int) bool {
-		return repoIDs[i] < repoIDs[j]
-	})
-	return repoIDs
-}
-
-func hostnameBestEffort() string {
-	if h := os.Getenv("NODE_NAME"); h != "" {
-		return h
-	}
-	if h := os.Getenv("HOSTNAME"); h != "" {
-		return h
-	}
-	hostname, _ := os.Hostname()
-	return hostname
-}
-
-// setupTmpDir sets up a temporary directory on the same volume as the
-// indexes.
-//
-// If main is true we will delete older temp directories left around. main is
-// false when this is a debug command.
-func setupTmpDir(index string, main bool) error {
-	tmpRoot := filepath.Join(index, ".indexserver.tmp")
-	if err := os.MkdirAll(tmpRoot, 0755); err != nil {
-		return err
-	}
-	if !tmpfriend.IsTmpFriendDir(tmpRoot) {
-		_, err := tmpfriend.RootTempDir(tmpRoot)
-		return err
-	}
-	return nil
-}
-
-func printMetaData(fn string) error {
-	repo, indexMeta, err := zoekt.ReadMetadataPath(fn)
-	if err != nil {
-		return err
 	}
 
-	err = json.NewEncoder(os.Stdout).Encode(indexMeta)
-	if err != nil {
-		return err
-	}
+	log.Printf("updating index %s reason=%s", args.String(), reason)
 
-	err = json.NewEncoder(os.Stdout).Encode(repo)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func printShardStats(fn string) error {
-	f, err := os.Open(fn)
-	if err != nil {
-		return err
-	}
-
-	iFile, err := zoekt.NewIndexFile(f)
-	if err != nil {
-		return err
-	}
-
-	return zoekt.PrintNgramStats(iFile)
-}
-
-func initializeGoogleCloudProfiler() {
-	// Google cloud profiler is opt-in since we only want to run it on
-	// Sourcegraph.com.
-	if os.Getenv("GOOGLE_CLOUD_PROFILER_ENABLED") == "" {
-		return
-	}
-
-	err := profiler.Start(profiler.Config{
-		Service:        "zoekt-sourcegraph-indexserver",
-		ServiceVersion: zoekt.Version,
-		MutexProfiling: true,
-		AllocForceGC:   true,
-	})
-	if err != nil {
-		log.Printf("could not initialize google cloud profiler: %s", err.Error())
-	}
-}
-
-func srcLogLevelIsDebug() bool {
-	lvl := os.Getenv("SRC_LOG_LEVEL")
-	return strings.EqualFold(lvl, "dbug") || strings.EqualFold(lvl, "debug")
-}
-
-func getEnvWithDefaultInt64(k string, defaultVal int64) int64 {
-	v := os.Getenv(k)
-	if v == "" {
-		return defaultVal
-	}
-	i, err := strconv.ParseInt(v, 10, 64)
-	if err != nil {
-		log.Fatalf("error parsing ENV %s: %s", k, err)
-	}
-	return i
-}
-
-func setCompoundShardCounter(indexDir string) {
-	fns, err := filepath.Glob(filepath.Join(indexDir, "compound-*.zoekt"))
-	if err != nil {
-		log.Printf("setCompoundShardCounter: %s\n", err)
-		return
-	}
+	runCmd := func(cmd *exec.Cmd) error { return cmd.Run() }
+	// runCmd := func(cmd *exec.Cmd) error { return s.loggedRun(tr, cmd) }
 	// TODO
-	_ = fns
-	// metricNumberCompoundShards.Set(float64(len(fns)))
+	// metricIndexingTotal.Inc()
+	return indexStateSuccess, gitIndex(args, runCmd)
 }
 
-func main() {
-	defaultIndexDir := os.Getenv("DATA_DIR")
-	if defaultIndexDir == "" {
-		defaultIndexDir = build.DefaultDir
+func createEmptyShard(args *IndexArgs) error {
+	bo := args.BuildOptions()
+	bo.SetDefaults()
+	bo.RepositoryDescription.Branches = []zoekt.RepositoryBranch{{Name: "HEAD", Version: "404aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}
+
+	if args.Incremental && bo.IncrementalSkipIndexing() {
+		return nil
 	}
 
-	root := flag.String("sourcegraph_url", os.Getenv("SRC_FRONTEND_INTERNAL"), "http://sourcegraph-frontend-internal or http://localhost:3090. If a path to a directory, we fake the Sourcegraph API and index all repos rooted under path.")
-	interval := flag.Duration("interval", time.Minute, "sync with sourcegraph this often")
-	vacuumInterval := flag.Duration("vacuum_interval", time.Hour, "run vacuum this often")
-	mergeInterval := flag.Duration("merge_interval", time.Hour, "run merge this often")
-	targetSize := flag.Int64("merge_target_size", getEnvWithDefaultInt64("SRC_TARGET_SIZE", 2000), "the target size of compound shards in MiB")
-	maxSize := flag.Int64("merge_max_size", getEnvWithDefaultInt64("SRC_MAX_SIZE", 1800), "the maximum size in MiB a shard can have to be considered for merging")
-	minSize := flag.Int64("merge_min_size", getEnvWithDefaultInt64("SRC_MIN_SIZE", 1800), "the minimum size of a compound shard in MiB")
-	index := flag.String("index", defaultIndexDir, "set index directory to use")
-	listen := flag.String("listen", ":6072", "listen on this address.")
-	hostname := flag.String("hostname", hostnameBestEffort(), "the name we advertise to Sourcegraph when asking for the list of repositories to index. Can also be set via the NODE_NAME environment variable.")
-	cpuFraction := flag.Float64("cpu_fraction", 1.0, "use this fraction of the cores for indexing.")
-	dbg := flag.Bool("debug", srcLogLevelIsDebug(), "turn on more verbose logging.")
-
-	// non daemon mode for debugging/testing
-	debugList := flag.Bool("debug-list", false, "do not start the indexserver, rather list the repositories owned by this indexserver then quit.")
-	debugIndex := flag.String("debug-index", "", "do not start the indexserver, rather index the repository ID then quit.")
-	debugShard := flag.String("debug-shard", "", "do not start the indexserver, rather print shard stats then quit.")
-	debugMeta := flag.String("debug-meta", "", "do not start the indexserver, rather print shard metadata then quit.")
-	debugMerge := flag.Bool("debug-merge", false, "do not start the indexserver, rather run merge in the index directory then quit.")
-	debugMergeSimulate := flag.Bool("simulate", false, "use in conjuction with debugMerge. If set, merging is simulated.")
-
-	_ = flag.Bool("exp-git-index", true, "DEPRECATED: not read anymore. We always use zoekt-git-index now.")
-
-	flag.Parse()
-
-	if *cpuFraction <= 0.0 || *cpuFraction > 1.0 {
-		log.Fatal("cpu_fraction must be between 0.0 and 1.0")
-	}
-	if *index == "" {
-		log.Fatal("must set -index")
-	}
-	needSourcegraph := !(*debugShard != "" || *debugMeta != "" || *debugMerge)
-	if *root == "" && needSourcegraph {
-		log.Fatal("must set -sourcegraph_url")
-	}
-	rootURL, err := url.Parse(*root)
+	builder, err := build.NewBuilder(*bo)
 	if err != nil {
-		log.Fatalf("url.Parse(%v): %v", *root, err)
+		return err
+	}
+	return builder.Finish()
+}
+
+func gitIndex(o *IndexArgs, runCmd func(*exec.Cmd) error) error {
+	if len(o.Branches) == 0 {
+		return errors.New("zoekt-git-index requires 1 or more branches")
 	}
 
-	// Tune GOMAXPROCS to match Linux container CPU quota.
-	_, _ = maxprocs.Set()
+	buildOptions := o.BuildOptions()
 
-	// Automatically prepend our own path at the front, to minimize
-	// required configuration.
-	if l, err := os.Readlink("/proc/self/exe"); err == nil {
-		os.Setenv("PATH", filepath.Dir(l)+":"+os.Getenv("PATH"))
+	// An index should never take longer than an hour.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+	defer cancel()
+
+	//
+	//
+	// TODO - replace the following with call to gitserver client
+
+	gitDir, err := tmpGitDir(o.Name)
+	if err != nil {
+		return err
+	}
+	// We intentionally leave behind gitdir if indexing failed so we can
+	// investigate. This is only during the experimental phase of indexing a
+	// clone. So don't defer os.RemoveAll here
+
+	// Create a repo to fetch into
+	cmd := exec.CommandContext(ctx, "git",
+		// use a random default branch. This is so that HEAD isn't a symref to a
+		// branch that is indexed. For example if you are indexing
+		// HEAD,master. Then HEAD would be pointing to master by default.
+		"-c", "init.defaultBranch=nonExistentBranchBB0FOFCH32",
+		"init",
+		// we don't need a working copy
+		"--bare",
+		gitDir)
+	cmd.Stdin = &bytes.Buffer{}
+	if err := runCmd(cmd); err != nil {
+		return err
 	}
 
-	if _, err := os.Stat(*index); err != nil {
-		if err := os.MkdirAll(*index, 0755); err != nil {
-			log.Fatalf("MkdirAll %s: %v", *index, err)
+	fetchStart := time.Now()
+
+	// We shallow fetch each commit specified in zoekt.Branches. This requires
+	// the server to have configured both uploadpack.allowAnySHA1InWant and
+	// uploadpack.allowFilter. (See gitservice.go in the Sourcegraph repository)
+	fetchArgs := []string{"-C", gitDir, "-c", "protocol.version=2", "fetch", "--depth=1", o.CloneURL}
+	var commits []string
+	for _, b := range o.Branches {
+		commits = append(commits, b.Version)
+	}
+	fetchArgs = append(fetchArgs, commits...)
+
+	cmd = exec.CommandContext(ctx, "git", fetchArgs...)
+	cmd.Stdin = &bytes.Buffer{}
+
+	err = runCmd(cmd)
+	fetchDuration := time.Since(fetchStart)
+	if err != nil {
+		// TODO
+		// metricFetchDuration.WithLabelValues("false", repoNameForMetric(o.Name)).Observe(fetchDuration.Seconds())
+		return err
+	}
+
+	// TODO
+	_ = fetchDuration
+	// metricFetchDuration.WithLabelValues("true", repoNameForMetric(o.Name)).Observe(fetchDuration.Seconds())
+	// debug.Printf("fetched git data for %q (%d commit(s)) in %s", o.Name, len(commits), fetchDuration)
+
+	// DONE
+	//
+	//
+
+	// We then create the relevant refs for each fetched commit.
+	for _, b := range o.Branches {
+		ref := b.Name
+		if ref != "HEAD" {
+			ref = "refs/heads/" + ref
+		}
+		cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "update-ref", ref, b.Version)
+		cmd.Stdin = &bytes.Buffer{}
+		if err := runCmd(cmd); err != nil {
+			return fmt.Errorf("failed update-ref %s to %s: %w", ref, b.Version, err)
 		}
 	}
 
-	isDebugCmd := *debugList || *debugIndex != "" || *debugShard != "" || *debugMeta != "" || *debugMerge
+	//
+	//
+	// Prepare git config
 
-	if err := setupTmpDir(*index, !isDebugCmd); err != nil {
-		log.Fatalf("failed to setup TMPDIR under %s: %v", *index, err)
+	// create git config with options
+	type configKV struct{ Key, Value string }
+	config := []configKV{{
+		// zoekt.name is used by zoekt-git-index to set the repository name.
+		Key:   "name",
+		Value: o.Name,
+	}}
+	for k, v := range buildOptions.RepositoryDescription.RawConfig {
+		config = append(config, configKV{Key: k, Value: v})
+	}
+	sort.Slice(config, func(i, j int) bool {
+		return config[i].Key < config[j].Key
+	})
+
+	// write config to repo
+	for _, kv := range config {
+		cmd = exec.CommandContext(ctx, "git", "-C", gitDir, "config", "zoekt."+kv.Key, kv.Value)
+		cmd.Stdin = &bytes.Buffer{}
+		if err := runCmd(cmd); err != nil {
+			return err
+		}
 	}
 
-	if *dbg || isDebugCmd {
-		debug = log.New(os.Stderr, "", log.LstdFlags)
+	// DONE
+	//
+	//
+
+	//
+	//
+	// TODO - replace the following with a direct call to zoekt-git-index
+
+	args := []string{
+		"-submodules=false",
 	}
 
-	indexingMetricsReposAllowlist := os.Getenv("INDEXING_METRICS_REPOS_ALLOWLIST")
-	if indexingMetricsReposAllowlist != "" {
-		var repos []string
+	// Even though we check for incremental in this process, we still pass it
+	// in just in case we regress in how we check in process. We will still
+	// notice thanks to metrics and increased load on gitserver.
+	if o.Incremental {
+		args = append(args, "-incremental")
+	}
 
-		for _, r := range strings.Split(indexingMetricsReposAllowlist, ",") {
-			r = strings.TrimSpace(r)
-			if r != "" {
-				repos = append(repos, r)
+	var branches []string
+	for _, b := range o.Branches {
+		branches = append(branches, b.Name)
+	}
+	args = append(args, "-branches", strings.Join(branches, ","))
+
+	args = append(args, buildOptions.Args()...)
+	args = append(args, gitDir)
+
+	cmd = exec.CommandContext(ctx, "zoekt-git-index", args...)
+	cmd.Stdin = &bytes.Buffer{}
+	if err := runCmd(cmd); err != nil {
+		return err
+	}
+
+	// Do not return error, since we have successfully indexed. Just log it
+	if err := os.RemoveAll(gitDir); err != nil {
+		log.Printf("WARN: failed to cleanup %s after successfully indexing %s: %v", gitDir, o.String(), err)
+	}
+
+	return nil
+}
+
+func tmpGitDir(name string) (string, error) {
+	abs := url.QueryEscape(name)
+	if len(abs) > 200 {
+		h := sha1.New()
+		_, _ = io.WriteString(h, abs)
+		abs = abs[:200] + fmt.Sprintf("%x", h.Sum(nil))[:8]
+	}
+	dir := filepath.Join(os.TempDir(), abs+".git")
+	if _, err := os.Stat(dir); err == nil {
+		if err := os.RemoveAll(dir); err != nil {
+			return "", err
+		}
+	}
+	return dir, nil
+}
+
+// mergeMeta updates the .meta files for the shards on disk for o.
+//
+// This process is best effort. If anything fails we return on the first
+// failure. This means you might have an inconsistent state on disk if an
+// error is returned. It is recommended to fallback to re-indexing in that
+// case.
+func mergeMeta(o *build.Options) error {
+	todo := map[string]string{}
+	for _, fn := range o.FindAllShards() {
+		repos, md, err := zoekt.ReadMetadataPath(fn)
+		if err != nil {
+			return err
+		}
+
+		var repo *zoekt.Repository
+		for _, cand := range repos {
+			if cand.Name == o.RepositoryDescription.Name {
+				repo = cand
+				break
 			}
 		}
 
-		for _, r := range repos {
-			reposWithSeparateIndexingMetrics[r] = struct{}{}
+		if repo == nil {
+			return fmt.Errorf("mergeMeta: could not find repo %s in shard %s", o.RepositoryDescription.Name, fn)
 		}
 
-		debug.Printf("capturing separate indexing metrics for: %s", repos)
-	}
-
-	var sg wipindexserver.Sourcegraph
-	if rootURL.IsAbs() {
-		var batchSize int
-		if v := os.Getenv("SRC_REPO_CONFIG_BATCH_SIZE"); v != "" {
-			batchSize, err = strconv.Atoi(v)
-			if err != nil {
-				log.Fatal("Invalid value for SRC_REPO_CONFIG_BATCH_SIZE, must be int")
-			}
+		if updated, err := repo.MergeMutable(&o.RepositoryDescription); err != nil {
+			return err
+		} else if !updated {
+			// This shouldn't happen, but ignore it if it does. We may be working on
+			// an interrupted shard. This helps us converge to something correct.
+			continue
 		}
 
-		client := retryablehttp.NewClient()
-		client.Logger = debug
-		sg = &sourcegraphClient{
-			Root:      rootURL,
-			Client:    client,
-			Hostname:  *hostname,
-			BatchSize: batchSize,
+		var merged interface{}
+		if md.IndexFormatVersion >= 17 {
+			merged = repos
+		} else {
+			// <= v16 expects a single repo, not a list.
+			merged = repo
 		}
-	} else {
-		sg = sourcegraphFake{
-			RootDir: rootURL.String(),
-			Log:     log.New(os.Stderr, "sourcegraph: ", log.LstdFlags),
-		}
-	}
 
-	cpuCount := int(math.Round(float64(runtime.GOMAXPROCS(0)) * (*cpuFraction)))
-	if cpuCount < 1 {
-		cpuCount = 1
-	}
-	s := &wipindexserver.Server{
-		Sourcegraph:     sg,
-		IndexDir:        *index,
-		Interval:        *interval,
-		VacuumInterval:  *vacuumInterval,
-		MergeInterval:   *mergeInterval,
-		CPUCount:        cpuCount,
-		TargetSizeBytes: *targetSize * 1024 * 1024,
-		MaxSizeBytes:    *maxSize * 1024 * 1024,
-		MinSizeBytes:    *minSize * 1024 * 1024,
-		ShardMerging:    zoekt.ShardMergingEnabled(),
-	}
-
-	if *debugList {
-		repos, err := s.Sourcegraph.List(context.Background(), listIndexed(s.IndexDir))
+		dst := fn + ".meta"
+		tmp, err := jsonMarshalTmpFile(merged, dst)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-		for _, r := range repos.IDs {
-			fmt.Println(r)
-		}
-		os.Exit(0)
+
+		todo[tmp] = dst
+
+		// if we fail to rename, this defer will attempt to remove the tmp file.
+		defer os.Remove(tmp)
 	}
 
-	if *debugIndex != "" {
-		id, err := strconv.Atoi(*debugIndex)
+	// best effort once we get here. Rename everything. Return error of last
+	// failure.
+	var renameErr error
+	for tmp, dst := range todo {
+		if err := os.Rename(tmp, dst); err != nil {
+			renameErr = err
+		}
+	}
+
+	return renameErr
+}
+
+// jsonMarshalFileTmp marshals v to the temporary file p + ".*.tmp" and
+// returns the file name.
+//
+// Note: .tmp is the same suffix used by Builder. indexserver knows to clean
+// them up.
+func jsonMarshalTmpFile(v interface{}, p string) (_ string, err error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+
+	f, err := ioutil.TempFile(filepath.Dir(p), filepath.Base(p)+".*.tmp")
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		f.Close()
 		if err != nil {
-			log.Fatal(err)
+			_ = os.Remove(f.Name())
 		}
-		msg, err := s.ForceIndex(uint32(id))
-		log.Println(msg)
-		if err != nil {
-			os.Exit(1)
-		}
-		os.Exit(0)
+	}()
+
+	if err := f.Chmod(0o666 &^ umask); err != nil {
+		return "", err
+	}
+	if _, err := f.Write(b); err != nil {
+		return "", err
 	}
 
-	if *debugShard != "" {
-		err = printShardStats(*debugShard)
-		if err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
-	}
+	return f.Name(), f.Close()
+}
 
-	if *debugMeta != "" {
-		err = printMetaData(*debugMeta)
-		if err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
-	}
+// respect process umask. build does this.
+var umask os.FileMode
 
-	if *debugMerge {
-		err = wipindexserver.DoMerge(*index, *targetSize*1024*1024, *maxSize*1024*1024, *debugMergeSimulate)
-		if err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
-	}
-
-	initializeGoogleCloudProfiler()
-	setCompoundShardCounter(s.IndexDir)
-
-	if *listen != "" {
-		go func() {
-			mux := http.NewServeMux()
-			debugserver.AddHandlers(mux, true)
-			mux.Handle("/", s)
-			debug.Printf("serving HTTP on %s", *listen)
-			log.Fatal(http.ListenAndServe(*listen, mux))
-		}()
-	}
-
-	s.Run()
+func init() {
+	umask = os.FileMode(syscall.Umask(0))
+	syscall.Umask(int(umask))
 }
