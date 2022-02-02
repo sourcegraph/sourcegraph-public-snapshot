@@ -23,7 +23,7 @@ export const CreateOrganization: React.FunctionComponent<CreateOrganization> = (
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [isTransitioning, setIsTransitioning] = useState<boolean>(false)
 
-    const { setComplete, currentIndex, setStep } = useSteps()
+    const { setComplete, currentIndex, setStep, currentStep } = useSteps()
 
     const logFormSubmission = useCallback(() => {
         eventLogger.log('PostSignUpOrgTabBetaFormSubmit')
@@ -62,7 +62,7 @@ export const CreateOrganization: React.FunctionComponent<CreateOrganization> = (
                 </div>
                 <div className="flex-grow-1">
                     <Button className="float-right ml-2" variant="primary" onClick={() => setStep(currentIndex + 1)}>
-                        Skip this step
+                        {currentStep.isComplete ? 'Continue' : 'Skip this step'}
                     </Button>
                 </div>
             </div>
