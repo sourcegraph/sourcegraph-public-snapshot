@@ -37,10 +37,10 @@ func TestParseDiff(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			diff := ParseDiff(tt.files)
 			for _, want := range tt.wantAffects {
-				assert.True(t, diff.Affects(want))
+				assert.True(t, diff.Has(want))
 			}
 			for _, doNotWant := range tt.doNotWantAffects {
-				assert.False(t, diff.Affects(doNotWant))
+				assert.False(t, diff.Has(doNotWant))
 			}
 		})
 	}

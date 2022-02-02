@@ -112,14 +112,14 @@ func (d Diff) String() string {
 	var allDiffs []string
 	for checkDiff := Go; checkDiff <= All<<1; checkDiff = 1 << checkDiff {
 		diffName := checkDiff.String()
-		if diffName != "" && d.Affects(checkDiff) {
+		if diffName != "" && d.Has(checkDiff) {
 			allDiffs = append(allDiffs, diffName)
 		}
 	}
 	return strings.Join(allDiffs, ", ")
 }
 
-func (d Diff) Affects(target Diff) bool {
+func (d Diff) Has(target Diff) bool {
 	if d == None && target == None {
 		return true
 	}

@@ -112,7 +112,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case PullRequest:
-		if c.Diff.Affects(changed.Client) {
+		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
 			// set it up separately from CoreTestOperations
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
@@ -202,7 +202,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
 		if c.RunType.Is(MainDryRun, MainBranch, ReleaseBranch) {
 			imageBuildOps.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.Diff.Affects(changed.ExecutorDockerRegistryMirror) {
+			if c.RunType.Is(ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				imageBuildOps.Append(buildExecutorDockerMirror(c.Version))
 			}
 		}
@@ -246,7 +246,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Executor VM image
 		if c.RunType.Is(MainBranch, ReleaseBranch) {
 			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.Diff.Affects(changed.ExecutorDockerRegistryMirror) {
+			if c.RunType.Is(ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				publishOps.Append(publishExecutorDockerMirror(c.Version))
 			}
 		}

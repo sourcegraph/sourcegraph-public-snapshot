@@ -45,27 +45,27 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		// these on all PRs
 		addPrettier,
 		addCheck)
-	if diff.Affects(changed.GraphQL | changed.All) {
+	if diff.Has(changed.GraphQL | changed.All) {
 		linterOps.Append(addGraphQLLint)
 	}
-	if diff.Affects(changed.SVG) {
+	if diff.Has(changed.SVG) {
 		linterOps.Append(addSVGLint)
 	}
-	if diff.Affects(changed.Client) {
+	if diff.Has(changed.Client) {
 		linterOps.Append(addYarnDeduplicateLint)
 	}
-	if diff.Affects(changed.Dockerfiles) {
+	if diff.Has(changed.Dockerfiles) {
 		linterOps.Append(addDockerfileLint)
 	}
-	if diff.Affects(changed.Terraform) {
+	if diff.Has(changed.Terraform) {
 		linterOps.Append(addTerraformLint)
 	}
-	if diff.Affects(changed.Docs) {
+	if diff.Has(changed.Docs) {
 		linterOps.Append(addDocs)
 	}
 	ops.Merge(linterOps)
 
-	if diff.Affects(changed.Client | changed.GraphQL) {
+	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
@@ -77,14 +77,14 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addTsLint))
 	}
 
-	if diff.Affects(changed.Go | changed.GraphQL) {
+	if diff.Has(changed.Go | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
 			addGoBuild))
 	}
 
-	if diff.Affects(changed.DatabaseSchema) {
+	if diff.Has(changed.DatabaseSchema) {
 		// If there are schema changes, ensure the tests of the last minor release continue
 		// to succeed when the new version of the schema is applied. This ensures that the
 		// schema can be rolled forward pre-upgrade without negatively affecting the running
@@ -94,7 +94,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	}
 
 	// CI script testing
-	if diff.Affects(changed.CIScripts) {
+	if diff.Has(changed.CIScripts) {
 		ops.Merge(operations.NewNamedSet("CI script tests", addCIScriptsTests))
 	}
 
