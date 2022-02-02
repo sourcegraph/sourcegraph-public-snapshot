@@ -176,3 +176,27 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 		failedVersions,
 	}, nil
 }
+
+type lockedVersionCallback func(
+	schemaVersion schemaVersion,
+) error
+
+// withLockedSchemaState attempts to take an advisory lock, then re-checks the version of the
+// database. The resulting schema state is passed to the given function. The advisory lock
+// will be released on function exit.
+func (r *Runner) withLockedSchemaState(ctx context.Context, schemaContext schemaContext, callback lockedVersionCallback) (err error) {
+	if acquired, unlock, err := schemaContext.store.Lock(ctx); err != nil {
+		return err
+	} else if !acquired {
+		return fmt.Errorf("failed to acquire migration lock")
+	} else {
+		defer func() { err = unlock(err) }()
+	}
+
+	schemaVersion, err := r.fetchVersion(ctx, schemaContext.schema.Name, schemaContext.store)
+	if err != nil {
+		return err
+	}
+
+	return callback(schemaVersion)
+}
