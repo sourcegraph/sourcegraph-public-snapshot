@@ -157,7 +157,7 @@ func addSVGLint(pipeline *bk.Pipeline) {
 }
 
 func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :yarn: SVG lint",
+	pipeline.AddStep(":lipstick: :yarn: Yarn deduplicate lint",
 		bk.Cmd("dev/check/yarn-deduplicate.sh"))
 }
 
