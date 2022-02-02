@@ -185,6 +185,10 @@ func (g Gitserver) RevListEach(commit string, onCommit func(commit string) (shou
 }
 
 func (g Gitserver) ArchiveEach(commit string, paths []string, onFile func(path string, contents []byte) error) error {
+	if len(paths) == 0 {
+		return nil
+	}
+
 	args := types.SearchArgs{Repo: api.RepoName(g.repo), CommitID: api.CommitID(commit)}
 	parseRequestOrErrors := g.f.FetchRepositoryArchive(context.TODO(), args, paths)
 	defer func() {
