@@ -10,15 +10,22 @@ type Element struct {
 }
 
 type Edge struct {
-	OutV     int
-	InV      int
-	InVs     []int
-	Document int
+	OutV     int   `json:"outV"`
+	InV      int   `json:"inV"`
+	InVs     []int `json:"inVs"`
+	Document int   `json:"document"`
+}
+
+type ToolInfo struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 type MetaData struct {
-	Version     string
-	ProjectRoot string
+	Version          string   `json:"version"`
+	ProjectRoot      string   `json:"projectRoot"`
+	PositionEncoding string   `json:"positionEncoding"`
+	ToolInfo         ToolInfo `json:"toolInfo"`
 }
 
 type Range struct {
@@ -29,14 +36,14 @@ type Range struct {
 type ResultSet struct{}
 
 type Moniker struct {
-	Kind       string
-	Scheme     string
-	Identifier string
+	Kind       string `json:"kind"`
+	Scheme     string `json:"scheme"`
+	Identifier string `json:"identifier"`
 }
 
 type PackageInformation struct {
-	Name    string
-	Version string
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 type Diagnostic struct {
