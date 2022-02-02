@@ -691,6 +691,7 @@ func Search(db Queryable, tasklog *TaskLog, repo, commit string, query *string) 
 
 	var rows *sql.Rows
 	if query != nil {
+		tasklog.Start("Search query")
 		rows, err = db.Query(`
 			SELECT id, commit_id, path, added, deleted, symbol_data
 			FROM rockskip_blobs
@@ -713,6 +714,7 @@ func Search(db Queryable, tasklog *TaskLog, repo, commit string, query *string) 
 	}
 	defer rows.Close()
 
+	tasklog.Start("Search read rows")
 	blobs := []Blob{}
 	for rows.Next() {
 		var id int
