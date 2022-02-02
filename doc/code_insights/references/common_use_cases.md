@@ -85,9 +85,9 @@ try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural arch
 ## Automatic version and pattern tracking
 These examples are all for use with the [automatically generated data series](../explanations/automatically_generated_data_series.md) of "Detect and track" Code Insights, using regular expression capture groups. 
 
-**What Java versions are present or most popular**
+**What Java versions defined in a Maven pom file that are present or most popular**
 ```sgquery
-file:\.pom$ <java\.version>(.*)</java\.version> archived:no fork:no
+file:pom\.xml$ <java\.version>(.*)</java\.version> archived:no fork:no
 ```
 
 **What Terraform versions are present or most popular**

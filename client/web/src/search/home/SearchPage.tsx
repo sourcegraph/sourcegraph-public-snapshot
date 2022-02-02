@@ -62,10 +62,10 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         features => features.showOnboardingTour ?? false
     )
     const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL !== '')
-    const isSearchOnboardingFeatureDisabled = props.featureFlags.get('disable-search-onboarding-tour')
+    const isGettingStartedTourEnabled = props.featureFlags.get('getting-started-tour')
     const showOnboardingTour = useMemo(
-        () => isExperimentalOnboardingTourEnabled && !hasSearchQuery && !isSearchOnboardingFeatureDisabled,
-        [hasSearchQuery, isSearchOnboardingFeatureDisabled, isExperimentalOnboardingTourEnabled]
+        () => isExperimentalOnboardingTourEnabled && !hasSearchQuery && !isGettingStartedTourEnabled,
+        [hasSearchQuery, isGettingStartedTourEnabled, isExperimentalOnboardingTourEnabled]
     )
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])

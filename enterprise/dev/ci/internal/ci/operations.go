@@ -40,44 +40,51 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 	runAll := len(changedFiles) == 0
 
 	// Base set
-	ops := operations.NewSet([]operations.Operation{
+	ops := operations.NewSet()
+
+	// Simple, fast-ish linter checks
+	linterOps := operations.NewNamedSet("Linters and static analysis",
 		// lightweight check that works over a lot of stuff - we are okay with running
 		// these on all PRs
 		addPrettier,
-		addCheck,
-	})
-
-	if runAll || changedFiles.AffectsPathsPrefixedBy("enterprise/dev/ci/scripts") {
-		ops.Append(
-			addCIScriptsTests,
-		)
+		addCheck)
+	if runAll || changedFiles.AffectsGraphQL() {
+		linterOps.Append(addGraphQLLint)
 	}
+	if runAll || changedFiles.AffectsFilesWithExt(".svg") {
+		linterOps.Append(addSVGLint)
+	}
+	if runAll || changedFiles.AffectsClient() {
+		linterOps.Append(addYarnDeduplicateLint)
+	}
+	if runAll || changedFiles.AffectsDockerfiles() {
+		linterOps.Append(addDockerfileLint)
+	}
+	if runAll || changedFiles.AffectsTerraformFiles() {
+		linterOps.Append(addTerraformLint)
+	}
+	if runAll || changedFiles.AffectsDocs() {
+		linterOps.Append(addDocs)
+	}
+	ops.Merge(linterOps)
 
 	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the client as well.
-		ops.Append(
+		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,   // ~4.5m
 			addWebApp,       // ~3m
 			addBrowserExt,   // ~2m
 			addBrandedTests, // ~1.5m
-			addTsLint,
-		)
+			addTsLint))
 	}
 
 	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the backend as well.
-		ops.Append(
+		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
-		)
-
-		// If the changes are only in ./dev/sg then we skip the build
-		if runAll || !changedFiles.AffectsSg() {
-			ops.Append(
-				addGoBuild, // ~0.5m
-			)
-		}
+			addGoBuild))
 	}
 
 	if runAll || changedFiles.AffectsDatabaseSchema() {
@@ -85,47 +92,32 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		// to succeed when the new version of the schema is applied. This ensures that the
 		// schema can be rolled forward pre-upgrade without negatively affecting the running
 		// instance (which was working fine prior to the upgrade).
-		ops.Append(
-			addGoTestsBackcompat(opts.MinimumUpgradeableVersion),
-		)
+		ops.Merge(operations.NewNamedSet("DB backcompat tests",
+			addGoTestsBackcompat(opts.MinimumUpgradeableVersion)))
 	}
 
-	if runAll || changedFiles.AffectsGraphQL() {
-		ops.Append(addGraphQLLint)
+	// CI script testing
+	if runAll || changedFiles.AffectsCIScripts() {
+		ops.Merge(operations.NewNamedSet("CI script tests", addCIScriptsTests))
 	}
 
-	if runAll || changedFiles.AffectsDockerfiles() {
-		ops.Append(addDockerfileLint)
-	}
-
-	if runAll || changedFiles.AffectsDocs() {
-		ops.Append(addDocs)
-	}
-
-	if runAll || changedFiles.AffectsTerraformFiles() {
-		ops.Append(addTerraformLint)
-	}
-
-	return &ops
+	return ops
 }
 
 // Run enterprise/dev/ci/scripts tests
 func addCIScriptsTests(pipeline *bk.Pipeline) {
-	files, err := os.ReadDir("./enterprise/dev/ci/scripts/tests")
+	testDir := "./enterprise/dev/ci/scripts/tests"
+	files, err := os.ReadDir(testDir)
 	if err != nil {
 		log.Fatalf("Failed to list CI scripts tests scripts: %s", err)
 	}
 
-	var stepOpts []bk.StepOpt
 	for _, f := range files {
 		if filepath.Ext(f.Name()) == ".sh" {
-			stepOpts = append(stepOpts, bk.RawCmd(fmt.Sprintf("./enterprise/dev/ci/scripts/tests/%s", f.Name())))
+			pipeline.AddStep(fmt.Sprintf(":bash: %s", f.Name()),
+				bk.RawCmd(fmt.Sprintf("%s/%s", testDir, f.Name())))
 		}
 	}
-
-	pipeline.AddStep(":bash: Test CI Scripts",
-		stepOpts...,
-	)
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -155,8 +147,18 @@ func addPrettier(pipeline *bk.Pipeline) {
 
 // yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :graphql:",
+	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
 		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
+}
+
+func addSVGLint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: :compression: SVG lint",
+		bk.Cmd("dev/check/svgo.sh"))
+}
+
+func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: :yarn: Yarn deduplicate lint",
+		bk.Cmd("dev/check/yarn-deduplicate.sh"))
 }
 
 // Adds Typescript linting. (2x ~41s) + ~60s + ~137s + 7s
@@ -271,19 +273,25 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-
-		if autoAcceptChanges {
-			chromaticCommand += " --auto-accept-changes"
-		}
-
-		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
+		stepOpts := []bk.StepOpt{
 			bk.AutomaticRetry(3),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
-			bk.Cmd(chromaticCommand))
+		}
+
+		// Upload storybook to Chromatic
+		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+		if autoAcceptChanges {
+			chromaticCommand += " --auto-accept-changes"
+		} else {
+			// Unless we plan on automatically accepting these changes, we only run this
+			// step on ready-for-review pull requests.
+			stepOpts = append(stepOpts, bk.IfReadyForReview())
+		}
+
+		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
+			append(stepOpts, bk.Cmd(chromaticCommand))...)
 	}
 }
 
@@ -569,8 +577,8 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
+				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
 				if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
-					fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
 					return "cmd/" + app
 				}
 				return "enterprise/cmd/" + app
@@ -748,7 +756,7 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 
 func uploadBuildeventTrace() operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":arrow_heading_up: Uploading trace to HoneyComb",
+		p.AddStep(":arrow_heading_up: Upload build trace",
 			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
 		)
 	}

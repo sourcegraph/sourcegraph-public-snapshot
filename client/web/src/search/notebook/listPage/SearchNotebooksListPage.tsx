@@ -164,8 +164,8 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     <div className="nav nav-tabs">
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <a
-                                href=""
+                            <Link
+                                to=""
                                 role="button"
                                 onClick={event => {
                                     event.preventDefault()
@@ -176,28 +176,28 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                                 <span className="text-content" data-tab-content="My Notebooks">
                                     My Notebooks
                                 </span>
-                            </a>
+                            </Link>
                         </div>
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <a
-                                href=""
+                            <Link
+                                to=""
                                 role="button"
                                 onClick={event => {
                                     event.preventDefault()
-                                    onSelectTab('starred', 'SearchNotebooksExploreNotebooksTabClick')
+                                    onSelectTab('starred', 'SearchNotebooksStarredNotebooksTabClick')
                                 }}
                                 className={classNames('nav-link', selectedTab === 'starred' && 'active')}
                             >
                                 <span className="text-content" data-tab-content="Starred Notebooks">
                                     Starred Notebooks
                                 </span>
-                            </a>
+                            </Link>
                         </div>
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <a
-                                href=""
+                            <Link
+                                to=""
                                 role="button"
                                 onClick={event => {
                                     event.preventDefault()
@@ -208,22 +208,26 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                                 <span className="text-content" data-tab-content="Explore Notebooks">
                                     Explore Notebooks
                                 </span>
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 </div>
                 {selectedTab === 'my' && authenticatedUser && (
                     <SearchNotebooksList
+                        logEventName="MyNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         filters={filters}
                         creatorUserID={authenticatedUser.id}
+                        telemetryService={telemetryService}
                     />
                 )}
                 {selectedTab === 'starred' && authenticatedUser && (
                     <SearchNotebooksList
+                        logEventName="StarredNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         starredByUserID={authenticatedUser.id}
                         filters={filters}
+                        telemetryService={telemetryService}
                     />
                 )}
                 {(selectedTab === 'my' || selectedTab === 'starred') && !authenticatedUser && (
@@ -235,7 +239,14 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                         }
                     />
                 )}
-                {selectedTab === 'explore' && <SearchNotebooksList fetchNotebooks={fetchNotebooks} filters={filters} />}
+                {selectedTab === 'explore' && (
+                    <SearchNotebooksList
+                        logEventName="ExploreNotebooks"
+                        fetchNotebooks={fetchNotebooks}
+                        filters={filters}
+                        telemetryService={telemetryService}
+                    />
+                )}
             </Page>
         </div>
     )

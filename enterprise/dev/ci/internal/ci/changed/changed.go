@@ -10,11 +10,10 @@ import (
 // Helper functions on Files should all be in the format `AffectsXYZ`.
 type Files []string
 
-// AffectsPathsPrefixedBy returns whether the chanegs affects files
-// whose path are prefixed with the given string.
-func (f Files) AffectsPathsPrefixedBy(prefix string) bool {
+// AffectsPathsPrefixedBy returns whether the chanegs affects CI scripts.
+func (f Files) AffectsCIScripts() bool {
 	for _, p := range f {
-		if strings.HasPrefix(p, prefix) {
+		if strings.HasPrefix(p, "enterprise/dev/ci/scripts") {
 			return true
 		}
 	}
@@ -46,6 +45,17 @@ func (c Files) AffectsSg() bool {
 func (c Files) AffectsTerraformFiles() bool {
 	for _, p := range c {
 		if strings.HasSuffix(p, ".tf") {
+			return true
+		}
+	}
+	return false
+}
+
+// AffectsFilesWithExt returns whether the changes affects files with the given extension.
+// Extension must be passed with the dot, eg: ".svg"
+func (c Files) AffectsFilesWithExt(ext string) bool {
+	for _, p := range c {
+		if strings.HasSuffix(p, ext) {
 			return true
 		}
 	}

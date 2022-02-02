@@ -7,7 +7,7 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
-	"github.com/sourcegraph/sourcegraph/dev/internal/team"
+	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
 type CheckOptions struct {

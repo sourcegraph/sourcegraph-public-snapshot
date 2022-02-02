@@ -2,15 +2,16 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Button, Card } from '@sourcegraph/wildcard'
+import { Button, Card, Link } from '@sourcegraph/wildcard'
 
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
+import { DEFAULT_DATA_SERIES_COLOR } from '../../constants'
 import { EditableDataSeries } from '../../types'
-import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
+import { FormColorInput } from '../form-color-input/FormColorInput'
 
 import { getQueryPatternTypeFilter } from './get-pattern-type-filter'
 
@@ -78,7 +79,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         initialValues: {
             seriesName: name ?? '',
             seriesQuery: query ?? '',
-            seriesColor: color ?? DEFAULT_ACTIVE_COLOR,
+            seriesColor: color ?? DEFAULT_DATA_SERIES_COLOR,
         },
         onSubmit: values =>
             onSubmit({
@@ -188,13 +189,13 @@ const QueryFieldDescription: React.FunctionComponent<{ isSearchQueryDisabled: bo
             <>
                 We don't yet allow editing queries for insights over all repos. To change the query, make a new insight.
                 This is a known{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                <Link
+                    to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     beta limitation
-                </a>
+                </Link>
             </>
         )}
     </span>
