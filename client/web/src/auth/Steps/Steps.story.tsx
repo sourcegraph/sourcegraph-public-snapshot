@@ -5,7 +5,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Container, Button } from '@sourcegraph/wildcard'
 
-import { Steps, Step, StepList, StepPanels, StepPanel, StepActions, useSteps } from '.'
+import { Steps, Step, StepList, StepPanels, StepPanel, useSteps } from '.'
 
 const Actions = () => {
     const { setStep, currentIndex, currentStep } = useSteps()
@@ -32,13 +32,19 @@ export const Stepper: Story = () => (
                         <Step borderColor="purple">Panel 3 Title</Step>
                     </StepList>
                     <StepPanels>
-                        <StepPanel>Panel 1</StepPanel>
-                        <StepPanel>Panel 2</StepPanel>
-                        <StepPanel>Panel 3</StepPanel>
+                        <StepPanel>
+                            <div>Panel 1</div>
+                            <Actions />
+                        </StepPanel>
+                        <StepPanel>
+                            <div>Panel 2</div>
+                            <Actions />
+                        </StepPanel>
+                        <StepPanel>
+                            <div>Panel 3</div>
+                            <Actions />
+                        </StepPanel>
                     </StepPanels>
-                    <StepActions>
-                        <Actions />
-                    </StepActions>
                 </Steps>
             </Container>
         )}

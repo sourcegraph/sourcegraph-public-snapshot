@@ -44,10 +44,12 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ initialStep = 1, to
 export const Step: React.FunctionComponent<StepProps> = ({ children, borderColor }) => {
     const { state } = useStepsContext()
     const { setCurrent, stepIndex } = useStepListContext()
-
     const { current, steps } = state
-    const disabled = !steps[stepIndex]?.isVisited && current !== steps[stepIndex]?.index
-    const active = current === steps[stepIndex]?.index || steps[stepIndex]?.isVisited
+
+    const didSeeStep = steps[stepIndex]?.isVisited || stepIndex <= current
+
+    const disabled = !didSeeStep
+    const active = didSeeStep
 
     return (
         <li
@@ -141,9 +143,7 @@ export const StepPanels: React.FunctionComponent = ({ children }) => {
         )
     }
 
-    return <div className="mt-4 pb-3 w-100">{childrenArray[indexArray]}</div>
+    return <div className="mt-4 pb-3">{childrenArray[indexArray]}</div>
 }
 
 export const StepPanel: React.FunctionComponent = ({ children }) => <>{children}</>
-
-export const StepActions: React.FunctionComponent = ({ children }) => <>{children}</>

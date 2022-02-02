@@ -20,7 +20,7 @@ import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 import styles from './PostSignUpPage.module.scss'
 import { getReturnTo } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
-import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from './Steps'
+import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
 import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { CreateOrganization } from './welcome/CreateOrganization'
@@ -150,7 +150,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                             </div>
                             <div className="mt-4 pb-3 d-flex flex-column align-items-center">
                                 <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
-                                    <StepList numeric={true} className={styles.container}>
+                                    <StepList numeric={true} className={classNames(styles.container, styles.progress)}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
                                         <Step borderColor="orange">Create an organization</Step>
@@ -170,6 +170,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     context={context}
                                                     refetch={refetchExternalServices}
                                                 />
+                                                <Footer onFinish={finishWelcomeFlow} />
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
@@ -195,10 +196,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     telemetryService={telemetryService}
                                                     onError={onError}
                                                 />
+                                                <Footer onFinish={finishWelcomeFlow} />
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <CreateOrganization />
+                                            <CreateOrganization onFinish={finishWelcomeFlow} />
                                         </StepPanel>
                                         <StepPanel>
                                             <StartSearching
@@ -210,12 +212,10 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                 }
                                                 setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                                                 onError={onError}
+                                                onFinish={finishWelcomeFlow}
                                             />
                                         </StepPanel>
                                     </StepPanels>
-                                    <StepActions>
-                                        <Footer onFinish={finishWelcomeFlow} skippableSteps={[3]} />
-                                    </StepActions>
                                 </Steps>
                             </div>
                         </div>

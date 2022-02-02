@@ -8,13 +8,11 @@ import { useSteps } from '../Steps/context'
 
 interface Props {
     onFinish: FinishWelcomeFlow
-    skippableSteps?: number[]
+    hidePrimaryButton?: boolean
 }
 
-export const Footer: React.FunctionComponent<Props> = ({ onFinish, skippableSteps }) => {
+export const Footer: React.FunctionComponent<Props> = ({ onFinish, hidePrimaryButton }) => {
     const { setStep, currentIndex, currentStep } = useSteps()
-
-    const isSkippable = (skippableSteps ?? []).includes(currentIndex)
 
     return (
         <div className="d-flex align-items-center justify-content-end mt-4 w-100">
@@ -41,27 +39,23 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish, skippableStep
                         Not right now
                     </Button>
                 )}
-                <LoaderButton
-                    alwaysShowLabel={true}
-                    label={
-                        currentStep.isLastStep
-                            ? 'Start searching'
-                            : isSkippable && !currentStep.isComplete
-                            ? 'Skip this step'
-                            : 'Continue'
-                    }
-                    className="float-right ml-2"
-                    disabled={!isSkippable && !currentStep.isComplete}
-                    variant="primary"
-                    onClick={event => {
-                        if (currentStep.isLastStep) {
-                            onFinish(event, { eventName: 'StartSearching_Clicked' })
-                        } else {
-                            event.currentTarget.blur()
-                            setStep(currentIndex + 1)
-                        }
-                    }}
-                />
+                {hidePrimaryButton !== true ? (
+                    <LoaderButton
+                        alwaysShowLabel={true}
+                        label={currentStep.isLastStep ? 'Start searching' : 'Continue'}
+                        className="float-right ml-2"
+                        disabled={!currentStep.isComplete}
+                        variant="primary"
+                        onClick={event => {
+                            if (currentStep.isLastStep) {
+                                onFinish(event, { eventName: 'StartSearching_Clicked' })
+                            } else {
+                                event.currentTarget.blur()
+                                setStep(currentIndex + 1)
+                            }
+                        }}
+                    />
+                ) : null}
             </div>
         </div>
     )

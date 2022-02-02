@@ -1,3 +1,7 @@
+.container {
+    width: 63.5rem;
+}
+
 .content {
     display: flex;
     flex-direction: column;
@@ -30,8 +34,8 @@
     opacity: 0;
 }
 
-.form-wrapper {
-    width: 48rem;
+.form {
+    width: 100%;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -40,12 +44,12 @@
     transition: opacity 150ms ease-in;
 }
 
-.form-wrapper-expanded {
-    display: flex;
-    opacity: 1;
+.form > div {
+    width: 100%;
+    max-width: 48rem;
 }
 
-.form {
-    width: 100%;
-    max-width: 48em;
+.form-expanded {
+    display: flex;
+    opacity: 1;
 }
