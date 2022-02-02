@@ -96,12 +96,12 @@ func TestIndex(t *testing.T) {
 	fmt.Println("🔵 Indexing", repo, "at", head, "with git size", size)
 	fmt.Println()
 
-	TASKLOG.Reset()
-	err = Index(git, db, parser.Parse, repo, head, 1)
+	tasklog := NewTaskLog()
+	err = Index(git, db, tasklog, parser.Parse, repo, head, 1)
 	if err != nil {
 		t.Fatalf("🚨 Index: %s", err)
 	}
-	TASKLOG.Print()
+	tasklog.Print()
 	fmt.Println()
 
 	rows, err := db.Query("SELECT pg_size_pretty(pg_total_relation_size('rockskip_ancestry')) AS rockskip_ancestry, pg_size_pretty(pg_total_relation_size('rockskip_blobs')) AS rockskip_blobs;")
@@ -119,7 +119,7 @@ func TestIndex(t *testing.T) {
 	}
 	fmt.Println()
 
-	blobs, err := Search(db, repo, head, nil)
+	blobs, err := Search(db, NewTaskLog(), repo, head, nil)
 	if err != nil {
 		t.Fatalf("🚨 PathsAtCommit: %s", err)
 	}

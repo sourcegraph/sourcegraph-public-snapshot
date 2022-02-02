@@ -102,11 +102,11 @@ type Task struct {
 	Count    int
 }
 
-func NewTaskLog() TaskLog {
-	return TaskLog{
+func NewTaskLog() *TaskLog {
+	return &TaskLog{
 		currentName:  "<start>",
 		currentStart: time.Now(),
-		nameToTask:   map[string]*Task{"<start>": {Duration: 0, Count: 0}},
+		nameToTask:   map[string]*Task{"<start>": {Duration: 0, Count: 1}},
 	}
 }
 
@@ -117,7 +117,27 @@ func (t *TaskLog) Start(name string) {
 		t.nameToTask[t.currentName] = &Task{Duration: 0, Count: 0}
 	}
 	t.nameToTask[t.currentName].Duration += now.Sub(t.currentStart)
-	t.nameToTask[t.currentName].Count += 1
+
+	if _, ok := t.nameToTask[name]; !ok {
+		t.nameToTask[name] = &Task{Duration: 0, Count: 0}
+	}
+	t.nameToTask[name].Count += 1
+
+	t.currentName = name
+	t.currentStart = now
+}
+
+func (t *TaskLog) Continue(name string) {
+	now := time.Now()
+
+	if _, ok := t.nameToTask[t.currentName]; !ok {
+		t.nameToTask[t.currentName] = &Task{Duration: 0, Count: 0}
+	}
+	t.nameToTask[t.currentName].Duration += now.Sub(t.currentStart)
+
+	if _, ok := t.nameToTask[name]; !ok {
+		t.nameToTask[name] = &Task{Duration: 0, Count: 0}
+	}
 
 	t.currentName = name
 	t.currentStart = now
@@ -130,19 +150,15 @@ func (t *TaskLog) Reset() {
 }
 
 func (t TaskLog) Print() {
-	t.Start(t.currentName)
-
-	ms := func(d time.Duration) string {
-		return fmt.Sprintf("%dms", int(d.Seconds()*1000))
-	}
-
 	var total time.Duration = 0
 	totalCount := 0
 	for _, task := range t.nameToTask {
 		total += task.Duration
 		totalCount += task.Count
 	}
-	fmt.Printf("Instants (%s total):\n", ms(total))
+	remainder := time.Since(t.currentStart)
+	total += remainder
+	fmt.Printf("Tasks (%s total):\n", total)
 
 	type kv struct {
 		Key   string
@@ -159,13 +175,15 @@ func (t TaskLog) Print() {
 	})
 
 	for _, kv := range kvs {
-		fmt.Printf("  [%6s] %6dx %s\n", ms(kv.Value.Duration), kv.Value.Count, kv.Key)
+		duration := kv.Value.Duration
+		if kv.Key == t.currentName {
+			duration += remainder
+		}
+		fmt.Printf("  %6d%% %6dx %s\n", duration*100/total, kv.Value.Count, kv.Key)
 	}
 }
 
-var TASKLOG = NewTaskLog()
-
-func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int) (err error) {
+func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int) (err error) {
 	unlock, err := onVisit(db, repo, maxRepos)
 	defer func() {
 		if unlock != nil {
@@ -180,7 +198,7 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 	tipHeight := 0
 
 	missingCount := 0
-	TASKLOG.Start("RevList + GetCommit")
+	tasklog.Start("RevList + GetCommit")
 	err = git.RevListEach(givenCommit, func(commit string) (shouldContinue bool, err error) {
 		_, height, present, err := GetCommit(db, repo, commit)
 		if err != nil {
@@ -193,34 +211,27 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 		missingCount += 1
 		return true, nil
 	})
-	TASKLOG.Start("idle")
+	tasklog.Start("idle")
 	if err != nil {
 		return errors.Wrap(err, "RevList")
 	}
 
 	pathToBlobIdCache := map[string]int{}
 
-	TASKLOG.Start("LogReverse")
+	tasklog.Start("LogReverse")
 	entries, err := git.LogReverse(givenCommit, missingCount)
-	TASKLOG.Start("idle")
+	tasklog.Start("idle")
 	if err != nil {
 		return errors.Wrap(err, "LogReverse")
 	}
-	start := time.Now()
-	last := time.Now()
-	for entryIndex, entry := range entries {
+	for _, entry := range entries {
 		tx, err := db.Begin()
 		if err != nil {
 			return errors.Wrap(err, "begin transaction")
 		}
 		defer tx.Rollback()
 
-		if time.Since(last) > time.Second {
-			fmt.Printf("Index: height %d (%d/s)\n", tipHeight+1, entryIndex/int(time.Since(start).Seconds()))
-			last = time.Now()
-		}
-
-		hops, err := getHops(tx, repo, tipCommit)
+		hops, err := getHops(tx, repo, tipCommit, tasklog)
 		if err != nil {
 			return errors.Wrap(err, "getHops")
 		}
@@ -230,22 +241,22 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 			return fmt.Errorf("ruler(%d) = %d is out of range of len(hops) = %d", tipHeight+1, r, len(hops))
 		}
 
-		TASKLOG.Start("InsertCommit")
+		tasklog.Start("InsertCommit")
 		err = InsertCommit(tx, repo, entry.Commit, tipHeight+1, hops[r])
-		TASKLOG.Start("idle")
+		tasklog.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "InsertCommit")
 		}
 
-		TASKLOG.Start("AppendHop (added)")
+		tasklog.Start("AppendHop (added)")
 		err = AppendHop(tx, hops[0:r], AddedAD, entry.Commit)
-		TASKLOG.Start("idle")
+		tasklog.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (added)")
 		}
-		TASKLOG.Start("AppendHop (deleted)")
+		tasklog.Start("AppendHop (deleted)")
 		err = AppendHop(tx, hops[0:r], DeletedAD, entry.Commit)
-		TASKLOG.Start("idle")
+		tasklog.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (deleted)")
 		}
@@ -267,9 +278,9 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 			if id, ok = pathToBlobIdCache[deletedPath]; !ok {
 				found := false
 				for _, hop := range hops {
-					TASKLOG.Start("GetBlob")
+					tasklog.Start("GetBlob")
 					id, found, err = GetBlob(tx, hop, deletedPath)
-					TASKLOG.Start("idle")
+					tasklog.Start("idle")
 					if err != nil {
 						return errors.Wrap(err, "GetBlob")
 					}
@@ -282,19 +293,19 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 				}
 			}
 
-			TASKLOG.Start("UpdateBlobHops")
+			tasklog.Start("UpdateBlobHops")
 			err = UpdateBlobHops(tx, id, DeletedAD, entry.Commit)
-			TASKLOG.Start("idle")
+			tasklog.Start("idle")
 			if err != nil {
 				return errors.Wrap(err, "UpdateBlobHops")
 			}
 		}
 
-		TASKLOG.Start("ArchiveEach")
+		tasklog.Start("ArchiveEach")
 		err = git.ArchiveEach(entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
-			TASKLOG.Start("parse")
+			tasklog.Start("parse")
 			symbols, err := parse(addedPath, contents)
-			TASKLOG.Start("idle")
+			tasklog.Start("idle")
 			if err != nil {
 				return err
 			}
@@ -305,34 +316,34 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 				Deleted: []string{},
 				Symbols: symbols,
 			}
-			TASKLOG.Start("InsertBlob")
+			tasklog.Start("InsertBlob")
 			id, err := InsertBlob(tx, blob, repo)
-			TASKLOG.Start("idle")
+			tasklog.Start("idle")
 			if err != nil {
 				return errors.Wrap(err, "InsertBlob")
 			}
 			pathToBlobIdCache[addedPath] = id
-			TASKLOG.Start("ArchiveEach")
+			tasklog.Continue("ArchiveEach")
 			return nil
 		})
-		TASKLOG.Start("idle")
+		tasklog.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "while looping ArchiveEach")
 		}
 
-		TASKLOG.Start("DeleteRedundant")
+		tasklog.Start("DeleteRedundant")
 		err = DeleteRedundant(tx, entry.Commit)
-		TASKLOG.Start("idle")
+		tasklog.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "DeleteRedundant")
 		}
 
-		TASKLOG.Start("CommitTx")
+		tasklog.Start("CommitTx")
 		err = tx.Commit()
 		if err != nil {
 			return errors.Wrap(err, "commit transaction")
 		}
-		TASKLOG.Start("idle")
+		tasklog.Start("idle")
 
 		tipCommit = entry.Commit
 		tipHeight += 1
@@ -341,14 +352,14 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, repo, givenCommit string
 	return nil
 }
 
-func getHops(tx Queryable, repo, commit string) ([]string, error) {
+func getHops(tx Queryable, repo, commit string, tasklog *TaskLog) ([]string, error) {
 	current := commit
 	spine := []string{current}
 
 	for {
-		TASKLOG.Start("GetCommit")
+		tasklog.Start("GetCommit")
 		ancestor, _, present, err := GetCommit(tx, repo, current)
-		TASKLOG.Start("idle")
+		tasklog.Start("idle")
 		if err != nil {
 			return nil, errors.Wrap(err, "GetCommit")
 		} else if !present {
@@ -670,10 +681,10 @@ func AppendHop(db Queryable, hops []string, givenStatus StatusAD, newHop string)
 	return errors.Wrap(err, "AppendHop")
 }
 
-func Search(db Queryable, repo, commit string, query *string) ([]Blob, error) {
+func Search(db Queryable, tasklog *TaskLog, repo, commit string, query *string) ([]Blob, error) {
 	var err error
 
-	hops, err := getHops(db, repo, commit)
+	hops, err := getHops(db, repo, commit, tasklog)
 	if err != nil {
 		return nil, err
 	}
