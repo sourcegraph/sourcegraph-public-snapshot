@@ -62,8 +62,10 @@ export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevi
         return null
     }
 
-    let baseCommitID = ''
-    let headCommitID = ''
+    let baseCommitID = 'a7d29481d12acf4650fbe68409e178ec987b32bc'
+    let headCommitID = 'cda01df57876e8352522358510dfe541c9c7c1cc'
+    // https://github.com/sourcegraph/sourcegraph/pull/30170/commits/cda01df57876e8352522358510dfe541c9c7c1cc
+    // TODO: fix here. One possible option to fetch from GQL based on current/head commit_oid.
     const fetchContainers = document.querySelectorAll('.js-socket-channel.js-updatable-content.js-pull-refresh-on-pjax')
     const isCommentedSnippet = codeView.classList.contains('js-comment-container')
     if (pageType === 'pull') {
