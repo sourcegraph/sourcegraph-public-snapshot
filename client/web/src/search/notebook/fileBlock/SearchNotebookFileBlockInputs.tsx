@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { debounce } from 'lodash'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
@@ -78,6 +79,8 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
         event.stopPropagation()
     }
 
+    const debouncedSetFileInput = useMemo(() => debounce(setFileInput, 300), [setFileInput])
+
     const onInputBlur = (event: React.FocusEvent<HTMLInputElement>): void => {
         // relatedTarget contains the element that will receive focus after the blur.
         const relatedTarget = event.relatedTarget && (event.relatedTarget as HTMLElement)
@@ -128,7 +131,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     inputClassName={styles.repositoryNameInput}
                     value={repositoryName}
                     placeholder="Repository name"
-                    onChange={repositoryName => setFileInput({ repositoryName })}
+                    onChange={repositoryName => debouncedSetFileInput({ repositoryName })}
                     onFocus={onInputFocus}
                     onBlur={onInputBlur}
                     suggestions={repoSuggestions}
@@ -143,7 +146,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     inputClassName={styles.filePathInput}
                     value={filePath}
                     placeholder="Path"
-                    onChange={filePath => setFileInput({ filePath })}
+                    onChange={filePath => debouncedSetFileInput({ filePath })}
                     onFocus={onInputFocus}
                     onBlur={onInputBlur}
                     suggestions={fileSuggestions}
@@ -162,7 +165,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                             inputClassName={styles.revisionInput}
                             value={revision}
                             placeholder="feature/branch"
-                            onChange={revision => setFileInput({ revision })}
+                            onChange={revision => debouncedSetFileInput({ revision })}
                             onFocus={onInputFocus}
                             onBlur={onInputBlur}
                             isValid={isRevisionValid}
@@ -183,7 +186,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                                 setLineRangeInput(lineRangeInput)
                                 const lineRange = parseLineRange(lineRangeInput)
                                 if (lineRange !== null) {
-                                    setFileInput({ lineRange })
+                                    debouncedSetFileInput({ lineRange })
                                 }
                             }}
                             onFocus={onInputFocus}
