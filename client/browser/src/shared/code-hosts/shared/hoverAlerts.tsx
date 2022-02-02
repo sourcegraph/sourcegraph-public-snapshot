@@ -62,7 +62,7 @@ export const createPrivateCodeHoverAlert = (codeHost: Pick<CodeHost, 'hoverOverl
             'To get Sourcegraph hovers on your private repositories, you need to set up a private Sourcegraph instance and connect it to the browser extension.' +
             '\n\n' +
             `<a href="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud" class="${
-                codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''
+                codeHost.hoverOverlayClassProps?.actionItemClassNames?.actionItemClassName ?? ''
             }" target="_blank" rel="noopener norefferer">Show more info</a>`,
     },
 })

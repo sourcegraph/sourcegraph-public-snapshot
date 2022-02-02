@@ -262,16 +262,18 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                                         <ActionItem
                                             {...props}
                                             {...item}
-                                            className={className}
                                             dataContent={dataContent}
                                             variant="actionItem"
-                                            iconClassName={styles.icon}
-                                            pressedClassName={styles.actionPressed}
-                                            inactiveClassName={inactiveClassName}
                                             hideLabel={true}
                                             tabIndex={-1}
                                             hideExternalLinkIcon={true}
                                             disabledDuringExecution={true}
+                                            actionItemClassNames={{
+                                                actionItemClassName: className,
+                                                actionItemPressedClassName: styles.actionPressed,
+                                                actionItemInactiveClassName: inactiveClassName,
+                                                actionItemIconClassName: styles.icon,
+                                            }}
                                         />
                                     </li>
                                 )

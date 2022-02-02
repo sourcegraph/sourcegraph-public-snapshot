@@ -6,7 +6,7 @@ import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, ButtonLink, ButtonLinkProps } from '@sourcegraph/wildcard'
+import { LoadingSpinner, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { ActionContribution, Evaluated } from '../api/protocol'
@@ -38,7 +38,20 @@ export interface ActionItemAction {
     disabledWhen?: boolean
 }
 
-interface ActionItemStyleProps {
+export interface ActionItemClassNames {
+    /**
+     * Added _in addition_ to `className` if the action item is a toggle in the "pressed" state.
+     */
+    actionItemPressedClassName?: string
+    /**
+     * Added _in addition_ to `className` if the action item is not active in the given context
+     */
+    actionItemInactiveClassName?: string
+    actionItemClassName?: string
+    actionItemIconClassName?: string
+}
+
+export interface ActionItemStyleProps {
     actionItemVariant?: ButtonLinkProps['variant']
     actionItemSize?: ButtonLinkProps['size']
     actionItemOutline?: ButtonLinkProps['outline']
@@ -49,27 +62,15 @@ export interface ActionItemComponentProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     location: H.Location
 
-    iconClassName?: string
-
     actionItemStyleProps?: ActionItemStyleProps
+
+    actionItemClassNames?: ActionItemClassNames
 }
 
 export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
     variant?: 'actionItem'
 
     hideLabel?: boolean
-
-    className?: string
-
-    /**
-     * Added _in addition_ to `className` if the action item is a toggle in the "pressed" state.
-     */
-    pressedClassName?: string
-
-    /**
-     * Added _in addition_ to `className` if the action item is not active in the given context
-     */
-    inactiveClassName?: string
 
     /** Called after executing the action (for both success and failure). */
     onDidExecute?: (actionID: string) => void
@@ -117,6 +118,8 @@ interface State {
 }
 
 export class ActionItem extends React.PureComponent<ActionItemProps, State> {
+    public declare context: React.ContextType<typeof WildcardThemeContext>
+
     public state: State = { actionOrError: null }
 
     private commandExecutions = new Subject<ExecuteCommandParameters>()
@@ -184,7 +187,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                         <img
                             src={this.props.action.actionItem.iconURL}
                             alt={this.props.action.actionItem.iconDescription || ''}
-                            className={this.props.iconClassName}
+                            className={this.props.actionItemClassNames?.actionItemIconClassName}
                         />
                     )}
                     {!this.props.hideLabel &&
@@ -202,7 +205,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                         <img
                             src={this.props.action.iconURL}
                             alt={this.props.action.description || ''}
-                            className={this.props.iconClassName}
+                            className={this.props.actionItemClassNames?.actionItemIconClassName}
                         />
                     )}{' '}
                     {this.props.action.category ? `${this.props.action.category}: ` : ''}
@@ -222,7 +225,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 <span
                     data-tooltip={tooltip}
                     data-content={this.props.dataContent}
-                    className={this.props.className}
+                    className={this.props.actionItemClassNames?.actionItemClassName}
                     tabIndex={this.props.tabIndex}
                 >
                     {content}
@@ -247,11 +250,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                       rel: 'noopener noreferrer',
                   }
                 : {}
-        const buttonLinkProps: Partial<ButtonLinkProps> = {
-            variant: this.props.actionItemStyleProps?.actionItemVariant ?? 'link',
-            size: this.props.actionItemStyleProps?.actionItemSize,
-            outline: this.props.actionItemStyleProps?.actionItemOutline,
-        }
+        const buttonLinkProps: Partial<ButtonLinkProps> = this.context.isBranded
+            ? {
+                  variant: this.props.actionItemStyleProps?.actionItemVariant ?? 'link',
+                  size: this.props.actionItemStyleProps?.actionItemSize,
+                  outline: this.props.actionItemStyleProps?.actionItemOutline,
+              }
+            : {}
 
         return (
             <ButtonLink
@@ -267,13 +272,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                         this.state.actionOrError === LOADING) ||
                     this.props.disabledWhen
                 }
-                disabledClassName={this.props.inactiveClassName}
+                disabledClassName={this.props.actionItemClassNames?.actionItemInactiveClassName}
                 data-action-item-pressed={pressed}
                 className={classNames(
                     'test-action-item',
-                    this.props.className,
+                    this.props.actionItemClassNames?.actionItemClassName,
                     showLoadingSpinner && styles.actionItemLoading,
-                    pressed && [this.props.pressedClassName],
+                    pressed && this.props.actionItemClassNames?.actionItemPressedClassName,
                     buttonLinkProps.variant === 'link' && 'p-0 font-weight-normal border-0 align-baseline d-inline'
                 )}
                 pressed={pressed}
@@ -287,11 +292,14 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
             >
                 {content}{' '}
                 {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
-                    <OpenInNewIcon className={this.props.iconClassName} />
+                    <OpenInNewIcon className={this.props.actionItemClassNames?.actionItemIconClassName} />
                 )}
                 {showLoadingSpinner && (
                     <div className={styles.loader} data-testid="action-item-spinner">
-                        <LoadingSpinner inline={false} className={this.props.iconClassName} />
+                        <LoadingSpinner
+                            inline={false}
+                            className={this.props.actionItemClassNames?.actionItemIconClassName}
+                        />
                     </div>
                 )}
             </ButtonLink>

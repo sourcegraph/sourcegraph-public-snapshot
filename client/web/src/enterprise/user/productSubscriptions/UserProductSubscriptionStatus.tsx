@@ -2,7 +2,7 @@ import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 import React, { useState, useCallback } from 'react'
 
-import { Button, CardFooter } from '@sourcegraph/wildcard'
+import { Button, CardFooter, Link } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../components/CopyableText'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -72,13 +72,13 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<Props> = ({
                             ) : (
                                 <div className="text-muted">
                                     No license key found.{' '}
-                                    <a
-                                        href={mailtoSales({
+                                    <Link
+                                        to={mailtoSales({
                                             subject: `No license key for subscription ${subscriptionName}`,
                                         })}
                                     >
                                         Contact sales
-                                    </a>{' '}
+                                    </Link>{' '}
                                     for help.
                                 </div>
                             )}

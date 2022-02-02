@@ -1,4 +1,4 @@
-package graphqlbackend
+package resolvers
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
-	"github.com/sourcegraph/sourcegraph/internal/compute"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -28,10 +28,13 @@ func TestToResultResolverList(t *testing.T) {
 			matches,
 			database.NewMockDB(),
 		)
-		var results []string
+		results := make([]string, 0, len(resolvers))
 		for _, r := range resolvers {
-			for _, m := range r.result.(*computeMatchContextResolver).matches {
-				results = append(results, m.Value())
+			if rr, ok := r.ToComputeMatchContext(); ok {
+				matches := rr.Matches()
+				for _, m := range matches {
+					results = append(results, m.Value())
+				}
 			}
 		}
 		v, _ := json.Marshal(results)

@@ -156,15 +156,19 @@ export const bitbucketCloudCodeHost: CodeHost = {
     codeViewToolbarClassProps: {
         className: styles.codeViewToolbar,
         listItemClass: styles.listItem,
-        actionItemClass: styles.codeViewToolbarActionItem,
-        actionItemPressedClass: styles.pressed,
-        actionItemIconClass: styles.icon,
+        actionItemClassNames: {
+            actionItemClassName: styles.codeViewToolbarActionItem,
+            actionItemPressedClassName: styles.pressed,
+            actionItemIconClassName: styles.icon,
+        },
     },
     hoverOverlayClassProps: {
         className: styles.hoverOverlay,
         badgeClassName: styles.badge,
-        actionItemClassName: styles.hoverOverlayActionItem,
-        iconClassName: styles.icon,
+        actionItemClassNames: {
+            actionItemClassName: styles.hoverOverlayActionItem,
+            actionItemIconClassName: styles.icon,
+        },
         contentClassName: styles.content,
     },
     notificationClassNames: { 1: '', 2: '', 3: '', 4: '', 5: '' },

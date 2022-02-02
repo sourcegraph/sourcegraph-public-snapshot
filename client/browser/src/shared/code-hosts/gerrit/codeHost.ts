@@ -385,7 +385,9 @@ export const gerritCodeHost: CodeHost = {
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--gerrit',
-        actionItemIconClass: 'icon--gerrit',
+        actionItemClassNames: {
+            actionItemIconClassName: 'icon--gerrit',
+        },
     },
     viewOnSourcegraphButtonClassProps: {
         className: 'open-on-sourcegraph--gerrit',

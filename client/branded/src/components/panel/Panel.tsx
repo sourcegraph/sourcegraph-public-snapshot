@@ -283,8 +283,10 @@ export const Panel = React.memo<Props>(props => {
                                 // This is okay for now because the Panel is currently only used in the webapp
                                 listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
                                 listItemClass="px-2 mx-2"
-                                actionItemClass="font-weight-medium"
-                                actionItemIconClass="icon-inline"
+                                actionItemClassNames={{
+                                    actionItemClassName: 'font-weight-medium',
+                                    actionItemIconClassName: 'icon-inline',
+                                }}
                                 menu={ContributableMenu.PanelToolbar}
                                 scope={{
                                     type: 'panelView',

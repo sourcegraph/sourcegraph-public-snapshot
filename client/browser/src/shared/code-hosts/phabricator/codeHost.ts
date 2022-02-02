@@ -191,15 +191,19 @@ export const phabricatorCodeHost: CodeHost = {
     // TODO: handle parsing selected line number from Phabricator href,
     // and find a way to listen to changes (Phabricator does not emit popstate events).
     codeViewToolbarClassProps: {
-        actionItemClass: classNames('button grey', styles.actionItem),
-        actionItemIconClass: styles.icon,
+        actionItemClassNames: {
+            actionItemClassName: classNames('button grey', styles.actionItem),
+            actionItemIconClassName: styles.icon,
+        },
     },
     notificationClassNames,
     hoverOverlayClassProps: {
         className: classNames('aphront-dialog-view', styles.hoverOverlay),
-        actionItemClassName: classNames('button grey', styles.hoverOverlayActionItem),
         iconClassName: styles.hoverOverlayActionItemIcon,
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
+        actionItemClassNames: {
+            actionItemClassName: classNames('button grey', styles.hoverOverlayActionItem),
+        },
     },
     codeViewsRequireTokenization: true,
 }

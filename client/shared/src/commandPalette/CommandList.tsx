@@ -241,10 +241,12 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                                 >
                                     <ActionItem
                                         {...this.props}
-                                        className={classNames(
-                                            this.props.actionItemClassName,
-                                            index === selectedIndex && this.props.selectedActionItemClassName
-                                        )}
+                                        actionItemClassNames={{
+                                            actionItemClassName: classNames(
+                                                this.props.actionItemClassName,
+                                                index === selectedIndex && this.props.selectedActionItemClassName
+                                            ),
+                                        }}
                                         {...item}
                                         ref={index === selectedIndex ? this.setSelectedItem : undefined}
                                         title={

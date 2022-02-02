@@ -4,7 +4,7 @@ import React, { CSSProperties } from 'react'
 import { isErrorLike } from '@sourcegraph/common'
 import { Card } from '@sourcegraph/wildcard'
 
-import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
+import { ActionItem, ActionItemClassNames, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -30,10 +30,9 @@ export interface HoverOverlayClassProps {
     iconClassName?: string
     badgeClassName?: string
 
-    actionItemClassName?: string
-    actionItemPressedClassName?: string
-
     contentClassName?: string
+
+    actionItemClassNames?: ActionItemClassNames
 
     /**
      * Allows providing any custom className to style the notifications as desired.
@@ -88,11 +87,10 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         className,
         iconClassName,
         badgeClassName,
-        actionItemClassName,
-        actionItemPressedClassName,
         contentClassName,
 
         actionItemStyleProps,
+        actionItemClassNames,
 
         getAlertClassName,
         getAlertVariant,
@@ -156,13 +154,6 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                                 <ActionItem
                                     key={index}
                                     {...action}
-                                    className={classNames(
-                                        hoverOverlayStyle.action,
-                                        actionItemClassName,
-                                        `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
-                                    )}
-                                    iconClassName={iconClassName}
-                                    pressedClassName={actionItemPressedClassName}
                                     variant="actionItem"
                                     disabledDuringExecution={true}
                                     showLoadingSpinnerDuringExecution={true}
@@ -171,6 +162,18 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                                     telemetryService={telemetryService}
                                     extensionsController={extensionsController}
                                     location={location}
+                                    actionItemClassNames={{
+                                        ...actionItemClassNames,
+                                        actionItemIconClassName: classNames(
+                                            actionItemClassNames?.actionItemIconClassName,
+                                            iconClassName
+                                        ),
+                                        actionItemClassName: classNames(
+                                            hoverOverlayStyle.action,
+                                            actionItemClassNames?.actionItemClassName,
+                                            `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                        ),
+                                    }}
                                     actionItemStyleProps={actionItemStyleProps}
                                 />
                             ))}
