@@ -1299,16 +1299,6 @@ func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolv
 
 func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
 	stream := r.stream
-	if !query.IsStreamingCompatible(r.Plan) {
-		srr, err := r.resultsBatch(ctx)
-		if srr != nil {
-			stream.Send(streaming.SearchEvent{
-				Results: srr.Matches,
-				Stats:   srr.Stats,
-			})
-		}
-		return srr, err
-	}
 	if sp, _ := r.Plan.ToParseTree().StringValue(query.FieldSelect); sp != "" {
 		// Ensure downstream events sent on the stream are processed by `select:`.
 		selectPath, _ := filter.SelectPathFromString(sp) // Invariant: error already checked
