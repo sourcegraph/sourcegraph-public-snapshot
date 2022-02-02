@@ -70,8 +70,8 @@ query Notebook($id: ID!) {
 `, notebookFields)
 
 var listNotebooksQuery = fmt.Sprintf(`
-query Notebooks($first: Int!, $after: String, $orderBy: NotebooksOrderBy, $descending: Boolean, $starredByUserID: ID, $creatorUserID: ID, $query: String) {
-	notebooks(first: $first, after: $after, orderBy: $orderBy, descending: $descending, starredByUserID: $starredByUserID, creatorUserID: $creatorUserID, query: $query) {
+query Notebooks($first: Int!, $after: String, $orderBy: NotebooksOrderBy, $descending: Boolean, $starredByUserID: ID, $creatorUserID: ID, $namespace: ID, $query: String) {
+	notebooks(first: $first, after: $after, orderBy: $orderBy, descending: $descending, starredByUserID: $starredByUserID, creatorUserID: $creatorUserID, namespace: $namespace, query: $query) {
 		nodes {
 			%s
 	  	}
@@ -108,7 +108,7 @@ mutation DeleteNotebook($id: ID!) {
 }
 `
 
-func notebookFixture(userID int32, public bool) *notebooks.Notebook {
+func notebookFixture(creatorID int32, namespaceUserID int32, namespaceOrgID int32, public bool) *notebooks.Notebook {
 	revision := "deadbeef"
 	blocks := notebooks.NotebookBlocks{
 		{ID: "1", Type: notebooks.NotebookQueryBlockType, QueryInput: &notebooks.NotebookQueryBlockInput{Text: "repo:a b"}},
@@ -120,7 +120,15 @@ func notebookFixture(userID int32, public bool) *notebooks.Notebook {
 			LineRange:      &notebooks.LineRange{StartLine: 10, EndLine: 12},
 		}},
 	}
-	return &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: public, CreatorUserID: userID, UpdaterUserID: userID, NamespaceUserID: userID}
+	return &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: public, CreatorUserID: creatorID, UpdaterUserID: creatorID, NamespaceUserID: namespaceUserID, NamespaceOrgID: namespaceOrgID}
+}
+
+func userNotebookFixture(userID int32, public bool) *notebooks.Notebook {
+	return notebookFixture(userID, userID, 0, public)
+}
+
+func orgNotebookFixture(creatorID int32, orgID int32, public bool) *notebooks.Notebook {
+	return notebookFixture(creatorID, 0, orgID, public)
 }
 
 func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapitest.Notebook, gotNotebookResponse notebooksapitest.Notebook, ignoreIDAndTimestamps bool) {
@@ -142,6 +150,8 @@ func TestSingleNotebookCRUD(t *testing.T) {
 	testdb := dbtest.NewDB(t)
 	db := database.NewDB(testdb)
 	u := database.Users(db)
+	o := database.Orgs(db)
+	om := database.OrgMembers(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {
@@ -153,22 +163,32 @@ func TestSingleNotebookCRUD(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
+	displayName := "My Org"
+	org, err := o.Create(internalCtx, "myorg", &displayName)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	_, err = om.Create(internalCtx, org.ID, user1.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
 	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	testGetNotebook(t, db, schema, user1)
-	testCreateNotebook(t, db, schema, user1)
-	testUpdateNotebook(t, db, schema, user1, user2)
-	testDeleteNotebook(t, db, schema, user1, user2)
+	testCreateNotebook(t, db, schema, user1, user2, org)
+	testUpdateNotebook(t, db, schema, user1, user2, org)
+	testDeleteNotebook(t, db, schema, user1, user2, org)
 }
 
 func testGetNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user *types.User) {
 	ctx := actor.WithInternalActor(context.Background())
 	n := notebooks.Notebooks(db)
 
-	createdNotebook, err := n.CreateNotebook(ctx, notebookFixture(user.ID, true))
+	createdNotebook, err := n.CreateNotebook(ctx, userNotebookFixture(user.ID, true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,63 +202,139 @@ func testGetNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user 
 	compareNotebookAPIResponses(t, wantNotebookResponse, response.Node, false)
 }
 
-func testCreateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user *types.User) {
-	notebook := notebookFixture(user.ID, true)
-	input := map[string]interface{}{"notebook": notebooksapitest.NotebookToAPIInput(notebook)}
-	var response struct{ CreateNotebook notebooksapitest.Notebook }
-	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user.ID)), t, schema, input, &response, createNotebookMutation)
+func testCreateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
+	tests := []struct {
+		name            string
+		namespaceUserID int32
+		namespaceOrgID  int32
+		creator         *types.User
+		wantErr         string
+	}{
+		{
+			name:            "user can create a notebook in their namespace",
+			namespaceUserID: user1.ID,
+			creator:         user1,
+		},
+		{
+			name:           "user can create a notebook in org namespace",
+			namespaceOrgID: org.ID,
+			creator:        user1,
+		},
+		{
+			name:            "user2 cannot create a notebook in user1 namespace",
+			namespaceUserID: user1.ID,
+			creator:         user2,
+			wantErr:         "user does not match the notebook user namespace",
+		},
+		{
+			name:           "user2 cannot create a notebook in org namespace",
+			namespaceOrgID: org.ID,
+			creator:        user2,
+			wantErr:        "user is not a member of the notebook organization namespace",
+		},
+	}
 
-	wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(notebook, marshalNotebookID(notebook.ID), user.Username, true)
-	compareNotebookAPIResponses(t, wantNotebookResponse, response.CreateNotebook, true)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			notebook := notebookFixture(tt.creator.ID, tt.namespaceUserID, tt.namespaceOrgID, true)
+			input := map[string]interface{}{"notebook": notebooksapitest.NotebookToAPIInput(notebook)}
+			var response struct{ CreateNotebook notebooksapitest.Notebook }
+			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.creator.ID)), t, schema, input, &response, createNotebookMutation)
+
+			if tt.wantErr != "" && len(gotErrors) == 0 {
+				t.Fatal("expected error, got none")
+			}
+
+			if tt.wantErr != "" && !strings.Contains(gotErrors[0].Message, tt.wantErr) {
+				t.Fatalf("expected error containing '%s', got '%s'", tt.wantErr, gotErrors[0].Message)
+			}
+
+			if tt.wantErr == "" {
+				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(notebook, marshalNotebookID(notebook.ID), tt.creator.Username, true)
+				compareNotebookAPIResponses(t, wantNotebookResponse, response.CreateNotebook, true)
+			}
+		})
+	}
 }
 
-func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User) {
+func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
 	internalCtx := actor.WithInternalActor(context.Background())
 	n := notebooks.Notebooks(db)
 
 	tests := []struct {
 		name            string
 		publicNotebook  bool
-		creatorID       int32
-		creatorUsername string
+		creator         *types.User
+		namespaceUserID int32
+		namespaceOrgID  int32
 		updaterID       int32
 		wantErr         string
 	}{
 		{
 			name:            "user can update their own public notebook",
 			publicNotebook:  true,
-			creatorID:       user1.ID,
-			creatorUsername: user1.Username,
+			creator:         user1,
+			namespaceUserID: user1.ID,
 			updaterID:       user1.ID,
 		},
 		{
 			name:            "user can update their own private notebook",
 			publicNotebook:  false,
-			creatorID:       user1.ID,
-			creatorUsername: user1.Username,
+			creator:         user1,
+			namespaceUserID: user1.ID,
 			updaterID:       user1.ID,
 		},
 		{
-			name:            "user cannot update other public notebooks",
+			name:           "user1 can update org public notebook",
+			publicNotebook: true,
+			creator:        user1,
+			namespaceOrgID: org.ID,
+			updaterID:      user1.ID,
+		},
+		{
+			name:           "user1 can update org private notebook",
+			publicNotebook: false,
+			creator:        user1,
+			namespaceOrgID: org.ID,
+			updaterID:      user1.ID,
+		},
+		{
+			name:            "user cannot update other users public notebooks",
 			publicNotebook:  true,
-			creatorID:       user1.ID,
-			creatorUsername: user1.Username,
+			creator:         user1,
+			namespaceUserID: user1.ID,
 			updaterID:       user2.ID,
 			wantErr:         "user does not match the notebook user namespace",
 		},
 		{
-			name:            "user cannot update other private notebooks",
+			name:            "user cannot update other users private notebooks",
 			publicNotebook:  false,
-			creatorID:       user1.ID,
-			creatorUsername: user1.Username,
+			creator:         user1,
+			namespaceUserID: user1.ID,
 			updaterID:       user2.ID,
 			wantErr:         "notebook not found",
+		},
+		{
+			name:           "user2 cannot update org public notebook",
+			publicNotebook: true,
+			creator:        user1,
+			namespaceOrgID: org.ID,
+			updaterID:      user2.ID,
+			wantErr:        "user is not a member of the notebook organization namespace",
+		},
+		{
+			name:           "user2 cannot update org private notebook",
+			publicNotebook: false,
+			creator:        user1,
+			namespaceOrgID: org.ID,
+			updaterID:      user2.ID,
+			wantErr:        "notebook not found",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			createdNotebook, err := n.CreateNotebook(internalCtx, notebookFixture(tt.creatorID, tt.publicNotebook))
+			createdNotebook, err := n.CreateNotebook(internalCtx, notebookFixture(tt.creator.ID, tt.namespaceUserID, tt.namespaceOrgID, tt.publicNotebook))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -261,47 +357,83 @@ func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 			}
 
 			if tt.wantErr == "" {
-				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(updatedNotebook, marshalNotebookID(updatedNotebook.ID), tt.creatorUsername, tt.creatorID == tt.updaterID)
+				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(updatedNotebook, marshalNotebookID(updatedNotebook.ID), tt.creator.Username, tt.creator.ID == tt.updaterID)
 				compareNotebookAPIResponses(t, wantNotebookResponse, response.UpdateNotebook, true)
 			}
 		})
 	}
 }
 
-func testDeleteNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User) {
+func testDeleteNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
 	internalCtx := actor.WithInternalActor(context.Background())
 	n := notebooks.Notebooks(db)
 
 	tests := []struct {
-		name           string
-		publicNotebook bool
-		creatorID      int32
-		deleterID      int32
-		wantErr        string
+		name            string
+		publicNotebook  bool
+		creatorID       int32
+		namespaceUserID int32
+		namespaceOrgID  int32
+		deleterID       int32
+		wantErr         string
 	}{
 		{
-			name:           "user can delete their own public notebook",
+			name:            "user can delete their own public notebook",
+			publicNotebook:  true,
+			creatorID:       user1.ID,
+			namespaceUserID: user1.ID,
+			deleterID:       user1.ID,
+		},
+		{
+			name:            "user can delete their own private notebook",
+			publicNotebook:  false,
+			creatorID:       user1.ID,
+			namespaceUserID: user1.ID,
+			deleterID:       user1.ID,
+		},
+		{
+			name:           "user1 can delete org public notebook",
 			publicNotebook: true,
 			creatorID:      user1.ID,
+			namespaceOrgID: org.ID,
 			deleterID:      user1.ID,
 		},
 		{
-			name:           "user can delete their own private notebook",
+			name:           "user1 can delete org private notebook",
 			publicNotebook: false,
 			creatorID:      user1.ID,
+			namespaceOrgID: org.ID,
 			deleterID:      user1.ID,
 		},
 		{
-			name:           "user cannot delete other public notebooks",
+			name:            "user2 cannot delete other user1 public notebook",
+			publicNotebook:  true,
+			creatorID:       user1.ID,
+			namespaceUserID: user1.ID,
+			deleterID:       user2.ID,
+			wantErr:         "user does not match the notebook user namespace",
+		},
+		{
+			name:            "user2 cannot delete other user1 private notebook",
+			publicNotebook:  false,
+			creatorID:       user1.ID,
+			namespaceUserID: user1.ID,
+			deleterID:       user2.ID,
+			wantErr:         "notebook not found",
+		},
+		{
+			name:           "user2 cannot delete org public notebook",
 			publicNotebook: true,
 			creatorID:      user1.ID,
+			namespaceOrgID: org.ID,
 			deleterID:      user2.ID,
-			wantErr:        "user does not match the notebook user namespace",
+			wantErr:        "user is not a member of the notebook organization namespace",
 		},
 		{
-			name:           "user cannot delete other private notebooks",
+			name:           "user2 cannot delete org private notebook",
 			publicNotebook: false,
 			creatorID:      user1.ID,
+			namespaceOrgID: org.ID,
 			deleterID:      user2.ID,
 			wantErr:        "notebook not found",
 		},
@@ -309,7 +441,7 @@ func testDeleteNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			createdNotebook, err := n.CreateNotebook(internalCtx, notebookFixture(tt.creatorID, tt.publicNotebook))
+			createdNotebook, err := n.CreateNotebook(internalCtx, notebookFixture(tt.creatorID, tt.namespaceUserID, tt.namespaceOrgID, tt.publicNotebook))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -368,6 +500,8 @@ func TestListNotebooks(t *testing.T) {
 	db := dbtest.NewDB(t)
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
+	o := database.Orgs(db)
+	om := database.OrgMembers(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {
@@ -379,18 +513,38 @@ func TestListNotebooks(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
+	displayName := "My Org"
+	org, err := o.Create(internalCtx, "myorg", &displayName)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	_, err = om.Create(internalCtx, org.ID, user1.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
 	idToUsername := map[int32]string{user1.ID: user1.Username, user2.ID: user2.Username}
 
-	n1 := notebookFixture(user1.ID, true)
+	n1 := userNotebookFixture(user1.ID, true)
 	n1.Blocks = notebooks.NotebookBlocks{{ID: "1", Type: notebooks.NotebookMarkdownBlockType, MarkdownInput: &notebooks.NotebookMarkdownBlockInput{Text: "# A special title"}}}
 
 	createdNotebooks := createNotebooks(t, db, []*notebooks.Notebook{
 		n1,
-		notebookFixture(user1.ID, false),
-		notebookFixture(user2.ID, true),
+		userNotebookFixture(user1.ID, false),
+		userNotebookFixture(user2.ID, true),
+		orgNotebookFixture(user1.ID, org.ID, false),
+		orgNotebookFixture(user1.ID, org.ID, true),
 	})
 	createNotebookStars(t, db, createdNotebooks[0].ID, user1.ID)
 	createNotebookStars(t, db, createdNotebooks[2].ID, user1.ID, user2.ID)
+
+	getNotebooks := func(indices ...int) []*notebooks.Notebook {
+		ids := make([]*notebooks.Notebook, 0, len(indices))
+		for _, idx := range indices {
+			ids = append(ids, createdNotebooks[idx])
+		}
+		return ids
+	}
 
 	database := database.NewDB(db)
 	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
@@ -409,36 +563,57 @@ func TestListNotebooks(t *testing.T) {
 			name:          "list all available notebooks",
 			viewerID:      user1.ID,
 			args:          map[string]interface{}{"first": 3, "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: createdNotebooks,
-			wantCount:     3,
+			wantNotebooks: getNotebooks(0, 1, 2),
+			wantCount:     5,
 		},
 		{
 			name:          "list second page of available notebooks",
 			viewerID:      user1.ID,
 			args:          map[string]interface{}{"first": 2, "after": marshalNotebookCursor(1), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: createdNotebooks[1:],
-			wantCount:     3,
+			wantNotebooks: getNotebooks(1, 2),
+			wantCount:     5,
 		},
 		{
 			name:          "query by block contents",
 			viewerID:      user1.ID,
 			args:          map[string]interface{}{"first": 3, "query": "special", "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: createdNotebooks[:1],
+			wantNotebooks: getNotebooks(0),
 			wantCount:     1,
 		},
 		{
 			name:          "filter by creator",
 			viewerID:      user1.ID,
 			args:          map[string]interface{}{"first": 3, "creatorUserID": graphqlbackend.MarshalUserID(user2.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: createdNotebooks[2:],
+			wantNotebooks: getNotebooks(2),
 			wantCount:     1,
+		},
+		{
+			name:          "filter by user namespace",
+			viewerID:      user1.ID,
+			args:          map[string]interface{}{"first": 3, "namespace": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			wantNotebooks: getNotebooks(0, 1),
+			wantCount:     2,
+		},
+		{
+			name:          "filter by org namespace",
+			viewerID:      user1.ID,
+			args:          map[string]interface{}{"first": 3, "namespace": graphqlbackend.MarshalOrgID(org.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			wantNotebooks: getNotebooks(3, 4),
+			wantCount:     2,
 		},
 		{
 			name:          "user2 cannot view user1 private notebooks",
 			viewerID:      user2.ID,
-			args:          map[string]interface{}{"first": 3, "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: []*notebooks.Notebook{createdNotebooks[0], createdNotebooks[2]},
-			wantCount:     2,
+			args:          map[string]interface{}{"first": 3, "namespace": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			wantNotebooks: getNotebooks(0),
+			wantCount:     1,
+		},
+		{
+			name:          "user2 cannot view org private notebooks",
+			viewerID:      user2.ID,
+			args:          map[string]interface{}{"first": 3, "namespace": graphqlbackend.MarshalOrgID(org.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
+			wantNotebooks: getNotebooks(4),
+			wantCount:     1,
 		},
 		{
 			name:          "user1 starred notebooks ordered by count",
