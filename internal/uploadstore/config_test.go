@@ -12,7 +12,11 @@ import (
 )
 
 func TestS3ClientOptions(t *testing.T) {
-	config := Config{}
+	config := Config{
+		S3: S3Config{
+			Endpoint: "http://minio:9000",
+		},
+	}
 
 	// minIO
 	{
