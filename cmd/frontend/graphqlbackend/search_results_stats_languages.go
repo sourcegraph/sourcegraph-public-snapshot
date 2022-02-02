@@ -50,7 +50,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 			srs.err = err
 			return
 		}
-		srs.results = agg.Get().Results
+		srs.results = agg.Results
 	})
 	return srs.results, srs.err
 }

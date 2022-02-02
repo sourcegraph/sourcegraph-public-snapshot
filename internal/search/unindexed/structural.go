@@ -115,7 +115,7 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 	agg := streaming.NewAggregatingStream()
 	err := streamStructuralSearch(ctx, args, repos, agg)
 
-	event := agg.Get()
+	event := agg.SearchEvent
 	if len(event.Results) == 0 && err == nil {
 		// retry structural search with a higher limit.
 		agg := streaming.NewAggregatingStream()
@@ -124,7 +124,7 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 			return err
 		}
 
-		event = agg.Get()
+		event = agg.SearchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
 			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
