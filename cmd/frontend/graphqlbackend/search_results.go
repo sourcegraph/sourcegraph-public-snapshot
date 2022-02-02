@@ -1196,14 +1196,16 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream s
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateJob(ctx, stream, job)
+			alert, err := r.evaluateJob(ctx, stream, job)
+			return &SearchResults{Alert: alert}, err
 		}
 	case query.Pattern:
 		job, err := r.toSearchJob(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJob(ctx, stream, job)
+		alert, err := r.evaluateJob(ctx, stream, job)
+		return &SearchResults{Alert: alert}, err
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -1219,7 +1221,8 @@ func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, 
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateJob(ctx, stream, job)
+		alert, err := r.evaluateJob(ctx, stream, job)
+		return &SearchResults{Alert: alert}, err
 	}
 	return r.evaluatePatternExpression(ctx, stream, q)
 }
@@ -1553,7 +1556,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // A search job represents a tree of evaluation steps. If the deadline
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sender, job run.Job) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sender, job run.Job) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "evaluateJob", "")
 	defer func() {
 		tr.SetError(err)
@@ -1576,28 +1579,22 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	}
 	alert, err := ao.Done()
 
-	rr := &SearchResults{
-		Matches: nil, // matches are always sent up the stream, which is always non-nil
-		Stats:   common,
-		Alert:   alert,
-	}
-
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
 	// it if no repos are marked as timedout. This somewhat couples us to how
 	// progress notifications work, but this is the third attempt at trying to
 	// fix this behaviour so we are accepting that.
 	if errors.Is(err, context.DeadlineExceeded) {
-		if !rr.Stats.Status.Any(search.RepoStatusTimedout) {
+		if !common.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
-			return alertToSearchResults(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)), nil
+			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
 		} else {
 			err = nil
 		}
 	}
 
-	return rr, err
+	return alert, err
 }
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
