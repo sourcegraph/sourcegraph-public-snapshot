@@ -420,7 +420,7 @@ cc @${config.captainGitHubUsername}
                                     items.push('Update the upgrade guides in `doc/admin/updates`')
                                 } else {
                                     items.push(
-                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch. Learn more about [how to update CHANGELOG.md](departments/product-engineering/engineering/process/releases#changelogmd).',
+                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch. Learn more about [how to update CHANGELOG.md](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/releases#changelogmd).',
                                         'If any specific upgrade steps are required, update the upgrade guides in `doc/admin/updates`'
                                     )
                                 }
