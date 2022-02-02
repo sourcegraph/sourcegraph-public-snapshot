@@ -6,10 +6,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
+import { isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import {
     RepoSpec,
@@ -45,28 +47,26 @@ import { Blob, BlobProps } from '../repo/blob/Blob'
 import styles from './CoolCodeIntel.module.scss'
 import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQueries'
 
-const SHOW_COOL_CODEINTEL = localStorage.getItem('coolCodeIntel') !== null
+export interface GlobalCoolCodeIntelProps {
+    coolCodeIntelEnabled: boolean
+    onTokenClick?: (clickedToken: CoolHoveredToken) => void
+}
 
-type CoolHoveredToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+export type CoolHoveredToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
 interface CoolCodeIntelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'> {
     hoveredToken?: CoolHoveredToken
 }
 
-export const CoolCodeIntel: React.FunctionComponent<
-    {
-        showPanel: boolean
-    } & CoolCodeIntelProps
-> = props => {
-    if (!SHOW_COOL_CODEINTEL) {
+export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
+    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel !== false
+
+export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps> = props => {
+    if (!props.coolCodeIntelEnabled) {
         return null
     }
 
-    if (props.showPanel) {
-        return <CoolCodeIntelResizablePanel {...props} />
-    }
-
-    return null
+    return <CoolCodeIntelResizablePanel {...props} />
 }
 
 const LAST_TAB_STORAGE_KEY = 'CoolCodeIntel.lastTab'
@@ -394,9 +394,11 @@ export const SideBlob: React.FunctionComponent<
     return (
         <Blob
             {...props}
-            onHoverToken={(token: CoolHoveredToken) => {
+            onTokenClick={(token: CoolHoveredToken) => {
                 console.log('sideblob token', token)
-                props.onHoverToken(token)
+                if (props.onTokenClick) {
+                    props.onTokenClick(token)
+                }
             }}
             disableStatusBar={true}
             wrapCode={true}
