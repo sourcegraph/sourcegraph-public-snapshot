@@ -140,9 +140,10 @@ func (r *CommitMatch) Key() Key {
 		typeRank = rankDiffMatch
 	}
 	return Key{
-		TypeRank: typeRank,
-		Repo:     r.Repo.Name,
-		Commit:   r.Commit.ID,
+		TypeRank:   typeRank,
+		Repo:       r.Repo.Name,
+		AuthorDate: &r.Commit.Author.Date,
+		Commit:     r.Commit.ID,
 	}
 }
 

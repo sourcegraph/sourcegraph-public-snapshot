@@ -8,6 +8,7 @@ import (
 
 type Definition struct {
 	ID                        int
+	Name                      string
 	UpQuery                   *sqlf.Query
 	DownQuery                 *sqlf.Query
 	Parents                   []int

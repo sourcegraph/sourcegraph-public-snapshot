@@ -19,6 +19,7 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -32,7 +33,13 @@ type CommitSearch struct {
 	IncludeModifiedFiles bool
 }
 
-func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
+func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "CommitSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	if err := j.ExpandUsernames(ctx, db); err != nil {
 		return err
 	}
@@ -49,7 +56,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 
 	var repoRevs []*search.RepositoryRevisions
 	repos := searchrepos.Resolver{DB: db, Opts: j.RepoOpts}
-	err := repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
 		if repoRevs = page.RepoRevs; page.Next != nil {
 			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
 		}

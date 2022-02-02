@@ -1,4 +1,7 @@
+import classNames from 'classnames'
+import { debounce } from 'lodash'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
@@ -76,6 +79,8 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
         event.stopPropagation()
     }
 
+    const debouncedSetFileInput = useMemo(() => debounce(setFileInput, 300), [setFileInput])
+
     const onInputBlur = (event: React.FocusEvent<HTMLInputElement>): void => {
         // relatedTarget contains the element that will receive focus after the blur.
         const relatedTarget = event.relatedTarget && (event.relatedTarget as HTMLElement)
@@ -113,6 +118,12 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
 
     return (
         <div className={styles.fileBlockInputs}>
+            <div className="text-muted mb-2">
+                <small>
+                    <InfoCircleOutlineIcon className="icon-inline" /> To automatically fill the inputs, copy a
+                    Sourcegraph file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
+                </small>
+            </div>
             <label htmlFor={`file-location-input-${id}`}>File location</label>
             <div id={`file-location-input-${id}`} className={styles.fileLocationInputWrapper}>
                 <SearchNotebookFileBlockInput
@@ -120,14 +131,13 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     inputClassName={styles.repositoryNameInput}
                     value={repositoryName}
                     placeholder="Repository name"
-                    onChange={repositoryName => setFileInput({ repositoryName })}
+                    onChange={repositoryName => debouncedSetFileInput({ repositoryName })}
                     onFocus={onInputFocus}
                     onBlur={onInputBlur}
                     suggestions={repoSuggestions}
                     suggestionsIcon={<SourceRepositoryIcon className="mr-1" size="1rem" />}
                     isValid={isRepositoryNameValid}
                     isMacPlatform={isMacPlatform}
-                    focusInput={repositoryName.length === 0}
                     dataTestId="file-block-repository-name-input"
                 />
                 <div className={styles.separator} />
@@ -136,7 +146,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     inputClassName={styles.filePathInput}
                     value={filePath}
                     placeholder="Path"
-                    onChange={filePath => setFileInput({ filePath })}
+                    onChange={filePath => debouncedSetFileInput({ filePath })}
                     onFocus={onInputFocus}
                     onBlur={onInputBlur}
                     suggestions={fileSuggestions}
@@ -146,7 +156,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     dataTestId="file-block-file-path-input"
                 />
             </div>
-            <div className="d-flex mt-3">
+            <div className={classNames('d-flex', (showRevisionInput || showLineRangeInput) && 'mt-3')}>
                 {showRevisionInput && (
                     <div className="w-50 mr-2">
                         <label htmlFor={`file-revision-input-${id}`}>Revision</label>
@@ -155,7 +165,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                             inputClassName={styles.revisionInput}
                             value={revision}
                             placeholder="feature/branch"
-                            onChange={revision => setFileInput({ revision })}
+                            onChange={revision => debouncedSetFileInput({ revision })}
                             onFocus={onInputFocus}
                             onBlur={onInputBlur}
                             isValid={isRevisionValid}
@@ -176,7 +186,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                                 setLineRangeInput(lineRangeInput)
                                 const lineRange = parseLineRange(lineRangeInput)
                                 if (lineRange !== null) {
-                                    setFileInput({ lineRange })
+                                    debouncedSetFileInput({ lineRange })
                                 }
                             }}
                             onFocus={onInputFocus}
