@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -163,6 +164,10 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+	// SECURITY: set the actor to the user that owns the code monitor.
+	// For all downstream actions (specifically executing searches),
+	// we should run as the user who owns the code monitor.
+	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
 
 	flags, err := r.db.FeatureFlags().GetUserFlags(ctx, m.UserID)
 	if err != nil {
