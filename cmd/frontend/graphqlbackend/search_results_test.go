@@ -12,7 +12,6 @@ import (
 	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
@@ -565,121 +564,51 @@ func TestCompareSearchResults(t *testing.T) {
 	}
 
 	tests := []struct {
-		name              string
-		a                 *result.FileMatch
-		b                 *result.FileMatch
-		exactFilePatterns map[string]struct{}
-		aIsLess           bool
+		name    string
+		a       *result.FileMatch
+		b       *result.FileMatch
+		aIsLess bool
 	}{
 		{
-			name:              "prefer exact match",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           false,
+			name:    "alphabetical order",
+			a:       makeResult("arepo", "afile"),
+			b:       makeResult("arepo", "bfile"),
+			aIsLess: true,
 		},
 		{
-			name:              "reverse a and b",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("arepo", "afile"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
+			name:    "same length, different files",
+			a:       makeResult("arepo", "bfile"),
+			b:       makeResult("arepo", "afile"),
+			aIsLess: false,
 		},
 		{
-			name:              "alphabetical order if exactFilePatterns is empty",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "file"),
-			exactFilePatterns: map[string]struct{}{},
-			aIsLess:           true,
+			name:    "different repo, no exact patterns",
+			a:       makeResult("arepo", "file"),
+			b:       makeResult("brepo", "afile"),
+			aIsLess: true,
 		},
 		{
-			name:              "alphabetical order if exactFilePatterns is nil",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "bfile"),
-			exactFilePatterns: nil,
-			aIsLess:           true,
+			name:    "repo matches only",
+			a:       makeResult("arepo", ""),
+			b:       makeResult("brepo", ""),
+			aIsLess: true,
 		},
 		{
-			name:              "same length, different files",
-			a:                 makeResult("arepo", "bfile"),
-			b:                 makeResult("arepo", "afile"),
-			exactFilePatterns: nil,
-			aIsLess:           false,
+			name:    "repo match and file match, same repo",
+			a:       makeResult("arepo", "file"),
+			b:       makeResult("arepo", ""),
+			aIsLess: false,
 		},
 		{
-			name:              "exact matches with different length",
-			a:                 makeResult("arepo", "adir1/file"),
-			b:                 makeResult("arepo", "dir1/file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           false,
-		},
-		{
-			name:              "exact matches with same length",
-			a:                 makeResult("arepo", "dir2/file"),
-			b:                 makeResult("arepo", "dir1/file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           false,
-		},
-		{
-			name:              "no match",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "bfile"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
-		},
-		{
-			name:              "different repo, 1 exact match",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("brepo", "afile"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
-		},
-		{
-			name:              "different repo, no exact patterns",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("brepo", "afile"),
-			exactFilePatterns: nil,
-			aIsLess:           true,
-		},
-		{
-			name:              "different repo, 2 exact matches",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("brepo", "file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
-		},
-		{
-			name:              "repo matches only",
-			a:                 makeResult("arepo", ""),
-			b:                 makeResult("brepo", ""),
-			exactFilePatterns: nil,
-			aIsLess:           true,
-		},
-		{
-			name:              "repo match and file match, same repo",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("arepo", ""),
-			exactFilePatterns: nil,
-			aIsLess:           false,
-		},
-		{
-			name:              "repo match and file match, different repos",
-			a:                 makeResult("arepo", ""),
-			b:                 makeResult("brepo", "file"),
-			exactFilePatterns: nil,
-			aIsLess:           true,
-		},
-		{
-			name:              "prefer repo matches",
-			a:                 makeResult("arepo", ""),
-			b:                 makeResult("brepo", "file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
+			name:    "repo match and file match, different repos",
+			a:       makeResult("arepo", ""),
+			b:       makeResult("brepo", "file"),
+			aIsLess: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run("test", func(t *testing.T) {
-			if got := compareSearchResults(tt.a, tt.b, tt.exactFilePatterns); got != tt.aIsLess {
+			if got := tt.a.Key().Less(tt.b.Key()); got != tt.aIsLess {
 				t.Errorf("compareSearchResults() = %v, aIsLess %v", got, tt.aIsLess)
 			}
 		})
@@ -1003,179 +932,6 @@ func TestSubRepoFiltering(t *testing.T) {
 
 			if len(rr.Matches) != tt.wantCount {
 				t.Fatalf("Want %d matches, got %d", tt.wantCount, len(rr.Matches))
-			}
-		})
-	}
-}
-
-func TestApplySubRepoFiltering(t *testing.T) {
-	unauthorizedFileName := "README.md"
-	errorFileName := "file.go"
-	var userWithSubRepoPerms int32 = 1234
-
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultReturn(true)
-	checker.PermissionsFunc.SetDefaultHook(func(c context.Context, user int32, rc authz.RepoContent) (authz.Perms, error) {
-		if user == userWithSubRepoPerms {
-			switch rc.Path {
-			case unauthorizedFileName:
-				// This file should be filtered out
-				return authz.None, nil
-			case errorFileName:
-				// Simulate an error case, should be filtered out
-				return authz.None, errors.New(errorFileName)
-			}
-		}
-		return authz.Read, nil
-	})
-
-	type args struct {
-		ctxActor *actor.Actor
-		matches  []result.Match
-	}
-	tests := []struct {
-		name        string
-		args        args
-		wantMatches []result.Match
-		wantErr     string
-	}{
-		{
-			name: "read from user with no perms",
-			args: args{
-				ctxActor: actor.FromUser(789),
-				matches: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: unauthorizedFileName,
-						},
-					},
-				},
-			},
-			wantMatches: []result.Match{
-				&result.FileMatch{
-					File: result.File{
-						Path: unauthorizedFileName,
-					},
-				},
-			},
-		},
-		{
-			name: "read for user with sub-repo perms",
-			args: args{
-				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				matches: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: "not-unauthorized.md",
-						},
-					},
-				},
-			},
-			wantMatches: []result.Match{
-				&result.FileMatch{
-					File: result.File{
-						Path: "not-unauthorized.md",
-					},
-				},
-			},
-		},
-		{
-			name: "drop match due to auth for user with sub-repo perms",
-			args: args{
-				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				matches: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: unauthorizedFileName,
-						},
-					},
-					&result.FileMatch{
-						File: result.File{
-							Path: "random-name.md",
-						},
-					},
-				},
-			},
-			wantMatches: []result.Match{
-				&result.FileMatch{
-					File: result.File{
-						Path: "random-name.md",
-					},
-				},
-			},
-		},
-		{
-			name: "drop match due to auth for user with sub-repo perms and error",
-			args: args{
-				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				matches: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: errorFileName,
-						},
-					},
-					&result.FileMatch{
-						File: result.File{
-							Path: "random-name.md",
-						},
-					},
-				},
-			},
-			wantMatches: []result.Match{
-				&result.FileMatch{
-					File: result.File{
-						Path: "random-name.md",
-					},
-				},
-			},
-			wantErr: "subRepoFilterFunc",
-		},
-		{
-			name: "repo matches should be ignored",
-			args: args{
-				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				matches: []result.Match{
-					&result.RepoMatch{
-						Name: "foo",
-						ID:   1,
-					},
-				},
-			},
-			wantMatches: []result.Match{
-				&result.RepoMatch{
-					Name: "foo",
-					ID:   1,
-				},
-			},
-		},
-		{
-			name: "should filter commit matches",
-			args: args{
-				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				matches: []result.Match{
-					&result.CommitMatch{
-						ModifiedFiles: []string{unauthorizedFileName},
-					},
-				},
-			},
-			wantMatches: []result.Match{},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := actor.WithActor(context.Background(), tt.args.ctxActor)
-			matches, err := applySubRepoFiltering(ctx, checker, tt.args.matches)
-			if diff := cmp.Diff(matches, tt.wantMatches, cmpopts.IgnoreUnexported(search.RepoStatusMap{})); diff != "" {
-				t.Fatal(diff)
-			}
-			if tt.wantErr != "" {
-				if err == nil {
-					t.Fatal("expected err, got none")
-				}
-				if !strings.Contains(err.Error(), tt.wantErr) {
-					t.Fatalf("expected err %q, got %q", tt.wantErr, err.Error())
-				}
 			}
 		})
 	}

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -46,6 +44,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -943,7 +942,7 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 		Options: repoOptions,
 	})
 
-	return run.NewLimitJob(
+	job := run.NewLimitJob(
 		maxResults,
 		run.NewTimeoutJob(
 			args.Timeout,
@@ -952,7 +951,14 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 				run.NewParallelJob(optionalJobs...),
 			),
 		),
-	), nil
+	)
+
+	checker := authz.DefaultSubRepoPermsChecker
+	if authz.SubRepoEnabled(checker) {
+		job = subrepoperms.NewFilterJob(job)
+	}
+
+	return job, nil
 }
 
 // intersect returns the intersection of two sets of search result content
@@ -1454,7 +1460,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 	matches := dedup.Results()
 	if len(matches) > 0 {
-		sortResults(matches)
+		sort.Sort(matches)
 	}
 
 	var alert *search.Alert
@@ -1536,11 +1542,12 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
 func (r *searchResolver) evaluateJob(ctx context.Context, job run.Job) (_ *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "evaluateRoutine", "")
+	tr, ctx := trace.New(ctx, "evaluateJob", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	tr.LazyPrintf("job name: %s", job.Name())
 
 	start := time.Now()
 	rr, err := doResults(ctx, r.SearchInputs, r.db, r.stream, job)
@@ -1826,31 +1833,7 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 	}()
 
 	agg := run.NewAggregator(stream)
-	stream = agg
-
-	var (
-		mu   sync.Mutex
-		errs = &multierror.Error{}
-	)
-
-	checker := authz.DefaultSubRepoPermsChecker
-	if authz.SubRepoEnabled(checker) {
-		// Wrap the aggregator stream in a stream that filters out
-		// any matches that should be blocked by sub-repo permissions
-		stream = streaming.StreamFunc(func(event streaming.SearchEvent) {
-			var filterErr error
-			event.Results, filterErr = applySubRepoFiltering(ctx, checker, event.Results)
-			if filterErr != nil {
-				mu.Lock()
-				errs = multierror.Append(filterErr)
-				mu.Unlock()
-			}
-
-			agg.Send(event)
-		})
-	}
-
-	errs = multierror.Append(job.Run(ctx, db, stream))
+	err = job.Run(ctx, db, agg)
 	matches, common, matchCount := agg.Get()
 
 	ao := alert.Observer{
@@ -1858,76 +1841,18 @@ func doResults(ctx context.Context, searchInputs *run.SearchInputs, db database.
 		SearchInputs: searchInputs,
 		HasResults:   matchCount > 0,
 	}
-	if errs.Len() > 0 {
-		ao.Error(ctx, errs)
+	if err != nil {
+		ao.Error(ctx, err)
 	}
 	alert, err := ao.Done(&common)
 
-	sortResults(matches)
+	sort.Sort(matches)
 
 	return &SearchResults{
 		Matches: matches,
 		Stats:   common,
 		Alert:   alert,
 	}, err
-}
-
-// applySubRepoFiltering filters a set of matches using the provided
-// authz.SubRepoPermissionChecker
-func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
-	if !authz.SubRepoEnabled(checker) {
-		return matches, nil
-	}
-
-	a := actor.FromContext(ctx)
-	errs := &multierror.Error{}
-
-	// Filter matches in place
-	filtered := matches[:0]
-
-	for _, m := range matches {
-		switch mm := m.(type) {
-		case *result.FileMatch:
-			repo := mm.Repo.Name
-			matchedPath := mm.Path
-
-			content := authz.RepoContent{
-				Repo: repo,
-				Path: matchedPath,
-			}
-			perms, err := authz.ActorPermissions(ctx, checker, a, content)
-			if err != nil {
-				errs = multierror.Append(errs, err)
-				continue
-			}
-
-			if perms.Include(authz.Read) {
-				filtered = append(filtered, m)
-			}
-		case *result.CommitMatch:
-			allowed, err := authz.CanReadAllPaths(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
-			if err != nil {
-				errs = multierror.Append(errs, err)
-				continue
-			}
-			if allowed {
-				filtered = append(filtered, m)
-			}
-		case *result.RepoMatch:
-			// Repo filtering is taking care of by our usual repo filtering logic
-			filtered = append(filtered, m)
-		}
-
-	}
-
-	if errs.Len() == 0 {
-		return filtered, nil
-	}
-
-	// We don't want to return sensitive authz information or excluded paths to the
-	// user so we'll return generic error and log something more specific.
-	log15.Warn("Applying sub-repo permissions to search results", "error", errs)
-	return filtered, errors.New("subRepoFilterFunc")
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
@@ -1951,75 +1876,6 @@ type SearchResultResolver interface {
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
 
 	ResultCount() int32
-}
-
-// compareFileLengths sorts file paths such that they appear earlier if they
-// match file: patterns in the query exactly.
-func compareFileLengths(left, right string, exactFilePatterns map[string]struct{}) bool {
-	_, aMatch := exactFilePatterns[path.Base(left)]
-	_, bMatch := exactFilePatterns[path.Base(right)]
-	if aMatch || bMatch {
-		if aMatch && bMatch {
-			// Prefer shorter file names (ie root files come first)
-			if len(left) != len(right) {
-				return len(left) < len(right)
-			}
-			return left < right
-		}
-		// Prefer exact match
-		return aMatch
-	}
-	return left < right
-}
-
-func compareDates(left, right *time.Time) bool {
-	if left == nil || right == nil {
-		return left != nil // Place the value that is defined first.
-	}
-	return left.After(*right)
-}
-
-// compareSearchResults sorts repository matches, file matches, and commits.
-// Repositories and filenames are sorted alphabetically. As a refinement, if any
-// filename matches a value in a non-empty set exactFilePatterns, then such
-// filenames are listed earlier.
-//
-// Commits are sorted by date. Commits are not associated with searchrepos, and
-// will always list after repository or file match results, if any.
-func compareSearchResults(left, right result.Match, exactFilePatterns map[string]struct{}) bool {
-	sortKeys := func(match result.Match) (string, string, *time.Time) {
-		switch r := match.(type) {
-		case *result.RepoMatch:
-			return string(r.Name), "", nil
-		case *result.FileMatch:
-			return string(r.Repo.Name), r.Path, nil
-		case *result.CommitMatch:
-			// Commits are relatively sorted by date, and after repo
-			// or path names. We use ~ as the key for repo and
-			// paths,lexicographically last in ASCII.
-			return "~", "~", &r.Commit.Author.Date
-		}
-		// Unreachable.
-		panic("unreachable: compareSearchResults expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
-	}
-
-	arepo, afile, adate := sortKeys(left)
-	brepo, bfile, bdate := sortKeys(right)
-
-	if arepo == brepo {
-		if len(exactFilePatterns) == 0 {
-			if afile != bfile {
-				return afile < bfile
-			}
-			return compareDates(adate, bdate)
-		}
-		return compareFileLengths(afile, bfile, exactFilePatterns)
-	}
-	return arepo < brepo
-}
-
-func sortResults(results []result.Match) {
-	sort.Slice(results, func(i, j int) bool { return compareSearchResults(results[i], results[j], nil) })
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{

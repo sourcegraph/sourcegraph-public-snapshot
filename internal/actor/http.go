@@ -137,6 +137,8 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// getCondensedURLPath truncates known high-cardinality paths to be used as metric labels in order to reduce the
+// label cardinality. This can and should be expanded to include other paths as necessary.
 func getCondensedURLPath(urlPath string) string {
 	if strings.HasPrefix(urlPath, "/.internal/git/") {
 		return "/.internal/git/..."

@@ -5,7 +5,7 @@ import React, { useCallback, useState } from 'react'
 import { useRouteMatch } from 'react-router-dom'
 import { Collapse } from 'reactstrap'
 
-import { Button, Link } from '@sourcegraph/wildcard'
+import { AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
 
@@ -19,20 +19,20 @@ export const SidebarNavItem: React.FunctionComponent<{
     source?: string
 }> = ({ children, className, to, exact, source }) => {
     const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
-    const routeMatch = useRouteMatch(to)
+    const routeMatch = useRouteMatch({ path: to, exact })
 
     if (source === 'server') {
         return (
-            <Button as="a" href={to} className={buttonClassNames}>
+            <ButtonLink as={AnchorLink} to={to} className={classNames(buttonClassNames, className)}>
                 {children}
-            </Button>
+            </ButtonLink>
         )
     }
 
     return (
-        <Button to={to} className={buttonClassNames} variant={routeMatch?.isExact ? 'primary' : undefined} as={Link}>
+        <ButtonLink to={to} className={buttonClassNames} variant={routeMatch?.isExact ? 'primary' : undefined}>
             {children}
-        </Button>
+        </ButtonLink>
     )
 }
 /**
