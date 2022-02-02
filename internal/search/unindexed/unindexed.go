@@ -307,12 +307,11 @@ func callSearcherOverRepos(
 }
 
 type RepoSubsetTextSearch struct {
-	ZoektArgs         *search.ZoektParameters
-	SearcherArgs      *search.SearcherParameters
-	NotSearcherOnly   bool
-	UseIndex          query.YesNoOnly
-	ContainsRefGlobs  bool
-	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+	ZoektArgs        *search.ZoektParameters
+	SearcherArgs     *search.SearcherParameters
+	NotSearcherOnly  bool
+	UseIndex         query.YesNoOnly
+	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
 }
@@ -326,13 +325,13 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream s
 
 	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, t.OnMissingRepoRevs)
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
 		}
 
 		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, t.UseIndex, t.ZoektArgs, t.OnMissingRepoRevs)
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, t.UseIndex, t.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
 			if err != nil {
 				return err
 			}

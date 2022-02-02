@@ -145,3 +145,7 @@ func (c *aggregatingStream) Send(event SearchEvent) {
 func (c *aggregatingStream) Get() SearchEvent {
 	return c.event
 }
+
+func NewNullStream() Sender {
+	return StreamFunc(func(SearchEvent) {})
+}

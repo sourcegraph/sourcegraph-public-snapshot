@@ -409,14 +409,13 @@ func limitOrDefault(first *int32) int {
 }
 
 type RepoSubsetSymbolSearch struct {
-	ZoektArgs         *search.ZoektParameters
-	PatternInfo       *search.TextPatternInfo
-	Limit             int
-	NotSearcherOnly   bool
-	UseIndex          query.YesNoOnly
-	ContainsRefGlobs  bool
-	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
-	RepoOpts          search.RepoOptions
+	ZoektArgs        *search.ZoektParameters
+	PatternInfo      *search.TextPatternInfo
+	Limit            int
+	NotSearcherOnly  bool
+	UseIndex         query.YesNoOnly
+	ContainsRefGlobs bool
+	RepoOpts         search.RepoOptions
 }
 
 func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
@@ -428,13 +427,13 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 
 	repos := searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
 		}
 
 		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
 			if err != nil {
 				return err
 			}
