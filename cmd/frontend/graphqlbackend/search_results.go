@@ -977,7 +977,7 @@ func intersect(left, right *SearchResults) *SearchResults {
 // and likely yields fewer than N results). If the intersection does not yield N
 // results, and is not exhaustive for every expression, we rerun the search by
 // doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
 	start := time.Now()
 
 	// Invariant: this function is only reachable from callers that
@@ -985,7 +985,6 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 	operands := q.Pattern.(query.Operator).Operands
 
 	var (
-		err        error
 		result     *SearchResults
 		termResult *SearchResults
 	)
@@ -1020,18 +1019,19 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 	for {
 		q = q.MapCount(tryCount)
 		agg := streaming.NewAggregatingStream()
-		result, err = r.evaluatePatternExpression(ctx, agg, q.MapPattern(operands[0]))
+		alert, err := r.evaluatePatternExpression(ctx, agg, q.MapPattern(operands[0]))
 		if err != nil {
 			return nil, err
 		}
-		if result == nil {
-			return &SearchResults{}, nil
+		result = &SearchResults{
+			Matches: agg.Results,
+			Stats:   agg.Stats,
+			Alert:   alert,
 		}
-		result.Matches, result.Stats = agg.Results, agg.Stats
 
 		if len(result.Matches) == 0 {
 			// result might contain an alert.
-			return result, nil
+			return result.Alert, nil
 		}
 		exhausted = !result.Stats.IsLimitHit
 		for _, term := range operands[1:] {
@@ -1040,23 +1040,24 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertToSearchResults(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)), nil
+				return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
 			default:
 			}
 
 			termAgg := streaming.NewAggregatingStream()
-			termResult, err = r.evaluatePatternExpression(ctx, termAgg, q.MapPattern(term))
+			termAlert, err := r.evaluatePatternExpression(ctx, termAgg, q.MapPattern(term))
 			if err != nil {
 				return nil, err
 			}
-			if termResult == nil {
-				return &SearchResults{}, nil
+			termResult = &SearchResults{
+				Matches: termAgg.Results,
+				Stats:   termAgg.Stats,
+				Alert:   termAlert,
 			}
-			termResult.Matches, termResult.Stats = termAgg.Results, termAgg.Stats
 
 			if len(termResult.Matches) == 0 {
 				// termResult might contain an alert.
-				return termResult, nil
+				return termResult.Alert, nil
 			}
 			exhausted = exhausted && !termResult.Stats.IsLimitHit
 			result = intersect(result, termResult)
@@ -1072,7 +1073,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertToSearchResults(search.AlertForCappedAndExpression()), nil
+			return search.AlertForCappedAndExpression(), nil
 		}
 	}
 	result.Stats.IsLimitHit = !exhausted
@@ -1080,14 +1081,14 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 		Results: result.Matches,
 		Stats:   result.Stats,
 	})
-	return result, nil
+	return result.Alert, nil
 }
 
 // evaluateOr performs set union on result sets. It collects results for all
 // expressions that are ORed together by searching for each subexpression. If
 // the maximum number of results are reached after evaluating a subexpression,
 // we shortcircuit and return results immediately.
-func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more operands.
 	operands := q.Pattern.(query.Operator).Operands
@@ -1119,11 +1120,15 @@ func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender
 			defer sem.Release(1)
 
 			agg := streaming.NewAggregatingStream()
-			new, err := r.evaluatePatternExpression(ctx, agg, q.MapPattern(term))
-			if err != nil || new == nil {
+			alert, err := r.evaluatePatternExpression(ctx, agg, q.MapPattern(term))
+			if err != nil {
 				return err
 			}
-			new.Matches, new.Stats = agg.Results, agg.Stats
+			new := &SearchResults{
+				Matches: agg.Results,
+				Stats:   agg.Stats,
+				Alert:   alert,
+			}
 
 			mu.Lock()
 			defer mu.Unlock()
@@ -1165,25 +1170,19 @@ func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender
 		alert = alerts[0]
 	}
 
-	sr := &SearchResults{
-		Matches: dedup.Results(),
-		Stats:   stats,
-		Alert:   alert,
-	}
-
 	stream.Send(streaming.SearchEvent{
-		Results: sr.Matches,
-		Stats:   sr.Stats,
+		Results: dedup.Results(),
+		Stats:   stats,
 	})
-	return sr, nil
+	return alert, nil
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
-func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
-			return &SearchResults{}, nil
+			return nil, nil
 		}
 
 		switch term.Kind {
@@ -1194,30 +1193,30 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream s
 		case query.Concat:
 			job, err := r.toSearchJob(q.ToParseTree())
 			if err != nil {
-				return &SearchResults{}, err
+				return nil, err
 			}
 			return r.evaluateJob(ctx, stream, job)
 		}
 	case query.Pattern:
 		job, err := r.toSearchJob(q.ToParseTree())
 		if err != nil {
-			return &SearchResults{}, err
+			return nil, err
 		}
 		return r.evaluateJob(ctx, stream, job)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
-		return &SearchResults{}, nil
+		return nil, nil
 	}
 	// Unreachable.
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
 // evaluate evaluates all expressions of a search query. The value of stream must be non-nil
-func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*SearchResults, error) {
+func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
 	if q.Pattern == nil {
 		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
 		if err != nil {
-			return &SearchResults{}, err
+			return nil, err
 		}
 		return r.evaluateJob(ctx, stream, job)
 	}
@@ -1406,12 +1405,19 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, stream streaming.
 				// If a predicate filter generated a new plan, evaluate that plan.
 				newResult, err = r.resultsRecursive(ctx, stream, predicatePlan)
 			} else if stream != nil {
-				newResult, err = r.evaluate(ctx, stream, q)
+				var alert *search.Alert
+				alert, err = r.evaluate(ctx, stream, q)
+				newResult = &SearchResults{Alert: alert}
 			} else {
 				// Always pass a non-nil stream to evaluate
 				agg := streaming.NewAggregatingStream()
-				newResult, err = r.evaluate(ctx, agg, q)
-				newResult.Matches, newResult.Stats = agg.Results, agg.Stats
+				var alert *search.Alert
+				alert, err = r.evaluate(ctx, agg, q)
+				newResult = &SearchResults{
+					Matches: agg.Results,
+					Stats:   agg.Stats,
+					Alert:   alert,
+				}
 			}
 
 			if err != nil || newResult == nil {
@@ -1553,7 +1559,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // A search job represents a tree of evaluation steps. If the deadline
 // is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sender, job run.Job) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sender, job run.Job) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "evaluateJob", "")
 	defer func() {
 		tr.SetError(err)
@@ -1576,28 +1582,22 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	}
 	alert, err := ao.Done()
 
-	rr := &SearchResults{
-		Matches: nil, // matches are always sent up the stream, which is always non-nil
-		Stats:   common,
-		Alert:   alert,
-	}
-
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
 	// it if no repos are marked as timedout. This somewhat couples us to how
 	// progress notifications work, but this is the third attempt at trying to
 	// fix this behaviour so we are accepting that.
 	if errors.Is(err, context.DeadlineExceeded) {
-		if !rr.Stats.Status.Any(search.RepoStatusTimedout) {
+		if !common.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
-			return alertToSearchResults(search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType)), nil
+			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
 		} else {
 			err = nil
 		}
 	}
 
-	return rr, err
+	return alert, err
 }
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
