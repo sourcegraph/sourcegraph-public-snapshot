@@ -95,7 +95,7 @@ const currentMigrationLogSchemaVersion = 1
 
 // EnsureSchemaTable creates the bookeeping tables required to track this schema
 // if they do not already exist. If old versions of the tables exist, this method
-// will attempt to update them in a backwards-compataible manner.
+// will attempt to update them in a backward-compatible manner.
 func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
