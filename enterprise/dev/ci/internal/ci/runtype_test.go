@@ -56,18 +56,24 @@ func TestComputeRunType(t *testing.T) {
 
 func TestRunTypeString(t *testing.T) {
 	// Check all individual types have a name defined at least
+	var tested int
 	for rt := PullRequest; rt < None; rt += 1 {
+		tested += 1
 		assert.NotEmpty(t, rt.String(), "RunType: %d with matcher %+v", rt, rt.Matcher())
 	}
+	assert.Equal(t, int(None), tested)
 }
 
 func TestRunTypeMatcher(t *testing.T) {
 	// Check all individual types have a matcher defined at least
 	// Start a PullRequest+1 because PullRequest is the default RunType, and does not have
 	// a matcher.
+	var tested int
 	for rt := PullRequest + 1; rt < None; rt += 1 {
+		tested += 1
 		assert.NotNil(t, rt.Matcher(), "RunType: %d with name %q", rt, rt.String())
 	}
+	assert.Equal(t, int(None)-1, tested)
 }
 
 func TestRunTypeMatcherMatches(t *testing.T) {
