@@ -151,10 +151,9 @@ type StructuralSearch struct {
 	ZoektArgs    *search.ZoektParameters
 	SearcherArgs *search.SearcherParameters
 
-	NotSearcherOnly   bool
-	UseIndex          query.YesNoOnly
-	ContainsRefGlobs  bool
-	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+	NotSearcherOnly  bool
+	UseIndex         query.YesNoOnly
+	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
 }
@@ -168,12 +167,12 @@ func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream strea
 
 	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
 		}
 		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
 			if err != nil {
 				return err
 			}
