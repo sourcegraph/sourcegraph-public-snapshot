@@ -95,7 +95,7 @@ import { ConditionalTelemetryService, EventLogger } from '../../tracking/eventLo
 import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
-import { observeSendTelemetry } from '../../util/optionFlags'
+import { observeOptionFlag, observeSendTelemetry } from '../../util/optionFlags'
 import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
@@ -489,6 +489,9 @@ function initCodeIntelligence({
             this.subscription.add(
                 hoverifier.hoverStateUpdates
                     .pipe(
+                        withLatestFrom(observeOptionFlag('clickToGoToDefinition')),
+                        filter(([, clickToGoToDefinition]) => clickToGoToDefinition),
+                        map(([hoverState]) => hoverState),
                         switchMap(({ hoveredTokenElement: token, hoverOverlayProps }) => {
                             if (token === undefined) {
                                 return EMPTY
