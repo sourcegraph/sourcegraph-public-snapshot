@@ -332,8 +332,8 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 	var multi error
 
 	hardErr := h.allReposIterator(ctx, h.buildForRepo(ctx, uniqueSeries, sortedSeriesIDs, multi))
-	if hardErr != nil {
-		log15.Error("historical_enqueuer.buildFrames - multierror", "err", hardErr)
+	if multi != nil {
+		log15.Error("historical_enqueuer.buildFrames - multierror", "err", multi)
 	}
 	return hardErr
 }
