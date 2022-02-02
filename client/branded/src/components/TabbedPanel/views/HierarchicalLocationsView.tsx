@@ -9,12 +9,11 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Alert, Panel } from '@sourcegraph/wildcard'
 
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import styles from './HierarchicalLocationsView.module.scss'
@@ -251,40 +250,35 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                             groupsToDisplay.map(
                                 (group, index) =>
                                     group && (
-                                        <Resizable
+                                        <Panel
                                             key={index}
                                             className={styles.resizableGroup}
                                             handleClassName={styles.resizableHandle}
-                                            handlePosition="right"
+                                            isFloating={false}
+                                            position="left"
                                             storageKey={`hierarchical-locations-view-resizable:${group.name}`}
                                             defaultSize={group.defaultSize}
-                                            element={
-                                                <div
-                                                    data-testid="hierarchical-locations-view-list"
-                                                    className={classNames('list-group', styles.groupList)}
-                                                >
-                                                    {groups[index].map((group, innerIndex) => (
-                                                        <HierarchicalLocationsViewButton
-                                                            key={innerIndex}
-                                                            groupKey={group.key}
-                                                            groupCount={group.count}
-                                                            isActive={selectedGroups[index] === group.key}
-                                                            onClick={event =>
-                                                                this.onSelectTree(
-                                                                    event,
-                                                                    selectedGroups,
-                                                                    index,
-                                                                    group.key
-                                                                )
-                                                            }
-                                                        />
-                                                    ))}
-                                                    {this.state.locationsOrError.isLoading && (
-                                                        <LoadingSpinner className="m-2 flex-shrink-0 test-loading-spinner" />
-                                                    )}
-                                                </div>
-                                            }
-                                        />
+                                        >
+                                            <div
+                                                data-testid="hierarchical-locations-view-list"
+                                                className={classNames('list-group', styles.groupList)}
+                                            >
+                                                {groups[index].map((group, innerIndex) => (
+                                                    <HierarchicalLocationsViewButton
+                                                        key={innerIndex}
+                                                        groupKey={group.key}
+                                                        groupCount={group.count}
+                                                        isActive={selectedGroups[index] === group.key}
+                                                        onClick={event =>
+                                                            this.onSelectTree(event, selectedGroups, index, group.key)
+                                                        }
+                                                    />
+                                                ))}
+                                                {this.state.locationsOrError.isLoading && (
+                                                    <LoadingSpinner className="m-2 flex-shrink-0 test-loading-spinner" />
+                                                )}
+                                            </div>
+                                        </Panel>
                                     )
                             )}
                     </div>

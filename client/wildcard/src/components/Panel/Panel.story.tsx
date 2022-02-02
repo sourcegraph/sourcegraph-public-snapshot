@@ -5,8 +5,8 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { panels } from '@sourcegraph/branded/src/components/panel/Panel.fixtures'
-import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
+import { panels } from '@sourcegraph/branded/src/components/TabbedPanel/TabbedPanel.fixtures'
+import { EmptyPanelView } from '@sourcegraph/branded/src/components/TabbedPanel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Button } from '../Button'

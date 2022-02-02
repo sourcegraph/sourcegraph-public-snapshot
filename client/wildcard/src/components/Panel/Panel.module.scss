@@ -3,25 +3,32 @@
     --panel-handle-bg-color: var(--border-color-2);
     --panel-bg-color: var(--color-bg-1);
 
-    position: fixed;
     background-color: var(--panel-bg-color);
     overflow-x: hidden;
     bottom: 0;
+
+    flex: 0 0 auto;
 
     &--bottom {
         left: 0;
         right: 0;
         padding-top: var(--panel-handle-size);
+        flex-direction: column-reverse;
+    }
+
+    &--right,
+    &--left {
+        height: 100%;
+        top: 0;
+        flex-direction: row-reverse;
     }
 
     &--left {
-        top: 0;
         left: 0;
         padding-right: var(--panel-handle-size);
     }
 
     &--right {
-        top: 0;
         right: 0;
         padding-left: var(--panel-handle-size);
     }

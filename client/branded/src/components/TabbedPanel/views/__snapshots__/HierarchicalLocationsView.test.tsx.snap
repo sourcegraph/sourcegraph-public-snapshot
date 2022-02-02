@@ -166,74 +166,82 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         class="d-flex"
       >
         <div
-          class="resizable resizableGroup"
-          style="width: 200px;"
+          class="position-relative"
         >
-          <div
-            class="list-group groupList"
-            data-testid="hierarchical-locations-view-list"
-          >
-            <button
-              class="list-group-item list-group-item-action locationButton active"
-              data-testid="hierarchical-locations-view-button"
-              type="button"
+          <div>
+            <div
+              class="resizableGroup panel panelLeft"
+              style="width: 200px;"
             >
-              <span
-                class="locationName"
-                title="file1.txt"
+              <div
+                class="list-group groupList"
+                data-testid="hierarchical-locations-view-list"
               >
-                <span
-                  class="locationNameText"
+                <button
+                  class="list-group-item list-group-item-action locationButton active"
+                  data-testid="hierarchical-locations-view-button"
+                  type="button"
                 >
                   <span
-                    class=""
+                    class="locationName"
+                    title="file1.txt"
                   >
-                     
-                    <span>
-                      file1.txt
+                    <span
+                      class="locationNameText"
+                    >
+                      <span
+                        class=""
+                      >
+                         
+                        <span>
+                          file1.txt
+                        </span>
+                      </span>
                     </span>
                   </span>
-                </span>
-              </span>
-              <span
-                class="locationBadge ml-1"
-              >
-                2
-              </span>
-            </button>
-            <button
-              class="list-group-item list-group-item-action locationButton"
-              data-testid="hierarchical-locations-view-button"
-              type="button"
-            >
-              <span
-                class="locationName"
-                title="file2.txt"
-              >
-                <span
-                  class="locationNameText"
+                  <span
+                    class="locationBadge ml-1"
+                  >
+                    2
+                  </span>
+                </button>
+                <button
+                  class="list-group-item list-group-item-action locationButton"
+                  data-testid="hierarchical-locations-view-button"
+                  type="button"
                 >
                   <span
-                    class=""
+                    class="locationName"
+                    title="file2.txt"
                   >
-                     
-                    <span>
-                      file2.txt
+                    <span
+                      class="locationNameText"
+                    >
+                      <span
+                        class=""
+                      >
+                         
+                        <span>
+                          file2.txt
+                        </span>
+                      </span>
                     </span>
                   </span>
-                </span>
-              </span>
-              <span
-                class="locationBadge ml-1"
-              >
-                3
-              </span>
-            </button>
+                  <span
+                    class="locationBadge ml-1"
+                  >
+                    3
+                  </span>
+                </button>
+              </div>
+              <div
+                class="handle resizableHandle"
+              />
+            </div>
+            <div
+              style="width: 200px;"
+            />
           </div>
-          <div
-            class="handle handleRight resizableHandle"
-            role="presentation"
-          />
         </div>
       </div>
       <div

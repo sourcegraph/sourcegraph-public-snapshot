@@ -2,13 +2,15 @@
 
 exports[`Panel renders correctly positioned at page bottom 1`] = `
 <DocumentFragment>
-  <div
-    class="panel panelBottom"
-    style="height: 200px;"
-  >
+  <div>
     <div
-      class="handle handleBottom"
-    />
+      class="panel panelBottom"
+      style="height: 200px;"
+    >
+      <div
+        class="handle handleBottom"
+      />
+    </div>
   </div>
 </DocumentFragment>
 `;

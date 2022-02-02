@@ -9,7 +9,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
-import { PanelViewWithComponent } from '../Panel'
+import { PanelViewWithComponent } from '../TabbedPanel'
 
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'

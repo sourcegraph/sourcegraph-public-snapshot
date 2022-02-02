@@ -24,3 +24,14 @@
         background-color: var(--color-bg-3);
     }
 }
+
+.resizable-handle {
+    width: 0;
+    padding-right: 0.5rem;
+    background-color: transparent;
+    border-right: 1px solid transparent;
+    cursor: ew-resize;
+    top: 0;
+    bottom: 0;
+    right: 0.1rem;
+}

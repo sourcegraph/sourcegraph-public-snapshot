@@ -8,14 +8,22 @@
     min-width: 6rem;
     padding-top: 0.5rem;
     overflow-y: auto;
+    background-color: transparent;
+    padding-right: 0.55rem;
 }
 
 .resizable-handle {
+    // pushes resizable handler to the right and vissible when hovered
     width: 0;
-    margin-right: 0.5rem;
-    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    background-color: transparent;
     transition: opacity 150ms;
     border-right: 1px solid var(--border-color-2);
+    opacity: 0;
+    cursor: ew-resize;
+    top: 0;
+    bottom: 0;
+    right: 0.5rem;
 
     &:hover {
         opacity: 1;
@@ -26,6 +34,7 @@
     flex: 1;
     border-right: none;
     overflow-x: hidden;
+    margin-right: 0.5rem;
 }
 
 .file-locations {
