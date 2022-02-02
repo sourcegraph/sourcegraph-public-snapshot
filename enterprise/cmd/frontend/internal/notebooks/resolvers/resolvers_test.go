@@ -118,7 +118,7 @@ func notebookFixture(userID int32, public bool) *notebooks.Notebook {
 			LineRange:      &notebooks.LineRange{StartLine: 10, EndLine: 12},
 		}},
 	}
-	return &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: public, CreatorUserID: userID}
+	return &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: public, CreatorUserID: userID, UpdaterUserID: userID, NamespaceUserID: userID}
 }
 
 func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapitest.Notebook, gotNotebookResponse notebooksapitest.Notebook, ignoreIDAndTimestamps bool) {
@@ -241,7 +241,7 @@ func TestUpdateNotebook(t *testing.T) {
 			creatorID:       user1.ID,
 			creatorUsername: user1.Username,
 			updaterID:       user2.ID,
-			wantErr:         "user does not have permissions to update the notebook",
+			wantErr:         "user does not match the notebook user namespace",
 		},
 		{
 			name:            "user cannot update other private notebooks",
@@ -331,7 +331,7 @@ func TestDeleteNotebook(t *testing.T) {
 			publicNotebook: true,
 			creatorID:      user1.ID,
 			deleterID:      user2.ID,
-			wantErr:        "user does not have permissions to update the notebook",
+			wantErr:        "user does not match the notebook user namespace",
 		},
 		{
 			name:           "user cannot delete other private notebooks",
