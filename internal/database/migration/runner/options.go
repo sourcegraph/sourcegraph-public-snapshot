@@ -44,9 +44,6 @@ func desugarOperation(schemaContext schemaContext, operation MigrationOperation)
 // identify the leaves of the current schema definition to run everything defined.
 func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
 	leafVersions := extractIDs(schemaContext.schema.Definitions.Leaves())
-	if len(leafVersions) != 1 {
-		return MigrationOperation{}, fmt.Errorf("nothing to upgrade")
-	}
 
 	logger.Info(
 		"Desugaring `upgrade` to `targeted up` operation",
@@ -54,6 +51,9 @@ func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (
 		"leafVersions", leafVersions,
 	)
 
+	if len(leafVersions) != 1 {
+		return MigrationOperation{}, fmt.Errorf("nothing to upgrade")
+	}
 	return MigrationOperation{
 		SchemaName:    operation.SchemaName,
 		Type:          MigrationOperationTypeTargetedUp,
@@ -71,7 +71,9 @@ func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (
 // down migrations can be run with an explicit "down" operation.
 func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
 	definitions := schemaContext.schema.Definitions
-	leafVersions := []int{schemaContext.initialSchemaVersion.version}
+	schemaVersion := schemaContext.initialSchemaVersion
+
+	leafVersions := []int{schemaVersion.version}
 
 	logger.Info(
 		"Desugaring `revert` to `targeted down` operation",
@@ -79,20 +81,28 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 		"appliedLeafVersions", leafVersions,
 	)
 
-	// We want to revert leafVersions[0], so we need to migrate "down" its parents.
-	// That operation will undo any applied proper descendants of this parent set, which
-	// should consist of exactly this target version.
-	definition, ok := definitions.GetByID(leafVersions[0])
-	if !ok {
-		return MigrationOperation{}, fmt.Errorf("unknown version %d", leafVersions[0])
-	}
-	if len(definition.Parents) != 1 {
-		return MigrationOperation{}, fmt.Errorf("expected one parent")
-	}
+	switch len(leafVersions) {
+	case 1:
+		// We want to revert leafVersions[0], so we need to migrate down to its parents.
+		// That operation will undo any applied proper descendants of this parent set, which
+		// should consist of exactly this target version.
+		definition, ok := definitions.GetByID(leafVersions[0])
+		if !ok {
+			return MigrationOperation{}, fmt.Errorf("unknown version %d", leafVersions[0])
+		}
 
-	return MigrationOperation{
-		SchemaName:    operation.SchemaName,
-		Type:          MigrationOperationTypeTargetedDown,
-		TargetVersion: definition.Parents[0],
-	}, nil
+		if len(definition.Parents) != 1 {
+			return MigrationOperation{}, fmt.Errorf("expected one parent")
+		}
+		return MigrationOperation{
+			SchemaName:    operation.SchemaName,
+			Type:          MigrationOperationTypeTargetedDown,
+			TargetVersion: definition.Parents[0],
+		}, nil
+
+	case 0:
+		return MigrationOperation{}, fmt.Errorf("nothing to revert")
+	default:
+		return MigrationOperation{}, fmt.Errorf("ambiguous revert")
+	}
 }
