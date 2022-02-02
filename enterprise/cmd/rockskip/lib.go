@@ -708,10 +708,16 @@ func Search(db Queryable, repo, commit string, query *string) ([]Blob, error) {
 		var commit string
 		var path string
 		var added, deleted []string
-		var symbols Symbols
-		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted), &symbols)
+		var allSymbols Symbols
+		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted), &allSymbols)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
+		}
+		symbols := []Symbol{}
+		for _, symbol := range allSymbols {
+			if query == nil || symbol.Name == *query {
+				symbols = append(symbols, symbol)
+			}
 		}
 		blobs = append(blobs, Blob{Commit: commit, Path: path, Added: added, Deleted: deleted, Symbols: symbols})
 	}
