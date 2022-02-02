@@ -126,6 +126,8 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 		return Definition{}, err
 	}
 
+	definition.Name = payload.Name
+
 	parents := payload.Parents
 	if payload.Parent != 0 {
 		parents = append(parents, payload.Parent)
