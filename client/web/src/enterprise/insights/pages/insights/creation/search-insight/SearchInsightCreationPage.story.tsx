@@ -67,7 +67,7 @@ const SUBJECTS = [
     createGlobalSubject('Global'),
 ] as SupportedInsightSubject[]
 
-add('Page', () => (
+add('SearchInsightCreationPage', () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
         <SearchInsightCreationPage
             visibility="user_test_id"

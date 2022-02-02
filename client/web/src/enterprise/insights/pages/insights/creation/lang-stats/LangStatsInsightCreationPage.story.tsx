@@ -19,7 +19,7 @@ import {
 import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
 import { LangStatsInsightCreationPage } from './LangStatsInsightCreationPage'
 
-const { add } = storiesOf('web/insights/CreateLangStatsInsightPageProps', module)
+const { add } = storiesOf('web/insights/LangStatsInsightCreationPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
@@ -65,7 +65,7 @@ const SUBJECTS = [
     createGlobalSubject('Global'),
 ] as SupportedInsightSubject[]
 
-add('Page', () => (
+add('LangStatsInsightCreationPage', () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
         <LangStatsInsightCreationPage
             subjects={SUBJECTS}
