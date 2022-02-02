@@ -1,6 +1,6 @@
 // Command zoekt-sourcegraph-indexserver periodically reindexes enabled
 // repositories on sourcegraph
-package main
+package zoektindexstuff
 
 import (
 	"bytes"
@@ -26,9 +26,6 @@ import (
 	wipindexserver "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver/wip"
 )
 
-// TODO - get rid of this
-type Server struct{}
-
 type IndexArgs = wipindexserver.IndexArgs
 
 type indexState string
@@ -42,7 +39,7 @@ const (
 )
 
 // Index starts an index job for repo name at commit.
-func (s *Server) Index(args *IndexArgs) (state indexState, err error) {
+func Index(args *IndexArgs) (state indexState, err error) {
 	// tr := trace.New("index", args.Name)
 
 	// defer func() {
