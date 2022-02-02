@@ -106,7 +106,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ArchiveURLFunc: &ClientArchiveURLFunc{
-			defaultHook: func(api.RepoName, ArchiveOptions) *url.URL {
+			defaultHook: func(api.RepoName, ArchiveUrlOptions) *url.URL {
 				return nil
 			},
 		},
@@ -218,7 +218,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ArchiveURLFunc: &ClientArchiveURLFunc{
-			defaultHook: func(api.RepoName, ArchiveOptions) *url.URL {
+			defaultHook: func(api.RepoName, ArchiveUrlOptions) *url.URL {
 				panic("unexpected invocation of MockClient.ArchiveURL")
 			},
 		},
@@ -695,15 +695,15 @@ func (c ClientArchiveFuncCall) Results() []interface{} {
 // ClientArchiveURLFunc describes the behavior when the ArchiveURL method of
 // the parent MockClient instance is invoked.
 type ClientArchiveURLFunc struct {
-	defaultHook func(api.RepoName, ArchiveOptions) *url.URL
-	hooks       []func(api.RepoName, ArchiveOptions) *url.URL
+	defaultHook func(api.RepoName, ArchiveUrlOptions) *url.URL
+	hooks       []func(api.RepoName, ArchiveUrlOptions) *url.URL
 	history     []ClientArchiveURLFuncCall
 	mutex       sync.Mutex
 }
 
 // ArchiveURL delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) ArchiveURL(v0 api.RepoName, v1 ArchiveOptions) *url.URL {
+func (m *MockClient) ArchiveURL(v0 api.RepoName, v1 ArchiveUrlOptions) *url.URL {
 	r0 := m.ArchiveURLFunc.nextHook()(v0, v1)
 	m.ArchiveURLFunc.appendCall(ClientArchiveURLFuncCall{v0, v1, r0})
 	return r0
@@ -711,7 +711,7 @@ func (m *MockClient) ArchiveURL(v0 api.RepoName, v1 ArchiveOptions) *url.URL {
 
 // SetDefaultHook sets function that is called when the ArchiveURL method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(api.RepoName, ArchiveOptions) *url.URL) {
+func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(api.RepoName, ArchiveUrlOptions) *url.URL) {
 	f.defaultHook = hook
 }
 
@@ -719,7 +719,7 @@ func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(api.RepoName, ArchiveOpt
 // ArchiveURL method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientArchiveURLFunc) PushHook(hook func(api.RepoName, ArchiveOptions) *url.URL) {
+func (f *ClientArchiveURLFunc) PushHook(hook func(api.RepoName, ArchiveUrlOptions) *url.URL) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -728,7 +728,7 @@ func (f *ClientArchiveURLFunc) PushHook(hook func(api.RepoName, ArchiveOptions) 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ClientArchiveURLFunc) SetDefaultReturn(r0 *url.URL) {
-	f.SetDefaultHook(func(api.RepoName, ArchiveOptions) *url.URL {
+	f.SetDefaultHook(func(api.RepoName, ArchiveUrlOptions) *url.URL {
 		return r0
 	})
 }
@@ -736,12 +736,12 @@ func (f *ClientArchiveURLFunc) SetDefaultReturn(r0 *url.URL) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ClientArchiveURLFunc) PushReturn(r0 *url.URL) {
-	f.PushHook(func(api.RepoName, ArchiveOptions) *url.URL {
+	f.PushHook(func(api.RepoName, ArchiveUrlOptions) *url.URL {
 		return r0
 	})
 }
 
-func (f *ClientArchiveURLFunc) nextHook() func(api.RepoName, ArchiveOptions) *url.URL {
+func (f *ClientArchiveURLFunc) nextHook() func(api.RepoName, ArchiveUrlOptions) *url.URL {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -779,7 +779,7 @@ type ClientArchiveURLFuncCall struct {
 	Arg0 api.RepoName
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 ArchiveOptions
+	Arg1 ArchiveUrlOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *url.URL

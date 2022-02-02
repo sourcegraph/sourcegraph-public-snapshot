@@ -303,7 +303,7 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	opts := gitserver.ArchiveOptions{
+	opts := gitserver.ArchiveUrlOptions{
 		Treeish: string(commit),
 		Format:  "tar",
 	}

@@ -41,9 +41,7 @@ func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs,
 	if newestDBFile, oldCommit, ok, err := w.getNewestCommit(ctx, args); err != nil {
 		return err
 	} else if ok {
-		if ok, err := w.writeFileIncrementally(ctx, args, dbFile, newestDBFile, oldCommit); err != nil || ok {
-			return err
-		}
+		return w.writeFileIncrementally(ctx, args, dbFile, newestDBFile, oldCommit)
 	}
 
 	return w.writeDBFile(ctx, args, dbFile)
@@ -90,23 +88,12 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs,
 	})
 }
 
-// The maximum number of paths when doing incremental indexing. Diffs with more paths than this will
-// not be incrementally indexed, and instead we will process all symbols.
-const maxTotalPaths = 999
-
-// The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
-// will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
-// could hit HTTP 431 (header fields too large) when sending the list of paths `git archive paths...`.
-// The actual limit is somewhere between 372KB and 450KB, and we want to be well under that.
-// 100KB seems safe.
-const maxTotalPathsLength = 100000
-
-func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) (bool, error) {
+func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) error {
 	observability.SetParseAmount(ctx, observability.PartialParse)
 
 	changes, err := w.gitserverClient.GitDiff(ctx, args.Repo, api.CommitID(oldCommit), args.CommitID)
 	if err != nil {
-		return false, errors.Wrap(err, "gitserverClient.GitDiff")
+		return errors.Wrap(err, "gitserverClient.GitDiff")
 	}
 
 	// Paths to re-parse
@@ -115,25 +102,11 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 	// Paths to modify in the database
 	addedModifiedOrDeletedPaths := append(addedOrModifiedPaths, changes.Deleted...)
 
-	// Too many entries
-	if len(addedModifiedOrDeletedPaths) > maxTotalPaths {
-		return false, nil
-	}
-
-	totalPathsLength := 0
-	for _, path := range addedModifiedOrDeletedPaths {
-		totalPathsLength += len(path)
-	}
-	// Argument lists too long
-	if totalPathsLength > maxTotalPathsLength {
-		return false, nil
-	}
-
 	if err := copyFile(newestDBFile, dbFile); err != nil {
-		return false, err
+		return err
 	}
 
-	return true, w.parseAndWriteInTransaction(ctx, args, addedOrModifiedPaths, dbFile, func(tx store.Store, symbolOrErrors <-chan parser.SymbolOrError) error {
+	return w.parseAndWriteInTransaction(ctx, args, addedOrModifiedPaths, dbFile, func(tx store.Store, symbolOrErrors <-chan parser.SymbolOrError) error {
 		if err := tx.UpdateMeta(ctx, string(args.CommitID)); err != nil {
 			return errors.Wrap(err, "store.UpdateMeta")
 		}

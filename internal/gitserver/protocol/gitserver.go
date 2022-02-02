@@ -98,6 +98,12 @@ type ExecRequest struct {
 	Opt            *RemoteOpts `json:"opt"`
 }
 
+// ArchiveBody specifies paths for `git archive`. Paths are put in the body because there's a limit to
+// how big a URL query can get. The other arguments are put in the URL query.
+type ArchiveBody struct {
+	Paths []string `json:"paths"`
+}
+
 // P4ExecRequest is a request to execute a p4 command with given arguments.
 //
 // Note that this request is deserialized by both gitserver and the frontend's

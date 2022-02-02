@@ -119,7 +119,7 @@ type Client interface {
 
 	// ArchiveURL returns a URL from which an archive of the given Git repository can
 	// be downloaded from.
-	ArchiveURL(api.RepoName, ArchiveOptions) *url.URL
+	ArchiveURL(api.RepoName, ArchiveUrlOptions) *url.URL
 
 	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
 	Command(name string, args ...string) *Cmd
@@ -256,11 +256,16 @@ func addrForKey(key string, addrs []string) string {
 	return addrs[serverIndex]
 }
 
+// ArchiveUrlOptions contains options for the ArchiveURL func.
+type ArchiveUrlOptions struct {
+	Treeish string // the tree or commit to produce an archive for
+	Format  string // format of the resulting archive (usually "tar" or "zip")
+}
+
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish string   // the tree or commit to produce an archive for
-	Format  string   // format of the resulting archive (usually "tar" or "zip")
-	Paths   []string // if nonempty, only include these paths
+	ArchiveUrlOptions
+	Paths []string // if nonempty, only include these paths
 }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
@@ -290,15 +295,11 @@ func (a *archiveReader) Close() error {
 
 // ArchiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *url.URL {
+func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveUrlOptions) *url.URL {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
 		"format":  {opt.Format},
-	}
-
-	for _, path := range opt.Paths {
-		q.Add("path", path)
 	}
 
 	return &url.URL{
@@ -327,8 +328,12 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 		return nil, err
 	}
 
-	u := c.ArchiveURL(repo, opt)
-	resp, err := c.do(ctx, repo, "GET", u.String(), nil)
+	u := c.ArchiveURL(repo, opt.ArchiveUrlOptions)
+	body, err := json.Marshal(protocol.ArchiveBody{Paths: opt.Paths})
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.do(ctx, repo, "GET", u.String(), body)
 	if err != nil {
 		return nil, err
 	}

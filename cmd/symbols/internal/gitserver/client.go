@@ -53,9 +53,11 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	defer endObservation(1, observation.Args{})
 
 	opts := gitserver.ArchiveOptions{
-		Treeish: string(commit),
-		Format:  "tar",
-		Paths:   paths,
+		ArchiveUrlOptions: gitserver.ArchiveUrlOptions{
+			Treeish: string(commit),
+			Format:  "tar",
+		},
+		Paths: paths,
 	}
 
 	return gitserver.DefaultClient.Archive(ctx, repo, opts)

@@ -865,8 +865,15 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		treeish = q.Get("treeish")
 		repo    = q.Get("repo")
 		format  = q.Get("format")
-		paths   = q["path"]
 	)
+
+	var paths []string
+	var archiveBody protocol.ArchiveBody
+	if err := json.NewDecoder(r.Body).Decode(&archiveBody); err == nil {
+		if paths == nil && archiveBody.Paths != nil {
+			paths = archiveBody.Paths
+		}
+	}
 
 	if err := checkSpecArgSafety(treeish); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
