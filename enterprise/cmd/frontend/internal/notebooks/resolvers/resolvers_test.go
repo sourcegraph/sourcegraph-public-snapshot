@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const notebookFields = `
@@ -135,24 +137,38 @@ func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapi
 	}
 }
 
-func TestGetNotebook(t *testing.T) {
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
+func TestSingleNotebookCRUD(t *testing.T) {
+	internalCtx := actor.WithInternalActor(context.Background())
+	testdb := dbtest.NewDB(t)
+	db := database.NewDB(testdb)
 	u := database.Users(db)
-	n := notebooks.Notebooks(db)
 
-	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	createdNotebook, err := n.CreateNotebook(ctx, notebookFixture(user.ID, true))
+	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
+	testGetNotebook(t, db, schema, user1)
+	testCreateNotebook(t, db, schema, user1)
+	testUpdateNotebook(t, db, schema, user1, user2)
+	testDeleteNotebook(t, db, schema, user1, user2)
+}
+
+func testGetNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user *types.User) {
+	ctx := actor.WithInternalActor(context.Background())
+	n := notebooks.Notebooks(db)
+
+	createdNotebook, err := n.CreateNotebook(ctx, notebookFixture(user.ID, true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,22 +182,7 @@ func TestGetNotebook(t *testing.T) {
 	compareNotebookAPIResponses(t, wantNotebookResponse, response.Node, false)
 }
 
-func TestCreateNotebook(t *testing.T) {
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
-
-	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
-	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-
-	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+func testCreateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user *types.User) {
 	notebook := notebookFixture(user.ID, true)
 	input := map[string]interface{}{"notebook": notebooksapitest.NotebookToAPIInput(notebook)}
 	var response struct{ CreateNotebook notebooksapitest.Notebook }
@@ -191,27 +192,9 @@ func TestCreateNotebook(t *testing.T) {
 	compareNotebookAPIResponses(t, wantNotebookResponse, response.CreateNotebook, true)
 }
 
-func TestUpdateNotebook(t *testing.T) {
-	db := dbtest.NewDB(t)
+func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User) {
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
 	n := notebooks.Notebooks(db)
-
-	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
-	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-
-	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
-	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-
-	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	tests := []struct {
 		name            string
@@ -285,27 +268,9 @@ func TestUpdateNotebook(t *testing.T) {
 	}
 }
 
-func TestDeleteNotebook(t *testing.T) {
-	db := dbtest.NewDB(t)
+func testDeleteNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User) {
 	internalCtx := actor.WithInternalActor(context.Background())
-	u := database.Users(db)
 	n := notebooks.Notebooks(db)
-
-	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
-	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-
-	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
-	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-
-	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	tests := []struct {
 		name           string
