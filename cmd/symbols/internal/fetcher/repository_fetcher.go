@@ -2,7 +2,6 @@ package fetcher
 
 import (
 	"archive/tar"
-	"bytes"
 	"context"
 	"io"
 	"strings"
@@ -184,20 +183,7 @@ func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(r
 	}
 	trace.Log(log.Int("n", n))
 
-	if n == 0 {
-		// Empty file, nothing to parse
-		return nil
-	}
-
-	// Check to see if first 256 bytes contain a 0x00. If so, we'll assume that
-	// the file is binary and skip parsing. Otherwise, we'll have some non-zero
-	// contents that passed our filters above to parse.
-
-	m := 256
-	if n < m {
-		m = n
-	}
-	if bytes.IndexByte(buffer[:m], 0x00) >= 0 {
+	if tarHeader.FileInfo().IsDir() || tarHeader.Typeflag == tar.TypeXGlobalHeader {
 		return nil
 	}
 

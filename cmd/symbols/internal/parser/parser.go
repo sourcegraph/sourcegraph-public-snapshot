@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"context"
 	"strings"
 	"sync"
@@ -109,6 +110,24 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 			for parseRequestOrError := range parseRequestOrErrors {
 				if parseRequestOrError.Err != nil {
 					symbolOrErrors <- SymbolOrError{Err: parseRequestOrError.Err}
+					break
+				}
+
+				length := len(parseRequestOrError.ParseRequest.Data)
+				if length == 0 {
+					// Empty file, nothing to parse
+					break
+				}
+
+				// Check to see if first 256 bytes contain a 0x00. If so, we'll assume that
+				// the file is binary and skip parsing. Otherwise, we'll have some non-zero
+				// contents that passed our filters above to parse.
+
+				m := 256
+				if length < m {
+					m = length
+				}
+				if bytes.IndexByte(parseRequestOrError.ParseRequest.Data[:m], 0x00) >= 0 {
 					break
 				}
 
