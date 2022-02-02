@@ -5,9 +5,9 @@ import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { IModalInviteResult, InvitedNotification, InviteMemberModal } from './InviteMemberModal'
+import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
 import { gql, useQuery } from '@apollo/client'
-import { OrganizationMembersResult, OrganizationMembersVariables } from '../../graphql-operations'
+import { Maybe, OrganizationMembersResult, OrganizationMembersVariables } from '../../graphql-operations'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AddMemberNotification, AddMemberToOrgModal } from './AddMemberToOrgModal'
 import styles from './OrgMembersListPage.module.scss'
@@ -32,11 +32,25 @@ const ORG_MEMBERS_QUERY = gql`
         }
     }
 `
-
+type MembersTypeNode = {
+    __typename?: 'Org'
+    viewerCanAdminister: boolean
+    members: {
+        __typename?: 'UserConnection'
+        totalCount: number
+        nodes: Array<{
+            __typename?: 'User'
+            id: string
+            username: string
+            displayName: Maybe<string>
+            avatarURL: Maybe<string>
+        }>
+    }
+}
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser, isSourcegraphDotCom }) => {
+export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
     const [member, setMemberAdded] = useState<string>()
 
@@ -50,6 +64,10 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
     useEffect(() => {
         eventLogger.logViewEvent('OrgMembersListV2', { orgId: org.id })
     }, [org.id])
+
+    const isSelf = (userId: string): boolean => {
+        return authenticatedUser !== null && userId === authenticatedUser.id
+    }
 
     const onInviteSent = useCallback(
         (result: IModalInviteResult) => {
@@ -75,6 +93,8 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
     }, [setMemberAdded])
 
     const viewerCanAddUserToOrganization = !!authenticatedUser && authenticatedUser.siteAdmin
+
+    const members = data ? (data.node as MembersTypeNode).members.nodes : undefined
 
     return (
         <>
@@ -102,17 +122,22 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                         className={styles.membersListHeader}
                     />
 
-                    {viewerCanAddUserToOrganization && isSourcegraphDotCom && (
+                    {viewerCanAddUserToOrganization && (
                         <AddMemberToOrgModal orgName={org.name} orgId={org.id} onMemberAdded={onMemberAdded} />
                     )}
                     {viewerCanAddUserToOrganization && (
-                        <InviteMemberModal orgName={org.name} orgId={org.id} onInviteSent={onInviteSent} />
+                        <InviteMemberModalHandler
+                            variant="success"
+                            orgName={org.name}
+                            orgId={org.id}
+                            onInviteSent={onInviteSent}
+                        />
                     )}
                 </div>
 
                 <Container>
                     {loading && <LoadingSpinner />}
-                    {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
+                    {members && <pre>{JSON.stringify(members, null, 2)}</pre>}
                     {error && (
                         <ErrorAlert
                             className="mt-2"
@@ -120,6 +145,26 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                         />
                     )}
                 </Container>
+
+                {viewerCanAddUserToOrganization && members && members.length === 1 && isSelf(members[0].id) && (
+                    <Container className={styles.onlyYouContainer}>
+                        <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
+                            <h3>{"Look like it's just you!"}</h3>
+                            <div>
+                                <InviteMemberModalHandler
+                                    orgName={org.name}
+                                    triggerLabel="Invite a teammate"
+                                    orgId={org.id}
+                                    onInviteSent={onInviteSent}
+                                    className={styles.inviteMemberLink}
+                                    as="a"
+                                    variant="link"
+                                ></InviteMemberModalHandler>
+                                {` to join you on ${org.name} on Sourcegraph`}
+                            </div>
+                        </div>
+                    </Container>
+                )}
             </div>
         </>
     )

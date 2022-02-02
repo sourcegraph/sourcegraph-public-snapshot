@@ -48,7 +48,7 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({
                     Profile
                 </SidebarNavItem>
                 {!newMembersInviteEnabled && (
-                    <SidebarNavItem to={`${match.url}/members-v1`} exact={true}>
+                    <SidebarNavItem to={`${match.url}/members`} exact={true}>
                         Members
                     </SidebarNavItem>
                 )}

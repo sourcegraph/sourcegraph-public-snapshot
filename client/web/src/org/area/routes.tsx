@@ -16,13 +16,13 @@ const redirectToOrganizationProfile: OrgAreaRoute['render'] = props => (
 
 export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
-        path: '/settings',
-        render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
-    },
-    {
-        path: '/members-v2',
+        path: '/settings/members',
         condition: context => context.newMembersInviteEnabled,
         render: props => <OrgMembersArea {...props} isLightTheme={props.isLightTheme} />,
+    },
+    {
+        path: '/settings',
+        render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
     },
     ...namespaceAreaRoutes,
 

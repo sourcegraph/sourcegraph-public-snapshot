@@ -107,7 +107,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                             />
                             {!props.newMembersInviteEnabled && (
                                 <Route
-                                    path={`${props.match.path}/members-v1`}
+                                    path={`${props.match.path}/members`}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     exact={true}
                                     render={routeComponentProps => (

@@ -5,7 +5,7 @@ import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { IModalInviteResult, InvitedNotification, InviteMemberModal } from './InviteMemberModal'
+import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
 import { gql, useQuery } from '@apollo/client'
 import { OrganizationMembersResult, OrganizationMembersVariables } from '../../graphql-operations'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -78,7 +78,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                     <PageHeader path={[{ text: 'Pending Invites' }]} headingElement="h2" />
                     <div>
                         {viewerCanAddUserToOrganization && (
-                            <InviteMemberModal orgName={org.name} orgId={org.id} onInviteSent={onInviteSent} />
+                            <InviteMemberModalHandler orgName={org.name} orgId={org.id} onInviteSent={onInviteSent} variant='success' />
                         )}
                     </div>
                 </div>

@@ -1,8 +1,8 @@
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Button, Input, Modal } from '@sourcegraph/wildcard'
+import React, { Component, FunctionComponent, useCallback, useEffect, useRef, useState } from 'react'
+import { Alert, Button, ButtonProps, Input, Modal } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../tracking/eventLogger'
 import { gql, useMutation } from '@apollo/client'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
@@ -32,19 +32,15 @@ export interface InviteMemberModalProps {
     orgName: string
     orgId: string
     onInviteSent: (result: IModalInviteResult) => void
+    onDismiss: () => void
 }
 
 export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> = props => {
-    const { orgName, orgId, onInviteSent } = props
+    const { orgName, orgId, onInviteSent, onDismiss } = props
     const emailPattern = useRef(new RegExp(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/))
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
-    const [modalOpened, setModalOpened] = React.useState<boolean>()
     const [isEmail, setIsEmail] = useState<boolean>(false)
     const title = `Invite teammate to ${orgName}`
-
-    // const onInviteSentMessageDismiss = useCallback(() => {
-    //     setInvite(undefined)
-    // }, [setInvite])
 
     useEffect(() => {
         setIsEmail(emailPattern.current.test(userNameOrEmail))
@@ -60,7 +56,7 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             eventLogger.log('OrgMemberInvited')
             onInviteSent({ username: userNameOrEmail, inviteResult: data })
             setUsernameOrEmail('')
-            setModalOpened(false)
+            onDismiss()
         }
     }, [data])
 
@@ -69,14 +65,6 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             eventLogger.log('OrgMemberInviteFailed')
         }
     }, [error])
-
-    const onInviteClick = useCallback(() => {
-        setModalOpened(true)
-    }, [setModalOpened])
-
-    const onCloseIviteModal = useCallback(() => {
-        setModalOpened(false)
-    }, [setModalOpened])
 
     const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setUsernameOrEmail(event.currentTarget.value)
@@ -94,45 +82,38 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
     const debounceInviteUser = debounce(inviteUser, 500, { leading: true })
 
     return (
-        <>
-            <Button variant="success" onClick={onInviteClick}>
-                Invite member
+        <Modal className={styles.modal} onDismiss={onDismiss} position="center" aria-label={title}>
+            <Button className={classNames('btn-icon', styles.closeButton)} onClick={onDismiss}>
+                <VisuallyHidden>Close</VisuallyHidden>
+                <CloseIcon />
             </Button>
-            {modalOpened && (
-                <Modal className={styles.modal} onDismiss={onCloseIviteModal} position="center" aria-label={title}>
-                    <Button className={classNames('btn-icon', styles.closeButton)} onClick={onCloseIviteModal}>
-                        <VisuallyHidden>Close</VisuallyHidden>
-                        <CloseIcon />
-                    </Button>
 
-                    <h2>{title}</h2>
-                    {error && <ErrorAlert className={styles.alert} error={error} />}
-                    <div className="d-flex flex-row position-relative">
-                        {isEmail && <EmailOpenOutlineIcon className={`icon-inline ${styles.mailIcon}`} />}
-                        <Input
-                            autoFocus
-                            value={userNameOrEmail}
-                            label="Email address or username"
-                            title="Email address or username"
-                            onChange={onUsernameChange}
-                            status={isInviting ? 'loading' : error ? 'error' : undefined}
-                            placeholder="Email address or username"
-                        />
-                    </div>
-                    <div className="d-flex justify-content-end mt-4">
-                        <Button
-                            type="button"
-                            className="mr-2"
-                            variant="primary"
-                            onClick={debounceInviteUser}
-                            disabled={isInviting}
-                        >
-                            Send invite
-                        </Button>
-                    </div>
-                </Modal>
-            )}
-        </>
+            <h2>{title}</h2>
+            {error && <ErrorAlert className={styles.alert} error={error} />}
+            <div className="d-flex flex-row position-relative">
+                {isEmail && <EmailOpenOutlineIcon className={`icon-inline ${styles.mailIcon}`} />}
+                <Input
+                    autoFocus
+                    value={userNameOrEmail}
+                    label="Email address or username"
+                    title="Email address or username"
+                    onChange={onUsernameChange}
+                    status={isInviting ? 'loading' : error ? 'error' : undefined}
+                    placeholder="Email address or username"
+                />
+            </div>
+            <div className="d-flex justify-content-end mt-4">
+                <Button
+                    type="button"
+                    className="mr-2"
+                    variant="primary"
+                    onClick={debounceInviteUser}
+                    disabled={isInviting}
+                >
+                    Send invite
+                </Button>
+            </div>
+        </Modal>
     )
 }
 
@@ -162,3 +143,40 @@ export const InvitedNotification: React.FunctionComponent<InvitedNotificationPro
         </Button>
     </Alert>
 )
+
+export interface InviteMemberModalButtonProps extends ButtonProps {
+    orgName: string
+    orgId: string
+    onInviteSent: (result: IModalInviteResult) => void
+    triggerLabel?: string
+    as?: keyof JSX.IntrinsicElements | Component | FunctionComponent
+}
+export const InviteMemberModalHandler = (props: InviteMemberModalButtonProps) => {
+    const { orgName, orgId, onInviteSent, triggerLabel, as, ...rest } = props
+    const [modalOpened, setModalOpened] = React.useState<boolean>()
+
+    const onInviteClick = useCallback(() => {
+        setModalOpened(true)
+    }, [setModalOpened])
+
+    const onCloseIviteModal = useCallback(() => {
+        setModalOpened(false)
+    }, [setModalOpened])
+
+    return (
+        <>
+            <Button {...rest} onClick={onInviteClick} as={as as any}>
+                {triggerLabel || 'Invite member'}
+            </Button>
+
+            {modalOpened && (
+                <InviteMemberModal
+                    orgId={orgId}
+                    orgName={orgName}
+                    onInviteSent={onInviteSent}
+                    onDismiss={onCloseIviteModal}
+                />
+            )}
+        </>
+    )
+}
