@@ -45,7 +45,7 @@ func TestPrepareWorkspace(t *testing.T) {
 
 	expectedCommands := [][]string{
 		{"git", "-C", dir, "init"},
-		{"git", "-C", dir, "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "fetch", "https://executor@test.io/internal/git/torvalds/linux", "-t", "deadbeef"},
+		{"git", "-C", dir, "-c", "protocol.version=2", "-c", "http.extraHeader=Authorization: token-executor hunter2", "-c", "http.extraHeader=X-Sourcegraph-Actor-UID: internal", "fetch", "https://executor@test.io/internal/git/torvalds/linux", "-t", "deadbeef"},
 		{"git", "-C", dir, "remote", "add", "origin", "torvalds/linux"},
 		{"git", "-C", dir, "checkout", "deadbeef"},
 	}

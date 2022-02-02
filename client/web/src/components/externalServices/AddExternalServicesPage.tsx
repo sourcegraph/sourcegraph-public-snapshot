@@ -3,7 +3,7 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage, Button, Alert } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
@@ -100,24 +100,24 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                         <li>Periodically pulling cloned repositories to ensure search results are current.</li>
                         <li>
                             Fetching{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/admin/repo/permissions"
+                            <Link
+                                to="https://docs.sourcegraph.com/admin/repo/permissions"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 user repository access permissions
-                            </a>
+                            </Link>
                             , if you have enabled this feature.
                         </li>
                         <li>
                             Opening pull requests and syncing their metadata as part of{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/user/batch_changes"
+                            <Link
+                                to="https://docs.sourcegraph.com/user/batch_changes"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 batch changes
-                            </a>
+                            </Link>
                             , if you have enabled this feature.
                         </li>
                     </ul>

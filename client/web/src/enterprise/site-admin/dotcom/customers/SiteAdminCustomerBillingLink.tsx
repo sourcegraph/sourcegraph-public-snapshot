@@ -7,7 +7,7 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import { Scalars, SetCustomerBillingResult, SetCustomerBillingVariables } from '../../../../graphql-operations'
@@ -64,9 +64,9 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<Props> = ({ c
         <div className="site-admin-customer-billing-link">
             <div className="d-flex align-items-center">
                 {customer.urlForSiteAdminBilling && (
-                    <a href={customer.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
+                    <Link to={customer.urlForSiteAdminBilling} className="mr-2 d-flex align-items-center">
                         View customer account <ExternalLinkIcon className="icon-inline ml-1" />
-                    </a>
+                    </Link>
                 )}
                 {isErrorLike(update) && (
                     <AlertCircleIcon className="icon-inline text-danger mr-2" data-tooltip={update.message} />

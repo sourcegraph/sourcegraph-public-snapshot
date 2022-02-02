@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { Link } from '@sourcegraph/wildcard'
+
 interface MaybeLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
     to?: string
 }
@@ -7,9 +9,9 @@ interface MaybeLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
 /** Wraps the children in a link if to (link href) prop is passed. */
 export const MaybeLink: React.FunctionComponent<MaybeLinkProps> = ({ children, to, ...props }) =>
     to ? (
-        <a {...props} href={to}>
+        <Link {...props} to={to}>
             {children}
-        </a>
+        </Link>
     ) : (
         (children as React.ReactElement)
     )
