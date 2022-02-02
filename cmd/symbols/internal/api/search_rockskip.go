@@ -75,31 +75,35 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig
 			return symbols, nil
 		}
 
-		fmt.Println()
+		fmt.Println(".")
 		fmt.Println("🔵 Rockskip search", args.Repo, args.CommitID, args.Query)
 		defer func() {
 			if results == nil {
 				fmt.Println("🔴 Rockskip search failed")
 			} else {
-				fmt.Println("🔴 Rockskip search", len(*results))
 				for _, result := range *results {
 					fmt.Println("  -", result.Path+":"+fmt.Sprint(result.Line), result.Name)
 				}
+				fmt.Println("🔴 Rockskip search", len(*results))
+				fmt.Println(".")
 			}
 		}()
 
 		tasklog := rockskip.NewTaskLog()
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
-			for ctx.Err() == nil {
-				tasklog.Print()
-
+			for {
 				select {
 				case <-ctx.Done():
 				case <-time.After(1 * time.Second):
 				}
+
+				tasklog.Print()
+
+				if ctx.Err() != nil {
+					break
+				}
 			}
-			tasklog.Print()
 		}()
 
 		err = rockskip.Index(NewGitserver(f, string(args.Repo)), db, tasklog, parse, string(args.Repo), string(args.CommitID), maxRepos)
