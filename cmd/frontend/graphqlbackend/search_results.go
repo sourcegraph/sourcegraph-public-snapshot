@@ -1704,9 +1704,10 @@ type searchResultsStats struct {
 
 	sr *searchResolver
 
-	once              sync.Once
-	getResultsMatches result.Matches
-	getResultsErr     error
+	// These items are lazily populated by getResults
+	once    sync.Once
+	results result.Matches
+	err     error
 }
 
 func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApproximateResultCount }

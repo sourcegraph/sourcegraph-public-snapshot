@@ -41,18 +41,18 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 	srs.once.Do(func() {
 		job, err := srs.sr.toSearchJob(srs.sr.Query)
 		if err != nil {
-			srs.getResultsErr = err
+			srs.err = err
 			return
 		}
 		agg := streaming.NewAggregatingStream()
 		err = job.Run(ctx, srs.sr.db, agg)
 		if err != nil {
-			srs.getResultsErr = err
+			srs.err = err
 			return
 		}
-		srs.getResultsMatches = agg.Get().Results
+		srs.results = agg.Get().Results
 	})
-	return srs.getResultsMatches, srs.getResultsErr
+	return srs.results, srs.err
 }
 
 func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []result.Match) ([]inventory.Lang, error) {
