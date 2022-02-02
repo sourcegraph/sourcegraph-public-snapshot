@@ -7,7 +7,7 @@ import (
 type Diff uint32
 
 const (
-	// None indicates no diff.
+	// None indicates no diff. Use sparingly.
 	None Diff = 0
 
 	Go Diff = 1 << iota
@@ -21,7 +21,7 @@ const (
 	Terraform
 	SVG
 
-	// All indicates all changes should be considered included in this diff.
+	// All indicates all changes should be considered included in this diff, except None.
 	All
 )
 
@@ -84,6 +84,7 @@ func (d Diff) String() string {
 	switch d {
 	case None:
 		return "None"
+
 	case Go:
 		return "Go"
 	case Client:
@@ -119,12 +120,18 @@ func (d Diff) String() string {
 	return strings.Join(allDiffs, ", ")
 }
 
+// Has returns true if this diff includes the given diff.
 func (d Diff) Has(target Diff) bool {
-	if d == None && target == None {
-		return true
+	switch d {
+	case None:
+		// If None, the only other Diff type that matches this is another None.
+		return target == None
+
+	case All:
+		// If All, this change includes all other Diff types except None.
+		return target != None
+
+	default:
+		return d&target != 0
 	}
-	if d == All {
-		return true
-	}
-	return d&target != 0
 }

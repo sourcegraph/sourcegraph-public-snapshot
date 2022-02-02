@@ -7,6 +7,16 @@ import (
 )
 
 func TestParseDiff(t *testing.T) {
+	t.Run("All", func(t *testing.T) {
+		assert.False(t, All.Has(None))
+		var lastName string
+		for diff := Go; diff <= All; diff <<= 1 {
+			assert.True(t, All.Has(diff))
+			lastName = diff.String()
+		}
+		assert.Equal(t, lastName, "All")
+	})
+
 	tests := []struct {
 		name             string
 		files            []string
@@ -16,7 +26,7 @@ func TestParseDiff(t *testing.T) {
 		name:             "None",
 		files:            []string{"asdf"},
 		wantAffects:      []Diff{None},
-		doNotWantAffects: []Diff{Go, Client, DatabaseSchema},
+		doNotWantAffects: []Diff{Go, Client, DatabaseSchema, All},
 	}, {
 		name:             "Go",
 		files:            []string{"main.go", "func.go"},
