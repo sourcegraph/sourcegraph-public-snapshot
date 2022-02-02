@@ -1,15 +1,14 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
-import { HoveredToken } from '@sourcegraph/codeintellify'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
+import { GlobalCoolCodeIntelProps } from './global/CoolCodeIntel'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
@@ -39,10 +38,10 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         ExtensionAlertProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps,
+        GlobalCoolCodeIntelProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
-    onHoverToken: (hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec) => void
 }
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
