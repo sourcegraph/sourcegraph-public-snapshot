@@ -1564,7 +1564,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	start := time.Now()
 	agg := run.NewAggregator(stream)
 	err = job.Run(ctx, r.db, agg)
-	matches, common, matchCount := agg.Get()
+	common, matchCount := agg.Get()
 
 	ao := alert.Observer{
 		Db:           r.db,
@@ -1576,10 +1576,8 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	}
 	alert, err := ao.Done()
 
-	sort.Sort(matches)
-
 	rr := &SearchResults{
-		Matches: matches,
+		Matches: nil, // matches are always sent up the stream, which is always non-nil
 		Stats:   common,
 		Alert:   alert,
 	}
