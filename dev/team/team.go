@@ -28,6 +28,7 @@ type TeammateResolver interface {
 }
 
 const teamDataURL = "https://raw.githubusercontent.com/sourcegraph/handbook/main/data/team.yml"
+const teamDataGitHubURL = "https://github.com/sourcegraph/handbook/blob/main/data/team.yml"
 
 type Teammate struct {
 	// Key is the key for this teammate in team.yml
@@ -95,7 +96,8 @@ func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle str
 		}
 	}
 	if teammate == nil {
-		return nil, fmt.Errorf("no teammate with GitHub handle %q", handle)
+		return nil, fmt.Errorf("no teammate with GitHub handle %q - if this is you, ensure the `github` field is set in your profile in %s",
+			handle, teamDataGitHubURL)
 	}
 	return teammate, nil
 }
