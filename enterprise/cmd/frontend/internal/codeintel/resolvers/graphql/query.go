@@ -156,6 +156,16 @@ func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPaged
 		return nil, err
 	}
 
+	if args.Filter != nil && *args.Filter != "" {
+		filtered := locations[:0]
+		for _, loc := range locations {
+			if strings.Contains(loc.Path, *args.Filter) {
+				filtered = append(filtered, loc)
+			}
+		}
+		locations = filtered
+	}
+
 	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
 }
 
