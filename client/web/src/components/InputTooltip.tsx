@@ -23,6 +23,7 @@ export const InputTooltip: React.FunctionComponent<InputTooltipProps> = ({ disab
         <Button
             as="input"
             disabled={disabled}
+            className={disabled ? styles.disabledBtn : undefined}
             data-tooltip={disabled ? undefined : tooltip}
             type={type as ButtonProps['type']}
             {...props}

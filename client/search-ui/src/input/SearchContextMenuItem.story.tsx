@@ -7,9 +7,9 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { SearchContextMenuItem } from './SearchContextMenu'
 
-const { add } = storiesOf('search-ui/searchContexts/SearchContextMenuItem', module)
+const { add } = storiesOf('search-ui/input/SearchContextMenuItem', module)
     .addParameters({
-        chromatic: { viewports: [1200] },
+        chromatic: { viewports: [1200], disableSnapshot: false },
     })
     .addDecorator(story => (
         <div className="dropdown-menu show" style={{ position: 'static' }}>

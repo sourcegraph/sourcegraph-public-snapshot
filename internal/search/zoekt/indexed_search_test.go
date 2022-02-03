@@ -325,14 +325,12 @@ func TestIndexedSearch(t *testing.T) {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			got := agg.Get()
-
-			gotFm, err := matchesToFileMatches(got.Results)
+			gotFm, err := matchesToFileMatches(agg.Results)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(&tt.wantCommon, &got.Stats, cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(&tt.wantCommon, &agg.Stats, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("common mismatch (-want +got):\n%s", diff)
 			}
 

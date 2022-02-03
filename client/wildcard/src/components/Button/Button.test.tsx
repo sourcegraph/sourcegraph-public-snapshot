@@ -6,26 +6,13 @@ import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 
 describe('Button', () => {
     it('renders a simple button correctly', () => {
-        const { container } = render(<Button>Hello world</Button>)
-        expect(container.firstChild).toMatchInlineSnapshot(`
-            <button
-              class="btn"
-              type="button"
-            >
-              Hello world
-            </button>
-        `)
+        const { asFragment } = render(<Button>Hello world</Button>)
+        expect(asFragment()).toMatchSnapshot()
     })
 
     it('supports rendering as different elements', () => {
-        const { container } = render(<Button as="a">I am a link</Button>)
-        expect(container.firstChild).toMatchInlineSnapshot(`
-            <a
-              class="btn"
-            >
-              I am a link
-            </a>
-        `)
+        const { asFragment } = render(<Button as="a">I am a link</Button>)
+        expect(asFragment()).toMatchSnapshot()
     })
 
     it('renders a special tooltip sibling if the button is disabled and has a tooltip', () => {
@@ -56,12 +43,12 @@ describe('Button', () => {
     })
 
     it.each(BUTTON_VARIANTS)("Renders variant '%s' correctly", variant => {
-        const { container } = render(<Button variant={variant}>Hello world</Button>)
-        expect(container.firstChild).toMatchSnapshot()
+        const { asFragment } = render(<Button variant={variant}>Hello world</Button>)
+        expect(asFragment()).toMatchSnapshot()
     })
 
     it.each(BUTTON_SIZES)("Renders size '%s' correctly", size => {
-        const { container } = render(<Button size={size}>Hello world</Button>)
-        expect(container.firstChild).toMatchSnapshot()
+        const { asFragment } = render(<Button size={size}>Hello world</Button>)
+        expect(asFragment()).toMatchSnapshot()
     })
 })

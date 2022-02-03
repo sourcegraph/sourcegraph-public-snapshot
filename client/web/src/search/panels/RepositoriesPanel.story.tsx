@@ -15,7 +15,7 @@ const { add } = storiesOf('web/search/panels/RepositoriesPanel', module)
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
-        chromatic: { viewports: [800] },
+        chromatic: { viewports: [800], disableSnapshot: false },
     })
     .addDecorator(story => <div style={{ width: '800px' }}>{story()}</div>)
 
@@ -34,10 +34,19 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('Populated', () => <WebStory>{() => <RepositoriesPanel {...props} />}</WebStory>)
+add('RepositoriesPanel', () => (
+    <WebStory>
+        {() => (
+            <div style={{ maxWidth: '32rem' }}>
+                <h2>Populated</h2>
+                <RepositoriesPanel {...props} />
 
-add('Loading', () => <WebStory>{() => <RepositoriesPanel {...props} fetchRecentSearches={() => NEVER} />}</WebStory>)
+                <h2>Loading</h2>
+                <RepositoriesPanel {...props} fetchRecentSearches={() => NEVER} />
 
-add('Empty', () => (
-    <WebStory>{() => <RepositoriesPanel {...props} fetchRecentSearches={() => of(emptyRecentSearches)} />}</WebStory>
+                <h2>Empty</h2>
+                <RepositoriesPanel {...props} fetchRecentSearches={() => of(emptyRecentSearches)} />
+            </div>
+        )}
+    </WebStory>
 ))

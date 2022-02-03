@@ -1,5 +1,6 @@
 import isAbsoluteUrl from 'is-absolute-url'
 import * as React from 'react'
+// eslint-disable-next-line no-restricted-imports
 import { Link } from 'react-router-dom'
 
 import { ForwardReferenceComponent } from '../../../types'

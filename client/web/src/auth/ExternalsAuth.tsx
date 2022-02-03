@@ -2,6 +2,8 @@ import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React from 'react'
 
+import { Link } from '@sourcegraph/wildcard'
+
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
 import styles from './CloudSignUpPage.module.scss'
@@ -68,8 +70,8 @@ const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
     return (
         <>
             {githubProvider && (
-                <a
-                    href={maybeAddPostSignUpRedirect(githubProvider.authenticationURL)}
+                <Link
+                    to={maybeAddPostSignUpRedirect(githubProvider.authenticationURL)}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
@@ -79,12 +81,12 @@ const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
                     onClick={() => onClick('github')}
                 >
                     <GithubIcon className="mr-3" /> {githubLabel}
-                </a>
+                </Link>
             )}
 
             {gitlabProvider && (
-                <a
-                    href={maybeAddPostSignUpRedirect(gitlabProvider.authenticationURL)}
+                <Link
+                    to={maybeAddPostSignUpRedirect(gitlabProvider.authenticationURL)}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
@@ -94,7 +96,7 @@ const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
                     onClick={() => onClick('gitlab')}
                 >
                     <GitlabColorIcon className="mr-3" /> {gitlabLabel}
-                </a>
+                </Link>
             )}
         </>
     )

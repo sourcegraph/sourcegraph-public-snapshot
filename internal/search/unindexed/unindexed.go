@@ -71,13 +71,12 @@ func SearchFilesInRepos(ctx context.Context, zoektArgs zoektutil.IndexedSearchRe
 func SearchFilesInReposBatch(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, searcherOnly bool) ([]*result.FileMatch, streaming.Stats, error) {
 	agg := streaming.NewAggregatingStream()
 	err := SearchFilesInRepos(ctx, zoektArgs, searcherArgs, searcherOnly, agg)
-	event := agg.Get()
 
-	fms, fmErr := matchesToFileMatches(event.Results)
+	fms, fmErr := matchesToFileMatches(agg.Results)
 	if fmErr != nil && err == nil {
 		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
 	}
-	return fms, event.Stats, err
+	return fms, agg.Stats, err
 }
 
 var mockSearchFilesInRepo func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error)
@@ -307,26 +306,31 @@ func callSearcherOverRepos(
 }
 
 type RepoSubsetTextSearch struct {
-	ZoektArgs         *search.ZoektParameters
-	SearcherArgs      *search.SearcherParameters
-	NotSearcherOnly   bool
-	UseIndex          query.YesNoOnly
-	ContainsRefGlobs  bool
-	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+	ZoektArgs        *search.ZoektParameters
+	SearcherArgs     *search.SearcherParameters
+	NotSearcherOnly  bool
+	UseIndex         query.YesNoOnly
+	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
 }
 
-func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
+func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "RepoSubsetTextSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, t.OnMissingRepoRevs)
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
 		}
 
 		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, t.UseIndex, t.ZoektArgs, t.OnMissingRepoRevs)
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, t.UseIndex, t.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
 			if err != nil {
 				return err
 			}
@@ -348,7 +352,13 @@ type RepoUniverseTextSearch struct {
 	UserID      int32
 }
 
-func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) error {
+func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+	tr, ctx := trace.New(ctx, "RepoUniverseTextSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	userID := int32(0)
 
 	if envvar.SourcegraphDotComMode() {

@@ -47,7 +47,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
         Code editors
       </button>
       <button
-        class="btn btn-primary text-left sidebar__link--inactive d-flex w-100"
+        class="btn btnPrimary text-left sidebar__link--inactive d-flex w-100"
         data-test-extension-category="Code analysis"
         type="button"
       >
@@ -74,7 +74,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
     <button
       aria-controls="menu--1"
       aria-haspopup="true"
-      class="btn btn-outline-secondary btn-sm"
+      class="btn btnOutlineSecondary btnSm"
       data-reach-menu-button=""
       id="menu-button--menu"
       type="button"
@@ -108,6 +108,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       <small>
         You can improve your workflow by creating custom extensions. See 
         <a
+          class=""
           href="https://docs.sourcegraph.com/extensions/authoring"
           rel="noreferrer"
           target="_blank"
