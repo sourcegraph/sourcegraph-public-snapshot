@@ -22,11 +22,12 @@ import {
 } from './components/live-preview-chart/live-preview-mock-data'
 import { SearchInsightCreationPage } from './SearchInsightCreationPage'
 
-const { add } = storiesOf('web/insights/SearchInsightCreationPage', module)
+const { add } = storiesOf('web/insights/creation-ui/SearchInsightCreationPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
             viewports: [576, 1440],
+            disableSnapshot: false,
         },
     })
 

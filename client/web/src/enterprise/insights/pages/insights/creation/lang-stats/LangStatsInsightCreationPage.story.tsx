@@ -19,11 +19,12 @@ import {
 import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
 import { LangStatsInsightCreationPage } from './LangStatsInsightCreationPage'
 
-const { add } = storiesOf('web/insights/LangStatsInsightCreationPage', module)
+const { add } = storiesOf('web/insights/creation-ui/LangStatsInsightCreationPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
             viewports: [576, 1440],
+            disableSnapshot: false,
         },
     })
 

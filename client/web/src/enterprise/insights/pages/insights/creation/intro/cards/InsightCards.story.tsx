@@ -5,9 +5,14 @@ import { WebStory } from '../../../../../../../components/WebStory'
 
 import { CaptureGroupInsightCard, LangStatsInsightCard, SearchInsightCard } from './InsightCards'
 
-const { add } = storiesOf('web/insights/InsightCards', module).addDecorator(story => (
-    <WebStory>{() => story()}</WebStory>
-))
+const { add } = storiesOf('web/insights/InsightCards', module)
+    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
+    .addParameters({
+        chromatic: {
+            viewports: [576, 1440],
+            disableSnapshot: false,
+        },
+    })
 
 add('InsightCards', () => (
     <section className="row">

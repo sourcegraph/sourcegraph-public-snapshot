@@ -17,9 +17,14 @@ import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 
-const { add } = storiesOf('web/insights/SmartInsightsViewGrid', module).addDecorator(story => (
-    <WebStory>{() => story()}</WebStory>
-))
+const { add } = storiesOf('web/insights/SmartInsightsViewGrid', module)
+    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
+    .addParameters({
+        chromatic: {
+            viewports: [576, 1440],
+            disableSnapshot: false,
+        },
+    })
 
 const insightsWithManyLines: Insight[] = [
     {

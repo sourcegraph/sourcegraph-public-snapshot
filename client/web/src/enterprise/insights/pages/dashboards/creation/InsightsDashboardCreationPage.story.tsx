@@ -15,6 +15,7 @@ const { add } = storiesOf('web/insights/InsightsDashboardCreationPage', module)
     .addParameters({
         chromatic: {
             viewports: [576, 1440],
+            disableSnapshot: false,
         },
     })
 

@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/react'
+import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
@@ -11,10 +11,14 @@ import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-in
 
 import { CaptureGroupCreationPage } from './CaptureGroupCreationPage'
 
-export default {
-    title: 'web/insights/creation-ui/CaptureGroupCreationPage',
-    decorators: [story => <WebStory>{() => <div className="p-3 container web-content">{story()}</div>}</WebStory>],
-} as Meta
+const { add } = storiesOf('web/insights/creation-ui/CaptureGroupCreationPage', module)
+    .addDecorator(story => <WebStory>{() => <div className="p-3 container web-content">{story()}</div>}</WebStory>)
+    .addParameters({
+        chromatic: {
+            viewports: [576, 1440],
+            disableSnapshot: false,
+        },
+    })
 
 class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
     public getRepositorySuggestions = () =>
@@ -30,7 +34,7 @@ class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
 
 const api = new CodeInsightExampleBackend({} as any)
 
-export const CaptureGroupCreationPageExample = () => (
+add('CaptureGroupCreationPage', () => (
     <CodeInsightsBackendContext.Provider value={api}>
         <CaptureGroupCreationPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -39,4 +43,4 @@ export const CaptureGroupCreationPageExample = () => (
             onCancel={noop}
         />
     </CodeInsightsBackendContext.Provider>
-)
+))
