@@ -3,7 +3,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Badge, Button, Card } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import { FormInput } from '../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../components/form/hooks/useField'
@@ -46,6 +46,7 @@ interface DynamicCodeInsightExampleProps extends React.HTMLAttributes<HTMLDivEle
 export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
+        touched: true,
         onSubmit: noop,
     })
 
@@ -68,9 +69,6 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     return (
         <Card {...props} className={classNames(styles.wrapper, props.className)}>
             <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
-                <Badge variant="primary" className="mb-2">
-                    Interactive example
-                </Badge>
                 <SearchInsightLivePreview
                     title="In-line TODO statements"
                     withLivePreviewControls={false}
