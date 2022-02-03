@@ -1,3 +1,4 @@
+import { ApolloError } from '@apollo/client'
 import { Meta } from '@storybook/react'
 import React from 'react'
 
@@ -15,6 +16,10 @@ const data = {
         alwaysNil: null,
     },
 }
+
+const mockError = new ApolloError({
+    errorMessage: 'Something went really wrong',
+})
 
 const config: Meta = {
     title: 'wildcard/FeedbackPrompt',
@@ -36,10 +41,32 @@ const config: Meta = {
 
 export default config
 
-export const FeedbackPromptExample = () => (
+export const FeedbackPromptWithNoData = () => (
     <>
-        <h1>This is a feedbackPrompt</h1>
+        <h1>This is a feedbackPrompt when no data provided</h1>
+        <FeedbackPrompt open={false} onSubmit={handleSubmit} loading={false}>
+            <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
+                <span>Feedback</span>
+            </FeedbackPromptTrigger>
+        </FeedbackPrompt>
+    </>
+)
+
+export const FeedbackPromptWithSuccessMessage = () => (
+    <>
+        <h1>This is a feedbackPrompt with success message</h1>
         <FeedbackPrompt open={false} onSubmit={handleSubmit} loading={false} data={data}>
+            <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
+                <span>Feedback</span>
+            </FeedbackPromptTrigger>
+        </FeedbackPrompt>
+    </>
+)
+
+export const FeedbackPromptWithErrorMessage = () => (
+    <>
+        <h1>This is a feedbackPrompt with error message</h1>
+        <FeedbackPrompt open={false} onSubmit={handleSubmit} loading={false} error={mockError}>
             <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
                 <span>Feedback</span>
             </FeedbackPromptTrigger>

@@ -162,20 +162,18 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, onSubmit,
     const forceClose = useCallback(() => setIsOpen(false), [])
 
     return (
-        <div className={styles.feedbackPrompt}>
-            <Popover isOpen={isOpen} onOpenChange={handleToggle}>
-                {children}
-                <PopoverContent position={Position.bottom} className={styles.menu}>
-                    <FeedbackPromptContent
-                        onSubmit={onSubmit}
-                        productResearchEnabled={true}
-                        closePrompt={forceClose}
-                        data={data}
-                        error={error}
-                        loading={loading}
-                    />
-                </PopoverContent>
-            </Popover>
-        </div>
+        <Popover isOpen={isOpen} onOpenChange={handleToggle}>
+            {children}
+            <PopoverContent position={Position.bottom} className={styles.menu}>
+                <FeedbackPromptContent
+                    onSubmit={onSubmit}
+                    productResearchEnabled={true}
+                    closePrompt={forceClose}
+                    data={data}
+                    error={error}
+                    loading={loading}
+                />
+            </PopoverContent>
+        </Popover>
     )
 }

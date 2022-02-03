@@ -4,4 +4,8 @@
     &:hover {
         border: 1px solid var(--header-icon-color);
     }
+    margin: 0 0.375rem;
+
+    /* Required as parent .nav-links applies nowrap */
+    white-space: normal;
 }

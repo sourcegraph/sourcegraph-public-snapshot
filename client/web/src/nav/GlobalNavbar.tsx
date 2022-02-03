@@ -288,7 +288,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     outline={true}
                                     size="sm"
                                 >
-                                    Share feedback
+                                    <span>Feedback</span>
                                 </FeedbackPromptTrigger>
                             </FeedbackPrompt>
                         </NavAction>

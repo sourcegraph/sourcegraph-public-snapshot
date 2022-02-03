@@ -16,6 +16,7 @@ export const BetaFeedbackPanel: React.FunctionComponent = () => {
             <Link to="https://docs.sourcegraph.com/code_insights#code-insights-beta" target="_blank" rel="noopener">
                 <ProductStatusBadge status="beta" className="text-uppercase" />
             </Link>
+
             <FeedbackPrompt open={isVisible} {...feedbackSubmitState} closePrompt={() => setVisibility(false)}>
                 <PopoverTrigger as={Button} variant="link" size="sm">
                     Share feedback
