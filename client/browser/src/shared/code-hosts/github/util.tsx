@@ -67,9 +67,7 @@ export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevi
     let headCommitID = ''
 
     if (pageType === 'pull') {
-        const commitsHashes = document
-            .querySelector("details-menu.select-menu-modal[src*='sha1'][src*='sha2']")
-            ?.getAttribute('src')
+        const commitsHashes = document.querySelector("details-menu[src*='sha1'][src*='sha2']")?.getAttribute('src')
 
         if (commitsHashes) {
             const searchParameters = new URLSearchParams(commitsHashes)
