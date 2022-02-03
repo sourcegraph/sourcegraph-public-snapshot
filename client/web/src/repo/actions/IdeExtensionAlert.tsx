@@ -5,6 +5,8 @@ import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { AtomIcon, JetBrainsIcon, SublimeTextIcon, VSCodeIcon } from '../../components/CtaIcons'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import styles from './IdeExtensionAlert.module.scss'
+
 interface Props {
     className: string
     onAlertDismissed: () => void
@@ -26,12 +28,12 @@ export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, o
                 onClick: onIDEExtensionClick,
             }}
             icon={
-                <>
-                    <VSCodeIcon />
-                    <JetBrainsIcon />
-                    <SublimeTextIcon />
-                    <AtomIcon />
-                </>
+                <div className={`d-flex flex-row ${styles.icons}`}>
+                    <VSCodeIcon width={47} height={47} />
+                    <JetBrainsIcon width={47} height={47} />
+                    <SublimeTextIcon width={47} height={47} />
+                    <AtomIcon width={47} height={47} />
+                </div>
             }
             className={className}
             onClose={onAlertDismissed}
