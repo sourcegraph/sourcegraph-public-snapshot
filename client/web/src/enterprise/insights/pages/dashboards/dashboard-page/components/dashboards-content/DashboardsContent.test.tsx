@@ -1,6 +1,6 @@
 import { useApolloClient } from '@apollo/client'
 import { MockedResponse } from '@apollo/client/testing'
-import { fireEvent, waitFor } from '@testing-library/react'
+import { waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
@@ -208,7 +208,7 @@ describe('DashboardsContent', () => {
         const screen = renderDashboardsContent()
         const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add insights/ }))
 
-        fireEvent.click(addInsightsButton)
+        userEvent.click(addInsightsButton)
 
         const addInsightHeader = await waitFor(() =>
             screen.getByRole('heading', { name: /Add insight to Global Dashboard/ })
