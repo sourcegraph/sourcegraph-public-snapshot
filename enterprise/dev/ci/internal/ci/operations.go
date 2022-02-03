@@ -483,7 +483,8 @@ func clusterQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/test/cluster/cluster-test.sh"),
+			// Disabling - https://github.com/sourcegraph/sourcegraph/issues/25977
+			// bk.Cmd("./dev/ci/test/cluster/cluster-test.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
