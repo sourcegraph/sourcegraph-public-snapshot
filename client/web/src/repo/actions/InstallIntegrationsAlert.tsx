@@ -113,7 +113,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
     }
 
     if (ctaToDisplay === 'ide') {
-        return <IDEExtensionAlert className="mr-3" onAlertDismissed={onAlertDismissed} />
+        return <IDEExtensionAlert className={className} onAlertDismissed={onAlertDismissed} />
     }
 
     return null
