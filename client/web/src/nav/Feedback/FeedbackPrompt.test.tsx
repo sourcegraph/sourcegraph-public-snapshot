@@ -35,7 +35,7 @@ describe('FeedbackPrompt', () => {
         beforeEach(() => {
             queries = renderWithRouter(
                 <MockedTestProvider>
-                    <FeedbackPrompt routes={routes} />
+                    <FeedbackPrompt open={true} routes={routes} />
                 </MockedTestProvider>
             )
         })
@@ -107,7 +107,7 @@ describe('FeedbackPrompt', () => {
             beforeEach(async () => {
                 queries = renderWithRouter(
                     <MockedTestProvider mocks={[successMock]}>
-                        <FeedbackPrompt routes={routes} />
+                        <FeedbackPrompt open={true} routes={routes} />
                     </MockedTestProvider>
                 )
 
@@ -115,7 +115,7 @@ describe('FeedbackPrompt', () => {
             })
 
             test('Renders success page correctly', () => {
-                expect(queries.getByText(/Want to help keep making Sourcegraph better?/)).toBeVisible()
+                expect(queries.getByText(/Want to help keep making Sourcegraph better?/)).toBeInTheDocument()
             })
         })
 
@@ -130,7 +130,7 @@ describe('FeedbackPrompt', () => {
             beforeEach(async () => {
                 queries = renderWithRouter(
                     <MockedTestProvider mocks={[errorMock]}>
-                        <FeedbackPrompt routes={routes} />
+                        <FeedbackPrompt open={true} routes={routes} />
                     </MockedTestProvider>
                 )
 
@@ -138,8 +138,8 @@ describe('FeedbackPrompt', () => {
             })
 
             test('Renders error alert correctly', () => {
-                expect(queries.getByText('Error submitting feedback:')).toBeVisible()
-                expect(queries.getByText(mockError.message)).toBeVisible()
+                expect(queries.getByText('Error submitting feedback:')).toBeInTheDocument()
+                expect(queries.getByText(mockError.message)).toBeInTheDocument()
             })
         })
     })

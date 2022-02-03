@@ -1,11 +1,5 @@
-.feedback-prompt {
-    margin: 0 0.375rem;
-
-    /* Required as parent .nav-links applies nowrap */
-    white-space: normal;
-}
-
 .toggle {
+    margin: 0 0.375rem;
     border: 1px solid var(--border-color);
 
     &:hover {

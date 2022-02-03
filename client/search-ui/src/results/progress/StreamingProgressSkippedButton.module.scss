@@ -2,6 +2,14 @@
     width: 20rem;
     padding: 0;
 }
+
+.skipped-btn {
+    :global(.caret) {
+        font-size: 14px;
+        fill: inherit !important;
+    }
+}
+
 .alert-danger-icon {
     // To overide secondary icon fill color, can be removed within DropdownToggle migrations.
     fill: var(--danger) !important;
