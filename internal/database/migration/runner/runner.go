@@ -2,9 +2,9 @@ package runner
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -106,7 +106,7 @@ func (r *Runner) prepareSchemas(schemaNames []string) (map[string]*schemas.Schem
 	// Ensure that all supplied schema names are valid
 	for _, schemaName := range schemaNames {
 		if _, ok := schemaMap[schemaName]; !ok {
-			return nil, fmt.Errorf("unknown schema %q", schemaName)
+			return nil, errors.Newf("unknown schema %q", schemaName)
 		}
 	}
 
@@ -119,7 +119,7 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 	for _, schemaName := range schemaNames {
 		storeFactory, ok := r.storeFactories[schemaName]
 		if !ok {
-			return nil, fmt.Errorf("unknown schema %q", schemaName)
+			return nil, errors.Newf("unknown schema %q", schemaName)
 		}
 
 		store, err := storeFactory(ctx)
@@ -188,7 +188,7 @@ func (r *Runner) withLockedSchemaState(ctx context.Context, schemaContext schema
 	if acquired, unlock, err := schemaContext.store.Lock(ctx); err != nil {
 		return err
 	} else if !acquired {
-		return fmt.Errorf("failed to acquire migration lock")
+		return errors.Newf("failed to acquire migration lock")
 	} else {
 		defer func() { err = unlock(err) }()
 	}

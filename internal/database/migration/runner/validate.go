@@ -2,7 +2,8 @@ package runner
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
@@ -111,7 +112,7 @@ func (r *Runner) lockedVersion(ctx context.Context, schemaContext schemaContext)
 	if locked, unlock, err := schemaContext.store.Lock(ctx); err != nil {
 		return schemaVersion{}, err
 	} else if !locked {
-		return schemaVersion{}, fmt.Errorf("failed to acquire migration lock")
+		return schemaVersion{}, errors.Newf("failed to acquire migration lock")
 	} else {
 		defer func() { err = unlock(err) }()
 	}

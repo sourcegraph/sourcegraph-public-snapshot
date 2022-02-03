@@ -82,7 +82,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		}},
 	}, "", "  ")
 	if err != nil {
-		return false, fmt.Errorf("MarshalIndent: %w", err)
+		return false, errors.Newf("MarshalIndent: %w", err)
 	}
 	log.Println("slackBody: ", string(body))
 
@@ -98,7 +98,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 
 		req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
 		if err != nil {
-			errs = errors.CombineErrors(errs, fmt.Errorf("%s: NewRequest: %w", webhook, err))
+			errs = errors.CombineErrors(errs, errors.Newf("%s: NewRequest: %w", webhook, err))
 			continue
 		}
 		req.Header.Add("Content-Type", "application/json")
@@ -107,7 +107,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		client := &http.Client{Timeout: 10 * time.Second}
 		resp, err := client.Do(req)
 		if err != nil {
-			errs = errors.CombineErrors(errs, fmt.Errorf("%s: client.Do: %w", webhook, err))
+			errs = errors.CombineErrors(errs, errors.Newf("%s: client.Do: %w", webhook, err))
 			continue
 		}
 
@@ -115,12 +115,12 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		buf := new(bytes.Buffer)
 		_, err = buf.ReadFrom(resp.Body)
 		if err != nil {
-			errs = errors.CombineErrors(errs, fmt.Errorf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
+			errs = errors.CombineErrors(errs, errors.Newf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
 			continue
 		}
 		defer resp.Body.Close()
 		if buf.String() != "ok" {
-			errs = errors.CombineErrors(errs, fmt.Errorf("%s: non-ok response from Slack: %s", webhook, buf.String()))
+			errs = errors.CombineErrors(errs, errors.Newf("%s: non-ok response from Slack: %s", webhook, buf.String()))
 			continue
 		}
 

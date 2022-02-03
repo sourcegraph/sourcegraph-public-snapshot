@@ -5,7 +5,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -226,7 +225,7 @@ git commit -am amsg
 	cmd := exec.Command("/bin/sh", "-euxc", script)
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("execution error: %v, output %s", err, out)
+		return errors.Newf("execution error: %v, output %s", err, out)
 	}
 	return nil
 }
