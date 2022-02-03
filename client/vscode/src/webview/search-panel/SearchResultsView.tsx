@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
@@ -10,7 +10,7 @@ import {
     fetchSearchContexts,
     QueryState,
 } from '@sourcegraph/search'
-import { SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { SearchBox, SearchBoxEditor, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
@@ -24,6 +24,7 @@ import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
 import { ModalVideo } from './alias/ModalVideo'
+import { setFocusSearchBox } from './api'
 import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchPageCta } from './components/SearchCta'
@@ -341,6 +342,21 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
     const clearRepositoryToShow = (): void => setRepoToShow(null)
 
+    const editorReference = useRef<SearchBoxEditor>()
+    const setEditor = useCallback((editor: SearchBoxEditor) => {
+        editorReference.current = editor
+        editor.focus()
+    }, [])
+
+    // TODO explain
+    useEffect(() => {
+        setFocusSearchBox(() => editorReference.current?.focus())
+
+        return () => {
+            setFocusSearchBox(null)
+        }
+    }, [])
+
     return (
         <div className={styles.resultsViewLayout}>
             {/* eslint-disable-next-line react/forbid-elements */}
@@ -382,6 +398,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
                     containerClassName={styles.searchBoxContainer}
                     autoFocus={true}
+                    setEditor={setEditor}
                 />
             </form>
 

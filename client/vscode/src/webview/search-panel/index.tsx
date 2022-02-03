@@ -5,13 +5,11 @@ import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
 import React, { useMemo } from 'react'
 import { render } from 'react-dom'
-import { of } from 'rxjs'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExtensionCoreAPI, SearchPanelAPI } from '../../contract'
+import { ExtensionCoreAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
 import { createPlatformContext, WebviewPageProps } from '../platform/context'
 import { adaptMonacoThemeToEditorTheme } from '../theming/monacoTheme'
@@ -21,15 +19,9 @@ import { SearchHomeView } from './SearchHomeView'
 import { SearchResultsView } from './SearchResultsView'
 
 import './index.module.scss'
+import { searchPanelAPI } from './api'
 
 const vsCodeApi = window.acquireVsCodeApi()
-
-const searchPanelAPI: SearchPanelAPI = {
-    ping: () => {
-        console.log('ping called')
-        return proxySubscribable(of('pong'))
-    },
-}
 
 const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 

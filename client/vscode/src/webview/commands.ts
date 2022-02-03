@@ -54,7 +54,7 @@ export function registerWebviews({
 
                 currentSearchPanel = 'initializing'
 
-                const { webviewPanel } = await initializeSearchPanelWebview({
+                const { webviewPanel, searchPanelAPI } = await initializeSearchPanelWebview({
                     extensionUri: context.extensionUri,
                     extensionCoreAPI,
                     initializedPanelIDs,
@@ -66,6 +66,11 @@ export function registerWebviews({
                     if (webviewPanel.active) {
                         extensionCoreAPI.emit({ type: 'search_panel_focused' })
                         focusSearchSidebar()
+                        searchPanelAPI.focusSearchBox().catch(() => {})
+                    }
+
+                    if (webviewPanel.visible) {
+                        searchPanelAPI.focusSearchBox().catch(() => {})
                     }
 
                     if (!webviewPanel.visible) {

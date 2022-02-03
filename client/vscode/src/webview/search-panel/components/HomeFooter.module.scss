@@ -25,8 +25,6 @@
     grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
 
-    // TODO: use editorwidget background
-
     @media (--md-breakpoint-down) {
         grid-template-columns: 1fr 1fr 1fr;
     }
@@ -48,7 +46,6 @@
     text-decoration: none !important;
     margin-bottom: 0.5rem;
     background-color: var(--vscode-editorWidget-background);
-    border-color: var(--vscode-textLink-foreground);
 
     &:hover {
         .search-example-icon {
@@ -57,6 +54,7 @@
         }
     }
 }
+
 .search-example-icon {
     color: var(--primary);
     padding: 0.5rem 0.75rem;
@@ -65,17 +63,18 @@
     border-top-left-radius: var(--border-radius);
     border-bottom-left-radius: var(--border-radius);
     color: var(--vscode-button-foreground) !important;
-    // background-color: var(--vscode-button-background) !important;
 
     &:hover {
         color: var(--vscode-button-secondaryHoverBackground) !important;
         background-color: var(--vscode-button-foreground) !important;
     }
 }
+
 .search-example-query-wrapper {
     padding: 0.5rem 0;
     align-self: center;
 }
+
 .search-example-query {
     padding: 0 0.75rem;
     border-left: 1px solid var(--border-color);
@@ -100,6 +99,7 @@
 
 .search-examples-title {
     font-size: var(--vscode-font-size) !important;
+
     @media (--sm-breakpoint-down) {
         margin-bottom: 0.5rem;
     }
@@ -128,6 +128,7 @@
 
 .thumbnailWrapper {
     padding: 0;
+
     @media (--xs-breakpoint-down) {
         margin-top: 1.5rem;
         text-align: center;
