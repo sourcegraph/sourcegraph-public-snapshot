@@ -52,7 +52,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       class="flex mt-1"
     >
       <button
-        class="btn btn-secondary btn-sm mr-2"
+        class="btn btnSecondary btnSm mr-2"
         data-testid="send-test-email"
         disabled=""
         type="button"
@@ -98,14 +98,14 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     >
       <div>
         <button
-          class="btn btn-secondary mr-1 test-submit-action-email"
+          class="btn btnSecondary mr-1 test-submit-action-email"
           data-testid="submit-action-email"
           type="button"
         >
           Continue
         </button>
         <button
-          class="btn btn-outline-secondary"
+          class="btn btnOutlineSecondary"
           data-testid="cancel-action-email"
           type="button"
         >
@@ -113,7 +113,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         </button>
       </div>
       <button
-        class="btn btn-outline-danger"
+        class="btn btnOutlineDanger"
         data-testid="delete-action-email"
         type="button"
       >

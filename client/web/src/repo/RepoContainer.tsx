@@ -31,7 +31,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -224,7 +224,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 key: 'repository',
                 element: (
                     <>
-                        <div className="d-inline-flex btn-group">
+                        <ButtonGroup className="d-inline-flex">
                             <Button
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
@@ -249,7 +249,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             >
                                 <ChevronDownIcon className="icon-inline" />
                             </Button>
-                        </div>
+                        </ButtonGroup>
                         <UncontrolledPopover
                             placement="bottom-start"
                             target="repo-popover"

@@ -223,13 +223,13 @@ exports[`GlobalNavbar default 1`] = `
       >
         <div>
           <a
-            class="btn btn-outline-secondary btn-sm mr-1"
+            class="btn btnOutlineSecondary btnSm mr-1"
             href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="btn btn-sm signUp"
+            class="btn btnSm signUp"
             href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             role="button"
             tabindex="0"
@@ -487,13 +487,13 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <div>
           <a
-            class="btn btn-outline-secondary btn-sm mr-1"
+            class="btn btnOutlineSecondary btnSm mr-1"
             href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="btn btn-sm signUp"
+            class="btn btnSm signUp"
             href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             role="button"
             tabindex="0"

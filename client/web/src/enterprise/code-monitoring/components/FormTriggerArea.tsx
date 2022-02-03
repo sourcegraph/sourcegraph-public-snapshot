@@ -303,7 +303,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <div
                                 className={classNames(
                                     'font-weight-bold',
-                                    !triggerCompleted && classNames(cardLinkClassName, styles.triggerLabel)
+                                    triggerCompleted
+                                        ? styles.triggerBtnText
+                                        : classNames(cardLinkClassName, styles.triggerLabel)
                                 )}
                             >
                                 When there are new search results
