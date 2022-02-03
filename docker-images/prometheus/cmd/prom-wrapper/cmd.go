@@ -18,11 +18,16 @@ func runCmd(log log15.Logger, errs chan<- error, cmd *exec.Cmd) {
 	}
 }
 
+const promDebugLog = "debug"
+
 // NewPrometheusCmd instantiates a new command to run Prometheus.
 // Parameter promArgs replicates "$@"
 func NewPrometheusCmd(promArgs []string, promPort string) *exec.Cmd {
 	promFlags := []string{
 		fmt.Sprintf("--web.listen-address=0.0.0.0:%s", promPort),
+	}
+	if verbose {
+		promFlags = append(promFlags, fmt.Sprintf("--log.level=%s", promDebugLog))
 	}
 	cmd := exec.Command("/prometheus.sh", append(promFlags, promArgs...)...)
 	cmd.Env = os.Environ()
@@ -32,9 +37,16 @@ func NewPrometheusCmd(promArgs []string, promPort string) *exec.Cmd {
 }
 
 func NewAlertmanagerCmd(configPath string) *exec.Cmd {
-	cmd := exec.Command("/alertmanager.sh",
+	alertManagerFlags := []string{
 		fmt.Sprintf("--config.file=%s", configPath),
-		fmt.Sprintf("--web.route-prefix=/%s", alertmanagerPathPrefix))
+		fmt.Sprintf("--web.route-prefix=/%s", alertmanagerPathPrefix),
+	}
+	if verbose {
+		alertManagerFlags = append(alertManagerFlags,
+			fmt.Sprintf("--log.level=%s", promDebugLog))
+	}
+	cmd := exec.Command("/alertmanager.sh", alertManagerFlags...)
+
 	// disable clustering unless otherwise configured - it is enabled by default, but
 	// can cause alertmanager to fail to start up in some environments: https://github.com/sourcegraph/sourcegraph/issues/13079
 	if alertmanagerEnableCluster != "true" {

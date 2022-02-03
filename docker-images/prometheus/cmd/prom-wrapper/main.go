@@ -36,15 +36,27 @@ var (
 	alertmanagerPort          = env.Get("ALERTMANAGER_INTERNAL_PORT", "9093", "internal Alertmanager port")
 	alertmanagerConfigPath    = env.Get("ALERTMANAGER_CONFIG_PATH", "/sg_config_prometheus/alertmanager.yml", "path to alertmanager configuration")
 	alertmanagerEnableCluster = env.Get("ALERTMANAGER_ENABLE_CLUSTER", "false", "enable alertmanager clustering")
-
-	opsGenieAPIKey = os.Getenv("OPSGENIE_API_KEY")
+	logLevel                  = env.Get("SRC_LOG_LEVEL", "dbug", "log-level for Sourcegraph services")
+	opsGenieAPIKey            = os.Getenv("OPSGENIE_API_KEY")
 )
+
+var verbose = false
 
 func main() {
 	log := log15.New("cmd", "prom-wrapper")
 	ctx := context.Background()
 	disableAlertmanager := noAlertmanager == "true"
 	disableSourcegraphConfig := noConfig == "true"
+
+	lvl, err := log15.LvlFromString(logLevel)
+	if err != nil {
+		log15.Info("unable to parse SRC_LOG_LEVEL: ", err)
+		os.Exit(1)
+	}
+	if lvl == log15.LvlDebug {
+		verbose = true
+	}
+	log15.LvlFilterHandler(lvl, log.GetHandler())
 
 	// spin up prometheus and alertmanager
 	procErrs := make(chan error)
