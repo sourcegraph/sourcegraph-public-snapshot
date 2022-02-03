@@ -29,6 +29,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.35.2
+
+### Fixed
+
+- Fix Code Monitor permissions. [#30547](https://github.com/sourcegraph/sourcegraph/pull/30547)
+
 ## 3.35.1
 
 ### Fixed
