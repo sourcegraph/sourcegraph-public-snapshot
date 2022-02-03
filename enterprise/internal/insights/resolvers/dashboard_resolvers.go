@@ -236,6 +236,9 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse dashboard grants")
 	}
+	if len(dashboardGrants) == 0 {
+		return nil, errors.New("dashboard must be created with at least one grant")
+	}
 
 	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
 	if err != nil {
