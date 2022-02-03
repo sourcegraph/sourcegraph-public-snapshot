@@ -22,7 +22,7 @@ import (
 )
 
 type Git interface {
-	LogReverse(commit string, n int) ([]LogEntry, error)
+	LogReverseEach(commit string, n int, onLogEntry func(logEntry LogEntry) error) error
 	RevListEach(commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
 	ArchiveEach(commit string, paths []string, onFile func(path string, contents []byte) error) error
 }
@@ -198,9 +198,13 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 	tipHeight := 0
 
 	missingCount := 0
-	tasklog.Start("RevList + GetCommit")
+	tasklog.Start("RevList")
 	err = git.RevListEach(givenCommit, func(commit string) (shouldContinue bool, err error) {
+		defer tasklog.Continue("RevList")
+
+		tasklog.Start("GetCommit")
 		_, height, present, err := GetCommit(db, repo, commit)
+		tasklog.Start("idle")
 		if err != nil {
 			return false, errors.Wrap(err, "GetCommit")
 		} else if present {
@@ -218,13 +222,10 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 
 	pathToBlobIdCache := map[string]int{}
 
-	tasklog.Start("LogReverse")
-	entries, err := git.LogReverse(givenCommit, missingCount)
-	tasklog.Start("idle")
-	if err != nil {
-		return errors.Wrap(err, "LogReverse")
-	}
-	for _, entry := range entries {
+	tasklog.Start("Log")
+	err = git.LogReverseEach(givenCommit, missingCount, func(entry LogEntry) error {
+		defer tasklog.Continue("Log")
+
 		tx, err := db.Begin()
 		if err != nil {
 			return errors.Wrap(err, "begin transaction")
@@ -347,6 +348,11 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 
 		tipCommit = entry.Commit
 		tipHeight += 1
+
+		return nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "LogReverseEach")
 	}
 
 	return nil
@@ -523,17 +529,17 @@ func (git SubprocessGit) Close() error {
 	return git.catFileCmd.Wait()
 }
 
-func (git SubprocessGit) LogReverse(givenCommit string, n int) (logEntries []LogEntry, returnError error) {
+func (git SubprocessGit) LogReverseEach(givenCommit string, n int, onLogEntry func(entry LogEntry) error) (returnError error) {
 	log := exec.Command("git", LogReverseArgs(n, givenCommit)...)
 	log.Dir = "/Users/chrismwendt/" + git.repo
 	output, err := log.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = log.Start()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer func() {
 		err = log.Wait()
@@ -542,7 +548,7 @@ func (git SubprocessGit) LogReverse(givenCommit string, n int) (logEntries []Log
 		}
 	}()
 
-	return ParseLogReverse(output)
+	return ParseLogReverseEach(output, onLogEntry)
 }
 
 func (git SubprocessGit) RevListEach(givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
@@ -839,7 +845,7 @@ func LogReverseArgs(n int, givenCommit string) []string {
 	}
 }
 
-func ParseLogReverse(stdout io.Reader) (logEntries []LogEntry, returnError error) {
+func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error) error {
 	reader := bufio.NewReader(stdout)
 
 	var buf []byte
@@ -852,14 +858,14 @@ func ParseLogReverse(stdout io.Reader) (logEntries []LogEntry, returnError error
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return nil, err
+			return err
 		}
 		commit := string(commitBytes)
 
 		// Skip past the NULL byte
 		_, err = reader.ReadBytes(0)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		// A '\n' indicates a list of paths and their statuses is next
@@ -867,7 +873,7 @@ func ParseLogReverse(stdout io.Reader) (logEntries []LogEntry, returnError error
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return nil, err
+			return err
 		}
 		if buf[0] == '\n' {
 			// A list of paths and their statuses is next
@@ -875,9 +881,9 @@ func ParseLogReverse(stdout io.Reader) (logEntries []LogEntry, returnError error
 			// Skip the '\n'
 			discarded, err := reader.Discard(1)
 			if discarded != 1 {
-				return nil, fmt.Errorf("discarded %d bytes, expected 1", discarded)
+				return fmt.Errorf("discarded %d bytes, expected 1", discarded)
 			} else if err != nil {
-				return nil, err
+				return err
 			}
 
 			pathStatuses := []PathStatus{}
@@ -890,7 +896,7 @@ func ParseLogReverse(stdout io.Reader) (logEntries []LogEntry, returnError error
 				if err == io.EOF {
 					break
 				} else if err != nil {
-					return nil, err
+					return err
 				}
 				if buf[0] != ':' {
 					break
@@ -900,15 +906,15 @@ func ParseLogReverse(stdout io.Reader) (logEntries []LogEntry, returnError error
 				buf = make([]byte, 99)
 				read, err := io.ReadFull(reader, buf)
 				if read != 99 {
-					return nil, fmt.Errorf("read %d bytes, expected 99", read)
+					return fmt.Errorf("read %d bytes, expected 99", read)
 				} else if err != nil {
-					return nil, err
+					return err
 				}
 
 				// Read the path
 				path, err := reader.ReadBytes(0)
 				if err != nil {
-					return nil, err
+					return err
 				}
 				path = path[:len(path)-1] // Drop the trailing NULL byte
 
@@ -950,12 +956,12 @@ func ParseLogReverse(stdout io.Reader) (logEntries []LogEntry, returnError error
 					continue
 				case 'C':
 					// Copied
-					return nil, fmt.Errorf("unexpected status 'C' given --no-renames was specified")
+					return fmt.Errorf("unexpected status 'C' given --no-renames was specified")
 				case 'R':
 					// Renamed
-					return nil, fmt.Errorf("unexpected status 'R' given --no-renames was specified")
+					return fmt.Errorf("unexpected status 'R' given --no-renames was specified")
 				case 'X':
-					return nil, fmt.Errorf("unexpected status 'X' indicates a bug in git")
+					return fmt.Errorf("unexpected status 'X' indicates a bug in git")
 				default:
 					fmt.Printf("LogReverse commit %q path %q: unrecognized diff status %q, skipping\n", commit, path, string(statusByte))
 					continue
@@ -964,11 +970,14 @@ func ParseLogReverse(stdout io.Reader) (logEntries []LogEntry, returnError error
 				pathStatuses = append(pathStatuses, PathStatus{Path: string(path), Status: status})
 			}
 
-			logEntries = append(logEntries, LogEntry{Commit: commit, PathStatuses: pathStatuses})
+			err = onLogEntry(LogEntry{Commit: commit, PathStatuses: pathStatuses})
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	return logEntries, nil
+	return nil
 }
 
 func RevListArgs(givenCommit string) []string {

@@ -2,7 +2,6 @@ package api
 
 import (
 	"archive/tar"
-	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -193,14 +192,22 @@ func NewGitserver(f fetcher.RepositoryFetcher, repo string) rockskip.Git {
 	}
 }
 
-func (g Gitserver) LogReverse(commit string, n int) ([]rockskip.LogEntry, error) {
+func (g Gitserver) LogReverseEach(commit string, n int, onLogEntry func(entry rockskip.LogEntry) error) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	command := gitserver.DefaultClient.Command("git", rockskip.LogReverseArgs(n, commit)...)
 	command.Repo = api.RepoName(g.repo)
-	stdout, err := command.Output(context.Background())
+	// We run a single `git log` command and stream the output while the repo is being processed, which
+	// can take much longer than 1 minute (the default timeout).
+	command.DisableTimeout()
+	stdout, err := gitserver.StdoutReader(ctx, command)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return rockskip.ParseLogReverse(bytes.NewReader(stdout))
+	defer stdout.Close()
+
+	return errors.Wrap(rockskip.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
 }
 
 func (g Gitserver) RevListEach(commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
