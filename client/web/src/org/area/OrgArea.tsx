@@ -31,10 +31,10 @@ import {
 } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { RouteDescriptor } from '../../util/contributions'
+import { ORG_CODE_FEATURE_FLAG_EMAIL_INVITE } from '../backend'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
-import { ORG_CODE_FEATURE_FLAG_EMAIL_INVITE } from '../backend'
 
 function queryOrganization(args: {
     name: string
@@ -93,9 +93,7 @@ function queryMembersFFlag(args: { orgID: string; flagName: string }): Observabl
         args
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => {
-            return data.organizationFeatureFlagValue
-        })
+        map(data => data.organizationFeatureFlagValue)
     )
 }
 

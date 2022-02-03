@@ -1,6 +1,7 @@
+import { Location } from 'history'
 import React from 'react'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { match } from 'react-router'
+import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
 import { PageHeader, Button } from '@sourcegraph/wildcard'
 
@@ -9,7 +10,6 @@ import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
 
 import { OrgAreaPageProps } from './OrgArea'
-import { Location } from 'history'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     isSourcegraphDotCom: boolean

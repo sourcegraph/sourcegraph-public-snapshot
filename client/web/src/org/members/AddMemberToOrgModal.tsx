@@ -1,14 +1,17 @@
+import { gql, useMutation } from '@apollo/client'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback, useEffect, useState } from 'react'
-import { Alert, Button, Input, Modal } from '@sourcegraph/wildcard'
-import styles from './InviteMemberModal.module.scss'
-import { eventLogger } from '../../tracking/eventLogger'
-import { gql, useMutation } from '@apollo/client'
-import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
 import { debounce } from 'lodash'
+import CloseIcon from 'mdi-react/CloseIcon'
+import React, { useCallback, useState } from 'react'
+
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Alert, Button, Input, Modal } from '@sourcegraph/wildcard'
+
+import { AddUserToOrganizationResult, AddUserToOrganizationVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
+
+import styles from './InviteMemberModal.module.scss'
 
 const ADD_USERNAME_OR_EMAIL_TO_ORG = gql`
     mutation AddUserToOrganization($organization: ID!, $username: String!) {
@@ -39,25 +42,10 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
         setModalOpened(false)
     }, [setModalOpened])
 
-    const [addUserToOrganization, { data, loading, error }] = useMutation<
+    const [addUserToOrganization, { loading, error }] = useMutation<
         AddUserToOrganizationResult,
         AddUserToOrganizationVariables
     >(ADD_USERNAME_OR_EMAIL_TO_ORG)
-
-    useEffect(() => {
-        if (data) {
-            eventLogger.log('OrgMemberAdded')
-            onMemberAdded(username)
-            setUsername('')
-            setModalOpened(false)
-        }
-    }, [data])
-
-    useEffect(() => {
-        if (error) {
-            eventLogger.log('AddOrgMemberFailed')
-        }
-    }, [error])
 
     const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setUsername(event.currentTarget.value)
@@ -69,9 +57,16 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
         }
 
         eventLogger.log('AddOrgMemberClicked')
-        await addUserToOrganization({ variables: { organization: orgId, username } })
-        setUsername('')
-    }, [username, orgId])
+        try {
+            await addUserToOrganization({ variables: { organization: orgId, username } })
+            onMemberAdded(username)
+            setUsername('')
+            setModalOpened(false)
+            eventLogger.log('OrgMemberAdded')
+        } catch {
+            eventLogger.log('AddOrgMemberFailed')
+        }
+    }, [username, orgId, onMemberAdded, addUserToOrganization])
 
     const debounceAddUser = debounce(addUser, 500, { leading: true })
 
@@ -91,7 +86,7 @@ export const AddMemberToOrgModal: React.FunctionComponent<AddMemberToOrgModalPro
                     {error && <ErrorAlert className={styles.alert} error={error} />}
                     <div className="d-flex flex-row position-relative">
                         <Input
-                            autoFocus
+                            autoFocus={true}
                             value={username}
                             label="Add member by username"
                             title="Add member by username"

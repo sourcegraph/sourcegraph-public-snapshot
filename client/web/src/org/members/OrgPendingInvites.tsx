@@ -1,14 +1,15 @@
+import { gql, useQuery } from '@apollo/client'
 import React, { useCallback, useEffect, useState } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
+import { OrganizationMembersResult, OrganizationMembersVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
+
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
-import { gql, useQuery } from '@apollo/client'
-import { OrganizationMembersResult, OrganizationMembersVariables } from '../../graphql-operations'
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
 
@@ -53,7 +54,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
             setInvite(result)
             await refetch({ id: orgId })
         },
-        [setInvite, orgId]
+        [setInvite, orgId, refetch]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {
@@ -78,7 +79,12 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                     <PageHeader path={[{ text: 'Pending Invites' }]} headingElement="h2" />
                     <div>
                         {viewerCanAddUserToOrganization && (
-                            <InviteMemberModalHandler orgName={org.name} orgId={org.id} onInviteSent={onInviteSent} variant='success' />
+                            <InviteMemberModalHandler
+                                orgName={org.name}
+                                orgId={org.id}
+                                onInviteSent={onInviteSent}
+                                variant="success"
+                            />
                         )}
                     </div>
                 </div>

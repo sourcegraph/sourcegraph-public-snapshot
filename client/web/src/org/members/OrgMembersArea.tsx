@@ -10,8 +10,9 @@ import { AuthenticatedUser } from '../../auth'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { OrgMembersSidebar } from './OrgMembersSidebar'
+
 import { OrgMembersListPage } from './OrgMembersListPage'
+import { OrgMembersSidebar } from './OrgMembersSidebar'
 import { OrgPendingInvitesPage } from './OrgPendingInvites'
 
 const NotFoundPage: React.FunctionComponent = () => (

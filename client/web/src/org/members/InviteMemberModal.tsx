@@ -1,16 +1,18 @@
+import { gql, useMutation } from '@apollo/client'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
+import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { Component, FunctionComponent, useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Button, ButtonProps, Input, Modal } from '@sourcegraph/wildcard'
-import { eventLogger } from '../../tracking/eventLogger'
-import { gql, useMutation } from '@apollo/client'
-import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
-import { debounce } from 'lodash'
-import EmailOpenOutlineIcon from 'mdi-react/EmailBoxIcon'
+
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import styles from './InviteMemberModal.module.scss'
+import { Alert, Button, ButtonProps, Input, Modal } from '@sourcegraph/wildcard'
+
 import { CopyableText } from '../../components/CopyableText'
+import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
+
+import styles from './InviteMemberModal.module.scss'
 
 const INVITE_USERNAME_OR_EMAIL_TO_ORG = gql`
     mutation InviteUserToOrganization($organization: ID!, $username: String!) {
@@ -37,7 +39,7 @@ export interface InviteMemberModalProps {
 
 export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> = props => {
     const { orgName, orgId, onInviteSent, onDismiss } = props
-    const emailPattern = useRef(new RegExp(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/))
+    const emailPattern = useRef(new RegExp(/^\w+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
     const [isEmail, setIsEmail] = useState<boolean>(false)
     const title = `Invite teammate to ${orgName}`
@@ -58,7 +60,7 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             setUsernameOrEmail('')
             onDismiss()
         }
-    }, [data])
+    }, [data, onDismiss, setUsernameOrEmail, onInviteSent, userNameOrEmail])
 
     useEffect(() => {
         if (error) {
@@ -75,9 +77,9 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             return
         }
 
-        eventLogger.log('InviteOrgMemberClicked')
+        eventLogger.log('InviteOrgMemberClicked', isEmail)
         await inviteUserToOrganization({ variables: { organization: orgId, username: userNameOrEmail } })
-    }, [userNameOrEmail, orgId, isEmail, onInviteSent])
+    }, [userNameOrEmail, orgId, inviteUserToOrganization, isEmail])
 
     const debounceInviteUser = debounce(inviteUser, 500, { leading: true })
 
@@ -91,9 +93,8 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             <h2>{title}</h2>
             {error && <ErrorAlert className={styles.alert} error={error} />}
             <div className="d-flex flex-row position-relative">
-                {isEmail && <EmailOpenOutlineIcon className={`icon-inline ${styles.mailIcon}`} />}
                 <Input
-                    autoFocus
+                    autoFocus={true}
                     value={userNameOrEmail}
                     label="Email address or username"
                     title="Email address or username"
@@ -135,7 +136,7 @@ export const InvitedNotification: React.FunctionComponent<InvitedNotificationPro
     <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
         <div className={styles.message}>
             <strong>{`You invited ${username} to join ${orgName}`}</strong>
-            <div>{`They will receive an email shortly. You can also send them this personal invite link:`}</div>
+            <div>They will receive an email shortly. You can also send them this personal invite link:</div>
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
@@ -151,7 +152,9 @@ export interface InviteMemberModalButtonProps extends ButtonProps {
     triggerLabel?: string
     as?: keyof JSX.IntrinsicElements | Component | FunctionComponent
 }
-export const InviteMemberModalHandler = (props: InviteMemberModalButtonProps) => {
+export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModalButtonProps> = (
+    props: InviteMemberModalButtonProps
+) => {
     const { orgName, orgId, onInviteSent, triggerLabel, as, ...rest } = props
     const [modalOpened, setModalOpened] = React.useState<boolean>()
 

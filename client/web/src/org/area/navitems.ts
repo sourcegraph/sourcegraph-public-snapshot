@@ -1,6 +1,6 @@
+import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 import CogOutlineIcon from 'mdi-react/CogOutlineIcon'
 import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
-import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 
