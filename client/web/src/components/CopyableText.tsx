@@ -22,6 +22,9 @@ interface Props {
 
     /** Whether or not the text to be copied is a password. */
     password?: boolean
+
+    /** Callback for when the content is copied  */
+    onCopy?: () => void
 }
 
 interface State {
@@ -72,5 +75,9 @@ export class CopyableText extends React.PureComponent<Props, State> {
         this.setState({ copied: true })
 
         setTimeout(() => this.setState({ copied: false }), 1000)
+
+        if (typeof this.props.onCopy === 'function') {
+            this.props.onCopy()
+        }
     }
 }
