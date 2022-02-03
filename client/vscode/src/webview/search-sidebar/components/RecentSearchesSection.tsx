@@ -38,6 +38,7 @@ export const RecentSearchesSection: React.FunctionComponent<HistorySidebarProps>
     }
 
     const onSavedSearchClick = (query: string): void => {
+        platformContext.telemetryService.log('VSCERecentSearchClick')
         extensionCoreAPI
             .streamSearch(query, {
                 // Debt: using defaults here. The saved search should override these, though.

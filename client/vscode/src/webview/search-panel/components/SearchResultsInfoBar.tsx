@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import LinkIcon from 'mdi-react/LinkIcon'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 
@@ -84,12 +84,21 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const showActionButtonExperimentalVersion = !authenticatedUser
 
+    const onActionButtonClick = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            setShowSavedSearchForm(!showSavedSearchForm)
+            platformContext.telemetryService.log('VSCESaveSearchClick')
+        },
+        [platformContext.telemetryService, setShowSavedSearchForm, showSavedSearchForm]
+    )
+
     const saveSearchButton = useMemo(
         () => (
             <li className={classNames('mr-2', styles.navItem)}>
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
-                    onNonExperimentalLinkClick={() => setShowSavedSearchForm(!showSavedSearchForm)}
+                    onNonExperimentalLinkClick={onActionButtonClick}
                     className="test-save-search-link"
                     button={
                         <>
@@ -101,14 +110,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
                     source="Saved"
-                    viewEventName="SearchResultSavedSeachCTAShown"
+                    viewEventName="VSCESignUpModalClick"
                     returnTo=""
                     telemetryService={platformContext.telemetryService}
                     isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
                 />
             </li>
         ),
-        [showSavedSearchForm, setShowSavedSearchForm, showActionButtonExperimentalVersion, platformContext]
+        [showActionButtonExperimentalVersion, onActionButtonClick, platformContext.telemetryService]
     )
 
     return (

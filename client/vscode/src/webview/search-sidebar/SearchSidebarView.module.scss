@@ -1,5 +1,5 @@
 .sidebar-container {
-    padding: 0.125rem 0 1.5rem 0 !important;
+    padding: 0.125rem 0 0 0 !important;
 
     & [data-reach-tabs] {
         // Override our default background color.
@@ -74,6 +74,15 @@
     &__list {
         list-style-type: none;
         max-height: 8rem;
+        overflow: auto;
+        // Negative margin and positive padding allows focus rings to not be cut off by overflow:auto
+        margin: 0 -0.125rem;
+        padding: 0.125rem;
+    }
+
+    &__file-list {
+        list-style-type: none;
+        max-height: 10rem;
         overflow: auto;
         // Negative margin and positive padding allows focus rings to not be cut off by overflow:auto
         margin: 0 -0.125rem;
