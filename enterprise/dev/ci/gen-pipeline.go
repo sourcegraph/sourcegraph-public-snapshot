@@ -100,8 +100,7 @@ func renderPipelineDocs(w io.Writer) {
 	// Introduce pull request builds first
 	fmt.Fprintf(w, "\n### %s\n", ci.PullRequest.String())
 	fmt.Fprintln(w, "\nThe default run type.")
-
-	for diff := changed.Go; diff < changed.All; diff <<= 1 {
+	changed.ForEachDiffType(func(diff changed.Diff) {
 		pipeline, err := ci.GeneratePipeline(ci.Config{
 			RunType: ci.PullRequest,
 			Diff:    diff,
@@ -111,22 +110,9 @@ func renderPipelineDocs(w io.Writer) {
 		}
 		fmt.Fprintf(w, "\n- **With %q changes:**\n", diff)
 		for _, raw := range pipeline.Steps {
-			switch v := raw.(type) {
-			case *buildkite.Step:
-				fmt.Fprintf(w, "  - %s\n", trimEmoji(v.Label))
-			case *buildkite.Pipeline:
-				var steps []string
-				for _, step := range v.Steps {
-					s, ok := step.(*buildkite.Step)
-					if ok {
-						steps = append(steps, trimEmoji(s.Label))
-					}
-				}
-				fmt.Fprintf(w, "  - %s: %s\n", v.Group.Group, strings.Join(steps, ", "))
-
-			}
+			printStepSummary(w, raw)
 		}
-	}
+	})
 
 	// Introduce the others
 	for rt := ci.PullRequest + 1; rt < ci.None; rt += 1 {
@@ -152,5 +138,21 @@ func renderPipelineDocs(w io.Writer) {
 			}
 			fmt.Fprintln(w)
 		}
+	}
+}
+
+func printStepSummary(w io.Writer, rawStep interface{}) {
+	switch v := rawStep.(type) {
+	case *buildkite.Step:
+		fmt.Fprintf(w, "  - %s\n", trimEmoji(v.Label))
+	case *buildkite.Pipeline:
+		var steps []string
+		for _, step := range v.Steps {
+			s, ok := step.(*buildkite.Step)
+			if ok {
+				steps = append(steps, trimEmoji(s.Label))
+			}
+		}
+		fmt.Fprintf(w, "  - %s: %s\n", v.Group.Group, strings.Join(steps, ", "))
 	}
 }
