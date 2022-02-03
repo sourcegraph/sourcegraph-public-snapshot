@@ -97,6 +97,12 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []types.Frame, i
 		log15.Error("unable to retrieve commit index metadata", "repo_id", id, "error", err)
 		return uncompressedPlan(frames)
 	}
+	if metadata.OldestIndexedAt == nil {
+		// The index has no commits for this repository. Therefore, we cannot apply any compression, and will need to
+		// query for each data point.
+		log15.Debug("skipping insights compression due to empty index", "repo_id", id)
+		return uncompressedPlan(frames)
+	}
 
 	// The first frame will always be included to establish a baseline measurement. This is important because
 	// it is possible that the commit index will report zero commits because they may have happened beyond the
@@ -105,8 +111,10 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []types.Frame, i
 	for i := 1; i < len(frames); i++ {
 		previous := frames[i-1]
 		frame := frames[i]
-		if metadata.LastIndexedAt.Before(frame.To) {
-			// The commit indexer is not up to date enough to understand if this frame can be dropped
+		if metadata.LastIndexedAt.Before(frame.To) || metadata.OldestIndexedAt.After(frame.From) {
+			// The commit indexer is not up to date enough to understand if this frame can be dropped,
+			// or the index doesn't contain enough history to be able to compress this frame
+			log15.Debug("cannot compress frame - missing history", "from", frame.From, "to", frame.To, "repo_id", id)
 			addToPlan(frame, "")
 			continue
 		}

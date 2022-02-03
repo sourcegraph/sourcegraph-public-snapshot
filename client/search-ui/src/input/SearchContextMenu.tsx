@@ -283,11 +283,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         <div onKeyDown={onMenuKeyDown}>
             <div className={styles.title}>
                 <small>Choose search context</small>
-                <Button
-                    onClick={() => closeMenu()}
-                    className={classNames('btn-icon', styles.titleClose)}
-                    aria-label="Close"
-                >
+                <Button onClick={() => closeMenu()} variant="icon" className={styles.titleClose} aria-label="Close">
                     <CloseIcon className="icon-inline" />
                 </Button>
             </div>

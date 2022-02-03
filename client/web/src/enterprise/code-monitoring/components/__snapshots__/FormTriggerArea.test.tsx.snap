@@ -274,7 +274,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
     </div>
     <div>
       <button
-        class="btn btn-secondary mr-1 test-submit-trigger"
+        class="btn btnSecondary mr-1 test-submit-trigger"
         data-testid="submit-trigger"
         disabled=""
         type="submit"
@@ -282,7 +282,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
         Continue
       </button>
       <button
-        class="btn btn-outline-secondary"
+        class="btn btnOutlineSecondary"
         type="button"
       >
         Cancel

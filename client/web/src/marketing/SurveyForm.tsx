@@ -128,7 +128,7 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authentic
                 />
             </div>
             <div className="form-group">
-                <Button className="btn-block" variant="primary" type="submit" disabled={response.loading}>
+                <Button display="block" variant="primary" type="submit" disabled={response.loading}>
                     Submit
                 </Button>
             </div>

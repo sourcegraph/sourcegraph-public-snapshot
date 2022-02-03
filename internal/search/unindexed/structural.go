@@ -115,7 +115,7 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 	agg := streaming.NewAggregatingStream()
 	err := streamStructuralSearch(ctx, args, repos, agg)
 
-	event := agg.Get()
+	event := agg.SearchEvent
 	if len(event.Results) == 0 && err == nil {
 		// retry structural search with a higher limit.
 		agg := streaming.NewAggregatingStream()
@@ -124,7 +124,7 @@ func runStructuralSearch(ctx context.Context, args *search.SearcherParameters, r
 			return err
 		}
 
-		event = agg.Get()
+		event = agg.SearchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
 			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
@@ -151,10 +151,9 @@ type StructuralSearch struct {
 	ZoektArgs    *search.ZoektParameters
 	SearcherArgs *search.SearcherParameters
 
-	NotSearcherOnly   bool
-	UseIndex          query.YesNoOnly
-	ContainsRefGlobs  bool
-	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+	NotSearcherOnly  bool
+	UseIndex         query.YesNoOnly
+	ContainsRefGlobs bool
 
 	RepoOpts search.RepoOptions
 }
@@ -168,12 +167,12 @@ func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream strea
 
 	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
 		}
 		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
 			if err != nil {
 				return err
 			}
