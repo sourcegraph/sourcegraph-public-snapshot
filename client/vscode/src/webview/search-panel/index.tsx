@@ -93,28 +93,20 @@ const Main: React.FC = () => {
         return null
     }
 
-    // Idle and remote browsing state should be same as search results.
-    if (state?.status === 'search-home') {
+    // Render SearchHomeView until the user submits a search.
+    if (state.context.submittedSearchQueryState === null) {
         return <SearchHomeView {...webviewPageProps} context={state.context} />
     }
-    if (state?.status === 'search-results') {
-        return <SearchResultsView {...webviewPageProps} context={state.context} />
-    }
-    // If state is remote browsing/idle but the search panel is still visible in a different column,
-    // we should still show results. Determine state by whether submittedSearchQuery is not null.
-    if (state.context.submittedSearchQueryState !== null) {
-        return (
-            <SearchResultsView
-                {...webviewPageProps}
-                context={{
-                    ...state.context,
-                    submittedSearchQueryState: state.context.submittedSearchQueryState,
-                }}
-            />
-        )
-    }
 
-    return null
+    return (
+        <SearchResultsView
+            {...webviewPageProps}
+            context={{
+                ...state.context,
+                submittedSearchQueryState: state.context.submittedSearchQueryState,
+            }}
+        />
+    )
 }
 
 render(
