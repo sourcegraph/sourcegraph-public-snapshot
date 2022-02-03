@@ -3,20 +3,22 @@ import * as monaco from 'monaco-editor'
 let lastThemeName: string | undefined
 
 export function adaptMonacoThemeToEditorTheme(): void {
+    let editor: monaco.editor.ICodeEditor | undefined
+
     // Wait for init to set theme.
-    monaco.editor.onDidCreateEditor(editor => {
-        setMonacoTheme()
-        editor.updateOptions({ fontSize: 24 })
+    monaco.editor.onDidCreateEditor(newEditor => {
+        editor = newEditor
+        setMonacoTheme({ editor })
     })
 
     const mutationObserver = new MutationObserver(() => {
-        setMonacoTheme()
+        setMonacoTheme({ editor })
     })
 
     mutationObserver.observe(document.documentElement, { childList: false, attributes: true })
 }
 
-function setMonacoTheme(): void {
+function setMonacoTheme({ editor }: { editor?: monaco.editor.ICodeEditor }): void {
     const body = document.querySelector<HTMLBodyElement>('body')
     const themeName = body?.dataset.vscodeThemeName
 
@@ -30,7 +32,7 @@ function setMonacoTheme(): void {
         for (const colorId of Object.keys(monacoColorIdWebviewCustomProperties)) {
             try {
                 const customProperty = monacoColorIdWebviewCustomProperties[colorId]
-                const style = computedStyle.getPropertyValuetes(customProperty)
+                const style = computedStyle.getPropertyValue(customProperty)
 
                 colors[colorId] = rgbaToHex(style)
             } catch (error) {
@@ -47,6 +49,12 @@ function setMonacoTheme(): void {
             } catch (error) {
                 console.error('Error computing style for search box:', error)
             }
+        }
+
+        // Set font size
+        const fontSize = parseInt(computedStyle.getPropertyValue('--vscode-editor-font-size'), 10)
+        if (!isNaN(fontSize)) {
+            editor?.updateOptions({ fontSize })
         }
 
         monaco.editor.defineTheme(themeKind === 'theme-light' ? 'sourcegraph-light' : 'sourcegraph-dark', {
