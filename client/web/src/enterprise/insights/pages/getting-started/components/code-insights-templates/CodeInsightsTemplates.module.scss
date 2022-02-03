@@ -23,3 +23,27 @@
     grid-column-end: -1;
     margin-top: 1rem;
 }
+
+.queries {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
+
+.query {
+    display: inline-block;
+    width: 100%;
+    padding: 0.25rem 1rem 0.25rem 0.5rem;
+    background-color: var(--body-bg);
+    border-radius: var(--border-radius);
+    font-size: 0.75rem;
+    position: relative;
+}
+
+.copy-button {
+    position: absolute;
+    right: 0.25rem;
+    top: 0.25rem;
+}
