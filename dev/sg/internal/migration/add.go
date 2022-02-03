@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
 
 const metadataFileTemplate = `name: %s
@@ -40,12 +39,7 @@ COMMIT;
 // Add creates a new directory with stub migration files in the given schema and returns the
 // names of the newly created files. If there was an error, the filesystem is rolled-back.
 func Add(database db.Database, migrationName string) (up, down, metadata string, _ error) {
-	fs, err := database.FS()
-	if err != nil {
-		return "", "", "", err
-	}
-
-	definitions, err := definition.ReadDefinitions(fs)
+	definitions, err := readDefinitions(database)
 	if err != nil {
 		return "", "", "", err
 	}

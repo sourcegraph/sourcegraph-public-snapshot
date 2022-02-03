@@ -32,17 +32,12 @@ const (
 )
 
 func Squash(database db.Database, commit string) error {
-	fs, err := database.FS()
+	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err
 	}
 
-	ds, err := definition.ReadDefinitions(fs)
-	if err != nil {
-		return err
-	}
-
-	newRoot, ok, err := selectNewRootMigration(database, ds, commit)
+	newRoot, ok, err := selectNewRootMigration(database, definitions, commit)
 	if err != nil {
 		return err
 	}
@@ -80,7 +75,7 @@ func Squash(database db.Database, commit string) error {
 	block.Writef("Created: %s", metadataPath)
 
 	// Remove the migration file pairs that were just squashed
-	filenames, err := removeAncestorsOf(database, ds, newRoot)
+	filenames, err := removeAncestorsOf(database, definitions, newRoot)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
+
+// readDefinitions returns definitions from the given database object.
+func readDefinitions(database db.Database) (*definition.Definitions, error) {
+	fs, err := database.FS()
+	if err != nil {
+		return nil, err
+	}
+
+	return definition.ReadDefinitions(fs)
+}
 
 // makeMigrationFilenames makes a pair of (absolute) paths to migration files with the given migration index.
 func makeMigrationFilenames(database db.Database, migrationIndex int) (up, down, metadata string, _ error) {
