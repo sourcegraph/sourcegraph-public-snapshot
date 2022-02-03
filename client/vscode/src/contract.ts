@@ -59,6 +59,8 @@ export interface ExtensionCoreAPI {
 
 export interface SearchPanelAPI {
     ping: () => ProxySubscribable<'pong'>
+
+    focusSearchBox: () => void
 }
 
 export interface SearchSidebarAPI

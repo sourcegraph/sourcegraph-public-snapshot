@@ -22,16 +22,18 @@
         --dropdown-bg: var(--vscode-dropdown-background);
         --dropdown-border-color: var(--vscode-dropdown-border);
         --dropdown-header-color: var(--vscode-panelTitle-activeForeground);
+
         .dropdown-menu {
             --body-color: var(--vscode-dropdown-foreground);
             --primary: var(--vscode-textLink-foreground); // hover background
             --color-bg-3: var(--color-bg-3); // active background
+
             & input {
                 background-color: var(--vscode-input-background) !important;
             }
         }
 
-        --input-bg: var(--vscode-input-background);
+        --input-bg: var(--vscode-editorWidget-background);
         --input-border-color: var(--vscode-input-border);
         --border-active-color: var(--vscode-focusBorder);
         --link-color: var(--vscode-textLink-foreground);
@@ -44,12 +46,14 @@
         --info-3: var(--vscode-inputValidation-infoBorder);
         --danger: var(--vscode-inputValidation-errorBackground);
     }
+
     .theme-dark {
         .sourcegraph-tooltip {
             --tooltip-bg: var(--vscode-input-background);
             --tooltip-color: var(--vscode-editorWidget-foreground);
         }
     }
+
     .theme-light {
         // Ensure tooltip always has a dark background with light text.
         .sourcegraph-tooltip {
@@ -57,6 +61,7 @@
             --tooltip-color: var(--vscode-input-background);
         }
     }
+
     --max-homepage-container-width: 65rem;
 
     // Media breakpoints
@@ -78,6 +83,7 @@ body {
     font-weight: var(--vscode-font-weight);
     font-size: var(--vscode-editor-font-size);
     --body-color: var(--vscode-dropdown-foreground);
+
     &.search-sidebar {
         background-color: transparent !important;
     }
