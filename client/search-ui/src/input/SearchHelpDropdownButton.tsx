@@ -1,13 +1,10 @@
-import classNames from 'classnames'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
-import { DropdownItem } from 'reactstrap'
+import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PopoverTrigger, PopoverContent, Popover, Button, Alert, Position, Link } from '@sourcegraph/wildcard'
-
-import styles from './SearchHelpDropdownButton.module.scss'
+import { Link, Alert } from '@sourcegraph/wildcard'
 
 interface SearchHelpDropdownButtonProps extends TelemetryProps {
     isSourcegraphDotCom?: boolean
@@ -30,22 +27,19 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
     const documentationUrlPrefix = isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
 
     return (
-        <Popover isOpen={isOpen} onOpenChange={toggleIsOpen}>
-            <PopoverTrigger
-                as={Button}
+        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="search-help-dropdown-button d-flex">
+            <DropdownToggle
+                caret={false}
                 color="link"
-                className={classNames(
-                    'px-2 d-flex align-items-center cursor-pointer search-help-dropdown-button',
-                    styles.searchHelpDropdownButton
-                )}
+                className="px-2 d-flex align-items-center cursor-pointer"
                 aria-label="Quick help for search"
             >
                 <HelpCircleOutlineIcon
                     className="test-search-help-dropdown-button-icon icon-inline"
                     aria-hidden="true"
                 />
-            </PopoverTrigger>
-            <PopoverContent position={Position.bottomEnd} className="pb-0">
+            </DropdownToggle>
+            <DropdownMenu right={true} className="pb-0">
                 <DropdownItem header={true}>
                     <strong>Search reference</strong>
                 </DropdownItem>
@@ -136,7 +130,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                         repositories.
                     </Alert>
                 )}
-            </PopoverContent>
-        </Popover>
+            </DropdownMenu>
+        </ButtonDropdown>
     )
 }

@@ -1,10 +1,9 @@
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo, useState } from 'react'
+import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import styles from './StreamingProgressSkippedButton.module.scss'
@@ -32,37 +31,28 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
     return (
         <>
             {progress.skipped.length > 0 && (
-                <Popover isOpen={isOpen} onOpenChange={toggleOpen}>
-                    <PopoverTrigger
-                        className={classNames('mb-0 d-flex align-items-center text-decoration-none', styles.skippedBtn)}
-                        size="sm"
-                        variant={skippedWithWarningOrError ? 'danger' : 'secondary'}
+                <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
+                    <Button
+                        className="mb-0 d-flex align-items-center text-decoration-none"
+                        caret={true}
                         outline={true}
+                        variant={skippedWithWarningOrError ? 'danger' : 'secondary'}
                         data-testid="streaming-progress-skipped"
-                        as={Button}
-                        aria-expanded={isOpen}
+                        size="sm"
+                        as={DropdownToggle}
                     >
                         {skippedWithWarningOrError ? (
                             <AlertCircleIcon className={classNames('mr-2 icon-inline', styles.alertDangerIcon)} />
                         ) : null}
                         Some results excluded
-                        {isOpen ? (
-                            <MenuUpIcon className="icon-inline caret" />
-                        ) : (
-                            <MenuDownIcon className="icon-inline caret" />
-                        )}
-                    </PopoverTrigger>
-                    <PopoverContent
-                        position={Position.bottomStart}
-                        className={styles.skippedPopover}
-                        data-testid="streaming-progress-skipped-popover"
-                    >
+                    </Button>
+                    <DropdownMenu className={styles.skippedPopover} data-testid="streaming-progress-skipped-popover">
                         <StreamingProgressSkippedPopover
                             progress={progress}
                             onSearchAgain={onSearchAgainWithPopupClose}
                         />
-                    </PopoverContent>
-                </Popover>
+                    </DropdownMenu>
+                </ButtonDropdown>
             )}
         </>
     )

@@ -7,6 +7,7 @@ import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
 import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import React from 'react'
+import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
@@ -18,7 +19,7 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import { Button, Link, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { requestGraphQL } from '../backend/graphql'
@@ -475,12 +476,16 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         }
 
         return (
-            <Popover isOpen={this.state.isOpen} onOpenChange={this.toggleIsOpen}>
-                <PopoverTrigger className="nav-link py-0 px-0 percy-hide chromatic-ignore" as={Button} variant="link">
+            <ButtonDropdown
+                isOpen={this.state.isOpen}
+                toggle={this.toggleIsOpen}
+                className="nav-link py-0 px-0 percy-hide chromatic-ignore"
+            >
+                <Button caret={false} nav={true} variant="link" as={DropdownToggle}>
                     {this.renderIcon()}
-                </PopoverTrigger>
+                </Button>
 
-                <PopoverContent position={Position.bottomEnd} className={classNames('p-0', styles.dropdownMenu)}>
+                <DropdownMenu right={true} className={classNames('p-0', styles.dropdownMenu)}>
                     <div className={styles.dropdownMenuContent}>
                         <small className={classNames('d-inline-block text-muted', styles.sync)}>Code sync status</small>
                         {isErrorLike(this.state.messagesOrError) ? (
@@ -493,8 +498,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             this.renderMessage(this.state.messagesOrError, this.props.user.isSiteAdmin)
                         )}
                     </div>
-                </PopoverContent>
-            </Popover>
+                </DropdownMenu>
+            </ButtonDropdown>
         )
     }
 }

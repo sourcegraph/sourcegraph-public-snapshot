@@ -54,13 +54,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
 
     return (
         <Popover isOpen={isDropdownOpen} onOpenChange={toggleDropdownOpen}>
-            <PopoverTrigger
-                as={Button}
-                outline={true}
-                variant="secondary"
-                size="sm"
-                className={classNames('menu-nav-item', className)}
-            >
+            <PopoverTrigger as={Button} outline={true} variant="secondary" size="sm" className={className}>
                 {button}
             </PopoverTrigger>
             <PopoverContent position={Position.bottomEnd} className={classNames(styles.container)}>

@@ -108,7 +108,12 @@ const NotebookSettingsDropdown: React.FunctionComponent<NotebookSettingsDropdown
                         Settings
                     </MenuItem>
                     <MenuDivider />
-                    <MenuItem className="btn-danger" onSelect={() => setShowDeleteModal(true)}>
+                    <MenuItem
+                        as={Button}
+                        variant="danger"
+                        className={styles.dangerMenuItem}
+                        onSelect={() => setShowDeleteModal(true)}
+                    >
                         Delete notebook
                     </MenuItem>
                 </MenuList>

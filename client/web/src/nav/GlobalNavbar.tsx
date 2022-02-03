@@ -284,7 +284,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         </NavAction>
                     )}
                     {props.authenticatedUser &&
-                        (false || userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
+                        (props.authenticatedUser.siteAdmin ||
+                            userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                             <NavAction>
                                 <StatusMessagesNavItem
                                     user={{
