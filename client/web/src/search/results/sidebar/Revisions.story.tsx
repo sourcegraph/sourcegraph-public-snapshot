@@ -28,7 +28,7 @@ export default {
     disableSnapshot: false,
 } as Meta
 
-const examples: Array<RevisionsProps & Partial<Pick<MockedProviderProps, 'mocks'>> & { title: string }> = [
+const examples: (RevisionsProps & Partial<Pick<MockedProviderProps, 'mocks'>> & { title: string })[] = [
     TabIndex.BRANCHES,
     TabIndex.TAGS,
 ]
@@ -87,7 +87,10 @@ export function RevisionsSection() {
             {() => (
                 <>
                     {examples.map(({ mocks, title, ...props }) => (
-                        <div style={{ border: '1px solid #AAA', borderRadius: '3px', padding: '1rem', margin: '1rem' }}>
+                        <div
+                            key={title}
+                            style={{ border: '1px solid #AAA', borderRadius: '3px', padding: '1rem', margin: '1rem' }}
+                        >
                             <h2>{title}</h2>
                             <div className={sidebarStyles.searchSidebar}>
                                 <MockedTestProvider mocks={mocks}>
