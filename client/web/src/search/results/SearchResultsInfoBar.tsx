@@ -112,7 +112,7 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
     }
     return (
         <ButtonLink
-            className={props.className}
+            className={classNames('text-decoration-none', props.className)}
             to={props.nonExperimentalLinkTo}
             onSelect={props.onNonExperimentalLinkClick}
             disabled={props.isNonExperimentalLinkDisabled}

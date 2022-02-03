@@ -194,7 +194,7 @@ const StatusBarItem: React.FunctionComponent<
             className={classNames(
                 'h-100 d-flex align-items-center px-1',
                 styles.item,
-                noop && styles.itemNoop,
+                noop && classNames('text-decoration-none', styles.itemNoop),
                 className
             )}
             data-tooltip={statusBarItem.tooltip}

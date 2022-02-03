@@ -457,18 +457,14 @@ export const githubCodeHost: CodeHost = {
     codeViewToolbarClassProps: {
         className: styles.codeViewToolbar,
         listItemClass: classNames(styles.codeViewToolbarItem, 'BtnGroup'),
-        actionItemClassNames: {
-            actionItemClassName: classNames('btn btn-sm tooltipped tooltipped-s BtnGroup-item', styles.actionItem),
-            actionItemPressedClassName: 'selected',
-            actionItemIconClassName: classNames(styles.icon, 'v-align-text-bottom'),
-        },
+        actionItemClass: classNames('btn btn-sm tooltipped tooltipped-s BtnGroup-item', styles.actionItem),
+        actionItemPressedClass: 'selected',
+        actionItemIconClass: classNames(styles.icon, 'v-align-text-bottom'),
     },
     hoverOverlayClassProps: {
         className: 'Box',
-        actionItemClassNames: {
-            actionItemClassName: 'btn btn-secondary',
-            actionItemPressedClassName: 'active',
-        },
+        actionItemClassName: 'btn btn-secondary',
+        actionItemPressedClassName: 'active',
         badgeClassName: classNames('label', styles.hoverOverlayBadge),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,

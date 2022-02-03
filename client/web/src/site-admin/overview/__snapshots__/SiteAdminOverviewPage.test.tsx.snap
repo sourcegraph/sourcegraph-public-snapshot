@@ -94,7 +94,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           </span>
           <button
             aria-label="Collapse section"
-            class="btn d-flex btn-icon expandBtn stretched-link"
+            class="btn btnIcon d-flex expandBtn stretched-link"
             type="button"
           >
             <svg
@@ -120,7 +120,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
             </h2>
             <h3>
               <a
-                class="btn btn-secondary"
+                class="btn btnSecondary"
                 href="/site-admin/usage-statistics"
               >
                 View all usage statistics 
@@ -314,7 +314,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
           </div>
           <button
             aria-label="Collapse section"
-            class="btn d-flex btn-icon expandBtn stretched-link"
+            class="btn btnIcon d-flex expandBtn stretched-link"
             type="button"
           >
             <svg
@@ -345,7 +345,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
               <button
                 aria-controls="panel--1--0"
                 aria-expanded="false"
-                class="btn btn-link list-group-item list-group-item-action button"
+                class="btn btnLink list-group-item list-group-item-action button"
                 data-reach-accordion-button=""
                 id="button--1--0"
               >

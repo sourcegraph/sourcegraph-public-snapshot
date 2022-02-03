@@ -63,12 +63,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
             <ActionsNavItems
                 {...props}
                 listItemClass={classNames(styles.item, props.buttonProps?.listItemClass ?? props.listItemClass)}
-                actionItemClassNames={{
-                    ...props.actionItemClassNames,
-                    actionItemClassName: classNames(
-                        props.buttonProps?.actionItemClass ?? props.actionItemClassNames?.actionItemClassName
-                    ),
-                }}
+                actionItemClass={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                 menu={ContributableMenu.EditorTitle}
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
@@ -81,10 +76,8 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                 <SignInButton
                     sourcegraphURL={props.sourcegraphURL}
                     onSignInClose={props.onSignInClose}
-                    className={classNames(
-                        props.buttonProps?.actionItemClass ?? props.actionItemClassNames?.actionItemClassName
-                    )}
-                    iconClassName={props.actionItemClassNames?.actionItemIconClassName}
+                    className={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
+                    iconClassName={props.actionItemIconClass}
                 />
             ) : null
         ) : (
@@ -94,10 +87,8 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                         <OpenDiffOnSourcegraph
                             ariaLabel="View file diff on Sourcegraph"
                             platformContext={props.platformContext}
-                            className={classNames(
-                                props.buttonProps?.actionItemClass ?? props.actionItemClassNames?.actionItemClassName
-                            )}
-                            iconClassName={props.actionItemClassNames?.actionItemIconClassName}
+                            className={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
+                            iconClassName={props.actionItemIconClass}
                             openProps={{
                                 sourcegraphURL: props.sourcegraphURL,
                                 repoName: props.fileInfoOrError.base.repoName,
@@ -123,11 +114,8 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                         >
                             <OpenOnSourcegraph
                                 ariaLabel="View file on Sourcegraph"
-                                className={classNames(
-                                    props.buttonProps?.actionItemClass ??
-                                        props.actionItemClassNames?.actionItemClassName
-                                )}
-                                iconClassName={props.actionItemClassNames?.actionItemIconClassName}
+                                className={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
+                                iconClassName={props.actionItemIconClass}
                                 openProps={{
                                     sourcegraphURL: props.sourcegraphURL,
                                     repoName: props.fileInfoOrError.blob.repoName,

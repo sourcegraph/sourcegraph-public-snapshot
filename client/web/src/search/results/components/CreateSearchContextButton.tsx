@@ -35,7 +35,7 @@ export const CreateSearchContextButton: React.FunctionComponent<CreateSearchCont
 
     return (
         <li data-tooltip="Create search context based on this query" data-delay={10000} className="nav-item mr-2">
-            <ButtonLink to={toURL} variant="secondary" outline={true} size="sm">
+            <ButtonLink to={toURL} className="text-decoration-none" variant="secondary" outline={true} size="sm">
                 <MagnifyIcon className="icon-inline mr-1" />
                 Create context
             </ButtonLink>

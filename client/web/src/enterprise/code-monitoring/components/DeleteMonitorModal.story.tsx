@@ -9,10 +9,12 @@ import { mockCodeMonitor } from '../testing/util'
 
 import { DeleteMonitorModal } from './DeleteMonitorModal'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/DeleteMonitorModal', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/DeleteMonitorModal', module).addParameters({
+    chromatic: { disableSnapshot: false },
+})
 
 add(
-    'Example',
+    'DeleteMonitorModal',
     () => (
         <WebStory>
             {props => (

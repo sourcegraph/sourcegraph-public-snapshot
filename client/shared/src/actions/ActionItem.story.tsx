@@ -35,10 +35,8 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     extensionsController: EXTENSIONS_CONTROLLER,
     platformContext: PLATFORM_CONTEXT,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    iconClassName: 'icon-inline',
     active: true,
-    actionItemClassNames: {
-        actionItemIconClassName: 'icon-inline',
-    },
 })
 
 const decorator: DecoratorFn = story => (

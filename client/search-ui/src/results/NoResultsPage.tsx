@@ -133,7 +133,7 @@ const Container: React.FunctionComponent<ContainerProps> = ({
         <h3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
-                <Button className="btn-icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
+                <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
                     <CloseIcon className="icon-inline" />
                 </Button>
             )}

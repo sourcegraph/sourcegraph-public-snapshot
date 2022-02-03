@@ -283,10 +283,8 @@ export const Panel = React.memo<Props>(props => {
                                 // This is okay for now because the Panel is currently only used in the webapp
                                 listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
                                 listItemClass="px-2 mx-2"
-                                actionItemClassNames={{
-                                    actionItemClassName: 'font-weight-medium',
-                                    actionItemIconClassName: 'icon-inline',
-                                }}
+                                actionItemClass="font-weight-medium"
+                                actionItemIconClass="icon-inline"
                                 menu={ContributableMenu.PanelToolbar}
                                 scope={{
                                     type: 'panelView',
@@ -301,7 +299,8 @@ export const Panel = React.memo<Props>(props => {
                     </small>
                     <Button
                         onClick={handlePanelClose}
-                        className={classNames('btn-icon ml-2', styles.dismissButton)}
+                        variant="icon"
+                        className={classNames('ml-2', styles.dismissButton)}
                         title="Close panel"
                         data-tooltip="Close panel"
                         data-placement="left"

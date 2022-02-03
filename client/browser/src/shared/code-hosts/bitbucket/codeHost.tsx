@@ -261,18 +261,14 @@ export const bitbucketServerCodeHost: CodeHost = {
     },
     codeViewToolbarClassProps: {
         className: classNames(styles.codeViewToolbar, 'aui-buttons'),
+        actionItemClass: 'aui-button',
+        // actionItemPressedClass is not needed because Bitbucket applies styling to aria-pressed="true"
+        actionItemIconClass: 'aui-icon',
         listItemClass: styles.actionNavItem,
-        actionItemClassNames: {
-            actionItemClassName: 'aui-button',
-            // actionItemPressedClass is not needed because Bitbucket applies styling to aria-pressed="true"
-            actionItemIconClassName: 'aui-icon',
-        },
     },
     hoverOverlayClassProps: {
         className: 'aui-dialog',
-        actionItemClassNames: {
-            actionItemClassName: classNames('aui-button', styles.hoverActionItem),
-        },
+        actionItemClassName: classNames('aui-button', styles.hoverActionItem),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
         iconClassName,
     },

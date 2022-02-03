@@ -1,91 +1,143 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Button Renders size 'lg' correctly 1`] = `
-<button
-  class="btn btn-lg"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnLg"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
 `;
 
 exports[`Button Renders size 'sm' correctly 1`] = `
-<button
-  class="btn btn-sm"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnSm"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
 `;
 
 exports[`Button Renders variant 'danger' correctly 1`] = `
-<button
-  class="btn btn-danger"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnDanger"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button Renders variant 'icon' correctly 1`] = `
+<DocumentFragment>
+  <button
+    class="btn btnIcon"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
 `;
 
 exports[`Button Renders variant 'info' correctly 1`] = `
-<button
-  class="btn btn-info"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnInfo"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
 `;
 
 exports[`Button Renders variant 'link' correctly 1`] = `
-<button
-  class="btn btn-link"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnLink"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
 `;
 
 exports[`Button Renders variant 'merged' correctly 1`] = `
-<button
-  class="btn btn-merged"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnMerged"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
 `;
 
 exports[`Button Renders variant 'primary' correctly 1`] = `
-<button
-  class="btn btn-primary"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnPrimary"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
 `;
 
 exports[`Button Renders variant 'secondary' correctly 1`] = `
-<button
-  class="btn btn-secondary"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnSecondary"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
 `;
 
 exports[`Button Renders variant 'success' correctly 1`] = `
-<button
-  class="btn btn-success"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnSuccess"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
 `;
 
 exports[`Button Renders variant 'warning' correctly 1`] = `
-<button
-  class="btn btn-warning"
-  type="button"
->
-  Hello world
-</button>
+<DocumentFragment>
+  <button
+    class="btn btnWarning"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button renders a simple button correctly 1`] = `
+<DocumentFragment>
+  <button
+    class="btn"
+    type="button"
+  >
+    Hello world
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button supports rendering as different elements 1`] = `
+<DocumentFragment>
+  <a
+    class="btn"
+  >
+    I am a link
+  </a>
+</DocumentFragment>
 `;

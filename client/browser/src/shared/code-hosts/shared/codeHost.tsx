@@ -1350,12 +1350,10 @@ export async function handleCodeHost({
                     render(
                         <CodeViewToolbar
                             {...codeHost.codeViewToolbarClassProps}
-                            actionItemClassNames={{
-                                ...codeHost.codeViewToolbarClassProps?.actionItemClassNames,
-                                actionItemClassName:
-                                    codeViewEvent.toolbarButtonProps?.actionItemClass ??
-                                    codeHost.codeViewToolbarClassProps?.actionItemClassNames?.actionItemClassName,
-                            }}
+                            actionItemClass={
+                                codeViewEvent.toolbarButtonProps?.actionItemClass ??
+                                codeHost.codeViewToolbarClassProps?.actionItemClass
+                            }
                             hideActions={hideActions}
                             fileInfoOrError={diffOrBlobInfo}
                             sourcegraphURL={sourcegraphURL}
