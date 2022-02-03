@@ -304,6 +304,8 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 
 		tasklog.Start("ArchiveEach")
 		err = git.ArchiveEach(entry.Commit, addedPaths, func(addedPath string, contents []byte) error {
+			defer tasklog.Continue("ArchiveEach")
+
 			tasklog.Start("parse")
 			symbols, err := parse(addedPath, contents)
 			tasklog.Start("idle")
@@ -324,7 +326,6 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 				return errors.Wrap(err, "InsertBlob")
 			}
 			pathToBlobIdCache[addedPath] = id
-			tasklog.Continue("ArchiveEach")
 			return nil
 		})
 		tasklog.Start("idle")
