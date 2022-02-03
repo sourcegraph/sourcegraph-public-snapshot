@@ -2,6 +2,11 @@
 
 .container {
     padding: 0.25rem;
+    background-color: var(--vscode-editorWidget-background) !important;
+    display: flex;
+    padding: 0.25rem;
+    flex-direction: row !important;
+    align-items: center !important;
 
     @media (--sm-breakpoint-down) {
         padding-top: 1rem;

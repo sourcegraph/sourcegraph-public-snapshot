@@ -5,6 +5,7 @@ import { ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchMatch, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { Event } from '@sourcegraph/web/src/graphql-operations'
 
 import { VSCEQueryState, VSCEState, VSCEStateMachine } from './state'
 
@@ -48,6 +49,12 @@ export interface ExtensionCoreAPI {
      * Used to send current query from panel to sidebar.
      */
     setSidebarQueryState: (queryState: VSCEQueryState) => void
+
+    getLocalStorageItem: (key: string) => string
+    setLocalStorageItem: (key: string, value: string) => Promise<boolean>
+
+    // For Telemetry Service
+    logEvents: (variables: Event) => void
 }
 
 export interface SearchPanelAPI {

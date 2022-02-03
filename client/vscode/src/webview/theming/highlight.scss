@@ -13,7 +13,7 @@
 
     .selection-highlight,
     .selection-highlight-sticky {
-        background-color: var(--vscode-editor-selectionHighlightBackground);
+        background-color: var(--vscode-editor-findMatchHighlightBackground);
     }
 
     .hljs-comment,
@@ -473,13 +473,22 @@ body[data-vscode-theme-name='One Dark Pro'].sourcegraph-extension.theme-dark {
 // Dracula
 body[data-vscode-theme-name='Dracula'].sourcegraph-extension.theme-dark {
     // Functions
-    .hl-entity.hl-name.hl-function,
+    .hl-entity.hl-name.hl-function {
+        color: #50fa7b;
+    }
     .hl-meta.hl-require,
     .hl-support.hl-function.hl-any-method,
     .hl-support.hl-function,
     .hl-variable.hl-function {
-        color: #50fa7b;
+        color: var(--vscode-terminal-ansiCyan);
     }
+
+    .hl-number,
+    .hl-constant.hl-numeric,
+    .hl-constant.hl-other.hl-placeholder {
+        color: var(--vscode-terminal-ansiBlue);
+    }
+
     .hl-keyword,
     .hl-storage {
         color: #ff79c6;
