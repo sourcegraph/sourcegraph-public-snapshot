@@ -418,7 +418,7 @@ type RepoSubsetSymbolSearch struct {
 	RepoOpts         search.RepoOptions
 }
 
-func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoSubsetSymbolSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -426,7 +426,7 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 	}()
 
 	repos := searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
-	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
@@ -456,7 +456,7 @@ type RepoUniverseSymbolSearch struct {
 	RepoOptions search.RepoOptions
 }
 
-func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoUniverseSymbolSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -478,7 +478,7 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stre
 	// TODO(rvantonder): The `true` argument corresponds to notSearcherOnly,
 	// implied by global search. Separate the concerns in the symbol search
 	// function so that we don't need to pass this value.
-	return symbolSearchInRepos(ctx, request, s.PatternInfo, true, s.Limit, stream)
+	return nil, symbolSearchInRepos(ctx, request, s.PatternInfo, true, s.Limit, stream)
 }
 
 func (*RepoUniverseSymbolSearch) Name() string {
