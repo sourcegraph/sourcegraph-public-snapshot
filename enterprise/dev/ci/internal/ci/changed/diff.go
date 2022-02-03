@@ -25,6 +25,22 @@ const (
 	All
 )
 
+// ForEachDiffType iterates all Diff types except None and All and calls the callback on
+// each.
+func ForEachDiffType(callback func(d Diff)) {
+	const firstDiffType = Diff(1 << 1)
+	for d := firstDiffType; d < All; d <<= 1 {
+		callback(d)
+	}
+}
+
+// ParseDiff identifies what has changed in files by generating a Diff that can be used
+// to check for specific changes, e.g.
+//
+// 	if diff.Has(changed.Client | changed.GraphQL) { ... }
+//
+// To introduce a new type of Diff, add it a new Diff constant above and add a check in
+// this function to identify the Diff.
 func ParseDiff(files []string) (diff Diff) {
 	for _, p := range files {
 		// Affects Go
@@ -111,12 +127,12 @@ func (d Diff) String() string {
 	}
 
 	var allDiffs []string
-	for checkDiff := Go; checkDiff <= All<<1; checkDiff = 1 << checkDiff {
+	ForEachDiffType(func(checkDiff Diff) {
 		diffName := checkDiff.String()
 		if diffName != "" && d.Has(checkDiff) {
 			allDiffs = append(allDiffs, diffName)
 		}
-	}
+	})
 	return strings.Join(allDiffs, ", ")
 }
 

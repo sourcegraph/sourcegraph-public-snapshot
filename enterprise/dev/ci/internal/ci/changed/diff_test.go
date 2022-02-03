@@ -6,15 +6,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestForEachDiffType(t *testing.T) {
+	var first, last Diff
+	ForEachDiffType(func(d Diff) {
+		if first == 0 {
+			first = d
+		}
+		last = d
+	})
+	assert.Equal(t, Diff(1<<1), first, "iteration start")
+	assert.Equal(t, All, last<<1, "iteration end")
+}
+
 func TestParseDiff(t *testing.T) {
 	t.Run("All", func(t *testing.T) {
 		assert.False(t, All.Has(None))
-		var lastName string
-		for diff := Go; diff <= All; diff <<= 1 {
-			assert.True(t, All.Has(diff))
-			lastName = diff.String()
-		}
-		assert.Equal(t, lastName, "All")
+		assert.True(t, All.Has(All))
+		ForEachDiffType(func(d Diff) {
+			assert.True(t, All.Has(d))
+		})
 	})
 
 	tests := []struct {
