@@ -27,7 +27,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
 
 - Whether the instance is deployed on localhost (true/false)
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
-- Which code hosts are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)
+- Which code hosts are in use (GitHub, Bitbucket Server / Bitbucket Data Center, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)
   - Which versions of the code hosts are used
 - Whether new user signup is allowed (true/false)
 - Whether a repository has ever been added (true/false)
