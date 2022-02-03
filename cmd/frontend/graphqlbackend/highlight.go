@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"html/template"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
@@ -53,7 +52,6 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		err             error
 		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	)
-	fmt.Printf("highlighting %s\n", path)
 	result.html, result.aborted, err = highlight.Code(ctx, highlight.Params{
 		Content:            []byte(content),
 		Filepath:           path,

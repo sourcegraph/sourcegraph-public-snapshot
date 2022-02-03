@@ -132,7 +132,6 @@ export interface SourcegraphWebAppProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
-    onWebHoverOverlayClick: () => void
 }
 
 interface SourcegraphWebAppState extends SettingsCascadeProps {
