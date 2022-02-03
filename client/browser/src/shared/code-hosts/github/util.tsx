@@ -58,42 +58,49 @@ function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; 
  */
 export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevisionSpec | null {
     const { pageType } = parseURL()
+
     if (!isDiffPageType(pageType)) {
         return null
     }
 
-    let baseCommitID = 'a7d29481d12acf4650fbe68409e178ec987b32bc'
-    let headCommitID = 'cda01df57876e8352522358510dfe541c9c7c1cc'
-    // https://github.com/sourcegraph/sourcegraph/pull/30170/commits/cda01df57876e8352522358510dfe541c9c7c1cc
-    // TODO: fix here. One possible option to fetch from GQL based on current/head commit_oid.
-    const fetchContainers = document.querySelectorAll('.js-socket-channel.js-updatable-content.js-pull-refresh-on-pjax')
-    const isCommentedSnippet = codeView.classList.contains('js-comment-container')
+    let baseCommitID = ''
+    let headCommitID = ''
+
     if (pageType === 'pull') {
-        if (fetchContainers && fetchContainers.length === 1) {
-            for (const element of fetchContainers) {
-                // for conversation view of pull request
-                const url = element.getAttribute('data-url')
-                if (!url) {
-                    continue
+        const commitsHashes = document
+            .querySelector("details-menu.select-menu-modal[src*='sha1'][src*='sha2']")
+            ?.getAttribute('src')
+
+        if (commitsHashes) {
+            const searchParameters = new URLSearchParams(commitsHashes)
+            const baseCommitSHA = searchParameters.get('sha1')
+            const headCommitSHA = searchParameters.get('sha2')
+
+            if (baseCommitSHA && headCommitSHA) {
+                baseCommitID = baseCommitSHA
+                headCommitID = headCommitSHA
+            }
+        }
+
+        const isCommentedSnippet = codeView.classList.contains('js-comment-container')
+
+        // TODO: check if this block is still relevant
+        if (!baseCommitID && !headCommitID) {
+            if (isCommentedSnippet) {
+                const resolvedDiffSpec = getResolvedDiffFromCommentedSnippet(codeView)
+                if (resolvedDiffSpec) {
+                    return resolvedDiffSpec
                 }
-                const parsed = new URL(url, window.location.href)
-                baseCommitID = parsed.searchParams.get('base_commit_oid') || ''
-                headCommitID = parsed.searchParams.get('end_commit_oid') || ''
-            }
-        } else if (isCommentedSnippet) {
-            const resolvedDiffSpec = getResolvedDiffFromCommentedSnippet(codeView)
-            if (resolvedDiffSpec) {
-                return resolvedDiffSpec
-            }
-        } else {
-            // Last-ditch: look for inline comment form input which has base/head on it.
-            const baseInput = document.querySelector('input[name="comparison_start_oid"]')
-            if (baseInput) {
-                baseCommitID = (baseInput as HTMLInputElement).value
-            }
-            const headInput = document.querySelector('input[name="comparison_end_oid"]')
-            if (headInput) {
-                headCommitID = (headInput as HTMLInputElement).value
+            } else {
+                // Last-ditch: look for inline comment form input which has base/head on it.
+                const baseInput = document.querySelector('input[name="comparison_start_oid"]')
+                if (baseInput) {
+                    baseCommitID = (baseInput as HTMLInputElement).value
+                }
+                const headInput = document.querySelector('input[name="comparison_end_oid"]')
+                if (headInput) {
+                    headCommitID = (headInput as HTMLInputElement).value
+                }
             }
         }
     } else if (pageType === 'commit') {
