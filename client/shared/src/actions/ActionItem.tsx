@@ -116,7 +116,8 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ActionItem extends React.PureComponent<ActionItemProps, State> {
+export class ActionItem extends React.PureComponent<ActionItemProps, State, typeof WildcardThemeContext> {
+    public static contextType = WildcardThemeContext
     public context!: React.ContextType<typeof WildcardThemeContext>
 
     public state: State = { actionOrError: null }
