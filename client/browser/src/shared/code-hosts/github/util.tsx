@@ -67,7 +67,8 @@ export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevi
     let headCommitID = ''
 
     if (pageType === 'pull') {
-        const commitsHashes = document.querySelector("details-menu[src*='sha1'][src*='sha2']")?.getAttribute('src')
+        const commitsHashes = document.querySelector("details-menu[src*='sha1='][src*='sha2=']")?.getAttribute('src')
+        const isCommentedSnippet = codeView.classList.contains('js-comment-container')
 
         if (commitsHashes) {
             const searchParameters = new URLSearchParams(commitsHashes)
@@ -75,30 +76,22 @@ export function getDiffResolvedRevision(codeView: HTMLElement): DiffResolvedRevi
             const headCommitSHA = searchParameters.get('sha2')
 
             if (baseCommitSHA && headCommitSHA) {
-                baseCommitID = baseCommitSHA
-                headCommitID = headCommitSHA
+                return { baseCommitID: baseCommitSHA, headCommitID: headCommitSHA }
             }
-        }
-
-        const isCommentedSnippet = codeView.classList.contains('js-comment-container')
-
-        // TODO: check if this block is still relevant
-        if (!baseCommitID && !headCommitID) {
-            if (isCommentedSnippet) {
-                const resolvedDiffSpec = getResolvedDiffFromCommentedSnippet(codeView)
-                if (resolvedDiffSpec) {
-                    return resolvedDiffSpec
-                }
-            } else {
-                // Last-ditch: look for inline comment form input which has base/head on it.
-                const baseInput = document.querySelector('input[name="comparison_start_oid"]')
-                if (baseInput) {
-                    baseCommitID = (baseInput as HTMLInputElement).value
-                }
-                const headInput = document.querySelector('input[name="comparison_end_oid"]')
-                if (headInput) {
-                    headCommitID = (headInput as HTMLInputElement).value
-                }
+        } else if (isCommentedSnippet) {
+            const resolvedDiffSpec = getResolvedDiffFromCommentedSnippet(codeView)
+            if (resolvedDiffSpec) {
+                return resolvedDiffSpec
+            }
+        } else {
+            // Last-ditch: look for inline comment form input which has base/head on it.
+            const baseInput = document.querySelector('input[name="comparison_start_oid"]')
+            if (baseInput) {
+                baseCommitID = (baseInput as HTMLInputElement).value
+            }
+            const headInput = document.querySelector('input[name="comparison_end_oid"]')
+            if (headInput) {
+                headCommitID = (headInput as HTMLInputElement).value
             }
         }
     } else if (pageType === 'commit') {
@@ -136,7 +129,7 @@ const COMMENTED_SNIPPET_DIFF_REGEX = /\/files\/((\w+)\.\.)?(\w+)#diff-\w+$/
 function getResolvedDiffFromCommentedSnippet(codeView: HTMLElement): DiffResolvedRevisionSpec | null {
     // For commented snippets, try to get the HEAD commit ID from the file header,
     // as it will always be the most accurate (for example in the case of outdated snippets).
-    const linkToFile: HTMLLinkElement | null = codeView.querySelector('.file-header a')
+    const linkToFile: HTMLLinkElement | null = codeView.querySelector(`summary a[href^="${location.pathname}"`)
     if (!linkToFile) {
         return null
     }
