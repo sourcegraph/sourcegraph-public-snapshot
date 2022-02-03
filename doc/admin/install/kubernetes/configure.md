@@ -704,8 +704,14 @@ Sourcegraph supports specifying a custom Redis server for:
 
 If you want to specify a custom Redis server, you'll need specify the corresponding environment variable for each of the following deployments:
 
+<!-- Use ./dev/depgraph/depgraph summary internal/redispool to generate this -->
+
 - `sourcegraph-frontend`
 - `repo-updater`
+- `worker`
+- `precise-code-intel-worker`
+- `searcher`
+- `symbols`
 
 ## Connect to an external Jaeger instance
 
