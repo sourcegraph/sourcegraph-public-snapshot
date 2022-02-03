@@ -137,8 +137,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                                 Find specific examples of useful code monitors to keep on top of security and
                                 consistency concerns.
                             </p>
-                            <Link
-                                to="/help/code_monitoring/how-tos/starting_points" className="link">
+                            <Link to="/help/code_monitoring/how-tos/starting_points" className="link">
                                 Explore starting points
                             </Link>
                         </div>
