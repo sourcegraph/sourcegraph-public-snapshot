@@ -1570,7 +1570,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	start := time.Now()
 	countingStream := streaming.NewResultCountingStream(stream)
 	statsObserver := streaming.NewStatsObservingStream(countingStream)
-	err = job.Run(ctx, r.db, statsObserver)
+	jobAlert, err := job.Run(ctx, r.db, statsObserver)
 
 	ao := alert.Observer{
 		Db:           r.db,
@@ -1580,7 +1580,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	if err != nil {
 		ao.Error(ctx, err)
 	}
-	alert, err := ao.Done()
+	observerAlert, err := ao.Done()
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1597,7 +1597,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 		}
 	}
 
-	return alert, err
+	return search.MaxPriorityAlert(jobAlert, observerAlert), err
 }
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
@@ -1767,7 +1767,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		err = job.Run(ctx, r.db, agg)
+		_, err = job.Run(ctx, r.db, agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
