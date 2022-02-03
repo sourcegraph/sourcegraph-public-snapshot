@@ -19,6 +19,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- `src batch [preview|apply]` will now check that the target Sourcegraph instance supports batch changes before doing any other work and exit early in the case that it does not.
+
 ### Removed
 
 ## 3.36.2

@@ -52,12 +52,20 @@ func New(opts *Opts) *Service {
 	}
 }
 
+// The reason we ask for batchChanges here is to surface errors about trying to use batch
+// changes in an unsupported environment sooner, since the version check is typically the
+// first thing we do.
 const sourcegraphVersionQuery = `query SourcegraphVersion {
 	site {
-	  productVersion
+		productVersion
 	}
-  }
-  `
+	batchChanges(first: 1) {
+		nodes {
+			id
+		}
+	}
+}
+`
 
 // getSourcegraphVersion queries the Sourcegraph GraphQL API to get the
 // current version of the Sourcegraph instance.
