@@ -149,15 +149,15 @@ func (t *TaskLog) Reset() {
 	t.nameToTask = map[string]*Task{"<start>": {Duration: 0, Count: 0}}
 }
 
-func (t TaskLog) Print() {
+func (t *TaskLog) Print() {
+	t.Continue(t.currentName)
+
 	var total time.Duration = 0
 	totalCount := 0
 	for _, task := range t.nameToTask {
 		total += task.Duration
 		totalCount += task.Count
 	}
-	remainder := time.Since(t.currentStart)
-	total += remainder
 	fmt.Printf("Tasks (%s total):\n", total)
 
 	type kv struct {
@@ -175,11 +175,7 @@ func (t TaskLog) Print() {
 	})
 
 	for _, kv := range kvs {
-		duration := kv.Value.Duration
-		if kv.Key == t.currentName {
-			duration += remainder
-		}
-		fmt.Printf("  %6d%% %6dx %s\n", duration*100/total, kv.Value.Count, kv.Key)
+		fmt.Printf("  %6d%% %6dx %s\n", kv.Value.Duration*100/total, kv.Value.Count, kv.Key)
 	}
 }
 
