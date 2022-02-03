@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import { createMemoryHistory } from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
@@ -33,6 +34,7 @@ import {
     useLocalStorage,
     CardHeader,
     useDebounce,
+    Button,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -151,7 +153,7 @@ export const ReferencesList: React.FunctionComponent<
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
     const [filter, setFilter] = useState<string | undefined>(undefined)
-    const debouncedFilter = useDebounce(filter, 250)
+    const debouncedFilter = useDebounce(filter, 150)
 
     useEffect(() => {
         setActiveLocation(undefined)
@@ -643,37 +645,62 @@ const ReferenceGroup: React.FunctionComponent<{
 
 const TABS: CoolCodeIntelTab[] = [{ id: 'references', label: 'References', component: ReferencesPanel }]
 
-export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps>(props => {
-    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }>(
+    props => {
+        const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
+        const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
-    return (
-        <Tabs size="medium" className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
-            <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.header)}>
-                <TabList>
-                    <div className="d-flex w-100">
-                        {TABS.map(({ label, id }) => (
-                            <Tab key={id}>
-                                <span className="tablist-wrapper--tab-label" role="none">
-                                    {label}
-                                </span>
-                            </Tab>
-                        ))}
+        return (
+            <Tabs size="medium" className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
+                <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.header)}>
+                    <TabList>
+                        <div className="d-flex w-100">
+                            {TABS.map(({ label, id }) => (
+                                <Tab key={id}>
+                                    <span className="tablist-wrapper--tab-label" role="none">
+                                        {label}
+                                    </span>
+                                </Tab>
+                            ))}
+                        </div>
+                    </TabList>
+                    <div className="align-items-center d-flex">
+                        <Button
+                            onClick={() => props.handlePanelClose(true)}
+                            className={classNames('btn-icon ml-2', styles.dismissButton)}
+                            title="Close panel"
+                            data-tooltip="Close panel"
+                            data-placement="left"
+                        >
+                            <CloseIcon className="icon-inline" />
+                        </Button>
                     </div>
-                </TabList>
-            </div>
-            <TabPanels>
-                {TABS.map(tab => (
-                    <TabPanel key={tab.id}>
-                        <tab.component {...props} />
-                    </TabPanel>
-                ))}
-            </TabPanels>
-        </Tabs>
-    )
-})
+                </div>
+                <TabPanels>
+                    {TABS.map(tab => (
+                        <TabPanel key={tab.id}>
+                            <tab.component {...props} />
+                        </TabPanel>
+                    ))}
+                </TabPanels>
+            </Tabs>
+        )
+    }
+)
 
 export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
+    const [closed, close] = useState(false)
+    const handlePanelClose = useCallback(() => close(true), [])
+    useEffect(() => {
+        if (props.clickedToken) {
+            close(false)
+        }
+    }, [props.clickedToken])
+
+    if (closed) {
+        return null
+    }
+
     if (!props.clickedToken) {
         return null
     }
@@ -684,7 +711,7 @@ export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelP
             handlePosition="top"
             defaultSize={350}
             storageKey="panel-size"
-            element={<CoolCodeIntelPanel {...props} />}
+            element={<CoolCodeIntelPanel {...props} handlePanelClose={handlePanelClose} />}
         />
     )
 }
