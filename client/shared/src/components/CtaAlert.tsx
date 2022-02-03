@@ -29,7 +29,7 @@ export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
                 <strong>{props.title}</strong>
             </div>
             <div className={classNames('text-muted', 'mb-2', styles.ctaDescription)}>{props.description}</div>
-            <Button to={props.cta.href} onClick={props.cta.onClick} variant="primary" as={Link}>
+            <Button to={props.cta.href} onClick={props.cta.onClick} variant="primary" as={Link} target="_blank">
                 {props.cta.label}
             </Button>
         </div>
