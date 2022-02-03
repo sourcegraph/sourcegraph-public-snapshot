@@ -152,8 +152,6 @@ export const ReferencesList: React.FunctionComponent<
     const [filter, setFilter] = useState<string | undefined>(undefined)
     const debouncedFilter = useDebounce(filter, 250)
 
-    const [hoverMarkdown, setHoverMarkdown] = useState<string | undefined>(undefined)
-
     useEffect(() => {
         setActiveLocation(undefined)
         setFilter(undefined)
@@ -169,45 +167,37 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     return (
-        <div className={classNames('align-items-stretch', styles.referencesList)}>
-            <div className={classNames('px-0', styles.sideReferences)}>
-                {hoverMarkdown && (
-                    <>
-                        <Markdown
-                            className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
-                            dangerousInnerHTML={renderMarkdown(hoverMarkdown)}
-                        />
-                        <hr />
-                    </>
-                )}
-                <input
-                    className="form-control px-2 mt-4"
-                    type="text"
-                    placeholder="Filter by filename..."
-                    value={filter === undefined ? '' : filter}
-                    onChange={event => {
-                        setFilter(event.target.value)
-                    }}
-                />
-                <SideReferences
-                    {...props}
-                    activeLocation={activeLocation}
-                    setActiveLocation={onReferenceClick}
-                    setHoverMarkdown={setHoverMarkdown}
-                    filter={debouncedFilter}
-                />
-            </div>
-            {activeLocation !== undefined && (
-                <div className={classNames('px-0 border-left', styles.sideBlob)}>
-                    <SideBlob
+        <>
+            <input
+                className="form-control px-2 mb-2"
+                type="text"
+                placeholder="Filter by filename..."
+                value={filter === undefined ? '' : filter}
+                onChange={event => {
+                    setFilter(event.target.value)
+                }}
+            />
+            <div className={classNames('align-items-stretch', styles.referencesList)}>
+                <div className={classNames('px-0', styles.sideReferences)}>
+                    <SideReferences
                         {...props}
-                        history={history}
-                        location={history.location}
                         activeLocation={activeLocation}
+                        setActiveLocation={onReferenceClick}
+                        filter={debouncedFilter}
                     />
                 </div>
-            )}
-        </div>
+                {activeLocation !== undefined && (
+                    <div className={classNames('px-0 border-left', styles.sideBlob)}>
+                        <SideBlob
+                            {...props}
+                            history={history}
+                            location={history.location}
+                            activeLocation={activeLocation}
+                        />
+                    </div>
+                )}
+            </div>
+        </>
     )
 }
 
@@ -217,7 +207,6 @@ export const SideReferences: React.FunctionComponent<
         setActiveLocation: (location: Location | undefined) => void
         activeLocation: Location | undefined
         filter: string | undefined
-        setHoverMarkdown: (hoverMarkdown: string | undefined) => void
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
 > = props => {
     const { data, error, loading } = useQuery<CoolCodeIntelReferencesResult, CoolCodeIntelReferencesVariables>(
@@ -273,12 +262,15 @@ export const SideReferences: React.FunctionComponent<
     }
 
     const hover = data.repository.commit?.blob?.lsif?.hover
-    if (hover) {
-        props.setHoverMarkdown(hover.markdown.text)
-    }
 
     return (
         <>
+            {hover && (
+                <Markdown
+                    className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
+                    dangerousInnerHTML={renderMarkdown(hover.markdown.text)}
+                />
+            )}
             <CardHeader>
                 <h4 className="py-1 mb-0">Definitions</h4>
             </CardHeader>
@@ -290,8 +282,14 @@ export const SideReferences: React.FunctionComponent<
                     filter={props.filter}
                 />
             ) : (
-                <p className="text-muted pl-2">
-                    <i>No definitions found</i>
+                <p className="text-muted my-1 pl-2">
+                    {props.filter ? (
+                        <i>
+                            No definitions matching <strong>{props.filter}</strong> found
+                        </i>
+                    ) : (
+                        <i>No definitions found</i>
+                    )}
                 </p>
             )}
             <CardHeader>
@@ -306,7 +304,13 @@ export const SideReferences: React.FunctionComponent<
                 />
             ) : (
                 <p className="text-muted pl-2">
-                    <i>No references found</i>
+                    {props.filter ? (
+                        <i>
+                            No references matching <strong>{props.filter}</strong> found
+                        </i>
+                    ) : (
+                        <i>No references found</i>
+                    )}
                 </p>
             )}
         </>
