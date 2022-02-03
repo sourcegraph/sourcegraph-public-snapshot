@@ -194,7 +194,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
           class="text-center py-3"
         >
           <button
-            class="btn btn-link test-repositories-panel-show-more"
+            class="btn btnLink test-repositories-panel-show-more"
             type="button"
           >
             Show more
@@ -315,7 +315,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
           class="text-center py-3"
         >
           <button
-            class="btn btn-link test-repositories-panel-show-more"
+            class="btn btnLink test-repositories-panel-show-more"
             type="button"
           >
             Show more

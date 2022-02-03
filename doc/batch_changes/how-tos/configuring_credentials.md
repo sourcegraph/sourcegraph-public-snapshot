@@ -148,7 +148,7 @@ Follow the steps to [create a personal access token](https://confluence.atlassia
 
 Batch Changes requires the access token to have the `write` permission on both projects and repositories. This is done by selecting the **Write** level in the **Projects** dropdown, and letting it be inherited by repositories:
 
-<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-token.png" alt="The Bitbucket Server token creation page, with Write permissions selected on both the Project and Repository dropdowns">
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/bb-token.png" alt="The Bitbucket Server / Bitbucket Data Center token creation page, with Write permissions selected on both the Project and Repository dropdowns">
 
 ### SSH access to code host
 

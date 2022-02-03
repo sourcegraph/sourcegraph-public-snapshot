@@ -182,10 +182,10 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	)
 	if hasRepoAware {
 		newQuery = q.QueryString
-		results, err = search(ctx, newQuery, m.UserID, &m.ID)
+		results, err = search(ctx, newQuery, &m.ID)
 	} else {
 		newQuery = newQueryWithAfterFilter(q)
-		results, err = search(ctx, newQuery, m.UserID, nil)
+		results, err = search(ctx, newQuery, nil)
 	}
 	if err != nil {
 		return errors.Wrap(err, "run search")

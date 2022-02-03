@@ -19,11 +19,11 @@ For users using any of the other authentication mechanisms, removing `builtin` a
 
 ## Authorization in Sourcegraph
 
-If you use GitHub, GitLab, or Bitbucket Server, you can sync access permissions directly from the code host:
+If you use GitHub, GitLab, or Bitbucket Server / Bitbucket Data Center, you can sync access permissions directly from the code host:
 
 - [GitHub](#github-enterprise-or-github-cloud-authentication-and-authorization)
 - [GitLab](#gitlab-enterprise-or-gilab-cloud-authentication-and-authorization)
-- [Bitbucket Server](#bitbucket-server-authorization)
+- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-authorization)
 
 If you do not use one of those listed code hosts, you will need to control access using our [explicit permissions API](#explicit-permissions-api-authorization).
 
@@ -112,14 +112,14 @@ Then you will need to configure permission in Sourcegraph as:
 
 And configure the identity provider to pass the email address as the `nameID`. 
 
-### Bitbucket Server authorization
+### Bitbucket Server / Bitbucket Data Center authorization
 
-We do not currently support OAuth for Bitbucket Server. You will need to combine permissions syncing from Bitbucket Server with another authentication mechanism (SAML, built-in auth, HTTP authentication proxies). Bitbucket Server only passes usernames to Sourcegraph, so you’ll need to make sure that those usernames are matched by whatever mechanism you choose to use for access.
+We do not currently support OAuth for Bitbucket Server or Bitbucket Data Center. You will need to combine permissions syncing from Bitbucket Server / Bitbucket Data Center with another authentication mechanism (SAML, built-in auth, HTTP authentication proxies). Bitbucket Server and Bitbucket Data Center only pass usernames to Sourcegraph, so you’ll need to make sure that those usernames are matched by whatever mechanism you choose to use for access.
 
-Follow the steps to [sync Bitbucket server permissions](../repo/permissions.md#bitbucket-server). Then, do one of the following:
+Follow the steps to [sync Bitbucket Server / Bitbucket Data Center permissions](../repo/permissions.md#bitbucket-server). Then, do one of the following:
 
 1. Create the user accounts in Sourcegraph with matching usernames. (Access using `builtin` auth.)
-2. [Configure SAML authentication](../auth/saml/index.md). If you are using Bitbucket Server, the `login` attribute is *not* optional. You need to pass the Bitbucket Server username as the `login` attribute. 
+2. [Configure SAML authentication](../auth/saml/index.md). If you are using Bitbucket Server / Bitbucket Data Center, the `login` attribute is *not* optional. You need to pass the Bitbucket Server username as the `login` attribute. 
 3. [Configure an HTTP authentication proxy](../auth/index.md#http-authentication-proxies), passing the Bitbucket Server username value as the `usernameHeader`. 
 
 ### Explicit Permissions API authorization
