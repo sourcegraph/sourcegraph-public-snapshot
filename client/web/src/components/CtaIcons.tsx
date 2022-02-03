@@ -163,8 +163,8 @@ export const CodeMonitorRadialGradientIcon = React.memo(() => (
     </svg>
 ))
 
-export const VSCodeIcon = React.memo(() => (
-    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+export const VSCodeIcon = React.memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
+    <svg width={width} height={height} viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
             d="M22.0834 21.3325V8.46915L13.5834 14.9008L22.0834 21.3325ZM1.14506 11.0192C0.939444 10.7993 0.822721 10.511 0.817486 10.21C0.812252 9.90905 0.918879 9.61685 1.11672 9.38999L2.81672 7.81749C3.10006 7.56249 3.79422 7.44915 4.30422 7.81749L9.14922 11.515L20.3834 1.24415C20.8367 0.79082 21.6159 0.606653 22.5084 1.07415L28.1751 3.77999C28.6851 4.07749 29.1667 4.54499 29.1667 5.40915V24.5342C29.1667 25.1008 28.7559 25.71 28.3167 25.9508L22.0834 28.9258C21.6301 29.11 20.7801 28.94 20.4826 28.6425L9.12089 18.3008L4.30422 21.9842C3.76589 22.3525 3.10006 22.2533 2.81672 21.9842L1.11672 20.4258C0.663389 19.9583 0.720056 19.1933 1.18756 18.7258L5.43756 14.9008"
             fill="#339AF0"
@@ -172,8 +172,8 @@ export const VSCodeIcon = React.memo(() => (
     </svg>
 ))
 
-export const JetBrainsIcon = React.memo(() => (
-    <svg height="30" viewBox="22 22 61 61" width="30" xmlns="http://www.w3.org/2000/svg">
+export const JetBrainsIcon = React.memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
+    <svg width={width} height={height} viewBox="22 22 61 61" xmlns="http://www.w3.org/2000/svg">
         <path d="M22.5 22.5h60v60h-60z" />
         <g fill="#fff">
             <path d="M29.03 71.25h22.5V75h-22.5zM28.09 38l1.67-1.58a1.88 1.88 0 0 0 1.47.87c.64 0 1.06-.44 1.06-1.31V30h2.58v6a3.48 3.48 0 0 1-.87 2.6 3.56 3.56 0 0 1-2.57.95A3.84 3.84 0 0 1 28.09 38zM36 30h7.53v2.19h-5v1.44h4.49v2H38.6v1.49h5v2.21H36zm11.23 2.29h-2.8V30h8.21v2.27h-2.81v7.1h-2.6zm-18.1 10.79h4.42a3.53 3.53 0 0 1 2.55.83 2.09 2.09 0 0 1 .6 1.53 2.16 2.16 0 0 1-1.44 2.09 2.27 2.27 0 0 1 1.86 2.29c0 1.61-1.31 2.59-3.55 2.59h-4.44zm5 2.89c0-.52-.42-.8-1.18-.8h-1.29v1.64h1.24c.79 0 1.25-.26 1.25-.81zm-.9 2.66h-1.57v1.73h1.62c.8 0 1.24-.31 1.24-.86 0-.5-.4-.87-1.27-.87zM38 43.08h4.1a4.19 4.19 0 0 1 3 1 2.93 2.93 0 0 1 .9 2.19 3 3 0 0 1-1.93 2.89l2.24 3.27h-3l-1.88-2.84h-.87v2.84H38zm4 4.5c.87 0 1.39-.43 1.39-1.11 0-.75-.54-1.12-1.4-1.12h-1.44v2.26z" />
@@ -183,38 +183,66 @@ export const JetBrainsIcon = React.memo(() => (
     </svg>
 ))
 
-export const AtomIcon = React.memo(() => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 64.666 58.666"
-        width="30"
-        height="30"
-        fill="#fff"
-        fillRule="evenodd"
-        stroke="#000"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-    >
-        <use href="#a" x="1.333" y="1.333" />
-        <symbol id="a" overflow="visible">
-            <path
-                d="M41.636 24.029c7.14 14.6 8.6 28.4 3.2 31.134-5.59 2.84-16.34-7.14-24.08-22.19-7.74-15.136-9.46-29.67-3.8-32.51 2.32-1.204 5.676 0 9.46 2.924M6.374 33.423c-4.106-2.17-6.536-4.75-6.366-7.5.26-6.3 14.26-10.58 31.22-9.7 16.86.86 30.36 6.6 30.1 12.9-.26 2.6-2.924 4.988-7.224 6.708m-29.5 14.706c-4.56 3.268-8.6 4.472-11.2 2.84-5.16-3.44-1.892-17.72 7.31-31.8S41.614-1.577 46.86 1.689c2.6 1.72 3.096 5.59 2.064 10.75"
-                stroke="#66595c"
-                fill="none"
-                strokeWidth="2.666"
-            />
-            <path
-                d="M34.584 27.023c.43 2.064-.86 4.128-2.924 4.56a3.75 3.75 0 0 1-4.472-2.924c-.432-2.064.86-4.128 2.924-4.56a3.8 3.8 0 0 1 4.472 2.924"
-                stroke="none"
-                fill="#66595c"
-                fillRule="nonzero"
-            />
-        </symbol>
+export const AtomIcon = React.memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
+    <svg width={width} height={height} viewBox="0 0 615 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="d" x="-.023" y="-.025" width="1.046" height="1.05" colorInterpolationFilters="sRGB">
+                <feGaussianBlur stdDeviation="3.295" />
+            </filter>
+            <filter id="e" x="-.192" y="-.192" width="1.385" height="1.384" colorInterpolationFilters="sRGB">
+                <feGaussianBlur stdDeviation="3.295" />
+            </filter>
+            <filter id="a" x="-.036" y="-.036" width="1.072" height="1.072" colorInterpolationFilters="sRGB">
+                <feGaussianBlur stdDeviation="8.47" />
+            </filter>
+            <linearGradient id="c" x1="309.26" x2="312.2" y1="50.9" y2="559.08" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#b0e098" offset="0" />
+                <stop stopColor="#70c485" offset=".5" />
+                <stop stopColor="#04a171" offset="1" />
+            </linearGradient>
+            <linearGradient id="b" x1="314.58" x2="309.18" y1="26.014" y2="573.96" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#fdfdfd" offset="0" />
+                <stop stopColor="#cbcbcb" offset="1" />
+            </linearGradient>
+        </defs>
+        <circle cx="311.77" cy="303.86" r="282.33" fill="#b3b3b3" filter="url(#a)" />
+        <circle cx="307.77" cy="299.86" r="282.33" fill="url(#b)" />
+        <circle cx="307.77" cy="299.86" r="258.17" fill="url(#c)" />
+        <g
+            transform="translate(38.06 414.14)"
+            fill="none"
+            filter="url(#d)"
+            stroke="#b3b3b3"
+            strokeLinecap="round"
+            strokeWidth="15"
+        >
+            <path d="M375.72-197.79c5.793-29.553 2.553-51.981-11.138-60.894-4.564-2.971-10.035-4.271-16.193-4.037-33.253 1.266-86.908 47.163-130.75 114.83-51.956 80.2-70.42 160.58-41.211 179.59 13.864 9.027 35.958 2.628 60.917-15.201" />
+            <path d="M402.361-66.637c24.66-9.59 39.824-22.716 40.612-37.79 1.823-34.864-73.865-67.141-169.13-72.146-8.93-.47-17.713-.716-26.303-.687-83.04.28-147.858 23.115-149.51 54.71-.786 15.046 12.888 29.634 36.328 41.741" />
+            <path d="M246.94-249.75c-16.872-14.033-32.696-21.569-45.41-20.613-3.384.255-6.515 1.09-9.424 2.577-31.031 15.85-21.118 97.821 22.19 183.03 43.311 85.204 103.57 141.42 134.6 125.57 29.842-15.242 21.787-91.625-17.393-173.24" />
+        </g>
+        <g fill="none" stroke="#fff" strokeLinecap="round" strokeWidth="15">
+            <path d="M411.78 214.35c5.793-29.553 2.553-51.981-11.138-60.894-4.564-2.971-10.035-4.271-16.193-4.037-33.253 1.266-86.908 47.163-130.75 114.83-51.956 80.2-70.42 160.58-41.211 179.59 13.864 9.027 35.958 2.628 60.917-15.201" />
+            <path d="M438.421 345.503c24.66-9.59 39.824-22.716 40.612-37.79 1.823-34.864-73.865-67.141-169.13-72.146-8.93-.47-17.713-.716-26.303-.687-83.04.28-147.858 23.115-149.51 54.71-.786 15.046 12.888 29.634 36.328 41.741" />
+            <path d="M283 162.39c-16.872-14.033-32.696-21.569-45.41-20.613-3.384.255-6.515 1.09-9.424 2.577-31.031 15.85-21.118 97.821 22.19 183.03 43.311 85.204 103.57 141.42 134.6 125.57 29.842-15.242 21.787-91.625-17.393-173.24" />
+        </g>
+        <path
+            transform="translate(37.332 410.87)"
+            d="M292.91-107.77a20.563 20.613 0 0 1-41.126 0 20.563 20.613 0 1 1 41.126 0z"
+            fill="#b3b3b3"
+            filter="url(#e)"
+        />
+        <path d="M328.242 301.1a20.563 20.613 0 0 1-41.126 0 20.563 20.613 0 1 1 41.126 0z" fill="#fff" />
     </svg>
 ))
 
-export const SublimeTextIcon = React.memo(() => (
-    <svg width="30" height="30" viewBox="0 0 256 332" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid">
+export const SublimeTextIcon = React.memo(({ width = 30, height = 30 }: { width?: number; height?: number } = {}) => (
+    <svg
+        width={width}
+        height={height}
+        viewBox="0 0 256 332"
+        xmlns="http://www.w3.org/2000/svg"
+        preserveAspectRatio="xMidYMid"
+    >
         <defs>
             <linearGradient x1="55.117%" y1="58.68%" x2="63.68%" y2="39.597%" id="a">
                 <stop stopColor="#FF9700" offset="0%" />
