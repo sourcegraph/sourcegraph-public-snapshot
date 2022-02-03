@@ -10,11 +10,11 @@
 }
 
 .chart {
-    min-height: 15rem;
+    min-height: 13rem;
     flex-grow: 1;
     width: 100%;
     position: relative;
-    flex-basis: 18rem;
+    flex-basis: 13rem;
 }
 
 .chart-content {
@@ -41,12 +41,17 @@
     }
 }
 
+.legend-migration-item {
+    min-width: 6rem;
+}
+
 .code {
     background-color: var(--body-bg);
     padding: 0.25rem 0.5rem;
     margin: 0;
     width: 100%;
     display: inline-block;
+    font-size: 0.75rem;
     border-radius: var(--border-radius);
 }
 
