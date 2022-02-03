@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/go-multierror"
+	"go.uber.org/atomic"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -37,10 +38,12 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 	}()
 
 	var (
-		g          multierror.Group
-		maxAlerter search.MaxAlerter
-		sem        = semaphore.NewWeighted(16)
-		merger     = result.NewLiveMerger(len(a.children))
+		g           multierror.Group
+		maxAlerter  search.MaxAlerter
+		limitHit    atomic.Bool
+		sentResults atomic.Bool
+		sem         = semaphore.NewWeighted(16)
+		merger      = result.NewLiveMerger(len(a.children))
 	)
 	for childNum, child := range a.children {
 		childNum, child := childNum, child
@@ -51,7 +54,13 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 			defer sem.Release(1)
 
 			intersectingStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+				if event.Stats.IsLimitHit {
+					limitHit.Store(true)
+				}
 				event.Results = merger.AddMatches(event.Results, childNum)
+				if len(event.Results) > 0 {
+					sentResults.Store(true)
+				}
 				stream.Send(event)
 			})
 
@@ -61,6 +70,11 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 		})
 	}
 
+	err = g.Wait().ErrorOrNil()
+
+	if !sentResults.Load() && limitHit.Load() {
+		maxAlerter.Add(search.AlertForCappedAndExpression())
+	}
 	return maxAlerter.Alert, g.Wait().ErrorOrNil()
 }
 
