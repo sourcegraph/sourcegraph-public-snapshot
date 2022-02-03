@@ -22,8 +22,8 @@ switch ($github.event_name) {
         # One way this is mitigated is that this request is streamed/paginated in order of most-recent-first,
         # which means we can hope the issue is usually found in the first page(s).
 
-        if (-not ($github.event.issue.labels | Where-Object { $_.name -eq $Label })) {
-            Write-Information "Issue does not have $Label label, exiting."
+        if (-not ($github.event.issue.labels | Where-Object { $_.name -eq $TeamLabel })) {
+            Write-Information "Issue does not have $TeamLabel label, exiting."
             return
         }
 
@@ -54,10 +54,10 @@ switch ($github.event_name) {
                 $number = $_.Groups['number'].Value
                 Get-GitHubIssue -Owner $owner -Repository $repo -Number $number
             } |
-            Where-Object { $_.labels | Where-Object { $_.name -eq $Label } }
+            Where-Object { $_.labels | Where-Object { $_.name -eq $TeamLabel } }
 
         if (!$fixedIssues) {
-            Write-Information "No fixed issues with $Label label referenced from PR description, exiting."
+            Write-Information "No fixed issues with $TeamLabel label referenced from PR description, exiting."
             return
         }
 
