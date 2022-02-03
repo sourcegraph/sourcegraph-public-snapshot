@@ -1,8 +1,12 @@
 .wrapper {
     display: grid;
-    grid-template-columns: 44fr 56fr;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
     gap: 3rem;
     padding: 1.5rem;
+}
+
+.chart {
+    min-height: 19.5rem;
 }
 
 .card-title {
@@ -16,17 +20,4 @@
     font-weight: 600;
     font-size: 1rem;
     line-height: 125%;
-}
-
-.callout-wrapper {
-    position: relative;
-    left: -1.5rem;
-    margin-top: 1.5rem;
-}
-
-.callout {
-    position: relative;
-    top: -0.2rem;
-    vertical-align: baseline;
-    margin-right: 1rem;
 }
