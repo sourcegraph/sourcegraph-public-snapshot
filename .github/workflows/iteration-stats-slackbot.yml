@@ -10,6 +10,7 @@ jobs:
   update-status:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Post iteration stats
         uses: Amadevus/pwsh-script@v2
         env:
