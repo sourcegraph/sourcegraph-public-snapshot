@@ -146,16 +146,12 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     }, [externalServices])
     const preventSubmit = useCallback((event: React.FormEvent<HTMLFormElement>): void => event.preventDefault(), [])
     const [query, setQuery] = useState('')
-    const [filteredCollaborators, setFilteredCollaborators] = useState<GQL.IPerson[]>([])
 
-    useMemo(() => {
-        if (query.trim() == '') {
-            setFilteredCollaborators(invitableCollaborators)
-        } else {
-            setFilteredCollaborators(
-                invitableCollaborators.filter(person => person.name.includes(query) || person.email.includes(query))
-            )
+    const filteredCollaborators: GQL.IPerson[] = useMemo(() => {
+        if (query.trim() === '') {
+            return invitableCollaborators
         }
+        return invitableCollaborators.filter(person => person.name.includes(query) || person.email.includes(query))
     }, [query, invitableCollaborators])
 
     const [inviteError, setInviteError] = useState<ErrorLike | null>(null)
@@ -217,7 +213,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
         }
     }, [currentIndex, setComplete, showAlert, isDoneCloning, fetchError])
 
-    const inviteURL = `${window.context.externalURL}?invitedBy=${user.username}`
+    const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${user.username}`
     return (
         <div className="m5-5 d-flex">
             <div className={classNames(className, 'mx-2')}>
@@ -314,12 +310,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                             <h4 className="m-0">Or invite by sending a link</h4>
                         </div>
                     </header>
-                    <CopyableText
-                        className="mb-3 ml-3 mr-3 flex-1"
-                        text={inviteURL}
-                        flex={true}
-                        size={inviteURL.length}
-                    />
+                    <CopyableText className="mb-3 flex-1" text={inviteURL} flex={true} size={inviteURL.length} />
                 </div>
             </div>
             <div className={classNames(className, 'mx-2')}>
