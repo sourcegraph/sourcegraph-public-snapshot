@@ -49,13 +49,13 @@ import { FETCH_HIGHLIGHTED_BLOB, FETCH_REFERENCES_QUERY } from './CoolCodeIntelQ
 
 export interface GlobalCoolCodeIntelProps {
     coolCodeIntelEnabled: boolean
-    onTokenClick?: (clickedToken: CoolHoveredToken) => void
+    onTokenClick?: (clickedToken: CoolClickedToken) => void
 }
 
-export type CoolHoveredToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+export type CoolClickedToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
 interface CoolCodeIntelProps extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'> {
-    hoveredToken?: CoolHoveredToken
+    clickedToken?: CoolClickedToken
 }
 
 export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
@@ -79,35 +79,12 @@ interface CoolCodeIntelTab {
     component: React.ComponentType<CoolCodeIntelProps>
 }
 
-export const TokenPanel: React.FunctionComponent<CoolCodeIntelProps> = props => (
-    <>
-        {props.hoveredToken ? (
-            <code>
-                Line: {props.hoveredToken.line}
-                {'\n'}
-                Character: {props.hoveredToken.character}
-                {'\n'}
-                Repo: {props.hoveredToken.repoName}
-                {'\n'}
-                Commit: {props.hoveredToken.commitID}
-                {'\n'}
-                Path: {props.hoveredToken.filePath}
-                {'\n'}
-            </code>
-        ) : (
-            <p>
-                <i>No token</i>
-            </p>
-        )}
-    </>
-)
-
 export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
-    if (!props.hoveredToken) {
+    if (!props.clickedToken) {
         return null
     }
 
-    return <ReferencesList hoveredToken={props.hoveredToken} {...props} />
+    return <ReferencesList clickedToken={props.clickedToken} {...props} />
 }
 
 interface Location {
@@ -168,7 +145,7 @@ interface LocationGroup {
 
 export const ReferencesList: React.FunctionComponent<
     {
-        hoveredToken: CoolHoveredToken
+        clickedToken: CoolClickedToken
     } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location | undefined>(undefined)
@@ -180,7 +157,7 @@ export const ReferencesList: React.FunctionComponent<
     useEffect(() => {
         setActiveLocation(undefined)
         setFilter(undefined)
-    }, [props.hoveredToken])
+    }, [props.clickedToken])
 
     const history = useMemo(() => createMemoryHistory(), [])
 
@@ -236,7 +213,7 @@ export const ReferencesList: React.FunctionComponent<
 
 export const SideReferences: React.FunctionComponent<
     {
-        hoveredToken: CoolHoveredToken
+        clickedToken: CoolClickedToken
         setActiveLocation: (location: Location | undefined) => void
         activeLocation: Location | undefined
         filter: string | undefined
@@ -247,12 +224,12 @@ export const SideReferences: React.FunctionComponent<
         FETCH_REFERENCES_QUERY,
         {
             variables: {
-                repository: props.hoveredToken.repoName,
-                commit: props.hoveredToken.commitID,
-                path: props.hoveredToken.filePath,
+                repository: props.clickedToken.repoName,
+                commit: props.clickedToken.commitID,
+                path: props.clickedToken.filePath,
                 // ATTENTION: Off by one ahead!!!!
-                line: props.hoveredToken.line - 1,
-                character: props.hoveredToken.character - 1,
+                line: props.clickedToken.line - 1,
+                character: props.clickedToken.character - 1,
                 after: null,
                 filter: props.filter || null,
             },
@@ -394,7 +371,7 @@ export const SideBlob: React.FunctionComponent<
     return (
         <Blob
             {...props}
-            onTokenClick={(token: CoolHoveredToken) => {
+            onTokenClick={(token: CoolClickedToken) => {
                 console.log('sideblob token', token)
                 if (props.onTokenClick) {
                     props.onTokenClick(token)
@@ -621,10 +598,7 @@ const ReferenceGroup: React.FunctionComponent<{
     )
 }
 
-const TABS: CoolCodeIntelTab[] = [
-    { id: 'token', label: 'Token', component: TokenPanel },
-    { id: 'references', label: 'References', component: ReferencesPanel },
-]
+const TABS: CoolCodeIntelTab[] = [{ id: 'references', label: 'References', component: ReferencesPanel }]
 
 export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps>(props => {
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
@@ -657,7 +631,7 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps>(props => {
 })
 
 export const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
-    if (!props.hoveredToken) {
+    if (!props.clickedToken) {
         return null
     }
 
