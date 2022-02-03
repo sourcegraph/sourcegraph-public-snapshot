@@ -52,11 +52,13 @@
 
 .cta-button {
     background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
     border: 0;
     width: 100%;
     font-size: var(--vscode-editor-font-size) !important;
 
     &:hover {
+        color: var(--vscode-button-foreground);
         background-color: var(--vscode-button-hoverBackground);
     }
 }

@@ -6,7 +6,7 @@
 
 .search-box {
     background-color: var(--vscode-editorWidget-background);
-    border-color: var(--vscode-editorWidget-border);
+    border-color: var(--vscode-textLink-foreground);
 
     &:first-child {
         border-top-left-radius: 0;
@@ -14,11 +14,11 @@
     }
 
     // Override for search context separator
-    --border-color-2: var(--vscode-editorWidget-border);
+    --border-color-2: var(--vscode-textLink-foreground);
     // For button hover background
     --color-bg-2: var(--vscode-input-background);
     &:first-child {
-        border-left-color: var(--vscode-editorWidget-border);
+        border-left-color: var(--vscode-textLink-foreground);
     }
 
     .btn:hover {
@@ -81,9 +81,21 @@
     }
 
     &-scroll-container {
+        padding: 0 1rem 0 0.5rem;
         min-height: 0;
         overflow: auto;
         width: 100%;
         height: 100%;
     }
+}
+
+div[class^='FileMatchChildren-module__file-match-children'] {
+    background-color: var(--vscode-editorWidget-background) !important;
+    a {
+        background-color: var(--vscode-editorWidget-background) !important;
+    }
+}
+
+div[class^='SearchResult-module__search-result-match'] {
+    background-color: var(--vscode-editorWidget-background) !important;
 }

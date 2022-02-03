@@ -22,7 +22,7 @@
     "onFileSystem:sourcegraph",
     "onLanguage:sourcegraph",
     "onCommand:sourcegraph.search",
-    "onCommand:sourcegraph.selectionSearch",
+    "onCommand:sourcegraph.selectionSearchWeb",
     "onCommand:sourcegraph.openFile",
     "onView:sourcegraph.searchSidebar",
     "onView:sourcegraph.files",

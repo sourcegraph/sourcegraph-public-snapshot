@@ -93,8 +93,8 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                         cloning them to your local machine.
                     </p>
                     <p className={classNames(styles.ctaParagraph)}>
-                        Developers at some of the world’s best software companies use Sourcegraph to onboard to new code
-                        bases, find examples, research errors, and resolve incidents.
+                        Developers use Sourcegraph every day to onboard to new code bases, find code to reuse, resolve
+                        incidents, fix security vulnerabilities, and more.
                     </p>
                     <div className={classNames(styles.ctaParagraph)}>
                         <p className="mb-0">Learn more:</p>
@@ -125,8 +125,8 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
         return renderCommon(
             <>
                 <p className={classNames(styles.ctaParagraph)}>
-                    Create an account to enhance search across your private repositories: search multiple repos & commit
-                    history, monitor, save searches and more.
+                    Create an account to search across your private repositories and access advanced features: search
+                    multiple repositories & commit history, monitor code changes, save searches, and more.
                 </p>
                 <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                     <button type="button" onClick={onSignUpClick} className={classNames('btn my-1', styles.ctaButton)}>
