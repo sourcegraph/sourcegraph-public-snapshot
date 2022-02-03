@@ -1,14 +1,17 @@
 import React, { useState } from 'react'
 
-import { Button, Link, Popover, PopoverContent, PopoverTrigger } from '@sourcegraph/wildcard'
+import { Button, Link, PopoverTrigger, FeedbackPrompt } from '@sourcegraph/wildcard'
 
-import { FeedbackPromptContent } from '../../../../../../nav/Feedback'
+import { useHandleSubmitFeedback } from '../../../../../../hooks'
 
 import styles from './CodeInsightsLearnMore.module.scss'
 
 export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes<HTMLElement>> = props => {
     const [isVisible, setVisibility] = useState(false)
-
+    const feedbackSubmitState = useHandleSubmitFeedback({
+        textPrefix: 'Code Insights: ',
+        routeMatch: '/insights/dashboards',
+    })
     return (
         <footer {...props}>
             <h2>Learn more about Code Insights</h2>
@@ -45,19 +48,11 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                         Have a question or idea about code monitoring? We want to hear your feedback!
                     </p>
 
-                    <Popover isOpen={isVisible} onOpenChange={event => setVisibility(event.isOpen)}>
+                    <FeedbackPrompt {...feedbackSubmitState} open={isVisible} closePrompt={() => setVisibility(false)}>
                         <PopoverTrigger as={Button} variant="link" className={styles.feedbackTrigger}>
                             Share your thoughts
                         </PopoverTrigger>
-
-                        <PopoverContent className={styles.feedbackPrompt}>
-                            <FeedbackPromptContent
-                                closePrompt={() => setVisibility(false)}
-                                textPrefix="Code Insights: "
-                                routeMatch="/insights/dashboards"
-                            />
-                        </PopoverContent>
-                    </Popover>
+                    </FeedbackPrompt>
                 </article>
             </div>
         </footer>

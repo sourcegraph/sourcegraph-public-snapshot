@@ -3,6 +3,7 @@ import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -60,18 +61,22 @@ describe('GlobalNavbar', () => {
 
     test('default', () => {
         const { asFragment } = render(
-            <MemoryRouter>
-                <GlobalNavbar {...PROPS} />
-            </MemoryRouter>
+            <MockedTestProvider>
+                <MemoryRouter>
+                    <GlobalNavbar {...PROPS} />
+                </MemoryRouter>
+            </MockedTestProvider>
         )
         expect(asFragment()).toMatchSnapshot()
     })
 
     test('low-profile', () => {
         const { asFragment } = render(
-            <MemoryRouter>
-                <GlobalNavbar {...PROPS} variant="low-profile" />
-            </MemoryRouter>
+            <MockedTestProvider>
+                <MemoryRouter>
+                    <GlobalNavbar {...PROPS} variant="low-profile" />
+                </MemoryRouter>
+            </MockedTestProvider>
         )
         expect(asFragment()).toMatchSnapshot()
     })

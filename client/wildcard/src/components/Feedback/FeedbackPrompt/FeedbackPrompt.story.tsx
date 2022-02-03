@@ -1,23 +1,18 @@
-import { MockedResponse } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { getDocumentNode } from '@sourcegraph/http-client'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { FeedbackPrompt, SUBMIT_HAPPINESS_FEEDBACK_QUERY } from '.'
+import { Button } from '../../Button'
 
-const mockRequest: MockedResponse = {
-    request: {
-        query: getDocumentNode(SUBMIT_HAPPINESS_FEEDBACK_QUERY),
-    },
-    result: {
-        data: {
-            submitHappinessFeedback: {
-                alwaysNil: null,
-            },
-        },
+import { FeedbackPrompt, FeedbackPromptTrigger } from '.'
+
+const handleSubmit = (text?: string, rating?: number) => new Promise<undefined>(resolve => resolve(undefined))
+
+const data = {
+    submitHappinessFeedback: {
+        alwaysNil: null,
     },
 }
 
@@ -26,9 +21,7 @@ const config: Meta = {
 
     decorators: [
         story => (
-            <BrandedStory mocks={[mockRequest]} styles={webStyles}>
-                {() => <div className="container mt-3">{story()}</div>}
-            </BrandedStory>
+            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
         ),
     ],
     parameters: {
@@ -46,6 +39,10 @@ export default config
 export const FeedbackPromptExample = () => (
     <>
         <h1>This is a feedbackPrompt</h1>
-        <FeedbackPrompt routes={[]} />
+        <FeedbackPrompt open={false} onSubmit={handleSubmit} loading={false} data={data}>
+            <FeedbackPromptTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
+                <span>Feedback</span>
+            </FeedbackPromptTrigger>
+        </FeedbackPrompt>
     </>
 )

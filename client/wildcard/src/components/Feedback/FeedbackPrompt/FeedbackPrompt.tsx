@@ -1,21 +1,18 @@
+import { ApolloError, OperationVariables } from '@apollo/client'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { gql, useMutation } from '@sourcegraph/http-client'
-import { Button, FlexTextArea, LoadingSpinner, useAutoFocus, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
-import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
-import { useRoutesMatch } from '../../hooks'
-import { LayoutRouteProps } from '../../routes'
-import { IconRadioButtons } from '../IconRadioButtons'
+import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link } from '../..'
+import { useAutoFocus, useLocalStorage } from '../../..'
 
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
 import styles from './FeedbackPrompt.module.scss'
+import { IconRadioButtons } from './IconRadioButtons'
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {
@@ -40,31 +37,25 @@ export const HAPPINESS_FEEDBACK_OPTIONS = [
     },
 ]
 
-export const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
-    mutation SubmitHappinessFeedback($input: HappinessFeedbackSubmissionInput!) {
-        submitHappinessFeedback(input: $input) {
-            alwaysNil
-        }
-    }
-`
-
-interface ContentProps {
-    closePrompt: () => void
-    routeMatch?: string
-    /** Text to be prepended to user input on submission. */
-    textPrefix?: string
+interface ContentProps<TData = any> {
+    closePrompt?: () => void
     /** Boolean for displaying the Join Research link */
     productResearchEnabled?: boolean
+    onSubmit: (text: string, rating: number) => Promise<OperationVariables | undefined>
+    loading: boolean
+    data?: TData | null
+    error?: ApolloError
 }
-
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
-export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
+const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
     closePrompt,
-    routeMatch,
     productResearchEnabled,
-    textPrefix = '',
+    onSubmit,
+    loading,
+    data,
+    error,
 }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
@@ -74,11 +65,6 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
         setText,
     ])
 
-    const [submitFeedback, { loading, data, error }] = useMutation<
-        SubmitHappinessFeedbackResult,
-        SubmitHappinessFeedbackVariables
-    >(SUBMIT_HAPPINESS_FEEDBACK_QUERY)
-
     const handleSubmit = useCallback<React.FormEventHandler>(
         event => {
             event.preventDefault()
@@ -87,13 +73,9 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                 return
             }
 
-            return submitFeedback({
-                variables: {
-                    input: { score: rating, feedback: `${textPrefix}${text}`, currentPath: routeMatch },
-                },
-            })
+            return onSubmit(text, rating)
         },
-        [rating, submitFeedback, text, routeMatch, textPrefix]
+        [rating, onSubmit, text]
     )
 
     useEffect(() => {
@@ -159,6 +141,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         role="menuitem"
                         type="submit"
                         variant="secondary"
+                        data-testid="send-feedback-btn"
                         className={classNames('btn-block', styles.button)}
                     >
                         {loading ? <LoadingSpinner /> : 'Send'}
@@ -169,40 +152,30 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
     )
 }
 
-interface Props {
+interface Props extends ContentProps {
     open?: boolean
-    routes: readonly LayoutRouteProps<{}>[]
 }
 
-export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes }) => {
+export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, onSubmit, loading, error, data, children }) => {
     const [isOpen, setIsOpen] = useState(() => !!open)
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
     const forceClose = useCallback(() => setIsOpen(false), [])
-    const match = useRoutesMatch(routes)
 
     return (
-        <ButtonDropdown
-            a11y={false}
-            isOpen={isOpen}
-            toggle={handleToggle}
-            className={styles.feedbackPrompt}
-            group={false}
-        >
-            <Button
-                tag="button"
-                caret={false}
-                className={classNames('text-decoration-none', styles.toggle)}
-                aria-label="Feedback"
-                variant="secondary"
-                outline={true}
-                size="sm"
-                as={DropdownToggle}
-            >
-                <span>Feedback</span>
-            </Button>
-            <DropdownMenu right={true} className={styles.menu}>
-                <FeedbackPromptContent productResearchEnabled={true} closePrompt={forceClose} routeMatch={match} />
-            </DropdownMenu>
-        </ButtonDropdown>
+        <div className={styles.feedbackPrompt}>
+            <Popover isOpen={isOpen} onOpenChange={handleToggle}>
+                {children}
+                <PopoverContent position={Position.bottom} className={styles.menu}>
+                    <FeedbackPromptContent
+                        onSubmit={onSubmit}
+                        productResearchEnabled={true}
+                        closePrompt={forceClose}
+                        data={data}
+                        error={error}
+                        loading={loading}
+                    />
+                </PopoverContent>
+            </Popover>
+        </div>
     )
 }

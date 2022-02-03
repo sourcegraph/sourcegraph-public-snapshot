@@ -7,6 +7,8 @@ import { Router, Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+
 import { CodeInsightsBackend } from '../../../core/backend/code-insights-backend'
 import {
     CodeInsightsBackendContext,
@@ -53,12 +55,14 @@ const renderWithRouter = (
     { route = '/', history = createMemoryHistory({ initialEntries: [route] }), api = {} } = {}
 ) => ({
     ...render(
-        <Wrapper api={api}>
-            <Router history={history}>
-                {component}
-                <Route path={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`}>{ALL_INSIGHTS}</Route>
-            </Router>
-        </Wrapper>
+        <MockedTestProvider>
+            <Wrapper api={api}>
+                <Router history={history}>
+                    {component}
+                    <Route path={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`}>{ALL_INSIGHTS}</Route>
+                </Router>
+            </Wrapper>
+        </MockedTestProvider>
     ),
     history,
 })

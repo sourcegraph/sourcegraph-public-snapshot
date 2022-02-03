@@ -19,14 +19,17 @@ import {
     useObservable,
     Link,
     Alert,
+    FeedbackPrompt,
     ButtonLink,
+    Button,
+    FeedbackPromptTrigger,
 } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
-import { FeedbackPrompt } from '../../nav/Feedback'
+import { useHandleSubmitFeedback, useRoutesMatch } from '../../hooks'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
@@ -72,6 +75,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     useBreadcrumb,
     ...props
 }) {
+    const routeMatch = useRoutesMatch(routes)
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryDocs')
     }, [])
@@ -79,6 +83,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 
     const thisPage = toDocumentationURL({ repoName: props.repo.name, revision: props.revision || '', pathID: '' })
     useBreadcrumb(useMemo(() => ({ key: 'node', element: <Link to={thisPage}>API docs</Link> }), [thisPage]))
+    const feedbackSubmitState = useHandleSubmitFeedback({ routeMatch })
 
     const pagePathID = props.pathID || '/'
     const page =
@@ -215,7 +220,17 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                             >
                                 Learn more
                             </ButtonLink>
-                            <FeedbackPrompt routes={routes} />
+                            <FeedbackPrompt {...feedbackSubmitState}>
+                                <FeedbackPromptTrigger
+                                    as={Button}
+                                    aria-label="Feedback"
+                                    variant="secondary"
+                                    outline={true}
+                                    size="sm"
+                                >
+                                    Share feedback
+                                </FeedbackPromptTrigger>
+                            </FeedbackPrompt>
                         </div>
                         <h1>
                             <BookOpenBlankVariantIcon className="icon-inline mr-1" />

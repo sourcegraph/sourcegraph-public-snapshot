@@ -1,0 +1,7 @@
+.toggle {
+    border: 1px solid var(--border-color);
+
+    &:hover {
+        border: 1px solid var(--header-icon-color);
+    }
+}

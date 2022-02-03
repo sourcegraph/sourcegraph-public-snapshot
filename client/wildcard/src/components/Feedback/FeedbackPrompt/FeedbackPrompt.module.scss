@@ -5,18 +5,11 @@
     white-space: normal;
 }
 
-.toggle {
-    border: 1px solid var(--border-color);
-
-    &:hover {
-        border: 1px solid var(--header-icon-color);
-    }
-}
-
 .menu {
     text-align: center;
     width: 20rem;
     padding: 1rem;
+    margin-top: 0.06rem;
 }
 
 .close {

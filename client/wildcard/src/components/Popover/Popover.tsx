@@ -99,7 +99,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
     return <PopoverContext.Provider value={context}>{children}</PopoverContext.Provider>
 }
 
-interface PopoverTriggerProps {}
+export interface PopoverTriggerProps {}
 
 export const PopoverTrigger = forwardRef((props, reference) => {
     const { as: Component = 'button', onClick = noop, ...otherProps } = props

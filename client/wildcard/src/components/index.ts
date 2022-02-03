@@ -20,7 +20,7 @@ export { Code, H1, H2, H3, H4, H5, H6, Label, Text } from './Typography'
 export * as Typography from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'
 export { Modal } from './Modal'
-export { FeedbackBadge, FeedbackText } from './Feedback'
+export { FeedbackBadge, FeedbackText, FeedbackPrompt, FeedbackPromptTrigger } from './Feedback'
 export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReason } from './Popover'
 
 /**
