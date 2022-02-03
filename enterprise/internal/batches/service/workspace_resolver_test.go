@@ -10,6 +10,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
@@ -416,7 +417,7 @@ func mockDefaultBranches(t *testing.T, defaultBranches map[api.RepoName]defaultB
 		if res, ok := defaultBranches[repo]; ok {
 			return res.branch, res.commit, nil
 		}
-		return "", "", fmt.Errorf("unknown repo: %s", repo)
+		return "", "", errors.Newf("unknown repo: %s", repo)
 	}
 	t.Cleanup(func() { git.Mocks.GetDefaultBranch = nil })
 }
@@ -425,7 +426,7 @@ func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
 	git.Mocks.Stat = func(commit api.CommitID, _ string) (fs.FileInfo, error) {
 		hasBatchIgnore, ok := m[commit]
 		if !ok {
-			return nil, fmt.Errorf("unknown commit: %s", commit)
+			return nil, errors.Newf("unknown commit: %s", commit)
 		}
 		if hasBatchIgnore {
 			return &util.FileInfo{Name_: ".batchignore", Mode_: 0}, nil
@@ -440,7 +441,7 @@ func mockResolveRevision(t *testing.T, branches map[string]api.CommitID) {
 		if commit, ok := branches[spec]; ok {
 			return commit, nil
 		}
-		return "", fmt.Errorf("unknown spec: %s", spec)
+		return "", errors.Newf("unknown spec: %s", spec)
 	}
 	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
 }

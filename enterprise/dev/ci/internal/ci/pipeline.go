@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 
@@ -282,7 +283,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		teammates := team.NewTeammateResolver(ghc, slc)
 		tm, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", c.Commit)
 		if err != nil {
-			pipeline.AddFailureSlackNotify(c.Notify.Channel, "", fmt.Errorf("failed to get Slack user: %w", err))
+			pipeline.AddFailureSlackNotify(c.Notify.Channel, "", errors.Newf("failed to get Slack user: %w", err))
 		} else {
 			pipeline.AddFailureSlackNotify(c.Notify.Channel, tm.SlackID, nil)
 		}
@@ -296,14 +297,14 @@ func ensureUniqueKeys(pipeline *bk.Pipeline) error {
 	for _, step := range pipeline.Steps {
 		if s, ok := step.(*buildkite.Step); ok {
 			if s.Key == "" {
-				return fmt.Errorf("empty key on step with label %q", s.Label)
+				return errors.Newf("empty key on step with label %q", s.Label)
 			}
 			occurences[s.Key] += 1
 		}
 	}
 	for k, count := range occurences {
 		if count > 1 {
-			return fmt.Errorf("non unique key on step with key %q", k)
+			return errors.Newf("non unique key on step with key %q", k)
 		}
 	}
 	return nil
