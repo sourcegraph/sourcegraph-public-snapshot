@@ -359,7 +359,7 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	repo = &imageRepository{name: ref.Name, imageRef: ref}
 	repo.authToken, err = repo.fetchAuthToken(ref.Registry)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	tags, err := repo.fetchAllTags()
 	if err != nil {
