@@ -61,7 +61,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent = () => {
                   id: '1',
                   name: 'TODOs',
                   query: query.input.value,
-                  stroke: DATA_SERIES_COLORS.BLUE,
+                  stroke: DATA_SERIES_COLORS.ORANGE,
               },
           ]
         : []
@@ -128,9 +128,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent = () => {
                         <li>Track migrations, adoption, and deprecations</li>
                         <li>Detect versions of languages, packages, or infrastructure</li>
                         <li>Ensure removal of security vulnerabilities</li>
-                        <li>Understand your code by team or repository</li>
-                        <li>Track code smells and health</li>
-                        <li>Visualize configurations like CI connections or service info</li>
+                        <li>Track code smells, ownership, and configurations</li>
                     </ul>
 
                     <Button variant="primary">
