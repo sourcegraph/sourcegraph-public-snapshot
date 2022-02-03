@@ -47,7 +47,15 @@ function getExtensionCoreConfiguration(targetType) {
     resolve: {
       // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
-      alias: {},
+      alias:
+        targetType === 'webworker'
+          ? {
+              path: require.resolve('path-browserify'),
+              './browserActionsNode': path.resolve(__dirname, 'src', 'link-commands', 'browserActionsWeb'),
+            }
+          : {
+              path: require.resolve('path-browserify'),
+            },
       fallback:
         targetType === 'webworker'
           ? {

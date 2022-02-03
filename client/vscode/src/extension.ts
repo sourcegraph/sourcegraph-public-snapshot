@@ -4,8 +4,10 @@ import vscode, { env } from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { Event } from '@sourcegraph/web/src/graphql-operations'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
+import { logEvent } from './backend/eventLogger'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSearchContexts } from './backend/searchContexts'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
@@ -114,6 +116,9 @@ export function activate(context: vscode.ExtensionContext): void {
             return localStorageService.setValue(SELECTED_SEARCH_CONTEXT_SPEC_KEY, spec)
         },
         setSidebarQueryState: sidebarQueryState => sidebarQueryStates.next(sidebarQueryState),
+        getLocalStorageItem: key => localStorageService.getValue(key),
+        setLocalStorageItem: (key: string, value: string) => localStorageService.setValue(key, value),
+        logEvents: (variables: Event) => logEvent(variables),
     }
 
     // Also initializes code intel.

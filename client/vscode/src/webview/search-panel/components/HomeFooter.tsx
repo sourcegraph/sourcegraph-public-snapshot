@@ -91,7 +91,7 @@ export const HomeFooter: React.FunctionComponent<HomeFooterProps> = props => (
                                 src: 'DtL9ZJs/vsce-watch-and-learn.png',
                                 alt: 'Watch and learn video thumbnail',
                             }}
-                            onToggle={() => props.telemetryService.log('VSCE_Home_Watch&Lean')}
+                            onToggle={() => props.telemetryService.log('VSCEHomeWatch&Lean')}
                             // assetsRoot="https://sourcegraph.com/.assets/"
                             assetsRoot="https://i.ibb.co/"
                         />

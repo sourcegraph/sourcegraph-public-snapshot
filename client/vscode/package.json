@@ -22,7 +22,7 @@
     "onFileSystem:sourcegraph",
     "onLanguage:sourcegraph",
     "onCommand:sourcegraph.search",
-    "onCommand:sourcegraph.selectionSearch",
+    "onCommand:sourcegraph.selectionSearchWeb",
     "onCommand:sourcegraph.openFile",
     "onView:sourcegraph.searchSidebar",
     "onView:sourcegraph.files",
@@ -35,7 +35,7 @@
       {
         "command": "sourcegraph.search",
         "category": "Sourcegraph",
-        "title": "Open Sourcegraph Search Tab",
+        "title": "Search with Sourcegraph",
         "icon": {
           "light": "images/logo.svg",
           "dark": "images/logo.svg"
@@ -46,14 +46,19 @@
         "category": "Sourcegraph",
         "title": "Open File in Sourcegraph Web",
         "icon": {
-          "light": "images/logo.svg",
-          "dark": "images/logo.svg"
+          "light": "images/logomark_dark.svg",
+          "dark": "images/logomark_light.svg"
         }
       },
       {
         "command": "sourcegraph.copyFileLink",
         "category": "Sourcegraph",
         "title": "Copy Sourcegraph File Link"
+      },
+      {
+        "command": "sourcegraph.selectionSearchWeb",
+        "category": "Sourcegraph",
+        "title": "Search Selection in Sourcegraph Web"
       }
     ],
     "viewsContainers": {
@@ -117,7 +122,7 @@
           "string"
         ],
         "default": "",
-        "description": "Will always open files on Sourcegraph web at this default branch."
+        "description": "Always open local files on Sourcegraph web at this default branch."
       }
     },
     "keybindings": [
@@ -130,10 +135,28 @@
         "command": "sourcegraph.openInBrowser",
         "key": "alt+a",
         "mac": "option+a"
+      },
+      {
+        "command": "sourcegraph.selectionSearchWeb",
+        "key": "alt+s",
+        "mac": "option+s"
       }
     ],
     "menus": {
       "editor/context": [
+        {
+          "command": "sourcegraph.openInBrowser",
+          "group": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.copyFileLink",
+          "group": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.selectionSearchWeb",
+          "group": "sourcegraph",
+          "when": "editorHasSelection"
+        },
         {
           "command": "sourcegraph.search",
           "group": "sourcegraph"
@@ -144,7 +167,7 @@
       "editor/title": [
         {
           "command": "sourcegraph.openInBrowser",
-          "when": "sourcegraph.canFocusActiveDocument",
+          "when": "resourceScheme == sourcegraph && editorReadonly",
           "group": "navigation"
         }
       ]

@@ -5,6 +5,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
 import { WebviewPageProps } from '../platform/context'
 
+import { RecentFilesSection } from './components/RecentFilesSection'
 import { RecentRepositoriesSection } from './components/RecentRepositoriesSection'
 import { RecentSearchesSection } from './components/RecentSearchesSection'
 import { SavedSearchesSection } from './components/SavedSearchesSection'
@@ -22,6 +23,6 @@ export const HistoryHomeSidebar: React.FunctionComponent<HistorySidebarProps> = 
         <SavedSearchesSection {...props} />
         <RecentSearchesSection {...props} />
         <RecentRepositoriesSection {...props} />
-        {/* TODO: Recent files (blocked on remote browsing) */}
+        <RecentFilesSection {...props} />
     </div>
 )
