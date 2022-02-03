@@ -139,7 +139,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload, trace observa
 				// If this is a unique constraint violation, then we've previously processed this same
 				// upload record up to this point, but failed to perform the transaction below. We can
 				// safely assume that the entire index's data is in the codeintel database, as it's
-				// parsed determinstically and written atomically.
+				// parsed deterministically and written atomically.
 				log15.Warn("LSIF data already exists for upload record")
 				trace.Log(log.Bool("rewriting", true))
 			} else {
