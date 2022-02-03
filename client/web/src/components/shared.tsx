@@ -11,8 +11,9 @@ export { WebHoverOverlay } from './WebHoverOverlay'
 export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = props => (
     <CommandListPopoverButton
         {...props}
-        buttonClassName="btn btn-link"
-        popoverClassName="popover  border-0"
+        variant="link"
+        buttonClassName="m-0 p-0"
+        popoverClassName="popover border-0"
         popoverInnerClassName="rounded overflow-hidden"
         formClassName="form p-2 bg-1 border-bottom"
         inputClassName="form-control px-2 py-1"
