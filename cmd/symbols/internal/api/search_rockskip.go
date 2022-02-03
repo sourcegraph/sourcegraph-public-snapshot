@@ -116,9 +116,9 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig
 		if args.Query != "" {
 			query = &args.Query
 		}
-		tasklog.Reset()
-		blobs, err := rockskip.Search(db, tasklog, string(args.Repo), string(args.CommitID), query)
-		tasklog.Print()
+		tasklog2 := rockskip.NewTaskLog()
+		blobs, err := rockskip.Search(db, tasklog2, string(args.Repo), string(args.CommitID), query)
+		tasklog2.Print()
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Search")
 		}
