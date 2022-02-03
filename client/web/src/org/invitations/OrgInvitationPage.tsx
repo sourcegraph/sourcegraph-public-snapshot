@@ -42,8 +42,8 @@ interface InviteVariables {
     token: string
 }
 
-export const INVITATION_BY_JWT = gql`
-    query InvitationByJWT($token: String!) {
+export const INVITATION_BY_TOKEN = gql`
+    query InvitationByToken($token: String!) {
         invitationByToken(token: $token) {
             id
             createdAt
@@ -67,7 +67,7 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
     const token = match.params.token as string
 
     const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<InviteResult, InviteVariables>(
-        INVITATION_BY_JWT,
+        INVITATION_BY_TOKEN,
         {
             skip: !authenticatedUser || !token,
             variables: {
@@ -89,31 +89,29 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
         },
     })
 
-    const acceptInvitation = useCallback(
-        () =>
-            respondToInvitation({
-                variables: {
-                    id: data?.id || '',
-                    response: OrganizationInvitationResponseType.ACCEPT,
-                },
-            }).then(d => {
-                if (orgName) {
-                    history.push(orgURL(orgName))
-                }
-            }),
-        [data?.id, history, orgName, respondToInvitation]
-    )
+    const acceptInvitation = useCallback(async () => {
+        await respondToInvitation({
+            variables: {
+                id: data?.id || '',
+                response: OrganizationInvitationResponseType.ACCEPT,
+            },
+        })
 
-    const declineInvitation = useCallback(
-        () =>
-            respondToInvitation({
-                variables: {
-                    id: data?.id || '',
-                    response: OrganizationInvitationResponseType.REJECT,
-                },
-            }).then(() => history.push(userURL(authenticatedUser.username))),
-        [authenticatedUser.username, data?.id, history, respondToInvitation]
-    )
+        if (orgName) {
+            history.push(orgURL(orgName))
+        }
+    }, [data?.id, history, orgName, respondToInvitation])
+
+    const declineInvitation = useCallback(async () => {
+        await respondToInvitation({
+            variables: {
+                id: data?.id || '',
+                response: OrganizationInvitationResponseType.REJECT,
+            },
+        })
+
+        history.push(userURL(authenticatedUser.username))
+    }, [authenticatedUser.username, data?.id, history, respondToInvitation])
 
     const loading = inviteLoading || respondLoading
     const error = inviteError || respondError

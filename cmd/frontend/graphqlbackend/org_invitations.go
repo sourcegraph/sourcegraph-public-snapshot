@@ -87,7 +87,7 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	}
 
 	if claims, ok := token.Claims.(*orgInvitationClaims); ok && token.Valid {
-		invite, err := r.db.OrgInvitations().GetPendingByID(ctx, claims.InvitationID) //(ctx, r.db, claims.InvitationID)
+		invite, err := r.db.OrgInvitations().GetPendingByID(ctx, claims.InvitationID)
 		if err != nil {
 			return nil, err
 		}
