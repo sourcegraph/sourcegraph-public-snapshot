@@ -74,12 +74,20 @@ func TestOrgInvitations(t *testing.T) {
 		t.Fatal(err)
 	}
 	OrgInvitations(db).Revoke(ctx, oi3.ID)
+	oi3, err = OrgInvitations(db).GetByID(ctx, oi3.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	oi4, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient2.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	OrgInvitations(db).Respond(ctx, oi4.ID, recipient2.ID, false)
+	oi4, err = OrgInvitations(db).GetByID(ctx, oi4.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	testGetByID := func(t *testing.T, id int64, want *OrgInvitation) {
 		t.Helper()
@@ -161,7 +169,7 @@ func TestOrgInvitations(t *testing.T) {
 		}
 	}
 	t.Run("List/Count all", func(t *testing.T) {
-		testListCount(t, OrgInvitationsListOptions{}, []*OrgInvitation{oi1, oi2})
+		testListCount(t, OrgInvitationsListOptions{}, []*OrgInvitation{oi1, oi2, oi3, oi4})
 	})
 	t.Run("List/Count by OrgID", func(t *testing.T) {
 		testListCount(t, OrgInvitationsListOptions{OrgID: org1.ID}, []*OrgInvitation{oi1})
