@@ -11,6 +11,9 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -21,7 +24,7 @@ const (
 	eventRetentionInDays int = 7
 )
 
-func newTriggerQueryRunner(ctx context.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newTriggerQueryRunner(ctx context.Context, db edb.EnterpriseDB, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_trigger_jobs_worker",
 		NumHandlers:       1,
@@ -29,7 +32,7 @@ func newTriggerQueryRunner(ctx context.Context, s edb.CodeMonitorStore, metrics 
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
-	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(s), &queryRunner{s}, options)
+	worker := dbworker.NewWorker(ctx, createDBWorkerStoreForTriggerJobs(db), &queryRunner{db: db}, options)
 	return worker
 }
 
@@ -104,7 +107,7 @@ func newActionJobResetter(ctx context.Context, s edb.CodeMonitorStore, metrics c
 	return dbworker.NewResetter(workerStore, options)
 }
 
-func createDBWorkerStoreForTriggerJobs(s edb.CodeMonitorStore) dbworkerstore.Store {
+func createDBWorkerStoreForTriggerJobs(s basestore.ShareableStore) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:              "code_monitors_trigger_jobs_worker_store",
 		TableName:         "cm_trigger_jobs",
@@ -131,7 +134,7 @@ func createDBWorkerStoreForActionJobs(s edb.CodeMonitorStore) dbworkerstore.Stor
 }
 
 type queryRunner struct {
-	edb.CodeMonitorStore
+	db edb.EnterpriseDB
 }
 
 func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -146,7 +149,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		return errors.Errorf("unexpected record type %T", record)
 	}
 
-	s, err := r.CodeMonitorStore.Transact(ctx)
+	s, err := r.db.CodeMonitors().Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -161,34 +164,51 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+	// SECURITY: set the actor to the user that owns the code monitor.
+	// For all downstream actions (specifically executing searches),
+	// we should run as the user who owns the code monitor.
+	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
 
-	newQuery := newQueryWithAfterFilter(q)
-
-	// Search.
-	results, err := search(ctx, newQuery, m.UserID)
+	flags, err := r.db.FeatureFlags().GetUserFlags(ctx, m.UserID)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "fetch feature flags for user")
 	}
-	var numResults int
-	if results != nil {
-		numResults = len(results.Data.Search.Results.Results)
+
+	hasRepoAware := featureflag.FlagSet(flags).GetBoolOr("cc-repo-aware-code-monitors", false)
+
+	var (
+		results  *searchResults
+		newQuery string
+	)
+	if hasRepoAware {
+		newQuery = q.QueryString
+		results, err = search(ctx, newQuery, &m.ID)
+	} else {
+		newQuery = newQueryWithAfterFilter(q)
+		results, err = search(ctx, newQuery, nil)
 	}
-	if numResults > 0 {
-		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
-		if err != nil {
-			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
-		}
+	if err != nil {
+		return errors.Wrap(err, "run search")
 	}
+
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, err)
 	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
 	if err != nil {
 		return err
 	}
+
 	// Log the actual query we ran and whether we got any new results.
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, numResults)
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, results.Results)
 	if err != nil {
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
+	}
+
+	if len(results.Results) > 0 {
+		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
+		if err != nil {
+			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
+		}
 	}
 	return nil
 }
@@ -276,12 +296,12 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 		return errors.Wrap(err, "GetActionJobMetadata")
 	}
 
-	w, err := s.GetSlackWebhookAction(ctx, *j.SlackWebhook)
+	w, err := s.GetWebhookAction(ctx, *j.Webhook)
 	if err != nil {
-		return errors.Wrap(err, "GetSlackWebhookAction")
+		return errors.Wrap(err, "GetWebhookAction")
 	}
 
-	utmSource := "code-monitor-slack-webhook"
+	utmSource := "code-monitor-webhook"
 	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
 	if err != nil {
 		return errors.Wrap(err, "GetSearchURL")
@@ -371,8 +391,8 @@ func newQueryWithAfterFilter(q *edb.QueryTrigger) string {
 	return strings.Join([]string{q.QueryString, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
 }
 
-func latestResultTime(previousLastResult *time.Time, v *gqlSearchResponse, searchErr error) time.Time {
-	if searchErr != nil || len(v.Data.Search.Results.Results) == 0 {
+func latestResultTime(previousLastResult *time.Time, v *searchResults, searchErr error) time.Time {
+	if searchErr != nil || len(v.Results) == 0 {
 		// Error performing the search, or there were no results. Assume the
 		// previous info's result time.
 		if previousLastResult != nil {
@@ -382,7 +402,7 @@ func latestResultTime(previousLastResult *time.Time, v *gqlSearchResponse, searc
 	}
 
 	// Results are ordered chronologically, so first result is the latest.
-	t, err := extractTime(v.Data.Search.Results.Results[0])
+	t, err := extractTime(v.Results[0])
 	if err != nil {
 		// Error already logged by extractTime.
 		return time.Now()

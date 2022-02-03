@@ -297,3 +297,7 @@ Policies.args = {
         tosAccepted: true,
     },
 }
+
+Policies.parameters = {
+    chromatic: { disableSnapshots: false },
+}

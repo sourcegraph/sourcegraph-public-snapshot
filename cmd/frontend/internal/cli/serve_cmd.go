@@ -263,6 +263,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		enterprise.SearchContextsResolver,
 		enterprise.OrgRepositoryResolver,
 		enterprise.NotebooksResolver,
+		enterprise.ComputeResolver,
 	)
 	if err != nil {
 		return err
@@ -316,6 +317,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppCloudSetupHandler,
+		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
 	if err != nil {

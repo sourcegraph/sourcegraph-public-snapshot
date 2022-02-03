@@ -17,7 +17,7 @@ A good automated test suite increases the velocity of our team because it allows
 
 Engineers should budget an appropriate amount of time for writing tests when making iteration plans.
 
-## Testing code
+### Types of tests
 
 <span class="badge badge-note">SOC2/GN-105</span>
 
@@ -26,53 +26,24 @@ In order to ensure we are true to our [philosphy](#philosophy), we have various 
 This includes, but is not limited to:
 
 - Image vulnerability scanning
-- Infrascture as code
+- Infrastructure as code static analyses
 - Unit, integration and end-to-end tests as outlined in the [testing-pyrmid](#testing-pyramid)
 
 Our goal is to ensure that our product and code work, and that all reasonable effort has been taken to reduce the risk of a security-related incident associated to Sourcegraph.
 
-Also see [continuous integration](continuous_integration.md).
+Also see [continuous integration](continuous_integration.md) and [internal infrastructure testing](https://handbook.sourcegraph.com/departments/product-engineering/engineering/tools/infrastructure/dev).
+
+## Failures on the `main` branch
+
+**A red `main` build is not okay and must be fixed.** Consecutive failed builds on the `main` branch means that [the releasability contract is broken](https://handbook.sourcegraph.com/engineering/continuous_releasability#continuous-releasability-contract), and that we cannot confidently ship that revision to our customers nor have it deployed in the Cloud environment.
 
 ## Flaky tests
 
-A *flaky* test is defined as a test that is unreliable or non-deterministic, i.e. it exhibits both a passing and a failing result with the same code.
-
-Typical reasons why a test may be flaky:
-
-- Race conditions or timing issues
-- Caching or inconsistent state between tests
-- Unreliable test infrastructure (such as CI)
-- Reliance on third-party services that are inconsistent
-
-**We do not tolerate flaky tests of any kind.** Any engineer that sees a flaky test in [continuous integration](./continuous_integration.md) should immediately:
-
-1. Open a PR to disable the flaky test.
-1. Open an issue to re-enable the flaky test (use the [Flaky Test template](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=flaky_test.md&title=Flake%3A+%24TEST_NAME+disabled)), and assign it to the most likely owner, and add it to the current release milestone.
-
-If the build or test infrastructure itself is flaky, then [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/distribution) and notify the [distribution team](https://handbook.sourcegraph.com/engineering/distribution#contact).
+**We do not tolerate flaky tests of any kind.** Any engineer that sees a flaky test in [continuous integration](./continuous_integration.md) should immediately [disable the flaky test](continuous_integration.md#flaky-tests).
 
 Why are flaky tests undesirable? Because these tests stop being an informative signal that the engineering team can rely on, and if we keep them around then we eventually train ourselves to ignore them and become blind to their results. This can hide real problems under the cover of flakiness.
 
-## Broken builds on the `main` branch
-
-A red `main` build is not okay and must be fixed. Consecutive failed builds on the `main` branch means that [the releasability contract is broken](https://handbook.sourcegraph.com/engineering/continuous_releasability#continuous-releasability-contract), and that we cannot confidently ship that revision to our customers nor have it deployed in the Cloud environment.
-
-### Process
-
-> In essence: Someone must have eyes on the build failure. Unsure about what's happening? Get help on #buildkite-main.
-
-- When a PR breaks the build, the author is responsible for investigating why, and asking for help if necessary:
-  - The failure will appear on [#buildkite-main](https://sourcegraph.slack.com/archives/C02FLQDD3TQ).
-  - If you've done ~30 mins of investigation and the cause is still unclear, ask for help!
-  - Handing the issue over to someone else (for any reason) is totally okay, but it has to happen.
-  - If there's no action being taken after a reasonable amount of time, the offending PR can be reverted by anyone blocked by it.
-- If there is reasonable suspicion of a [flake](#flaky-tests) (e.g. can't reproduce the problem locally) or if it’s clear that the cause is not related to the PR:
-  - Rebuild the job.
-  - Notify the team in charge of the concerned test or disable it.
-  - It's a CI flake? Pass ownership to the DX team.
-- If there is no immediate fix in sight (or rebuilding didn't fix it):
-  - [Mark the faulty test as skipped or revert the changes](#flaky-tests) to restore the main branch to green and avoid blocking others.
-  - if reverting won't fix because it depends on external resources, just comment out that test and open a ticket mentioning the owners.
+Other kinds of flakes include [flaky steps](continuous_integration.md#flaky-steps) and [flaky infrastructure](continuous_integration.md#laky-infrastructure)
 
 ## Testing pyramid
 

@@ -47,7 +47,7 @@ export interface TabsProps extends PropsWithAs<As, ReachTabsProps & TabsSettings
     className?: string
 }
 
-export interface TabListProps extends PropsWithAs<As, ReachTabListProps> {
+export interface TabListProps extends PropsWithAs<As, ReachTabListProps>, React.HTMLAttributes<HTMLDivElement> {
     /*
      * action is used to render content in the left side of
      * the component. e.g. a close button or a list of links.
@@ -55,9 +55,9 @@ export interface TabListProps extends PropsWithAs<As, ReachTabListProps> {
     actions?: React.ReactNode
 }
 
-export interface TabProps extends PropsWithAs<As, ReachTabProps> {}
-export interface TabPanelsProps extends PropsWithAs<As, ReachTabPanelsProps> {}
-export interface TabPanelProps extends PropsWithAs<As, ReachTabPanelProps> {}
+export interface TabProps extends PropsWithAs<As, ReachTabProps>, React.HTMLAttributes<HTMLDivElement> {}
+export interface TabPanelsProps extends PropsWithAs<As, ReachTabPanelsProps>, React.HTMLAttributes<HTMLDivElement> {}
+export interface TabPanelProps extends PropsWithAs<As, ReachTabPanelProps>, React.HTMLAttributes<HTMLDivElement> {}
 
 /**
  * reach UI tabs component with steroids, this tabs handles how the data should be loaded

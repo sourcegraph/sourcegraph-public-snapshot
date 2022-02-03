@@ -17,9 +17,9 @@ import { SearchNotebook } from './SearchNotebook'
 
 import { BlockInit } from '.'
 
-const { add } = storiesOf('web/search/notebook/SearchNotebook', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const { add } = storiesOf('web/search/notebook/SearchNotebook', module)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    .addParameters({ chromatic: { disableSnapshots: false } })
 
 const blocks: BlockInit[] = [
     { id: '1', type: 'md', input: '# Markdown' },

@@ -9,7 +9,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 import { BlockType } from '../search/notebook'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
+import { createRepositoryRedirectResult, createResolveRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
 import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
@@ -62,6 +62,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     ...commonWebGraphQlResults,
     ...highlightFileResult,
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+    ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({
         node: {
             __typename: 'Notebook',
@@ -163,6 +164,16 @@ describe('Search Notebook', () => {
 
     const addNewBlock = (type: BlockType) =>
         driver.page.click(`[data-testid="always-visible-add-block-buttons"] [data-testid="add-${type}-button"]`)
+
+    const getFileBlockHeaderText = async (fileBlockSelector: string) => {
+        const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
+        await driver.page.waitForSelector(fileBlockHeaderSelector, { visible: true })
+        const fileBlockHeaderText = await driver.page.evaluate(
+            fileBlockHeaderSelector => document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent,
+            fileBlockHeaderSelector
+        )
+        return fileBlockHeaderText
+    }
 
     it('Should render a notebook', async () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
@@ -290,13 +301,53 @@ describe('Search Notebook', () => {
         // Save the inputs
         await driver.page.click('[data-testid="Save"]')
 
-        const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
-        await driver.page.waitForSelector(fileBlockHeaderSelector, { visible: true })
-        const fileBlockHeaderText = await driver.page.evaluate(
-            fileBlockHeaderSelector => document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent,
-            fileBlockHeaderSelector
-        )
+        const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
         expect(fileBlockHeaderText).toEqual('github.com/sourcegraph/sourcegraph/client/web/file.tsx')
+    })
+
+    it('Should add file block and auto-fill the inputs when pasting a file URL', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        await addNewBlock('file')
+
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+
+        const fileBlockSelector = blockSelector(blockIds[2])
+
+        // Edit new file block
+        await driver.page.click(fileBlockSelector)
+
+        // Simulate pasting the file URL
+        await driver.page.evaluate(
+            (fileBlockSelector: string, fileURL: string) => {
+                const dataTransfer = new DataTransfer()
+                dataTransfer.setData('text', fileURL)
+                const event = new ClipboardEvent('paste', {
+                    clipboardData: dataTransfer,
+                    bubbles: true,
+                })
+                const element = document.querySelector(fileBlockSelector)
+                element?.dispatchEvent(event)
+            },
+            fileBlockSelector,
+            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/client/search/src/index.ts?L30-32'
+        )
+
+        // Wait for highlighted code to load
+        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
+
+        // Refocus the entire block (prevents jumping content for below actions)
+        await driver.page.click(fileBlockSelector)
+
+        // Save the inputs
+        await driver.page.click('[data-testid="Save"]')
+
+        const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
+        expect(fileBlockHeaderText).toEqual(
+            'github.com/sourcegraph/sourcegraph/client/search/src/index.ts@main, lines 30-32'
+        )
     })
 
     it('Should update the notebook title', async () => {
