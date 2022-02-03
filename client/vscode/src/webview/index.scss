@@ -27,7 +27,7 @@
             --primary: var(--vscode-textLink-foreground); // hover background
             --color-bg-3: var(--color-bg-3); // active background
             & input {
-                background-color: var(--vscode-editorWidget-background) !important;
+                background-color: var(--vscode-input-background) !important;
             }
         }
 

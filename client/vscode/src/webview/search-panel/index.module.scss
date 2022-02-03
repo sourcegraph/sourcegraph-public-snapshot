@@ -88,14 +88,3 @@
         height: 100%;
     }
 }
-
-div[class^='FileMatchChildren-module__file-match-children'] {
-    background-color: var(--vscode-editorWidget-background) !important;
-    a {
-        background-color: var(--vscode-editorWidget-background) !important;
-    }
-}
-
-div[class^='SearchResult-module__search-result-match'] {
-    background-color: var(--vscode-editorWidget-background) !important;
-}

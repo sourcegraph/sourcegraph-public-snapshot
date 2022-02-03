@@ -262,6 +262,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                         console.error('Error opening Sourcegraph repository', error)
                     })
                     // Log View Event to sync search history
+                    // URL must be provided to render Recent Searches on Web
                     platformContext.telemetryService.logViewEvent(
                         'Repository',
                         null,
