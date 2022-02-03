@@ -419,7 +419,8 @@ func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, e
 		return MockGetAuthenticatedOAuthScopes(ctx)
 	}
 
-	if scope := c.getAuthenticatedOAuthScopesFromCache(ctx, c.auth.Hash()); scope != "" {
+	key := c.auth.Hash()
+	if scope := c.getAuthenticatedOAuthScopesFromCache(ctx, key); scope != "" {
 		return strings.Split(scope, ", "), nil
 	}
 
@@ -434,6 +435,10 @@ func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, e
 	if scope == "" {
 		return []string{}, nil
 	}
+
+	// Set the scope in the cache.
+	c.oauthScopesCache.Set(key, []byte(scope))
+
 	return strings.Split(scope, ", "), nil
 }
 
