@@ -56,12 +56,6 @@
         "title": "Copy Sourcegraph File Link"
       },
       {
-        "command": "sourcegraph.gitClone",
-        "category": "Sourcegraph",
-        "title": "Clone Remote Repo",
-        "icon": "$(cloud-download)"
-      },
-      {
         "command": "sourcegraph.selectionSearchWeb",
         "category": "Sourcegraph",
         "title": "Search Selection in Sourcegraph Web"
@@ -173,11 +167,6 @@
       "editor/title": [
         {
           "command": "sourcegraph.openInBrowser",
-          "when": "resourceScheme == sourcegraph && editorReadonly",
-          "group": "navigation"
-        },
-        {
-          "command": "sourcegraph.gitClone",
           "when": "resourceScheme == sourcegraph && editorReadonly",
           "group": "navigation"
         }
