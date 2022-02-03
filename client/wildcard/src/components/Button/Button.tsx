@@ -4,8 +4,8 @@ import React from 'react'
 import { ForwardReferenceComponent } from '../../types'
 
 import styles from './Button.module.scss'
-import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
-import { getButtonSize, getButtonStyle } from './utils'
+import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
+import { getButtonSize, getButtonStyle, getButtonDisplay } from './utils'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**
@@ -16,6 +16,10 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
      * Allows modifying the size of the button. Supports larger or smaller variants.
      */
     size?: typeof BUTTON_SIZES[number]
+    /**
+     * Allows modifying the display property of the button. Supports inline-block or block variants.
+     */
+    display?: typeof BUTTON_DISPLAY[number]
     /**
      * Modifies the button style to have a transparent/light background and a more pronounced outline.
      */
@@ -54,6 +58,7 @@ export const Button = React.forwardRef(
             outline,
             className,
             disabled,
+            display,
             ...attributes
         },
         reference
@@ -64,8 +69,9 @@ export const Button = React.forwardRef(
             <Component
                 ref={reference}
                 className={classNames(
-                    'btn',
+                    styles.btn,
                     variant && getButtonStyle({ variant, outline }),
+                    display && getButtonDisplay({ display }),
                     size && getButtonSize({ size }),
                     className
                 )}

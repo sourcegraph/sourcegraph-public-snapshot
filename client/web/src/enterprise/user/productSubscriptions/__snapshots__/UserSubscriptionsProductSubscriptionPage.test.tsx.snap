@@ -9,7 +9,7 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
       class="d-flex align-items-center justify-content-between"
     >
       <a
-        class="btn btn-link btn-sm mb-3"
+        class="btn btnLink btnSm mb-3"
         href="/u/subscriptions"
       >
         <svg

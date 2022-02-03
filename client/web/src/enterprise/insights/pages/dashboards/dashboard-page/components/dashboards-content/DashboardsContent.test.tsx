@@ -6,6 +6,7 @@ import React from 'react'
 import sinon from 'sinon'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { AuthenticatedUser } from '../../../../../../../auth'
@@ -158,6 +159,7 @@ const triggerDashboardMenuItem = async (screen: RenderWithRouterResult & { user:
 
 beforeEach(() => {
     jest.clearAllMocks()
+    window.IntersectionObserver = MockIntersectionObserver
 })
 
 describe('DashboardsContent', () => {
@@ -204,8 +206,9 @@ describe('DashboardsContent', () => {
 
     it('opens add insight modal', async () => {
         const screen = renderDashboardsContent()
+        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add insights/ }))
 
-        await triggerDashboardMenuItem(screen, /Add or remove insights/)
+        userEvent.click(addInsightsButton)
 
         const addInsightHeader = await waitFor(() =>
             screen.getByRole('heading', { name: /Add insight to Global Dashboard/ })

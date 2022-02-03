@@ -120,7 +120,7 @@ const gqlSearchQuery = `query CodeMonitorSearch(
 	}
 }`
 
-func search(ctx context.Context, query string, userID int32, monitorID *int64) (_ *searchResults, err error) {
+func search(ctx context.Context, query string, monitorID *int64) (_ *searchResults, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "CodeMonitorSearch")
 	defer func() {
 		span.LogFields(log.Error(err))
