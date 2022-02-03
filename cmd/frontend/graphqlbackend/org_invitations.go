@@ -79,13 +79,8 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	}
 
 	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (interface{}, error) {
-		// Validate the alg is what we expect
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.Newf("Unexpected signing method: %v", token.Header["alg"])
-		}
-
 		return []byte(conf.SiteConfig().OrganizationInvitations.SigningKey), nil
-	})
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
 
 	if err != nil {
 		return nil, err
