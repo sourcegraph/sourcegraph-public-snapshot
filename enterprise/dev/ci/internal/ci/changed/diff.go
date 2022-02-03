@@ -136,7 +136,7 @@ func (d Diff) String() string {
 	return strings.Join(allDiffs, ", ")
 }
 
-// Has returns true if this diff includes the given diff.
+// Has returns true if d has the target diff.
 func (d Diff) Has(target Diff) bool {
 	switch d {
 	case None:
