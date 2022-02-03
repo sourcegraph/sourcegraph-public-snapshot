@@ -18,5 +18,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => <IDEExtensionAlert className="" onAlertDismissed={action('onAlertDismissed')} />
-Default.storyName = 'IDEExtensionAlert'
+export const IDEExtensionAlertDefault: Story = () => (
+    <IDEExtensionAlert className="" onAlertDismissed={action('onAlertDismissed')} />
+)
+IDEExtensionAlertDefault.storyName = 'IDEExtensionAlert'
