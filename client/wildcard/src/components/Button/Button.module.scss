@@ -34,6 +34,11 @@
     &:disabled {
         cursor: not-allowed;
     }
+
+    &:hover {
+        color: var(--body-color);
+        text-decoration: none;
+    }
 }
 
 .btn-link {
