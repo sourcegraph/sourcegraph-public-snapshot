@@ -1747,6 +1747,15 @@ func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepos
 	return repo, nil
 }
 
+func (c *V3Client) getAuthenticatedOAuthScopesFromCache(ctx context.Context, key string) string {
+	b, ok := c.oauthScopesCache.Get(strings.ToLower(key))
+	if !ok {
+		return ""
+	}
+
+	return string(b[:])
+}
+
 var reposGitHubCacheCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_repos_github_cache_hit",
 	Help: "Counts cache hits and misses for GitHub repo metadata.",

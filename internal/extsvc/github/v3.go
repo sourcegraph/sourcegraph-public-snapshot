@@ -47,6 +47,8 @@ type V3Client struct {
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
 
+	oauthScopesCache *rcache.Cache
+
 	// repoCache is the repository cache associated with the token.
 	repoCache *rcache.Cache
 
@@ -112,6 +114,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
 		auth:             a,
 		httpClient:       cli,
+		oauthScopesCache: newOAuthScopesCache(a),
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
 		repoCache:        newRepoCache(apiURL, a),
@@ -220,6 +223,15 @@ func newRepoCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
 		key = a.Hash()
 	}
 	return rcache.NewWithTTL("gh_repo:"+key, int(cacheTTL/time.Second))
+}
+
+func newOAuthScopesCache(a auth.Authenticator) *rcache.Cache {
+	key := ""
+	if a != nil {
+		key = a.Hash()
+	}
+
+	return rcache.NewWithTTL("gh_oauth_scopes:"+key, 5)
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
@@ -406,12 +418,18 @@ func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, e
 	if MockGetAuthenticatedOAuthScopes != nil {
 		return MockGetAuthenticatedOAuthScopes(ctx)
 	}
+
+	if scope := c.getAuthenticatedOAuthScopesFromCache(ctx, c.auth.Hash()); scope != "" {
+		return strings.Split(scope, ", "), nil
+	}
+
 	// We only care about headers
 	var dest struct{}
 	header, err := c.requestGetWithHeader(ctx, "/", &dest)
 	if err != nil {
 		return nil, err
 	}
+
 	scope := header.Get("x-oauth-scopes")
 	if scope == "" {
 		return []string{}, nil
