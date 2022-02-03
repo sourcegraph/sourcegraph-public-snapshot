@@ -290,7 +290,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="mr-2 navItem"
         >
           <button
-            class="btn btnOutlineSecondary btnSm menu-nav-item create-code-monitor-button"
+            class="btn btnOutlineSecondary btnSm create-code-monitor-button"
             type="button"
           >
             <svg
@@ -314,7 +314,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="mr-2 navItem"
         >
           <button
-            class="btn btnOutlineSecondary btnSm menu-nav-item test-save-search-link"
+            class="btn btnOutlineSecondary btnSm test-save-search-link"
             type="button"
           >
             <svg
@@ -552,7 +552,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           class="mr-2 navItem"
         >
           <button
-            class="btn btnOutlineSecondary btnSm menu-nav-item create-code-monitor-button"
+            class="btn btnOutlineSecondary btnSm create-code-monitor-button"
             type="button"
           >
             <svg
@@ -576,7 +576,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           class="mr-2 navItem"
         >
           <button
-            class="btn btnOutlineSecondary btnSm menu-nav-item test-save-search-link"
+            class="btn btnOutlineSecondary btnSm test-save-search-link"
             type="button"
           >
             <svg
