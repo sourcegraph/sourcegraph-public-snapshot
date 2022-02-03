@@ -3197,7 +3197,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server / Bitbucket Data Center](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-perms).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3221,7 +3221,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server / Bitbucket Data Center](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-stale-perms).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3246,7 +3246,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server / Bitbucket Data Center](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-no-perms).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3271,7 +3271,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server / Bitbucket Data Center](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-outdated-perms).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -3320,7 +3320,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server / Bitbucket Data Center](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-queue-size).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 

@@ -221,71 +221,71 @@ type BitbucketCloudRateLimit struct {
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
-// BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
+// BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server / Bitbucket Data Center repository permissions.
 type BitbucketServerAuthorization struct {
-	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
+	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server / Bitbucket Data Center identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server / Bitbucket Data Center accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
 	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
-	// Oauth description: OAuth configuration specified when creating the Bitbucket Server Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
+	// Oauth description: OAuth configuration specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
 	Oauth BitbucketServerOAuth `json:"oauth"`
 }
 
-// BitbucketServerConnection description: Configuration for a connection to Bitbucket Server.
+// BitbucketServerConnection description: Configuration for a connection to Bitbucket Server / Bitbucket Data Center.
 type BitbucketServerConnection struct {
-	// Authorization description: If non-null, enforces Bitbucket Server repository permissions.
+	// Authorization description: If non-null, enforces Bitbucket Server / Bitbucket Data Center repository permissions.
 	Authorization *BitbucketServerAuthorization `json:"authorization,omitempty"`
-	// Certificate description: TLS certificate of the Bitbucket Server instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
+	// Certificate description: TLS certificate of the Bitbucket Server / Bitbucket Data Center instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
-	// Exclude description: A list of repositories to never mirror from this Bitbucket Server instance. Takes precedence over "repos" and "repositoryQuery".
+	// Exclude description: A list of repositories to never mirror from this Bitbucket Server / Bitbucket Data Center instance. Takes precedence over "repos" and "repositoryQuery".
 	//
 	// Supports excluding by name ({"name": "projectKey/repositorySlug"}) or by ID ({"id": 42}).
 	Exclude []*ExcludedBitbucketServerRepo `json:"exclude,omitempty"`
 	// ExcludePersonalRepositories description: Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://docs.sourcegraph.com/integration/bitbucket_server#excluding-personal-repositories for more information.
 	ExcludePersonalRepositories bool `json:"excludePersonalRepositories,omitempty"`
-	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server / Bitbucket Data Center instance.
 	//
-	// If "http", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).
+	// If "http", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server / Bitbucket Data Center instance uses HTTPS).
 	//
-	// If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	// If "ssh", Sourcegraph will access Bitbucket Server / Bitbucket Data Center repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. BitBucket repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
-	// Password description: The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding "username" field.
+	// Password description: The password to use when authenticating to the Bitbucket Server / Bitbucket Data Center instance. Also set the corresponding "username" field.
 	//
-	// For Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the "token" field).
+	// For Bitbucket Server / Bitbucket Data Center instances that support personal access tokens (Bitbucket Server / Bitbucket Data Center version 5.5 and newer), it is recommended to provide a token instead (in the "token" field).
 	Password string `json:"password,omitempty"`
-	// Plugin description: Configuration for Bitbucket Server Sourcegraph plugin
+	// Plugin description: Configuration for Bitbucket Server / Bitbucket Data Center Sourcegraph plugin
 	Plugin *BitbucketServerPlugin `json:"plugin,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to BitbucketServer.
 	RateLimit *BitbucketServerRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
 	Repos []string `json:"repos,omitempty"`
-	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.
+	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server / Bitbucket Data Center repository.
 	//
-	//  - "{host}" is replaced with the Bitbucket Server URL's host (such as bitbucket.example.com)
+	//  - "{host}" is replaced with the Bitbucket Server / Bitbucket Data Center URL's host (such as bitbucket.example.com)
 	//  - "{projectKey}" is replaced with the Bitbucket repository's parent project key (such as "PRJ")
 	//  - "{repositorySlug}" is replaced with the Bitbucket repository's slug key (such as "my-repo").
 	//
-	// For example, if your Bitbucket Server is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{projectKey}/{repositorySlug}" would mean that a Bitbucket Server repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.
+	// For example, if your Bitbucket Server / Bitbucket Data Center is https://bitbucket.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{projectKey}/{repositorySlug}" would mean that a Bitbucket Server / Bitbucket Data Center repository at https://bitbucket.example.com/projects/PRJ/repos/my-repo is available on Sourcegraph at https://src.example.com/bitbucket.example.com/PRJ/my-repo.
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	// RepositoryQuery description: An array of strings specifying which repositories to mirror on Sourcegraph. Each string is a URL query string with parameters that filter the list of returned repos. Examples: "?name=my-repo&projectname=PROJECT&visibility=private".
 	//
-	// The special string "none" can be used as the only element to disable this feature. Repositories matched by multiple query strings are only imported once. Here's the official Bitbucket Server documentation about which query string parameters are valid: https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
+	// The special string "none" can be used as the only element to disable this feature. Repositories matched by multiple query strings are only imported once. Here's the official Bitbucket Server / Bitbucket Data Center documentation about which query string parameters are valid: https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
 	RepositoryQuery []string `json:"repositoryQuery,omitempty"`
-	// Token description: A Bitbucket Server personal access token with Read permissions. When using batch changes, the token needs Write permissions. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add. Also set the corresponding "username" field.
+	// Token description: A Bitbucket Server / Bitbucket Data Center personal access token with Read permissions. When using batch changes, the token needs Write permissions. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add. Also set the corresponding "username" field.
 	//
-	// For Bitbucket Server instances that don't support personal access tokens (Bitbucket Server version 5.4 and older), specify user-password credentials in the "username" and "password" fields.
+	// For Bitbucket Server / Bitbucket Data Center instances that don't support personal access tokens (Bitbucket Server / Bitbucket Data Center version 5.4 and older), specify user-password credentials in the "username" and "password" fields.
 	Token string `json:"token,omitempty"`
-	// Url description: URL of a Bitbucket Server instance, such as https://bitbucket.example.com.
+	// Url description: URL of a Bitbucket Server / Bitbucket Data Center instance, such as https://bitbucket.example.com.
 	Url string `json:"url"`
-	// Username description: The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding "token" or "password" field.
+	// Username description: The username to use when authenticating to the Bitbucket Server / Bitbucket Data Center instance. Also set the corresponding "token" or "password" field.
 	Username string `json:"username"`
 	// Webhooks description: DEPRECATED: Switch to "plugin.webhooks"
 	Webhooks *Webhooks `json:"webhooks,omitempty"`
 }
 
-// BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
+// BitbucketServerIdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server / Bitbucket Data Center identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server / Bitbucket Data Center accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
 type BitbucketServerIdentityProvider struct {
 	Username *BitbucketServerUsernameIdentity
 }
@@ -310,22 +310,22 @@ func (v *BitbucketServerIdentityProvider) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"username"})
 }
 
-// BitbucketServerOAuth description: OAuth configuration specified when creating the Bitbucket Server Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
+// BitbucketServerOAuth description: OAuth configuration specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
 type BitbucketServerOAuth struct {
-	// ConsumerKey description: The OAuth consumer key specified when creating the Bitbucket Server Application Link with incoming authentication.
+	// ConsumerKey description: The OAuth consumer key specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication.
 	ConsumerKey string `json:"consumerKey"`
-	// SigningKey description: Base64 encoding of the OAuth PEM encoded RSA private key used to generate the public key specified when creating the Bitbucket Server Application Link with incoming authentication.
+	// SigningKey description: Base64 encoding of the OAuth PEM encoded RSA private key used to generate the public key specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication.
 	SigningKey string `json:"signingKey"`
 }
 
-// BitbucketServerPlugin description: Configuration for Bitbucket Server Sourcegraph plugin
+// BitbucketServerPlugin description: Configuration for Bitbucket Server / Bitbucket Data Center Sourcegraph plugin
 type BitbucketServerPlugin struct {
-	// Permissions description: Enables fetching Bitbucket Server permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.
+	// Permissions description: Enables fetching Bitbucket Server / Bitbucket Data Center permissions through the roaring bitmap endpoint. Warning: there may be performance degradation under significant load.
 	Permissions string                         `json:"permissions,omitempty"`
 	Webhooks    *BitbucketServerPluginWebhooks `json:"webhooks,omitempty"`
 }
 type BitbucketServerPluginWebhooks struct {
-	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server instance. For details of how the webhook is configured, see our docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks
+	// DisableSync description: Disallow Sourcegraph from automatically syncing webhook config with the Bitbucket Server / Bitbucket Data Center instance. For details of how the webhook is configured, see our docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks
 	DisableSync bool `json:"disableSync,omitempty"`
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
@@ -511,11 +511,11 @@ type ExcludedBitbucketCloudRepo struct {
 	Uuid string `json:"uuid,omitempty"`
 }
 type ExcludedBitbucketServerRepo struct {
-	// Id description: The ID of a Bitbucket Server repo (as returned by the Bitbucket Server instance's API) to exclude from mirroring.
+	// Id description: The ID of a Bitbucket Server / Bitbucket Data Center repo (as returned by the Bitbucket Server / Bitbucket Data Center instance's API) to exclude from mirroring.
 	Id int `json:"id,omitempty"`
-	// Name description: The name of a Bitbucket Server repo ("projectKey/repositorySlug") to exclude from mirroring.
+	// Name description: The name of a Bitbucket Server / Bitbucket Data Center repo ("projectKey/repositorySlug") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
-	// Pattern description: Regular expression which matches against the name of a Bitbucket Server repo.
+	// Pattern description: Regular expression which matches against the name of a Bitbucket Server / Bitbucket Data Center repo.
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitHubRepo struct {
