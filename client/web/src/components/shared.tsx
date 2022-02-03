@@ -1,9 +1,12 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import {
     CommandListPopoverButton,
     CommandListPopoverButtonProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
+
+import styles from './WebCommandListPopoverButton.module.scss'
 
 // Components from shared with web-styling class names applied
 export { WebHoverOverlay } from './WebHoverOverlay'
@@ -12,7 +15,7 @@ export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPop
     <CommandListPopoverButton
         {...props}
         variant="link"
-        buttonClassName="m-0 p-0"
+        buttonClassName={classNames('m-0 p-0', styles.button)}
         popoverClassName="popover border-0"
         popoverInnerClassName="rounded overflow-hidden"
         formClassName="form p-2 bg-1 border-bottom"
