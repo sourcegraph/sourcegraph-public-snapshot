@@ -327,27 +327,25 @@ func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) (
 
 // Checks that each grant is contained in the available user/org ids.
 func hasPermissionForGrants(dashboardGrants []store.DashboardGrant, userIds []int, orgIds []int) bool {
-	for _, dashboardGrant := range dashboardGrants {
-		if dashboardGrant.UserID != nil {
-			found := false
-			for _, userId := range userIds {
-				if userId == *dashboardGrant.UserID {
-					found = true
-				}
-				if !found {
-					return false
-				}
+	allowedUsers := make(map[int]bool)
+	allowedOrgs := make(map[int]bool)
+
+	for _, userId := range userIds {
+		allowedUsers[userId] = true
+	}
+	for _, orgId := range orgIds {
+		allowedOrgs[orgId] = true
+	}
+
+	for _, requestedGrant := range dashboardGrants {
+		if requestedGrant.UserID != nil {
+			if _, ok := allowedUsers[*requestedGrant.UserID]; !ok {
+				return false
 			}
 		}
-		if dashboardGrant.OrgID != nil {
-			found := false
-			for _, orgId := range orgIds {
-				if orgId == *dashboardGrant.OrgID {
-					found = true
-				}
-				if !found {
-					return false
-				}
+		if requestedGrant.OrgID != nil {
+			if _, ok := allowedOrgs[*requestedGrant.OrgID]; !ok {
+				return false
 			}
 		}
 	}
