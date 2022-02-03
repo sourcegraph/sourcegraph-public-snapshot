@@ -65,10 +65,8 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     if (!isVisible) {
         return (
             <Button
-                className={classNames(
-                    'position-absolute btn-icon border-top border-bottom border-right mt-4',
-                    styles.toggle
-                )}
+                variant="icon"
+                className={classNames('position-absolute border-top border-bottom border-right mt-4', styles.toggle)}
                 onClick={() => handleSidebarToggle(true)}
                 data-tooltip="Show sidebar"
             >

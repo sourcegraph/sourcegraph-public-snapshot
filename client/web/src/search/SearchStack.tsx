@@ -67,7 +67,8 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
             <div className={classNames(styles.header, 'd-flex align-items-center justify-content-between')}>
                 <Button
                     aria-label={`${open ? 'Close' : 'Open'} search session`}
-                    className={classNames('btn-icon p-2')}
+                    variant="icon"
+                    className="p-2"
                     onClick={() => setOpen(open => !open)}
                 >
                     <SearchStackIcon className="icon-inline" />
@@ -75,7 +76,8 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                 </Button>
                 <Button
                     aria-label="Close search session"
-                    className={classNames('btn-icon pr-2', styles.closeButton, styles.openVisible)}
+                    variant="icon"
+                    className={classNames('pr-2', styles.closeButton, styles.openVisible)}
                     onClick={() => setOpen(false)}
                 >
                     <CloseIcon className="icon-inline" />
