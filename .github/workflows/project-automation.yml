@@ -29,7 +29,7 @@ jobs:
             $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
             $PSDefaultParameterValues['*GitHubBetaProject*:ProjectNodeId'] = 'MDExOlByb2plY3ROZXh0MzI3Ng==' # https://github.com/orgs/sourcegraph/projects/200
 
-            $fixIssuePattern = "(?:close|fixe?|resolve)(?:[sd])? (?:#|(?<owner>[^/]+)/(?<repo>[^/]+)#|https://github\.com/(?<owner>[^/]+)/(?<repo>[^/]+)/issues/)(?<number>\d+)"
+            $fixIssuePattern = "(?:close|fixe?|resolve)(?:[sd])? (?:#|(?<owner>[\w_-]+)/(?<repo>[\w_-]+)#|https://github\.com/(?<owner>[\w_-]+)/(?<repo>[\w_-]+)/issues/)(?<number>\d+)"
 
             switch ($github.event_name) {
 
