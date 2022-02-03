@@ -144,5 +144,7 @@ COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporte
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
 
+WORKDIR /
+
 ENV GO111MODULES=on LANG=en_US.utf8
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]
