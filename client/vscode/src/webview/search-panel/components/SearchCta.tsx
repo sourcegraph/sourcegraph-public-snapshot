@@ -18,7 +18,7 @@ export const SearchPageCta: React.FunctionComponent<SearchPageCtaProps> = ({
     buttonText,
     onClickAction,
 }) => (
-    <div className={classNames('cta-card d-flex flex-md-row flex-column align-items-center', styles.container)}>
+    <div className={classNames(styles.container)}>
         <div className="mr-md-3 ml-3">
             <div className="w-50">{icon}</div>
         </div>

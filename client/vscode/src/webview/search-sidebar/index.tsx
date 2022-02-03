@@ -87,18 +87,21 @@ const Main: React.FC = () => {
         // TODO: should we hide the access token form permanently if an unauthenticated user
         // has performed a search before? Or just for this session?
         if (!authenticatedUser) {
-            return <AuthSidebarView {...webviewPageProps} />
+            return <AuthSidebarView {...webviewPageProps} stateStatus={state.status} />
         }
         return <HistoryHomeSidebar {...webviewPageProps} authenticatedUser={authenticatedUser} />
     }
 
     // <SearchSidebarView> is wrapped w/ React.memo so pass only necessary props.
     return (
-        <SearchSidebarView
-            platformContext={platformContext}
-            extensionCoreAPI={extensionCoreAPI}
-            settingsCascade={settingsCascade}
-        />
+        <>
+            <SearchSidebarView
+                platformContext={platformContext}
+                extensionCoreAPI={extensionCoreAPI}
+                settingsCascade={settingsCascade}
+            />
+            {!authenticatedUser && <AuthSidebarView {...webviewPageProps} stateStatus={state.status} />}
+        </>
     )
 }
 

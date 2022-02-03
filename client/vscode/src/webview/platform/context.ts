@@ -7,12 +7,12 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { TooltipController } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
 
-import { vscodeTelemetryService } from './telemetryService'
+import { EventLogger } from './EventLogger'
+import { VsceTelemetryService } from './telemetryService'
 
 export interface VSCodePlatformContext
     extends Pick<
@@ -30,7 +30,7 @@ export interface VSCodePlatformContext
         | 'forceUpdateTooltip'
     > {
     // Ensure telemetryService is non-nullable.
-    telemetryService: TelemetryService
+    telemetryService: VsceTelemetryService
     requestGraphQL: <R, V = object>(options: {
         request: string
         variables: V
@@ -53,7 +53,7 @@ export function createPlatformContext(extensionCoreAPI: Comlink.Remote<Extension
         settings: wrapRemoteObservable(extensionCoreAPI.observeSourcegraphSettings()),
         // TODO: implement GQL mutation, settings refresh (called by extensions, impl w/ ext. host).
         updateSettings: () => Promise.resolve(),
-        telemetryService: vscodeTelemetryService,
+        telemetryService: new EventLogger(extensionCoreAPI),
         sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
         clientApplication: 'other', // TODO add 'vscode-extension' to `clientApplication`,
         getScriptURLForExtension: () => undefined,

@@ -48,7 +48,7 @@
     text-decoration: none !important;
     margin-bottom: 0.5rem;
     background-color: var(--vscode-editorWidget-background);
-    border-color: var(--vscode-editorWidget-border);
+    border-color: var(--vscode-textLink-foreground);
 
     &:hover {
         .search-example-icon {

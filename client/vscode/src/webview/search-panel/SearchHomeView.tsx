@@ -12,6 +12,8 @@ import {
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
+import { appendContextFilter, sanitizeQueryForTelemetry } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
@@ -21,7 +23,6 @@ import { WebviewPageProps } from '../platform/context'
 import { BrandHeader } from './components/BrandHeader'
 import { HomeFooter } from './components/HomeFooter'
 import styles from './index.module.scss'
-
 export interface SearchHomeViewProps extends WebviewPageProps {
     context: SearchHomeState['context']
 }
@@ -42,6 +43,11 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
     })
+
+    const isSourcegraphDotCom = useMemo(() => {
+        const hostname = new URL(instanceURL).hostname
+        return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
+    }, [instanceURL])
 
     const onSubmit = useCallback(() => {
         extensionCoreAPI
@@ -67,7 +73,56 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
                 // TODO surface error to users
                 console.error('Error updating sidebar query state from panel', error)
             })
-    }, [userQueryState.query, caseSensitive, patternType, extensionCoreAPI])
+
+        // Log Search History
+        const hostname = new URL(instanceURL).hostname
+        let queryString = `${userQueryState.query}${caseSensitive ? ' case:yes' : ''}`
+        if (context.selectedSearchContextSpec) {
+            queryString = appendContextFilter(queryString, context.selectedSearchContextSpec)
+        }
+        const metrics = queryString ? collectMetrics(queryString) : undefined
+        platformContext.telemetryService.log(
+            'SearchResultsQueried',
+            {
+                code_search: {
+                    query_data: {
+                        query: metrics,
+                        combined: queryString,
+                        empty: !queryString,
+                    },
+                },
+            },
+            {
+                code_search: {
+                    query_data: {
+                        // 🚨 PRIVACY: never provide any private query data in the
+                        // { code_search: query_data: query } property,
+                        // which is also potentially exported in pings data.
+                        query: metrics,
+
+                        // 🚨 PRIVACY: Only collect the full query string for unauthenticated users
+                        // on Sourcegraph.com, and only after sanitizing to remove certain filters.
+                        combined:
+                            !authenticatedUser && isSourcegraphDotCom
+                                ? sanitizeQueryForTelemetry(queryString)
+                                : undefined,
+                        empty: !queryString,
+                    },
+                },
+            },
+            `https://${hostname}/search?q=${encodeURIComponent(queryString)}&patternType=${patternType}`
+        )
+    }, [
+        extensionCoreAPI,
+        userQueryState.query,
+        caseSensitive,
+        patternType,
+        instanceURL,
+        context.selectedSearchContextSpec,
+        platformContext.telemetryService,
+        authenticatedUser,
+        isSourcegraphDotCom,
+    ])
 
     // Update local query state on sidebar query state updates.
     useDeepCompareEffectNoCheck(() => {
@@ -92,11 +147,6 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
             wrapRemoteObservable(extensionCoreAPI.fetchStreamSuggestions(query, instanceURL)),
         [extensionCoreAPI, instanceURL]
     )
-
-    const isSourcegraphDotCom = useMemo(() => {
-        const hostname = new URL(instanceURL).hostname
-        return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
-    }, [instanceURL])
 
     return (
         <div className="d-flex flex-column align-items-center">
