@@ -3,7 +3,6 @@ package connections
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"os"
 
 	"github.com/cockroachdb/errors"
@@ -75,7 +74,7 @@ func validateSchema(db *sql.DB, schema *schemas.Schema, validateOnly bool, obser
 			return err
 		}
 		if !shouldMigrate(validateOnly) {
-			return fmt.Errorf("database schema out of date")
+			return errors.Newf("database schema out of date")
 		}
 
 		return migrationRunner.Run(ctx, runner.Options{

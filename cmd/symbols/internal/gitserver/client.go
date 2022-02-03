@@ -3,7 +3,6 @@ package gitserver
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
@@ -86,7 +85,7 @@ var NUL = []byte{0}
 func parseGitDiffOutput(output []byte) (changes Changes, _ error) {
 	slices := bytes.Split(bytes.TrimRight(output, string(NUL)), NUL)
 	if len(slices)%2 != 0 {
-		return changes, fmt.Errorf("uneven pairs")
+		return changes, errors.Newf("uneven pairs")
 	}
 
 	for i := 0; i < len(slices); i += 2 {

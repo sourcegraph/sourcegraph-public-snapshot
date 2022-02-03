@@ -45,10 +45,6 @@ func (s *memoryStore) Versions(ctx context.Context) (appliedVersions, pendingVer
 	return s.appliedVersions, s.pendingVersions, s.failedVersions, nil
 }
 
-func (s *memoryStore) Lock(ctx context.Context) (bool, func(err error) error, error) {
-	return true, func(err error) error { return err }, nil
-}
-
 func (s *memoryStore) TryLock(ctx context.Context) (bool, func(err error) error, error) {
 	return true, func(err error) error { return err }, nil
 }

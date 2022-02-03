@@ -124,7 +124,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 				}
 				if err != nil {
-					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+					return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 				}
 				// Print a high level overview
 				printBuildOverview(build)
@@ -135,7 +135,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						// get the next update
 						build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 						if err != nil {
-							return false, fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+							return false, errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 						}
 						done := 0
 						for _, job := range build.Jobs {
@@ -237,7 +237,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 
 				build, err := client.TriggerBuild(ctx, "sourcegraph", branch, commit)
 				if err != nil {
-					return fmt.Errorf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
+					return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
 				}
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 				return nil
@@ -272,7 +272,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 				}
 				if err != nil {
-					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+					return errors.Newf("failed to get most recent build for branch %q: %w", branch, err)
 				}
 				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Fetching logs for %s ...",
 					*build.WebURL))
@@ -306,7 +306,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 				default:
 					lokiURL, err := url.Parse(*ciLogsOutFlag)
 					if err != nil {
-						return fmt.Errorf("invalid Loki target: %w", err)
+						return errors.Newf("invalid Loki target: %w", err)
 					}
 					lokiClient := loki.NewLokiClient(lokiURL)
 					stdout.Out.WriteLine(output.Linef("", output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
@@ -505,7 +505,7 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 				return nil
 			}
 		case <-time.After(30 * time.Minute):
-			return fmt.Errorf("polling timeout reached")
+			return errors.Newf("polling timeout reached")
 		case <-ctx.Done():
 			return ctx.Err()
 		}
