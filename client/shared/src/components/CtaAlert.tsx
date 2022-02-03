@@ -21,7 +21,16 @@ export interface CtaAlertProps {
 
 export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
     <Card
-        className={classNames('my-2', 'd-flex', 'p-3', 'pr-5', 'flex-md-row', 'flex-column', props.className || null)}
+        className={classNames(
+            'my-2',
+            'd-flex',
+            'align-items-md-center',
+            'p-3',
+            'pr-5',
+            'flex-md-row',
+            'flex-column',
+            props.className || null
+        )}
     >
         <div className="mr-md-3">{props.icon}</div>
         <div className="flex-1 my-md-0 my-2">
