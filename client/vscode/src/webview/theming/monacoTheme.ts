@@ -4,8 +4,9 @@ let lastThemeName: string | undefined
 
 export function adaptMonacoThemeToEditorTheme(): void {
     // Wait for init to set theme.
-    monaco.editor.onDidCreateEditor(() => {
+    monaco.editor.onDidCreateEditor(editor => {
         setMonacoTheme()
+        editor.updateOptions({ fontSize: 24 })
     })
 
     const mutationObserver = new MutationObserver(() => {
@@ -29,7 +30,7 @@ function setMonacoTheme(): void {
         for (const colorId of Object.keys(monacoColorIdWebviewCustomProperties)) {
             try {
                 const customProperty = monacoColorIdWebviewCustomProperties[colorId]
-                const style = computedStyle.getPropertyValue(customProperty)
+                const style = computedStyle.getPropertyValuetes(customProperty)
 
                 colors[colorId] = rgbaToHex(style)
             } catch (error) {
