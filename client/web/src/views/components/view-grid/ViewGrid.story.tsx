@@ -33,7 +33,7 @@ export const SimpleViewGrid: Story = () => (
             subtitle="Subtitle chart description"
             actions={
                 <>
-                    <Button className="btn-icon p-1">
+                    <Button variant="icon" className="p-1">
                         <FilterOutlineIcon size="1rem" />
                     </Button>
                     <ContextMenu />
@@ -48,7 +48,7 @@ export const SimpleViewGrid: Story = () => (
 function ContextMenu() {
     return (
         <Menu>
-            <MenuButton as={Button} className="btn-icon p-1">
+            <MenuButton as={Button} variant="icon" className="p-1">
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuPopover>
