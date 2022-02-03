@@ -35,7 +35,7 @@ export const RESPOND_TO_ORG_INVITATION = gql`
 `
 
 interface InviteResult {
-    invitationByJWT: Maybe<IOrganizationInvitation>
+    invitationByToken: Maybe<IOrganizationInvitation>
 }
 
 interface InviteVariables {
@@ -44,7 +44,7 @@ interface InviteVariables {
 
 export const INVITATION_BY_JWT = gql`
     query InvitationByJWT($token: String!) {
-        invitationByJWT(token: $token) {
+        invitationByToken(token: $token) {
             id
             createdAt
             sender {
@@ -76,7 +76,7 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
         }
     )
 
-    const data = inviteData?.invitationByJWT
+    const data = inviteData?.invitationByToken
     const orgName = data?.organization.name
     const sender = data?.sender
 

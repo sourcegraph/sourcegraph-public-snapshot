@@ -67,7 +67,7 @@ type orgInvitationClaims struct {
 func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool { return r.sentInvitationEmail }
 func (r *inviteUserToOrganizationResult) InvitationURL() string     { return r.invitationURL }
 
-func (r *schemaResolver) InvitationByJWT(ctx context.Context, args *struct {
+func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	Token string
 }) (*organizationInvitationResolver, error) {
 	actor := actor.FromContext(ctx)
@@ -77,6 +77,7 @@ func (r *schemaResolver) InvitationByJWT(ctx context.Context, args *struct {
 	if !orgInvitationConfigDefined() {
 		return nil, errors.Newf("signing key not provided, cannot validate JWT on invitation URL. Please add organizationInvitations signingKey to site configuration.")
 	}
+
 	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Validate the alg is what we expect
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

@@ -211,7 +211,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 	})
 }
 
-func TestInvitationByJWT(t *testing.T) {
+func TestInvitationByToken(t *testing.T) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
@@ -249,8 +249,8 @@ func TestInvitationByJWT(t *testing.T) {
 				Schema:  mustParseGraphQLSchema(t, db),
 				Context: ctx,
 				Query: `
-				query InvitationByJWT($token: String!) {
-					invitationByJWT(token: $token) {
+				query InvitationByToken($token: String!) {
+					invitationByToken(token: $token) {
 						organization {
 							name
 						}
@@ -264,7 +264,7 @@ func TestInvitationByJWT(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "signing key not provided, cannot validate JWT on invitation URL. Please add organizationInvitations signingKey to site configuration.",
-						Path:    []interface{}{"invitationByJWT"},
+						Path:    []interface{}{"invitationByToken"},
 					},
 				},
 			},
@@ -279,8 +279,8 @@ func TestInvitationByJWT(t *testing.T) {
 				Schema:  mustParseGraphQLSchema(t, db),
 				Context: ctx,
 				Query: `
-				query InvitationByJWT($token: String!) {
-					invitationByJWT(token: $token) {
+				query InvitationByToken($token: String!) {
+					invitationByToken(token: $token) {
 						id
 						organization {
 							name
@@ -292,7 +292,7 @@ func TestInvitationByJWT(t *testing.T) {
 					"token": token,
 				},
 				ExpectedResult: `{
-					"invitationByJWT": {
+					"invitationByToken": {
 						"id": "T3JnSW52aXRhdGlvbjox",
 						"organization": {
 							"name": "acme"

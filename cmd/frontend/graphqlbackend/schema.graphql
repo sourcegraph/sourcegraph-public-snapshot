@@ -1476,14 +1476,13 @@ type Query {
         after: String
     ): ExecutorConnection!
 
-
     """
     (experimental)
     Get invitation based on the JWT in the invitation URL
     """
-    invitationByJWT(
+    invitationByToken(
         """
-        The JWT that uniquely identifies the invitation
+        The token that uniquely identifies the invitation
         """
         token: String!
     ): OrganizationInvitation!
@@ -5003,7 +5002,7 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     viewerPendingInvitation: OrganizationInvitation
         @deprecated(
-            reason: "Use invitationByJWT operation instead. This field is deprecated and will be removed in a future release."
+            reason: "Use invitationByToken operation instead. This field is deprecated and will be removed in a future release."
         )
     """
     Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
