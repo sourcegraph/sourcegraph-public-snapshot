@@ -84,7 +84,7 @@ const MemberItem: React.FunctionComponent<{ member: Member; viewerCanAdminister:
             <div className="site-admin-detail-list__actions">
                 {viewerCanAdminister && (
                     <Menu>
-                        <MenuButton variant="secondary" outline={false}>
+                        <MenuButton variant="secondary" outline={false} className={styles.memberMenu}>
                             <CogIcon /> <span aria-hidden={true}>▾</span>
                         </MenuButton>
 
