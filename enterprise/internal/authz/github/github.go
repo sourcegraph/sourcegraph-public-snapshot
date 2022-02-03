@@ -89,33 +89,39 @@ func (p *Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *Provider) Validate() (problems []string) {
+func (p *Provider) Validate() []string {
 	required := p.requiredAuthScopes()
-	if len(required) > 0 {
-		scopes, err := p.client.GetAuthenticatedOAuthScopes(context.Background())
-		if err != nil {
-			problems = append(problems, fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err))
-		} else {
-			gotScopes := make(map[string]struct{})
-			for _, gotScope := range scopes {
-				gotScopes[gotScope] = struct{}{}
-			}
+	if len(required) == 0 {
+		return []string{}
+	}
 
-			// check if required scopes are satisfied
-			for _, requiredScope := range required {
-				satisfiesScope := false
-				for _, s := range requiredScope.oneOf {
-					if _, found := gotScopes[s]; found {
-						satisfiesScope = true
-						break
-					}
-				}
-				if !satisfiesScope {
-					problems = append(problems, requiredScope.message)
-				}
-			}
+	scopes, err := p.client.GetAuthenticatedOAuthScopes(context.Background())
+	if err != nil {
+		return []string{
+			fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err),
 		}
 	}
+
+	gotScopes := make(map[string]struct{})
+	for _, gotScope := range scopes {
+		gotScopes[gotScope] = struct{}{}
+	}
+
+	var problems []string
+	// check if required scopes are satisfied
+	for _, requiredScope := range required {
+		satisfiesScope := false
+		for _, s := range requiredScope.oneOf {
+			if _, found := gotScopes[s]; found {
+				satisfiesScope = true
+				break
+			}
+		}
+		if !satisfiesScope {
+			problems = append(problems, requiredScope.message)
+		}
+	}
+
 	return problems
 }
 
