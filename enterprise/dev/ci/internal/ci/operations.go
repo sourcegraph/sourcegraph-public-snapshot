@@ -45,7 +45,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		// these on all PRs
 		addPrettier,
 		addCheck)
-	if diff.Has(changed.GraphQL | changed.All) {
+	if diff.Has(changed.GraphQL) {
 		linterOps.Append(addGraphQLLint)
 	}
 	if diff.Has(changed.SVG) {

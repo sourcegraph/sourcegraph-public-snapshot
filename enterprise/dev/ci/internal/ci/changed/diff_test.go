@@ -41,17 +41,17 @@ func TestParseDiff(t *testing.T) {
 		name:             "Go",
 		files:            []string{"main.go", "func.go"},
 		wantAffects:      []Diff{Go},
-		doNotWantAffects: []Diff{Client},
+		doNotWantAffects: []Diff{Client, All},
 	}, {
 		name:             "DB schema implies Go and DB schema diff",
 		files:            []string{"migrations/file1", "migrations/file2"},
 		wantAffects:      []Diff{Go, DatabaseSchema},
-		doNotWantAffects: []Diff{Client},
+		doNotWantAffects: []Diff{Client, All},
 	}, {
 		name:             "Or",
 		files:            []string{"client/file1", "file2.graphql"},
 		wantAffects:      []Diff{Client | GraphQL},
-		doNotWantAffects: []Diff{Go},
+		doNotWantAffects: []Diff{Go, All},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
