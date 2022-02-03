@@ -36,7 +36,7 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
-import { CoolCodeIntel, CoolHoveredToken, isCoolCodeIntelEnabled } from './global/CoolCodeIntel'
+import { CoolCodeIntel, CoolClickedToken, isCoolCodeIntelEnabled } from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
@@ -190,7 +190,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // }, [])
 
     // Experimental reference panel
-    const [clickedToken, onTokenClick] = useState<CoolHoveredToken>()
+    const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
     const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
 
     // Remove trailing slash (which is never valid in any of our URLs).
@@ -299,7 +299,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 {...themeProps}
                 coolCodeIntelEnabled={coolCodeIntelEnabled}
                 onTokenClick={onTokenClick}
-                hoveredToken={clickedToken}
+                clickedToken={clickedToken}
             />
         </div>
     )
