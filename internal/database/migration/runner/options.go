@@ -1,8 +1,6 @@
 package runner
 
-import (
-	"fmt"
-)
+import "github.com/cockroachdb/errors"
 
 type Options struct {
 	Operations []MigrationOperation
@@ -52,7 +50,7 @@ func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) (
 	)
 
 	if len(leafVersions) != 1 {
-		return MigrationOperation{}, fmt.Errorf("nothing to upgrade")
+		return MigrationOperation{}, errors.Newf("nothing to upgrade")
 	}
 	return MigrationOperation{
 		SchemaName:    operation.SchemaName,
@@ -88,11 +86,11 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 		// should consist of exactly this target version.
 		definition, ok := definitions.GetByID(leafVersions[0])
 		if !ok {
-			return MigrationOperation{}, fmt.Errorf("unknown version %d", leafVersions[0])
+			return MigrationOperation{}, errors.Newf("unknown version %d", leafVersions[0])
 		}
 
 		if len(definition.Parents) != 1 {
-			return MigrationOperation{}, fmt.Errorf("expected one parent")
+			return MigrationOperation{}, errors.Newf("expected one parent")
 		}
 		return MigrationOperation{
 			SchemaName:    operation.SchemaName,
@@ -101,8 +99,8 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 		}, nil
 
 	case 0:
-		return MigrationOperation{}, fmt.Errorf("nothing to revert")
+		return MigrationOperation{}, errors.Newf("nothing to revert")
 	default:
-		return MigrationOperation{}, fmt.Errorf("ambiguous revert")
+		return MigrationOperation{}, errors.Newf("ambiguous revert")
 	}
 }

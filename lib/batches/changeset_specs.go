@@ -2,7 +2,6 @@ package batches
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -235,13 +234,13 @@ func validateGroups(repoName, defaultBranch string, groups []Group) error {
 
 	for _, g := range groups {
 		if _, ok := uniqueBranches[g.Branch]; ok {
-			return NewValidationError(fmt.Errorf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repoName, g.Branch))
+			return NewValidationError(errors.Newf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repoName, g.Branch))
 		} else {
 			uniqueBranches[g.Branch] = struct{}{}
 		}
 
 		if g.Branch == defaultBranch {
-			return NewValidationError(fmt.Errorf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repoName, defaultBranch))
+			return NewValidationError(errors.Newf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repoName, defaultBranch))
 		}
 	}
 

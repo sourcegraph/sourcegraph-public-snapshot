@@ -2,7 +2,6 @@ package runner
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
@@ -108,10 +107,8 @@ func (r *Runner) waitForMigration(ctx context.Context, schemaName string, schema
 }
 
 func (r *Runner) lockedVersion(ctx context.Context, schemaContext schemaContext) (_ schemaVersion, err error) {
-	if locked, unlock, err := schemaContext.store.Lock(ctx); err != nil {
+	if unlock, err := r.pollLock(ctx, schemaContext.store); err != nil {
 		return schemaVersion{}, err
-	} else if !locked {
-		return schemaVersion{}, fmt.Errorf("failed to acquire migration lock")
 	} else {
 		defer func() { err = unlock(err) }()
 	}

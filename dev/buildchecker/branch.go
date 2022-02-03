@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
 )
 
@@ -34,7 +35,7 @@ func NewBranchLocker(ghc *github.Client, owner, repo, branch string) BranchLocke
 func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallbackTeam string) (func() error, error) {
 	protects, _, err := b.ghc.Repositories.GetBranchProtection(ctx, b.owner, b.repo, b.branch)
 	if err != nil {
-		return nil, fmt.Errorf("getBranchProtection: %w", err)
+		return nil, errors.Newf("getBranchProtection: %w", err)
 	}
 	if protects.Restrictions != nil {
 		// restrictions already in place, do not overwrite
@@ -56,7 +57,7 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallb
 	for _, u := range failureAuthors {
 		membership, _, err := b.ghc.Organizations.GetOrgMembership(ctx, *u.Login, b.owner)
 		if err != nil {
-			return nil, fmt.Errorf("getOrgMembership: %w", err)
+			return nil, errors.Newf("getOrgMembership: %w", err)
 		}
 		if membership == nil || *membership.State != "active" {
 			continue // we don't want this user
@@ -79,7 +80,7 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallb
 				RequiredApprovingReviewCount: 1,
 			},
 		}); err != nil {
-			return fmt.Errorf("unlock: %w", err)
+			return errors.Newf("unlock: %w", err)
 		}
 		return nil
 	}, nil
@@ -88,7 +89,7 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallb
 func (b *repoBranchLocker) Unlock(ctx context.Context) (func() error, error) {
 	protects, _, err := b.ghc.Repositories.GetBranchProtection(ctx, b.owner, b.repo, b.branch)
 	if err != nil {
-		return nil, fmt.Errorf("getBranchProtection: %w", err)
+		return nil, errors.Newf("getBranchProtection: %w", err)
 	}
 	if protects.Restrictions == nil {
 		// no restrictions in place, we are done
@@ -100,12 +101,12 @@ func (b *repoBranchLocker) Unlock(ctx context.Context) (func() error, error) {
 			b.owner, b.repo, b.branch),
 		nil)
 	if err != nil {
-		return nil, fmt.Errorf("deleteRestrictions: %w", err)
+		return nil, errors.Newf("deleteRestrictions: %w", err)
 	}
 
 	return func() error {
 		if _, err := b.ghc.Do(ctx, req, nil); err != nil {
-			return fmt.Errorf("unlock: %w", err)
+			return errors.Newf("unlock: %w", err)
 		}
 		return nil
 	}, nil

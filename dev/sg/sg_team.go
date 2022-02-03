@@ -35,7 +35,7 @@ func teammateExec(ctx context.Context, args []string) error {
 
 	slackClient, err := slack.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("slack.NewClient: %w", err)
+		return errors.Newf("slack.NewClient: %w", err)
 	}
 	resolver := team.NewTeammateResolver(nil, slackClient)
 
