@@ -15,7 +15,7 @@ func TestEncodeSeriesID(t *testing.T) {
 		want  autogold.Value
 	}{
 		{
-			input: &schema.InsightSeries{Search: "errors.Newf repo:github.com/golang/go"},
+			input: &schema.InsightSeries{Search: "fmt.Errorf repo:github.com/golang/go"},
 			want: autogold.Want("basic_search", [2]interface{}{
 				"s:6CB26B840C8EEBFB03DDB44A23FFBD4D7AD864B47D9AA1E975E69FCF0EE2A67E",
 				"<nil>",
