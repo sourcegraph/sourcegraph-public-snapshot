@@ -166,13 +166,8 @@ For more advanced usage for specific run types, see [Developing run types](#deve
 
 #### Developing PR checks
 
-To create a new check that can run on pull requests on relevant files, check the [`changed.Files`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/changed/changed.go) type to see if a relevant `affectsXyz` check already exists.
-
-```sgquery
-Affects type:symbol select:symbol.function repo:^github\.com/sourcegraph/sourcegraph$ file:^enterprise/dev/ci/internal/ci/changed
-```
-
-If not, you can define a new one on the `changed.Files` type.
+To create a new check that can run on pull requests on relevant files, check the [`changed.Diff`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/changed/diff.go) type to see if a relevant `Diff` type already exists.
+If not, you can define a new one on the `Diff` type and update the `ParseDiff` function.
 
 Then, you can add a new check to [`CoreTestOperations`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci+CoreTestOperations+type:symbol+&patternType=literal).
 Make sure to follow the best practices outlined in docstring.
