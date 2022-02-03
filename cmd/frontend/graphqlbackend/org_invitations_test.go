@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -19,6 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func mockTimeNow() {
+	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
+	timeNow = func() time.Time {
+		return now
+	}
+}
+
 func mockSiteConfigSigningKey() string {
 	signingKey := "foo"
 	conf.Mock(&conf.Unified{
@@ -32,6 +40,10 @@ func mockSiteConfigSigningKey() string {
 	return signingKey
 }
 
+func mockDefaultSiteConfig() {
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{}})
+}
+
 func TestCreateJWT(t *testing.T) {
 	t.Run("Fails when signingKey is not configured in site config", func(t *testing.T) {
 		_, err := createInvitationJWT(1, 1, 1, 1, "foo@bar.baz")
@@ -43,6 +55,7 @@ func TestCreateJWT(t *testing.T) {
 	})
 	t.Run("Returns JWT with encoded parameters", func(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey()
+		defer mockDefaultSiteConfig()
 
 		token, err := createInvitationJWT(1, 2, 3, 4, "")
 		if err != nil {
@@ -69,7 +82,7 @@ func TestCreateJWT(t *testing.T) {
 		if !ok {
 			t.Fatalf("parsed JWT claims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.Audience != "4" {
+		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.Audience[0] != "4" {
 			t.Fatalf("claims from JWT do not match expectations %v", claims)
 		}
 	})
@@ -87,6 +100,7 @@ func TestOrgInvitationURL(t *testing.T) {
 
 	t.Run("Returns invitation URL with JWT", func(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey()
+		defer mockDefaultSiteConfig()
 
 		url, err := orgInvitationURL(1, 2, 3, 0, "foo@bar.baz", true)
 		if err != nil {
@@ -118,13 +132,17 @@ func TestOrgInvitationURL(t *testing.T) {
 		if !ok {
 			t.Fatalf("parsed JWT claims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.Audience != "foo@bar.baz" {
+		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.Audience[0] != "foo@bar.baz" {
 			t.Fatalf("claims from JWT do not match expectations %v", claims)
 		}
 	})
 }
 
 func TestInviteUserToOrganization(t *testing.T) {
+	mockTimeNow()
+	defer func() {
+		timeNow = time.Now
+	}()
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
@@ -183,6 +201,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 
 	t.Run("Returns invitation URL in the response", func(t *testing.T) {
 		mockSiteConfigSigningKey()
+		defer mockDefaultSiteConfig()
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
@@ -201,7 +220,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiYXVkIjoiMiIsImV4cCI6MTY0Mzk5NTc2MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSJ9.zxGjkhOwJouclyT4nNM0whtCeX9aUoYuCIfMZ0QCSLHt56ftcSSRLwGwEugtCfFmZRwRrn99weArC_qPHwdQBg",
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImF1ZCI6WyIyIl0sImV4cCI6MTYxMTk2NDgwMH0.Dze7dKGqabpxRxsNz86pvH9BUVsB2cCQdoaJ0EeurGhfnm8GvdhiKHuSbThiBtxS1sHreBxij3WaDZ2KxZe6LQ",
 						"sentInvitationEmail": false
 					}
 				}
@@ -273,7 +292,11 @@ func TestInvitationByToken(t *testing.T) {
 
 	t.Run("Returns invitation URL in the response", func(t *testing.T) {
 		mockSiteConfigSigningKey()
-		token := "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiYXVkIjoiMiIsImV4cCI6MTY0Mzk5NTc2MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSJ9.zxGjkhOwJouclyT4nNM0whtCeX9aUoYuCIfMZ0QCSLHt56ftcSSRLwGwEugtCfFmZRwRrn99weArC_qPHwdQBg"
+		defer mockDefaultSiteConfig()
+		token, err := createInvitationJWT(1, 1, 1, 2, "")
+		if err != nil {
+			t.Fatal(err)
+		}
 		RunTests(t, []*Test{
 			{
 				Schema:  mustParseGraphQLSchema(t, db),

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, RouteComponentProps } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
@@ -8,14 +8,16 @@ import { IEmptyResponse, IOrganizationInvitation } from '@sourcegraph/shared/src
 import { Alert, Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
 import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAvatar } from '../OrgAvatar'
-import { Props as OrgsAreaProps } from '../OrgsArea'
 
-interface Props extends OrgsAreaProps {}
+interface Props extends RouteComponentProps<{ token: string }> {
+    authenticatedUser: AuthenticatedUser
+}
 
 interface RespondToOrgInvitationResult {
     respondToOrganizationInvitation: Maybe<IEmptyResponse>
@@ -64,7 +66,7 @@ export const INVITATION_BY_TOKEN = gql`
  * Displays the organization invitation for the user, based on the token in the invite URL.
  */
 export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticatedUser, history, match }) => {
-    const token = match.params.token as string
+    const token = match.params.token
 
     const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<InviteResult, InviteVariables>(
         INVITATION_BY_TOKEN,

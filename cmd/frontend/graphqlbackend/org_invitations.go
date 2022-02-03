@@ -61,7 +61,7 @@ type inviteUserToOrganizationResult struct {
 type orgInvitationClaims struct {
 	InvitationID int64 `json:"invite_ID"`
 	SenderID     int32 `json:"sender_id"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool { return r.sentInvitationEmail }
@@ -311,12 +311,12 @@ func orgInvitationURL(orgID int32, invitationID int64, senderID int32, recipient
 }
 
 func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipientID int32, recipientEmail string) (string, error) {
+	if !orgInvitationConfigDefined() {
+		return "", errors.New("signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration.")
+	}
 	aud := recipientEmail
 	if aud == "" {
 		aud = strconv.FormatInt(int64(recipientID), 10)
-	}
-	if !orgInvitationConfigDefined() {
-		return "", errors.New("signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration.")
 	}
 	config := conf.SiteConfig().OrganizationInvitations
 
@@ -326,10 +326,10 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipi
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &orgInvitationClaims{
-		StandardClaims: jwt.StandardClaims{
-			Audience:  aud,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Audience:  jwt.ClaimStrings{aud},
 			Issuer:    globals.ExternalURL().String(),
-			ExpiresAt: time.Now().Add(expiryTime * time.Hour).Unix(), // TODO: store expiry in DB
+			ExpiresAt: jwt.NewNumericDate(timeNow().Add(expiryTime * time.Hour)), // TODO: store expiry in DB
 			Subject:   strconv.FormatInt(int64(orgID), 10),
 		},
 		InvitationID: invitationID,
