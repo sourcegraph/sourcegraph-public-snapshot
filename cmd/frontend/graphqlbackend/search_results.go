@@ -1081,30 +1081,41 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 	return result.Alert, nil
 }
 
+// toAndJob creates a new job from a basic query whose pattern is an And operator at the top level
 func (r *searchResolver) toAndJob(q query.Basic) (run.Job, error) {
 	// Invariant: this function is only reachable from callers that
-	// guarantee a root node with one or more operands.
-	operands := q.Pattern.(query.Operator).Operands
+	// guarantee a root node with one or more queryOperands.
+	queryOperands := q.Pattern.(query.Operator).Operands
 
-	children := make([]run.Job, 0, len(operands))
-	for _, operand := range operands {
-		child, err := r.toPatternExpressionJob(q.MapPattern(operand))
+	// Limit the number of results from each child to avoid a huge amount of memory bloat.
+	// With streaming, we should re-evaluate this number.
+	//
+	// NOTE: It may be possible to page over repos so that each intersection is only over
+	// a small set of repos, limiting massive number of results that would need to be
+	// kept in memory otherwise.
+	maxTryCount := 40000
+
+	operands := make([]run.Job, 0, len(queryOperands))
+	for _, queryOperand := range queryOperands {
+		operand, err := r.toPatternExpressionJob(q.MapPattern(queryOperand))
 		if err != nil {
 			return nil, err
 		}
-		children = append(children, child)
+		operands = append(operands, run.NewLimitJob(maxTryCount, operand))
 	}
 
+	// TODO(@camdencheek): move this to the top-level evaluate job
 	timeout := search.TimeoutDuration(q)
 
 	return run.NewTimeoutJob(
 		timeout,
 		&AndJob{
-			children: children,
+			children: operands,
 		},
 	), nil
 }
 
+// toOrJob creates a new job from a basic query whose pattern is an Or operator at the top level
 func (r *searchResolver) toOrJob(q query.Basic) (run.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more operands.

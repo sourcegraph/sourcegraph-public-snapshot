@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
@@ -16,8 +15,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
+// NewAndJob creates a job that will run each of its child jobs and stream
+// deduplicated matches that were streamed by at least one of the jobs.
+func NewOrJob(children ...run.Job) run.Job {
+	return &OrJob{
+		children: children,
+	}
+}
+
 type OrJob struct {
-	limit    int
 	children []run.Job
 }
 
@@ -29,64 +35,44 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 	}()
 
 	var (
-		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
-		// this concurrency limit should probably be informed by a user's rate limit quota
-		// at any given time.
-		sem        = semaphore.NewWeighted(16)
 		maxAlerter search.MaxAlerter
 		g          multierror.Group
-
-		mu        sync.Mutex
-		dedup     = result.NewDeduper()
-		stats     streaming.Stats
-		remaining = j.limit
+		sem        = semaphore.NewWeighted(16)
+		merger     = result.NewLiveMerger(len(j.children))
 	)
-
-	for _, child := range j.children {
-		child := child
+	for childNum, child := range j.children {
+		childNum, child := childNum, child
 		g.Go(func() error {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
 			}
 			defer sem.Release(1)
 
-			agg := streaming.NewAggregatingStream()
-			alert, err := child.Run(ctx, db, agg)
+			unioningStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+				event.Results = merger.AddMatches(event.Results, childNum)
+				stream.Send(event)
+			})
+
+			alert, err := child.Run(ctx, db, unioningStream)
 			maxAlerter.Add(alert)
-			if err != nil {
-				return err
-			}
-
-			mu.Lock()
-			defer mu.Unlock()
-
-			if remaining <= 0 {
-				return context.Canceled
-			}
-
-			// BUG: When we find enough results we stop adding them to dedupper,
-			// but don't adjust the stats accordingly. This bug was here
-			// before, and remains after making OR query evaluation concurrent.
-			stats.Update(&agg.Stats)
-
-			for _, m := range agg.Results {
-				remaining = m.Limit(remaining)
-				if dedup.Add(m); remaining <= 0 {
-					return context.Canceled
-				}
-			}
-
-			return nil
+			return err
 		})
 	}
 
+	// TODO(@camdencheek): errors.Is isn't good enough here since a single
+	// backend that returns a context.Canceled error will make the multierror
+	// return true for errors.Is(err, context.Canceled). Ideally, we have some
+	// sort of multi-error filter that can filter out any context.Canceled and
+	// leave us with whatever errors are left. Note that this is true of anywhere
+	// we check the type of an aggregated error. This is neither a new nor a
+	// unique problem.
 	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		return maxAlerter.Alert, err
 	}
 
+	// Send results that were only seen by some of the sources
 	stream.Send(streaming.SearchEvent{
-		Results: dedup.Results(),
-		Stats:   stats,
+		Results: merger.UnsentTracked(),
 	})
 	return maxAlerter.Alert, nil
 }
