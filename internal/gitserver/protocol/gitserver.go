@@ -95,6 +95,7 @@ type ExecRequest struct {
 	EnsureRevision string      `json:"ensureRevision"`
 	Args           []string    `json:"args"`
 	Opt            *RemoteOpts `json:"opt"`
+	Timeout        *bool       `json:"timeout"`
 }
 
 // P4ExecRequest is a request to execute a p4 command with given arguments.
