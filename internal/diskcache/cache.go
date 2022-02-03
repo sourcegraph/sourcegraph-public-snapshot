@@ -304,17 +304,17 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		return strings.HasSuffix(fi.Name(), ".zip")
 	}
 
-	type relpathPrefixedFileInfo struct {
-		path string
-		info fs.FileInfo
+	type absFileInfo struct {
+		absPath string
+		info    fs.FileInfo
 	}
-	entries := []relpathPrefixedFileInfo{}
+	entries := []absFileInfo{}
 	err = filepath.Walk(s.dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			entries = append(entries, relpathPrefixedFileInfo{path, info})
+			entries = append(entries, absFileInfo{absPath: path, info: info})
 			return nil
 		})
 	if err != nil {
@@ -350,7 +350,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		if !isZip(entry.info) {
 			continue
 		}
-		path := filepath.Join(s.dir, entry.path, entry.info.Name())
+		path := entry.absPath
 		if s.beforeEvict != nil {
 			s.beforeEvict(path, trace)
 		}
