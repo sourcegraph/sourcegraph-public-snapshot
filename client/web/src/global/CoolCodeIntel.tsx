@@ -41,6 +41,7 @@ import {
     CoolCodeIntelReferencesResult,
     CoolCodeIntelReferencesVariables,
     LocationFields,
+    Maybe,
 } from '../graphql-operations'
 import { Blob, BlobProps } from '../repo/blob/Blob'
 
@@ -173,9 +174,7 @@ export const ReferencesList: React.FunctionComponent<
                 type="text"
                 placeholder="Filter by filename..."
                 value={filter === undefined ? '' : filter}
-                onChange={event => {
-                    setFilter(event.target.value)
-                }}
+                onChange={event => setFilter(event.target.value)}
             />
             <div className={classNames('align-items-stretch', styles.referencesList)}>
                 <div className={classNames('px-0', styles.sideReferences)}>
@@ -251,17 +250,44 @@ export const SideReferences: React.FunctionComponent<
         return <>Nothing found</>
     }
 
-    const references: Location[] = []
-    for (const node of data.repository.commit?.blob?.lsif?.references.nodes) {
-        references.push(buildLocation(node))
-    }
+    const lsif = data.repository?.commit?.blob?.lsif
 
-    const definitions: Location[] = []
-    for (const node of data.repository.commit?.blob?.lsif?.definitions.nodes) {
-        definitions.push(buildLocation(node))
-    }
+    return (
+        <SideReferencesLists
+            {...props}
+            references={lsif.references}
+            definitions={lsif.definitions}
+            implementations={lsif.implementations}
+            hover={lsif.hover}
+        />
+    )
+}
 
-    const hover = data.repository.commit?.blob?.lsif?.hover
+interface LSIFLocationResult {
+    __typename?: 'LocationConnection'
+    nodes: ({ __typename?: 'Location' } & LocationFields)[]
+    pageInfo: { __typename?: 'PageInfo'; endCursor: Maybe<string> }
+}
+
+export const SideReferencesLists: React.FunctionComponent<
+    {
+        clickedToken: CoolClickedToken
+        setActiveLocation: (location: Location | undefined) => void
+        activeLocation: Location | undefined
+        filter: string | undefined
+        references: LSIFLocationResult
+        definitions: Omit<LSIFLocationResult, 'pageInfo'>
+        implementations: LSIFLocationResult
+        hover: Maybe<{
+            __typename?: 'Hover'
+            markdown: { __typename?: 'Markdown'; html: string; text: string }
+        }>
+    } & Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar'>
+> = props => {
+    const { references, definitions, implementations, hover } = props
+    const references_: Location[] = useMemo(() => references.nodes.map(buildLocation), [references])
+    const defs: Location[] = useMemo(() => definitions.nodes.map(buildLocation), [definitions])
+    const impls: Location[] = useMemo(() => implementations.nodes.map(buildLocation), [implementations])
 
     return (
         <>
@@ -272,11 +298,11 @@ export const SideReferences: React.FunctionComponent<
                 />
             )}
             <CardHeader>
-                <h4 className="py-1 mb-0">Definitions</h4>
+                <h4 className="py-1 px-1 mb-0">Definitions</h4>
             </CardHeader>
-            {definitions.length > 0 ? (
+            {defs.length > 0 ? (
                 <LocationsList
-                    locations={definitions}
+                    locations={defs}
                     activeLocation={props.activeLocation}
                     setActiveLocation={props.setActiveLocation}
                     filter={props.filter}
@@ -293,11 +319,11 @@ export const SideReferences: React.FunctionComponent<
                 </p>
             )}
             <CardHeader>
-                <h4 className="py-1 mb-0">References</h4>
+                <h4 className="py-1 px-1 mb-0">References</h4>
             </CardHeader>
-            {references.length > 0 ? (
+            {references_.length > 0 ? (
                 <LocationsList
-                    locations={references}
+                    locations={references_}
                     activeLocation={props.activeLocation}
                     setActiveLocation={props.setActiveLocation}
                     filter={props.filter}
@@ -312,6 +338,19 @@ export const SideReferences: React.FunctionComponent<
                         <i>No references found</i>
                     )}
                 </p>
+            )}
+            {impls.length > 0 && (
+                <>
+                    <CardHeader>
+                        <h4 className="py-1 px-1 mb-0">Implementations</h4>
+                    </CardHeader>
+                    <LocationsList
+                        locations={impls}
+                        activeLocation={props.activeLocation}
+                        setActiveLocation={props.setActiveLocation}
+                        filter={props.filter}
+                    />
+                </>
             )}
         </>
     )
