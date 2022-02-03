@@ -53,6 +53,14 @@ export const FETCH_REFERENCES_QUERY = gql`
                                 endCursor
                             }
                         }
+                        implementations(line: $line, character: $character, after: $after, filter: $filter) {
+                            nodes {
+                                ...LocationFields
+                            }
+                            pageInfo {
+                                endCursor
+                            }
+                        }
                         definitions(line: $line, character: $character, filter: $filter) {
                             nodes {
                                 ...LocationFields
