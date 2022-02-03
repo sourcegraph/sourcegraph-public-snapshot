@@ -1753,7 +1753,7 @@ func (c *V3Client) getAuthenticatedOAuthScopesFromCache(ctx context.Context, key
 		return ""
 	}
 
-	return string(b[:])
+	return string(b)
 }
 
 var reposGitHubCacheCounter = promauto.NewCounterVec(prometheus.CounterOpts{
