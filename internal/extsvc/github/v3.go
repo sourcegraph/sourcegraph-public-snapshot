@@ -13,6 +13,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -413,6 +414,17 @@ func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
 
 var MockGetAuthenticatedOAuthScopes func(ctx context.Context) ([]string, error)
 
+var (
+	cacheHit = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_github_oauth_cache_hit",
+		Help: "The number of times we hit the GitHub client's oauth scopes cache",
+	})
+	cacheMiss = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_github_oauth_cache_miss",
+		Help: "The number of times we missed the GitHub client's oauth scopes cache",
+	})
+)
+
 // GetAuthenticatedOAuthScopes gets the list of OAuth scopes granted to the token in use.
 func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error) {
 	if MockGetAuthenticatedOAuthScopes != nil {
@@ -421,13 +433,17 @@ func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, e
 
 	key := c.auth.Hash()
 	if scope := c.getAuthenticatedOAuthScopesFromCache(ctx, key); scope != "" {
+		cacheHit.Inc()
 		return strings.Split(scope, ", "), nil
 	}
+
+	cacheMiss.Inc()
 
 	// We only care about headers
 	var dest struct{}
 	header, err := c.requestGetWithHeader(ctx, "/", &dest)
 	if err != nil {
+
 		return nil, err
 	}
 
