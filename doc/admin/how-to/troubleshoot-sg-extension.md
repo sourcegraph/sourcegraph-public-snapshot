@@ -63,7 +63,8 @@ It's likely that the CSV file exceeds the browser's limit for data URI size. Use
 
 #### Search-export: The number of exported results does not match the number of results displayed on Sourcegraph
 
-This is expected, as all instances that match for a single file will be listed in the same entry column under the Search matches row.  
+The Sourcegraph [Streaming API](../../api/stream_api/index.md) determines the number of results in the Sourcegraph UI. However, our Search-export extension runs a query on our GraphQL API and will only export the complete list of results if the search query includes the `count:all` keyword.
+
 
 ___
 

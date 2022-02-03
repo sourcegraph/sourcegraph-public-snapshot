@@ -273,7 +273,7 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
             )}
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
+        <Button variant="icon" title="Dismiss" onClick={onDismiss}>
             <CloseIcon className="icon-inline" />
         </Button>
     </Alert>

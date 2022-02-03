@@ -29,6 +29,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Removed `experimentalFeature.showCodeMonitoringTestEmailButton`. Test emails can still be sent by editing the code monitor and expanding the "Send email notification" section. [#29953](https://github.com/sourcegraph/sourcegraph/pull/29953)
 
+## 3.36.3
+
+### Fixed
+
+- Fix Code Monitor permissions. [#30547](https://github.com/sourcegraph/sourcegraph/pull/30547)
+
 ## 3.36.2
 
 ### Removed

@@ -78,7 +78,6 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
             as="div"
             ref={toggleCheckbox}
             className={classNames(
-                'btn-icon',
                 styles.toggle,
                 props.className,
                 !!disabledRule && styles.disabled,
@@ -87,6 +86,7 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
                 props.activeClassName
             )}
             role="checkbox"
+            variant="icon"
             aria-disabled={!!disabledRule}
             aria-checked={isActive}
             aria-label={`${props.title} toggle`}

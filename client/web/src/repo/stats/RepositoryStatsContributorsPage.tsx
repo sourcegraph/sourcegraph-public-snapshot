@@ -13,7 +13,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -247,7 +247,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         onChange={this.onChange}
                                     />
                                     <div className="input-group-append">
-                                        <div className="btn-group">
+                                        <ButtonGroup>
                                             <Button
                                                 className={classNames(
                                                     styles.btnNoLeftRoundedCorners,
@@ -279,7 +279,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                             >
                                                 All time
                                             </Button>
-                                        </div>
+                                        </ButtonGroup>
                                     </div>
                                 </div>
                             </div>
