@@ -4,8 +4,8 @@ import { createMemoryHistory } from 'history'
 import React from 'react'
 import { Route } from 'react-router'
 
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { SurveyPage } from './SurveyPage'
 import { mockVariables, submitSurveyMock } from './SurveyPage.mocks'
@@ -22,7 +22,7 @@ interface RenderSurveyPageParameters {
 }
 
 describe('SurveyPage', () => {
-    let renderResult: RenderWithRouterResult
+    let renderResult: RenderWithBrandedContextResult
 
     afterEach(cleanup)
 
@@ -30,7 +30,7 @@ describe('SurveyPage', () => {
         const history = createMemoryHistory()
         history.push(`/survey/${routerProps?.matchParam || ''}`, routerProps?.locationState)
 
-        return renderWithRouter(
+        return renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
                 <Route path="/survey/:score?">
                     <SurveyPage authenticatedUser={null} />

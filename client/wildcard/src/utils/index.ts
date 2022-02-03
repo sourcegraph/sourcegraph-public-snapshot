@@ -1,1 +1,1 @@
-export * from './renderBrandedToString'
+export * from './renderWithBrandedTheme'

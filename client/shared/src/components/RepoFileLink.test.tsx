@@ -1,12 +1,12 @@
 import React from 'react'
 
-import { renderWithRouter } from '../testing/render-with-router'
+import { renderWithBrandedContext } from '../testing'
 
 import { RepoFileLink } from './RepoFileLink'
 
 describe('RepoFileLink', () => {
     test('renders', () => {
-        const component = renderWithRouter(
+        const component = renderWithBrandedContext(
             <RepoFileLink
                 repoName="example.com/my/repo"
                 repoURL="https://example.com"
