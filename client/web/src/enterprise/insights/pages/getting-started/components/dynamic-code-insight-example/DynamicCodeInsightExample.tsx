@@ -86,14 +86,14 @@ export const DynamicCodeInsightExample: React.FunctionComponent = () => {
                     />
 
                     <FormInput
-                        title="Search query"
+                        title="Data series search query"
                         required={true}
                         as={InsightQueryInput}
                         patternType={getQueryPatternTypeFilter(query.input.value)}
                         placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                         valid={query.meta.touched && query.meta.validState === 'VALID'}
                         error={query.meta.touched && query.meta.error}
-                        className="mt-4"
+                        className="mt-3 mb-0"
                         {...query.input}
                     />
 
@@ -107,7 +107,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent = () => {
                         valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
                         error={repositories.meta.touched && repositories.meta.error}
                         {...repositories.input}
-                        className="mb-0 d-flex flex-column"
+                        className="mt-3 mb-0"
                     />
                 </form>
 
