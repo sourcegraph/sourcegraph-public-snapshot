@@ -348,12 +348,12 @@ func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetV
 		keep[definition.ID] = struct{}{}
 	}
 
-	// Gather the set of names that are NOT a proper descendant of the given target version.
+	// Gather the set of filtered that are NOT a proper descendant of the given target version.
 	// This will leave us with the ancestors of the target version (including itself).
-	names := make([]string, 0, len(allDefinitions))
+	filtered := make([]string, 0, len(allDefinitions))
 	for _, definition := range allDefinitions {
 		if _, ok := keep[definition.ID]; !ok {
-			names = append(names, strconv.Itoa(definition.ID))
+			filtered = append(filtered, strconv.Itoa(definition.ID))
 		}
 	}
 
@@ -362,11 +362,11 @@ func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetV
 		return nil, err
 	}
 
-	for _, name := range names {
+	for _, name := range filtered {
 		if err := os.RemoveAll(filepath.Join(baseDir, name)); err != nil {
 			return nil, err
 		}
 	}
 
-	return names, nil
+	return filtered, nil
 }
