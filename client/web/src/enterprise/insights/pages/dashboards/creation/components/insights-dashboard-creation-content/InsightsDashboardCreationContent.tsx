@@ -178,7 +178,6 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     className="mr-3 flex-grow-0"
                     labelTooltipText={getGlobalSubjectTooltipText(globalSubject)}
                     labelTooltipPosition="bottom"
-                    disabled={!globalSubject?.viewerCanAdminister}
                     onChange={visibility.input.onChange}
                 />
             </FormGroup>
