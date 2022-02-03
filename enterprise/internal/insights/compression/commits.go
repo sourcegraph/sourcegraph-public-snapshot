@@ -97,10 +97,10 @@ func (c *DBCommitStore) Get(ctx context.Context, id api.RepoID, start time.Time,
 
 // GetMetadata Returns commit index metadata for a given repository
 func (c *DBCommitStore) GetMetadata(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error) {
-	row := c.QueryRow(ctx, sqlf.Sprintf(getCommitIndexMetadataStr, id))
+	row := c.QueryRow(ctx, sqlf.Sprintf(getCommitIndexMetadataStr, id, id))
 
 	var metadata CommitIndexMetadata
-	if err := row.Scan(&metadata.RepoId, &metadata.Enabled, &metadata.LastIndexedAt); err != nil {
+	if err := row.Scan(&metadata.RepoId, &metadata.Enabled, &metadata.LastIndexedAt, &metadata.OldestIndexedAt); err != nil {
 		return CommitIndexMetadata{}, err
 	}
 
@@ -126,9 +126,10 @@ type CommitStamp struct {
 }
 
 type CommitIndexMetadata struct {
-	RepoId        int
-	Enabled       bool
-	LastIndexedAt time.Time
+	RepoId          int
+	Enabled         bool
+	LastIndexedAt   time.Time
+	OldestIndexedAt *time.Time
 }
 
 const getCommitsInRangeStr = `
@@ -143,7 +144,9 @@ INSERT INTO commit_index(repo_id, commit_bytea, committed_at, debug_field) VALUE
 
 const getCommitIndexMetadataStr = `
 -- source: enterprise/internal/insights/compression/commits.go:GetMetadata
-SELECT repo_id, enabled, last_indexed_at FROM commit_index_metadata WHERE repo_id = %s;
+SELECT repo_id, enabled, last_indexed_at, (select min(committed_at) from commit_index where repo_id = %s) oldest_indexed_at
+FROM commit_index_metadata
+WHERE repo_id = %s;
 `
 
 const upsertCommitIndexMetadataStampStr = `

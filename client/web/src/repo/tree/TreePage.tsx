@@ -36,7 +36,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, Button, useObservable, Link } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, useObservable, ButtonGroup, Link } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -346,7 +346,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         className="mb-3 test-tree-page-title"
                                     />
                                     {repo.description && <p>{repo.description}</p>}
-                                    <div className="btn-group">
+                                    <ButtonGroup>
                                         {enableAPIDocs && (
                                             <Button
                                                 to={`${treeOrError.url}/-/docs`}
@@ -424,7 +424,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 <SettingsIcon className="icon-inline" /> Settings
                                             </Button>
                                         )}
-                                    </div>
+                                    </ButtonGroup>
                                 </>
                             ) : (
                                 <PageHeader
@@ -458,11 +458,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 <section className={styles.section}>
                                     <h2>Actions</h2>
                                     {items.map(item => (
-                                        <ActionItem
+                                        <Button
                                             {...props}
                                             key={item.action.id}
                                             {...item}
-                                            className="btn btn-secondary mr-1 mb-1"
+                                            className="mr-1 mb-1"
+                                            variant="secondary"
+                                            as={ActionItem}
                                         />
                                     ))}
                                 </section>

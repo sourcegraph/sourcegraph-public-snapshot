@@ -645,6 +645,25 @@ query{
 	}
 }
 
+func TestRecentCommitters(t *testing.T) {
+	cli, save := newV4Client(t, "RecentCommitters")
+	t.Cleanup(save)
+
+	recentCommitters, err := cli.RecentCommitters(context.Background(), &RecentCommittersParams{
+		Owner: "sourcegraph-testing",
+		Name:  "etcd",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/RecentCommitters",
+		update("SearchRepos-Enterprise"),
+		recentCommitters,
+	)
+}
+
 func TestV4Client_SearchRepos_Enterprise(t *testing.T) {
 	cli, save := newEnterpriseV4Client(t, "SearchRepos-Enterprise")
 	t.Cleanup(save)

@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/cockroachdb/errors"
@@ -19,7 +18,7 @@ func TestCheckGitHubPermissions(t *testing.T) {
 		listInstallationRepositoriesHook func(context.Context, int) ([]*github.Repository, bool, int, error)
 	}
 
-	testErr := fmt.Errorf("uh-oh")
+	testErr := errors.Newf("uh-oh")
 
 	getRepositoryHookAuthorizedRepository := func(ctx context.Context, owner, name string) (*github.Repository, error) {
 		return &github.Repository{ViewerPermission: "WRITE"}, nil

@@ -3,15 +3,23 @@
 package ci
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/google/go-github/v41/github"
+	"github.com/slack-go/slack"
+
+	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
@@ -98,19 +106,20 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	const minimumUpgradeableVersion = "3.36.0"
 
 	// Set up operations that add steps to a pipeline.
-	var ops operations.Set
+	ops := operations.NewSet()
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case PullRequest:
-		if c.ChangedFiles.AffectsClient() {
+		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
 			// set it up separately from CoreTestOperations
-			ops.Append(triggerAsync(buildOptions))
+			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
+				triggerAsync(buildOptions)))
 		}
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case BackendIntegrationTests:
 		ops.Append(
@@ -118,29 +127,27 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
-		ops = operations.NewSet([]operations.Operation{
+		ops = operations.NewSet(
 			addTsLint,
 			addBrowserExt,
 			frontendTests,
 			wait,
-			addBrowserExtensionReleaseSteps,
-		})
+			addBrowserExtensionReleaseSteps)
 
 	case BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
-		ops = operations.NewSet([]operations.Operation{
+		ops = operations.NewSet(
 			addTsLint,
 			addBrowserExt,
 			frontendTests,
 			wait,
-			addBrowserExtensionE2ESteps,
-		})
+			addBrowserExtensionE2ESteps)
 
 	case ImagePatch:
 		// only build candidate image for the specified image in the branch name
@@ -149,26 +156,25 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
-		ops = operations.NewSet([]operations.Operation{
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
-		})
+		ops = operations.NewSet(
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()))
 
 		// Trivy security scans
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 		// Publish images after everything is done
-		ops.Append(wait,
+		ops.Append(
+			wait,
 			publishFinalDockerImage(c, patchImage))
 
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.Branch[27:]
-		ops = operations.NewSet([]operations.Operation{
+		ops = operations.NewSet(
 			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
 			wait,
-			publishFinalDockerImage(c, app),
-		})
+			publishFinalDockerImage(c, app))
 
 	case CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {
@@ -177,66 +183,75 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 	case ExecutorPatchNoTest:
-		ops = operations.NewSet([]operations.Operation{
+		ops = operations.NewSet(
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			buildExecutorDockerMirror(c.Version),
-			publishExecutorDockerMirror(c.Version),
-		})
+			publishExecutorDockerMirror(c.Version))
 
 	default:
 		// Slow async pipeline
-		ops.Append(triggerAsync(buildOptions))
+		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
+			triggerAsync(buildOptions)))
 
 		// Slow image builds
+		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
-
-		// Trivy security scans
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
 		if c.RunType.Is(MainDryRun, MainBranch, ReleaseBranch) {
-			ops.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
-				ops.Append(buildExecutorDockerMirror(c.Version))
+			imageBuildOps.Append(buildExecutor(c.Version, skipHashCompare))
+			if c.RunType.Is(ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				imageBuildOps.Append(buildExecutorDockerMirror(c.Version))
 			}
 		}
+		ops.Merge(imageBuildOps)
+
+		// Trivy security scans
+		imageScanOps := operations.NewNamedSet("Image security scans")
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+		}
+		ops.Merge(imageScanOps)
 
 		// Core tests
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
+		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 		}))
 
-		// Various integration tests
-		ops.Append(
+		// Integration tests
+		ops.Merge(operations.NewNamedSet("Integration tests",
 			backendIntegrationTests(c.candidateImageTag()),
 			codeIntelQA(c.candidateImageTag()),
+		))
+		// End-to-end tests
+		ops.Merge(operations.NewNamedSet("End-to-end tests",
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
 			// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
 			// clusterQA(c.candidateImageTag()),
-			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
+			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
+		))
 
 		// All operations before this point are required
 		ops.Append(wait)
 
 		// Add final artifacts
+		publishOps := operations.NewNamedSet("Publish images")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(publishFinalDockerImage(c, dockerImage))
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
 		if c.RunType.Is(MainBranch, ReleaseBranch) {
-			ops.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
-				ops.Append(publishExecutorDockerMirror(c.Version))
+			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
+			if c.RunType.Is(ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				publishOps.Append(publishExecutorDockerMirror(c.Version))
 			}
 		}
+		ops.Merge(publishOps)
 	}
 
 	ops.Append(
@@ -245,14 +260,34 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	)
 
 	// Construct pipeline
-	pipeline := &bk.Pipeline{
-		Env: env,
-	}
+	pipeline := &bk.Pipeline{Env: env}
 	ops.Apply(pipeline)
 
-	// Validate generated pipeline has unique keys
+	// Validate generated pipeline have unique keys
 	if err := ensureUniqueKeys(pipeline); err != nil {
 		return nil, err
+	}
+
+	// Add a notify block
+	if c.RunType.Is(MainBranch) {
+		ctx := context.Background()
+
+		// Slack client for retriving Slack profile data, not for making the request - for
+		// more details, see the config.Notify docstring.
+		slc := slack.New(c.Notify.SlackToken)
+
+		// For now, we use an unauthenticated GitHub client because `sourcegraph/sourcegraph`
+		// is a public repository.
+		ghc := github.NewClient(http.DefaultClient)
+
+		// Get teammate based on GitHub author of commit
+		teammates := team.NewTeammateResolver(ghc, slc)
+		tm, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", c.Commit)
+		if err != nil {
+			pipeline.AddFailureSlackNotify(c.Notify.Channel, "", errors.Newf("failed to get Slack user: %w", err))
+		} else {
+			pipeline.AddFailureSlackNotify(c.Notify.Channel, tm.SlackID, nil)
+		}
 	}
 
 	return pipeline, nil
@@ -263,14 +298,14 @@ func ensureUniqueKeys(pipeline *bk.Pipeline) error {
 	for _, step := range pipeline.Steps {
 		if s, ok := step.(*buildkite.Step); ok {
 			if s.Key == "" {
-				return fmt.Errorf("empty key on step with label %q", s.Label)
+				return errors.Newf("empty key on step with label %q", s.Label)
 			}
 			occurences[s.Key] += 1
 		}
 	}
 	for k, count := range occurences {
 		if count > 1 {
-			return fmt.Errorf("non unique key on step with key %q", k)
+			return errors.Newf("non unique key on step with key %q", k)
 		}
 	}
 	return nil

@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Badge } from '@sourcegraph/wildcard'
+import { Button, Badge, Link } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -82,9 +82,9 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
                 <h2>Authentication providers</h2>
                 <p>
                     Authentication providers allow users to sign into Sourcegraph. See{' '}
-                    <a href="https://docs.sourcegraph.com/admin/auth">authentication documentation</a> about configuring
-                    single-sign-on (SSO) via SAML and OpenID Connect. Configure authentication providers in the{' '}
-                    <a href="https://docs.sourcegraph.com/admin/config/site_config">site configuration</a>.
+                    <Link to="https://docs.sourcegraph.com/admin/auth">authentication documentation</Link> about
+                    configuring single-sign-on (SSO) via SAML and OpenID Connect. Configure authentication providers in
+                    the <Link to="https://docs.sourcegraph.com/admin/config/site_config">site configuration</Link>.
                 </p>
                 <FilteredAuthProviderConnection
                     className="list-group list-group-flush mt-3"

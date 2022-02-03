@@ -3,6 +3,7 @@ package search
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -20,38 +21,51 @@ type Alert struct {
 	Priority int
 }
 
-type ProposedQuery struct {
-	description string
-	query       string
-	patternType query.SearchType
+func MaxPriorityAlert(alerts ...*Alert) (max *Alert) {
+	for _, alert := range alerts {
+		if alert == nil {
+			continue
+		}
+		if max == nil || alert.Priority > max.Priority {
+			max = alert
+		}
+	}
+	return max
 }
 
-func NewProposedQuery(description, query string, patternType query.SearchType) *ProposedQuery {
-	return &ProposedQuery{description: description, query: query, patternType: patternType}
+// MaxAlerter is a simple struct that provides a thread-safe way
+// to aggregate a set of alerts, leaving the highest priority alert
+type MaxAlerter struct {
+	sync.Mutex
+	*Alert
+}
+
+func (m *MaxAlerter) Add(a *Alert) {
+	m.Lock()
+	m.Alert = MaxPriorityAlert(m.Alert, a)
+	m.Unlock()
+}
+
+type ProposedQuery struct {
+	Description string
+	Query       string
+	PatternType query.SearchType
 }
 
 func (q *ProposedQuery) QueryString() string {
-	if q.description != "Remove quotes" {
-		switch q.patternType {
+	if q.Description != "Remove quotes" {
+		switch q.PatternType {
 		case query.SearchTypeRegex:
-			return q.query + " patternType:regexp"
+			return q.Query + " patternType:regexp"
 		case query.SearchTypeLiteral:
-			return q.query + " patternType:literal"
+			return q.Query + " patternType:literal"
 		case query.SearchTypeStructural:
-			return q.query + " patternType:structural"
+			return q.Query + " patternType:structural"
 		default:
 			panic("unreachable")
 		}
 	}
-	return q.query
-}
-
-func (q *ProposedQuery) Description() *string {
-	if q.description == "" {
-		return nil
-	}
-
-	return &q.description
+	return q.Query
 }
 
 func AlertForCappedAndExpression() *Alert {
@@ -93,11 +107,11 @@ func AlertForTimeout(usedTime time.Duration, suggestTime time.Duration, queryStr
 		Title:          "Timed out while searching",
 		Description:    fmt.Sprintf("We weren't able to find any results in %s.", usedTime.Round(time.Second)),
 		ProposedQueries: []*ProposedQuery{
-			NewProposedQuery(
-				"query with longer timeout",
-				fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitField(q, query.FieldTimeout)),
-				patternType,
-			),
+			{
+				Description: "query with longer timeout",
+				Query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitField(q, query.FieldTimeout)),
+				PatternType: patternType,
+			},
 		},
 	}
 }
@@ -129,11 +143,11 @@ func AlertForStructuralSearchNotSet(queryString string) *Alert {
 		Title:          "No results",
 		Description:    "It looks like you may have meant to run a structural search, but it is not toggled.",
 		ProposedQueries: []*ProposedQuery{
-			NewProposedQuery(
-				"Activate structural search",
-				queryString,
-				query.SearchTypeStructural,
-			),
+			{
+				Description: "Activate structural search",
+				Query:       queryString,
+				PatternType: query.SearchTypeStructural,
+			},
 		},
 	}
 }

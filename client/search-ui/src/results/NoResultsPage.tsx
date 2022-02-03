@@ -49,18 +49,20 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                 {showSearchContext && (
                     <>
                         <div className={classNames(searchBoxStyle.searchBoxContextDropdown, styles.fakeSearchContext)}>
-                            <div
+                            <Button
+                                as="div"
+                                variant="link"
                                 className={classNames(
                                     styles.fakeSearchContextButton,
                                     searchContextDropDownStyles.button,
-                                    'btn btn-link text-monospace dropdown-toggle'
+                                    'text-monospace dropdown-toggle'
                                 )}
                             >
                                 <code className={searchContextDropDownStyles.buttonContent}>
                                     <span className="search-filter-keyword">context:</span>
                                     global
                                 </code>
-                            </div>
+                            </Button>
                         </div>
                         <div className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)} />
                     </>
@@ -131,7 +133,7 @@ const Container: React.FunctionComponent<ContainerProps> = ({
         <h3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
-                <Button className="btn-icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
+                <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
                     <CloseIcon className="icon-inline" />
                 </Button>
             )}

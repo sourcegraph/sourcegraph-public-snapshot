@@ -150,3 +150,7 @@ RepositoryPage.args = {
     repo: { id: 'sourcegraph' },
     queryLsifUploadsByRepository: () => of(makeResponse(testUploads)),
 }
+RepositoryPage.parameters = {
+    // Keep snapshots for one variant
+    chromatic: { disableSnapshots: false },
+}

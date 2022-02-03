@@ -34,8 +34,6 @@ const (
 )
 
 var (
-	partsPerCommit = len(commitFields)
-
 	commitFields = []string{
 		hash,
 		refNames,
@@ -50,12 +48,22 @@ var (
 		parentHashes,
 	}
 
+	// commitSeparator is a special ascii code we use to separate each commit, the
+	// ASCII record separator:
+	// https://www.asciihex.com/character/control/30/0x1E/rs-record-separator. This
+	// is required since the number of zero byte separators per commit changes
+	// depending on the number of files modified in the commit.
+	commitSeparator = []byte("\x1E")
+
+	// Note that we begin each commit with a special string constant. This allows us
+	// to easily separate each commit since the number of parts in each commit varies
+	// depending on the number of files modified.
 	logArgs = []string{
 		"log",
 		"--decorate=full",
 		"-z",
 		"--no-merges",
-		"--format=format:" + strings.Join(commitFields, "%x00") + "%x00",
+		"--format=format:" + "%x1E" + strings.Join(commitFields, "%x00") + "%x00",
 	}
 
 	sep = []byte{0x0}
@@ -73,10 +81,11 @@ const (
 )
 
 type CommitSearcher struct {
-	RepoDir     string
-	Query       MatchTree
-	Revisions   []protocol.RevisionSpecifier
-	IncludeDiff bool
+	RepoDir              string
+	Query                MatchTree
+	Revisions            []protocol.RevisionSpecifier
+	IncludeDiff          bool
+	IncludeModifiedFiles bool
 }
 
 // Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
@@ -124,7 +133,11 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 
 func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
 	revArgs := revsToGitArgs(cs.Revisions)
-	cmd := exec.CommandContext(ctx, "git", append(logArgs, revArgs...)...)
+	args := append(logArgs, revArgs...)
+	if cs.IncludeModifiedFiles {
+		args = append(args, "--name-only")
+	}
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = cs.RepoDir
 	stdoutReader, err := cmd.StdoutPipe()
 	if err != nil {
@@ -262,6 +275,7 @@ type RawCommit struct {
 	CommitterDate  []byte
 	Message        []byte
 	ParentHashes   []byte
+	ModifiedFiles  [][]byte
 }
 
 type CommitScanner struct {
@@ -279,31 +293,29 @@ func NewCommitScanner(r io.Reader) *CommitScanner {
 
 	// Split by commit
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if len(data) == 0 { // should only happen when atEOF
-			return 0, nil, nil
+		if len(data) == 0 {
+			if !atEOF {
+				// Read more data
+				return 0, nil, nil
+			}
+			return 0, nil, errors.Errorf("incomplete data")
 		}
 
-		// See if we have enough null bytes to constitute a full commit
-		// Look for one more than the number of parts because the each message ends with a null byte too
-		sepCount := bytes.Count(data, sep)
-		if sepCount < partsPerCommit+1 {
-			if atEOF {
-				if sepCount == partsPerCommit {
-					return len(data), data, nil
-				}
-				return 0, nil, errors.Errorf("incomplete line")
-			}
-			return 0, nil, nil
+		if !bytes.HasPrefix(data, commitSeparator) {
+			// Each commit should always start with our separator
+			return 0, nil, errors.Errorf("expected commit separator")
 		}
 
-		// If we do, expand token to the end of that commit
-		for i := 0; i < partsPerCommit; i++ {
-			idx := bytes.IndexByte(data[len(token):], 0x0)
-			if idx == -1 {
-				panic("we already counted enough bytes in data")
+		// Find the index of the next separator
+		idx := bytes.Index(data[1:], commitSeparator)
+		if idx == -1 {
+			if !atEOF {
+				return 0, nil, nil
 			}
-			token = data[:len(token)+idx+1]
+			return len(data), data[1:], nil
 		}
+		token = data[1 : idx+1]
+
 		return len(token) + 1, token, nil
 	})
 
@@ -321,8 +333,8 @@ func (c *CommitScanner) Scan() bool {
 	buf := make([]byte, len(c.scanner.Bytes()))
 	copy(buf, c.scanner.Bytes())
 
-	parts := bytes.SplitN(buf, sep, partsPerCommit+1)
-	if len(parts) < partsPerCommit+1 {
+	parts := bytes.Split(buf, sep)
+	if len(parts) < len(commitFields) {
 		c.err = errors.Errorf("invalid commit log entry: %q", parts)
 		return false
 	}
@@ -339,6 +351,7 @@ func (c *CommitScanner) Scan() bool {
 		CommitterDate:  parts[8],
 		Message:        bytes.TrimSpace(parts[9]),
 		ParentHashes:   parts[10],
+		ModifiedFiles:  parts[11:],
 	}
 
 	return true
@@ -373,7 +386,7 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool) (*pro
 	}
 
 	return &protocol.CommitMatch{
-		Oid: api.CommitID(string(lc.Hash)),
+		Oid: api.CommitID(lc.Hash),
 		Author: protocol.Signature{
 			Name:  string(lc.AuthorName),
 			Email: string(lc.AuthorEmail),
@@ -391,6 +404,7 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool) (*pro
 			Content:       string(lc.Message),
 			MatchedRanges: hc.Message,
 		},
-		Diff: diff,
+		Diff:          diff,
+		ModifiedFiles: lc.ModifiedFiles(),
 	}, nil
 }

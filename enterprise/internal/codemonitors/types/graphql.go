@@ -25,7 +25,7 @@ func (c *CommitSearchResults) UnmarshalJSON(b []byte) error {
 		}
 
 		switch t.Typename {
-		case "CommitSearchResults", "":
+		case "CommitSearchResult", "":
 		default:
 			return errors.Errorf("expected result type %q, got %q", "CommitSearchResult", t.Typename)
 		}
@@ -87,12 +87,15 @@ type Commit struct {
 	Repository struct {
 		Name string `json:"name"`
 	} `json:"repository"`
-	Oid     string `json:"oid"`
-	Message string `json:"message"`
-	Author  struct {
-		Person struct {
-			DisplayName string `json:"displayName"`
-		} `json:"person"`
-		Date string `json:"date"`
-	} `json:"author"`
+	Oid       string    `json:"oid"`
+	Message   string    `json:"message"`
+	Author    Signature `json:"author"`
+	Committer Signature `json:"committer"`
+}
+
+type Signature struct {
+	Person struct {
+		DisplayName string `json:"displayName"`
+	} `json:"person"`
+	Date string `json:"date"`
 }

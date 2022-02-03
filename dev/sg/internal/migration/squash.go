@@ -1,20 +1,26 @@
 package migration
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -30,7 +36,7 @@ func Squash(database db.Database, commit string) error {
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("no migrations exist at commit %s", commit)
+		return errors.Newf("no migrations exist at commit %s", commit)
 	}
 
 	// Run migrations up to last migration index and dump the database into a single migration file pair
@@ -54,19 +60,23 @@ func Squash(database db.Database, commit string) error {
 	}
 
 	// Write the replacement migration pair
-	upPath, downPath, err := makeMigrationFilenames(database, lastMigrationIndex, "squashed_migrations")
+	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, lastMigrationIndex)
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(upPath, []byte(squashedUpMigration), os.ModePerm); err != nil {
-		return err
+
+	contents := map[string]string{
+		upPath:       squashedUpMigration,
+		downPath:     squashedDownMigration,
+		metadataPath: "name: 'squashed_migrations'\n",
 	}
-	if err := os.WriteFile(downPath, []byte(squashedDownMigration), os.ModePerm); err != nil {
+	if err := writeMigrationFiles(contents); err != nil {
 		return err
 	}
 
 	block.Writef("Created: %s", upPath)
 	block.Writef("Created: %s", downPath)
+	block.Writef("Created: %s", metadataPath)
 	return nil
 }
 
@@ -103,7 +113,7 @@ func generateSquashedMigrations(database db.Database, migrationIndex int) (up, d
 		err = teardown(err)
 	}()
 
-	if err := runMigrationsGoto(database, migrationIndex, postgresDSN); err != nil {
+	if err := runTargetedUpMigrations(database, migrationIndex, postgresDSN); err != nil {
 		return "", "", err
 	}
 
@@ -115,9 +125,8 @@ func generateSquashedMigrations(database db.Database, migrationIndex int) (up, d
 	return upMigration, "-- Nothing\n", nil
 }
 
-// runMigrationsGoto runs the `migrate` utility to migrate up or down to the given
-// migration index.
-func runMigrationsGoto(database db.Database, migrationIndex int, postgresDSN string) (err error) {
+// runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
+func runTargetedUpMigrations(database db.Database, targetVersion int, postgresDSN string) (err error) {
 	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
@@ -127,22 +136,27 @@ func runMigrationsGoto(database db.Database, migrationIndex int, postgresDSN str
 		}
 	}()
 
-	_, err = runMigrate(
-		database,
-		postgresDSN+fmt.Sprintf("&x-migrations-table=%s", database.MigrationsTable),
-		"goto", strconv.FormatInt(int64(migrationIndex), 10),
-	)
-	return err
-}
+	ctx := context.Background()
 
-// runMigrate runs the migrate utility with the given arguments.
-func runMigrate(database db.Database, postgresDSN string, args ...string) (string, error) {
-	baseDir, err := migrationDirectoryForDatabase(database)
-	if err != nil {
-		return "", err
+	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
 
-	return run.InRoot(exec.Command("migrate", append([]string{"-database", postgresDSN, "-path", baseDir}, args...)...))
+	options := runner.Options{
+		Operations: []runner.MigrationOperation{
+			{
+				SchemaName:    database.Name,
+				Type:          runner.MigrationOperationTypeTargetedUp,
+				TargetVersion: targetVersion,
+			},
+		},
+	}
+
+	dsns := map[string]string{
+		database.Name: postgresDSN,
+	}
+
+	return connections.RunnerFromDSNs(dsns, "sg", storeFactory).Run(ctx, options)
 }
 
 // runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.
@@ -164,7 +178,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 			squasherContainerName,
 		}
 		if _, killErr := run.DockerCmd(killArgs...); killErr != nil {
-			err = multierror.Append(err, fmt.Errorf("failed to stop docker container: %s", killErr))
+			err = multierror.Append(err, errors.Newf("failed to stop docker container: %s", killErr))
 		}
 
 		return err
@@ -217,7 +231,21 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ st
 		return run.InRoot(cmd)
 	}
 
-	pgDumpOutput, err := pgDump("--schema-only", "--no-owner", "--exclude-table", "*schema_migrations")
+	excludeTables := []string{
+		"*schema_migrations",
+		"migration_logs",
+		"migration_logs_id_seq",
+	}
+
+	args := []string{
+		"--schema-only",
+		"--no-owner",
+	}
+	for _, tableName := range excludeTables {
+		args = append(args, "--exclude-table", tableName)
+	}
+
+	pgDumpOutput, err := pgDump(args...)
 	if err != nil {
 		return "", err
 	}
@@ -302,7 +330,7 @@ func removeMigrationFilesUpToIndex(database db.Database, targetIndex int) ([]str
 	}
 
 	for _, name := range filtered {
-		if err := os.Remove(filepath.Join(baseDir, name)); err != nil {
+		if err := os.RemoveAll(filepath.Join(baseDir, name)); err != nil {
 			return nil, err
 		}
 	}

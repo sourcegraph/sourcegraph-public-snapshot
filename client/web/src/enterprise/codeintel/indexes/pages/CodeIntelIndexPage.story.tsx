@@ -453,6 +453,11 @@ Completed.args = {
         }),
 }
 
+Completed.parameters = {
+    // Keep snapshots for one variant
+    chromatic: { disableSnapshots: false },
+}
+
 export const Errored = Template.bind({})
 Errored.args = {
     ...defaults,

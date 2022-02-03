@@ -124,21 +124,64 @@ func (f StreamFunc) Send(se SearchEvent) {
 	f(se)
 }
 
-// CollectStream will call search and aggregates all events it sends. It then
-// returns the aggregate event and any error it returns.
-func CollectStream(search func(Sender) error) ([]result.Match, Stats, error) {
-	var (
-		mu      sync.Mutex
-		results []result.Match
-		stats   Stats
-	)
+// NewAggregatingStream returns a stream that collects all the events
+// sent to it. The aggregated event can be retrieved with Get().
+func NewAggregatingStream() *aggregatingStream {
+	return &aggregatingStream{}
+}
 
-	err := search(StreamFunc(func(event SearchEvent) {
-		mu.Lock()
-		results = append(results, event.Results...)
-		stats.Update(&event.Stats)
-		mu.Unlock()
-	}))
+type aggregatingStream struct {
+	sync.Mutex
+	SearchEvent
+}
 
-	return results, stats, err
+func (c *aggregatingStream) Send(event SearchEvent) {
+	c.Lock()
+	c.Results = append(c.Results, event.Results...)
+	c.Stats.Update(&event.Stats)
+	c.Unlock()
+}
+
+func NewNullStream() Sender {
+	return StreamFunc(func(SearchEvent) {})
+}
+
+func NewStatsObservingStream(s Sender) *statsObservingStream {
+	return &statsObservingStream{
+		parent: s,
+	}
+}
+
+type statsObservingStream struct {
+	parent Sender
+
+	sync.Mutex
+	Stats
+}
+
+func (s *statsObservingStream) Send(event SearchEvent) {
+	s.Lock()
+	s.Stats.Update(&event.Stats)
+	s.Unlock()
+	s.parent.Send(event)
+}
+
+func NewResultCountingStream(s Sender) *resultCountingStream {
+	return &resultCountingStream{
+		parent: s,
+	}
+}
+
+type resultCountingStream struct {
+	parent Sender
+	count  atomic.Int64
+}
+
+func (c *resultCountingStream) Send(event SearchEvent) {
+	c.count.Add(int64(event.Results.ResultCount()))
+	c.parent.Send(event)
+}
+
+func (c *resultCountingStream) Count() int {
+	return int(c.count.Load())
 }

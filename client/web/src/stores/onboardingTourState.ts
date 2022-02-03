@@ -7,10 +7,10 @@ export enum OnboardingTourLanguage {
     C = 'C',
     Go = 'Go',
     Java = 'Java',
-    Javascript = 'Javascript',
-    Php = 'Php',
+    Javascript = 'JavaScript',
+    Php = 'PHP',
     Python = 'Python',
-    Typescript = 'Typescript',
+    Typescript = 'TypeScript',
 }
 
 export interface OnboardingTourState {
