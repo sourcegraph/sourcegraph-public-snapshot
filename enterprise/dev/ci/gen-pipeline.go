@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -98,8 +99,8 @@ func renderPipelineDocs(w io.Writer) {
 	fmt.Fprintln(w, "## Run types")
 
 	// Introduce pull request builds first
-	fmt.Fprintf(w, "\n### %s\n", ci.PullRequest.String())
-	fmt.Fprintln(w, "\nThe default run type.")
+	fmt.Fprintf(w, "\n### %s\n\n", ci.PullRequest.String())
+	fmt.Fprintln(w, "The default run type.")
 	changed.ForEachDiffType(func(diff changed.Diff) {
 		pipeline, err := ci.GeneratePipeline(ci.Config{
 			RunType: ci.PullRequest,
@@ -108,7 +109,7 @@ func renderPipelineDocs(w io.Writer) {
 		if err != nil {
 			log.Fatalf("Generating pipeline for diff %q: %s", diff, err)
 		}
-		fmt.Fprintf(w, "\n- **With %q changes:**\n", diff)
+		fmt.Fprintf(w, "\n- Pipeline for `%s` changes:\n", diff)
 		for _, raw := range pipeline.Steps {
 			printStepSummary(w, raw)
 		}
@@ -116,10 +117,11 @@ func renderPipelineDocs(w io.Writer) {
 
 	// Introduce the others
 	for rt := ci.PullRequest + 1; rt < ci.None; rt += 1 {
-		fmt.Fprintf(w, "\n### %s\n", rt.String())
+		fmt.Fprintf(w, "\n### %s\n\n", rt.String())
 		if m := rt.Matcher(); m == nil {
-			fmt.Fprintln(w, "\nNo matcher defined")
+			fmt.Fprintln(w, "No matcher defined")
 		} else {
+			conditions := []string{}
 			if m.Branch != "" {
 				matchName := fmt.Sprintf("`%s`", m.Branch)
 				if m.BranchRegexp {
@@ -128,15 +130,29 @@ func renderPipelineDocs(w io.Writer) {
 				if m.BranchExact {
 					matchName += " (exact)"
 				}
-				fmt.Fprintf(w, "\n- Branches matching %s", matchName)
+				conditions = append(conditions, fmt.Sprintf("branches matching %s", matchName))
 			}
 			if m.TagPrefix != "" {
-				fmt.Fprintf(w, "\n- Tags starting with `%s`", m.TagPrefix)
+				conditions = append(conditions, fmt.Sprintf("tags starting with `%s`", m.TagPrefix))
 			}
 			if len(m.EnvIncludes) > 0 {
-				fmt.Fprintf(w, "\n- Environment including `%+v`", m.EnvIncludes)
+				env, _ := json.Marshal(m.EnvIncludes)
+				conditions = append(conditions, fmt.Sprintf("environment including `%s`", string(env)))
 			}
-			fmt.Fprintln(w)
+			fmt.Fprintf(w, "The run type for %s.\n", strings.Join(conditions, ", "))
+
+			pipeline, err := ci.GeneratePipeline(ci.Config{
+				RunType: ci.PullRequest,
+				Diff:    changed.All,
+				Branch:  m.Branch,
+			})
+			if err != nil {
+				log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
+			}
+			fmt.Fprintln(w, "\n- Default pipeline:")
+			for _, raw := range pipeline.Steps {
+				printStepSummary(w, raw)
+			}
 		}
 	}
 }
@@ -153,6 +169,6 @@ func printStepSummary(w io.Writer, rawStep interface{}) {
 				steps = append(steps, trimEmoji(s.Label))
 			}
 		}
-		fmt.Fprintf(w, "  - %s: %s\n", v.Group.Group, strings.Join(steps, ", "))
+		fmt.Fprintf(w, "  - **%s**: %s\n", v.Group.Group, strings.Join(steps, ", "))
 	}
 }
