@@ -90,21 +90,6 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs,
 	})
 }
 
-// The maximum number of paths when doing incremental indexing. Diffs with more paths than this will
-// not be incrementally indexed, and instead we will process all symbols.
-const maxTotalPaths = 999
-
-// The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
-// will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
-// could hit the error "argument list too long" by exceeding the limit on the number of arguments to a
-// command.
-//
-// Mac  : getconf ARG_MAX returns 1,048,576
-// Linux: getconf ARG_MAX returns 2,097,152
-//
-// We want to remain well under that limit, so 100,000 seems safe.
-const maxTotalPathsLength = 100_000
-
 func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) (bool, error) {
 	observability.SetParseAmount(ctx, observability.PartialParse)
 
@@ -118,20 +103,6 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 
 	// Paths to modify in the database
 	addedModifiedOrDeletedPaths := append(addedOrModifiedPaths, changes.Deleted...)
-
-	// Too many entries
-	if len(addedModifiedOrDeletedPaths) > maxTotalPaths {
-		return false, nil
-	}
-
-	totalPathsLength := 0
-	for _, path := range addedModifiedOrDeletedPaths {
-		totalPathsLength += len(path)
-	}
-	// Argument lists too long
-	if totalPathsLength > maxTotalPathsLength {
-		return false, nil
-	}
 
 	if err := copyFile(newestDBFile, dbFile); err != nil {
 		return false, err
