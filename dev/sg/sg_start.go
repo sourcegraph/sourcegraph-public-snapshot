@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -186,12 +187,10 @@ func startExec(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	shellPath, shellConfigPath, err := guessUserShell()
+	ctx, err = usershell.Context(ctx)
 	if err != nil {
 		return err
 	}
-	userContext := userContext{shellPath: shellPath, shellConfigPath: shellConfigPath}
-	ctx = buildUserContext(userContext, ctx)
 
 	var failedchecks []string
 	for _, check := range funcs {

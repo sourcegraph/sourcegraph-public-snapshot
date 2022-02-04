@@ -26,6 +26,7 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -43,26 +44,6 @@ var (
 	}
 )
 
-type userContextKey struct{}
-type userContext struct {
-	shellPath       string
-	shellConfigPath string
-}
-
-func buildUserContext(userContext userContext, ctx context.Context) context.Context {
-	return context.WithValue(ctx, userContextKey{}, userContext)
-}
-
-func getUserShellPath(ctx context.Context) string {
-	v := ctx.Value(userContextKey{}).(userContext)
-	return v.shellPath
-}
-
-func getUserShellConfigPath(ctx context.Context) string {
-	v := ctx.Value(userContextKey{}).(userContext)
-	return v.shellConfigPath
-}
-
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
@@ -74,20 +55,17 @@ func setupExec(ctx context.Context, args []string) error {
 		currentOS = overridesOS
 	}
 
-	// extract user environment general informations
-	shellPath, shellConfigPath, err := guessUserShell()
+	ctx, err := usershell.Context(ctx)
 	if err != nil {
 		return err
 	}
-	userContext := userContext{shellPath: shellPath, shellConfigPath: shellConfigPath}
-	ctx = buildUserContext(userContext, ctx)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
 			writeOrangeLinef("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(getUserShellPath(ctx)))
+			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(usershell.ShellPath(ctx)))
 			os.Exit(0)
 		}
 	}()
@@ -293,7 +271,7 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 				check: checkCommandOutputContains("asdf", "version"),
 				instructionsCommandsBuilder: stringCommandBuilder(func(ctx context.Context) string {
 					// Uses `&&` to avoid appending the shell config on failed installations attempts.
-					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + getUserShellConfigPath(ctx)
+					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + usershell.ShellConfigPath(ctx)
 				}),
 			},
 		},
@@ -992,34 +970,12 @@ func checkFileContains(fileName, content string) func(context.Context) error {
 	}
 }
 
-func guessUserShell() (string, string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", "", err
-	}
-	// Look up which shell the user is using, because that's most likely the
-	// one that has all the environment correctly setup.
-	shell, ok := os.LookupEnv("SHELL")
-	var shellrc string
-	if !ok {
-		// If we can't find the shell in the environment, we fall back to `bash`
-		shell = "bash"
-	}
-	switch {
-	case strings.Contains(shell, "bash"):
-		shellrc = ".bashrc"
-	case strings.Contains(shell, "zsh"):
-		shellrc = ".zshrc"
-	}
-	return shell, filepath.Join(home, shellrc), nil
-}
-
 // execFreshShell returns a command wrapped in a new shell process, enabling
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
 func execFreshShell(ctx context.Context, cmd string) *exec.Cmd {
-	command := fmt.Sprintf("source %s || true; %s", getUserShellConfigPath(ctx), cmd)
-	return exec.CommandContext(ctx, getUserShellPath(ctx), "-c", command)
+	command := fmt.Sprintf("source %s || true; %s", usershell.ShellConfigPath(ctx), cmd)
+	return exec.CommandContext(ctx, usershell.ShellPath(ctx), "-c", command)
 }
 
 // combinedSourceExec runs a command in a fresh shell environment,

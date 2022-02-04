@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 )
 
 func TestCheckCommandVersion(t *testing.T) {
@@ -26,13 +28,10 @@ func TestCheckCommandVersion(t *testing.T) {
 		{"git version foobar", "1.2.3", true},
 	}
 
-	// extract user environment general informations
-	shellPath, shellConfigPath, err := guessUserShell()
+	ctx, err := usershell.Context(context.Background())
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
-	userContext := userContext{shellPath: shellPath, shellConfigPath: shellConfigPath}
-	ctx := buildUserContext(userContext, context.Background())
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("constraint %q against %q", test.constraint, test.output), func(t *testing.T) {
