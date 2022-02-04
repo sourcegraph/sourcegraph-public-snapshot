@@ -281,17 +281,6 @@ export const SourcegraphURLForm: React.FunctionComponent<SourcegraphURLFormProps
         }
     }, [onChange, urlState])
 
-    const handleInputChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
-            if (!event.target.value.startsWith('https://')) {
-                // TODO: handle pasting URLs starting with 'http://'
-                event.target.value = `https://${event.target.value}`
-            }
-            nextUrlFieldChange(event)
-        },
-        [nextUrlFieldChange]
-    )
-
     return (
         // eslint-disable-next-line react/forbid-elements
         <form onSubmit={preventDefault} noValidate={true}>
@@ -305,11 +294,12 @@ export const SourcegraphURLForm: React.FunctionComponent<SourcegraphURLFormProps
                         autoComplete="off"
                         autocomplete={false}
                         pattern="^https://.*"
+                        placeholder="https://"
                         onFocus={onFocus}
                         id="sourcegraph-url"
                         ref={urlInputElements}
                         value={urlState.value}
-                        onChange={handleInputChange}
+                        onChange={nextUrlFieldChange}
                         className={classNames('form-control', 'test-sourcegraph-url', deriveInputClassName(urlState))}
                     />
                 </LoaderInput>
