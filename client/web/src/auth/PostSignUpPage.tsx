@@ -23,9 +23,9 @@ import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
 import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
-import { CreateOrganization } from './welcome/CreateOrganization'
 import { Footer } from './welcome/Footer'
 import { StartSearching } from './welcome/StartSearching'
+import { TeamsBeta } from './welcome/TeamsBeta'
 
 interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
@@ -136,7 +136,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     className="text-left"
                     body={
                         <div className="pb-1 d-flex flex-column align-items-center w-100">
-                            <div className={styles.container}>
+                            <div className={styles.progress}>
                                 {hasErrors && (
                                     <Alert className="mb-4" role="alert" variant="danger">
                                         Sorry, something went wrong. Try refreshing the page or{' '}
@@ -148,12 +148,12 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                     Three quick steps to add your repositories and get searching with Sourcegraph
                                 </p>
                             </div>
-                            <div className="mt-4 pb-3 d-flex flex-column align-items-center">
+                            <div className="mt-2 pb-3 d-flex flex-column align-items-center">
                                 <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
-                                    <StepList numeric={true} className={classNames(styles.container, styles.progress)}>
+                                    <StepList numeric={true} className={styles.progress}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
-                                        <Step borderColor="orange">Create an organization</Step>
+                                        <Step borderColor="orange">Teams beta</Step>
                                         <Step borderColor="green">Start searching</Step>
                                     </StepList>
                                     <StepPanels>
@@ -174,7 +174,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <div className={classNames('mt-5', styles.container)}>
+                                            <div className={classNames('mt-3', styles.container)}>
                                                 <h3>Add repositories</h3>
                                                 <p className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
@@ -196,11 +196,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     telemetryService={telemetryService}
                                                     onError={onError}
                                                 />
-                                                <Footer onFinish={finishWelcomeFlow} />
+                                                <Footer onFinish={finishWelcomeFlow} isSkippable={true} />
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <CreateOrganization onFinish={finishWelcomeFlow} />
+                                            <TeamsBeta onFinish={finishWelcomeFlow} />
                                         </StepPanel>
                                         <StepPanel>
                                             <StartSearching

@@ -8,10 +8,10 @@ import { useSteps } from '../Steps/context'
 
 interface Props {
     onFinish: FinishWelcomeFlow
-    hidePrimaryButton?: boolean
+    isSkippable?: boolean
 }
 
-export const Footer: React.FunctionComponent<Props> = ({ onFinish, hidePrimaryButton }) => {
+export const Footer: React.FunctionComponent<Props> = ({ onFinish, isSkippable }) => {
     const { setStep, currentIndex, currentStep } = useSteps()
 
     return (
@@ -28,34 +28,40 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish, hidePrimaryBu
             )}
 
             <div>
-                {!currentStep.isLastStep && (
+                {currentStep.isFirstStep && (
                     <Button
                         className="font-weight-normal text-secondary"
-                        onClick={event =>
-                            onFinish(event, { eventName: 'NotRightNow_Clicked', tabNumber: currentIndex })
-                        }
+                        onClick={event => {
+                            event.currentTarget.blur()
+                            setStep(currentIndex + 1)
+                        }}
                         variant="link"
                     >
                         Not right now
                     </Button>
                 )}
-                {hidePrimaryButton !== true ? (
-                    <LoaderButton
-                        alwaysShowLabel={true}
-                        label={currentStep.isLastStep ? 'Start searching' : 'Continue'}
-                        className="float-right ml-2"
-                        disabled={!currentStep.isComplete}
-                        variant="primary"
-                        onClick={event => {
-                            if (currentStep.isLastStep) {
-                                onFinish(event, { eventName: 'StartSearching_Clicked' })
-                            } else {
-                                event.currentTarget.blur()
-                                setStep(currentIndex + 1)
-                            }
-                        }}
-                    />
-                ) : null}
+
+                <LoaderButton
+                    alwaysShowLabel={true}
+                    label={
+                        isSkippable === true
+                            ? 'Skip this step'
+                            : currentStep.isLastStep
+                            ? 'Start searching'
+                            : 'Continue'
+                    }
+                    className="float-right ml-2"
+                    disabled={!currentStep.isComplete && !isSkippable}
+                    variant="primary"
+                    onClick={event => {
+                        if (currentStep.isLastStep) {
+                            onFinish(event, { eventName: 'StartSearching_Clicked' })
+                        } else {
+                            event.currentTarget.blur()
+                            setStep(currentIndex + 1)
+                        }
+                    }}
+                />
             </div>
         </div>
     )

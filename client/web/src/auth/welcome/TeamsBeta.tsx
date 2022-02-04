@@ -7,18 +7,18 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps'
 
-import styles from './CreateOrganization.module.scss'
 import { Footer } from './Footer'
+import styles from './TeamsBeta.module.scss'
 import { useHubSpotForm } from './useHubSpotForm'
-
-interface CreateOrganization {
-    onFinish: FinishWelcomeFlow
-}
 
 const PORTAL_ID = '2762526'
 const FORM_ID = 'e0e43746-83e9-4133-97bd-9954a60c7af8'
 
-export const CreateOrganization: React.FunctionComponent<CreateOrganization> = ({ onFinish }) => {
+interface TeamsBeta {
+    onFinish: FinishWelcomeFlow
+}
+
+export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish }) => {
     const contentReference = useRef<HTMLDivElement | null>(null)
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [isTransitioning, setIsTransitioning] = useState<boolean>(false)
@@ -48,23 +48,15 @@ export const CreateOrganization: React.FunctionComponent<CreateOrganization> = (
     }
 
     return (
-        <div className={classNames('mt-2', styles.container)}>
-            <div className="d-flex align-items-end mb-3">
-                <div>
-                    <h3>
-                        Create an organization (optional){' '}
-                        <ProductStatusBadge status="beta" className="text-uppercase mr-1" />
-                    </h3>
-                    <p className="text-muted mb-0">
-                        Teams on Sourcegraph Cloud will be the quickest way to level up your team with powerful code
-                        search.
-                    </p>
-                </div>
-                <div className="flex-grow-1">
-                    <Button className="float-right ml-2" variant="primary" onClick={() => setStep(currentIndex + 1)}>
-                        {currentStep.isComplete ? 'Continue' : 'Skip this step'}
-                    </Button>
-                </div>
+        <div className={classNames('mt-3', styles.container)}>
+            <div className="mb-3">
+                <h3>
+                    Apply to the team beta (optional){' '}
+                    <ProductStatusBadge status="beta" className="text-uppercase mr-1" />
+                </h3>
+                <p className="text-muted mb-0">
+                    Teams on Sourcegraph Cloud will be the quickest way to level up your team with powerful code search.
+                </p>
             </div>
             <div
                 className={classNames({ [styles.content]: true, [styles.contentTransitioning]: isTransitioning })}
@@ -73,9 +65,9 @@ export const CreateOrganization: React.FunctionComponent<CreateOrganization> = (
             >
                 {!isExpanded && (
                     <div className={styles.contentInner}>
-                        <p>Would you like to be added to the teams beta?</p>
+                        <p>Click the button below to apply to the beta.</p>
                         <Button onClick={onClick} variant="success">
-                            Apply
+                            Apply to beta
                         </Button>
                     </div>
                 )}
@@ -89,7 +81,7 @@ export const CreateOrganization: React.FunctionComponent<CreateOrganization> = (
                     {form}
                 </div>
             </div>
-            <Footer onFinish={onFinish} hidePrimaryButton={true} />
+            <Footer onFinish={onFinish} isSkippable={true} />
         </div>
     )
 }
