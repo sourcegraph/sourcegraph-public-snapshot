@@ -15,11 +15,11 @@ import { createPlatformContext, WebviewPageProps } from '../platform/context'
 import { adaptMonacoThemeToEditorTheme } from '../theming/monacoTheme'
 import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
 
+import { searchPanelAPI } from './api'
 import { SearchHomeView } from './SearchHomeView'
 import { SearchResultsView } from './SearchResultsView'
 
 import './index.module.scss'
-import { searchPanelAPI } from './api'
 
 const vsCodeApi = window.acquireVsCodeApi()
 
