@@ -99,8 +99,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				stdout.Out.Write(out)
-				return nil
+				return writePrettyMarkdown(out)
 			},
 		}, {
 			Name:      "status",
