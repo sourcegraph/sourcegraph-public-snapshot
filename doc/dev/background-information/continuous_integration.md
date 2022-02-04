@@ -164,6 +164,8 @@ For most basic PR checks, see [Developing PR checks](#developing-pr-checks) for 
 
 For more advanced usage for specific run types, see [Developing run types](#developing-run-types).
 
+#### Caching build artefacts
+
 For caching artefacts to speed up builds, see [How to cache CI artefacts](../how-to/cache_ci_artefacts.md).
 
 #### Developing PR checks
