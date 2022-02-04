@@ -22,6 +22,7 @@ import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfig
 
 import { GlobalAlert } from './GlobalAlert'
 import styles from './GlobalAlerts.module.scss'
+import { Notices } from './Notices'
 
 interface Props extends SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
@@ -73,10 +74,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         {window.context.sourcegraphDotComMode && (
                             <GitLabScopeAlert authenticatedUser={this.props.authenticatedUser} />
                         )}
-                        {this.state.siteFlags.alerts.map((alert, index) => {
-                            console.log(alert)
-                            return <GlobalAlert key={index} alert={alert} className={styles.alert} />
-                        })}
+                        {this.state.siteFlags.alerts.map((alert, index) => (
+                            <GlobalAlert key={index} alert={alert} className={styles.alert} />
+                        ))}
                         {this.state.siteFlags.productSubscription.license &&
                             (() => {
                                 const expiresAt = parseISO(this.state.siteFlags.productSubscription.license.expiresAt)
@@ -121,7 +121,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         .
                     </DismissibleAlert>
                 )}
-                {/* <Notices alertClassName={styles.alert} location="top" settingsCascade={this.props.settingsCascade} /> */}
+                <Notices alertClassName={styles.alert} location="top" settingsCascade={this.props.settingsCascade} />
             </div>
         )
     }
