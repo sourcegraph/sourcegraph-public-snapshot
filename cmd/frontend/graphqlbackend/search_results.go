@@ -1284,11 +1284,11 @@ func (r *searchResolver) toEvaluateJob(q query.Basic) (run.Job, error) {
 	timeout := search.TimeoutDuration(q)
 
 	if q.Pattern == nil {
-		j, err := r.toSearchJob(query.ToNodes(q.Parameters))
-		return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, j)), err
+		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
+		return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, job)), err
 	}
-	j, err := r.toPatternExpressionJob(q)
-	return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, j)), err
+	job, err := r.toPatternExpressionJob(q)
+	return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, job)), err
 }
 
 // evaluate evaluates all expressions of a search query. The value of stream must be non-nil
