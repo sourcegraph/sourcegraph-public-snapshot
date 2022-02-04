@@ -107,11 +107,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const { affiliatedRepos, errorAffiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
     const { selectedRepos, errorSelectedRepos } = useSelectedRepos(authenticatedUser.id)
 
-    console.log({
-        externalServices,
-        affiliatedRepos,
-        selectedRepos,
-    })
     const fetchingError =
         errorServices ||
         // The affliliated repos query will always return an error on the GraphQL API when no
