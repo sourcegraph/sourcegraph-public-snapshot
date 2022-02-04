@@ -33,6 +33,8 @@ interface CodeHostItemProps {
     onDidAdd?: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
+    loading?: boolean
+    useGitHubApp?: boolean
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
@@ -49,6 +51,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     isUpdateModalOpen,
     toggleUpdateModal,
     onDidUpsert,
+    loading = false,
+    useGitHubApp = false,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
@@ -70,6 +74,14 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         })
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
+
+    const toGitHubApp = function (): void {
+        window.location.assign(
+            `https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${encodeURIComponent(
+                owner.id
+            )}`
+        )
+    }
 
     const isUserOwner = owner.type === 'user'
     const connectAction = isUserOwner ? toAuthProvider : toggleAddConnectionModal
@@ -137,8 +149,16 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             alwaysShowLabel={true}
                             variant="primary"
                         />
+                    ) : loading ? (
+                        <LoaderButton
+                            type="button"
+                            className="btn btn-primary"
+                            loading={true}
+                            disabled={true}
+                            alwaysShowLabel={false}
+                        />
                     ) : (
-                        <Button onClick={connectAction} variant="primary">
+                        <Button onClick={useGitHubApp ? toGitHubApp : connectAction} variant="primary">
                             Connect
                         </Button>
                     )
