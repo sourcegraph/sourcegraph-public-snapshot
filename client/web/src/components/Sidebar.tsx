@@ -2,12 +2,12 @@ import classNames from 'classnames'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { useRouteMatch } from 'react-router-dom'
 import { Collapse } from 'reactstrap'
 
-import styles from './Sidebar.module.scss'
+import { Button, Link } from '@sourcegraph/wildcard'
 
-export const SIDEBAR_BUTTON_CLASS = classNames('btn text-left w-100', styles.linkInactive)
+import styles from './Sidebar.module.scss'
 
 /**
  * Item of `SideBarGroup`.
@@ -18,25 +18,21 @@ export const SidebarNavItem: React.FunctionComponent<{
     exact?: boolean
     source?: string
 }> = ({ children, className, to, exact, source }) => {
-    const buttonClassNames = classNames('btn text-left d-flex', styles.linkInactive)
+    const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
+    const routeMatch = useRouteMatch(to)
 
     if (source === 'server') {
         return (
-            <a href={to} className={classNames(buttonClassNames, className)}>
+            <Button as="a" href={to} className={buttonClassNames}>
                 {children}
-            </a>
+            </Button>
         )
     }
 
     return (
-        <NavLink
-            to={to}
-            exact={exact}
-            className={classNames(buttonClassNames, className)}
-            activeClassName="btn-primary"
-        >
+        <Button to={to} className={buttonClassNames} variant={routeMatch?.isExact ? 'primary' : undefined} as={Link}>
             {children}
-        </NavLink>
+        </Button>
     )
 }
 /**

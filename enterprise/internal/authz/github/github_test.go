@@ -15,10 +15,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func mustURL(t *testing.T, u string) *url.URL {
@@ -728,6 +726,12 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			p.client = &mockClient{
 				MockListRepositoryCollaborators: mockListCollaborators,
 				MockListOrganizationMembers: func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					if adminOnly {
+						return []*github.Collaborator{
+							{DatabaseID: 9999},
+						}, false, nil
+					}
+
 					switch page {
 					case 1:
 						return []*github.Collaborator{
@@ -741,6 +745,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					}
 
 					return []*github.Collaborator{}, false, nil
+				},
+				MockListRepositoryTeams: func(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error) {
+					// No team has exlicit access to mockInternalOrgRepo. It's an internal repo so everyone in the org should have access to it.
+					return []*github.Team{}, false, nil
 				},
 				MockGetRepository: func(ctx context.Context, owner, repo string) (*github.Repository, error) {
 					return &mockInternalOrgRepo, nil
@@ -757,10 +765,16 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				},
 			}
 
-			memCache := memGroupsCache()
-			p.groupsCache = memCache
-
+			// Ideally don't want a feature flag for this and want this internal repos to sync for
+			// all users inside an org. Since we're introducing a new feature this is guarded behind
+			// a feature flag, thus we also test against it. Once we're reasonably sure this works
+			// as intended, we will remove the feature flag and enable the behaviour by default.
 			t.Run("feature flag disabled", func(t *testing.T) {
+				p.enableGithubInternalRepoVisibility = false
+
+				memCache := memGroupsCache()
+				p.groupsCache = memCache
+
 				accountIDs, err := p.FetchRepoPerms(
 					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
 				)
@@ -775,6 +789,8 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					"57463526",
 					"67471",
 					"187831",
+					// The admin is expected to be in this list.
+					"9999",
 				}
 				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
 					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
@@ -782,13 +798,9 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			})
 
 			t.Run("feature flag enabled", func(t *testing.T) {
-				conf.Mock(&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						ExperimentalFeatures: &schema.ExperimentalFeatures{
-							EnableGithubInternalRepoVisibility: true,
-						},
-					},
-				})
+				p.enableGithubInternalRepoVisibility = true
+				memCache := memGroupsCache()
+				p.groupsCache = memCache
 
 				accountIDs, err := p.FetchRepoPerms(
 					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},

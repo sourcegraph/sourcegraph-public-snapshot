@@ -12,7 +12,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useEventObservable } from '@sourcegraph/wildcard'
+import { Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -25,7 +25,7 @@ import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
 import { isMonacoEditorDescendant } from './useBlockSelection'
 
-import { Block, BlockDirection, BlockInit, BlockInput, Notebook } from '.'
+import { Block, BlockDirection, BlockInit, BlockInput, BlockType, Notebook } from '.'
 
 export interface SearchNotebookProps
     extends SearchStreamingProps,
@@ -43,6 +43,16 @@ export interface SearchNotebookProps
 }
 
 const LOADING = 'LOADING' as const
+
+type BlockCounts = { [blockType in BlockType]: number }
+
+function countBlockTypes(blocks: Block[]): BlockCounts {
+    return blocks.reduce((aggregate, block) => ({ ...aggregate, [block.type]: aggregate[block.type] + 1 }), {
+        md: 0,
+        file: 0,
+        query: 0,
+    })
+}
 
 export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     onSerializeBlocks,
@@ -69,8 +79,14 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             if (serialize) {
                 onSerializeBlocks(blocks)
             }
+            const blockCountsPerType = countBlockTypes(blocks)
+            props.telemetryService.log(
+                'SearchNotebookBlocksUpdated',
+                { blocksCount: blocks.length, blockCountsPerType },
+                { blocksCount: blocks.length, blockCountsPerType }
+            )
         },
-        [notebook, setBlocks, onSerializeBlocks]
+        [notebook, setBlocks, onSerializeBlocks, props.telemetryService]
     )
 
     // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
@@ -298,15 +314,16 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     return (
         <div className={styles.searchNotebook}>
             <div className="pb-1">
-                <button
-                    className="btn btn-primary mr-2 btn-sm"
-                    type="button"
+                <Button
+                    className="mr-2"
+                    variant="primary"
+                    size="sm"
                     onClick={runAllBlocks}
                     disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                 >
                     <PlayCircleOutlineIcon className="icon-inline mr-1" />
                     <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
-                </button>
+                </Button>
             </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>

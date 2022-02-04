@@ -345,7 +345,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
               <button
                 aria-controls="panel--1--0"
                 aria-expanded="false"
-                class="list-group-item list-group-item-action btn-link button"
+                class="btn btn-link list-group-item list-group-item-action button"
                 data-reach-accordion-button=""
                 id="button--1--0"
               >

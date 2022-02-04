@@ -1,6 +1,8 @@
 package result
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -52,6 +54,14 @@ type Key struct {
 	// Rev is the revision associated with the repo if it exists
 	Rev string
 
+	// AuthorDate is the date a commit was authored if this key is for
+	// a commit match.
+	//
+	// NOTE(@camdencheek): this should probably use committer date,
+	// but the CommitterField on our CommitMatch type is possibly null,
+	// so using AuthorDate here preserves previous sorting behavior.
+	AuthorDate *time.Time
+
 	// Commit is the commit hash of the commit the match belongs to.
 	// Empty if there is no commit associated with the match (e.g. RepoMatch)
 	Commit api.CommitID
@@ -72,6 +82,14 @@ func (k Key) Less(other Key) bool {
 
 	if k.Rev != other.Rev {
 		return k.Rev < other.Rev
+	}
+
+	if k.AuthorDate != nil && other.AuthorDate != nil {
+		return k.AuthorDate.Before(*other.AuthorDate)
+	} else if k.AuthorDate != nil {
+		return true
+	} else if other.AuthorDate != nil {
+		return false
 	}
 
 	if k.Commit != other.Commit {

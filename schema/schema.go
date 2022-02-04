@@ -870,6 +870,8 @@ type GithubAppCloud struct {
 	AppID string `json:"appID,omitempty"`
 	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph Cloud.
 	PrivateKey string `json:"privateKey,omitempty"`
+	// Slug description: The slug of the GitHub App for Sourcegraph Cloud.
+	Slug string `json:"slug,omitempty"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -1019,8 +1021,9 @@ type MountedEncryptionKey struct {
 }
 
 // NPMPackagesConnection description: Configuration for a connection to an NPM packages repository.
-// TODO: [npm-package-support-credentials] Add a credential field to NPMConfig.
 type NPMPackagesConnection struct {
+	// Credentials description: Access token for logging into the NPM registry.
+	Credentials string `json:"credentials,omitempty"`
 	// Dependencies description: An array of "(@scope/)?packageName@version" strings specifying which NPM packages to mirror on Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the NPM registry.
@@ -1545,6 +1548,8 @@ type SettingsExperimentalFeatures struct {
 	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
 	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
 	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
+	// CodeInsightsLandingPage description: Enables code insights landing page layout.
+	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.

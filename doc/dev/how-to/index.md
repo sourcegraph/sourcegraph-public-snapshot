@@ -31,6 +31,10 @@
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
 - [Adding or changing Buildkite secrets](adding_buildkite_secrets.md)
 
+## Executors
+
+- [How to deploy a new executor image](deploy_executor_image.md)
+
 ## Windows support
 
 Running Sourcegraph on Windows is not actively tested, but should be possible within the Windows Subsystem for Linux (WSL).

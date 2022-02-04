@@ -6,8 +6,9 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnectionFilter } from '../../../components/FilteredConnection'
@@ -151,10 +152,10 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     path={[{ icon: MagnifyIcon, to: '/search' }, { text: 'Notebooks' }]}
                     actions={
                         authenticatedUser && (
-                            <Link to={PageRoutes.NotebookCreate} className="btn btn-primary">
+                            <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link}>
                                 <PlusIcon className="icon-inline" />
                                 Create notebook
-                            </Link>
+                            </Button>
                         )
                     }
                     className="mb-3"
@@ -184,7 +185,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                                 role="button"
                                 onClick={event => {
                                     event.preventDefault()
-                                    onSelectTab('starred', 'SearchNotebooksExploreNotebooksTabClick')
+                                    onSelectTab('starred', 'SearchNotebooksStarredNotebooksTabClick')
                                 }}
                                 className={classNames('nav-link', selectedTab === 'starred' && 'active')}
                             >
@@ -213,28 +214,39 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                 </div>
                 {selectedTab === 'my' && authenticatedUser && (
                     <SearchNotebooksList
+                        logEventName="MyNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         filters={filters}
                         creatorUserID={authenticatedUser.id}
+                        telemetryService={telemetryService}
                     />
                 )}
                 {selectedTab === 'starred' && authenticatedUser && (
                     <SearchNotebooksList
+                        logEventName="StarredNotebooks"
                         fetchNotebooks={fetchNotebooks}
                         starredByUserID={authenticatedUser.id}
                         filters={filters}
+                        telemetryService={telemetryService}
                     />
                 )}
                 {(selectedTab === 'my' || selectedTab === 'starred') && !authenticatedUser && (
                     <UnauthenticatedNotebooksSection
-                        cta={selectedTab === 'my' ? 'Sign up to create notebooks' : 'Sign up to star notebooks'}
+                        cta={selectedTab === 'my' ? 'Get started creating notebooks' : 'Get started starring notebooks'}
                         telemetryService={telemetryService}
                         onSelectExploreNotebooks={() =>
                             onSelectTab('explore', 'SearchNotebooksExploreNotebooksTabClick')
                         }
                     />
                 )}
-                {selectedTab === 'explore' && <SearchNotebooksList fetchNotebooks={fetchNotebooks} filters={filters} />}
+                {selectedTab === 'explore' && (
+                    <SearchNotebooksList
+                        logEventName="ExploreNotebooks"
+                        fetchNotebooks={fetchNotebooks}
+                        filters={filters}
+                        telemetryService={telemetryService}
+                    />
+                )}
             </Page>
         </div>
     )
@@ -256,18 +268,19 @@ const UnauthenticatedNotebooksSection: React.FunctionComponent<UnauthenticatedMy
 
     return (
         <div className="d-flex justify-content-center align-items-center flex-column p-3">
-            <Link
+            <Button
+                as={Link}
                 onClick={onClick}
-                to={`/sign-up?returnTo=${encodeURIComponent('/notebooks')}`}
-                className="btn btn-primary"
+                to={buildGetStartedURL('search-notebooks', '/notebooks')}
+                variant="primary"
             >
                 {cta}
-            </Link>
+            </Button>
             <span className="my-3 text-muted">or</span>
             <span className={classNames('d-flex align-items-center', styles.explorePublicNotebooks)}>
-                <button className="btn btn-link p-1" type="button" onClick={onSelectExploreNotebooks}>
+                <Button className="p-1" variant="link" onClick={onSelectExploreNotebooks}>
                     explore
-                </button>{' '}
+                </Button>{' '}
                 public notebooks
             </span>
         </div>

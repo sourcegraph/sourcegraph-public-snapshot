@@ -98,7 +98,7 @@ func failureHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
 }
 
-var clientIDSecretValidator = lazyregexp.New("^[a-z0-9]*$")
+var clientIDSecretValidator = lazyregexp.New("^[a-zA-Z0-9.]*$")
 
 func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 	return clientIDSecretValidator.MatchString(clientIDOrSecret)
