@@ -31,7 +31,6 @@ export function initializeSourcegraphFileSystem({
         vscode.commands.registerCommand('sourcegraph.openFile', async uri => {
             if (typeof uri === 'string') {
                 await openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri))
-                await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', true)
             } else {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 log.error(`extension.openRemoteFile(${uri}) argument is not a string`)
@@ -41,8 +40,8 @@ export function initializeSourcegraphFileSystem({
 
     // Remove Selected Repository from File Tree
     context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.removeRepoTree', () => {
-            files.removeTreeItem()
+        vscode.commands.registerCommand('sourcegraph.removeRepoTree', async () => {
+            await files.removeTreeItem()
         })
     )
 

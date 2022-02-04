@@ -171,7 +171,7 @@
       "view/title": [
         {
           "command": "sourcegraph.removeRepoTree",
-          "when": "sourcegraph.selectRepoFileTree",
+          "when": "view == sourcegraph.files && sourcegraph.removeRepository",
           "group": "navigation"
         }
       ],

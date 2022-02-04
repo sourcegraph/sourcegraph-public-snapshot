@@ -14,7 +14,7 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
     private isExpandedNode = new Set<string>()
     private treeView: vscode.TreeView<string> | undefined
     private activeUri: vscode.Uri | undefined
-    private selectedDirectory: string | undefined
+    private selectedRepository: string | undefined
     private didFocusToken = new vscode.CancellationTokenSource()
     private treeItemCache = new Map<string, vscode.TreeItem>()
     private readonly didChangeTreeData = new vscode.EventEmitter<string | undefined>()
@@ -31,15 +31,8 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
     public setTreeView(treeView: vscode.TreeView<string>): void {
         this.treeView = treeView
         treeView.onDidChangeSelection(async event => {
-            const repos = [...this.fs.allRepositoryUris()]
-            const selectedUri = event.selection[0]
-            if (repos.includes(selectedUri)) {
-                this.selectedDirectory = selectedUri
-                await vscode.commands.executeCommand('setContext', 'sourcegraph.selectRepoFileTree', true)
-            } else {
-                this.selectedDirectory = undefined
-                await vscode.commands.executeCommand('setContext', 'sourcegraph.selectRepoFileTree', false)
-            }
+            // Check if a repository is selected for removing purpose
+            await this.isRepository(event.selection[0])
         })
         treeView.onDidChangeVisibility(async event => {
             const didBecomeVisible = !this._isViewVisible && event.visible
@@ -53,16 +46,23 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
                 //   2. Execute "Reload window" command.
                 //   3. After VS Code loads, open the "Files" view.
                 this.didChangeTreeData.fire(undefined)
-                await vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', true)
                 await this.didFocus(this.activeUri)
             }
         })
-        treeView.onDidExpandElement(event => {
+        treeView.onDidExpandElement(async event => {
+            await this.isRepository(event.element)
             this.isExpandedNode.add(event.element)
         })
-        treeView.onDidCollapseElement(event => {
+        treeView.onDidCollapseElement(async event => {
+            await this.isRepository(event.element)
             this.isExpandedNode.delete(event.element)
         })
+    }
+
+    public async isRepository(selectedUri: string): Promise<void> {
+        const isRepo = [...this.fs.allRepositoryUris()].includes(selectedUri)
+        this.selectedRepository = isRepo ? selectedUri : undefined
+        await vscode.commands.executeCommand('setContext', 'sourcegraph.removeRepository', isRepo)
     }
 
     public async getParent(uriString?: string): Promise<string | undefined> {
@@ -201,13 +201,13 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
     }
 
     // Remove selected repo from tree
-    public removeTreeItem(): void {
-        console.log(this.selectedDirectory)
-        if (this.selectedDirectory) {
-            this.fs.removeRepository(this.selectedDirectory)
+    public async removeTreeItem(): Promise<void> {
+        if (this.selectedRepository) {
+            this.fs.removeRepository(this.selectedRepository)
         }
-        this.didChangeTreeData.fire(undefined)
-        return
+        this.selectedRepository = undefined
+        await vscode.commands.executeCommand('setContext', 'sourcegraph.removeRepository', false)
+        return this.didChangeTreeData.fire(undefined)
     }
 
     private newTreeItem(
