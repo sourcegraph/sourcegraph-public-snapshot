@@ -371,6 +371,17 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 				return nil
 			},
+		}, {
+			Name:      "docs",
+			ShortHelp: "Render reference documentation for build pipeline types.",
+			Exec: func(ctx context.Context, args []string) error {
+				cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
+				out, err := run.InRoot(cmd)
+				if err != nil {
+					return err
+				}
+				return writePrettyMarkdown(fmt.Sprintf("# Pipeline types reference\n%s", out))
+			},
 		}},
 	}
 )
