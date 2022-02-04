@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -81,7 +81,12 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     className,
     onFinish,
 }) => {
-    const { externalServices, errorServices, loadingServices } = useExternalServicesWithCollaborators(user.id)
+    const {
+        externalServices,
+        errorServices,
+        loadingServices,
+        refetchExternalServices,
+    } = useExternalServicesWithCollaborators(user.id)
     const saveSelectedRepos = useSaveSelectedRepos()
 
     const {
@@ -98,7 +103,12 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
         repoSelectionMode,
     })
 
+    // We need to wait for the selected repos to be synced with the backend and
+    // the external services to be refetched before we can display collaborators
+    const [didRefetchExternalServices, setDidRefetchExternalServices] = useState(false)
+
     const isLoading = loadingServices || cloningStatusLoading
+    const isLoadingCollaborators = loadingServices || !didRefetchExternalServices
     const fetchError = cloningStatusError || errorServices
 
     useEffect(() => {
@@ -108,16 +118,24 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
         }
     }, [fetchError, onError, stopPollingCloningStatus])
 
+    // Make sure the below repo saving is only called ones
+    const didSaveSelectedReposReference = useRef(false)
     useEffect(() => {
-        if (externalServices) {
-            const selectedRepos = selectedReposVar()
+        if (!externalServices || didSaveSelectedReposReference.current) {
+            return
+        }
+        didSaveSelectedReposReference.current = true
 
-            for (const host of externalServices) {
-                const areSyncingAllRepos = repoSelectionMode === 'all'
-                // when we're in the "sync all" - don't list individual repos
-                // set allRepos key to true
-                const repos = areSyncingAllRepos ? null : getReposForCodeHost(selectedRepos, host.id)
+        const selectedRepos = selectedReposVar()
 
+        const savePromises: Promise<void>[] = []
+        for (const host of externalServices) {
+            const areSyncingAllRepos = repoSelectionMode === 'all'
+            // when we're in the "sync all" - don't list individual repos
+            // set allRepos key to true
+            const repos = areSyncingAllRepos ? null : getReposForCodeHost(selectedRepos, host.id)
+
+            savePromises.push(
                 saveSelectedRepos({
                     variables: {
                         id: host.id,
@@ -125,19 +143,37 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                         repos,
                     },
                 })
-                    .then(() => {
-                        setSelectedSearchContextSpec(`@${user.username}`)
-                    })
+                    .then(() => setSelectedSearchContextSpec(`@${user.username}`))
                     .catch(onError)
-            }
-
-            const loggerPayload = {
-                userReposSelection: repoSelectionMode ? (repoSelectionMode === 'selected' ? 'specific' : 'all') : null,
-            }
-
-            eventLogger.log(getPostSignUpEvent('Repos_Saved'), loggerPayload, loggerPayload)
+            )
         }
-    }, [externalServices, saveSelectedRepos, repoSelectionMode, onError, setSelectedSearchContextSpec, user.username])
+
+        const loggerPayload = {
+            userReposSelection: repoSelectionMode ? (repoSelectionMode === 'selected' ? 'specific' : 'all') : null,
+        }
+
+        eventLogger.log(getPostSignUpEvent('Repos_Saved'), loggerPayload, loggerPayload)
+
+        Promise.all(savePromises)
+            .then(() => {
+                setDidRefetchExternalServices(true)
+                return refetchExternalServices({
+                    namespace: user.id,
+                    first: null,
+                    after: null,
+                })
+            })
+            .catch(onError)
+    }, [
+        externalServices,
+        saveSelectedRepos,
+        repoSelectionMode,
+        onError,
+        setSelectedSearchContextSpec,
+        user.username,
+        user.id,
+        refetchExternalServices,
+    ])
 
     const invitableCollaborators = useMemo<GQL.IPerson[]>(() => {
         const invitable = externalServices ? externalServices.flatMap(host => host.invitableCollaborators) : []
@@ -253,7 +289,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                         </div>
                     </header>
                     <div className={classNames('mb-3', styles.invitableCollaborators)}>
-                        {!isLoading &&
+                        {!isLoadingCollaborators &&
                             filteredCollaborators.map((person, index) => (
                                 <div
                                     className={classNames(
@@ -287,12 +323,12 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                                     )}
                                 </div>
                             ))}
-                        {isLoading && (
+                        {isLoadingCollaborators && (
                             <div className="text-muted d-flex justify-content-center mt-3">
                                 <LoadingSpinner inline={false} />
                             </div>
                         )}
-                        {!isLoading && filteredCollaborators.length === 0 && (
+                        {!isLoadingCollaborators && filteredCollaborators.length === 0 && (
                             <div className="text-muted d-flex justify-content-center mt-3">
                                 No collaborators found. Try sending them a direct link below
                             </div>
@@ -302,7 +338,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                         variant="success"
                         className="d-block ml-auto mb-3 mr-3"
                         onClick={inviteAllClicked}
-                        disabled={isLoading || filteredCollaborators.length === 0}
+                        disabled={isLoadingCollaborators || filteredCollaborators.length === 0}
                     >
                         Invite all
                     </Button>
