@@ -81,7 +81,7 @@ export function changelogURL(version: string): string {
     return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#${versionAnchor}`
 }
 
-export function ensureMainBranchAndUpToDate(): void {
+export function ensureMainBranchUpToDate(): void {
     const mainBranch = 'main'
     const currentBranch = execa.sync('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim()
     if (currentBranch !== mainBranch) {
