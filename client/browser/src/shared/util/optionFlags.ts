@@ -44,7 +44,7 @@ export const optionFlagDefinitions: OptionFlagDefinition[] = [
     },
     {
         key: 'clickToGoToDefinition',
-        label: 'Single click to go to definition',
+        label: 'Enable click to go to definition',
     },
 ]
 
