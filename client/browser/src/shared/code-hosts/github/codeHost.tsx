@@ -3,8 +3,8 @@ import classNames from 'classnames'
 import { trimStart } from 'lodash'
 import React from 'react'
 import { render } from 'react-dom'
-import { defer, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { defer, Observable, of, Subscription } from 'rxjs'
+import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -423,119 +423,76 @@ export interface GithubCodeHost extends CodeHost {
         onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
     }
 
-    enhanceSearchPage: (sourcegraphURL: string) => void
+    enhanceSearchPage: (sourcegraphURL: string) => Subscription
 }
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => 'searchEnhancement' in codeHost
 
+const isGlobalSearchPage = (): boolean => window.location.pathname.startsWith('/search')
+const isAdvancedSearchPage = (): boolean => window.location.pathname.startsWith('/search/advanced')
+const isRepoSearchPage = (): boolean => window.location.pathname.endsWith('/search')
+const isSearchPage = (): boolean => isGlobalSearchPage() || isRepoSearchPage()
+const isSearchResultsPage = (): boolean =>
+    Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
+
+const getSourcegraphResultType = (): 'repo' | 'commit' | '' => {
+    const githubResultType = new URLSearchParams(window.location.search).get('type')
+
+    if (!githubResultType) {
+        return isGlobalSearchPage ? 'repo' : ''
+    }
+    if (githubResultType.toLowerCase() === 'repositories') {
+        return 'repo'
+    }
+
+    if (githubResultType.toLowerCase() === 'commits') {
+        return 'commit'
+    }
+
+    return ''
+}
+
+const getSourcegraphResultLanguage = (): string | null => new URLSearchParams(window.location.search).get('l')
+
 /**
  * Adds "Search in Sourcegraph buttons" to GitHub search pages
  */
-function enhanceSearchPage(sourcegraphURL: string): void {
-    const githubURL = new URL(window.location.href)
-    const isGlobalSearchPage = githubURL.pathname.startsWith('/search')
-    const isAdvancedSearchPage = githubURL.pathname.startsWith('/search/advanced')
-    const isRepoSearchPage = githubURL.pathname.endsWith('/search')
-    const isSearchPage = isGlobalSearchPage || isRepoSearchPage
-    const urlSearchQuery = githubURL.searchParams.get('q')
-
-    if (!isSearchPage) {
-        return
+function enhanceSearchPage(sourcegraphURL: string): Subscription {
+    if (!isSearchPage()) {
+        return new Subscription()
     }
 
-    const renderConfigs: { container: HTMLElement; className?: string; getSearchQuery: () => string[] }[] = []
+    const buildSourcegraphQuery = (searchTerms: string[]): string => {
+        const queryParameters = searchTerms.filter(Boolean)
+        const sourcegraphResultType = getSourcegraphResultType()
+        const resultsLanguage = getSourcegraphResultLanguage()
 
-    if (urlSearchQuery && !isAdvancedSearchPage) {
-        /* Search results page */
-
-        /*
-            Separate search form is visible for screen sizes xs-md, so we add a Sourcegraph button
-            next to form submit button and track search query changes from the corresponding form input.
-            On screen sizes smaller than md Github *Submit* and *Search on Sourcegraph* buttons are hidden while search input remains visible.
-        */
-
-        const pageSearchForm = document.querySelector<HTMLFormElement>('.application-main form.js-site-search-form')
-        const pageSearchInput = pageSearchForm?.querySelector<HTMLInputElement>("input.form-control[name='q']")
-        const pageSearchFormSubmitButton = [
-            ...document.querySelectorAll<HTMLButtonElement>(".application-main button[type='submit']"),
-        ].find(button => button.form === pageSearchForm)
-
-        if (pageSearchInput && pageSearchFormSubmitButton) {
-            const buttonContainer = document.createElement('div')
-            buttonContainer.classList.add('ml-2', 'd-none', 'd-md-block')
-            pageSearchFormSubmitButton.after(buttonContainer)
-            renderConfigs.push({
-                container: buttonContainer,
-                getSearchQuery: () => pageSearchInput.value.split(' ').map(substring => substring.trim()),
-            })
+        if (sourcegraphResultType) {
+            queryParameters.push(`type:${sourcegraphResultType}`)
         }
 
-        /*
-            On screen sizes lg and larger separate search form is hidden, so we add a Sourcegraph button
-            next to search results header container and track search query changes from search input in header.
-        */
-
-        const headerSearchInput = document.querySelector<HTMLInputElement>(
-            "header form.js-site-search-form input.form-control[name='q']"
-        )
-        const searchResultsContainer = document.querySelector<HTMLDivElement>('.codesearch-results')
-        const emptyResultsContainer = searchResultsContainer?.querySelector('.blankslate')
-        const searchResultsContainerHeading = searchResultsContainer?.querySelector<HTMLHeadingElement>(
-            'div > div > h3'
-        )
-
-        if (headerSearchInput && (emptyResultsContainer || searchResultsContainerHeading)) {
-            const buttonContainer = document.createElement('div')
-            buttonContainer.classList.add('ml-auto', 'd-none', 'd-lg-block')
-
-            if (emptyResultsContainer) {
-                buttonContainer.classList.add('mt-2')
-                emptyResultsContainer.append(buttonContainer)
-            } else if (searchResultsContainerHeading) {
-                buttonContainer.classList.add('mr-2')
-                searchResultsContainerHeading.after(buttonContainer)
-            }
-
-            renderConfigs.push({
-                container: buttonContainer,
-                className: emptyResultsContainer ? '' : 'btn-sm',
-                getSearchQuery: () => headerSearchInput.value.split(' ').map(substring => substring.trim()),
-            })
+        if (resultsLanguage) {
+            queryParameters.push(`lang:${encodeURIComponent(resultsLanguage)}`)
         }
-    } else {
-        /* Simple and advanced search pages */
 
-        const searchInputContainer = document.querySelector('.search-form-fluid')
-        const inputElement = document.querySelector<HTMLInputElement>('#search_form input')
-
-        if (searchInputContainer && inputElement) {
-            const buttonContainer = document.createElement('div')
-            buttonContainer.classList.add('ml-0', 'ml-md-2', 'mt-2', 'mt-md-0')
-            searchInputContainer?.append(buttonContainer)
-
-            renderConfigs.push({
-                container: buttonContainer,
-                getSearchQuery: () => inputElement.value.split(' ').map(substring => substring.trim()),
-            })
-        }
+        return queryParameters.join('+')
     }
 
-    /* Map Github result type to Sourcegraph result type */
+    const renderSourcegraphButton = ({
+        container,
+        className = '',
+        getSearchQuery,
+    }: {
+        container: HTMLElement
+        className?: string
+        getSearchQuery: () => string[]
+    }): void => {
+        if (!isSearchPage() || container.querySelector(`.${styles.sourcegraphIconButton}`)) {
+            return
+        }
 
-    const githubResultType = githubURL.searchParams.get('type')
-    let sourcegraphResultType = ''
+        const sourcegraphSearchURL = new URL('/search', sourcegraphURL)
 
-    if (!githubResultType) {
-        sourcegraphResultType = isGlobalSearchPage ? 'repo' : ''
-    } else if (githubResultType.toLowerCase() === 'repositories') {
-        sourcegraphResultType = 'repo'
-    } else if (githubResultType.toLowerCase() === 'commits') {
-        sourcegraphResultType = 'commit'
-    }
-
-    const sourcegraphSearchURL = new URL('/search', sourcegraphURL)
-
-    for (const { container, className = '', getSearchQuery } of renderConfigs) {
         render(
             <SourcegraphIconButton
                 label="Search on Sourcegraph"
@@ -545,16 +502,7 @@ function enhanceSearchPage(sourcegraphURL: string): void {
                 iconClassName={classNames(styles.icon)}
                 href={sourcegraphSearchURL.href}
                 onClick={event => {
-                    let searchQuery = ''
-                    const queryParameters = getSearchQuery().filter(Boolean)
-
-                    if (sourcegraphResultType) {
-                        queryParameters.push(`type:${sourcegraphResultType}`)
-                    }
-
-                    if (queryParameters.length > 0) {
-                        searchQuery = queryParameters.join('+')
-                    }
+                    const searchQuery = buildSourcegraphQuery(getSearchQuery())
 
                     // Note: we don't use URLSearchParams.set('q', value) as it encodes the value which can't be corretly parsed by sourcegraph search page.
                     ;(event.target as HTMLAnchorElement).href = `${sourcegraphSearchURL.href}${
@@ -565,6 +513,103 @@ function enhanceSearchPage(sourcegraphURL: string): void {
             container
         )
     }
+
+    if (isSearchResultsPage()) {
+        const renderSearchResultsPageButtons = (): void => {
+            /*
+                Separate search form is visible for screen sizes xs-md, so we add a Sourcegraph button
+                next to form submit button and track search query changes from the corresponding form input.
+                On screen sizes smaller than md Github *Submit* and *Search on Sourcegraph* buttons are hidden while search input remains visible.
+            */
+
+            const pageSearchForm = document.querySelector<HTMLFormElement>('.application-main form.js-site-search-form')
+            const pageSearchInput = pageSearchForm?.querySelector<HTMLInputElement>("input.form-control[name='q']")
+            const pageSearchFormSubmitButton = [
+                ...document.querySelectorAll<HTMLButtonElement>(".application-main button[type='submit']"),
+            ].find(button => button.form === pageSearchForm)
+
+            if (pageSearchInput && pageSearchFormSubmitButton) {
+                const buttonContainer = document.createElement('div')
+                buttonContainer.classList.add('ml-2', 'd-none', 'd-md-block')
+                pageSearchFormSubmitButton.after(buttonContainer)
+
+                renderSourcegraphButton({
+                    container: buttonContainer,
+                    getSearchQuery: () => pageSearchInput.value.split(' ').map(substring => substring.trim()),
+                })
+            }
+
+            /*
+                On screen sizes lg and larger separate search form is hidden, so we add a Sourcegraph button
+                next to search results header container and track search query changes from search input in header.
+            */
+
+            const headerSearchInput = document.querySelector<HTMLInputElement>(
+                "header form.js-site-search-form input.form-control[name='q']"
+            )
+            const searchResultsContainer = document.querySelector<HTMLDivElement>('.codesearch-results')
+            const emptyResultsContainer = searchResultsContainer?.querySelector('.blankslate')
+            const searchResultsContainerHeading = searchResultsContainer?.querySelector<HTMLHeadingElement>(
+                'div > div > h3'
+            )
+
+            if (headerSearchInput && (emptyResultsContainer || searchResultsContainerHeading)) {
+                const buttonContainer = document.createElement('div')
+                buttonContainer.classList.add('ml-auto', 'd-none', 'd-lg-block')
+
+                if (emptyResultsContainer) {
+                    buttonContainer.classList.add('mt-2')
+                    emptyResultsContainer.append(buttonContainer)
+                } else if (searchResultsContainerHeading) {
+                    buttonContainer.classList.add('mr-2')
+                    searchResultsContainerHeading.after(buttonContainer)
+                }
+
+                renderSourcegraphButton({
+                    container: buttonContainer,
+                    className: emptyResultsContainer ? '' : 'btn-sm',
+                    getSearchQuery: () => headerSearchInput.value.split(' ').map(substring => substring.trim()),
+                })
+            }
+        }
+
+        return new Observable(subscriber => {
+            const locationChangeObserver = new MutationObserver(mutations => subscriber.next(mutations))
+            locationChangeObserver.observe(document, { subtree: true, childList: true })
+
+            // TODO: ensure it's called when observable is unsubscribed!
+            return () => locationChangeObserver.disconnect()
+        })
+            .pipe(
+                map(() => document.querySelector('.codesearch-results h3')?.textContent?.trim()),
+                filter(Boolean),
+                distinctUntilChanged()
+            )
+            .subscribe(entries => {
+                renderSearchResultsPageButtons()
+                // 1. Ensure Sourcegraph buttons are rendered
+                // 2. Update language and type query params
+                console.log(entries)
+            })
+    }
+
+    /* Simple and advanced search pages */
+
+    const searchInputContainer = document.querySelector('.search-form-fluid')
+    const inputElement = document.querySelector<HTMLInputElement>('#search_form input')
+
+    if (searchInputContainer && inputElement) {
+        const buttonContainer = document.createElement('div')
+        buttonContainer.classList.add('ml-0', 'ml-md-2', 'mt-2', 'mt-md-0')
+        searchInputContainer?.append(buttonContainer)
+
+        renderSourcegraphButton({
+            container: buttonContainer,
+            getSearchQuery: () => inputElement.value.split(' ').map(substring => substring.trim()),
+        })
+    }
+
+    return new Subscription()
 }
 
 export const githubCodeHost: GithubCodeHost = {
