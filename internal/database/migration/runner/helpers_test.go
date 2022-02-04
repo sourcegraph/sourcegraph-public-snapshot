@@ -11,6 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
+func init() {
+	definition.IsTesting = true
+}
+
 func makeTestSchemas(t *testing.T) []*schemas.Schema {
 	return []*schemas.Schema{
 		makeTestSchema(t, "well-formed"),
