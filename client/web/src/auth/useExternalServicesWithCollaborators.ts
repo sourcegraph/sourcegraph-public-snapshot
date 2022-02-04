@@ -28,7 +28,9 @@ interface UseExternalServicesWithCollaboratorsResult {
     ) => Promise<ApolloQueryResult<ExternalServicesWithCollaboratorsResult>>
 }
 
-export const useExternalServicesWithCollaborators = (userId: string | null): UseExternalServicesWithCollaboratorsResult => {
+export const useExternalServicesWithCollaborators = (
+    userId: string | null
+): UseExternalServicesWithCollaboratorsResult => {
     const { data, loading, error, refetch } = useQuery<
         ExternalServicesWithCollaboratorsResult,
         ExternalServicesWithCollaboratorsVariables
