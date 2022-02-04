@@ -16,6 +16,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Changed
 
 - `src batch` commands no longer require `-f` to read from a file. Additionally, running a `src batch` command that requires a batch spec file without a `-f` option from the terminal will now generate an error instead of waiting indefinitely for a batch spec on standard input; however, piping in a batch spec will still work as expected. [#687](https://github.com/sourcegraph/src-cli/pull/687)
+- Pulling container images now occurs in parallel, with the number of concurrent downloads being controlled by the `-j` flag. [#17577](https://github.com/sourcegraph/sourcegraph/issues/17577)
 
 ### Fixed
 

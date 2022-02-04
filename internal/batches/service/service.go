@@ -10,6 +10,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
@@ -30,7 +31,7 @@ type Service struct {
 	allowIgnored     bool
 	client           api.Client
 	features         batches.FeatureFlags
-	imageCache       *docker.ImageCache
+	imageCache       docker.ImageCache
 }
 
 type Opts struct {
@@ -162,23 +163,98 @@ func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batcheslib.Ch
 // images exist and to determine the exact content digest to be used when running
 // each step, including any required by the service itself.
 //
-// Progress information is reported back to the given progress function: perc
-// will be a value between 0.0 and 1.0, inclusive.
-func (svc *Service) EnsureDockerImages(ctx context.Context, steps []batcheslib.Step, progress func(done, total int)) (map[string]docker.Image, error) {
-	total := len(steps)
+// Progress information is reported back to the given progress function.
+func (svc *Service) EnsureDockerImages(
+	ctx context.Context,
+	steps []batcheslib.Step,
+	parallelism int,
+	progress func(done, total int),
+) (map[string]docker.Image, error) {
+	// Figure out the image names used in the batch spec.
+	names := map[string]struct{}{}
+	for i := range steps {
+		names[steps[i].Container] = struct{}{}
+	}
+
+	total := len(names)
 	progress(0, total)
 
-	// TODO: this _really_ should be parallelised, since the image cache takes
-	// care to only pull the same image once.
-	images := make(map[string]docker.Image)
-	for i := range steps {
-		img, err := svc.EnsureImage(ctx, steps[i].Container)
-		if err != nil {
-			return nil, err
-		}
-		images[steps[i].Container] = img
+	// Set up the channels that will be used in the parallel goroutines handling
+	// the pulls.
+	type image struct {
+		name  string
+		image docker.Image
+		err   error
+	}
+	complete := make(chan image)
+	inputs := make(chan string, total)
 
-		progress(i+1, total)
+	// Set up a worker context that we can use to terminate the workers if an
+	// error occurs.
+	workerCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Spawn worker goroutines to call EnsureImage on each image name.
+	if parallelism < 1 {
+		parallelism = 1
+	}
+	var wg sync.WaitGroup
+	for i := 0; i < parallelism; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-workerCtx.Done():
+					// If the worker context has been cancelled, then we just want to
+					// return immediately, rather than continuing to read from inputs.
+					return
+				case name, more := <-inputs:
+					if !more {
+						return
+					}
+					img, err := svc.EnsureImage(workerCtx, name)
+					select {
+					case <-workerCtx.Done():
+						return
+					case complete <- image{
+						name:  name,
+						image: img,
+						err:   err,
+					}:
+						// All good; let's move onto the next input.
+					}
+				}
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(complete)
+	}()
+
+	// Send the image names to the worker goroutines.
+	go func() {
+		for name := range names {
+			inputs <- name
+		}
+		close(inputs)
+	}()
+
+	// Receive the results of the image pulls and build the return value.
+	i := 0
+	images := make(map[string]docker.Image)
+	for image := range complete {
+		if image.err != nil {
+			// If EnsureImage errored, then we'll early return here and let the
+			// worker context clean things up.
+			return nil, image.err
+		}
+
+		images[image.name] = image.image
+		i += 1
+		progress(i, total)
 	}
 
 	return images, nil

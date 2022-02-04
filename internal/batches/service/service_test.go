@@ -3,19 +3,25 @@ package service
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/assert"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/mock"
 )
 
 func TestSetDefaultQueryCount(t *testing.T) {
@@ -568,4 +574,127 @@ func TestService_ValidateChangesetSpecs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEnsureDockerImages(t *testing.T) {
+	ctx := context.Background()
+	parallelCases := []int{0, 1, 2, 4, 8}
+
+	newServiceWithImages := func(images map[string]docker.Image) *Service {
+		return &Service{
+			imageCache: &mock.ImageCache{Images: images},
+		}
+	}
+
+	t.Run("success", func(t *testing.T) {
+		t.Run("single image", func(t *testing.T) {
+			// A zeroed mock.Image should be usable for testing purposes.
+			image := &mock.Image{}
+			images := map[string]docker.Image{
+				"image": image,
+			}
+
+			for name, steps := range map[string][]batcheslib.Step{
+				"single step":    {{Container: "image"}},
+				"multiple steps": {{Container: "image"}, {Container: "image"}},
+			} {
+				t.Run(name, func(t *testing.T) {
+					for _, parallelism := range parallelCases {
+						t.Run(fmt.Sprintf("%d worker(s)", parallelism), func(t *testing.T) {
+							svc := newServiceWithImages(images)
+							progress := &mock.Progress{}
+
+							have, err := svc.EnsureDockerImages(ctx, steps, parallelism, progress.Callback())
+							assert.Nil(t, err)
+							assert.Equal(t, images, have)
+							assert.Equal(t, []mock.ProgressCall{
+								{Done: 0, Total: 1},
+								{Done: 1, Total: 1},
+							}, progress.Calls)
+						})
+					}
+				})
+			}
+		})
+
+		t.Run("multiple images", func(t *testing.T) {
+			var (
+				imageA = &mock.Image{}
+				imageB = &mock.Image{}
+				imageC = &mock.Image{}
+				images = map[string]docker.Image{
+					"a": imageA,
+					"b": imageB,
+					"c": imageC,
+				}
+			)
+
+			for _, parallelism := range parallelCases {
+				t.Run(fmt.Sprintf("%d worker(s)", parallelism), func(t *testing.T) {
+					svc := newServiceWithImages(images)
+					progress := &mock.Progress{}
+
+					have, err := svc.EnsureDockerImages(ctx, []batcheslib.Step{
+						{Container: "a"},
+						{Container: "a"},
+						{Container: "a"},
+						{Container: "b"},
+						{Container: "c"},
+					}, parallelism, progress.Callback())
+					assert.Nil(t, err)
+					assert.Equal(t, images, have)
+					assert.Equal(t, []mock.ProgressCall{
+						{Done: 0, Total: 3},
+						{Done: 1, Total: 3},
+						{Done: 2, Total: 3},
+						{Done: 3, Total: 3},
+					}, progress.Calls)
+				})
+			}
+		})
+	})
+
+	t.Run("errors", func(t *testing.T) {
+		// The only really interesting case is where an image fails — we want to
+		// ensure that the error is propagated, and that we don't end up
+		// deadlocking while the context cancellation propagates. Let's set up a
+		// good number of images (and steps) so we can give this a good test.
+		wantErr := errors.New("expected error")
+		images := map[string]docker.Image{}
+		steps := []batcheslib.Step{}
+
+		total := 100
+		for i := 0; i < total; i++ {
+			name := strconv.Itoa(i)
+			if i%25 == 0 {
+				images[name] = &mock.Image{EnsureErr: wantErr}
+			} else {
+				images[name] = &mock.Image{}
+			}
+			for j := 0; j < (i%10)+1; j++ {
+				steps = append(steps, batcheslib.Step{Container: name})
+			}
+		}
+
+		// Just verify we did that right!
+		assert.Len(t, images, total)
+		assert.True(t, len(steps) > total)
+
+		for _, parallelism := range parallelCases {
+			t.Run(fmt.Sprintf("%d worker(s)", parallelism), func(t *testing.T) {
+				svc := newServiceWithImages(images)
+				progress := &mock.Progress{}
+
+				have, err := svc.EnsureDockerImages(ctx, steps, parallelism, progress.Callback())
+				assert.ErrorIs(t, err, wantErr)
+				assert.Nil(t, have)
+
+				// Because there's no particular order the images will be fetched in,
+				// the number of progress calls we get is non-deterministic, other than
+				// that we should always get the first one.
+				assert.Equal(t, mock.ProgressCall{Done: 0, Total: total}, progress.Calls[0])
+			})
+		}
+
+	})
 }

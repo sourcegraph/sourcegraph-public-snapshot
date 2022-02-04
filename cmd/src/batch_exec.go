@@ -111,7 +111,10 @@ func executeBatchSpecInWorkspaces(ctx context.Context, ui *ui.JSONLines, opts ex
 
 	if len(input.Workspace.Steps) > 0 {
 		ui.PreparingContainerImages()
-		images, err := svc.EnsureDockerImages(ctx, input.Workspace.Steps, ui.PreparingContainerImagesProgress)
+		images, err := svc.EnsureDockerImages(
+			ctx, input.Workspace.Steps, opts.flags.parallelism,
+			ui.PreparingContainerImagesProgress,
+		)
 		if err != nil {
 			return err
 		}
