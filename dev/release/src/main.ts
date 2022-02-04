@@ -16,7 +16,7 @@ async function main(): Promise<void> {
 
     const step = args[0] as StepID
     const stepArguments = args.slice(1)
-    ensureMainBranchAndUpToDate()
+    ensureMainBranchUpToDate()
     await runStep(config, step, ...stepArguments)
 }
 
