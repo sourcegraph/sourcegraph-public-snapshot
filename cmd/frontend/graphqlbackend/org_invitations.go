@@ -59,8 +59,12 @@ func (r *inviteUserToOrganizationResult) InvitationURL() string     { return r.i
 
 func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
-	Username     string
+	Username     *string
+	Email        *string
 }) (*inviteUserToOrganizationResult, error) {
+	if (args.Email != nil && *args.Email != "") || args.Username == nil {
+		return nil, errors.New("inviting by email is not implemented yet")
+	}
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
 		return nil, err
@@ -80,7 +84,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	if err != nil {
 		return nil, err
 	}
-	recipient, recipientEmail, err := getUserToInviteToOrganization(ctx, r.db, args.Username, orgID)
+	recipient, recipientEmail, err := getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
 	if err != nil {
 		return nil, err
 	}
