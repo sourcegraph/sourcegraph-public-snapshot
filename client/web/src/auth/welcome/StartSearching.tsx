@@ -17,7 +17,7 @@ import { LogoAscii } from '../LogoAscii'
 import { getPostSignUpEvent, RepoSelectionMode, FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps'
 import { Terminal, TerminalTitle, TerminalLine, TerminalDetails, TerminalProgress } from '../Terminal'
-import { useExternalServices } from '../useExternalServices'
+import { useExternalServicesWithCollaborators } from '../useExternalServicesWithCollaborators'
 import { useRepoCloningStatus } from '../useRepoCloningStatus'
 import { selectedReposVar, useSaveSelectedRepos, MinSelectedRepo } from '../useSelectedRepos'
 
@@ -81,7 +81,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     className,
     onFinish,
 }) => {
-    const { externalServices, errorServices, loadingServices } = useExternalServices(user.id, true)
+    const { externalServices, errorServices, loadingServices } = useExternalServicesWithCollaborators(user.id)
     const saveSelectedRepos = useSaveSelectedRepos()
 
     const {
@@ -191,12 +191,12 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
         [loadingInvites]
     )
     const invitePersonClicked = useCallback(
-        (person: GQL.IPerson) => async (): void => {
+        (person: GQL.IPerson) => async (): Promise<void> => {
             await invitePerson(person)
         },
         [invitePerson]
     )
-    const inviteAllClicked = useCallback(async (): void => {
+    const inviteAllClicked = useCallback(async (): Promise<void> => {
         for (const person of filteredCollaborators) {
             await invitePerson(person)
         }
