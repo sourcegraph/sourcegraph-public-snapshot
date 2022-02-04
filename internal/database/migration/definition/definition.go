@@ -1,8 +1,7 @@
 package definition
 
 import (
-	"fmt"
-
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 )
 
@@ -92,7 +91,7 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 	for _, definition := range filtered {
 		for _, parent := range definition.Parents {
 			if _, ok := idMap[parent]; !ok {
-				return nil, fmt.Errorf("illegal filter: migration %d (included) references parent migration %d (excluded)", definition.ID, parent)
+				return nil, errors.Newf("illegal filter: migration %d (included) references parent migration %d (excluded)", definition.ID, parent)
 			}
 		}
 	}
@@ -322,8 +321,8 @@ func (ds *Definitions) traverse(targetIDs []int, next func(definition Definition
 
 func unknownMigrationError(id int, source *int) error {
 	if source == nil {
-		return fmt.Errorf("unknown migration %d", id)
+		return errors.Newf("unknown migration %d", id)
 	}
 
-	return fmt.Errorf("unknown migration %d referenced from migration %d", id, *source)
+	return errors.Newf("unknown migration %d referenced from migration %d", id, *source)
 }

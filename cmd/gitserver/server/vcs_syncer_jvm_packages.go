@@ -75,12 +75,14 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 	noDepsCounter := 0
 	for _, dependency := range dependencies {
 		_, err := coursier.FetchSources(ctx, s.Config, dependency)
-		if errors.Is(err, coursier.ErrNoSources{}) {
-			// Non fatal
-			noDepsCounter++
-			continue
-		}
 		if err != nil {
+			// Temporary: We shouldn't need both these checks but we're continuing to see the
+			// error in production logs which implies `Is` is not matching.
+			if errors.Is(err, coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
+				// Non fatal
+				noDepsCounter++
+				continue
+			}
 			return err
 		}
 	}
@@ -143,7 +145,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		if tags[dependency.GitTagFromVersion()] {
 			continue
 		}
-		// the gitPushDependencyTag method is reponsible for cleaning up temporary directories.
+		// the gitPushDependencyTag method is responsible for cleaning up temporary directories.
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
 			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
 		}

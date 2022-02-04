@@ -190,7 +190,7 @@ const QueryFieldDescription: React.FunctionComponent<{ isSearchQueryDisabled: bo
                 We don't yet allow editing queries for insights over all repos. To change the query, make a new insight.
                 This is a known{' '}
                 <Link
-                    to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                    to="/help/code_insights/explanations/current_limitations_of_code_insights"
                     target="_blank"
                     rel="noopener noreferrer"
                 >

@@ -294,6 +294,7 @@ export const SourcegraphURLForm: React.FunctionComponent<SourcegraphURLFormProps
                         autoComplete="off"
                         autocomplete={false}
                         pattern="^https://.*"
+                        placeholder="https://"
                         onFocus={onFocus}
                         id="sourcegraph-url"
                         ref={urlInputElements}

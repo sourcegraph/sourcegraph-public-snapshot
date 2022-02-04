@@ -2,10 +2,10 @@ package runner
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
@@ -106,7 +106,7 @@ func (r *Runner) prepareSchemas(schemaNames []string) (map[string]*schemas.Schem
 	// Ensure that all supplied schema names are valid
 	for _, schemaName := range schemaNames {
 		if _, ok := schemaMap[schemaName]; !ok {
-			return nil, fmt.Errorf("unknown schema %q", schemaName)
+			return nil, errors.Newf("unknown schema %q", schemaName)
 		}
 	}
 
@@ -119,7 +119,7 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 	for _, schemaName := range schemaNames {
 		storeFactory, ok := r.storeFactories[schemaName]
 		if !ok {
-			return nil, fmt.Errorf("unknown schema %q", schemaName)
+			return nil, errors.Newf("unknown schema %q", schemaName)
 		}
 
 		store, err := storeFactory(ctx)

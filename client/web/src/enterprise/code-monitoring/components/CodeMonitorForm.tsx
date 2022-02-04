@@ -169,7 +169,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             Give it a short, descriptive name to reference events on Sourcegraph and in notifications.
                             Do not include{' '}
                             <Link
-                                to="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
+                                to="/help/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
                                 target="_blank"
                                 rel="noopener"
                             >
