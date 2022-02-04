@@ -32,6 +32,12 @@
             list-style: none;
             padding: 0.8rem 1.5rem;
             border-top: 1px solid var(--border-color);
+
+            div {
+                &:first-child {
+                    gap: 1rem;
+                }
+            }
         }
     }
 }
@@ -55,4 +61,12 @@
 
 .memberMenu {
     padding: 0.1rem 0.5rem;
+}
+
+.memberRole {
+    width: 3rem;
+}
+
+.memberActions {
+    width: 4.5rem;
 }

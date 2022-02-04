@@ -131,7 +131,7 @@ interface State extends BreadcrumbSetters {
      * The fetched org or an error if an error occurred; undefined while loading.
      */
     orgOrError?: OrgAreaOrganizationFields | ErrorLike
-    emailInvite: boolean
+    newMembersInviteEnabled: boolean
 }
 
 /**
@@ -176,7 +176,7 @@ export class OrgArea extends React.Component<Props> {
         this.state = {
             setBreadcrumb: props.setBreadcrumb,
             useBreadcrumb: props.useBreadcrumb,
-            emailInvite: false,
+            newMembersInviteEnabled: false,
         }
     }
 
@@ -213,7 +213,7 @@ export class OrgArea extends React.Component<Props> {
                                 : of(false)
                         return flagObservable.pipe(
                             catchError((): [boolean] => [false]), // set flag to false in case of error reading it
-                            map(emailInvite => ({ orgOrError: state.orgOrError, emailInvite }))
+                            map(newMembersInviteEnabled => ({ orgOrError: state.orgOrError, newMembersInviteEnabled }))
                         )
                     })
                 )
@@ -229,7 +229,7 @@ export class OrgArea extends React.Component<Props> {
                                 useBreadcrumb: childBreadcrumbSetters.useBreadcrumb,
                                 setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
                                 orgOrError: stateUpdate.orgOrError,
-                                emailInvite: stateUpdate.emailInvite,
+                                newMembersInviteEnabled: stateUpdate.newMembersInviteEnabled,
                             })
                         } else {
                             this.setState(stateUpdate)
@@ -281,7 +281,7 @@ export class OrgArea extends React.Component<Props> {
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
-            newMembersInviteEnabled: this.state.emailInvite,
+            newMembersInviteEnabled: this.state.newMembersInviteEnabled,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

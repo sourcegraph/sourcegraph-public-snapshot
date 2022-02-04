@@ -1,4 +1,4 @@
-import { gql, useQuery } from '@apollo/client'
+import { gql, useMutation, useQuery } from '@apollo/client'
 import { MenuItem, MenuList } from '@reach/menu-button'
 import classNames from 'classnames'
 import CogIcon from 'mdi-react/CogIcon'
@@ -9,7 +9,13 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { Container, PageHeader, LoadingSpinner, Link, Menu, MenuButton } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
-import { Maybe, OrganizationMembersResult, OrganizationMembersVariables } from '../../graphql-operations'
+import {
+    Maybe,
+    OrganizationMembersResult,
+    OrganizationMembersVariables,
+    RemoveUserFromOrganizationResult,
+    RemoveUserFromOrganizationVariables,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
@@ -39,6 +45,14 @@ const ORG_MEMBERS_QUERY = gql`
         }
     }
 `
+
+const ORG_MEMBER_REMOVE_QUERY = gql`
+    mutation RemoveUserFromOrg($user: ID!, $organization: ID!) {
+        removeUserFromOrganization(user: $user, organization: $organization) {
+            alwaysNil
+        }
+    }
+`
 interface Member {
     id: string
     username: string
@@ -54,12 +68,90 @@ interface MembersTypeNode {
     }
 }
 
-const MemberItem: React.FunctionComponent<{ member: Member; viewerCanAdminister: boolean; isSelf: boolean }> = ({
+interface MemberItemProps {
+    member: Member
+    viewerCanAdminister: boolean
+    isSelf: boolean
+    onlyMember: boolean
+    orgId: string
+    onShouldRefetch: () => void
+}
+
+const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     member,
+    orgId,
     viewerCanAdminister,
     isSelf,
-}) => (
-    <li data-test-username={member.username}>
+    onlyMember,
+    onShouldRefetch,
+}) => {
+    const [removeUserFromOrganization, { loading, error }] = useMutation<
+        RemoveUserFromOrganizationResult,
+        RemoveUserFromOrganizationVariables
+    >(ORG_MEMBER_REMOVE_QUERY)
+
+    const onRemoveClick = useCallback(async () => {
+        if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {
+            await removeUserFromOrganization({ variables: { organization: orgId, user: member.id } })
+            onShouldRefetch()
+        }
+    }, [isSelf, member.username, removeUserFromOrganization, onShouldRefetch, member.id, orgId])
+
+    return (
+        <li data-test-username={member.username}>
+            <div className="d-flex align-items-center justify-content-between">
+                <div
+                    className={classNames(
+                        'd-flex align-items-center justify-content-start flex-1',
+                        styles.memberDetails
+                    )}
+                >
+                    <div className={styles.avatarContainer}>
+                        <UserAvatar
+                            className={styles.avatar}
+                            user={member}
+                            data-tooltip={member.displayName || member.username}
+                        />
+                    </div>
+                    <div className="d-flex flex-column">
+                        <Link to={userURL(member.username)}>
+                            <strong>{member.displayName || member.username}</strong>
+                        </Link>
+                        {member.displayName && <span className="text-muted">{member.username}</span>}
+                    </div>
+                </div>
+                <div className={styles.memberRole}>
+                    <span className="text-muted">Admin</span>
+                </div>
+                <div className={styles.memberActions}>
+                    {viewerCanAdminister && (
+                        <Menu>
+                            <MenuButton variant="secondary" outline={false} className={styles.memberMenu}>
+                                {loading ? <LoadingSpinner /> : <CogIcon />}
+                                <span aria-hidden={true}>▾</span>
+                            </MenuButton>
+
+                            <MenuList>
+                                <MenuItem onSelect={onRemoveClick} disabled={onlyMember || loading}>
+                                    {isSelf ? 'Leave organization' : 'Remove from organization'}
+                                </MenuItem>
+                            </MenuList>
+                        </Menu>
+                    )}
+                    {error && (
+                        <ErrorAlert
+                            className="mt-2"
+                            error={`Error removing ${member.username}. Please, try refreshing the page.`}
+                        />
+                    )}
+                </div>
+            </div>
+        </li>
+    )
+}
+
+const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: string }> = ({ total, orgName }) => (
+    <li data-test-membersheader="memberslist-header">
         <div className="d-flex align-items-center justify-content-between">
             <div
                 className={classNames(
@@ -67,35 +159,10 @@ const MemberItem: React.FunctionComponent<{ member: Member; viewerCanAdminister:
                     styles.memberDetails
                 )}
             >
-                <div className={styles.avatarContainer}>
-                    <UserAvatar
-                        className={styles.avatar}
-                        user={member}
-                        data-tooltip={member.displayName || member.username}
-                    />
-                </div>
-                <div className="d-flex flex-column">
-                    <Link to={userURL(member.username)}>
-                        <strong>{member.displayName || member.username}</strong>
-                    </Link>
-                    {member.displayName && <span className="text-muted">{member.username}</span>}
-                </div>
+                {`${total} ${pluralize('person', total)} in the ${orgName} organization`}
             </div>
-            <div className="site-admin-detail-list__actions">
-                {viewerCanAdminister && (
-                    <Menu>
-                        <MenuButton variant="secondary" outline={false} className={styles.memberMenu}>
-                            <CogIcon /> <span aria-hidden={true}>▾</span>
-                        </MenuButton>
-
-                        <MenuList>
-                            <MenuItem onSelect={() => alert('Clicked!')}>
-                                {isSelf ? 'Leave organization' : 'Remove from organization'}
-                            </MenuItem>
-                        </MenuList>
-                    </Menu>
-                )}
-            </div>
+            <div className={styles.memberRole}>Role</div>
+            <div className={styles.memberActions} />
         </div>
     </li>
 )
@@ -103,7 +170,7 @@ const MemberItem: React.FunctionComponent<{ member: Member; viewerCanAdminister:
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
+export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser, isSourcegraphDotCom }) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
     const [member, setMemberAdded] = useState<string>()
 
@@ -131,8 +198,8 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
         setInvite(undefined)
     }, [setInvite])
 
-    const onMemberAdded = useCallback(
-        async (username: string) => {
+    const onShouldRefetch = useCallback(
+        async (username?: string) => {
             setMemberAdded(username)
             await refetch({ id: org.id })
         },
@@ -174,9 +241,9 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                     />
 
                     {viewerCanAddUserToOrganization && (
-                        <AddMemberToOrgModal orgName={org.name} orgId={org.id} onMemberAdded={onMemberAdded} />
+                        <AddMemberToOrgModal orgName={org.name} orgId={org.id} onMemberAdded={onShouldRefetch} />
                     )}
-                    {viewerCanAddUserToOrganization && (
+                    {authenticatedUser && (
                         <InviteMemberModalHandler
                             variant="success"
                             orgName={org.name}
@@ -190,16 +257,16 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                     {loading && <LoadingSpinner />}
                     {membersResult && (
                         <ul>
-                            <li>{`${membersResult.members.totalCount} ${pluralize(
-                                'person',
-                                membersResult.members.totalCount
-                            )} in the ${org.name} organization`}</li>
+                            <MembersResultHeader total={membersResult.members.totalCount} orgName={org.name} />
                             {membersResult.members.nodes.map(usr => (
                                 <MemberItem
                                     key={usr.id}
                                     member={usr}
+                                    orgId={org.id}
+                                    onlyMember={membersResult.members.totalCount === 1}
                                     viewerCanAdminister={membersResult.viewerCanAdminister}
                                     isSelf={isSelf(usr.id)}
+                                    onShouldRefetch={onShouldRefetch}
                                 />
                             ))}
                         </ul>
@@ -212,7 +279,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                     )}
                 </Container>
 
-                {viewerCanAddUserToOrganization &&
+                {authenticatedUser &&
                     membersResult &&
                     membersResult.members.totalCount === 1 &&
                     isSelf(membersResult.members.nodes[0].id) && (
