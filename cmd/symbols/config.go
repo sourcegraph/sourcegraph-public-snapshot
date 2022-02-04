@@ -31,7 +31,8 @@ type Config struct {
 	// Mac  : getconf ARG_MAX returns 1,048,576
 	// Linux: getconf ARG_MAX returns 2,097,152
 	//
-	// We want to remain well under that limit, so defaulting to 100,000 seems safe.
+	// We want to remain well under that limit, so defaulting to 100,000 seems safe (see the
+	// MAX_TOTAL_PATHS_LENGTH environment variable below).
 	maxTotalPathsLength int
 }
 
