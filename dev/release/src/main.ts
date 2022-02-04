@@ -1,6 +1,6 @@
 import { loadConfig } from './config'
 import { runStep, StepID } from './release'
-import { ensureMainBranchAndUpToDate } from './util'
+import { ensureMainBranchUpToDate } from './util'
 
 /**
  * Release captain automation
