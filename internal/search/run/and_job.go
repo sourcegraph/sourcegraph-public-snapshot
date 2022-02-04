@@ -60,7 +60,9 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 				if len(event.Results) > 0 {
 					sentResults.Store(true)
 				}
-				stream.Send(event)
+				if len(event.Results) > 0 || !event.Stats.Zero() {
+					stream.Send(event)
+				}
 			})
 
 			alert, err := child.Run(ctx, db, intersectingStream)

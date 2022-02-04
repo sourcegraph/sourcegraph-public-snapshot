@@ -49,7 +49,9 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 
 			unioningStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 				event.Results = merger.AddMatches(event.Results, childNum)
-				stream.Send(event)
+				if len(event.Results) > 0 || !event.Stats.Zero() {
+					stream.Send(event)
+				}
 			})
 
 			alert, err := child.Run(ctx, db, unioningStream)
