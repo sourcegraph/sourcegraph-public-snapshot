@@ -50,6 +50,11 @@ func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]gra
 		executionsByWorkspaceID[e.BatchSpecWorkspaceID] = e
 	}
 
+	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.opts.BatchSpecID})
+	if err != nil {
+		return nil, err
+	}
+
 	repoIDs := make([]api.RepoID, len(nodes))
 	for _, w := range nodes {
 		repoIDs = append(repoIDs, w.RepoID)
@@ -65,6 +70,7 @@ func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]gra
 			store:         r.store,
 			workspace:     w,
 			preloadedRepo: repos[w.RepoID],
+			batchSpec:     batchSpec.Spec,
 		}
 		if ex, ok := executionsByWorkspaceID[w.ID]; ok {
 			res.execution = ex

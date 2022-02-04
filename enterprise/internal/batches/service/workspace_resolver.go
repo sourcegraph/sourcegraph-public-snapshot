@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
 // RepoRevision describes a repository on a branch at a fixed revision.
@@ -47,9 +46,7 @@ func (r *RepoRevision) HasBranch() bool {
 
 type RepoWorkspace struct {
 	*RepoRevision
-	Path         string
-	Steps        []batcheslib.Step
-	SkippedSteps []int32
+	Path string
 
 	OnlyFetchWorkspace bool
 
@@ -652,15 +649,6 @@ func findWorkspaces(
 
 	workspaces := make([]*RepoWorkspace, 0, len(workspacesByRepoRev))
 	for _, workspace := range workspacesByRepoRev {
-		steps, skipped, err := stepsForRepo(
-			spec,
-			string(workspace.Repo.Name),
-			workspace.FileMatches,
-		)
-		if err != nil {
-			return nil, err
-		}
-
 		for _, path := range workspace.Paths {
 			fetchWorkspace := workspace.OnlyFetchWorkspace
 			if path == "" {
@@ -670,9 +658,7 @@ func findWorkspaces(
 			workspaces = append(workspaces, &RepoWorkspace{
 				RepoRevision:       workspace.RepoRevision,
 				Path:               path,
-				Steps:              steps,
 				OnlyFetchWorkspace: fetchWorkspace,
-				SkippedSteps:       skipped,
 			})
 		}
 	}
@@ -686,46 +672,6 @@ func findWorkspaces(
 	})
 
 	return workspaces, nil
-}
-
-// stepsForRepo calculates the steps required to run on the given repo.
-func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []string) (steps []batcheslib.Step, skipped []int32, err error) {
-	steps = []batcheslib.Step{}
-
-	for idx, step := range spec.Steps {
-		// If no if condition is given, just go ahead and add the step to the list.
-		if step.IfCondition() == "" {
-			steps = append(steps, step)
-			continue
-		}
-
-		batchChange := template.BatchChangeAttributes{
-			Name:        spec.Name,
-			Description: spec.Description,
-		}
-		// TODO: This step ctx is incomplete, is this allowed?
-		// We can at least optimize further here and do more static evaluation
-		// when we have a cached result for the previous step.
-		stepCtx := &template.StepContext{
-			Repository: template.Repository{
-				Name:        repoName,
-				FileMatches: fileMatches,
-			},
-			BatchChange: batchChange,
-		}
-		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		steps = append(steps, step)
-
-		if static && !boolVal {
-			skipped = append(skipped, int32(idx))
-		}
-	}
-
-	return steps, skipped, nil
 }
 
 type repoRevKey struct {

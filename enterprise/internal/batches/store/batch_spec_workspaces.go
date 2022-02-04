@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // batchSpecWorkspaceInsertColumns is the list of batch_spec_workspaces columns
@@ -31,8 +30,6 @@ var batchSpecWorkspaceInsertColumns = []string{
 	"path",
 	"file_matches",
 	"only_fetch_workspace",
-	"steps",
-	"skipped_steps",
 	"unsupported",
 	"ignored",
 	"skipped",
@@ -57,8 +54,6 @@ var BatchSpecWorkspaceColums = SQLColumns{
 	"batch_spec_workspaces.path",
 	"batch_spec_workspaces.file_matches",
 	"batch_spec_workspaces.only_fetch_workspace",
-	"batch_spec_workspaces.steps",
-	"batch_spec_workspaces.skipped_steps",
 	"batch_spec_workspaces.unsupported",
 	"batch_spec_workspaces.ignored",
 	"batch_spec_workspaces.skipped",
@@ -100,23 +95,9 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				wj.FileMatches = []string{}
 			}
 
-			if wj.Steps == nil {
-				wj.Steps = []batcheslib.Step{}
-			}
-
-			marshaledSteps, err := json.Marshal(wj.Steps)
-			if err != nil {
-				return err
-			}
-
 			marshaledStepCacheResults, err := json.Marshal(wj.StepCacheResults)
 			if err != nil {
 				return err
-			}
-
-			skippedSteps := wj.SkippedSteps
-			if skippedSteps == nil {
-				skippedSteps = []int32{}
 			}
 
 			if err := inserter.Insert(
@@ -129,8 +110,6 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				wj.Path,
 				pq.Array(wj.FileMatches),
 				wj.OnlyFetchWorkspace,
-				marshaledSteps,
-				pq.Array(skippedSteps),
 				wj.Unsupported,
 				wj.Ignored,
 				wj.Skipped,
@@ -339,7 +318,6 @@ func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID 
 }
 
 func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) error {
-	var steps json.RawMessage
 	var stepCacheResults json.RawMessage
 
 	if err := s.Scan(
@@ -352,8 +330,6 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) err
 		&wj.Path,
 		pq.Array(&wj.FileMatches),
 		&wj.OnlyFetchWorkspace,
-		&steps,
-		pq.Array(&wj.SkippedSteps),
 		&wj.Unsupported,
 		&wj.Ignored,
 		&wj.Skipped,
@@ -363,10 +339,6 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) err
 		&wj.UpdatedAt,
 	); err != nil {
 		return err
-	}
-
-	if err := json.Unmarshal(steps, &wj.Steps); err != nil {
-		return errors.Wrap(err, "scanBatchSpecWorkspace: failed to unmarshal Steps")
 	}
 
 	if err := json.Unmarshal(stepCacheResults, &wj.StepCacheResults); err != nil {
