@@ -81,16 +81,31 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 	f.operations.fetching.Inc()
 	defer f.operations.fetching.Dec()
 
-	for _, pathBatch := range batchByTotalLength(paths, f.maxTotalPathsLength) {
-		rc, err := f.gitserverClient.FetchTar(ctx, args.Repo, args.CommitID, pathBatch)
+	fetchAndRead := func(paths []string) error {
+		rc, err := f.gitserverClient.FetchTar(ctx, args.Repo, args.CommitID, paths)
 		if err != nil {
 			return errors.Wrap(err, "gitserverClient.FetchTar")
 		}
+		defer rc.Close()
 
 		err = readTar(ctx, tar.NewReader(rc), callback, trace)
-		rc.Close()
 		if err != nil {
 			return errors.Wrap(err, "readTar")
+		}
+
+		return nil
+	}
+
+	if len(paths) == 0 {
+		// Full archive
+		return fetchAndRead(nil)
+	}
+
+	// Partial archive
+	for _, pathBatch := range batchByTotalLength(paths, f.maxTotalPathsLength) {
+		err = fetchAndRead(pathBatch)
+		if err != nil {
+			return err
 		}
 	}
 
