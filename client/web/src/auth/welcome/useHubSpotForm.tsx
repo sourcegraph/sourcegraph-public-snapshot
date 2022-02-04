@@ -53,11 +53,12 @@ export function useHubSpotForm({ hubSpotConfig, onFormSubmitted, onError, initia
         if (!initialFormValues) {
             return
         }
+        // Prefilling form fields following the examples from
+        // https://legacydocs.hubspot.com/docs/methods/forms/advanced_form_options
         const iframeDocument = getFormDocument(`hs-${containerId}`)
         if (!iframeDocument) {
             return
         }
-
         for (const [field, value] of Object.entries(initialFormValues)) {
             const input = iframeDocument.querySelector<HTMLInputElement>(`input[name="${field}"]`)
             if (input) {
