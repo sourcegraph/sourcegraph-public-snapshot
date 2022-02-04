@@ -258,7 +258,7 @@ type Mutation {
 
     Only site admins and any organization member may perform this mutation.
     """
-    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
+    inviteUserToOrganization(organization: ID!, username: String, email: String): InviteUserToOrganizationResult!
     """
     Accept or reject an existing organization invitation.
 
