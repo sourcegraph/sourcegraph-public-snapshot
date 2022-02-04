@@ -3,9 +3,8 @@ package migration
 import (
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const metadataFileTemplate = `name: %s
