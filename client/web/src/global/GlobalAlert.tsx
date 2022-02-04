@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -13,10 +14,11 @@ import { DismissibleAlert, DismissibleAlertProps } from '../components/Dismissib
  */
 export const GlobalAlert: React.FunctionComponent<{
     alert: Pick<GQL.IAlert, 'message' | 'isDismissibleWithKey' | 'type'>
-    className: string
+    className?: string
 }> = ({ alert, className: commonClassName }) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
-    const className = `${commonClassName} d-flex`
+    const className = classNames(commonClassName, 'd-flex')
+
     if (alert.isDismissibleWithKey) {
         return (
             <DismissibleAlert
