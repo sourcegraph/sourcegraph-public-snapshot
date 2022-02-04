@@ -172,14 +172,14 @@ export const ReferencesList: React.FunctionComponent<
     return (
         <>
             <input
-                className="form-control px-2 mb-2"
+                className={classNames('form-control px-2', styles.referencesFilter)}
                 type="text"
                 placeholder="Filter by filename..."
                 value={filter === undefined ? '' : filter}
                 onChange={event => setFilter(event.target.value)}
             />
             <div className={classNames('align-items-stretch', styles.referencesList)}>
-                <div className={classNames('px-0', styles.sideReferences)}>
+                <div className={classNames('px-0', styles.referencesSideReferences)}>
                     <SideReferences
                         {...props}
                         activeLocation={activeLocation}
@@ -188,7 +188,7 @@ export const ReferencesList: React.FunctionComponent<
                     />
                 </div>
                 {activeLocation !== undefined && (
-                    <div className={classNames('px-0 border-left', styles.sideBlob)}>
+                    <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
                         <SideBlob
                             {...props}
                             history={history}
@@ -424,7 +424,7 @@ export const SideBlob: React.FunctionComponent<
             }}
             disableStatusBar={true}
             wrapCode={true}
-            className={styles.sideBlob}
+            className={styles.referencesSideBlob}
             blobInfo={{
                 content: props.activeLocation.resource.content,
                 html,
@@ -652,7 +652,12 @@ export const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelC
 
         return (
             <Tabs size="medium" className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
-                <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.header)}>
+                <div
+                    className={classNames(
+                        'tablist-wrapper d-flex justify-content-between sticky-top',
+                        styles.panelHeader
+                    )}
+                >
                     <TabList>
                         <div className="d-flex w-100">
                             {TABS.map(({ label, id }) => (
