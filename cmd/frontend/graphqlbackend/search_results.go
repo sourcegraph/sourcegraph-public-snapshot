@@ -1293,7 +1293,7 @@ func (r *searchResolver) toEvaluateJob(q query.Basic) (run.Job, error) {
 
 // evaluate evaluates all expressions of a search query. The value of stream must be non-nil
 func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
-	enableAndOrJobs := featureflag.FromContext(ctx).GetBoolOr("cc-and-or-jobs", false)
+	enableAndOrJobs := r.SearchInputs.Features.GetBoolOr("cc-and-or-jobs", false)
 	if enableAndOrJobs {
 		j, err := r.toEvaluateJob(q)
 		if err != nil {
