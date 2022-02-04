@@ -259,6 +259,8 @@ func (s *batchingStream) Done() {
 	s.mu.Unlock()
 }
 
+// flush sends the currently batched events to the parent stream. The caller must hold
+// a lock on the batching stream.
 func (s *batchingStream) flush() {
 	if s.dirty {
 		s.parent.Send(s.batch)
