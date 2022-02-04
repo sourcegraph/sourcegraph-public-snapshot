@@ -7,10 +7,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 )
 
-func init() {
-	IsTesting = true
-}
-
 var queryComparer = cmp.Comparer(func(a, b *sqlf.Query) bool {
 	if a == nil {
 		return b == nil
