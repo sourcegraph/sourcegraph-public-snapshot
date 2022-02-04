@@ -144,9 +144,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                     </Alert>
                                 )}
                                 <h2>Get started with Sourcegraph</h2>
-                                <p className="text-muted pb-3">
-                                    Three quick steps to add your repositories and get searching with Sourcegraph
-                                </p>
+                                <p className="text-muted pb-3">Follow these steps to set up your account</p>
                             </div>
                             <div className="mt-2 pb-3 d-flex flex-column align-items-center">
                                 <Steps initialStep={debug ? parseInt(debug, 10) : 1} totalSteps={4}>
