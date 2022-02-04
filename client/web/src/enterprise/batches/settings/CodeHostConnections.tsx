@@ -74,11 +74,7 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
             />
             <p className="mb-0">
                 Code host not present? Site admins can add a code host in{' '}
-                <Link
-                    to="https://docs.sourcegraph.com/admin/external_service"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <Link to="/help/admin/external_service" target="_blank" rel="noopener noreferrer">
                     the manage repositories settings
                 </Link>
                 .

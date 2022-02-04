@@ -102,7 +102,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     <small className="ml-auto">
                         <span className="text-muted">Default filters applied</span>{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
+                            to="/help/code_insights/explanations/code_insights_filters"
                             target="_blank"
                             rel="noopener"
                             className="small"

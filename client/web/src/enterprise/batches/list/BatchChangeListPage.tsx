@@ -298,7 +298,7 @@ const GettingStartedFooter: React.FunctionComponent<{}> = () => (
                 <CardBody className="text-center">
                     <p>Create your first batch change</p>
                     <h2 className="mb-0">
-                        <Link to="https://docs.sourcegraph.com/batch_changes/quickstart" target="_blank" rel="noopener">
+                        <Link to="/help/batch_changes/quickstart" target="_blank" rel="noopener">
                             Batch Changes quickstart
                         </Link>
                     </h2>
