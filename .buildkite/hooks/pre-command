@@ -28,6 +28,11 @@ if [[ ! "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ .*job.* ]]; then
     exit 0
 fi
 
+# We need awscli to use asdf cache
+echo "install asdf awscli"
+asdf install awscli
+echo "done installing"
+
 # set the buildkite cache access keys
 AWS_CONFIG_DIR_PATH="/buildkite/.aws"
 mkdir -p "$AWS_CONFIG_DIR_PATH"
