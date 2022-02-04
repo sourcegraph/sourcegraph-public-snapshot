@@ -192,7 +192,7 @@ const indexPollInterval = time.Second
 
 // createIndexConcurrently deals with the special case of `CREATE INDEX CONCURRENTLY` migrations. We cannot
 // hold an advisory lock during concurrent index creation without trivially deadlocking concurrent migrator
-// instances (see `interrnal/database/migration/store/store_test.go:TestIndexStatus` for an example). Instead,
+// instances (see `internal/database/migration/store/store_test.go:TestIndexStatus` for an example). Instead,
 // we use Postgres system tables to determine the status of the index being created and re-issue the index
 // creation command if it's missing or invalid.
 //
