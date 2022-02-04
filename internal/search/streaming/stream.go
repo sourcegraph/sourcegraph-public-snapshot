@@ -213,7 +213,7 @@ func (s *batchingStream) Send(event SearchEvent) {
 	s.mu.Lock()
 
 	// Send the first event without delay
-	if !s.sentFirstEvent {
+	if !s.sentFirstEvent && len(event.Results) > 0 {
 		s.sentFirstEvent = true
 		s.mu.Unlock()
 		s.parent.Send(event)
@@ -237,6 +237,7 @@ func (s *batchingStream) Send(event SearchEvent) {
 	} else if !s.flushScheduled {
 		// Reuse the timer, scheduling a new flush
 		s.timer.Reset(s.maxDelay)
+		s.flushScheduled = true
 	}
 	// If neither of those conditions is true,
 	// a flush has already been scheduled and
