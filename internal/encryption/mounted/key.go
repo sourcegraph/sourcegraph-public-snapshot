@@ -12,11 +12,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/schema"
-
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func NewKey(ctx context.Context, k schema.MountedEncryptionKey) (*Key, error) {

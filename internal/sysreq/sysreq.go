@@ -5,7 +5,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Status describes the status of a system requirement.

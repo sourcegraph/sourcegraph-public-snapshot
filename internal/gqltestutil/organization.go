@@ -1,8 +1,6 @@
 package gqltestutil
 
-import (
-	"github.com/cockroachdb/errors"
-)
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 // Organization contains basic information of an organization.
 type Organization struct {
