@@ -14,7 +14,6 @@ import (
 	"os/signal"
 	"os/user"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -896,29 +895,75 @@ func removeEntry(s []int, val int) (result []int) {
 	return result
 }
 
-func checkCommandOutputVersion(cmd string, versionConstraint string) func(context.Context) error {
-	r := regexp.MustCompile(`v?(\d+\.\d+\.\d+)`)
-
+func checkGitVersion(versionConstraint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		c, err := semver.NewConstraint(versionConstraint)
+		out, err := combinedSourceExec(ctx, "git version")
 		if err != nil {
-			return err
-		}
-		out, _ := combinedSourceExec(ctx, cmd)
-		matches := r.FindStringSubmatch(string(out))
-		if len(matches) < 2 {
-			return errors.Newf("cannot find version string in %q", string(out))
-		}
-		version, err := semver.NewVersion(matches[1])
-		if err != nil {
-			return errors.Newf("cannot decode version in %q: %w", matches[1], err)
+			return errors.Wrapf(err, "failed to run 'git version'")
 		}
 
-		if !c.Check(version) {
-			return errors.Newf("version %q from %q does not match constraint %q", matches[1], cmd, versionConstraint)
+		elems := strings.Split(string(out), " ")
+		if len(elems) != 3 {
+			return errors.Newf("unexpected output from git server: %s", out)
 		}
-		return nil
+
+		trimmed := strings.TrimSpace(elems[2])
+		return checkVersion("git", trimmed, versionConstraint)
 	}
+}
+
+func checkGoVersion(versionConstraint string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		cmd := "go version"
+		out, err := combinedSourceExec(ctx, "go version")
+		if err != nil {
+			return errors.Wrapf(err, "failed to run %q", cmd)
+		}
+
+		elems := strings.Split(string(out), " ")
+		if len(elems) != 4 {
+			return errors.Newf("unexpected output from %q: %s", out)
+		}
+
+		haveVersion := strings.TrimLeft(elems[2], "go")
+
+		return checkVersion("go", haveVersion, versionConstraint)
+	}
+}
+
+func checkYarnVersion(versionConstraint string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		cmd := "yarn --version"
+		out, err := combinedSourceExec(ctx, cmd)
+		if err != nil {
+			return errors.Wrapf(err, "failed to run %q", cmd)
+		}
+
+		elems := strings.Split(string(out), "\n")
+		if len(elems) == 0 {
+			return errors.Newf("no output from %q", cmd)
+		}
+
+		trimmed := strings.TrimSpace(elems[0])
+		return checkVersion("yarn", trimmed, versionConstraint)
+	}
+}
+
+func checkVersion(cmdName, haveVersion, versionConstraint string) error {
+	c, err := semver.NewConstraint(versionConstraint)
+	if err != nil {
+		return err
+	}
+
+	version, err := semver.NewVersion(haveVersion)
+	if err != nil {
+		return errors.Newf("cannot decode version in %q: %w", haveVersion, err)
+	}
+
+	if !c.Check(version) {
+		return errors.Newf("version %q from %q does not match constraint %q", haveVersion, cmdName, versionConstraint)
+	}
+	return nil
 }
 
 func checkCommandOutputContains(cmd, contains string) func(context.Context) error {

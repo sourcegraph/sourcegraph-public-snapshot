@@ -34,10 +34,11 @@ var checkFuncs = map[string]dependencyCheck{
 	"postgres": anyChecks(checkSourcegraphDatabase, checkPostgresConnection),
 	"redis":    retryCheck(checkRedisConnection, 5, 500*time.Millisecond),
 	"psql":     checkInPath("psql"),
-	"git":      combineChecks(checkInPath("git"), checkCommandOutputVersion("git version", ">= 2.34.1")),
-	"yarn":     combineChecks(checkInPath("yarn"), checkCommandOutputContains("yarn version", "yarn version")),
-	"go":       combineChecks(checkInPath("go"), checkCommandOutputContains("go version", "go version")),
-	"docker":   wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
+	// TODO: get these versions from .tool-versions
+	"git":    combineChecks(checkInPath("git"), checkGitVersion(">= 2.34.1")),
+	"yarn":   combineChecks(checkInPath("yarn"), checkYarnVersion("~> 1.22.4")),
+	"go":     combineChecks(checkInPath("go"), checkGoVersion("1.17.5")),
+	"docker": wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
 }
 
 type builtinCheck struct {

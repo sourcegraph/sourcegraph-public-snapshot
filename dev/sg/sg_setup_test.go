@@ -1,49 +1,39 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
+	"github.com/google/go-cmp/cmp"
 )
 
-func TestCheckCommandVersion(t *testing.T) {
-	mockVersionCmd := func(output string) string {
-		return fmt.Sprintf(`echo -e "%s"`, output)
-	}
-
+func TestCheckVersion(t *testing.T) {
 	tests := []struct {
-		output     string
-		constraint string
-		wantErr    bool
+		cmd         string
+		haveVersion string
+		constraint  string
+		wantErr     string
 	}{
-		{"git version 1.2.3", "1.2.3", false},
-		{"git version 1.2.3", "> 6.2.3", true},
-		{"git version v1.2.3", "1.2.3", false},
-		{"git version v1.2.3", "> 6.2.3", true},
-		{"git \nversion 1.2.3", "1.2.3", false},
-		{"git \nversion 1.2.3", "> 6.2.3", true},
-		{"git version 3", "1.2.3", true},
-		{"git version foobar", "1.2.3", true},
+		{"git", "1.2.3", ">= 1.2.0", ""},
+		{"git", "1.2.3", ">= 2.99.0", `version "1.2.3" from "git" does not match constraint ">= 2.99.0"`},
+		{"git", "1.2.3", ">>= 2.0 <==", `improper constraint: >>= 2.0 <==`},
 	}
 
-	ctx, err := usershell.Context(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
+	for _, tt := range tests {
+		err := checkVersion(tt.cmd, tt.haveVersion, tt.constraint)
 
-	for _, test := range tests {
-		t.Run(fmt.Sprintf("constraint %q against %q", test.constraint, test.output), func(t *testing.T) {
-			f := checkCommandOutputVersion(mockVersionCmd(test.output), test.constraint)
-			err := f(ctx)
-
-			if test.wantErr && err == nil {
-				t.Fatalf("want error but got none")
+		if tt.wantErr != "" {
+			if err != nil {
+				errMsg := err.Error()
+				if diff := cmp.Diff(tt.wantErr, errMsg); diff != "" {
+					t.Fatalf("wrong error (-want +got):\n%s", diff)
+				}
+			} else {
+				t.Fatalf("expected error but got none")
 			}
-			if !test.wantErr && err != nil {
-				t.Fatalf("want no error but got %q", err)
+		} else {
+			if err != nil {
+				t.Fatalf("want no but got: %s", err)
 			}
-		})
+		}
 	}
 }
