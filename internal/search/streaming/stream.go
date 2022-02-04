@@ -190,6 +190,8 @@ func (c *resultCountingStream) Count() int {
 // NewBatchingStream returns a stream that batches results sent to it, holding
 // delaying their forwarding by a max time of maxDelay, then sending the batched
 // event to the parent stream. The first event is passed through without delay.
+// When there will be no more events sent on the batching stream, Done() must be
+// called to flush the remaining batched events.
 func NewBatchingStream(maxDelay time.Duration, parent Sender) *batchingStream {
 	return &batchingStream{
 		parent:   parent,
