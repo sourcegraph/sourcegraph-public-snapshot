@@ -1568,19 +1568,19 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	tr.LazyPrintf("job name: %s", job.Name())
 
 	start := time.Now()
-	agg := run.NewAggregator(stream)
-	err = job.Run(ctx, r.db, agg)
-	common, matchCount := agg.Get()
+	countingStream := streaming.NewResultCountingStream(stream)
+	statsObserver := streaming.NewStatsObservingStream(countingStream)
+	jobAlert, err := job.Run(ctx, r.db, statsObserver)
 
 	ao := alert.Observer{
 		Db:           r.db,
 		SearchInputs: r.SearchInputs,
-		HasResults:   matchCount > 0,
+		HasResults:   countingStream.Count() > 0,
 	}
 	if err != nil {
 		ao.Error(ctx, err)
 	}
-	alert, err := ao.Done()
+	observerAlert, err := ao.Done()
 
 	// We have an alert for context timeouts and we have a progress
 	// notification for timeouts. We don't want to show both, so we only show
@@ -1588,7 +1588,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 	// progress notifications work, but this is the third attempt at trying to
 	// fix this behaviour so we are accepting that.
 	if errors.Is(err, context.DeadlineExceeded) {
-		if !common.Status.Any(search.RepoStatusTimedout) {
+		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
 			usedTime := time.Since(start)
 			suggestTime := longer(2, usedTime)
 			return search.AlertForTimeout(usedTime, suggestTime, r.rawQuery(), r.PatternType), nil
@@ -1597,7 +1597,7 @@ func (r *searchResolver) evaluateJob(ctx context.Context, stream streaming.Sende
 		}
 	}
 
-	return alert, err
+	return search.MaxPriorityAlert(jobAlert, observerAlert), err
 }
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
@@ -1767,7 +1767,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		err = job.Run(ctx, r.db, agg)
+		_, err = job.Run(ctx, r.db, agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}

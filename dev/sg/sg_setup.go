@@ -332,7 +332,7 @@ Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
 brew install gpg
 asdf plugin-add yarn
-asdf install yarn 
+asdf install yarn
 `,
 			},
 			{
@@ -350,7 +350,7 @@ programming languages and tools. Find out how to install asdf here:
 
 Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
-asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
+asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
 grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc
 asdf install nodejs
 `,
@@ -391,7 +391,7 @@ createdb || true
 					`Once PostgreSQL is installed and running, we need to setup Sourcegraph database itself and a
 specific user.`,
 				instructionsCommands: `createuser --superuser sourcegraph || true
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';" 
+psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 `,
 			},
@@ -1396,10 +1396,10 @@ func trusted(cert *x509.Certificate) bool {
 func pemDecodeSingleCert(pemDER []byte) (*x509.Certificate, error) {
 	pemBlock, _ := pem.Decode(pemDER)
 	if pemBlock == nil {
-		return nil, fmt.Errorf("no PEM block found")
+		return nil, errors.Newf("no PEM block found")
 	}
 	if pemBlock.Type != "CERTIFICATE" {
-		return nil, fmt.Errorf("expected PEM block type to be CERTIFICATE, but got '%s'", pemBlock.Type)
+		return nil, errors.Newf("expected PEM block type to be CERTIFICATE, but got '%s'", pemBlock.Type)
 	}
 	return x509.ParseCertificate(pemBlock.Bytes)
 }

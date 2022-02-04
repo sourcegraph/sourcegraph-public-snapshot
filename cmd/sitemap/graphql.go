@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -102,7 +101,7 @@ func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, qu
 		return nil, errors.Wrap(err, "Unmarshal errors")
 	}
 	if len(errs.Errors) > 0 {
-		return nil, fmt.Errorf("graphql error: %v", errs.Errors)
+		return nil, errors.Newf("graphql error: %v", errs.Errors)
 	}
 	return data, nil
 }

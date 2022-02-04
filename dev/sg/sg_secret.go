@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -81,11 +80,11 @@ func listSecretExec(ctx context.Context, args []string) error {
 		for _, key := range keys {
 			var val map[string]interface{}
 			if err := secretsStore.Get(key, &val); err != nil {
-				return fmt.Errorf("Get %q: %w", key, err)
+				return errors.Newf("Get %q: %w", key, err)
 			}
 			data, err := json.MarshalIndent(val, "  ", "  ")
 			if err != nil {
-				return fmt.Errorf("Marshal %q: %w", key, err)
+				return errors.Newf("Marshal %q: %w", key, err)
 			}
 			stdout.Out.WriteLine(output.Linef("", output.StyleYellow, "- %s:", key))
 			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "  %s", string(data)))

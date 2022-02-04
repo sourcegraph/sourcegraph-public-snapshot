@@ -2,9 +2,10 @@ package runner
 
 import (
 	"context"
-	"fmt"
 	"sync"
+	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -106,7 +107,7 @@ func (r *Runner) prepareSchemas(schemaNames []string) (map[string]*schemas.Schem
 	// Ensure that all supplied schema names are valid
 	for _, schemaName := range schemaNames {
 		if _, ok := schemaMap[schemaName]; !ok {
-			return nil, fmt.Errorf("unknown schema %q", schemaName)
+			return nil, errors.Newf("unknown schema %q", schemaName)
 		}
 	}
 
@@ -119,7 +120,7 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 	for _, schemaName := range schemaNames {
 		storeFactory, ok := r.storeFactories[schemaName]
 		if !ok {
-			return nil, fmt.Errorf("unknown schema %q", schemaName)
+			return nil, errors.Newf("unknown schema %q", schemaName)
 		}
 
 		store, err := storeFactory(ctx)
@@ -177,6 +178,28 @@ func (r *Runner) fetchVersion(ctx context.Context, schemaName string, store Stor
 	}, nil
 }
 
+const lockPollInterval = time.Second
+
+// pollLock will attempt to acquire a session-level advisory lock while the given context has not
+// been canceled. The caller must eventually invoke the unlock function on successful acquisition
+// of the lock.
+func (r *Runner) pollLock(ctx context.Context, store Store) (unlock func(err error) error, _ error) {
+	for {
+		if acquired, unlock, err := store.TryLock(ctx); err != nil {
+			return nil, err
+		} else if acquired {
+			return unlock, nil
+		}
+
+		select {
+		case <-time.After(lockPollInterval):
+			continue
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+}
+
 type lockedVersionCallback func(
 	schemaVersion schemaVersion,
 ) error
@@ -184,11 +207,14 @@ type lockedVersionCallback func(
 // withLockedSchemaState attempts to take an advisory lock, then re-checks the version of the
 // database. The resulting schema state is passed to the given function. The advisory lock
 // will be released on function exit.
-func (r *Runner) withLockedSchemaState(ctx context.Context, schemaContext schemaContext, callback lockedVersionCallback) (err error) {
-	if acquired, unlock, err := schemaContext.store.Lock(ctx); err != nil {
+func (r *Runner) withLockedSchemaState(
+	ctx context.Context,
+	schemaContext schemaContext,
+	callback lockedVersionCallback,
+) (err error) {
+	unlock, err := r.pollLock(ctx, schemaContext.store)
+	if err != nil {
 		return err
-	} else if !acquired {
-		return fmt.Errorf("failed to acquire migration lock")
 	} else {
 		defer func() { err = unlock(err) }()
 	}

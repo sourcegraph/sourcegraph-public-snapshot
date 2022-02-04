@@ -35,10 +35,7 @@ type CoreTestOperationsOptions struct {
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
 // arguments, please add it to the switch case within `GeneratePipeline` instead.
-func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptions) *operations.Set {
-	// Various RunTypes can provide a nil changedFiles to run all checks.
-	runAll := len(changedFiles) == 0
-
+func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
 
@@ -48,27 +45,27 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		// these on all PRs
 		addPrettier,
 		addCheck)
-	if runAll || changedFiles.AffectsGraphQL() {
+	if diff.Has(changed.GraphQL) {
 		linterOps.Append(addGraphQLLint)
 	}
-	if runAll || changedFiles.AffectsFilesWithExt(".svg") {
+	if diff.Has(changed.SVG) {
 		linterOps.Append(addSVGLint)
 	}
-	if runAll || changedFiles.AffectsClient() {
+	if diff.Has(changed.Client) {
 		linterOps.Append(addYarnDeduplicateLint)
 	}
-	if runAll || changedFiles.AffectsDockerfiles() {
+	if diff.Has(changed.Dockerfiles) {
 		linterOps.Append(addDockerfileLint)
 	}
-	if runAll || changedFiles.AffectsTerraformFiles() {
+	if diff.Has(changed.Terraform) {
 		linterOps.Append(addTerraformLint)
 	}
-	if runAll || changedFiles.AffectsDocs() {
+	if diff.Has(changed.Docs) {
 		linterOps.Append(addDocs)
 	}
 	ops.Merge(linterOps)
 
-	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
+	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
@@ -80,14 +77,14 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 			addTsLint))
 	}
 
-	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
+	if diff.Has(changed.Go | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
 			addGoBuild))
 	}
 
-	if runAll || changedFiles.AffectsDatabaseSchema() {
+	if diff.Has(changed.DatabaseSchema) {
 		// If there are schema changes, ensure the tests of the last minor release continue
 		// to succeed when the new version of the schema is applied. This ensures that the
 		// schema can be rolled forward pre-upgrade without negatively affecting the running
@@ -97,7 +94,7 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 	}
 
 	// CI script testing
-	if runAll || changedFiles.AffectsCIScripts() {
+	if diff.Has(changed.CIScripts) {
 		ops.Merge(operations.NewNamedSet("CI script tests", addCIScriptsTests))
 	}
 
