@@ -651,6 +651,7 @@ export async function createLatestRelease(
     const latestTag = latest.data.tag_name
     if (release.compare(latestTag.startsWith('v') ? latestTag.slice(1) : latestTag) === -1) {
         // if latest is greater than release, do not generate a release
+        console.log(`Latest release ${latestTag} is more recent than ${release.version}, skipping GitHub release`)
         return ''
     }
 
