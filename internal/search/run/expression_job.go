@@ -96,6 +96,33 @@ type OrJob struct {
 	children []Job
 }
 
+// For OR queries, there are two phases:
+// 1) Stream any results that are found in every subquery
+// 2) Once all subqueries have completed, send the results we've found that
+//    were returned by some subqueries, but not all subqueries.
+//
+// This means that the only time we would hit streaming limit before we have
+// results from all subqueries is if we hit the limit only with results from
+// phase 1. These results are very "fair" in that they are found in all
+// subqueries.
+//
+// Then, in phase 2, we send all results that were returned by at least one
+// sub-query. These are generated from a map iteration, so the document order
+// is random, meaning that when/if they are truncated to fit inside the limit,
+// they will be from a random distribution of sub-queries.
+//
+// This solution has the following nice properties:
+// - Early cancellation is possible
+// - Results are streamed where possible, decreasing user-visible latency
+// - The only results that are streamed are "fair" results. They are "fair" because
+//   they were returned from every subquery, so there can be no bias between subqueries
+// - The only time we cancel early is when streamed results hit the limit. Since the only
+//   streamed results are "fair" results, there will be no bias against slow or low-volume subqueries
+// - Every result we stream is guaranteed to be "complete". By "complete", I mean if I search for "a or b",
+//   the streamed result will highlight both "a" and "b" if they both exist in the document.
+// - The bias is towards documents that match all of our subqueries, so doesn't bias any individual subquery.
+//   Additionally, a bias towards matching all subqueries is probably desirable, since it's more likely that
+//   a document matching all subqueries is what the user is looking for than a document matching only one.
 func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "OrJob", "")
 	defer func() {
