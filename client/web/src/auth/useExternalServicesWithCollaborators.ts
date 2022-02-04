@@ -1,17 +1,17 @@
 import { ApolloError, ApolloQueryResult } from '@apollo/client'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { EXTERNAL_SERVICES } from '@sourcegraph/web/src/components/externalServices/backend'
+import { EXTERNAL_SERVICES_WITH_COLLABORATORS } from '@sourcegraph/web/src/components/externalServices/backend'
 
 import {
     Exact,
-    ExternalServicesResult,
-    ExternalServicesVariables,
+    ExternalServicesWithCollaboratorsResult,
+    ExternalServicesWithCollaboratorsVariables,
     ListExternalServiceFields,
     Maybe,
 } from '../graphql-operations'
 
-interface UseExternalServicesResult {
+interface UseExternalServicesWithCollaboratorsResult {
     externalServices: ListExternalServiceFields[] | undefined
     loadingServices: boolean
     errorServices: ApolloError | undefined
@@ -25,20 +25,20 @@ interface UseExternalServicesResult {
                   }>
               >
             | undefined
-    ) => Promise<ApolloQueryResult<ExternalServicesResult>>
+    ) => Promise<ApolloQueryResult<ExternalServicesWithCollaboratorsResult>>
 }
 
-export const useExternalServices = (userId: string | null): UseExternalServicesResult => {
-    const { data, loading, error, refetch } = useQuery<ExternalServicesResult, ExternalServicesVariables>(
-        EXTERNAL_SERVICES,
-        {
-            variables: {
-                namespace: userId,
-                first: null,
-                after: null,
-            },
-        }
-    )
+export const useExternalServicesWithCollaborators = (userId: string | null): UseExternalServicesWithCollaboratorsResult => {
+    const { data, loading, error, refetch } = useQuery<
+        ExternalServicesWithCollaboratorsResult,
+        ExternalServicesWithCollaboratorsVariables
+    >(EXTERNAL_SERVICES_WITH_COLLABORATORS, {
+        variables: {
+            namespace: userId,
+            first: null,
+            after: null,
+        },
+    })
 
     return {
         externalServices: data?.externalServices.nodes,
