@@ -1084,7 +1084,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 	return result.Alert, nil
 }
 
-// toAndJob creates a new job from a basic query whose pattern is an And operator at the top level
+// toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
 func (r *searchResolver) toAndJob(q query.Basic) (run.Job, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more queryOperands.
