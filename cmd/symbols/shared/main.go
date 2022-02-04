@@ -83,9 +83,15 @@ func Main(setup func(config *Config, observationContext *observation.Context) (s
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
-	searchFunc, routines := setup(config, observationContext)
-	if searchFunc == nil {
+	var searchFunc sharedtypes.SearchFunc
+	var routines []goroutine.BackgroundRoutine
+	if setup == nil {
 		searchFunc, routines = SetupSqlite(config, observationContext)
+	} else {
+		searchFunc, routines = setup(config, observationContext)
+		if searchFunc == nil {
+			searchFunc, routines = SetupSqlite(config, observationContext)
+		}
 	}
 
 	apiHandler := api.NewHandler(searchFunc, config.Ctags.Command)
