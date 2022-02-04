@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/cockroachdb/errors"
@@ -48,7 +47,7 @@ type JVMPackagesRepoStore interface {
 func NewJVMPackagesSource(svc *types.ExternalService) (*JVMPackagesSource, error) {
 	var c schema.JVMPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Newf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newJVMPackagesSource(svc, &c)
 }

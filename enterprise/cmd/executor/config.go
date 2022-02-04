@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
@@ -62,7 +63,7 @@ func (c *Config) Load() {
 func (c *Config) Validate() error {
 	if c.FirecrackerNumCPUs != 1 && c.FirecrackerNumCPUs%2 != 0 {
 		// Required by Firecracker: The vCPU number is invalid! The vCPU number can only be 1 or an even number when hyperthreading is enabled
-		c.AddError(fmt.Errorf("EXECUTOR_FIRECRACKER_NUM_CPUS must be 1 or an even number"))
+		c.AddError(errors.Newf("EXECUTOR_FIRECRACKER_NUM_CPUS must be 1 or an even number"))
 	}
 
 	return c.BaseConfig.Validate()

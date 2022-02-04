@@ -40,6 +40,7 @@ type OrgInvitationStore interface {
 	Create(ctx context.Context, orgID, senderUserID, recipientUserID int32) (*OrgInvitation, error)
 	GetByID(context.Context, int64) (*OrgInvitation, error)
 	GetPending(ctx context.Context, orgID, recipientUserID int32) (*OrgInvitation, error)
+	GetPendingByID(ctx context.Context, id int64) (*OrgInvitation, error)
 	List(context.Context, OrgInvitationsListOptions) ([]*OrgInvitation, error)
 	Count(context.Context, OrgInvitationsListOptions) (int, error)
 	UpdateEmailSentTimestamp(ctx context.Context, id int64) error
@@ -73,6 +74,10 @@ func (s *orgInvitationStore) Transact(ctx context.Context) (OrgInvitationStore, 
 // OrgInvitationNotFoundError occurs when an org invitation is not found.
 type OrgInvitationNotFoundError struct {
 	args []interface{}
+}
+
+func NewOrgInvitationNotFoundError(id int64) OrgInvitationNotFoundError {
+	return OrgInvitationNotFoundError{[]interface{}{id}}
 }
 
 // NotFound implements errcode.NotFounder.
@@ -111,7 +116,7 @@ func (s *orgInvitationStore) GetByID(ctx context.Context, id int64) (*OrgInvitat
 		return nil, err
 	}
 	if len(results) == 0 {
-		return nil, OrgInvitationNotFoundError{[]interface{}{id}}
+		return nil, NewOrgInvitationNotFoundError(id)
 	}
 	return results[0], nil
 }
@@ -129,6 +134,22 @@ func (s *orgInvitationStore) GetPending(ctx context.Context, orgID, recipientUse
 	}
 	if len(results) == 0 {
 		return nil, OrgInvitationNotFoundError{[]interface{}{fmt.Sprintf("pending for org %d recipient %d", orgID, recipientUserID)}}
+	}
+	return results[0], nil
+}
+
+// GetPendingByID retrieves the pending invitation (if any) based on the invitation ID
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this org invitation.
+func (s *orgInvitationStore) GetPendingByID(ctx context.Context, id int64) (*OrgInvitation, error) {
+	results, err := s.list(ctx, []*sqlf.Query{
+		sqlf.Sprintf("id=%d AND responded_at IS NULL AND revoked_at IS NULL", id),
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, NewOrgInvitationNotFoundError(id)
 	}
 	return results[0], nil
 }
@@ -213,7 +234,7 @@ func (s *orgInvitationStore) UpdateEmailSentTimestamp(ctx context.Context, id in
 		return err
 	}
 	if nrows == 0 {
-		return OrgInvitationNotFoundError{[]interface{}{id}}
+		return NewOrgInvitationNotFoundError(id)
 	}
 	return nil
 }
@@ -242,7 +263,7 @@ func (s *orgInvitationStore) Revoke(ctx context.Context, id int64) error {
 		return err
 	}
 	if nrows == 0 {
-		return OrgInvitationNotFoundError{[]interface{}{id}}
+		return NewOrgInvitationNotFoundError(id)
 	}
 	return nil
 }

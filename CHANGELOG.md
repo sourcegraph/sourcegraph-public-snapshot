@@ -82,6 +82,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Removed unused backend service from Kubernetes deployments. [#4050](https://github.com/sourcegraph/deploy-sourcegraph/pull/4050)
 
+## 3.35.2
+
+### Fixed
+
+- Fix Code Monitor permissions. [#30547](https://github.com/sourcegraph/sourcegraph/pull/30547)
+
 ## 3.35.1
 
 **⚠️ Due to issues related to Code Insights in the 3.35.0 release, users are advised to upgrade directly to 3.35.1.**

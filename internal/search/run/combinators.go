@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -37,7 +38,7 @@ func (r *JobWithOptional) Name() string {
 	return fmt.Sprintf("JobWithOptional{Required: %s, Optional: %s}", r.required.Name(), r.optional.Name())
 }
 
-func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
+func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "JobWithOptional", "")
 	defer func() {
 		tr.SetError(err)
@@ -49,12 +50,20 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 
 	start := time.Now()
 
-	var optionalGroup, requiredGroup multierror.Group
+	var (
+		maxAlerter    search.MaxAlerter
+		optionalGroup multierror.Group
+		requiredGroup multierror.Group
+	)
 	requiredGroup.Go(func() error {
-		return r.required.Run(ctx, db, s)
+		alert, err := r.required.Run(ctx, db, s)
+		maxAlerter.Add(alert)
+		return err
 	})
 	optionalGroup.Go(func() error {
-		return r.optional.Run(ctx, db, s)
+		alert, err := r.optional.Run(ctx, db, s)
+		maxAlerter.Add(alert)
+		return err
 	})
 
 	var errs *multierror.Error
@@ -74,7 +83,7 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 	}
 	tr.LazyPrintf("optional group completed")
 
-	return errs.ErrorOrNil()
+	return maxAlerter.Alert, errs.ErrorOrNil()
 }
 
 // NewParallelJob will create a job that runs all its child jobs in separate
@@ -100,21 +109,26 @@ func (p ParallelJob) Name() string {
 	return fmt.Sprintf("ParallelJob{%s}", strings.Join(childNames, ", "))
 }
 
-func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
+func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "ParallelJob", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	var g multierror.Group
+	var (
+		g          multierror.Group
+		maxAlerter search.MaxAlerter
+	)
 	for _, job := range p {
 		job := job
 		g.Go(func() error {
-			return job.Run(ctx, db, s)
+			alert, err := job.Run(ctx, db, s)
+			maxAlerter.Add(alert)
+			return err
 		})
 	}
-	return g.Wait().ErrorOrNil()
+	return maxAlerter.Alert, g.Wait().ErrorOrNil()
 }
 
 // NewTimeoutJob creates a new job that is canceled after the
@@ -134,7 +148,7 @@ type TimeoutJob struct {
 	timeout time.Duration
 }
 
-func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
+func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "TimeoutJob", "")
 	defer func() {
 		tr.SetError(err)
@@ -170,7 +184,7 @@ type LimitJob struct {
 	limit int
 }
 
-func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (err error) {
+func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "LimitJob", "")
 	defer func() {
 		tr.SetError(err)
@@ -189,5 +203,8 @@ func (l *LimitJob) Name() string {
 
 type emptyJob struct{}
 
-func (e *emptyJob) Run(context.Context, database.DB, streaming.Sender) error { return nil }
-func (e *emptyJob) Name() string                                             { return "EmptyJob" }
+func (e *emptyJob) Run(context.Context, database.DB, streaming.Sender) (*search.Alert, error) {
+	return nil, nil
+}
+
+func (e *emptyJob) Name() string { return "EmptyJob" }

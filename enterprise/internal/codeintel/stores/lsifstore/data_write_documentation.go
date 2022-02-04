@@ -732,7 +732,7 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableS
 		strings.ReplaceAll(countDocumentationSearchRowsQuery, "$SUFFIX", tableSuffix),
 	)))
 	if !exists {
-		return fmt.Errorf("failed to count table size")
+		return errors.Newf("failed to count table size")
 	}
 	if err != nil {
 		return errors.Wrap(err, "counting table size")

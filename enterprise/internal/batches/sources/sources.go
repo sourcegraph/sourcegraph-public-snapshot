@@ -26,7 +26,7 @@ import (
 // if the user that applied the last batch change/changeset spec doesn't have
 // UserCredentials for the given repository and is not a site-admin (so no
 // fallback to the global credentials is possible).
-var ErrMissingCredentials = errors.New("no credential found to authenticate ChangesetSource")
+var ErrMissingCredentials = errors.New("no credential found that can authenticate to the code host")
 
 // ErrNoPushCredentials is returned by gitserverPushConfig if the
 // authenticator cannot be used by git to authenticate a `git push`.

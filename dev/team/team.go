@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 	"golang.org/x/net/context/ctxhttp"
@@ -72,12 +73,12 @@ func NewTeammateResolver(ghClient *github.Client, slackClient *slack.Client) Tea
 
 func (r *teammateResolver) ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Teammate, error) {
 	if r.github == nil {
-		return nil, fmt.Errorf("GitHub integration disabled")
+		return nil, errors.Newf("GitHub integration disabled")
 	}
 
 	resp, _, err := r.github.Repositories.GetCommit(ctx, org, repo, commit, nil)
 	if err != nil {
-		return nil, fmt.Errorf("GetCommit: %w", err)
+		return nil, errors.Newf("GetCommit: %w", err)
 	}
 	return r.ResolveByGitHubHandle(ctx, resp.Author.GetLogin())
 }
@@ -85,7 +86,7 @@ func (r *teammateResolver) ResolveByCommitAuthor(ctx context.Context, org, repo,
 func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle string) (*Teammate, error) {
 	team, err := r.getTeamData(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getTeamData: %w", err)
+		return nil, errors.Newf("getTeamData: %w", err)
 	}
 
 	var teammate *Teammate
@@ -96,7 +97,7 @@ func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle str
 		}
 	}
 	if teammate == nil {
-		return nil, fmt.Errorf("no teammate with GitHub handle %q - if this is you, ensure the `github` field is set in your profile in %s",
+		return nil, errors.Newf("no teammate with GitHub handle %q - if this is you, ensure the `github` field is set in your profile in %s",
 			handle, teamDataGitHubURL)
 	}
 	return teammate, nil
@@ -105,7 +106,7 @@ func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle str
 func (r *teammateResolver) ResolveByName(ctx context.Context, name string) (*Teammate, error) {
 	team, err := r.getTeamData(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getTeamData: %w", err)
+		return nil, errors.Newf("getTeamData: %w", err)
 	}
 
 	// Generalize name
@@ -137,10 +138,10 @@ func (r *teammateResolver) ResolveByName(ctx context.Context, name string) (*Tea
 		for _, c := range candidates {
 			candidateNames = append(candidateNames, c.Name)
 		}
-		return nil, fmt.Errorf("multiple users found for name %q: %s", name, strings.Join(candidateNames, ", "))
+		return nil, errors.Newf("multiple users found for name %q: %s", name, strings.Join(candidateNames, ", "))
 	}
 
-	return nil, fmt.Errorf("no users found matching name %q", name)
+	return nil, errors.Newf("no users found matching name %q", name)
 }
 
 func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammate, error) {
@@ -148,7 +149,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 	r.cachedTeamOnce.Do(func() {
 		team, err := fetchTeamData(ctx)
 		if err != nil {
-			onceErr = fmt.Errorf("fetchTeamData: %w", err)
+			onceErr = errors.Newf("fetchTeamData: %w", err)
 			return
 		}
 
@@ -169,7 +170,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 		if r.slack != nil {
 			slackUsers, err := r.slack.GetUsers()
 			if err != nil {
-				onceErr = fmt.Errorf("slack.GetUsers: %w", err)
+				onceErr = errors.Newf("slack.GetUsers: %w", err)
 				return
 			}
 			for _, user := range slackUsers {
@@ -178,7 +179,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 					teammate.SlackName = user.Name
 					teammate.SlackTimezone, err = time.LoadLocation(user.TZ)
 					if err != nil {
-						onceErr = fmt.Errorf("teammate %q: time.LoadLocation: %w", teammate.Key, err)
+						onceErr = errors.Newf("teammate %q: time.LoadLocation: %w", teammate.Key, err)
 						return
 					}
 				}
@@ -193,18 +194,18 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 func fetchTeamData(ctx context.Context) (map[string]*Teammate, error) {
 	resp, err := ctxhttp.Get(ctx, http.DefaultClient, teamDataURL)
 	if err != nil {
-		return nil, fmt.Errorf("Get: %w", err)
+		return nil, errors.Newf("Get: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("ReadAll: %w", err)
+		return nil, errors.Newf("ReadAll: %w", err)
 	}
 
 	team := map[string]*Teammate{}
 	if err = yaml.Unmarshal(body, &team); err != nil {
-		return nil, fmt.Errorf("Unmarshal: %w", err)
+		return nil, errors.Newf("Unmarshal: %w", err)
 	}
 	for id, tm := range team {
 		tm.Key = id

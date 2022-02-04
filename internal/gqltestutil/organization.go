@@ -85,10 +85,10 @@ type InviteUserToOrganizationResult struct {
 }
 
 // InviteUserToOrganization invites a user to the given organization.
-func (c *Client) InviteUserToOrganization(orgID, username string) (*InviteUserToOrganizationResult, error) {
+func (c *Client) InviteUserToOrganization(orgID, username string, email string) (*InviteUserToOrganizationResult, error) {
 	const query = `
-mutation InviteUserToOrganization($organization: ID!, $username: String!) {
-	inviteUserToOrganization(organization: $organization, username: $username) {
+mutation InviteUserToOrganization($organization: ID!, $username: String, $email String) {
+	inviteUserToOrganization(organization: $organization, username: $username, email $email) {
 		... on InviteUserToOrganizationResult {
 			sentInvitationEmail
 			invitationURL
@@ -99,6 +99,7 @@ mutation InviteUserToOrganization($organization: ID!, $username: String!) {
 	variables := map[string]interface{}{
 		"organization": orgID,
 		"username":     username,
+		"email":        email,
 	}
 	var resp struct {
 		Data struct {
@@ -112,7 +113,7 @@ mutation InviteUserToOrganization($organization: ID!, $username: String!) {
 	return resp.Data.InviteUserToOrganizationResult, nil
 }
 
-// InviteUserToOrganization invites a user to the given organization.
+// AddUserToOrganization invites a user to the given organization.
 func (c *Client) AddUserToOrganization(orgID, username string) error {
 	const query = `
 	mutation AddUserToOrganization($organization: ID!, $username: String!) {

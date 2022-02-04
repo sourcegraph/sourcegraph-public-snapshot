@@ -1287,6 +1287,22 @@
           "default": "72h"
         }
       }
+    },
+    "organizationInvitations": {
+      "description": "Configuration for organization invitations.",
+      "type": "object",
+      "required": ["signingKey"],
+      "properties": {
+        "expiryTime": {
+          "description": "Time before the invitation expires, in hours (experimental, not enforced at the moment).",
+          "type": "integer",
+          "default": 48
+        },
+        "signingKey": {
+          "description": "HMAC Signing key to sign a JWT token, which is attached to each invitation URL. Can be any string.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
+          "type": "string"
+        }
+      }
     }
   },
   "definitions": {

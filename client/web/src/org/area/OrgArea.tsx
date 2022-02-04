@@ -34,7 +34,7 @@ import { RouteDescriptor } from '../../util/contributions'
 import { ORG_CODE_FEATURE_FLAG_EMAIL_INVITE } from '../backend'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
-import { OrgInvitationPage } from './OrgInvitationPage'
+import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
 
 function queryOrganization(args: {
     name: string
@@ -285,8 +285,8 @@ export class OrgArea extends React.Component<Props> {
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
-            // The OrgInvitationPage is displayed without the OrgHeader because it is modal-like.
-            return <OrgInvitationPage {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
+            // The OrgInvitationPageLegacy is displayed without the OrgHeader because it is modal-like.
+            return <OrgInvitationPageLegacy {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
         }
 
         return (

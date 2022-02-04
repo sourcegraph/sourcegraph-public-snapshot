@@ -50,7 +50,7 @@ const DotcomGettingStartedPageFooter: React.FunctionComponent<{}> = () => (
             bodyText="Batch Changes requires a local Sourcegraph installation. You can check it out for free by installing with a single line of code."
             title="Install locally to get started"
             linkText="Install local instance"
-            href="https://docs.sourcegraph.com/admin/install?utm_medium=inproduct&utm_source=inproduct-batch-changes&utm_campaign=inproduct-batch-changes&term="
+            href="/help/admin/install?utm_medium=inproduct&utm_source=inproduct-batch-changes&utm_campaign=inproduct-batch-changes&term="
             icon={<DownloadSourcegraphIcon />}
             className="ml-3"
             onClick={() => eventLogger.log('BatchChangesInstallFromCloudClicked')}
