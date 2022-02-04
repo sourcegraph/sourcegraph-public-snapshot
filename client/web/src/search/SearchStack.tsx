@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { LocationDescriptor } from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SearchStackIcon from 'mdi-react/LayersSearchIcon'
@@ -16,7 +17,13 @@ import { Button, Link } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
-import { useSearchStackState, restorePreviousSession, SearchEntry, SearchStackEntry } from '../stores/searchStack'
+import {
+    useSearchStackState,
+    restorePreviousSession,
+    SearchEntry,
+    SearchStackEntry,
+    removeSearchStackEntry,
+} from '../stores/searchStack'
 
 import { BlockInput } from './notebook'
 import { serializeBlocks } from './notebook/serialize'
@@ -122,12 +129,52 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     )
 }
 
+interface SearchStackEntryComponentProps {
+    entry: SearchStackEntry
+    icon: React.ReactElement
+    title: React.ReactElement
+    location: LocationDescriptor<any>
+    children?: React.ReactElement
+}
+
+const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryComponentProps> = ({
+    icon,
+    title,
+    location,
+    children,
+    entry,
+}) => (
+    <div className={styles.entry}>
+        <div className="d-flex">
+            <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
+            <Link to={location} className={classNames(styles.entry, 'flex-1 p-0')}>
+                {title}
+            </Link>
+            <span className="ml-1">
+                <Button
+                    aria-label="Remove entry"
+                    title="Remove entry"
+                    variant="icon"
+                    className="text-muted"
+                    onClick={() => removeSearchStackEntry(entry)}
+                >
+                    <CloseIcon className="icon-inline" />
+                </Button>{' '}
+            </span>
+        </div>
+        {children}
+    </div>
+)
+
 function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
     switch (entry.type) {
         case 'search':
             return (
-                <Link
-                    to={{
+                <SearchStackEntryComponent
+                    entry={entry}
+                    icon={<SearchIcon className="icon-inline" />}
+                    title={<SyntaxHighlightedSearchQuery query={entry.query} />}
+                    location={{
                         pathname: '/search',
                         search: buildSearchURLQuery(
                             entry.query,
@@ -136,39 +183,27 @@ function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
                             entry.searchContext
                         ),
                     }}
-                    className={styles.entry}
-                >
-                    <div className="d-flex">
-                        <span className="flex-shrink-0">
-                            <SearchIcon className="icon-inline text-muted mr-1" />
-                        </span>
-                        <SyntaxHighlightedSearchQuery query={entry.query} />
-                    </div>
-                </Link>
+                />
             )
         case 'file':
             return (
-                <Link
-                    to={{
+                <SearchStackEntryComponent
+                    entry={entry}
+                    icon={<FileDocumentIcon className="icon-inline" />}
+                    title={<span title={entry.path}>{shortenFilePath(entry.path)}</span>}
+                    location={{
                         pathname: toPrettyBlobURL({
                             repoName: entry.repo,
                             revision: entry.revision,
                             filePath: entry.path,
                         }),
                     }}
-                    className={styles.entry}
                 >
-                    <div className="d-flex">
-                        <span className="flex-shrink-0">
-                            <FileDocumentIcon className="icon-inline text-muted mr-1" />
-                        </span>
-                        <span title={entry.path}>{shortenFilePath(entry.path)}</span>
-                    </div>
                     <small className="text-muted">
                         <RepoIcon repoName={entry.repo} className="icon-inline text-muted mr-1" />
                         {entry.repo}
                     </small>
-                </Link>
+                </SearchStackEntryComponent>
             )
     }
 }
