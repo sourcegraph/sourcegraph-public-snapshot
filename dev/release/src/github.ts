@@ -648,7 +648,8 @@ export async function createLatestRelease(
         owner,
         repo,
     })
-    if (release.compare(latest.data.tag_name) === -1) {
+    const latestTag = latest.data.tag_name
+    if (release.compare(latestTag.startsWith('v') ? latestTag.slice(1) : latestTag) === -1) {
         // if latest is greater than release, do not generate a release
         return ''
     }
