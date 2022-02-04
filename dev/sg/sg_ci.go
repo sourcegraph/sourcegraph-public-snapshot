@@ -380,7 +380,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 				if err != nil {
 					return err
 				}
-				return writePrettyMarkdown(fmt.Sprintf("# Pipeline types reference\n%s", out))
+				return writePrettyMarkdown(out)
 			},
 		}},
 	}

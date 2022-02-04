@@ -96,7 +96,8 @@ func trimEmoji(s string) string {
 }
 
 func renderPipelineDocs(w io.Writer) {
-	fmt.Fprintln(w, "## Run types")
+	fmt.Fprintln(w, "# Pipeline reference")
+	fmt.Fprintln(w, "\n## Run types")
 
 	// Introduce pull request builds first
 	fmt.Fprintf(w, "\n### %s\n\n", ci.PullRequest.String())
