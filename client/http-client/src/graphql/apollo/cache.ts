@@ -1,7 +1,7 @@
 import { InMemoryCache } from '@apollo/client'
 
 import { TypedTypePolicies } from '@sourcegraph/shared/src/graphql-operations'
-import { IExtensionRegistry } from '@sourcegraph/shared/src/schema'
+import { IExtensionRegistry, IPerson } from '@sourcegraph/shared/src/schema'
 
 // Defines how the Apollo cache interacts with our GraphQL schema.
 // See https://www.apollographql.com/docs/react/caching/cache-configuration/#typepolicy-fields
@@ -10,6 +10,13 @@ const typePolicies: TypedTypePolicies = {
         // Replace existing `ExtensionRegistry` with the incoming value.
         // Required because of the missing `id` on the `ExtensionRegistry` field.
         merge(existing: IExtensionRegistry, incoming: IExtensionRegistry): IExtensionRegistry {
+            return incoming
+        },
+    },
+    Person: {
+        // Replace existing `Person` with the incoming value.
+        // Required because of the missing `id` on the `Person` field.
+        merge(existing: IPerson, incoming: IPerson): IPerson {
             return incoming
         },
     },
