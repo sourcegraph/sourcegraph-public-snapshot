@@ -370,6 +370,39 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     indexIntermediateCommits: Boolean!
 }
 
+type CodeIntelligenceRetentionPolicyMatch {
+    configurationPolicy: CodeIntelligenceConfigurationPolicy!
+
+    matches: Boolean!
+
+    protectingCommits: [String!]
+}
+
+type CodeIntelligenceRetentionByReference {
+    referencingUploads: [LSIFUpload!]!
+
+    total: Int!
+}
+
+union CodeIntelligenceRetentionReasons = CodeIntelligenceRetentionPolicyMatch | CodeIntelligenceRetentionByReference
+
+type CodeIntelligenceRetentionPolicyMatchesConnection {
+    """
+    A list of code intelligence retention policies matches.
+    """
+    nodes: [CodeIntelligenceRetentionPolicyMatch!]!
+
+    """
+    The total number of policies in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
 extend type Repository {
     """
     Gets the indexing configuration associated with the repository.
@@ -1125,6 +1158,30 @@ type LSIFUpload implements Node {
     The LSIF indexing job that created this upload record.
     """
     associatedIndex: LSIFIndex
+
+    retentionPolicyOverview(
+        matchesOnly: Boolean!
+
+        """
+        An (optional) search query that searches over the name property.
+        """
+        query: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): CodeIntelligenceRetentionPolicyMatchesConnection!
 }
 
 """
