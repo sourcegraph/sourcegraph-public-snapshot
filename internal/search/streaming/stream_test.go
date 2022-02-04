@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -108,9 +109,9 @@ func TestBatchingStream(t *testing.T) {
 	})
 
 	t.Run("super parallel", func(t *testing.T) {
-		var matches result.Matches
+		var count atomic.Int64
 		s := NewBatchingStream(100*time.Millisecond, StreamFunc(func(event SearchEvent) {
-			matches = append(matches, event.Results...)
+			count.Add(int64(len(event.Results)))
 		}))
 
 		var wg sync.WaitGroup
@@ -124,10 +125,10 @@ func TestBatchingStream(t *testing.T) {
 		wg.Wait()
 
 		// One should be sent immediately
-		require.Len(t, matches, 1)
+		require.Equal(t, count.Load(), int64(1))
 
 		// The rest should be sent after flushing
 		s.Done()
-		require.Len(t, matches, 1000)
+		require.Equal(t, count.Load(), int64(1000))
 	})
 }
