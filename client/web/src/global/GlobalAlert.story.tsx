@@ -34,7 +34,7 @@ export const GlobalAlerts: Story = () => (
         </p>
         <h2>Variants</h2>
         {Object.values(AlertType).map(type => (
-            <GlobalAlert key={type} alert={{ message: 'Something went wrong!', isDismissibleWithKey: null, type }} />
+            <GlobalAlert key={type} alert={{ message: 'Something happened!', isDismissibleWithKey: null, type }} />
         ))}
         <h2>Dismissible</h2>
         <GlobalAlert
