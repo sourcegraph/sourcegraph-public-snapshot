@@ -22,14 +22,16 @@ interface HubSpotConfig {
     portalId: string
     // Unique ID of the form you wish to build
     formId: string
-    // Callback the data is actually sent. This allows you to perform an action when the submission is fully complete,
-    // such as displaying a confirmation or thank you message.
-    onFormSubmitted?: () => void
+}
 
+interface Props {
+    hubSpotConfig: HubSpotConfig
+    initialFormValues?: { [key: string]: string }
+    onFormSubmitted?: () => void
     onError: (error: Error) => void
 }
 
-export function useHubSpotForm(config: HubSpotConfig): React.ReactNode {
+export function useHubSpotForm({ hubSpotConfig, onFormSubmitted, onError, initialFormValues }: Props): React.ReactNode {
     const [isScriptLoaded, setIsScriptLoaded] = useState<boolean>(false)
     const [isFormRendered, setIsFormRendered] = useState<boolean>(false)
     const [containerId] = useState(() => uuid.v4())
@@ -38,25 +40,52 @@ export function useHubSpotForm(config: HubSpotConfig): React.ReactNode {
         setIsScriptLoaded(true)
     }, [])
 
-    const { onFormSubmitted, formId, onError } = config
-    const onFormSubmittedCallback = useCallback(
-        event => {
-            if (typeof onFormSubmitted !== 'function') {
-                return
-            }
+    const { formId } = hubSpotConfig
 
+    const onFormSubmittedCallback = useCallback(() => {
+        if (typeof onFormSubmitted !== 'function') {
+            return
+        }
+        onFormSubmitted()
+    }, [onFormSubmitted])
+
+    const onFormReadyCallback = useCallback(() => {
+        if (!initialFormValues) {
+            return
+        }
+        const iframeDocument = getFormDocument(`hs-${containerId}`)
+        if (!iframeDocument) {
+            return
+        }
+
+        for (const [field, value] of Object.entries(initialFormValues)) {
+            const input = iframeDocument.querySelector<HTMLInputElement>(`input[name="${field}"]`)
+            if (input) {
+                input.value = value
+                input.dispatchEvent(new Event('input', { bubbles: true }))
+            }
+        }
+    }, [containerId, initialFormValues])
+
+    const onMessage = useCallback(
+        event => {
             if (
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 event.data.type === 'hsFormCallback' &&
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                event.data.eventName === 'onFormSubmit' &&
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                 event.data.id === formId
             ) {
-                onFormSubmitted()
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
+                const eventName = event.data.eventName
+
+                if (eventName === 'onFormSubmit') {
+                    onFormSubmittedCallback()
+                } else if (eventName === 'onFormReady') {
+                    onFormReadyCallback()
+                }
             }
         },
-        [onFormSubmitted, formId]
+        [formId, onFormSubmittedCallback, onFormReadyCallback]
     )
 
     useEffect(() => {
@@ -87,22 +116,25 @@ export function useHubSpotForm(config: HubSpotConfig): React.ReactNode {
             //   https://legacydocs.hubspot.com/global-form-events
             // More context can be found here:
             //   https://github.com/escaladesports/react-hubspot-form/issues/22
-            const { onFormSubmitted, onError, ...rest } = config
             if (typeof onFormSubmitted === 'function') {
-                window.addEventListener('message', onFormSubmittedCallback)
+                window.addEventListener('message', onMessage)
                 cleanup = () => window.removeEventListener
             }
 
             if (!isFormRendered) {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
                 const windowWithHubspot: WindowWithHubspot = window as any
-                windowWithHubspot.hbspt.forms.create({ ...rest, target: `#hs-${containerId}` })
+                windowWithHubspot.hbspt.forms.create({ ...hubSpotConfig, target: `#hs-${containerId}` })
                 setIsFormRendered(true)
             }
         }
 
         return cleanup
-    }, [isScriptLoaded, isFormRendered, config, containerId, onFormSubmittedCallback])
+    }, [isScriptLoaded, isFormRendered, hubSpotConfig, containerId, onMessage, onFormSubmitted])
 
     return <div id={`hs-${containerId}`} />
+}
+
+function getFormDocument(containerId: string): undefined | Document {
+    return document.querySelector<HTMLIFrameElement>(`#${containerId} > iframe`)?.contentDocument ?? undefined
 }

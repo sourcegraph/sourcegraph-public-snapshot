@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useState, useRef, SyntheticEvent, useCallback } from 'react'
+import React, { useState, useRef, SyntheticEvent, useCallback, useMemo } from 'react'
 
 import { Button, ProductStatusBadge } from '@sourcegraph/wildcard'
 
@@ -31,12 +31,19 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onErro
         setComplete(currentIndex, true)
     }, [currentIndex, setComplete])
 
-    const form = useHubSpotForm({
-        portalId: PORTAL_ID,
-        formId: FORM_ID,
-        onFormSubmitted: logFormSubmission,
-        onError,
-    })
+    const config = useMemo(
+        () => ({
+            hubSpotConfig: {
+                portalId: PORTAL_ID,
+                formId: FORM_ID,
+            },
+            onFormSubmitted: logFormSubmission,
+            onError,
+            initialFormValues: {},
+        }),
+        [logFormSubmission, onError]
+    )
+    const form = useHubSpotForm(config)
 
     function onClick(): void {
         eventLogger.log('PostSignUpOrgTabApplyToBeta')
