@@ -2,10 +2,10 @@ package runner
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 )
 
@@ -155,7 +155,7 @@ func TestRun(t *testing.T) {
 	t.Run("upgrade (query error)", func(t *testing.T) {
 		store := testStoreWithVersion(10000, false)
 		expectedErrorMessage := "database connection error"
-		store.UpFunc.PushReturn(fmt.Errorf(expectedErrorMessage))
+		store.UpFunc.PushReturn(errors.Newf(expectedErrorMessage))
 
 		if err := makeTestRunner(t, store).Run(ctx, Options{
 			Operations: []MigrationOperation{

@@ -1,8 +1,6 @@
 package runner
 
 import (
-	"fmt"
-
 	"github.com/cockroachdb/errors"
 )
 
@@ -80,7 +78,7 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 	for _, version := range schemaVersion.appliedVersions {
 		definition, ok := definitions.GetByID(version)
 		if !ok {
-			return MigrationOperation{}, fmt.Errorf("unknown version %d", version)
+			return MigrationOperation{}, errors.Newf("unknown version %d", version)
 		}
 
 		for _, parent := range definition.Parents {
