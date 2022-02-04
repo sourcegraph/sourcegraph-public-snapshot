@@ -25,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig types.CtagsConfig, maxRepos int) (types.SearchFunc, error) {
+func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig types.CtagsConfig, maxTotalPathsLength int, maxRepos int) (types.SearchFunc, error) {
 	parser := mustCreateCtagsParser(ctagsConfig)
 
 	operations := NewOperations(observationContext)
@@ -35,7 +35,7 @@ func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig
 	gitserverClient := symbolsGitserver.NewClient(observationContext)
 
 	shouldRead := func(tarHeader *tar.Header) bool { return true }
-	f := fetcher.NewRepositoryFetcher(gitserverClient, 16, observationContext, shouldRead)
+	f := fetcher.NewRepositoryFetcher(gitserverClient, 16, maxTotalPathsLength, observationContext, shouldRead)
 
 	db := mustInitializeCodeIntelDB()
 

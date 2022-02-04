@@ -112,7 +112,7 @@ func main() {
 
 	var searchFunc types.SearchFunc
 	if config.useRockskip {
-		searchFunc, err = api.MakeRockskipSearchFunc(observationContext, config.ctags, config.maxRepos)
+		searchFunc, err = api.MakeRockskipSearchFunc(observationContext, config.ctags, config.maxTotalPathsLength, config.maxRepos)
 		if err != nil {
 			log.Fatalf("Failed to create rockskip search function: %s", err)
 		}
