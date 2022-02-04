@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var isTesting = false
+var IsTesting = false
 
 func ReadDefinitions(fs fs.FS) (*Definitions, error) {
 	migrationDefinitions, err := readDefinitions(fs)
@@ -28,7 +28,7 @@ func ReadDefinitions(fs fs.FS) (*Definitions, error) {
 		return nil, err
 	}
 
-	if !isTesting {
+	if !IsTesting {
 		if err := validateLinearizedGraph(migrationDefinitions); err != nil {
 			return nil, err
 		}

@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	isTesting = true
+	IsTesting = true
 }
 
 var queryComparer = cmp.Comparer(func(a, b *sqlf.Query) bool {
