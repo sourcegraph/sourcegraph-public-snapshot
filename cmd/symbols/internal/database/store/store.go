@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
+	sharedtypes "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -18,7 +18,7 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	Search(ctx context.Context, args types.SearchArgs) ([]result.Symbol, error)
+	Search(ctx context.Context, args sharedtypes.SearchArgs) ([]result.Symbol, error)
 
 	CreateMetaTable(ctx context.Context) error
 	GetCommit(ctx context.Context) (string, bool, error)

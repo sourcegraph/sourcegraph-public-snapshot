@@ -11,10 +11,12 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
-	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
-	rockskip "github.com/sourcegraph/sourcegraph/enterprise/cmd/rockskip"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared/fetcher"
+	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/gitserver"
+	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/observability"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared/types"
+	sharedtypes "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -25,10 +27,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig types.CtagsConfig, maxTotalPathsLength int, maxRepos int) (types.SearchFunc, error) {
+func MakeRockskipSearchFunc(observationContext *observation.Context, ctagsConfig sharedtypes.CtagsConfig, maxTotalPathsLength int, maxRepos int) (sharedtypes.SearchFunc, error) {
 	parser := mustCreateCtagsParser(ctagsConfig)
 
-	operations := NewOperations(observationContext)
+	operations := sharedobservability.NewOperations(observationContext)
 	// TODO use operations
 	_ = operations
 
@@ -160,7 +162,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	return db
 }
 
-func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
+func mustCreateCtagsParser(ctagsConfig sharedtypes.CtagsConfig) ctags.Parser {
 	options := ctags.Options{
 		Bin:                ctagsConfig.Command,
 		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
@@ -240,7 +242,7 @@ func (g Gitserver) ArchiveEach(commit string, paths []string, onFile func(path s
 
 	for parseRequestOrError := range parseRequestOrErrors {
 		if parseRequestOrError.Err != nil {
-			return parseRequestOrError.Err
+			return errors.Wrap(parseRequestOrError.Err, "FetchRepositoryArchive")
 		}
 
 		err := onFile(parseRequestOrError.ParseRequest.Path, parseRequestOrError.ParseRequest.Data)

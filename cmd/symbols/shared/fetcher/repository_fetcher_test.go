@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared/gitserver"
+	sharedtypes "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -42,7 +42,7 @@ func TestRepositoryFetcher(t *testing.T) {
 
 	shouldRead := func(tarHeader *tar.Header) bool { return tarHeader.Size <= 524288 }
 	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext, shouldRead)
-	args := types.SearchArgs{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
+	args := sharedtypes.SearchArgs{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
 
 	t.Run("all paths", func(t *testing.T) {
 		paths := []string(nil)

@@ -13,9 +13,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared/gitserver"
+	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/shared/observability"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -55,7 +56,7 @@ func TestHandler(t *testing.T) {
 	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext, shouldRead), 0, 10, &observation.TestContext)
 	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser)
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(MakeSqliteSearchFunc(NewOperations(&observation.TestContext), cachedDatabaseWriter), "")
+	handler := NewHandler(MakeSqliteSearchFunc(sharedobservability.NewOperations(&observation.TestContext), cachedDatabaseWriter), "")
 
 	server := httptest.NewServer(handler)
 	defer server.Close()

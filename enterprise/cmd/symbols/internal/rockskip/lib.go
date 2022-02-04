@@ -307,7 +307,7 @@ func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, 
 			symbols, err := parse(addedPath, contents)
 			tasklog.Start("idle")
 			if err != nil {
-				return err
+				return errors.Wrap(err, "parse")
 			}
 			blob := Blob{
 				Commit:  entry.Commit,
