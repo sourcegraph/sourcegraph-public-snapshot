@@ -3,6 +3,7 @@ package result
 import (
 	"net/url"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -123,6 +124,15 @@ func (fm *FileMatch) Limit(limit int) int {
 	if after := limit - fm.ResultCount(); after >= 0 {
 		return after
 	}
+
+	// Sort the line matches so the ones that are truncated
+	// are the last in the file. This is especially important
+	// when two FileMatches have been merged because otherwise
+	// you will have things that should be highlighted on the
+	// same line as other highlights.
+	sort.Slice(fm.LineMatches, func(i, j int) bool {
+		return fm.LineMatches[i].LineNumber < fm.LineMatches[j].LineNumber
+	})
 
 	// Invariant: limit > 0
 	for i, m := range fm.LineMatches {
