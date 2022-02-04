@@ -96,10 +96,14 @@ const maxTotalPaths = 999
 
 // The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
 // will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
-// could hit HTTP 431 (header fields too large) when sending the list of paths `git archive paths...`.
-// The actual limit is somewhere between 372KB and 450KB, and we want to be well under that.
-// 100KB seems safe.
-const maxTotalPathsLength = 100000
+// could hit the error "argument list too long" by exceeding the limit on the number of arguments to a
+// command.
+//
+// Mac  : getconf ARG_MAX returns 1,048,576
+// Linux: getconf ARG_MAX returns 2,097,152
+//
+// We want to remain well under that limit, so 100,000 seems safe.
+const maxTotalPathsLength = 100_000
 
 func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) (bool, error) {
 	observability.SetParseAmount(ctx, observability.PartialParse)
