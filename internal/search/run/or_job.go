@@ -1,4 +1,4 @@
-package graphqlbackend
+package run
 
 import (
 	"context"
@@ -10,21 +10,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // NewAndJob creates a job that will run each of its child jobs and stream
 // deduplicated matches that were streamed by at least one of the jobs.
-func NewOrJob(children ...run.Job) run.Job {
+func NewOrJob(children ...Job) Job {
 	return &OrJob{
 		children: children,
 	}
 }
 
 type OrJob struct {
-	children []run.Job
+	children []Job
 }
 
 func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {

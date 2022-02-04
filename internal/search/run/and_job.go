@@ -1,4 +1,4 @@
-package graphqlbackend
+package run
 
 import (
 	"context"
@@ -10,16 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // NewAndJob creates a job that will run each of its child jobs and only
 // stream matches that were found in all of the child jobs.
-func NewAndJob(children ...run.Job) run.Job {
+func NewAndJob(children ...Job) Job {
 	if len(children) == 0 {
-		return run.NewNoopJob()
+		return NewNoopJob()
 	} else if len(children) == 1 {
 		return children[0]
 	}
@@ -27,7 +26,7 @@ func NewAndJob(children ...run.Job) run.Job {
 }
 
 type AndJob struct {
-	children []run.Job
+	children []Job
 }
 
 func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {

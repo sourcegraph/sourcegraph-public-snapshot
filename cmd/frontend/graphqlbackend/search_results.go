@@ -1107,7 +1107,7 @@ func (r *searchResolver) toAndJob(q query.Basic) (run.Job, error) {
 		operands = append(operands, run.NewLimitJob(maxTryCount, operand))
 	}
 
-	return NewAndJob(operands...), nil
+	return run.NewAndJob(operands...), nil
 }
 
 // toOrJob creates a new job from a basic query whose pattern is an Or operator at the top level
@@ -1124,7 +1124,7 @@ func (r *searchResolver) toOrJob(q query.Basic) (run.Job, error) {
 		}
 		operands = append(operands, operand)
 	}
-	return NewOrJob(operands...), nil
+	return run.NewOrJob(operands...), nil
 }
 
 // evaluateOr performs set union on result sets. It collects results for all
