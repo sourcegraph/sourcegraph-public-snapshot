@@ -18,6 +18,14 @@ import (
 	"github.com/ghodss/yaml"
 )
 
+type featureFlags struct {
+	StatelessBuild bool
+}
+
+var FeatureFlags = featureFlags{
+	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true",
+}
+
 type Pipeline struct {
 	Env    map[string]string `json:"env,omitempty"`
 	Steps  []interface{}     `json:"steps"`
@@ -39,10 +47,6 @@ type BuildOptions struct {
 	Branch   string                 `json:"branch,omitempty"`
 	MetaData map[string]interface{} `json:"meta_data,omitempty"`
 	Env      map[string]string      `json:"env,omitempty"`
-}
-
-func WantsStatelessBuild() bool {
-	return os.Getenv("WANT_STATELESS") != ""
 }
 
 func (bo BuildOptions) MarshalJSON() ([]byte, error) {
@@ -152,7 +156,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 
 	// Set a default agent queue to assign this job to
 	if len(step.Agents) == 0 {
-		if WantsStatelessBuild() {
+		if FeatureFlags.StatelessBuild {
 			step.Agents["queue"] = "job"
 		} else {
 			step.Agents["queue"] = "standard"
