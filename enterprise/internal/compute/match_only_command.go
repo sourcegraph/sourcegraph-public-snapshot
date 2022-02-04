@@ -6,7 +6,9 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type MatchOnly struct {
@@ -31,7 +33,7 @@ func (c *MatchOnly) String() string {
 	)
 }
 
-func fromRegexpMatches(submatches []int, namedGroups []string, lineValue string, lineNumber int) Match {
+func fromRegexpMatches(submatches []int, namedGroups []string, content string) Match {
 	env := make(Environment)
 	var firstValue string
 	var firstRange Range
@@ -45,8 +47,15 @@ func fromRegexpMatches(submatches []int, namedGroups []string, lineValue string,
 			// group inside it did not. Ignore this entry.
 			continue
 		}
-		value := lineValue[start:end]
-		range_ := newRange(lineNumber, lineNumber, start, end)
+		value := content[start:end]
+		// NOTE: Since we match potentially multiline fragments, we
+		// cannot assume that we are matching only on one line. The
+		// regex library doesn't do line accounting and doesn't give
+		// this information about matches. So, we cannot get the line
+		// range/column range without doing real heavy work. We
+		// currently don't do that heavy work and only expose the range
+		// offsets. https://github.com/sourcegraph/sourcegraph/issues/30711
+		range_ := newOffsetRange(start, end)
 
 		if j == 0 {
 			// The first submatch is the overall match
@@ -67,20 +76,23 @@ func fromRegexpMatches(submatches []int, namedGroups []string, lineValue string,
 	return Match{Value: firstValue, Range: firstRange, Environment: env}
 }
 
-func matchOnly(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
-	matches := make([]Match, 0, len(fm.LineMatches))
-	for _, l := range fm.LineMatches {
-		for _, submatches := range r.FindAllStringSubmatchIndex(l.Preview, -1) {
-			matches = append(matches, fromRegexpMatches(submatches, r.SubexpNames(), l.Preview, int(l.LineNumber)))
-		}
+func matchOnly(ctx context.Context, fm *result.FileMatch, r *regexp.Regexp) (*MatchContext, error) {
+	content, err := git.ReadFile(ctx, fm.Repo.Name, fm.CommitID, fm.Path, 0, authz.DefaultSubRepoPermsChecker)
+	if err != nil {
+		return nil, err
 	}
-	return &MatchContext{Matches: matches, Path: fm.Path}
+
+	matches := []Match{}
+	for _, submatches := range r.FindAllStringSubmatchIndex(string(content), -1) {
+		matches = append(matches, fromRegexpMatches(submatches, r.SubexpNames(), string(content)))
+	}
+	return &MatchContext{Matches: matches, Path: fm.Path}, nil
 }
 
-func (c *MatchOnly) Run(_ context.Context, r result.Match) (Result, error) {
+func (c *MatchOnly) Run(ctx context.Context, r result.Match) (Result, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		return matchOnly(m, c.ComputePattern.(*Regexp).Value), nil
+		return matchOnly(ctx, m, c.ComputePattern.(*Regexp).Value)
 	}
 	return nil, nil
 }

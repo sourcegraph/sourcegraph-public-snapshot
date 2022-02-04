@@ -1,12 +1,15 @@
 package compute
 
 import (
+	"context"
 	"encoding/json"
 	"regexp"
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type serializer func(*MatchContext) interface{}
@@ -26,19 +29,19 @@ func environment(r *MatchContext) interface{} {
 }
 
 func Test_matchOnly(t *testing.T) {
+	content := "abcdefgh\n1234"
+
+	git.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
+		return []byte(content), nil
+	}
+
 	data := &result.FileMatch{
 		File: result.File{Path: "bedge"},
-		LineMatches: []*result.LineMatch{
-			{
-				Preview:    "abcdefgh",
-				LineNumber: 1,
-			},
-		},
 	}
 
 	test := func(input string, serialize serializer) string {
 		r, _ := regexp.Compile(input)
-		result := matchOnly(data, r)
+		result, _ := matchOnly(context.Background(), data, r)
 		v, _ := json.MarshalIndent(serialize(result), "", "  ")
 		return string(v)
 	}
@@ -53,6 +56,11 @@ func Test_matchOnly(t *testing.T) {
   "ThisIsNamed": "b"
 }`).Equal(t, test("(a)(?P<ThisIsNamed>b)", environment))
 
+	autogold.Want("compute multiline regexp submatch", `{
+  "1": "abcdefgh",
+  "2": "1234"
+}`).Equal(t, test("(.*)\n(.*)", environment))
+
 	autogold.Want("no slice out of bounds access on capture group", "{}").Equal(t, test("(lasvegans)|abcdefgh", environment))
 
 	autogold.Want("compute regexp submatch nonempty environment", `{
@@ -61,14 +69,14 @@ func Test_matchOnly(t *testing.T) {
       "value": "abcdefgh",
       "range": {
         "start": {
-          "offset": -1,
-          "line": 1,
-          "column": 0
+          "offset": 0,
+          "line": -1,
+          "column": -1
         },
         "end": {
-          "offset": -1,
-          "line": 1,
-          "column": 8
+          "offset": 8,
+          "line": -1,
+          "column": -1
         }
       },
       "environment": {
@@ -76,14 +84,14 @@ func Test_matchOnly(t *testing.T) {
           "value": "bc",
           "range": {
             "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 1
+              "offset": 1,
+              "line": -1,
+              "column": -1
             },
             "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 3
+              "offset": 3,
+              "line": -1,
+              "column": -1
             }
           }
         },
@@ -91,14 +99,14 @@ func Test_matchOnly(t *testing.T) {
           "value": "c",
           "range": {
             "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 2
+              "offset": 2,
+              "line": -1,
+              "column": -1
             },
             "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 3
+              "offset": 3,
+              "line": -1,
+              "column": -1
             }
           }
         },
@@ -106,14 +114,14 @@ func Test_matchOnly(t *testing.T) {
           "value": "de",
           "range": {
             "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 3
+              "offset": 3,
+              "line": -1,
+              "column": -1
             },
             "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 5
+              "offset": 5,
+              "line": -1,
+              "column": -1
             }
           }
         },
@@ -121,14 +129,14 @@ func Test_matchOnly(t *testing.T) {
           "value": "g",
           "range": {
             "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 6
+              "offset": 6,
+              "line": -1,
+              "column": -1
             },
             "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 7
+              "offset": 7,
+              "line": -1,
+              "column": -1
             }
           }
         }
@@ -144,14 +152,14 @@ func Test_matchOnly(t *testing.T) {
       "value": "a",
       "range": {
         "start": {
-          "offset": -1,
-          "line": 1,
-          "column": 0
+          "offset": 0,
+          "line": -1,
+          "column": -1
         },
         "end": {
-          "offset": -1,
-          "line": 1,
-          "column": 1
+          "offset": 1,
+          "line": -1,
+          "column": -1
         }
       },
       "environment": {
@@ -159,14 +167,14 @@ func Test_matchOnly(t *testing.T) {
           "value": "a",
           "range": {
             "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 0
+              "offset": 0,
+              "line": -1,
+              "column": -1
             },
             "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 1
+              "offset": 1,
+              "line": -1,
+              "column": -1
             }
           }
         }
@@ -176,14 +184,14 @@ func Test_matchOnly(t *testing.T) {
       "value": "g",
       "range": {
         "start": {
-          "offset": -1,
-          "line": 1,
-          "column": 6
+          "offset": 6,
+          "line": -1,
+          "column": -1
         },
         "end": {
-          "offset": -1,
-          "line": 1,
-          "column": 7
+          "offset": 7,
+          "line": -1,
+          "column": -1
         }
       },
       "environment": {
@@ -191,14 +199,14 @@ func Test_matchOnly(t *testing.T) {
           "value": "g",
           "range": {
             "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 6
+              "offset": 6,
+              "line": -1,
+              "column": -1
             },
             "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 7
+              "offset": 7,
+              "line": -1,
+              "column": -1
             }
           }
         }

@@ -7,25 +7,25 @@ import (
 
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestToResultResolverList(t *testing.T) {
-	matches := []result.Match{
-		&result.FileMatch{
-			LineMatches: []*result.LineMatch{
-				{Preview: "a"},
-				{Preview: "b"},
-			},
-		},
+	content := "ab"
+
+	git.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
+		return []byte(content), nil
 	}
+
 	test := func(input string) string {
 		computeQuery, _ := compute.Parse(input)
 		resolvers, _ := toResultResolverList(
 			context.Background(),
 			computeQuery.Command,
-			matches,
+			[]result.Match{&result.FileMatch{}},
 			database.NewMockDB(),
 		)
 		results := make([]string, 0, len(resolvers))

@@ -46,9 +46,16 @@ func newLocation(line, column, offset int) Location {
 	}
 }
 
-func newRange(startLine, endLine, startColumn, endColumn int) Range {
+func NewRange(startLine, endLine, startColumn, endColumn int) Range {
 	return Range{
 		Start: newLocation(startLine, startColumn, -1),
 		End:   newLocation(endLine, endColumn, -1),
+	}
+}
+
+func newOffsetRange(start, end int) Range {
+	return Range{
+		Start: newLocation(-1, -1, start),
+		End:   newLocation(-1, -1, end),
 	}
 }
