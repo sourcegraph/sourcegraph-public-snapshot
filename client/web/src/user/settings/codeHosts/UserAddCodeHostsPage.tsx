@@ -2,6 +2,7 @@ import React, { useCallback, useState, useEffect } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { keyExistsIn } from '@sourcegraph/shared/src/util/types'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
@@ -10,8 +11,14 @@ import { Button, Container, PageHeader, LoadingSpinner, Link, Alert } from '@sou
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
-import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import {
+    ExternalServiceKind,
+    ListExternalServiceFields,
+    OrgFeatureFlagValueResult,
+    OrgFeatureFlagValueVariables,
+} from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import { GET_ORG_FEATURE_FLAG_VALUE, GITHUB_APP_FEATURE_FLAG_NAME } from '../../../org/backend'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
@@ -281,6 +288,19 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [authProvidersByKind]
     )
 
+    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        GET_ORG_FEATURE_FLAG_VALUE,
+        {
+            variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            skip: !(owner.type === 'org'),
+        }
+    )
+
+    const useGitHubApp = data?.organizationFeatureFlagValue || false
+
     return (
         <div className="user-code-hosts-page">
             <PageTitle title="Code host connections" />
@@ -327,6 +347,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
+                                        loading={kind === ExternalServiceKind.GITHUB && loading}
+                                        useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
                                     />
                                 </CodeHostListItem>
                             ) : null
