@@ -17,7 +17,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Link, renderBrandedToString, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -25,6 +25,7 @@ import { SearchPatternType } from '../../graphql-operations'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../CtaIcons'
 import featureTourStyles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
+import { renderBrandedToString } from '../render-branded-to-string'
 import {
     getTourOptions,
     HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY,

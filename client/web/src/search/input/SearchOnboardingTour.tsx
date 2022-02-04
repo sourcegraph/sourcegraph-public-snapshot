@@ -15,9 +15,10 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
-import { Button, renderBrandedToString } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { renderBrandedToString } from '../render-branded-to-string'
 
 import styles from './SearchOnboardingTour.module.scss'
 import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
