@@ -25,6 +25,8 @@ interface HubSpotConfig {
     // Callback the data is actually sent. This allows you to perform an action when the submission is fully complete,
     // such as displaying a confirmation or thank you message.
     onFormSubmitted?: () => void
+
+    onError: (error: Error) => void
 }
 
 export function useHubSpotForm(config: HubSpotConfig): React.ReactNode {
@@ -35,11 +37,8 @@ export function useHubSpotForm(config: HubSpotConfig): React.ReactNode {
     const onLoad = useCallback(() => {
         setIsScriptLoaded(true)
     }, [])
-    const onError = useCallback(() => {
-        throw new Error('Failed to load HubSpot form')
-    }, [])
 
-    const { onFormSubmitted, formId } = config
+    const { onFormSubmitted, formId, onError } = config
     const onFormSubmittedCallback = useCallback(
         event => {
             if (typeof onFormSubmitted !== 'function') {
@@ -88,7 +87,7 @@ export function useHubSpotForm(config: HubSpotConfig): React.ReactNode {
             //   https://legacydocs.hubspot.com/global-form-events
             // More context can be found here:
             //   https://github.com/escaladesports/react-hubspot-form/issues/22
-            const { onFormSubmitted, ...rest } = config
+            const { onFormSubmitted, onError, ...rest } = config
             if (typeof onFormSubmitted === 'function') {
                 window.addEventListener('message', onFormSubmittedCallback)
                 cleanup = () => window.removeEventListener

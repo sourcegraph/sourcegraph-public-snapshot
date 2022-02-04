@@ -46,6 +46,8 @@ export const Step: React.FunctionComponent<StepProps> = ({ children, borderColor
     const { setCurrent, stepIndex } = useStepListContext()
     const { current, steps } = state
 
+    // Marking all previous steps active helps when we using the debug option to start the flow in
+    // the middle.
     const didSeeStep = steps[stepIndex]?.isVisited || stepIndex <= current
 
     const disabled = !didSeeStep

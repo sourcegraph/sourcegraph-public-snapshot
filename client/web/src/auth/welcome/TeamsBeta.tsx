@@ -12,14 +12,14 @@ import styles from './TeamsBeta.module.scss'
 import { useHubSpotForm } from './useHubSpotForm'
 
 const PORTAL_ID = '2762526'
-// const FORM_ID = 'e0e43746-83e9-4133-97bd-9954a60c7af8'
-const FORM_ID = 'b460046a-b1e1-495c-8057-0a954390c011'
+const FORM_ID = 'e0e43746-83e9-4133-97bd-9954a60c7af8'
 
 interface TeamsBeta {
     onFinish: FinishWelcomeFlow
+    onError: (error: Error) => void
 }
 
-export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish }) => {
+export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish, onError }) => {
     const contentReference = useRef<HTMLDivElement | null>(null)
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const [isTransitioning, setIsTransitioning] = useState<boolean>(false)
@@ -35,6 +35,7 @@ export const TeamsBeta: React.FunctionComponent<TeamsBeta> = ({ onFinish }) => {
         portalId: PORTAL_ID,
         formId: FORM_ID,
         onFormSubmitted: logFormSubmission,
+        onError,
     })
 
     function onClick(): void {

@@ -200,7 +200,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                             </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <TeamsBeta onFinish={finishWelcomeFlow} />
+                                            <TeamsBeta onFinish={finishWelcomeFlow} onError={onError} />
                                         </StepPanel>
                                         <StepPanel>
                                             <StartSearching
