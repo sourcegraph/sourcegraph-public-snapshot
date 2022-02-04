@@ -158,7 +158,7 @@ func (t *TaskLog) Print() {
 		total += task.Duration
 		totalCount += task.Count
 	}
-	fmt.Printf("Tasks (%s total):\n", total)
+	fmt.Printf("Tasks (%s total): ", total)
 
 	type kv struct {
 		Key   string
@@ -175,8 +175,9 @@ func (t *TaskLog) Print() {
 	})
 
 	for _, kv := range kvs {
-		fmt.Printf("  %6d%% %6dx %s\n", kv.Value.Duration*100/total, kv.Value.Count, kv.Key)
+		fmt.Printf("%d%% %dx %s ", kv.Value.Duration*100/total, kv.Value.Count, kv.Key)
 	}
+	fmt.Println()
 }
 
 func Index(git Git, db *sql.DB, tasklog *TaskLog, parse ParseSymbolsFunc, repo, givenCommit string, maxRepos int) (err error) {
