@@ -95,12 +95,12 @@ func (s *notebooksStore) Transact(ctx context.Context) (*notebooksStore, error) 
 }
 
 const notebooksPermissionsConditionFmtStr = `(
-    -- Bypass permission check
-    %s
-    -- Happy path of public notebooks
-    OR notebooks.public
-    -- Private notebooks are available only to its creator
-    OR (notebooks.namespace_user_id IS NOT NULL AND notebooks.namespace_user_id = %d)
+	-- Bypass permission check
+	%s
+	-- Happy path of public notebooks
+	OR notebooks.public
+	-- Private notebooks are available only to its creator
+	OR (notebooks.namespace_user_id IS NOT NULL AND notebooks.namespace_user_id = %d)
 	-- Private org notebooks are available only to its members
 	OR (notebooks.namespace_org_id IS NOT NULL AND EXISTS (SELECT FROM org_members om WHERE om.org_id = notebooks.namespace_org_id AND om.user_id = %d))
 )`
