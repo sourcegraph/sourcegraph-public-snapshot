@@ -68,12 +68,8 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             this.removes
                 .pipe(
                     filter(() => {
-                        if (this.props.org.hasOneMember) {
-                            if (this.props.blockRemoveOnlyMember) {
-                                if (this.props.blockRemoveOnlyMember()) {
-                                    return false
-                                }
-                            }
+                        if (this.props.org.hasOneMember && this.props.blockRemoveOnlyMember?.()) {
+                            return false
                         }
                         return window.confirm(
                             this.isSelf ? 'Leave the organization?' : `Remove the user ${this.props.node.username}?`
