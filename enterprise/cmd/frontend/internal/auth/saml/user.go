@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type authnResponseInfo struct {

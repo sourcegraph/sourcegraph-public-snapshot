@@ -6,29 +6,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
-
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/hashicorp/go-multierror"
-
-	"golang.org/x/time/rate"
-
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ workerutil.Handler = &workHandler{}
@@ -91,7 +82,7 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job, r
 		groupedByCapture := query.GroupByCaptureMatch(byRepo)
 		repoId, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repoKey))
 		if idErr != nil {
-			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryIDCapture"))
+			err = errors.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryIDCapture"))
 			continue
 		}
 		for _, group := range groupedByCapture {
@@ -181,19 +172,19 @@ func (r *workHandler) searchHandler(ctx context.Context, job *Job, series *types
 	for graphQLRepoID, matchCount := range matchesPerRepo {
 		dbRepoID, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(graphQLRepoID))
 		if idErr != nil {
-			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryID"))
+			err = errors.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryID"))
 			continue
 		}
 		repoName := repoNames[graphQLRepoID]
 		if len(repoName) == 0 {
 			// this really should never happen, expect if for some reason the gql response is broken
-			err = multierror.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
+			err = errors.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
 			continue
 		}
 
 		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
-			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
+			err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
 	}
 	return err
@@ -211,7 +202,7 @@ func (r *workHandler) computeHandler(ctx context.Context, job *Job, series *type
 		return err
 	}
 	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
-		err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
 }
@@ -236,7 +227,7 @@ func (r *workHandler) searchStreamHandler(ctx context.Context, job *Job, series 
 	for _, match := range streamRepoCounts {
 		args := ToRecording(job, float64(match.MatchCount), recordTime, match.RepositoryName, api.RepoID(match.RepositoryID), nil)
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
-			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
+			err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
 	}
 	return err
