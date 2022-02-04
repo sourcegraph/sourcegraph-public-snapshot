@@ -115,8 +115,8 @@ func TestBatchingStream(t *testing.T) {
 		}))
 
 		var wg sync.WaitGroup
-		wg.Add(1000)
-		for i := 0; i < 1000; i++ {
+		wg.Add(10)
+		for i := 0; i < 10; i++ {
 			go func() {
 				s.Send(SearchEvent{Results: make(result.Matches, 1)})
 				wg.Done()
@@ -129,6 +129,6 @@ func TestBatchingStream(t *testing.T) {
 
 		// The rest should be sent after flushing
 		s.Done()
-		require.Equal(t, count.Load(), int64(1000))
+		require.Equal(t, count.Load(), int64(10))
 	})
 }
