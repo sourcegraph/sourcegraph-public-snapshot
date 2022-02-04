@@ -67,6 +67,7 @@ export interface SearchBoxProps
  */
 export interface SearchBoxEditor {
     focus: () => void
+    updateOptions: (newOptions: { fontSize?: number }) => void
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
