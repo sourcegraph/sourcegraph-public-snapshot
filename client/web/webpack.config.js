@@ -141,42 +141,42 @@ const config = {
     }),
     getMonacoWebpackPlugin(),
     !shouldServeIndexHTML &&
-    new WebpackManifestPlugin({
-      writeToFileEmit: true,
-      fileName: 'webpack.manifest.json',
-      // Only output files that are required to run the application
-      filter: ({ isInitial }) => isInitial,
-    }),
+      new WebpackManifestPlugin({
+        writeToFileEmit: true,
+        fileName: 'webpack.manifest.json',
+        // Only output files that are required to run the application
+        filter: ({ isInitial }) => isInitial,
+      }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
     shouldAnalyze && new BundleAnalyzerPlugin(),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     isProduction &&
-    new CompressionPlugin({
-      filename: '[path][base].gz',
-      algorithm: 'gzip',
-      test: /\.(js|css|svg)$/,
-      compressionOptions: {
-        /** Maximum compression level for Gzip */
-        level: 9,
-      },
-    }),
+      new CompressionPlugin({
+        filename: '[path][base].gz',
+        algorithm: 'gzip',
+        test: /\.(js|css|svg)$/,
+        compressionOptions: {
+          /** Maximum compression level for Gzip */
+          level: 9,
+        },
+      }),
     isProduction &&
-    new CompressionPlugin({
-      filename: '[path][base].br',
-      algorithm: 'brotliCompress',
-      test: /\.(js|css|svg)$/,
-      compressionOptions: {
-        /** Maximum compression level for Brotli */
-        level: 11,
-      },
-      /**
-       * We get little/no benefits from compressing files that are already under this size.
-       * We can fall back to dynamic gzip for these.
-       */
-      threshold: 10240,
-    }),
-  ].filter(Boolean),
+      new CompressionPlugin({
+        filename: '[path][base].br',
+        algorithm: 'brotliCompress',
+        test: /\.(js|css|svg)$/,
+        compressionOptions: {
+          /** Maximum compression level for Brotli */
+          level: 11,
+        },
+        /**
+         * We get little/no benefits from compressing files that are already under this size.
+         * We can fall back to dynamic gzip for these.
+         */
+        threshold: 10240,
+      }),
+    ].filter(Boolean),
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
