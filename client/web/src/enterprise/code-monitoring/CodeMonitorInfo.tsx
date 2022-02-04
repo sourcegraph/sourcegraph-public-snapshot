@@ -26,7 +26,8 @@ export const CodeMonitorInfo: React.FunctionComponent<{ className?: string }> = 
             </p>
             <Button
                 aria-label="Close alert"
-                className={classNames('btn-icon', styles.closeButton)}
+                variant="icon"
+                className={styles.closeButton}
                 onClick={() => setVisible(false)}
             >
                 <CloseIcon className="icon-inline" />

@@ -48,18 +48,10 @@ import {
 import {
     asError,
     asObservable,
-    FileSpec,
     isDefined,
     isInstanceOf,
     property,
-    RawRepoSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
-    toRootURI,
-    toURIWithPath,
-    UIPositionSpec,
-    ViewStateSpec,
+    registerHighlightContributions,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
@@ -75,7 +67,6 @@ import {
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
 import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
@@ -83,6 +74,17 @@ import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/not
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import {
+    FileSpec,
+    UIPositionSpec,
+    RawRepoSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+    toRootURI,
+    toURIWithPath,
+    ViewStateSpec,
+} from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'

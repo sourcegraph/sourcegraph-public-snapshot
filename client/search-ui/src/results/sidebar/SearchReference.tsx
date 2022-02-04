@@ -390,7 +390,8 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                     </span>
                 </Button>
                 <Button
-                    className={classNames('btn-icon', styles.collapseButton)}
+                    variant="icon"
+                    className={styles.collapseButton}
                     onClick={event => {
                         event.stopPropagation()
                         setCollapsed(collapsed => !collapsed)

@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import { numberWithCommas } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { Link } from '@sourcegraph/wildcard'
 
 import { SingleValueCard } from '../../components/SingleValueCard'
 import { formatUserCount } from '../../productSubscription/helpers'
@@ -62,9 +63,9 @@ export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
             </div>
             <small>
                 Learn more about{' '}
-                <a href="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener noreferrer">
+                <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener noreferrer">
                     Sourcegraph's true-up pricing model
-                </a>
+                </Link>
                 .
             </small>
         </div>

@@ -11,16 +11,10 @@ import {
     asError,
     createAggregateError,
     ErrorLike,
-    FileSpec,
     isErrorLike,
     isDefined,
     memoizeObservable,
-    ModeSpec,
     property,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
-    UIPositionSpec,
 } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -33,6 +27,14 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import {
+    FileSpec,
+    ModeSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+    UIPositionSpec,
+} from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'

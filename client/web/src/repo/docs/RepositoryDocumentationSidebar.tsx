@@ -4,8 +4,8 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback, useMemo } from 'react'
 
-import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/common'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
+import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
 import { Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
 
@@ -140,10 +140,10 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
     if (!toggleSidebar) {
         return (
             <Button
-                className="position-absolute btn-icon border-right border-bottom rounded-0 repo-revision-container__toggle"
+                className="position-absolute border-right border-bottom rounded-0 repo-revision-container__toggle"
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
-                variant="link"
+                variant="icon"
             >
                 <FileTreeIcon className="icon-inline" />
             </Button>

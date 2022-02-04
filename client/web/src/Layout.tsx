@@ -206,7 +206,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...themeProps,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
-        isMacPlatform,
+        isMacPlatform: isMacPlatform(),
     }
 
     return (

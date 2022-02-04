@@ -271,7 +271,7 @@ const useTourWithSteps = ({
                 text: generateStep({
                     tour,
                     stepNumber: 4,
-                    content: generateStepContent('Search', `(Or press ${isMacPlatform ? 'RETURN' : 'ENTER'})`),
+                    content: generateStepContent('Search', `(Or press ${isMacPlatform() ? 'RETURN' : 'ENTER'})`),
                 }),
                 when: {
                     show() {

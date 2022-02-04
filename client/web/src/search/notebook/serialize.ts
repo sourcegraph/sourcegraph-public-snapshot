@@ -1,5 +1,5 @@
-import { toAbsoluteBlobURL } from '@sourcegraph/common'
 import { IHighlightLineRange, NotebookBlock } from '@sourcegraph/shared/src/schema'
+import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { CreateNotebookBlockInput, NotebookBlockType } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -35,7 +35,7 @@ export function serializeBlockInput(block: BlockInput, sourcegraphURL: string): 
     }
 }
 
-function parseFileBlockInput(input: string): FileBlockInput {
+export function parseFileBlockInput(input: string): FileBlockInput {
     try {
         const { repoName, rawRevision, filePath, position, range } = parseBrowserRepoURL(input)
 

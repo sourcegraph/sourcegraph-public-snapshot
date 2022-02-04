@@ -3,7 +3,6 @@ package secrets
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 
@@ -96,7 +95,7 @@ func (s *Store) Get(key string, target interface{}) error {
 	if v, ok := s.m[key]; ok {
 		return json.Unmarshal(v, target)
 	}
-	return fmt.Errorf("%w: %s not found", ErrSecretNotFound, key)
+	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
 }
 
 // Remove deletes a value from memory.
@@ -105,7 +104,7 @@ func (s *Store) Remove(key string) error {
 		delete(s.m, key)
 		return nil
 	}
-	return fmt.Errorf("%w: %s not found", ErrSecretNotFound, key)
+	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
 }
 
 // Keys returns out all keys

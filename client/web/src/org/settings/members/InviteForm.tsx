@@ -142,7 +142,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                             <Button
                                 type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
                                 disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                className={viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'}
+                                variant={viewerCanAddUserToOrganization ? 'secondary' : 'primary'}
                                 data-tooltip={
                                     emailInvitesEnabled
                                         ? 'Send invitation email with link to join this organization'
@@ -192,8 +192,8 @@ function inviteUserToOrganization(
 ): Promise<InviteUserToOrganizationResult['inviteUserToOrganization']> {
     return requestGraphQL<InviteUserToOrganizationResult, InviteUserToOrganizationVariables>(
         gql`
-            mutation InviteUserToOrganization($organization: ID!, $username: String!) {
-                inviteUserToOrganization(organization: $organization, username: $username) {
+            mutation InviteUserToOrganization($organization: ID!, $username: String, $email: String) {
+                inviteUserToOrganization(organization: $organization, username: $username, email: $email) {
                     ...InviteUserToOrganizationFields
                 }
             }
@@ -206,6 +206,7 @@ function inviteUserToOrganization(
         {
             username,
             organization,
+            email: null,
         }
     )
         .pipe(
@@ -273,7 +274,7 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
             )}
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
+        <Button variant="icon" title="Dismiss" onClick={onDismiss}>
             <CloseIcon className="icon-inline" />
         </Button>
     </Alert>

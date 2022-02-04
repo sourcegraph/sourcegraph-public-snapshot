@@ -143,21 +143,18 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                     // Use a div instead. The edit button will still allow keyboard users to activate the form.
                     as={completed ? 'div' : Button}
                     data-testid={`form-action-toggle-${idName}`}
-                    className={classNames(`test-action-button-${idName}`, styles.cardButton, disabled && 'disabled')}
+                    className={classNames(
+                        `test-action-button-${idName}`,
+                        styles.cardButton,
+                        disabled && styles.btnDisabled
+                    )}
                     disabled={disabled}
                     aria-label={`Edit action: ${label}`}
                     onClick={toggleExpanded}
                 >
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <div>
-                            <div
-                                className={classNames(
-                                    'font-weight-bold',
-                                    !completed && classNames(styles.cardLink, 'btn-link')
-                                )}
-                            >
-                                {title}
-                            </div>
+                            <div className={classNames('font-weight-bold', !completed && styles.cardLink)}>{title}</div>
                             {completed ? (
                                 <span
                                     className="text-muted font-weight-normal"

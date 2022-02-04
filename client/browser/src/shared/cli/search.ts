@@ -1,8 +1,9 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 
-import { buildSearchURLQuery, ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchPatternType } from '../../graphql-operations'
 import { createSuggestionFetcher } from '../backend/search'

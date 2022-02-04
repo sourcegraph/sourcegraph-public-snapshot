@@ -6,7 +6,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
 import React, { useEffect, useState } from 'react'
 
-import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/common'
+import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
@@ -170,8 +170,9 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                     )}
                     {styleAsExpandable && (
                         <Button
+                            variant="icon"
                             className={classNames(
-                                'd-flex flex-shrink-0 mr-1 btn-icon',
+                                'd-flex flex-shrink-0 mr-1',
                                 styles.documentationIndexNodeExpandButton
                             )}
                             aria-label={expanded ? 'Collapse section' : 'Expand section'}

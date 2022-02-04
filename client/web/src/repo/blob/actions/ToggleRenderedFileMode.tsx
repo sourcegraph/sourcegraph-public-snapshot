@@ -2,7 +2,7 @@ import EyeIcon from 'mdi-react/EyeIcon'
 import React, { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
-import { RenderMode } from '@sourcegraph/common'
+import { RenderMode } from '@sourcegraph/shared/src/util/url'
 import { TooltipController } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -34,7 +34,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFile
 
     if (actionType === 'dropdown') {
         return (
-            <RepoHeaderActionButtonLink className="btn" to={getURLForMode(location, otherMode)} file={true}>
+            <RepoHeaderActionButtonLink to={getURLForMode(location, otherMode)} file={true}>
                 <EyeIcon className="icon-inline" />
                 <span>{label}</span>
             </RepoHeaderActionButtonLink>
@@ -43,7 +43,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFile
 
     return (
         <RepoHeaderActionButtonLink
-            className="btn btn-icon"
+            className="btn-icon"
             file={false}
             to={getURLForMode(location, otherMode)}
             data-tooltip={label}

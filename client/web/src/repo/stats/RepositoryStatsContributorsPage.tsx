@@ -6,17 +6,12 @@ import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import {
-    createAggregateError,
-    numberWithCommas,
-    pluralize,
-    memoizeObservable,
-    buildSearchURLQuery,
-} from '@sourcegraph/common'
+import { createAggregateError, numberWithCommas, pluralize, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Button, ButtonGroup, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -250,7 +245,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                         onChange={this.onChange}
                                     />
                                     <div className="input-group-append">
-                                        <div className="btn-group">
+                                        <ButtonGroup>
                                             <Button
                                                 className={classNames(
                                                     styles.btnNoLeftRoundedCorners,
@@ -282,7 +277,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                             >
                                                 All time
                                             </Button>
-                                        </div>
+                                        </ButtonGroup>
                                     </div>
                                 </div>
                             </div>

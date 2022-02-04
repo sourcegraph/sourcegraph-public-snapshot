@@ -21,10 +21,10 @@ import {
     isDefined,
     isExactly,
     isNot,
-    parseRepoURI,
     property,
 } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { Context } from '@sourcegraph/template-parser'
 
 import { getModeFromPath } from '../../languages'

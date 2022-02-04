@@ -7,18 +7,19 @@ import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import {
     Container,
     ProductStatusBadge,
     LoadingSpinner,
     useObservable,
-    Button,
     Link,
     Alert,
+    ButtonLink,
 } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -203,19 +204,17 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                 <div className={styles.container}>
                     <div className={styles.containerContent}>
                         <div className="d-flex float-right">
-                            <Button
-                                // eslint-disable-next-line react/jsx-no-target-blank
+                            <ButtonLink
                                 target="_blank"
                                 rel="noopener"
-                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                                 className="mr-1 text-decoration-none btn-link"
                                 variant="secondary"
                                 outline={true}
                                 size="sm"
-                                as="a"
                             >
                                 Learn more
-                            </Button>
+                            </ButtonLink>
                             <FeedbackPrompt routes={routes} />
                         </div>
                         <h1>
@@ -239,14 +238,13 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 repository.
                             </p>
                             <h3>
-                                <a
-                                    // eslint-disable-next-line react/jsx-no-target-blank
+                                <Link
                                     target="_blank"
                                     rel="noopener"
-                                    href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                    to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                                 >
                                     Learn more
-                                </a>
+                                </Link>
                             </h3>
                             <p className="text-muted mt-3 mb-0">
                                 <strong>Note:</strong> only the Go programming language is currently supported.

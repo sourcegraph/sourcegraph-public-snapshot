@@ -3,11 +3,10 @@ import { noop } from 'lodash'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback, useRef, useMemo } from 'react'
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
-import { buildSearchURLQuery } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
@@ -18,6 +17,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -128,6 +128,15 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     )
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
+
+    // Focus the query input when a new query block is added (the input is empty).
+    useEffect(() => {
+        if (editor && input.length === 0) {
+            editor.focus()
+        }
+        // Only run this hook for the initial input.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editor])
 
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>

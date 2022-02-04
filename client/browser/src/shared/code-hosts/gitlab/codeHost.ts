@@ -2,8 +2,9 @@ import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
-import { subtypeOf, toAbsoluteBlobURL } from '@sourcegraph/common'
+import { subtypeOf } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { CodeHost } from '../shared/codeHost'

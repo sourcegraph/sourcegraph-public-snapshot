@@ -34,11 +34,13 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 		}, nil
 	})
 	externalServices := database.NewMockExternalServiceStore()
+	featureFlags := database.NewMockFeatureFlagStore()
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	apiURL, err := url.Parse("https://github.com")
 	require.NoError(t, err)
@@ -57,6 +59,15 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 	require.Nil(t, err)
 
 	h := newGitHubAppCloudSetupHandler(db, apiURL, client)
+
+	t.Run("feature flag not enabled", func(t *testing.T) {
+		resp := httptest.NewRecorder()
+		h.ServeHTTP(resp, req)
+
+		assert.Equal(t, http.StatusForbidden, resp.Code)
+		assert.Equal(t, "Sourcegraph Cloud GitHub App setup is not enabled for the organization", resp.Body.String())
+	})
+	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
 
 	t.Run("not an organization member", func(t *testing.T) {
 		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)

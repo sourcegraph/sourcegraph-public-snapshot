@@ -33,16 +33,8 @@ import {
     isDefined,
     property,
     observeResize,
-    AbsoluteRepoFile,
-    FileSpec,
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
-    ModeSpec,
-    UIPositionSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
-    toURIWithPath,
     toPositionOrRangeQueryParameter,
     addLineRangeQueryParameter,
     formatSearchParameters,
@@ -63,7 +55,17 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import {
+    AbsoluteRepoFile,
+    FileSpec,
+    ModeSpec,
+    UIPositionSpec,
+    RepoSpec,
+    ResolvedRevisionSpec,
+    RevisionSpec,
+    toURIWithPath,
+    parseQueryAndHash,
+} from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'

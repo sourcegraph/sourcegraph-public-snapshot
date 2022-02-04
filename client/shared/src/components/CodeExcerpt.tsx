@@ -6,7 +6,8 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { of, combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
-import { asError, ErrorLike, highlightNode, isErrorLike, Repo } from '@sourcegraph/common'
+import { asError, ErrorLike, highlightNode, isErrorLike } from '@sourcegraph/common'
+import { Repo } from '@sourcegraph/shared/src/util/url'
 
 import * as GQL from '../schema'
 

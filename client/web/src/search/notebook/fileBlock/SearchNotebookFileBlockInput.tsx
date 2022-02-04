@@ -7,7 +7,6 @@ import {
     ComboboxList,
 } from '@reach/combobox'
 import classNames from 'classnames'
-import { debounce } from 'lodash'
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react'
 
 import { isModifierKeyPressed } from '../useBlockShortcuts'
@@ -27,8 +26,8 @@ interface SearchNotebookFileBlockInputProps {
     suggestionsIcon?: JSX.Element
     isValid?: boolean
     isMacPlatform: boolean
+    focusInput?: boolean
     dataTestId?: string
-    testTriggerSuggestions?: boolean
 }
 
 export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNotebookFileBlockInputProps> = ({
@@ -44,25 +43,28 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
     suggestionsIcon,
     isValid,
     isMacPlatform,
+    focusInput,
     dataTestId,
-    testTriggerSuggestions,
 }) => {
     const [inputValue, setInputValue] = useState(value)
-    const debouncedOnChange = useMemo(() => debounce(onChange, 300), [onChange])
     const onSelect = useCallback(
         (value: string) => {
             setInputValue(value)
-            debouncedOnChange(value)
+            onChange(value)
         },
-        [debouncedOnChange, setInputValue]
+        [onChange, setInputValue]
     )
 
     const inputReference = useRef<HTMLInputElement>(null)
     useEffect(() => {
-        if (testTriggerSuggestions) {
+        if (focusInput) {
             inputReference.current?.focus()
         }
-    }, [inputReference, testTriggerSuggestions])
+        // Only focus input on the initial render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [inputReference])
+
+    useEffect(() => setInputValue(value), [setInputValue, value])
 
     const popoverReference = useRef<HTMLDivElement>(null)
     const onKeyDown = (event: React.KeyboardEvent): void => {
@@ -101,6 +103,11 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         }
     }
 
+    const hasSingleExactMatchingSuggestion = useMemo(
+        () => suggestions !== undefined && suggestions.length === 1 && suggestions[0] === inputValue,
+        [suggestions, inputValue]
+    )
+
     return (
         <Combobox openOnFocus={true} onSelect={onSelect} className={className} onKeyDown={onKeyDown}>
             <ComboboxInput
@@ -117,10 +124,11 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
                 onChange={event => onSelect(event.target.value)}
                 onFocus={onFocus}
                 onBlur={onBlur}
+                onPaste={event => event.stopPropagation()}
                 data-testid={dataTestId}
             />
-            {/* Only show suggestions popover for the latest input value */}
-            {suggestions && value === inputValue && (
+            {/* Only show suggestions popover for the latest input value and if it does not contain a single exact match. */}
+            {suggestions && value === inputValue && !hasSingleExactMatchingSuggestion && (
                 <ComboboxPopover ref={popoverReference} className={styles.suggestionsPopover}>
                     <ComboboxList className={styles.suggestionsList}>
                         {suggestions.map(suggestion => (

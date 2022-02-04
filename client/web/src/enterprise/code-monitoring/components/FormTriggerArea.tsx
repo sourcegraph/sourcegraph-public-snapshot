@@ -5,9 +5,9 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { buildSearchURLQuery } from '@sourcegraph/common'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button, Link, Card } from '@sourcegraph/wildcard'
 
@@ -303,7 +303,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <div
                                 className={classNames(
                                     'font-weight-bold',
-                                    !triggerCompleted && classNames(cardLinkClassName, 'btn-link')
+                                    triggerCompleted
+                                        ? styles.triggerBtnText
+                                        : classNames(cardLinkClassName, styles.triggerLabel)
                                 )}
                             >
                                 When there are new search results
@@ -321,16 +323,20 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 </span>
                             )}
                         </div>
-                        {triggerCompleted && <div className="btn-link">Edit</div>}
+                        {triggerCompleted && (
+                            <Button variant="link" as="div">
+                                Edit
+                            </Button>
+                        )}
                     </div>
                 </Card>
             )}
             <small className="text-muted">
                 {' '}
                 What other events would you like to monitor?{' '}
-                <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
+                <Link to="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
-                </a>
+                </Link>
             </small>
         </>
     )

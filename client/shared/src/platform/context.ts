@@ -4,16 +4,7 @@ import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
 import { InputBoxOptions } from 'sourcegraph'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
-import {
-    ErrorLike,
-    hasProperty,
-    FileSpec,
-    UIPositionSpec,
-    RawRepoSpec,
-    RepoSpec,
-    RevisionSpec,
-    ViewStateSpec,
-} from '@sourcegraph/common'
+import { ErrorLike, hasProperty } from '@sourcegraph/common'
 import { GraphQLClient, GraphQLResult } from '@sourcegraph/http-client'
 
 import { SettingsEdit } from '../api/client/services/settings'
@@ -21,6 +12,7 @@ import { ExecutableExtension } from '../api/extension/activation'
 import { Scalars } from '../graphql-operations'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
+import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */

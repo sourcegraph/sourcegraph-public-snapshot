@@ -177,7 +177,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     <CopyQueryButton
                         fullQuery={fullQuery}
                         keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
-                        isMacPlatform={isMacPlatform}
+                        isMacPlatform={isMacPlatform()}
                         className={classNames(styles.toggle, styles.copyQueryButton)}
                     />
                 </>

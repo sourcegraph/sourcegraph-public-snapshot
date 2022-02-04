@@ -32,7 +32,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
                 Create a code monitor
             </Button>
         ) : (
-            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Sign up to create a code monitor" />
+            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Get started with code monitors" />
         )}
     </div>
 )
@@ -117,7 +117,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                 </div>
             </div>
             <div className="mt-5">
-                We want to hear your feedback! <a href="mailto:feedback@sourcegraph.com">Share your thoughts</a>
+                We want to hear your feedback! <Link to="mailto:feedback@sourcegraph.com">Share your thoughts</Link>
             </div>
         </>
     )

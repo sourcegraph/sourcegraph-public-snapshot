@@ -11,14 +11,7 @@ import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
-import {
-    allOf,
-    check,
-    isTaggedUnionMember,
-    resetAllMemoizationCaches,
-    subtypeOf,
-    toPrettyBlobURL,
-} from '@sourcegraph/common'
+import { allOf, check, isTaggedUnionMember, resetAllMemoizationCaches, subtypeOf } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { SuccessGraphQLResult } from '@sourcegraph/http-client'
@@ -31,6 +24,7 @@ import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { IQuery } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'

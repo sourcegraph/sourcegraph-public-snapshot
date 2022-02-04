@@ -3,7 +3,8 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState, useEffect } from 'react'
 
-import { pluralize, toPrettyBlobURL } from '@sourcegraph/common'
+import { pluralize } from '@sourcegraph/common'
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage, Button, Modal } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
@@ -238,7 +239,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
                         Find file
                     </h3>
-                    <Button className="btn-icon" onClick={() => props.onClose()} aria-label="Close">
+                    <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
                         <CloseIcon className={classNames('icon-inline', styles.closeIcon)} />
                     </Button>
                 </div>

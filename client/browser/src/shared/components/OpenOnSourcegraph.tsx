@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
-import { toPrettyBlobURL } from '@sourcegraph/common'
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { OpenInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'

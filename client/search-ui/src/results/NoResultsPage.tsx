@@ -3,7 +3,6 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React, { useCallback, useEffect } from 'react'
 
-import { buildSearchURLQuery } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery, Toggles } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -11,6 +10,7 @@ import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/setting
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
@@ -49,18 +49,20 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                 {showSearchContext && (
                     <>
                         <div className={classNames(searchBoxStyle.searchBoxContextDropdown, styles.fakeSearchContext)}>
-                            <div
+                            <Button
+                                as="div"
+                                variant="link"
                                 className={classNames(
                                     styles.fakeSearchContextButton,
                                     searchContextDropDownStyles.button,
-                                    'btn btn-link text-monospace dropdown-toggle'
+                                    'text-monospace dropdown-toggle'
                                 )}
                             >
                                 <code className={searchContextDropDownStyles.buttonContent}>
                                     <span className="search-filter-keyword">context:</span>
                                     global
                                 </code>
-                            </div>
+                            </Button>
                         </div>
                         <div className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)} />
                     </>
@@ -131,7 +133,7 @@ const Container: React.FunctionComponent<ContainerProps> = ({
         <h3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
-                <Button className="btn-icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
+                <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
                     <CloseIcon className="icon-inline" />
                 </Button>
             )}
