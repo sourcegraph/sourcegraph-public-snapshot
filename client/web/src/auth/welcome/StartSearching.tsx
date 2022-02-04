@@ -141,7 +141,10 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
 
     const invitableCollaborators = useMemo<GQL.IPerson[]>(() => {
         const invitable = externalServices ? externalServices.flatMap(host => host.invitableCollaborators) : []
-        eventLogger.log('UserInvitations_DiscoveredCollaborators', {}, invitable.length)
+        const loggerPayload = {
+            discovered: invitable.length,
+        }
+        eventLogger.log('UserInvitationsDiscoveredCollaborators', loggerPayload, loggerPayload)
         return invitable
     }, [externalServices])
     const preventSubmit = useCallback((event: React.FormEvent<HTMLFormElement>): void => event.preventDefault(), [])
@@ -183,7 +186,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                 const removed = new Set(loadingInvites)
                 removed.delete(person.email)
                 setLoadingInvites(removed)
-                eventLogger.log('UserInvitations_SentEmailInvite')
+                eventLogger.log('UserInvitationsSentEmailInvite')
             } catch (error) {
                 setInviteError(error)
             }
@@ -310,7 +313,13 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                             <h4 className="m-0">Or invite by sending a link</h4>
                         </div>
                     </header>
-                    <CopyableText className="mb-3 flex-1" text={inviteURL} flex={true} size={inviteURL.length} />
+                    <CopyableText
+                        className="mb-3 flex-1"
+                        text={inviteURL}
+                        flex={true}
+                        size={inviteURL.length}
+                        onCopy={() => eventLogger.log('UserInvitationsCopiedInviteLink')}
+                    />
                 </div>
             </div>
             <div className={classNames(className, 'mx-2')}>
