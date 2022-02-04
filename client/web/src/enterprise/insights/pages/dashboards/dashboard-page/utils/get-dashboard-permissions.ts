@@ -23,7 +23,7 @@ const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
     reason: DashboardReasonDenied.UnknownDashboard,
 }
 
-export function useDashboardPermissions(
+export function getDashboardPermissions(
     dashboard: InsightDashboard | undefined,
     supportedSubjects?: SupportedInsightSubject[]
 ): DashboardPermissions {

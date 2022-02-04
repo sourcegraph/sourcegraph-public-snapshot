@@ -72,12 +72,22 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 		return err
 	}
 
+	noDepsCounter := 0
 	for _, dependency := range dependencies {
 		_, err := coursier.FetchSources(ctx, s.Config, dependency)
+		if errors.Is(err, coursier.ErrNoSources{}) {
+			// Non fatal
+			noDepsCounter++
+			continue
+		}
 		if err != nil {
 			return err
 		}
 	}
+	if noDepsCounter == len(dependencies) {
+		return errors.Errorf("all dependencies are missing sources")
+	}
+
 	return nil
 }
 

@@ -132,16 +132,56 @@ func NewAggregatingStream() *aggregatingStream {
 
 type aggregatingStream struct {
 	sync.Mutex
-	event SearchEvent
+	SearchEvent
 }
 
 func (c *aggregatingStream) Send(event SearchEvent) {
 	c.Lock()
-	c.event.Results = append(c.event.Results, event.Results...)
-	c.event.Stats.Update(&event.Stats)
+	c.Results = append(c.Results, event.Results...)
+	c.Stats.Update(&event.Stats)
 	c.Unlock()
 }
 
-func (c *aggregatingStream) Get() SearchEvent {
-	return c.event
+func NewNullStream() Sender {
+	return StreamFunc(func(SearchEvent) {})
+}
+
+func NewStatsObservingStream(s Sender) *statsObservingStream {
+	return &statsObservingStream{
+		parent: s,
+	}
+}
+
+type statsObservingStream struct {
+	parent Sender
+
+	sync.Mutex
+	Stats
+}
+
+func (s *statsObservingStream) Send(event SearchEvent) {
+	s.Lock()
+	s.Stats.Update(&event.Stats)
+	s.Unlock()
+	s.parent.Send(event)
+}
+
+func NewResultCountingStream(s Sender) *resultCountingStream {
+	return &resultCountingStream{
+		parent: s,
+	}
+}
+
+type resultCountingStream struct {
+	parent Sender
+	count  atomic.Int64
+}
+
+func (c *resultCountingStream) Send(event SearchEvent) {
+	c.count.Add(int64(event.Results.ResultCount()))
+	c.parent.Send(event)
+}
+
+func (c *resultCountingStream) Count() int {
+	return int(c.count.Load())
 }

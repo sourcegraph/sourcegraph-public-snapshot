@@ -7,7 +7,7 @@ Sourcegraph can sync repositories from code hosts and other similar services.
 - [GitHub](github.md)
 - [GitLab](gitlab.md)
 - [Bitbucket Cloud](bitbucket_cloud.md)
-- [Bitbucket Server](bitbucket_server.md) or Bitbucket Data Center
+- [Bitbucket Server / Bitbucket Data Center](bitbucket_server.md) or Bitbucket Data Center
 - [Phabricator](phabricator.md)
 - [Gitolite](gitolite.md)
 - [AWS CodeCommit](aws_codecommit.md)

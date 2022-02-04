@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
@@ -14,13 +15,13 @@ import (
 func TestLimitJob(t *testing.T) {
 	t.Run("only send limit", func(t *testing.T) {
 		mockJob := NewMockJob()
-		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, db database.DB, s streaming.Sender) error {
+		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, db database.DB, s streaming.Sender) (*search.Alert, error) {
 			for i := 0; i < 10; i++ {
 				s.Send(streaming.SearchEvent{
 					Results: []result.Match{&result.FileMatch{}},
 				})
 			}
-			return nil
+			return nil, nil
 		})
 
 		var sent []result.Match
@@ -39,7 +40,7 @@ func TestLimitJob(t *testing.T) {
 
 	t.Run("send partial event", func(t *testing.T) {
 		mockJob := NewMockJob()
-		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, db database.DB, s streaming.Sender) error {
+		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, db database.DB, s streaming.Sender) (*search.Alert, error) {
 			for i := 0; i < 10; i++ {
 				s.Send(streaming.SearchEvent{
 					Results: []result.Match{
@@ -48,7 +49,7 @@ func TestLimitJob(t *testing.T) {
 					},
 				})
 			}
-			return nil
+			return nil, nil
 		})
 
 		var sent []result.Match
@@ -67,18 +68,18 @@ func TestLimitJob(t *testing.T) {
 
 	t.Run("cancel after limit", func(t *testing.T) {
 		mockJob := NewMockJob()
-		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, db database.DB, s streaming.Sender) error {
+		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, db database.DB, s streaming.Sender) (*search.Alert, error) {
 			for i := 0; i < 10; i++ {
 				select {
 				case <-ctx.Done():
-					return nil
+					return nil, nil
 				default:
 				}
 				s.Send(streaming.SearchEvent{
 					Results: []result.Match{&result.FileMatch{}},
 				})
 			}
-			return nil
+			return nil, nil
 		})
 
 		var sent []result.Match

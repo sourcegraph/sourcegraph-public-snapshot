@@ -304,13 +304,17 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		return strings.HasSuffix(fi.Name(), ".zip")
 	}
 
-	list := []fs.FileInfo{}
+	type absFileInfo struct {
+		absPath string
+		info    fs.FileInfo
+	}
+	entries := []absFileInfo{}
 	err = filepath.Walk(s.dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			list = append(list, info)
+			entries = append(entries, absFileInfo{absPath: path, info: info})
 			return nil
 		})
 	if err != nil {
@@ -322,9 +326,9 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 
 	// Sum up the total size of all zips
 	var size int64
-	for _, fi := range list {
-		if isZip(fi) {
-			size += fi.Size()
+	for _, entry := range entries {
+		if isZip(entry.info) {
+			size += entry.info.Size()
 		}
 	}
 	stats.CacheSize = size
@@ -336,17 +340,17 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 
 	// Keep removing files until we are under the cache size. Remove the
 	// oldest first.
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].ModTime().Before(list[j].ModTime())
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].info.ModTime().Before(entries[j].info.ModTime())
 	})
-	for _, fi := range list {
+	for _, entry := range entries {
 		if size <= maxCacheSizeBytes {
 			break
 		}
-		if !isZip(fi) {
+		if !isZip(entry.info) {
 			continue
 		}
-		path := filepath.Join(s.dir, fi.Name())
+		path := entry.absPath
 		if s.beforeEvict != nil {
 			s.beforeEvict(path, trace)
 		}
@@ -357,7 +361,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 			continue
 		}
 		stats.Evicted++
-		size -= fi.Size()
+		size -= entry.info.Size()
 	}
 
 	trace.Tag(
