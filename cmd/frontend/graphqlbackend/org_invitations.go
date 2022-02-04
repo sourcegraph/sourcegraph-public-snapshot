@@ -26,6 +26,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var EMAIL_INVITES_FF = "org-email-invites"
+var SIGNING_KEY_MESSAGE = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
+
 func getUserToInviteToOrganization(ctx context.Context, db database.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
 	userToInvite, err = db.Users().GetByUsername(ctx, username)
 	if err != nil {
@@ -66,6 +69,37 @@ type orgInvitationClaims struct {
 func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool { return r.sentInvitationEmail }
 func (r *inviteUserToOrganizationResult) InvitationURL() string     { return r.invitationURL }
 
+func checkEmails(ctx context.Context, db database.DB, inviteEmail string) error {
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	emails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+		UserID: user.ID,
+	})
+
+	containsEmail := func(userEmails []*database.UserEmail, email string) *database.UserEmail {
+		for _, userEmail := range userEmails {
+			if email == userEmail.Email == nil {
+				return userEmail
+			}
+		}
+
+		return nil
+	}
+
+	emailMatch := containsEmail(emails, inviteEmail)
+	if emailMatch == nil {
+		return errors.New("your email address does not match the records on the invitation.")
+	} else if emailMatch.VerifiedAt == nil {
+		// set email address as verified if not already
+		db.UserEmails().SetVerified(ctx, user.ID, inviteEmail, true)
+	}
+
+	return nil
+}
+
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	Token string
 }) (*organizationInvitationResolver, error) {
@@ -93,6 +127,12 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 		if invite.RecipientUserID > 0 && invite.RecipientUserID != actor.UID {
 			return nil, database.NewOrgInvitationNotFoundError(claims.InvitationID)
 		}
+		if invite.RecipientEmail != "" {
+			err = checkEmails(ctx, r.db, invite.RecipientEmail)
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		return NewOrganizationInvitationResolver(r.db, invite), nil
 	} else {
@@ -105,9 +145,10 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	Username     *string
 	Email        *string
 }) (*inviteUserToOrganizationResult, error) {
-	if (args.Email != nil && *args.Email != "") || args.Username == nil {
-		return nil, errors.New("inviting by email is not implemented yet")
+	if args.Email == nil && args.Username == nil {
+		return nil, errors.New("either username or email must be defined")
 	}
+
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
 		return nil, err
@@ -116,6 +157,12 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// invited to.
 	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
+	}
+	// check org has feature flag for email invites enabled, we can ignore errors here as flag value would be false
+	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EMAIL_INVITES_FF)
+	// return error if feature flag is not enabled and we got an email as an argument
+	if ((args.Email != nil && *args.Email != "") || args.Username == nil) && !enabled {
+		return nil, errors.New("inviting by email is not supported for this organization")
 	}
 
 	// Create the invitation.
@@ -127,17 +174,36 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	if err != nil {
 		return nil, err
 	}
-	recipient, recipientEmail, err := getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
+
+	// sending invitation to user ID or email
+	var recipientID int32
+	var recipientEmail string
+	if args.Username != nil {
+		recipient, userEmail, err := getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
+		if err != nil {
+			return nil, err
+		}
+		recipientID = recipient.ID
+		recipientEmail = userEmail
+	}
+	hasConfig := orgInvitationConfigDefined()
+	if args.Email != nil {
+		// we only support new URL schema for email invitations
+		if !hasConfig {
+			return nil, errors.New(SIGNING_KEY_MESSAGE)
+		}
+		recipientEmail = *args.Email
+	}
+
+	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipientID, recipientEmail)
 	if err != nil {
 		return nil, err
 	}
-	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipient.ID)
-	if err != nil {
-		return nil, err
-	}
+
+	// create invitation URL
 	var invitationURL string
-	if orgInvitationConfigDefined() {
-		invitationURL, err = orgInvitationURL(org.ID, invitation.ID, sender.ID, recipient.ID, recipientEmail, false)
+	if args.Email != nil || hasConfig {
+		invitationURL, err = orgInvitationURL(org.ID, invitation.ID, sender.ID, recipientID, recipientEmail, false)
 	} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
 		invitationURL = orgInvitationURLLegacy(org, false)
 	}
@@ -311,7 +377,7 @@ func orgInvitationURL(orgID int32, invitationID int64, senderID int32, recipient
 
 func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipientID int32, recipientEmail string) (string, error) {
 	if !orgInvitationConfigDefined() {
-		return "", errors.New("signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration.")
+		return "", errors.New(SIGNING_KEY_MESSAGE)
 	}
 	aud := recipientEmail
 	if aud == "" {

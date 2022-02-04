@@ -47,7 +47,7 @@ func unmarshalOrgInvitationID(id graphql.ID) (orgInvitationID int64, err error) 
 }
 
 func (r *organizationInvitationResolver) Organization(ctx context.Context) (*OrgResolver, error) {
-	return OrgByIDInt32(ctx, r.db, r.v.OrgID)
+	return orgByIDInt32WithForcedAccess(ctx, r.db, r.v.OrgID, r.v.RecipientEmail != "")
 }
 
 func (r *organizationInvitationResolver) Sender(ctx context.Context) (*UserResolver, error) {
