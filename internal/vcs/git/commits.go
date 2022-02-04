@@ -641,7 +641,7 @@ func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRe
 }
 
 func derefField(field string) string {
-	return "%(if)%(" + field + ")%(then)%(" + field + ")%(else)%(*" + field + ")%(end)"
+	return "%(if)%(*" + field + ")%(then)%(*" + field + ")%(else)%(" + field + ")%(end)"
 }
 
 func filterRefDescriptions(ctx context.Context,
