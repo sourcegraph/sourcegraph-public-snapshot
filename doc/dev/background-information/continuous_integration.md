@@ -219,7 +219,7 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 
 Enabling a feature flag on the CI pipeline is achieved by setting environment variables `CI_FEATURE_FLAGS_*` to `true`. 
 
-- `CI_FEATURE_FLAGS_STATELESS`: schedule the build on stateless agents instead of normal agents (this forces a `main-dry-run` run type). 
+- `CI_FEATURE_FLAG_STATELESS`: schedule the build on stateless agents instead of normal agents (this forces a `main-dry-run` run type). 
 
 ## GitHub Actions
 
