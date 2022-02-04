@@ -16,8 +16,8 @@
         {{end}}
         <!-- TODO: Google Tag Manager? -->
         <script ignore-csp>
-            window.context = {{ .Context }}
-            window.pageError = {{ .Error }}
+            window.context = {{.Context}}
+            window.pageError = {{.Error}}
         </script>
         {{.Injected.HeadBottom}}
     </head>
