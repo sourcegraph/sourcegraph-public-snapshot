@@ -5,14 +5,6 @@
     background-color: var(--body-bg);
 }
 
-.cool-code-intel-tabs {
-    min-width: 30vw;
-    max-width: 35vw;
-
-    min-height: 27rem; /* avoid jitter when only loading indicator is shown */
-    max-height: 27vh;
-}
-
 .hover-markdown {
     p,
     pre {
@@ -66,6 +58,8 @@
 }
 
 .panel {
+    $panel-header-height: 2rem;
+
     flex: 1 1 50%;
     min-height: 0;
 
@@ -75,20 +69,24 @@
     flex-direction: column;
     position: relative;
 
-    // [data-reach-tabs],
-    // [data-reach-tab-panels],
-    // [data-reach-tab-panel] {
-    //     height: 100%;
-    // }
+    [data-reach-tab-panels] {
+        // Ensure wrapper spans entire height of panel, and that the scrollable area does not include the header height
+        height: calc(100% - #{$panel-header-height});
+    }
+
+    [data-reach-tab-panel] {
+        height: 100%;
+    }
 
     background-color: var(--color-bg-1);
     border-top: 2px solid var(--border-color-2);
     width: 100%;
-}
 
-.header {
-    padding: 0 1rem;
-    background-color: var(--color-bg-1);
+    &--header {
+        padding: 0 1rem;
+        background-color: var(--color-bg-1);
+        height: $panel-header-height;
+    }
 }
 
 .dismiss-button {
@@ -104,14 +102,23 @@
     color: var(--icon-color);
 }
 
-.references-list {
-    display: flex;
-    // height: 100%;
-}
+.references {
+    $references-filter-height: 2rem;
 
-.side-references,
-.side-blob {
-    flex: 1;
-    overflow: scroll;
-    max-height: 40vh;
+    &--filter {
+        height: $references-filter-height;
+    }
+
+    &--list {
+        display: flex;
+        // Ensure list spans entire height of panel, and that the scrollable area does not include the filter height
+        height: calc(100% - #{$references-filter-height});
+    }
+
+    &--side-references,
+    &--side-blob {
+        flex: 1;
+        overflow: auto;
+        height: 100%;
+    }
 }
