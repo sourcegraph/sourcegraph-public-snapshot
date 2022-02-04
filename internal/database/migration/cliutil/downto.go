@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -16,7 +17,7 @@ func DownTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command 
 	var (
 		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s downto", commandName), flag.ExitOnError)
 		schemaNameFlag = flagSet.String("db", "", `The target schema to migrate.`)
-		targetFlag     = flagSet.String("target", "", "Revert all children of the given target.")
+		targetsFlag    = flagSet.String("target", "", "Revert all children of the given target. Comma-separated values are accepted.")
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -30,22 +31,28 @@ func DownTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command 
 			return flag.ErrHelp
 		}
 
-		if *targetFlag == "" {
+		targets := strings.Split(*targetsFlag, ",")
+		if len(targets) == 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a migration target via -target"))
 			return flag.ErrHelp
 		}
 
-		version, err := strconv.Atoi(*targetFlag)
-		if err != nil {
-			return err
+		versions := make([]int, 0, len(targets))
+		for _, target := range targets {
+			version, err := strconv.Atoi(target)
+			if err != nil {
+				return err
+			}
+
+			versions = append(versions, version)
 		}
 
 		return run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName:    *schemaNameFlag,
-					Type:          runner.MigrationOperationTypeTargetedDown,
-					TargetVersion: version,
+					SchemaName:     *schemaNameFlag,
+					Type:           runner.MigrationOperationTypeTargetedDown,
+					TargetVersions: versions,
 				},
 			},
 		})
