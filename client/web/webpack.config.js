@@ -109,6 +109,9 @@ const config = {
     // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
     // strict superset of the OSS entrypoint.
     app: isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
+    // Embedding entrypoint. It uses a small subset of the main webapp intended to be embedded into
+    // iframes on 3rd party sites.
+    embed: path.join(enterpriseDirectory, 'embed', 'main.tsx')
   },
   output: {
     path: path.join(ROOT_PATH, 'ui', 'assets'),
@@ -138,41 +141,41 @@ const config = {
     }),
     getMonacoWebpackPlugin(),
     !shouldServeIndexHTML &&
-      new WebpackManifestPlugin({
-        writeToFileEmit: true,
-        fileName: 'webpack.manifest.json',
-        // Only output files that are required to run the application
-        filter: ({ isInitial }) => isInitial,
-      }),
+    new WebpackManifestPlugin({
+      writeToFileEmit: true,
+      fileName: 'webpack.manifest.json',
+      // Only output files that are required to run the application
+      filter: ({ isInitial }) => isInitial,
+    }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
     shouldAnalyze && new BundleAnalyzerPlugin(),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     isProduction &&
-      new CompressionPlugin({
-        filename: '[path][base].gz',
-        algorithm: 'gzip',
-        test: /\.(js|css|svg)$/,
-        compressionOptions: {
-          /** Maximum compression level for Gzip */
-          level: 9,
-        },
-      }),
+    new CompressionPlugin({
+      filename: '[path][base].gz',
+      algorithm: 'gzip',
+      test: /\.(js|css|svg)$/,
+      compressionOptions: {
+        /** Maximum compression level for Gzip */
+        level: 9,
+      },
+    }),
     isProduction &&
-      new CompressionPlugin({
-        filename: '[path][base].br',
-        algorithm: 'brotliCompress',
-        test: /\.(js|css|svg)$/,
-        compressionOptions: {
-          /** Maximum compression level for Brotli */
-          level: 11,
-        },
-        /**
-         * We get little/no benefits from compressing files that are already under this size.
-         * We can fall back to dynamic gzip for these.
-         */
-        threshold: 10240,
-      }),
+    new CompressionPlugin({
+      filename: '[path][base].br',
+      algorithm: 'brotliCompress',
+      test: /\.(js|css|svg)$/,
+      compressionOptions: {
+        /** Maximum compression level for Brotli */
+        level: 11,
+      },
+      /**
+       * We get little/no benefits from compressing files that are already under this size.
+       * We can fall back to dynamic gzip for these.
+       */
+      threshold: 10240,
+    }),
   ].filter(Boolean),
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],

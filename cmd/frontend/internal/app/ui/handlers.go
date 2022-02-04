@@ -329,6 +329,23 @@ func serveSignIn(db database.DB) handlerFunc {
 	}
 }
 
+func serveEmbed(db database.DB) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		// Allow embedding in an iframe
+		w.Header().Del("X-Frame-Options")
+
+		common, err := newCommon(w, r, db, "", index, serveError)
+		if err != nil {
+			return err
+		}
+		if common == nil {
+			return nil // request was handled
+		}
+
+		return renderTemplate(w, "embed.html", common)
+	}
+}
+
 // redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
 // or a tree page to a blob page if the directory is actually a file.
 func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB) (requestHandled bool, err error) {
