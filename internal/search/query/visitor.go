@@ -6,7 +6,7 @@ type Visitor struct {
 	Pattern   func(value string, negated bool, annotation Annotation)
 }
 
-// Visit recursively visits each node in a query. Need a visitor that doesn't
+// Visit recursively visits each node in a query. Need a visitor that
 // returns early or doesn't recurse? Use this function as a template and
 // customize it for your task!
 func (v *Visitor) Visit(node Node) {
