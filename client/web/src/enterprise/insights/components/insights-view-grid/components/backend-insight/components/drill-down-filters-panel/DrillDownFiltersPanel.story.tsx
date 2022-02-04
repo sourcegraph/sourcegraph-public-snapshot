@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import delay from 'delay'
 import React from 'react'
 
@@ -13,10 +13,6 @@ import {
     DrillDownFiltersForm,
 } from './components/drill-down-filters-form/DrillDownFiltersForm'
 import { DrillDownInsightCreationForm } from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
-
-const { add } = storiesOf('web/insights/DrillDownFiltersPanel', module).addDecorator(story => (
-    <WebStory>{() => story()}</WebStory>
-))
 
 const fakeAPIRequest = async () => {
     await delay(1000)
@@ -36,7 +32,7 @@ const DRILLDOWN_FILTERS: DrillDownFiltersFormValues = {
     includeRepoRegexp: '',
 }
 
-add('DrillDownFiltersPanel', () => (
+export const DrillDownFiltersPanel: Story = () => (
     <section>
         <article>
             <h2>Creation Form</h2>
@@ -55,4 +51,9 @@ add('DrillDownFiltersPanel', () => (
             />
         </article>
     </section>
-))
+)
+
+export default {
+    title: 'web/insights/DrillDownFiltersPanel',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+} as Meta

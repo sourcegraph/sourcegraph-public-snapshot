@@ -1,20 +1,22 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import { WebStory } from '../../../../../../../components/WebStory'
 
 import { CaptureGroupInsightCard, LangStatsInsightCard, SearchInsightCard } from './InsightCards'
 
-const { add } = storiesOf('web/insights/InsightCards', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+export default {
+    title: 'web/insights/InsightCards',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
         chromatic: {
             viewports: [576, 1440],
             disableSnapshot: false,
         },
-    })
+    },
+} as Meta
 
-add('InsightCards', () => (
+export const InsightCards: Story = () => (
     <section className="row">
         <article className="col-sm-4">
             <h2>Search Insight Card</h2>
@@ -29,4 +31,4 @@ add('InsightCards', () => (
             <CaptureGroupInsightCard />
         </article>
     </section>
-))
+)
