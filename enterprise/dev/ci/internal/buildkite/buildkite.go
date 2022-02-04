@@ -137,19 +137,13 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Plugins: make([]map[string]interface{}, 0, 0),
 	}
 	for _, opt := range BeforeEveryStepOpts {
-		if opt != nil {
-			opt(step)
-		}
+		opt(step)
 	}
 	for _, opt := range opts {
-		if opt != nil {
-			opt(step)
-		}
+		opt(step)
 	}
 	for _, opt := range AfterEveryStepOpts {
-		if opt != nil {
-			opt(step)
-		}
+		opt(step)
 	}
 
 	if step.Key == "" {
@@ -401,10 +395,10 @@ func AllowDependencyFailure() StepOpt {
 	}
 }
 
-// FlattenStepOpts conveniently turns a list of StepOpt into a single StepOpt.
+// flattenStepOpts conveniently turns a list of StepOpt into a single StepOpt.
 // It is useful to build helpers that can then be used when defining operations,
 // when the helper wraps multiple stepOpts at once.
-func FlattenStepOpts(stepOpts ...StepOpt) StepOpt {
+func flattenStepOpts(stepOpts ...StepOpt) StepOpt {
 	return func(step *Step) {
 		for _, stepOpt := range stepOpts {
 			stepOpt(step)

@@ -37,7 +37,7 @@ type CacheOptions struct {
 }
 
 func Cache(opts *CacheOptions) StepOpt {
-	return FlattenStepOpts(
+	return flattenStepOpts(
 		// Overrides the aws command configuration to use the buildkite cache
 		// configuration instead.
 		Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
