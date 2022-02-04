@@ -91,7 +91,7 @@ export const TabList: React.FunctionComponent<TabListProps> = React.forwardRef((
 })
 
 export const Tab: React.FunctionComponent<TabProps> = React.forwardRef((props, reference) => {
-    const { as = 'div', ...reachProps } = props
+    const { as = 'button', ...reachProps } = props
     const { size = 'small' } = useTabsSettings()
     return (
         <ReachTab className={styles[size]} data-testid="wildcard-tab" as={as} ref={reference} {...reachProps}>
