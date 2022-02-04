@@ -69,7 +69,7 @@ func (lm *merger) addMatch(m Match, source int) Match {
 		// If we've not seen the match before, track it and continue
 		newVal := mergeVal{
 			match: m,
-			seen:  bitset.New(lm.numSources).Set(uint(source))
+			seen:  bitset.New(uint(lm.numSources)).Set(uint(source)),
 		}
 		lm.matches[key] = newVal
 		return nil
