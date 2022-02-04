@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -629,7 +627,6 @@ func TestDelete(t *testing.T) {
 		}
 		t.Log(table)
 		q := sqlf.Sprintf("select count(*) from %s where series_id = %s;", sqlf.Sprintf(table), seriesId)
-		log15.Info("asdf", "q", q.Query(sqlf.PostgresBindVar), "a", q.Args())
 		row := timeseriesStore.QueryRow(ctx, q)
 		val, err := basestore.ScanInt(row)
 		if err != nil {
