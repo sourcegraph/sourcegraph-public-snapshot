@@ -637,11 +637,22 @@ export async function createTag(
     await execa('bash', ['-c', `git tag -a ${tag} -m ${tag} && ${finalizeTag}`], { stdio: 'inherit', cwd: workdir })
 }
 
-export async function createRelease(
+// createLatestRelease generates a GitHub release iff this release is the latest and
+// greatest, otherwise it is a no-op.
+export async function createLatestRelease(
     octokit: Octokit,
     { owner, repo, release }: { owner: string; repo: string; release: semver.SemVer },
     dryRun?: boolean
 ): Promise<string> {
+    const latest = await octokit.repos.getLatestRelease({
+        owner,
+        repo,
+    })
+    if (release.compare(latest.data.tag_name) === -1) {
+        // if latest is greater than release, do not generate a release
+        return ''
+    }
+
     const updateURL = 'https://docs.sourcegraph.com/admin/updates'
     const releasePostURL = `https://about.sourcegraph.com/blog/release/${release.major}.${release.minor}`
 

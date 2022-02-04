@@ -19,7 +19,7 @@ import {
     commentOnIssue,
     queryIssues,
     IssueLabel,
-    createRelease,
+    createLatestRelease,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
@@ -600,7 +600,7 @@ Batch change: ${batchChangeURL}`,
             // Create final GitHub release
             let githubRelease = ''
             try {
-                githubRelease = await createRelease(
+                githubRelease = await createLatestRelease(
                     githubClient,
                     {
                         owner: 'sourcegraph',
@@ -621,7 +621,7 @@ Batch change: ${batchChangeURL}`,
             const releaseMessage = `*Sourcegraph ${release.version} has been published*
 
 * Changelog: ${changelogURL(release.format())}
-* GitHub release: ${githubRelease || 'Failed to generate release'}
+* GitHub release: ${githubRelease || 'No release generated'}
 * Release batch change: ${batchChangeURL}`
 
             // Slack
