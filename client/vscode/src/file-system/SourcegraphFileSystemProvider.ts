@@ -128,6 +128,11 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
         return this.fileNamesByRepository.clear()
     }
 
+    // Remove Currently Selected Repository from Tree
+    public removeRepository(uriString: string): void {
+        this.fileNamesByRepository.delete(uriString)
+    }
+
     public async allFilesFromOpenRepositories(folder?: SourcegraphUri): Promise<RepositoryFileNames[]> {
         const promises: RepositoryFileNames[] = []
         const folderRepositoryUri = folder?.repositoryUri()

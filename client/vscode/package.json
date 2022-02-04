@@ -59,6 +59,12 @@
         "command": "sourcegraph.selectionSearchWeb",
         "category": "Sourcegraph",
         "title": "Search Selection in Sourcegraph Web"
+      },
+      {
+        "command": "sourcegraph.removeRepoTree",
+        "category": "Sourcegraph",
+        "title": "Remove Repository from Sourcegraph File System",
+        "icon": "$(trash)"
       }
     ],
     "viewsContainers": {
@@ -162,7 +168,12 @@
           "group": "sourcegraph"
         }
       ],
-      "view/item/context": [
+      "view/title": [
+        {
+          "command": "sourcegraph.removeRepoTree",
+          "when": "sourcegraph.selectRepoFileTree",
+          "group": "navigation"
+        }
       ],
       "editor/title": [
         {

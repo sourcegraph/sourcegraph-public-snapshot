@@ -39,5 +39,12 @@ export function initializeSourcegraphFileSystem({
         })
     )
 
+    // Remove Selected Repository from File Tree
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.removeRepoTree', () => {
+            files.removeTreeItem()
+        })
+    )
+
     return { fs }
 }

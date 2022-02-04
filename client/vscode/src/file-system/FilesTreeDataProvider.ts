@@ -14,6 +14,7 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
     private isExpandedNode = new Set<string>()
     private treeView: vscode.TreeView<string> | undefined
     private activeUri: vscode.Uri | undefined
+    private selectedDirectory: string | undefined
     private didFocusToken = new vscode.CancellationTokenSource()
     private treeItemCache = new Map<string, vscode.TreeItem>()
     private readonly didChangeTreeData = new vscode.EventEmitter<string | undefined>()
@@ -29,6 +30,17 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
     }
     public setTreeView(treeView: vscode.TreeView<string>): void {
         this.treeView = treeView
+        treeView.onDidChangeSelection(async event => {
+            const repos = [...this.fs.allRepositoryUris()]
+            const selectedUri = event.selection[0]
+            if (repos.includes(selectedUri)) {
+                this.selectedDirectory = selectedUri
+                await vscode.commands.executeCommand('setContext', 'sourcegraph.selectRepoFileTree', true)
+            } else {
+                this.selectedDirectory = undefined
+                await vscode.commands.executeCommand('setContext', 'sourcegraph.selectRepoFileTree', false)
+            }
+        })
         treeView.onDidChangeVisibility(async event => {
             const didBecomeVisible = !this._isViewVisible && event.visible
             this._isViewVisible = event.visible
@@ -186,6 +198,16 @@ export class FilesTreeDataProvider implements vscode.TreeDataProvider<string> {
         } catch (error) {
             log.error(`didFocusString(${uri.uri})`, error)
         }
+    }
+
+    // Remove selected repo from tree
+    public removeTreeItem(): void {
+        console.log(this.selectedDirectory)
+        if (this.selectedDirectory) {
+            this.fs.removeRepository(this.selectedDirectory)
+        }
+        this.didChangeTreeData.fire(undefined)
+        return
     }
 
     private newTreeItem(
