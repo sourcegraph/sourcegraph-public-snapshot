@@ -116,7 +116,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 <p className="text-muted">
                     Shows language usage in your repository based on number of lines of code.{' '}
-                    <Link to="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                    <Link to="/help/code_insights" target="_blank" rel="noopener">
                         Learn more.
                     </Link>
                 </p>
