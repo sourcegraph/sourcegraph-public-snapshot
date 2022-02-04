@@ -153,6 +153,6 @@ const CalloutArrow: React.FunctionComponent<{ className?: string }> = props => (
                 fill="#A6B6D9"
             />
         </svg>
-        <span>This insight is interactive! Type any search query or change the repo.</span>
+        <span className="text-muted">This insight is interactive! Type any search query or change the repo.</span>
     </p>
 )
