@@ -212,18 +212,18 @@ type batchingStream struct {
 func (s *batchingStream) Send(event SearchEvent) {
 	s.mu.Lock()
 
-	// Send the first event without delay
-	if !s.sentFirstEvent && len(event.Results) > 0 {
-		s.sentFirstEvent = true
-		s.mu.Unlock()
-		s.parent.Send(event)
-		return
-	}
-
 	// Update the batch
 	s.batch.Results = append(s.batch.Results, event.Results...)
 	s.batch.Stats.Update(&event.Stats)
 	s.dirty = true
+
+	// If this is our first event with results, flush immediately
+	if !s.sentFirstEvent && len(event.Results) > 0 {
+		s.sentFirstEvent = true
+		s.flush()
+		s.mu.Unlock()
+		return
+	}
 
 	if s.timer == nil {
 		// Create a timer and schedule a flush
