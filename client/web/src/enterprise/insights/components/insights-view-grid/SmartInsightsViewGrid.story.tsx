@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -17,14 +17,16 @@ import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 
-const { add } = storiesOf('web/insights/SmartInsightsViewGrid', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+export default {
+    title: 'web/insights/SmartInsightsViewGridExample',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
         chromatic: {
             viewports: [576, 1440],
-            disableSnapshot: false,
+            enableDarkMode: true,
         },
-    })
+    },
+} as Meta
 
 const insightsWithManyLines: Insight[] = [
     {
@@ -157,8 +159,8 @@ class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend
 
 const codeInsightsApiWithManyLines = new StoryBackendWithManyLinesCharts()
 
-add('SmartInsightsViewGrid', () => (
+export const SmartInsightsViewGridExample = () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsApiWithManyLines}>
         <SmartInsightsViewGrid insights={insightsWithManyLines} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </CodeInsightsBackendContext.Provider>
-))
+)
