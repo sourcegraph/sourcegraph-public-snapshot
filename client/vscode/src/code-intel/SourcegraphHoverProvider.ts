@@ -48,7 +48,7 @@ export class SourcegraphHoverProvider implements vscode.HoverProvider {
                             return prefix + `[${badge.text}](${badge.linkURL})\n`
                         }
                         return prefix + `${badge.text}\n`
-                    }, '')
+                    }, `![*](${sourcegraphLogoDataURI}) `)
 
                     return of<vscode.Hover>({
                         contents: [
@@ -68,3 +68,6 @@ export class SourcegraphHoverProvider implements vscode.HoverProvider {
         return definitions
     }
 }
+
+const sourcegraphLogoDataURI =
+    'data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjE0IiB2aWV3Qm94PSIwIDAgNTIgNTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTMwLjggNTEuOGMtMi44LjUtNS41LTEuMy02LTQuMUwxNy4yIDYuMmMtLjUtMi44IDEuMy01LjUgNC4xLTZzNS41IDEuMyA2IDQuMWw3LjYgNDEuNWMuNSAyLjgtMS40IDUuNS00LjEgNnoiIGZpbGw9IiNGRjU1NDMiLz48cGF0aCBkPSJNMTAuOSA0NC43QzkuMSA0NSA3LjMgNDQuNCA2IDQzYy0xLjgtMi4yLTEuNi01LjQuNi03LjJMMzguNyA4LjVjMi4yLTEuOCA1LjQtMS42IDcuMi42IDEuOCAyLjIgMS42IDUuNC0uNiA3LjJsLTMyIDI3LjNjLS43LjYtMS42IDEtMi40IDEuMXoiIGZpbGw9IiNBMTEyRkYiLz48cGF0aCBkPSJNNDYuOCAzOC4xYy0uOS4yLTEuOC4xLTIuNi0uMkw0LjQgMjMuOGMtMi43LTEtNC4xLTMuOS0zLjEtNi42IDEtMi43IDMuOS00LjEgNi42LTMuMWwzOS43IDE0LjFjMi43IDEgNC4xIDMuOSAzLjEgNi42LS42IDEuOC0yLjIgMy0zLjkgMy4zeiIgZmlsbD0iIzAwQ0JFQyIvPjwvc3ZnPg=='
