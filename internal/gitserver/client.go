@@ -328,7 +328,7 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 	}
 
 	u := c.ArchiveURL(repo, opt)
-	resp, err := c.do(ctx, repo, "GET", u.String(), nil)
+	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}

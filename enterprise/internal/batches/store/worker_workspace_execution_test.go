@@ -38,7 +38,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
+	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID}
 	if err := s.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +228,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testin
 		t.Fatal(err)
 	}
 
-	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
+	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID}
 	if err := s.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
 		t.Fatal(err)
 	}

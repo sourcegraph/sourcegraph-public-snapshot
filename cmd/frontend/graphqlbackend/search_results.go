@@ -1084,6 +1084,49 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, stream streaming.Sende
 	return result.Alert, nil
 }
 
+// toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
+func (r *searchResolver) toAndJob(q query.Basic) (run.Job, error) {
+	// Invariant: this function is only reachable from callers that
+	// guarantee a root node with one or more queryOperands.
+	queryOperands := q.Pattern.(query.Operator).Operands
+
+	// Limit the number of results from each child to avoid a huge amount of memory bloat.
+	// With streaming, we should re-evaluate this number.
+	//
+	// NOTE: It may be possible to page over repos so that each intersection is only over
+	// a small set of repos, limiting massive number of results that would need to be
+	// kept in memory otherwise.
+	maxTryCount := 40000
+
+	operands := make([]run.Job, 0, len(queryOperands))
+	for _, queryOperand := range queryOperands {
+		operand, err := r.toPatternExpressionJob(q.MapPattern(queryOperand))
+		if err != nil {
+			return nil, err
+		}
+		operands = append(operands, run.NewLimitJob(maxTryCount, operand))
+	}
+
+	return run.NewAndJob(operands...), nil
+}
+
+// toOrJob creates a new job from a basic query whose pattern is an Or operator at the top level
+func (r *searchResolver) toOrJob(q query.Basic) (run.Job, error) {
+	// Invariant: this function is only reachable from callers that
+	// guarantee a root node with one or more queryOperands.
+	queryOperands := q.Pattern.(query.Operator).Operands
+
+	operands := make([]run.Job, 0, len(queryOperands))
+	for _, term := range queryOperands {
+		operand, err := r.toPatternExpressionJob(q.MapPattern(term))
+		if err != nil {
+			return nil, err
+		}
+		operands = append(operands, operand)
+	}
+	return run.NewOrJob(operands...), nil
+}
+
 // evaluateOr performs set union on result sets. It collects results for all
 // expressions that are ORed together by searching for each subexpression. If
 // the maximum number of results are reached after evaluating a subexpression,
@@ -1177,6 +1220,31 @@ func (r *searchResolver) evaluateOr(ctx context.Context, stream streaming.Sender
 	return alert, nil
 }
 
+func (r *searchResolver) toPatternExpressionJob(q query.Basic) (run.Job, error) {
+	switch term := q.Pattern.(type) {
+	case query.Operator:
+		if len(term.Operands) == 0 {
+			return run.NewNoopJob(), nil
+		}
+
+		switch term.Kind {
+		case query.And:
+			return r.toAndJob(q)
+		case query.Or:
+			return r.toOrJob(q)
+		case query.Concat:
+			return r.toSearchJob(q.ToParseTree())
+		}
+	case query.Pattern:
+		return r.toSearchJob(q.ToParseTree())
+	case query.Parameter:
+		// evaluatePatternExpression does not process Parameter nodes.
+		return run.NewNoopJob(), nil
+	}
+	// Unreachable.
+	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
+}
+
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
 func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
 	switch term := q.Pattern.(type) {
@@ -1211,8 +1279,28 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, stream s
 	return nil, errors.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
+func (r *searchResolver) toEvaluateJob(q query.Basic) (run.Job, error) {
+	maxResults := r.MaxResults()
+	timeout := search.TimeoutDuration(q)
+
+	if q.Pattern == nil {
+		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
+		return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, job)), err
+	}
+	job, err := r.toPatternExpressionJob(q)
+	return run.NewTimeoutJob(timeout, run.NewLimitJob(maxResults, job)), err
+}
+
 // evaluate evaluates all expressions of a search query. The value of stream must be non-nil
 func (r *searchResolver) evaluate(ctx context.Context, stream streaming.Sender, q query.Basic) (*search.Alert, error) {
+	enableAndOrJobs := r.SearchInputs.Features.GetBoolOr("cc-and-or-jobs", false)
+	if enableAndOrJobs {
+		j, err := r.toEvaluateJob(q)
+		if err != nil {
+			return nil, err
+		}
+		return j.Run(ctx, r.db, stream)
+	}
 	if q.Pattern == nil {
 		job, err := r.toSearchJob(query.ToNodes(q.Parameters))
 		if err != nil {
