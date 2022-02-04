@@ -176,7 +176,7 @@ const config = {
          */
         threshold: 10240,
       }),
-    ].filter(Boolean),
+  ].filter(Boolean),
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
