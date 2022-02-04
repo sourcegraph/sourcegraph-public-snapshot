@@ -42,6 +42,7 @@ import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useInitialBatchSpec } from './useInitialBatchSpec'
 import { useNamespaces } from './useNamespaces'
 import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
+import { haveMatchingOnStatements } from './yaml-util'
 
 export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
@@ -208,14 +209,9 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     )
 
     const [noCache, setNoCache] = useState<boolean>(false)
-
-    const onChangeNoCache = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => {
-            setNoCache(event.target.checked)
-            // Mark that the batch spec code on the backend is now stale.
-            setBatchSpecStale(true)
-        },
-        [setNoCache]
+    const toggleNoCache = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event => setNoCache(event.target.checked),
+        []
     )
 
     // Manage the batch spec input YAML code that's being edited.
@@ -224,17 +220,17 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         batchChange.name
     )
 
-    // Track whenever the batch spec code that is presently in the editor is newer than
-    // the batch spec code on the backend.
-    const [batchSpecStale, setBatchSpecStale] = useState(false)
+    // The batch spec is only considered stale when its "on" statement has been modified,
+    // since this is what's relevant to the workspaces preview.
+    const batchSpecStale = useMemo(() => haveMatchingOnStatements(initialBatchSpecCode, debouncedCode) === false, [
+        initialBatchSpecCode,
+        debouncedCode,
+    ])
 
     // When we successfully submit the latest batch spec code to the backend for a new
-    // workspaces preview, we can:
-    // - Mark that the batch spec code is no longer stale.
-    // - Mark that the user has previewed the workspaces at least once.
-    // - Refetch the batch change to get the latest batch spec.
+    // workspaces preview, we follow up by refetching the batch change to get the latest
+    // batch spec.
     const onCompletePreview = useCallback(() => {
-        setBatchSpecStale(false)
         refetchBatchChange().then(noop).catch(noop)
     }, [refetchBatchChange])
 
@@ -256,8 +252,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
             clearPreviewError()
-            // Mark that the batch spec code on the backend is now stale.
-            setBatchSpecStale(true)
             handleCodeChange(newCode)
         },
         [handleCodeChange, clearPreviewError]
@@ -270,7 +264,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         isLoadingPreview,
     ])
 
-    const workspacesPreviewResolution = useBatchSpecWorkspaceResolution(batchSpec, { fetchPolicy: 'cache-first' })
+    const { resolutionState } = useBatchSpecWorkspaceResolution(batchSpec, { fetchPolicy: 'cache-first' })
 
     // Manage submitting a batch spec for execution.
     const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpec.id)
@@ -290,7 +284,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 isExecuting ||
                 !hasPreviewed ||
                 batchSpecStale ||
-                workspacesPreviewResolution?.state !== BatchSpecWorkspaceResolutionState.COMPLETED
+                resolutionState !== BatchSpecWorkspaceResolutionState.COMPLETED
         )
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
@@ -300,20 +294,12 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 ? 'Preview workspaces first before you run.'
                 : batchSpecStale
                 ? 'Update your workspaces preview before you run.'
-                : isLoadingPreview || workspacesPreviewResolution?.state !== BatchSpecWorkspaceResolutionState.COMPLETED
+                : isLoadingPreview || resolutionState !== BatchSpecWorkspaceResolutionState.COMPLETED
                 ? 'Wait for the preview to finish first.'
                 : undefined
 
         return [disableExecution, executionTooltip]
-    }, [
-        hasPreviewed,
-        isValid,
-        previewError,
-        isLoadingPreview,
-        isExecuting,
-        batchSpecStale,
-        workspacesPreviewResolution?.state,
-    ])
+    }, [hasPreviewed, isValid, previewError, isLoadingPreview, isExecuting, batchSpecStale, resolutionState])
 
     const buttons = (
         <>
@@ -331,7 +317,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
             </BatchSpecDownloadLink>
             <div className="form-group">
                 <label>
-                    <input type="checkbox" className="mr-2" checked={noCache} onChange={onChangeNoCache} />
+                    <input type="checkbox" className="mr-2" checked={noCache} onChange={toggleNoCache} />
                     Disable cache
                 </label>
             </div>

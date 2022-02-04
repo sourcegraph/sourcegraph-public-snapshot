@@ -240,17 +240,25 @@ export const excludeRepo = (spec: string, repo: string, branch: string): YAMLMan
 }
 
 /**
+ * Finds and returns the value for a node within the `ast` mappings whose key is "on".
+ *
+ * @param ast the `YAMLMap` node to scan
+ */
+const findOnStatement = (ast: YAMLMap): YAMLNode | undefined => {
+    // Find the `YAMLMapping` node with the key "on"
+    const onMapping = find(ast.mappings, mapping => mapping.key.value === 'on')
+    return onMapping?.value
+}
+
+/**
  * Checks for a valid "on: " sequence within the provided YAML AST parsed from the input
  * batch spec.
  *
  * @param ast the `YAMLMap` node parsed from the input batch spec
  */
 const hasOnStatement = (ast: YAMLMap): boolean => {
-    // Find the `YAMLMapping` node with the key "on"
-    const onMapping = find(ast.mappings, mapping => mapping.key.value === 'on')
-    // Take the sequence of values for the "on" key
-    const onSequence = onMapping?.value
-
+    // Find the sequence of values for the key "on"
+    const onSequence = findOnStatement(ast)
     return Boolean(onSequence && isYAMLSequence(onSequence) && onSequence.items.length > 0)
 }
 
@@ -329,4 +337,34 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
     return (
         librarySpec.slice(0, nameMapping.value.startPosition) + name + librarySpec.slice(nameMapping.value.endPosition)
     )
+}
+
+/**
+ * Parses and performs a comparison between the values for the "on" statement of two
+ * different batch specs, returning true if the statements match or "UNKNOWN" if the specs
+ * are not able to be parsed and compared.
+ *
+ * @param spec1 the first raw batch spec YAML code to compare against `spec2`
+ * @param spec2 the second raw batch spec YAML code to compare against `spec1`
+ */
+export const haveMatchingOnStatements = (spec1: string, spec2: string): boolean | 'UNKNOWN' => {
+    const ast1 = load(spec1)
+    const ast2 = load(spec2)
+
+    if (!isYAMLMap(ast1) || ast1.errors.length > 0 || !isYAMLMap(ast2) || ast2.errors.length > 0) {
+        return 'UNKNOWN'
+    }
+
+    // Find the value for the "on" statement for both specs
+    const on1 = findOnStatement(ast1)
+    const on2 = findOnStatement(ast2)
+
+    if (!on1 || !on2) {
+        return 'UNKNOWN'
+    }
+
+    const onString1 = spec1.slice(on1.startPosition, on1.endPosition)
+    const onString2 = spec2.slice(on2.startPosition, on2.endPosition)
+
+    return onString1 === onString2
 }
