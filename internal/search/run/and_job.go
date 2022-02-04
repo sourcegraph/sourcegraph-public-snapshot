@@ -42,7 +42,7 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 		limitHit    atomic.Bool
 		sentResults atomic.Bool
 		sem         = semaphore.NewWeighted(16)
-		merger      = result.NewLiveMerger(len(a.children))
+		merger      = result.NewMerger(len(a.children))
 	)
 	for childNum, child := range a.children {
 		childNum, child := childNum, child

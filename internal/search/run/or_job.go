@@ -37,7 +37,7 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 		maxAlerter search.MaxAlerter
 		g          multierror.Group
 		sem        = semaphore.NewWeighted(16)
-		merger     = result.NewLiveMerger(len(j.children))
+		merger     = result.NewMerger(len(j.children))
 	)
 	for childNum, child := range j.children {
 		childNum, child := childNum, child
