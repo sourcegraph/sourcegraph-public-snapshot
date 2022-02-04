@@ -2,6 +2,8 @@ package result
 
 import (
 	"sync"
+
+	"github.com/bits-and-blooms/bitset"
 )
 
 // NewMerger creates a type that will perform a merge on any number of result sets.
@@ -28,9 +30,9 @@ type merger struct {
 }
 
 type mergeVal struct {
-	match       Match
-	sourceMarks []bool
-	sent        bool
+	match Match
+	seen  *bitset.BitSet
+	sent  bool
 }
 
 // AddMatches adds a set of Matches from the given source to the merger.
@@ -66,10 +68,9 @@ func (lm *merger) addMatch(m Match, source int) Match {
 	if !ok {
 		// If we've not seen the match before, track it and continue
 		newVal := mergeVal{
-			match:       m,
-			sourceMarks: make([]bool, lm.numSources), // all false
+			match: m,
+			seen:  bitset.New(lm.numSources).Set(uint(source))
 		}
-		newVal.sourceMarks[source] = true
 		lm.matches[key] = newVal
 		return nil
 	}
@@ -84,10 +85,10 @@ func (lm *merger) addMatch(m Match, source int) Match {
 	}
 
 	// Mark the key as seen by this source
-	prev.sourceMarks[source] = true
+	prev.seen.Set(uint(source))
 
 	// Check if the match has been added by all sources
-	if all(prev.sourceMarks) {
+	if prev.seen.All() {
 		// Mark that we've returned this match as "streamable"
 		// so we don't return it again.
 		prev.sent = true
@@ -112,13 +113,4 @@ func (lm *merger) UnsentTracked() Matches {
 		}
 	}
 	return res
-}
-
-func all(b []bool) bool {
-	for _, val := range b {
-		if !val {
-			return false
-		}
-	}
-	return true
 }
