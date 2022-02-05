@@ -8,29 +8,27 @@ import (
 	"github.com/google/go-github/v41/github"
 )
 
-type acceptanceResult struct {
-	// Checked indicates the acceptance checklist checkbox was checked.
-	Checked bool
+type checkResult struct {
 	// Reviewed indicates that *any* review has been made on the PR.
 	Reviewed bool
-	// Explanation is the content provided after the acceptance checklist checkbox.
-	Explanation string
+	// TestPlan is the content provided after the acceptance checklist checkbox.
+	TestPlan string
 	// Error indicating any issue that might have occured during the check.
 	Error error
 }
 
-func (r acceptanceResult) Explained() bool {
-	return r.Explanation != ""
+func (r checkResult) HasTestPlan() bool {
+	return r.TestPlan != ""
 }
 
 var markdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
 
-func checkAcceptance(ctx context.Context, ghc *github.Client, payload *EventPayload) acceptanceResult {
-	var err error
+func checkTestPlan(ctx context.Context, ghc *github.Client, payload *EventPayload) checkResult {
 	pr := payload.PullRequest
 
 	// Reviewed can be inferred from payload, but if not reviewed we double-check through
 	// the GitHub API
+	var err error
 	reviewed := pr.ReviewComments > 0
 	if !reviewed {
 		repoParts := strings.Split(payload.Repository.FullName, "/")
@@ -42,32 +40,21 @@ func checkAcceptance(ctx context.Context, ghc *github.Client, payload *EventPayl
 
 	// Parse aceptance data from body
 	const (
-		acceptanceHeader        = "## Acceptance checklist"
-		acceptanceChecklistItem = "I have gone through the [acceptance checklist]"
+		acceptanceHeader = "## Test plan"
 	)
 	sections := strings.Split(pr.Body, acceptanceHeader)
 	if len(sections) < 2 {
-		return acceptanceResult{
-			Checked:  false,
+		return checkResult{
 			Reviewed: reviewed,
 			Error:    err,
 		}
 	}
 	acceptanceSection := sections[1]
-	if strings.Contains(acceptanceSection, acceptanceChecklistItem) && strings.Contains(acceptanceSection, "- [x] ") {
-		return acceptanceResult{
-			Checked:  true,
-			Reviewed: reviewed,
-			Error:    err,
-		}
-	}
 	acceptanceLines := strings.Split(acceptanceSection, "\n")
 	var explanation []string
 	for _, l := range acceptanceLines {
 		line := strings.TrimSpace(l)
-		if !strings.Contains(line, acceptanceChecklistItem) {
-			explanation = append(explanation, line)
-		}
+		explanation = append(explanation, line)
 	}
 
 	// Merge into single string
@@ -76,10 +63,9 @@ func checkAcceptance(ctx context.Context, ghc *github.Client, payload *EventPayl
 	fullExplanation = markdownCommentRegexp.ReplaceAllString(fullExplanation, "")
 	// Remove whitespace
 	fullExplanation = strings.TrimSpace(fullExplanation)
-	return acceptanceResult{
-		Checked:     false,
-		Reviewed:    reviewed,
-		Explanation: fullExplanation,
-		Error:       err,
+	return checkResult{
+		Reviewed: reviewed,
+		TestPlan: fullExplanation,
+		Error:    err,
 	}
 }

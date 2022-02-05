@@ -57,13 +57,13 @@ func main() {
 	}
 
 	// Do checks
-	acceptance := checkAcceptance(ctx, ghc, payload)
-	log.Printf("checkAcceptance: %+v\n", acceptance)
-	if acceptance.Checked && acceptance.Reviewed {
+	result := checkTestPlan(ctx, ghc, payload)
+	log.Printf("checkTestPlan: %+v\n", result)
+	if result.HasTestPlan() && result.Reviewed {
 		log.Println("Acceptance checked and PR reviewed, done")
 		return
 	}
-	issue, closeIssue := generateAcceptanceAuditTrailIssue(payload, &acceptance)
+	issue, closeIssue := generateExceptionIssue(payload, &result)
 
 	log.Printf("Creating issue for exception: %+v\n", issue)
 	created, _, err := ghc.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, issue)
