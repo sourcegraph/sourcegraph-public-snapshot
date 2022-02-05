@@ -14,7 +14,7 @@ const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
 
 export type ButtonLinkProps = Omit<ButtonProps, 'as'> &
-    AnchorHTMLAttributes<HTMLAnchorElement> & {
+    Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
         /** The link destination URL. */
         to?: H.LocationDescriptor
 
