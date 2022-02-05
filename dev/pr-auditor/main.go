@@ -63,7 +63,7 @@ func main() {
 		log.Println("Acceptance checked and PR reviewed, done")
 		return
 	}
-	issue, closeIssue := generateExceptionIssue(payload, &result)
+	issue := generateExceptionIssue(payload, &result)
 
 	log.Printf("Creating issue for exception: %+v\n", issue)
 	created, _, err := ghc.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, issue)
@@ -71,15 +71,4 @@ func main() {
 		log.Fatal("Issues.Create: ", err)
 	}
 	log.Println("Created issue: ", created.GetHTMLURL())
-
-	if closeIssue {
-		log.Println("Closing created issue")
-		_, _, err := ghc.Issues.Edit(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, created.GetNumber(), &github.IssueRequest{
-			State: github.String("closed"),
-		})
-		if err != nil {
-			log.Fatal("Issues.Edit: ", err)
-		}
-		log.Println("Created issue was closed")
-	}
 }
