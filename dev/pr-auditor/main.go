@@ -23,7 +23,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubPayloadPath, "github.payload-path", "", "path to JSON file with GitHub event payload")
 	flag.StringVar(&f.GitHubToken, "github.token", "", "GitHub token")
 	flag.StringVar(&f.IssuesRepoOwner, "issues.repo-owner", "sourcegraph", "owner of repo to create issues in")
-	flag.StringVar(&f.IssuesRepoName, "issues.repo-name", "sec-audit-trail", "name of repo to create issues in")
+	flag.StringVar(&f.IssuesRepoName, "issues.repo-name", "sec-pr-audit-trail", "name of repo to create issues in")
 	flag.Parse()
 }
 
