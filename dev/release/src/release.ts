@@ -371,7 +371,7 @@ cc @${config.captainGitHubUsername}
 
             // Render changes
             const createdChanges = await createChangesets({
-                requiredCommands: ['comby', sed, 'find', 'go'],
+                requiredCommands: ['comby', sed, 'find', 'go', 'src'],
                 changes: [
                     {
                         owner: 'sourcegraph',
