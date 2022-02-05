@@ -1239,6 +1239,8 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 		metricsPermsGap.WithLabelValues("user").Set(m.UsersPermsGapSeconds)
 		metricsStalePerms.WithLabelValues("repo").Set(float64(m.ReposWithStalePerms))
 		metricsPermsGap.WithLabelValues("repo").Set(m.ReposPermsGapSeconds)
+		metricsStalePerms.WithLabelValues("sub-repo").Set(float64(m.SubReposWithStalePerms))
+		metricsPermsGap.WithLabelValues("sub-repo").Set(m.SubReposPermsGapSeconds)
 
 		s.queue.mu.RLock()
 		metricsQueueSize.Set(float64(s.queue.Len()))

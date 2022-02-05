@@ -7,6 +7,8 @@ import { Router, Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
+
 import { CodeInsightsBackend } from '../../../core/backend/code-insights-backend'
 import {
     CodeInsightsBackendContext,
@@ -64,6 +66,10 @@ const renderWithRouter = (
 })
 
 describe('DashboardsPage', () => {
+    beforeAll(() => {
+        window.IntersectionObserver = MockIntersectionObserver
+    })
+
     it('should redirect to "All insights" page if no dashboardId is provided', () => {
         const { history } = renderWithRouter(<DashboardsPage telemetryService={mockTelemetryService} />)
 

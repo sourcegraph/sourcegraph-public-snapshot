@@ -258,7 +258,7 @@ type Mutation {
 
     Only site admins and any organization member may perform this mutation.
     """
-    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
+    inviteUserToOrganization(organization: ID!, username: String, email: String): InviteUserToOrganizationResult!
     """
     Accept or reject an existing organization invitation.
 
@@ -1475,6 +1475,17 @@ type Query {
         """
         after: String
     ): ExecutorConnection!
+
+    """
+    (experimental)
+    Get invitation based on the JWT in the invitation URL
+    """
+    invitationByToken(
+        """
+        The token that uniquely identifies the invitation
+        """
+        token: String!
+    ): OrganizationInvitation!
 }
 
 """
@@ -2318,6 +2329,20 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
+
+    """
+    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
+    repositories included by this external service, and is derived from commit history (because that
+    for example gives more accurate collaborator work email addresses than the contributors API which
+    often returns personal emails.
+
+    Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
+    inviting collaborators while repositories are cloning.
+
+    In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
+    reaches out to the code host directly which is wasteful if repositories are already cloned.
+    """
+    invitableCollaborators: [Person!]!
 }
 
 """
@@ -4972,9 +4997,13 @@ type Org implements Node & SettingsSubject & Namespace {
             reason: "Use settingsCascade instead. This field is a deprecated alias for it and will be removed in a future release."
         )
     """
+    DEPRECATED
     A pending invitation for the viewer to join this organization, if any.
     """
     viewerPendingInvitation: OrganizationInvitation
+        @deprecated(
+            reason: "Use invitationByToken operation instead. This field is deprecated and will be removed in a future release."
+        )
     """
     Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
     have admin privileges on the organization.

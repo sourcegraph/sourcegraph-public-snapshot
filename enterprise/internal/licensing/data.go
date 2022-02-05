@@ -54,6 +54,9 @@ const (
 	// FeatureBackupAndRestore is whether builtin backup and restore on this Sourcegraph instance
 	// has been purchased.
 	FeatureBackupAndRestore Feature = "backup-and-restore"
+
+	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
+	FeatureCodeInsights Feature = "code-insights"
 )
 
 // planFeatures defines the features that are enabled for each plan.
@@ -68,6 +71,7 @@ var planFeatures = map[Plan][]Feature{
 		FeatureBatchChanges,
 		FeatureMonitoring,
 		FeatureBackupAndRestore,
+		FeatureCodeInsights,
 	},
 	team:       {},
 	enterprise: {},

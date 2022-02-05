@@ -1,7 +1,6 @@
 package definition
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/cockroachdb/errors"
@@ -9,10 +8,13 @@ import (
 )
 
 type Definition struct {
-	ID        int
-	UpQuery   *sqlf.Query
-	DownQuery *sqlf.Query
-	Parents   []int
+	ID                        int
+	Name                      string
+	UpQuery                   *sqlf.Query
+	DownQuery                 *sqlf.Query
+	Parents                   []int
+	IsCreateIndexConcurrently bool
+	IndexMetadata             *IndexMetadata
 }
 
 type IndexMetadata struct {
@@ -44,14 +46,6 @@ func (ds *Definitions) All() []Definition {
 	definitions := make([]Definition, len(ds.definitions))
 	copy(definitions, ds.definitions)
 	return ds.definitions
-}
-
-func (ds *Definitions) Count() int {
-	return len(ds.definitions)
-}
-
-func (ds *Definitions) First() int {
-	return ds.definitions[0].ID
 }
 
 func (ds *Definitions) GetByID(id int) (Definition, bool) {
@@ -99,7 +93,7 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 	for _, definition := range filtered {
 		for _, parent := range definition.Parents {
 			if _, ok := idMap[parent]; !ok {
-				return nil, fmt.Errorf("illegal filter: migration %d (included) references parent migration %d (excluded)", definition.ID, parent)
+				return nil, errors.Newf("illegal filter: migration %d (included) references parent migration %d (excluded)", definition.ID, parent)
 			}
 		}
 	}
@@ -407,8 +401,8 @@ func (ds *Definitions) DownFrom(id, n int) ([]Definition, error) {
 
 func unknownMigrationError(id int, source *int) error {
 	if source == nil {
-		return fmt.Errorf("unknown migration %d", id)
+		return errors.Newf("unknown migration %d", id)
 	}
 
-	return fmt.Errorf("unknown migration %d referenced from migration %d", id, *source)
+	return errors.Newf("unknown migration %d referenced from migration %d", id, *source)
 }

@@ -2,6 +2,7 @@ package trace
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -217,7 +218,7 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 			kvs := make([]interface{}, 0, 20)
 			kvs = append(kvs,
 				"method", r.Method,
-				"url", r.URL.String(),
+				"url", truncate(r.URL.String(), 100),
 				"code", m.Code,
 				"duration", m.Duration,
 			)
@@ -272,6 +273,13 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 			})
 		}
 	}))
+}
+
+func truncate(s string, n int) string {
+	if len(s) > n {
+		return fmt.Sprintf("%s...(%d more)", s[:n], len(s)-n)
+	}
+	return s
 }
 
 func Route(next http.Handler) http.Handler {

@@ -303,7 +303,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <div
                                 className={classNames(
                                     'font-weight-bold',
-                                    !triggerCompleted && classNames(cardLinkClassName, styles.triggerLabel)
+                                    triggerCompleted
+                                        ? styles.triggerBtnText
+                                        : classNames(cardLinkClassName, styles.triggerLabel)
                                 )}
                             >
                                 When there are new search results
@@ -332,9 +334,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             <small className="text-muted">
                 {' '}
                 What other events would you like to monitor?{' '}
-                <a href="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
+                <Link to="mailto:feedback@sourcegraph.com" target="_blank" rel="noopener">
                     Share feedback.
-                </a>
+                </Link>
             </small>
         </>
     )

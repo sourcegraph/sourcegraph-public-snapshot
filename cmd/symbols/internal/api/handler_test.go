@@ -50,7 +50,7 @@ func TestHandler(t *testing.T) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
 
-	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext), 0, 10, &observation.TestContext)
+	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext), 0, 10, &observation.TestContext)
 	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser)
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
 	handler := NewHandler(cachedDatabaseWriter, &observation.TestContext)

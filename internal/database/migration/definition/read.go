@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
+var isTesting = false
+
 func ReadDefinitions(fs fs.FS) (*Definitions, error) {
 	migrationDefinitions, err := readDefinitions(fs)
 	if err != nil {
@@ -26,8 +28,10 @@ func ReadDefinitions(fs fs.FS) (*Definitions, error) {
 		return nil, err
 	}
 
-	if err := validateLinearizedGraph(migrationDefinitions); err != nil {
-		return nil, err
+	if !isTesting {
+		if err := validateLinearizedGraph(migrationDefinitions); err != nil {
+			return nil, err
+		}
 	}
 
 	return newDefinitions(migrationDefinitions), nil
@@ -91,17 +95,6 @@ func readDefinition(fs fs.FS, version int) (Definition, error) {
 		return Definition{}, err
 	}
 
-	if _, ok := parseIndexMetadata(downQuery.Query(sqlf.PostgresBindVar)); ok {
-		return Definition{}, instructionalError{
-			class:       "malformed concurrent index creation",
-			description: "did not expect down migration to contain concurrent creation of an index",
-			instructions: strings.Join([]string{
-				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
-				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
-			}, " "),
-		}
-	}
-
 	return hydrateMetadataFromFile(fs, metadataFilename, Definition{
 		ID:        version,
 		UpQuery:   upQuery,
@@ -124,23 +117,63 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 	}
 
 	var payload struct {
-		Name   string `yaml:"name"`
-		Parent int    `yaml:"parent"`
+		Name                    string `yaml:"name"`
+		Parent                  int    `yaml:"parent"`
+		Parents                 []int  `yaml:"parents"`
+		CreateIndexConcurrently bool   `yaml:"createIndexConcurrently"`
 	}
 	if err := yaml.Unmarshal(contents, &payload); err != nil {
 		return Definition{}, err
 	}
 
+	definition.Name = payload.Name
+
+	parents := payload.Parents
 	if payload.Parent != 0 {
-		definition.Parents = append(definition.Parents, payload.Parent)
+		parents = append(parents, payload.Parent)
+	}
+	sort.Ints(parents)
+	definition.Parents = parents
+
+	if _, ok := parseIndexMetadata(definition.DownQuery.Query(sqlf.PostgresBindVar)); ok {
+		return Definition{}, instructionalError{
+			class:       "malformed concurrent index creation",
+			description: "did not expect down migration to contain concurrent creation of an index",
+			instructions: strings.Join([]string{
+				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
+				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
+			}, " "),
+		}
+	}
+
+	if indexMetadata, ok := parseIndexMetadata(definition.UpQuery.Query(sqlf.PostgresBindVar)); ok {
+		if !payload.CreateIndexConcurrently {
+			return Definition{}, instructionalError{
+				class:       "malformed concurrent index creation",
+				description: "did not expect up migration to contain concurrent creation of an index",
+				instructions: strings.Join([]string{
+					"Add `createIndexConcurrently: true` to this migration's metadata.yaml file.",
+				}, " "),
+			}
+		}
+
+		definition.IsCreateIndexConcurrently = true
+		definition.IndexMetadata = indexMetadata
+	} else if payload.CreateIndexConcurrently {
+		return Definition{}, instructionalError{
+			class:       "malformed concurrent index creation",
+			description: "expected up migration to contain concurrent creation of an index",
+			instructions: strings.Join([]string{
+				"Remove `createIndexConcurrently: true` from this migration's metadata.yaml file.",
+			}, " "),
+		}
 	}
 
 	return definition, nil
 }
 
-// readQueryFromFile returns the parsed query and extracted metadata read from
-// the given file.
-func readQueryFromFile(fs fs.FS, filepath string) (_ *sqlf.Query, _ error) {
+// readQueryFromFile returns the query parsed from the given file.
+func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
 	file, err := fs.Open(filepath)
 	if err != nil {
 		return nil, err
@@ -210,12 +243,6 @@ func reorderDefinitions(migrationDefinitions []Definition) error {
 	return nil
 }
 
-var (
-	ErrNoRoots       = fmt.Errorf("no roots")
-	ErrMultipleRoots = fmt.Errorf("multiple roots")
-	ErrCycle         = fmt.Errorf("cycle")
-)
-
 // findDefinitionOrder returns an order of migration definition identifiers such that
 // migrations occur only after their dependencies (parents). This assumes that the set
 // of definitions provided form a single-root directed acyclic graph and fails with an
@@ -247,15 +274,42 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 	var (
 		order    = make([]int, 0, len(migrationDefinitions))
 		marks    = make(map[int]MarkType, len(migrationDefinitions))
-		children = children(migrationDefinitions)
+		childMap = children(migrationDefinitions)
 
-		dfs func(id int) error
+		dfs func(id int, parents []int) error
 	)
 
-	dfs = func(id int) error {
+	for _, children := range childMap {
+		// Reverse-order each child slice. This will end up giving the output slice the
+		// property that migrations not related via ancestry will be ordered by their
+		// version number. This gives a nice, determinstic, and intuitive order in which
+		// migrations will be applied.
+		sort.Sort(sort.Reverse(sort.IntSlice(children)))
+	}
+
+	dfs = func(id int, parents []int) error {
 		if marks[id] == MarkTypeVisiting {
-			// currently processing
-			return ErrCycle
+			// We're currently processing the descendants of this node, so we have a paths in
+			// both directions between these two nodes.
+
+			// Peel off the head of the parent list until we reach the target  node. This leaves
+			// us with a slice starting with the target node, followed by the path back to itself.
+			// We'll use this instance of a cycle in the error description.
+			for len(parents) > 0 && parents[0] != id {
+				parents = parents[1:]
+			}
+			if len(parents) == 0 || parents[0] != id {
+				panic("unreachable")
+			}
+			cycle := append(parents, id)
+
+			return instructionalError{
+				class:       "migration dependency cycle",
+				description: fmt.Sprintf("migrations %d and %d declare each other as dependencies", parents[len(parents)-1], id),
+				instructions: strings.Join([]string{
+					fmt.Sprintf("Break one of the links in the following cycle:\n%s", strings.Join(intsToStrings(cycle), " -> ")),
+				}, " "),
+			}
 		}
 		if marks[id] == MarkTypeVisited {
 			// already visited
@@ -265,8 +319,8 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 		marks[id] = MarkTypeVisiting
 		defer func() { marks[id] = MarkTypeVisited }()
 
-		for _, child := range children[id] {
-			if err := dfs(child); err != nil {
+		for _, child := range childMap[id] {
+			if err := dfs(child, append(append([]int(nil), parents...), id)); err != nil {
 				return err
 			}
 		}
@@ -276,18 +330,29 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 		return nil
 	}
 
-	if err := dfs(root); err != nil {
+	// Perform a depth-first traversal from the single root we found above
+	if err := dfs(root, nil); err != nil {
 		return nil, err
 	}
-	if len(order) != len(migrationDefinitions) {
-		return nil, ErrCycle
+	if len(order) < len(migrationDefinitions) {
+		// We didn't visit every node, but we also do not have more than one root. There necessarily
+		// exists a cycle that we didn't enter in the traversal from our root. Continue the traversal
+		// starting from each unvisited node until we return a cycle.
+		for _, migrationDefinition := range migrationDefinitions {
+			if _, ok := marks[migrationDefinition.ID]; !ok {
+				if err := dfs(migrationDefinition.ID, nil); err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		panic("unreachable")
 	}
 
 	return order, nil
 }
 
-// root returns the unique migration definition with no parent. An error is returned
-// if there is not exactly one root.
+// root returns the unique migration definition with no parent or an error of no such migration exists.
 func root(migrationDefinitions []Definition) (int, error) {
 	roots := make([]int, 0, 1)
 	for _, migrationDefinition := range migrationDefinitions {
@@ -296,10 +361,29 @@ func root(migrationDefinitions []Definition) (int, error) {
 		}
 	}
 	if len(roots) == 0 {
-		return 0, ErrNoRoots
+		return 0, instructionalError{
+			class:       "no roots",
+			description: "every migration declares a parent",
+			instructions: strings.Join([]string{
+				`There is no migration defined in this schema that does not declare a parent.`,
+				`This indicates either a migration dependency cycle or a reference to a parent migration that no longer exists.`,
+			}, " "),
+		}
 	}
+
 	if len(roots) > 1 {
-		return 0, ErrMultipleRoots
+		strRoots := intsToStrings(roots)
+		sort.Strings(strRoots)
+
+		return 0, instructionalError{
+			class:       "multiple roots",
+			description: fmt.Sprintf("expected exactly one migration to have no parent but found %d", len(roots)),
+			instructions: strings.Join([]string{
+				`There are multiple migrations defined in this schema that do not declare a parent.`,
+				`This indicates a new migration that did not correctly attach itself to an existing migration.`,
+				`This may also indicate the presence of a duplicate squashed migration.`,
+			}, " "),
+		}
 	}
 
 	return roots[0], nil
@@ -308,14 +392,14 @@ func root(migrationDefinitions []Definition) (int, error) {
 // children constructs map from migration identifiers to the set of identifiers of all
 // dependent migrations.
 func children(migrationDefinitions []Definition) map[int][]int {
-	children := make(map[int][]int, len(migrationDefinitions))
+	childMap := make(map[int][]int, len(migrationDefinitions))
 	for _, migrationDefinition := range migrationDefinitions {
 		for _, parent := range migrationDefinition.Parents {
-			children[parent] = append(children[parent], migrationDefinition.ID)
+			childMap[parent] = append(childMap[parent], migrationDefinition.ID)
 		}
 	}
 
-	return children
+	return childMap
 }
 
 // validateLinearizedGraph returns an error if the given sequence of migrations are
@@ -331,14 +415,23 @@ func validateLinearizedGraph(migrationDefinitions []Definition) error {
 	}
 
 	if len(migrationDefinitions[0].Parents) != 0 {
-		return fmt.Errorf("unexpected parent for root definition")
+		return errors.Newf("unexpected parent for root definition")
 	}
 
 	for _, definition := range migrationDefinitions[1:] {
 		if len(definition.Parents) != 1 || definition.Parents[0] != definition.ID-1 {
-			return fmt.Errorf("unexpected parent declared in definition %d", definition.ID)
+			return errors.Newf("unexpected parent declared in definition %d", definition.ID)
 		}
 	}
 
 	return nil
+}
+
+func intsToStrings(ints []int) []string {
+	strs := make([]string, 0, len(ints))
+	for _, value := range ints {
+		strs = append(strs, strconv.Itoa(value))
+	}
+
+	return strs
 }

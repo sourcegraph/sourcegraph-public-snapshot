@@ -4,6 +4,8 @@ import React from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Link } from '../Link'
+
 import { Menu, MenuButton, MenuDivider, MenuHeader, MenuItem, MenuLink, MenuList } from '.'
 
 const config: Meta = {
@@ -36,7 +38,7 @@ export const MenuExample: Story = () => (
             <MenuItem onSelect={() => alert('Clicked!')}>Click me</MenuItem>
             <MenuItem onSelect={() => alert('Clicked!')}>Alternative action</MenuItem>
             <MenuDivider />
-            <MenuLink as="a" href="https://www.example.com">
+            <MenuLink as={Link} to="https://www.example.com">
                 Go somewhere
             </MenuLink>
         </MenuList>

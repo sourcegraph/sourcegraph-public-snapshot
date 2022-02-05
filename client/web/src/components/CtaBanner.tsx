@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
-import { Button, Card } from '@sourcegraph/wildcard'
+import { ButtonLink, Card } from '@sourcegraph/wildcard'
 
 import styles from './CtaBanner.module.scss'
 
@@ -35,18 +35,16 @@ export const CtaBanner: React.FunctionComponent<Props> = ({
         <div>
             <HeadingX>{title}</HeadingX>
             <p className={bodyTextClassName}>{bodyText}</p>
-            <Button
-                href={href}
-                // eslint-disable-next-line react/jsx-no-target-blank
+            <ButtonLink
+                to={href}
                 target="_blank"
                 rel="noreferrer"
                 onClick={onClick}
                 className={classNames({ 'ga-cta-install-now': googleAnalytics })}
                 variant="primary"
-                as="a"
             >
                 {linkText}
-            </Button>
+            </ButtonLink>
         </div>
     </Card>
 )

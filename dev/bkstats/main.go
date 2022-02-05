@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+	"github.com/cockroachdb/errors"
 )
 
 var token string
@@ -191,18 +192,18 @@ func postOnSlack(report *report) error {
 
 	body, err := json.MarshalIndent(slackBody, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to post on slack: %w", err)
+		return errors.Newf("failed to post on slack: %w", err)
 	}
 	// Perform the HTTP Post on the webhook
 	req, err := http.NewRequest(http.MethodPost, slack, bytes.NewBuffer(body))
 	if err != nil {
-		return fmt.Errorf("failed to post on slack: %w", err)
+		return errors.Newf("failed to post on slack: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to post on slack: %w", err)
+		return errors.Newf("failed to post on slack: %w", err)
 	}
 
 	// Parse the response, to check if it succeeded
@@ -213,7 +214,7 @@ func postOnSlack(report *report) error {
 	}
 	defer resp.Body.Close()
 	if buf.String() != "ok" {
-		return fmt.Errorf("failed to post on slack: %s", buf.String())
+		return errors.Newf("failed to post on slack: %s", buf.String())
 	}
 	return nil
 }

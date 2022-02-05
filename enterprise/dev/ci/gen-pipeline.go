@@ -49,25 +49,7 @@ func main() {
 
 func previewPipeline(w io.Writer, c ci.Config, pipeline *buildkite.Pipeline) {
 	fmt.Fprintf(w, "Detected run type:\n\t%s\n", c.RunType.String())
-	fmt.Fprintf(w, "Detected changed files (%d):\n", len(c.ChangedFiles))
-	for _, f := range c.ChangedFiles {
-		fmt.Fprintf(w, "\t%s\n", f)
-	}
-
-	fmt.Fprintln(w, "Detected changes:")
-	for affects, doesAffects := range map[string]bool{
-		"Go":                           c.ChangedFiles.AffectsGo(),
-		"Client":                       c.ChangedFiles.AffectsClient(),
-		"Docs":                         c.ChangedFiles.AffectsDocs(),
-		"Dockerfiles":                  c.ChangedFiles.AffectsDockerfiles(),
-		"GraphQL":                      c.ChangedFiles.AffectsGraphQL(),
-		"CI scripts":                   c.ChangedFiles.AffectsCIScripts(),
-		"Terraform":                    c.ChangedFiles.AffectsTerraformFiles(),
-		"ExecutorDockerRegistryMirror": c.ChangedFiles.AffectsExecutorDockerRegistryMirror(),
-	} {
-		fmt.Fprintf(w, "\tAffects %s: %t\n", affects, doesAffects)
-	}
-
+	fmt.Fprintf(w, "Detected diffs:\n\t%s\n", c.Diff.String())
 	fmt.Fprintf(w, "Computed build steps:\n")
 	printPipeline(w, "", pipeline)
 }

@@ -61,14 +61,14 @@ interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFie
 export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecDownloadLinkProps> = React.memo(
     function BatchSpecDownloadLink({ children, className, name, originalInput }) {
         return (
-            <a
+            <Link
                 download={getFileName(name)}
-                href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+                to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
                 className={className}
                 data-tooltip={`Download ${getFileName(name)}`}
             >
                 {children}
-            </a>
+            </Link>
         )
     }
 )

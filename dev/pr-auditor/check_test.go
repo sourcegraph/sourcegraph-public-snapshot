@@ -11,26 +11,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_checkAcceptance(t *testing.T) {
+func TestCheckTestPlan(t *testing.T) {
 	tests := []struct {
 		name     string
 		bodyFile string
 		want     checkResult
 	}{
 		{
-			name:     "accepted",
+			name:     "has test plan",
 			bodyFile: "testdata/pull_request_body/has-plan.md",
 			want: checkResult{
 				TestPlan: "I have a plan!",
 			},
 		},
 		{
-			name:     "no explanation",
+			name:     "no test plan",
 			bodyFile: "testdata/pull_request_body/no-plan.md",
 			want:     checkResult{},
 		},
 		{
-			name:     "complicated explanation",
+			name:     "complicated test plan",
 			bodyFile: "testdata/pull_request_body/has-plan-fancy.md",
 			want: checkResult{
 				TestPlan: `This is a plan!

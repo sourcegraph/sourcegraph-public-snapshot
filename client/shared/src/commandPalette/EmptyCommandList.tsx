@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { onlyDefaultExtensionsAdded } from '../extensions/extensions'
 import { SettingsCascadeOrError } from '../settings/settings'
@@ -28,9 +28,9 @@ export const EmptyCommandList: React.FunctionComponent<Props> = ({ settingsCasca
                     : 'Commands from your installed extensions will be shown when you navigate to certain pages.'}
             </p>
 
-            <Button href={sourcegraphURL + '/extensions'} variant="primary" as="a">
+            <ButtonLink to={sourcegraphURL + '/extensions'} variant="primary">
                 Explore extensions
-            </Button>
+            </ButtonLink>
 
             <PuzzleIllustration className={styles.illustration} />
         </EmptyCommandListContainer>

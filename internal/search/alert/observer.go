@@ -22,7 +22,6 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
 type Observer struct {
@@ -200,9 +199,9 @@ func (o *Observer) update(alert *search.Alert) {
 	}
 }
 
-//  Done returns the highest priority alert and a multierror.Error containing
-//  all errors that could not be converted to alerts.
-func (o *Observer) Done(stats *streaming.Stats) (*search.Alert, error) {
+// Done returns the highest priority alert and a multierror.Error containing
+// all errors that could not be converted to alerts.
+func (o *Observer) Done() (*search.Alert, error) {
 	if !o.HasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
 		o.update(search.AlertForStructuralSearchNotSet(o.OriginalQuery))
 	}

@@ -19,14 +19,16 @@ func Flags(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 	return &ffcli.Command{
 		Name:       commandName,
 		ShortUsage: fmt.Sprintf("%s <command>", commandName),
-		ShortHelp:  "Modifies and runs database migrations",
+		ShortHelp:  "Modifies and runs schema migrations",
 		FlagSet:    rootFlagSet,
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
 		},
 		Subcommands: []*ffcli.Command{
 			Up(commandName, run, out),
-			Down(commandName, run, out),
+			UpTo(commandName, run, out),
+			Undo(commandName, run, out),
+			DownTo(commandName, run, out),
 		},
 	}
 }

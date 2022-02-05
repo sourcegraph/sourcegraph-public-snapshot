@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// The metric generated here will be named as "src_bitbucket_requests_total".
 var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of requests sent to the Bitbucket API.")
 
 // These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does

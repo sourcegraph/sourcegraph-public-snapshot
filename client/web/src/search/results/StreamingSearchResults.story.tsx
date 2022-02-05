@@ -66,7 +66,7 @@ const defaultProps: StreamingSearchResultsProps = {
 
 const { add } = storiesOf('web/search/results/StreamingSearchResults', module)
     .addParameters({
-        chromatic: { viewports: [577, 769, 993] },
+        chromatic: { viewports: [577, 769, 993], disableSnapshot: false },
     })
     .addDecorator(Story => {
         useExperimentalFeatures.setState({ codeMonitoring: true, showSearchContext: true })
@@ -358,33 +358,6 @@ add('limit hit with some results', () => {
             {() => (
                 <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
                     <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
-                </SearchQueryStateStoreProvider>
-            )}
-        </WebStory>
-    )
-})
-
-add('results with signup CTA', () => {
-    const result: AggregateStreamingSearchResults = {
-        state: 'complete',
-        results: MULTIPLE_SEARCH_RESULT.results,
-        filters: MULTIPLE_SEARCH_RESULT.filters,
-        progress: {
-            durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
-            skipped: [],
-        },
-    }
-
-    return (
-        <WebStory>
-            {() => (
-                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                    <StreamingSearchResults
-                        {...defaultProps}
-                        authenticatedUser={null}
-                        streamSearch={() => of(result)}
-                    />
                 </SearchQueryStateStoreProvider>
             )}
         </WebStory>

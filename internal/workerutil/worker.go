@@ -7,7 +7,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -131,7 +130,7 @@ func (w *Worker) Start() {
 			ids := w.runningIDSet.Slice()
 			knownIDs, err := w.store.Heartbeat(w.ctx, ids)
 			if err != nil {
-				log15.Error("Failed to refresh heartbeats", "name", w.options.Name, "ids", ids, "error", err)
+				logger.Error("Failed to refresh heartbeats", "name", w.options.Name, "ids", ids, "error", err)
 			}
 			knownIDsMap := map[int]struct{}{}
 			for _, id := range knownIDs {
@@ -140,7 +139,7 @@ func (w *Worker) Start() {
 
 			for _, id := range ids {
 				if _, ok := knownIDsMap[id]; !ok {
-					log15.Error("Removed unknown job from running set", "id", id)
+					logger.Error("Removed unknown job from running set", "id", id)
 					w.runningIDSet.Remove(id)
 				}
 			}
@@ -170,7 +169,7 @@ loop:
 				break loop
 			}
 
-			log15.Error("Failed to dequeue and handle record", "name", w.options.Name, "err", err)
+			logger.Error("Failed to dequeue and handle record", "name", w.options.Name, "err", err)
 		}
 
 		delay := w.options.Interval
@@ -197,7 +196,7 @@ loop:
 		}
 	}
 
-	log15.Info("Shutting down dequeue loop", "name", w.options.Name, "reason", reason)
+	logger.Info("Shutting down dequeue loop", "name", w.options.Name, "reason", reason)
 	w.wg.Wait()
 }
 
@@ -271,7 +270,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	w.options.Metrics.numJobs.Inc()
-	log15.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID(), "traceID", trace.IDFromSpan(workerSpan))
+	logger.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID(), "traceID", trace.IDFromSpan(workerSpan))
 
 	if hook, ok := w.handler.(WithHooks); ok {
 		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
@@ -303,7 +302,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		}()
 
 		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {
-			log15.Error("Failed to finalize record", "name", w.options.Name, "err", err)
+			logger.Error("Failed to finalize record", "name", w.options.Name, "err", err)
 		}
 	}()
 
@@ -322,23 +321,23 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 		if marked, markErr := w.store.MarkFailed(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
-			log15.Warn("Marked record as failed", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
+			logger.Warn("Marked record as failed", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
 		}
 	} else if handleErr != nil {
 		if marked, markErr := w.store.MarkErrored(workerContext, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkErrored")
 		} else if marked {
-			log15.Warn("Marked record as errored", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
+			logger.Warn("Marked record as errored", "name", w.options.Name, "id", record.RecordID(), "err", handleErr)
 		}
 	} else {
 		if marked, markErr := w.store.MarkComplete(workerContext, record.RecordID()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
-			log15.Debug("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
+			logger.Debug("Marked record as complete", "name", w.options.Name, "id", record.RecordID())
 		}
 	}
 
-	log15.Debug("Handled record", "name", w.options.Name, "id", record.RecordID())
+	logger.Debug("Handled record", "name", w.options.Name, "id", record.RecordID())
 	return nil
 }
 
