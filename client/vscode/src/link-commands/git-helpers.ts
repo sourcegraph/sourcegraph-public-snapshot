@@ -177,8 +177,7 @@ export async function gitRemoteUrlWithReplacements(
     log?.appendLine(`${stdoutBefore} became ${stdout}`)
     return stdout
 }
-
-// Debt: this is broken, use the editor endpoint.
+//
 export function getSourcegraphFileUrl(
     SourcegraphUrl: string,
     remoteURL: string,
@@ -186,16 +185,33 @@ export function getSourcegraphFileUrl(
     fileRelative: string,
     editor: TextEditor
 ): string {
-    // construct final url
-    const repoName = remoteURL.replace('https://', '').replace('git@', '').replace(new RegExp('.git$'), '')
+    // Editor endpoint is returning an outdated url that does not show preview
+    // build repo url manually for now until endpoint is fixed
+    // const editorEndpoint =
+    //     `${SourcegraphUrl}/-/editor` +
+    //     `?remote_url=${encodeURIComponent(remoteURL)}` +
+    //     `&branch=${encodeURIComponent(branch)}` +
+    //     `&file=${encodeURIComponent(fileRelative)}` +
+    //     `&editor=${encodeURIComponent('VSCode')}` +
+    //     `&version=${encodeURIComponent('0.0.1')}` +
+    //     `&start_row=${encodeURIComponent(String(editor.selection.start.line))}` +
+    //     `&start_col=${encodeURIComponent(String(editor.selection.start.character))}` +
+    //     `&end_row=${encodeURIComponent(String(editor.selection.end.line))}` +
+    //     `&end_col=${encodeURIComponent(String(editor.selection.end.character))}`
+    // extract repo name using regex
+    const getRepoName = remoteURL.startsWith('git')
+        ? remoteURL.match(/(?<=git@)(.*?)(?=.git)/)
+        : remoteURL.match(/(?<=https:\/\/)(.*?)(?=.git)/)
+    const repoName = getRepoName?.length ? getRepoName[0].replace(':', '/') : remoteURL
     log.appendLine(`repoName: ${repoName}, remoteURL: ${remoteURL}`)
-    const finalUrl = `${SourcegraphUrl}/${encodeURIComponent(repoName)}@${encodeURIComponent(
+    // construct url for file on sourcegraph
+    const fileUrl = `${SourcegraphUrl}/${encodeURIComponent(repoName)}@${encodeURIComponent(
         branch
     )}/-/blob/${encodeURIComponent(fileRelative)}?L${encodeURIComponent(
         String(editor.selection.start.line + 1)
     )}:${encodeURIComponent(String(editor.selection.end.line + 1))}`
 
-    return finalUrl
+    return fileUrl
 }
 
 function getRemoteUrlReplacements(): Record<string, string> {
