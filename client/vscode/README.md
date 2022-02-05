@@ -16,7 +16,7 @@ You can read more about Sourcegraph on our [website](https://about.sourcegraph.c
 ### From the Visual Studio Marketplace:
 
 1. Install Sourcegraph from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph). 
-2. Launch VS Code, and click on the Sourcegraph (Wildcard) icon in the VS Code Activity Bar to open the Sourcegraph extension. Alternatively, you can launch the extension by pressing Cmd+Shift+P or Ctrl+Shift+P and searching for “Sourcegraph: Open search tab.”
+2. Launch VS Code, and click on the Sourcegraph (Wildcard) icon in the VS Code Activity Bar to open the Sourcegraph extension. Alternatively, you can launch the extension by pressing <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> and searching for “Sourcegraph: Open search tab.”
 
 ### From within VS Code:
 1. Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
@@ -36,7 +36,7 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 5. Back in Sourcegraph Cloud, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
 6. Once you have generated a token, navigate back to the Sourcegraph extension. In the sidebar, under `Create an account`, click `Have an account?`.
 7. Copy and paste the generated token from step 4 into the input field in the sidebar.
-8. Alternatively, you can copy and paste the generated token from step 4 in this format “sourcegraph.accessToken": "e4234234123112312” into your VS Code Setting by going to `Code` > `Preference` > `Settings` > Search for "Sourcegraph" > `Edit in settings.json`.
+8. Alternatively, you can copy and paste the generated token from step 4 in this format: `“sourcegraph.accessToken": "e4234234123112312”` into your VS Code Setting by going to `Code` > `Preference` > `Settings` > Search for "Sourcegraph" > `Edit in settings.json`.
 9. The Editor will be reloaded automatically to use the newly added token.
 
 ## Using the Sourcegraph extension
@@ -50,17 +50,21 @@ Sourcegraph offers 3 different ways to search:
 2. [Structural search](https://learn.sourcegraph.com/how-to-search-with-sourcegraph-using-structural-patterns)
 3. [Regular expressions](https://learn.sourcegraph.com/how-to-search-with-sourcegraph-using-regular-expression-patterns)
 
-Sourcegraph also has filters to narrow down search results, such as `repo`, `file`, and `lang`. Check out our search [cheat sheet](https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet).
+Sourcegraph also accepts filters to narrow down search results, such as `repo`, `file`, and `lang`. Check out our search [cheat sheet](https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet).
 
+For example, you can search for "auth provider" in a Go repository with a search like this one:
 
+```
+repo:sourcegraph/sourcegraph lang:go auto provider`
+```
 ## Keyboard Shortcuts:
 
 | Description                             | Mac                                          | Linux / Windows                               |
 | --------------------------------------- | -------------------------------------------- | --------------------------------------------- |
 | Open Sourcegraph Search Tab             | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> |
-| Open File in Sourcegraph Web            | <kbd>Option</kbd>+<kbd>A</kbd>               | <kbd>Alt</kbd>+<kbd>A</kbd>                   |
+| Open File in Sourcegraph Cloud            | <kbd>Option</kbd>+<kbd>A</kbd>               | <kbd>Alt</kbd>+<kbd>A</kbd>                   |
 | Search Selected Text in Sourcegraph     | <kbd>Option</kbd>+<kbd>S</kbd>               | <kbd>Alt</kbd>+<kbd>S</kbd>                   |
-| Search Selected Text in Sourcegraph Web | <kbd>Option</kbd>+<kbd>Q</kbd>               | <kbd>Alt</kbd>+<kbd>Q</kbd>                   |
+| Search Selected Text in Sourcegraph Cloud | <kbd>Option</kbd>+<kbd>Q</kbd>               | <kbd>Alt</kbd>+<kbd>Q</kbd>                   |
 
 ## Extension Settings
 
@@ -74,7 +78,7 @@ This extension contributes the following settings:
 
 ## Questions & Feedback
 
-Please file an issue at https://github.com/sourcegraph/sourcegraph-vscode/issues/new
+Please file an issue at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
 
 ## Uninstallation
 
