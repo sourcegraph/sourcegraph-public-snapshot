@@ -71,6 +71,8 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                     .filter(decoration => decoration.isWholeLine)
                     .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
                     .reduce((style, decoration) => ({ ...style, ...decoration }), {})
+                console.log(line.html)
+
                 return (
                     <tr
                         key={index}
@@ -92,7 +94,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                         data-line={oldLine - 1}
                                         data-part="base"
                                         id={oldAnchor}
-                                        data-hunk-num=" "
+                                        data-hunk-num=""
                                     >
                                         {persistLines && (
                                             <Link className={styles.numLine} to={{ hash: oldAnchor }}>
@@ -136,7 +138,6 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                 return (
                                     <React.Fragment key={index}>
-                                        {' '}
                                         <LinkOrSpan
                                             to={decoration.after.linkURL}
                                             data-tooltip={decoration.after.hoverMessage}

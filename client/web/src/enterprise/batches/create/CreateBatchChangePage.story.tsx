@@ -11,9 +11,14 @@ import { WebStory } from '../../../components/WebStory'
 
 import { CreateBatchChangePage } from './CreateBatchChangePage'
 
-const { add } = storiesOf('web/batches/CreateBatchChangePage', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const { add } = storiesOf('web/batches/CreateBatchChangePage', module)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    .addParameters({
+        chromatic: {
+            viewports: [320, 576, 978, 1440],
+            disableSnapshot: false,
+        },
+    })
 
 add('experimental execution disabled', () => (
     <WebStory>

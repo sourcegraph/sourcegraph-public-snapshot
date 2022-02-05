@@ -11,6 +11,7 @@
 .line--addition .content {
     background-color: var(--diff-add-bg);
 }
+
 .line--addition .num {
     background-color: var(--diff-add-bg);
 }
@@ -24,6 +25,7 @@
 }
 
 .content {
+    display: flex;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
     font-family: var(--code-font-family);
