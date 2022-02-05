@@ -311,7 +311,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     >
                                         Log in
                                     </Button>
-                                    <ButtonLink className={styles.signUp} href={buildGetStartedURL('nav')} size="sm">
+                                    <ButtonLink className={styles.signUp} to={buildGetStartedURL('nav')} size="sm">
                                         Get started
                                     </ButtonLink>
                                 </div>
