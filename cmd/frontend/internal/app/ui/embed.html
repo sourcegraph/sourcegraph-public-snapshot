@@ -14,11 +14,12 @@
         {{if .Manifest.EmbedCSSBundlePath}}
         <link rel="stylesheet" href="{{.Manifest.EmbedCSSBundlePath}}" />
         {{end}}
-        <!-- TODO: Google Tag Manager? -->
+
         <script ignore-csp>
             window.context = {{.Context}}
             window.pageError = {{.Error}}
         </script>
+
         {{.Injected.HeadBottom}}
     </head>
 
