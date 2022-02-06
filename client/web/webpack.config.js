@@ -111,7 +111,7 @@ const config = {
     app: isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
     // Embedding entrypoint. It uses a small subset of the main webapp intended to be embedded into
     // iframes on 3rd party sites.
-    embed: path.join(enterpriseDirectory, 'embed', 'main.tsx')
+    embed: path.join(enterpriseDirectory, 'embed', 'main.tsx'),
   },
   output: {
     path: path.join(ROOT_PATH, 'ui', 'assets'),
