@@ -5,13 +5,17 @@ import React, { useRef } from 'react'
 import { PANEL_POSITIONS } from './constants'
 import styles from './Panel.module.scss'
 import { useResizablePanel } from './useResizablePanel'
+import { getDisplayStyle, getPositionStyle } from './utils'
 
 export interface PanelProps {
     /**
-     * If true, panel moves over elements on resize, defaults to false
+     * If true, panel moves over elements on resize, defaults to true
      */
     isFloating?: boolean
     className?: string
+    /**
+     * CSS class applied to the resize handle
+     */
     handleClassName?: string
     storageKey?: string
     defaultSize?: number
@@ -41,30 +45,25 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
     return (
         <div
             // eslint-disable-next-line react/forbid-dom-props
-            style={{
-                position: isFloating ? 'fixed' : 'relative',
-                display: isFloating ? 'block' : 'flex',
-                [position === 'bottom' ? 'height' : 'width']: `${panelSize}px`,
-            }}
+            style={{ [position === 'bottom' ? 'height' : 'width']: `${panelSize}px` }}
             className={classNames(
                 className,
                 styles.panel,
-                styles[`panel${upperFirst(position)}` as keyof typeof styles]
+                getPositionStyle({ position }),
+                getDisplayStyle({ isFloating })
             )}
             ref={panelReference}
         >
-            {children}
             <div
-                /**
-                 * handle ClassName takes custom className for the handler.
-                 */
                 ref={handleReference}
                 className={classNames(
                     styles.handle,
-                    handleClassName || styles[`handle${upperFirst(position)}` as keyof typeof styles],
+                    styles[`handle${upperFirst(position)}` as keyof typeof styles],
+                    handleClassName,
                     isResizing && styles.handleResizing
                 )}
             />
+            {children}
         </div>
     )
 }

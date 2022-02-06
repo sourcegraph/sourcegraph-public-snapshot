@@ -104,6 +104,10 @@ certutil.exe -addstore -user Root "$(find /usr/local/share/ca-certificates/ -nam
 
 This command will add the certificate to the `Trusted Root Certification Authorities` for your Windows user.
 
+### Enabling Caddy certificates in Firefox
+
+Firefox on Windows and macOS will not look for enterprise roots by default. If you are getting certificate errors in Firefox only, toggling `security.enterprise_roots.enabled` on in `about:config` should fix the problem.
+
 ### Certificate expiry
 
 If you see a certificate expiry warning you may need to delete your certificate and restart your server.

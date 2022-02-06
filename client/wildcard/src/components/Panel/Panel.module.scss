@@ -1,26 +1,23 @@
 .panel {
     --panel-handle-size: 2px;
     --panel-handle-bg-color: var(--border-color-2);
+    --panel-handle-resizing-bg-color: var(--border-color);
     --panel-bg-color: var(--color-bg-1);
 
     background-color: var(--panel-bg-color);
     overflow-x: hidden;
     bottom: 0;
 
-    flex: 0 0 auto;
-
     &--bottom {
         left: 0;
         right: 0;
         padding-top: var(--panel-handle-size);
-        flex-direction: column-reverse;
     }
 
     &--right,
     &--left {
         height: 100%;
         top: 0;
-        flex-direction: row-reverse;
     }
 
     &--left {
@@ -31,6 +28,15 @@
     &--right {
         right: 0;
         padding-left: var(--panel-handle-size);
+    }
+
+    &--fixed {
+        position: fixed;
+    }
+
+    &--relative {
+        position: relative;
+        flex: 0 0 auto;
     }
 }
 
@@ -65,6 +71,6 @@
     }
 
     &--resizing {
-        --panel-handle-bg-color: var(--border-color);
+        background-color: var(--panel-handle-resizing-bg-color);
     }
 }

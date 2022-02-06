@@ -5,28 +5,22 @@
 }
 
 .resizable-group {
+    --panel-bg-color: transparent;
+
     min-width: 6rem;
     padding-top: 0.5rem;
     overflow-y: auto;
-    background-color: transparent;
     padding-right: 0.55rem;
+    margin-right: 0.55rem;
 }
 
 .resizable-handle {
-    // pushes resizable handler to the right and vissible when hovered
-    width: 0;
-    padding-right: 0.5rem;
-    background-color: transparent;
-    transition: opacity 150ms;
-    border-right: 1px solid var(--border-color-2);
-    opacity: 0;
-    cursor: ew-resize;
-    top: 0;
-    bottom: 0;
-    right: 0.5rem;
+    --panel-handle-bg-color: transparent;
+
+    transition: opacity 0.15s;
 
     &:hover {
-        opacity: 1;
+        --panel-handle-bg-color: var(--border-color-2);
     }
 }
 
@@ -34,7 +28,6 @@
     flex: 1;
     border-right: none;
     overflow-x: hidden;
-    margin-right: 0.5rem;
 }
 
 .file-locations {

@@ -166,81 +166,72 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         class="d-flex"
       >
         <div
-          class="position-relative"
+          class="resizableGroup panel panelLeft panelRelative"
+          style="width: 200px;"
         >
-          <div>
-            <div
-              class="resizableGroup panel panelLeft"
-              style="width: 200px;"
+          <div
+            class="handle handleLeft resizableHandle"
+          />
+          <div
+            class="list-group groupList"
+            data-testid="hierarchical-locations-view-list"
+          >
+            <button
+              class="list-group-item list-group-item-action locationButton active"
+              data-testid="hierarchical-locations-view-button"
+              type="button"
             >
-              <div
-                class="list-group groupList"
-                data-testid="hierarchical-locations-view-list"
+              <span
+                class="locationName"
+                title="file1.txt"
               >
-                <button
-                  class="list-group-item list-group-item-action locationButton active"
-                  data-testid="hierarchical-locations-view-button"
-                  type="button"
+                <span
+                  class="locationNameText"
                 >
                   <span
-                    class="locationName"
-                    title="file1.txt"
+                    class=""
                   >
-                    <span
-                      class="locationNameText"
-                    >
-                      <span
-                        class=""
-                      >
-                         
-                        <span>
-                          file1.txt
-                        </span>
-                      </span>
+                     
+                    <span>
+                      file1.txt
                     </span>
                   </span>
-                  <span
-                    class="locationBadge ml-1"
-                  >
-                    2
-                  </span>
-                </button>
-                <button
-                  class="list-group-item list-group-item-action locationButton"
-                  data-testid="hierarchical-locations-view-button"
-                  type="button"
+                </span>
+              </span>
+              <span
+                class="locationBadge ml-1"
+              >
+                2
+              </span>
+            </button>
+            <button
+              class="list-group-item list-group-item-action locationButton"
+              data-testid="hierarchical-locations-view-button"
+              type="button"
+            >
+              <span
+                class="locationName"
+                title="file2.txt"
+              >
+                <span
+                  class="locationNameText"
                 >
                   <span
-                    class="locationName"
-                    title="file2.txt"
+                    class=""
                   >
-                    <span
-                      class="locationNameText"
-                    >
-                      <span
-                        class=""
-                      >
-                         
-                        <span>
-                          file2.txt
-                        </span>
-                      </span>
+                     
+                    <span>
+                      file2.txt
                     </span>
                   </span>
-                  <span
-                    class="locationBadge ml-1"
-                  >
-                    3
-                  </span>
-                </button>
-              </div>
-              <div
-                class="handle resizableHandle"
-              />
-            </div>
-            <div
-              style="width: 200px;"
-            />
+                </span>
+              </span>
+              <span
+                class="locationBadge ml-1"
+              >
+                3
+              </span>
+            </button>
           </div>
         </div>
       </div>

@@ -22,4 +22,12 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('Populated', () => <WebStory>{() => <CommunitySearchContextsPanel {...props} />}</WebStory>)
+add('CommunitySearchContextPanel', () => (
+    <WebStory>
+        {() => (
+            <div style={{ maxWidth: '32rem' }}>
+                <CommunitySearchContextsPanel {...props} />
+            </div>
+        )}
+    </WebStory>
+))

@@ -50,6 +50,7 @@ const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponent
             disabled={isDisabled}
             role="menuitem"
             data-testid={label}
+            size="sm"
             {...elementSpecificProps}
         >
             <div className={iconClassName}>{icon}</div>

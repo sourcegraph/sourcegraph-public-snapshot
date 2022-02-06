@@ -415,12 +415,12 @@ func validateLinearizedGraph(migrationDefinitions []Definition) error {
 	}
 
 	if len(migrationDefinitions[0].Parents) != 0 {
-		return fmt.Errorf("unexpected parent for root definition")
+		return errors.Newf("unexpected parent for root definition")
 	}
 
 	for _, definition := range migrationDefinitions[1:] {
 		if len(definition.Parents) != 1 || definition.Parents[0] != definition.ID-1 {
-			return fmt.Errorf("unexpected parent declared in definition %d", definition.ID)
+			return errors.Newf("unexpected parent declared in definition %d", definition.ID)
 		}
 	}
 

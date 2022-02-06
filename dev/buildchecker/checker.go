@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
@@ -47,7 +48,7 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 			fmt.Printf("most recent finished build %d passed\n", *b.Number)
 			results.Action, err = branch.Unlock(ctx)
 			if err != nil {
-				return nil, fmt.Errorf("unlockBranch: %w", err)
+				return nil, errors.Newf("unlockBranch: %w", err)
 			}
 			return
 		}
@@ -70,7 +71,7 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 		fmt.Println("threshold not exceeded")
 		results.Action, err = branch.Unlock(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("unlockBranch: %w", err)
+			return nil, errors.Newf("unlockBranch: %w", err)
 		}
 		return
 	}
@@ -97,7 +98,7 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 	results.LockBranch = true
 	results.Action, err = branch.Lock(ctx, results.FailedCommits, "dev-experience")
 	if err != nil {
-		return nil, fmt.Errorf("lockBranch: %w", err)
+		return nil, errors.Newf("lockBranch: %w", err)
 	}
 	return
 }

@@ -27,7 +27,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
 import { Button, useObservable, Panel } from '@sourcegraph/wildcard'
 
-import styles from './Panel.module.scss'
+import styles from './TabbedPanel.module.scss'
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
@@ -297,7 +297,8 @@ export const TabbedPanel = React.memo<Props>(props => {
                     </small>
                     <Button
                         onClick={handlePanelClose}
-                        className={classNames('btn-icon ml-2', styles.dismissButton)}
+                        variant="icon"
+                        className={classNames('ml-2', styles.dismissButton)}
                         title="Close panel"
                         data-tooltip="Close panel"
                         data-placement="left"
@@ -325,7 +326,6 @@ export const TabbedPanel = React.memo<Props>(props => {
 export const ResizablePanel: React.FunctionComponent<Props> = props => (
     <Panel
         className={styles.resizablePanel}
-        handleClassName={styles.resizableHandle}
         isFloating={false}
         position="bottom"
         defaultSize={350}

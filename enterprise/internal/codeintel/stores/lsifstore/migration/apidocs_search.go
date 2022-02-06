@@ -2,7 +2,6 @@ package migration
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
@@ -141,7 +140,7 @@ func (m *apiDocsSearchMigrator) processUpload(ctx context.Context, uploadID int)
 		return errors.Wrap(err, "RepoStore.GetByIDs")
 	}
 	if len(repos) == 0 {
-		return fmt.Errorf("could not get repo id=%v name=%q", upload.RepositoryID, upload.RepositoryName) // Repository no longer exists? nothing we can do
+		return errors.Newf("could not get repo id=%v name=%q", upload.RepositoryID, upload.RepositoryName) // Repository no longer exists? nothing we can do
 	}
 	repo := repos[0]
 

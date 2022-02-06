@@ -98,12 +98,21 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 		return "", err
 	}
 	if len(paths) == 0 || (len(paths) == 1 && paths[0] == "") {
-		return "", errors.Errorf("no sources for dependency %s", dependency)
+		return "", ErrNoSources{Dependency: dependency}
 	}
 	if len(paths) > 1 {
 		return "", errors.Errorf("expected single JAR path but found multiple: %v", paths)
 	}
 	return paths[0], nil
+}
+
+// ErrNoSources indicates that a dependency has no sources
+type ErrNoSources struct {
+	Dependency reposource.MavenDependency
+}
+
+func (e ErrNoSources) Error() string {
+	return fmt.Sprintf("no sources for dependency %s", e.Dependency)
 }
 
 func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (byteCodeJarPath string, err error) {

@@ -1133,9 +1133,6 @@ func TestService(t *testing.T) {
 				ws := &btypes.BatchSpecWorkspace{
 					BatchSpecID: spec.ID,
 					RepoID:      repo.ID,
-					Steps: []batcheslib.Step{
-						{Run: "echo hello", Container: "alpine:3"},
-					},
 				}
 				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 					t.Fatal(err)
@@ -1224,18 +1221,12 @@ func TestService(t *testing.T) {
 			ignoredWorkspace := &btypes.BatchSpecWorkspace{
 				BatchSpecID: spec.ID,
 				RepoID:      rs[0].ID,
-				Steps: []batcheslib.Step{
-					{Run: "echo hello", Container: "alpine:3"},
-				},
-				Ignored: true,
+				Ignored:     true,
 			}
 
 			unsupportedWorkspace := &btypes.BatchSpecWorkspace{
 				BatchSpecID: spec.ID,
 				RepoID:      rs[0].ID,
-				Steps: []batcheslib.Step{
-					{Run: "echo hello", Container: "alpine:3"},
-				},
 				Unsupported: true,
 			}
 			if err := s.CreateBatchSpecWorkspace(ctx, ignoredWorkspace, unsupportedWorkspace); err != nil {
@@ -1642,9 +1633,6 @@ func TestService(t *testing.T) {
 				ws := &btypes.BatchSpecWorkspace{
 					BatchSpecID: spec.ID,
 					RepoID:      repo.ID,
-					Steps: []batcheslib.Step{
-						{Run: "echo hello", Container: "alpine:3"},
-					},
 				}
 				// This workspace has the completed job and resulted in 2 changesetspecs
 				if i == 2 {
@@ -1700,9 +1688,6 @@ func TestService(t *testing.T) {
 			ws := &btypes.BatchSpecWorkspace{
 				BatchSpecID: spec.ID,
 				RepoID:      rs[0].ID,
-				Steps: []batcheslib.Step{
-					{Run: "echo hello", Container: "alpine:3"},
-				},
 			}
 
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
@@ -1743,9 +1728,6 @@ func TestService(t *testing.T) {
 			ws := &btypes.BatchSpecWorkspace{
 				BatchSpecID: spec.ID,
 				RepoID:      rs[0].ID,
-				Steps: []batcheslib.Step{
-					{Run: "echo hello", Container: "alpine:3"},
-				},
 			}
 
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
@@ -1780,9 +1762,6 @@ func TestService(t *testing.T) {
 			ws := &btypes.BatchSpecWorkspace{
 				BatchSpecID: spec.ID,
 				RepoID:      rs[0].ID,
-				Steps: []batcheslib.Step{
-					{Run: "echo hello", Container: "alpine:3"},
-				},
 			}
 
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
@@ -1868,9 +1847,6 @@ func TestService(t *testing.T) {
 				ws := &btypes.BatchSpecWorkspace{
 					BatchSpecID: spec.ID,
 					RepoID:      repo.ID,
-					Steps: []batcheslib.Step{
-						{Run: "echo hello", Container: "alpine:3"},
-					},
 				}
 				// This workspace has the completed job and resulted in 2 changesetspecs
 				if i == 2 {
@@ -1939,9 +1915,6 @@ func TestService(t *testing.T) {
 				ws := &btypes.BatchSpecWorkspace{
 					BatchSpecID: spec.ID,
 					RepoID:      repo.ID,
-					Steps: []batcheslib.Step{
-						{Run: "echo hello", Container: "alpine:3"},
-					},
 				}
 				// This workspace has the completed job and resulted in 2 changesetspecs
 				if i == 2 {
@@ -2006,7 +1979,6 @@ func TestService(t *testing.T) {
 			ws := &btypes.BatchSpecWorkspace{
 				BatchSpecID: spec.ID,
 				RepoID:      rs[0].ID,
-				Steps:       []batcheslib.Step{{Run: "echo hello", Container: "alpine:3"}},
 			}
 
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
@@ -2047,9 +2019,6 @@ func TestService(t *testing.T) {
 			ws := &btypes.BatchSpecWorkspace{
 				BatchSpecID: spec.ID,
 				RepoID:      rs[0].ID,
-				Steps: []batcheslib.Step{
-					{Run: "echo hello", Container: "alpine:3"},
-				},
 			}
 
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
@@ -2104,7 +2073,6 @@ func TestService(t *testing.T) {
 			ws := &btypes.BatchSpecWorkspace{
 				BatchSpecID: spec.ID,
 				RepoID:      rs[0].ID,
-				Steps:       []batcheslib.Step{{Run: "echo hello", Container: "alpine:3"}},
 			}
 
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
@@ -2282,7 +2250,6 @@ func testWorkspace(batchSpecID int64, repoID api.RepoID) *btypes.BatchSpecWorksp
 	return &btypes.BatchSpecWorkspace{
 		BatchSpecID: batchSpecID,
 		RepoID:      repoID,
-		Steps:       []batcheslib.Step{{Run: "echo hello", Container: "alpine:3"}},
 	}
 }
 

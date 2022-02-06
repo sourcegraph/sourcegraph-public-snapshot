@@ -11,6 +11,7 @@ import React, { VideoHTMLAttributes } from 'react'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link } from '@sourcegraph/wildcard'
 
 import { getPlatformName } from '../../shared/util/context'
 
@@ -53,12 +54,12 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
     return (
         <div className="after-install-page-content">
             <div className="d-flex w-100 p-3 justify-content-between align-items-center">
-                <a href="https://sourcegraph.com/search" target="_blank" rel="noopener">
+                <Link to="https://sourcegraph.com/search" target="_blank" rel="noopener">
                     <SourcegraphLogo className={styles.sourcegraphLogo} />
-                </a>
-                <a href="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
+                </Link>
+                <Link to="https://docs.sourcegraph.com/integration/browser_extension" target="_blank" rel="noopener">
                     Browser extension docs <ExternalLinkIcon className="icon-inline" />
-                </a>
+                </Link>
             </div>
 
             <div className="container mt-3">
@@ -172,20 +173,20 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 <ol className="m-0 d-flex flex-column justify-content-around">
                                     <li>
                                         <strong>Install Sourcegraph</strong> (
-                                        <a
-                                            href="https://docs.sourcegraph.com/admin/install"
+                                        <Link
+                                            to="https://docs.sourcegraph.com/admin/install"
                                             target="_blank"
                                             rel="noopener"
                                         >
                                             visit our docs for instructions
-                                        </a>
+                                        </Link>
                                         ).Skip this step if you already have a private Sourcegraph instance.
                                     </li>
                                     <li>
                                         Click the Sourcegraph extension icon in the browser toolbar to{' '}
-                                        <a href="./options.html" rel="noopener" target="_blank">
+                                        <Link to="./options.html" rel="noopener" target="_blank">
                                             open the settings page
-                                        </a>
+                                        </Link>
                                         .
                                     </li>
                                     <li>
@@ -212,13 +213,13 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                         </div>
                         <p className="m-0 ml-3">
                             Read the{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/integration/browser_extension"
+                            <Link
+                                to="https://docs.sourcegraph.com/integration/browser_extension"
                                 rel="noopener"
                                 target="_blank"
                             >
                                 Sourcegraph docs
-                            </a>{' '}
+                            </Link>{' '}
                             to learn more about how we respect your privacy, troubleshooting and extension features.
                         </p>
                     </div>

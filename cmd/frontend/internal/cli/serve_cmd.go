@@ -317,6 +317,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppCloudSetupHandler,
+		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
 	if err != nil {

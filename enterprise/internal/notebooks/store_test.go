@@ -24,6 +24,20 @@ func createNotebooks(ctx context.Context, store NotebooksStore, notebooks []*Not
 	return createdNotebooks, nil
 }
 
+func notebookByUser(notebook *Notebook, userID int32) *Notebook {
+	notebook.CreatorUserID = userID
+	notebook.UpdaterUserID = userID
+	notebook.NamespaceUserID = userID
+	return notebook
+}
+
+func notebookByOrg(notebook *Notebook, creatorID int32, orgID int32) *Notebook {
+	notebook.CreatorUserID = creatorID
+	notebook.UpdaterUserID = creatorID
+	notebook.NamespaceOrgID = orgID
+	return notebook
+}
+
 func TestCreateAndGetNotebook(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t)
@@ -43,7 +57,7 @@ func TestCreateAndGetNotebook(t *testing.T) {
 			RepositoryName: "github.com/sourcegraph/sourcegraph", FilePath: "client/web/file.tsx"},
 		},
 	}
-	notebook := &Notebook{Title: "Notebook Title", Blocks: blocks, Public: true, CreatorUserID: user.ID}
+	notebook := notebookByUser(&Notebook{Title: "Notebook Title", Blocks: blocks, Public: true}, user.ID)
 	createdNotebook, err := n.CreateNotebook(ctx, notebook)
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +80,7 @@ func TestUpdateNotebook(t *testing.T) {
 	}
 
 	blocks := NotebookBlocks{{ID: "1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}}}
-	notebook := &Notebook{Title: "Notebook Title", Blocks: blocks, Public: true, CreatorUserID: user.ID}
+	notebook := notebookByUser(&Notebook{Title: "Notebook Title", Blocks: blocks, Public: true}, user.ID)
 	createdNotebook, err := n.CreateNotebook(ctx, notebook)
 	if err != nil {
 		t.Fatal(err)
@@ -103,7 +117,7 @@ func TestDeleteNotebook(t *testing.T) {
 	}
 
 	blocks := NotebookBlocks{{ID: "1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}}}
-	notebook := &Notebook{Title: "Notebook Title", Blocks: blocks, Public: true, CreatorUserID: user.ID}
+	notebook := notebookByUser(&Notebook{Title: "Notebook Title", Blocks: blocks, Public: true}, user.ID)
 	createdNotebook, err := n.CreateNotebook(ctx, notebook)
 	if err != nil {
 		t.Fatal(err)
@@ -118,14 +132,6 @@ func TestDeleteNotebook(t *testing.T) {
 	if !errors.Is(err, ErrNotebookNotFound) {
 		t.Fatalf("want ErrNotebookNotFound error, got %+v", err)
 	}
-}
-
-func getNotebookIDs(notebooks []*Notebook) []int64 {
-	ids := make([]int64, 0, len(notebooks))
-	for _, n := range notebooks {
-		ids = append(ids, n.ID)
-	}
-	return ids
 }
 
 func TestConvertingToPostgresTextSearchQuery(t *testing.T) {
@@ -176,6 +182,8 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 	db := dbtest.NewDB(t)
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
+	o := database.Orgs(db)
+	om := database.OrgMembers(db)
 	n := Notebooks(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -183,6 +191,15 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	displayName := "My Org"
+	org, err := o.Create(internalCtx, "myorg", &displayName)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	_, err = om.Create(internalCtx, org.ID, user1.ID)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -199,10 +216,12 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 	}
 
 	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
-		{Title: "Notebook User1 Public", Blocks: NotebookBlocks{blocks[0], blocks[4]}, Public: true, CreatorUserID: user1.ID},
-		{Title: "Notebook User1 Private", Blocks: NotebookBlocks{blocks[1]}, Public: false, CreatorUserID: user1.ID},
-		{Title: "Notebook User2 Public", Blocks: NotebookBlocks{blocks[2], blocks[5]}, Public: true, CreatorUserID: user2.ID},
-		{Title: "Notebook User2 Private", Blocks: NotebookBlocks{blocks[3]}, Public: false, CreatorUserID: user2.ID},
+		notebookByUser(&Notebook{Title: "Notebook User1 Public", Blocks: NotebookBlocks{blocks[0], blocks[4]}, Public: true}, user1.ID),
+		notebookByUser(&Notebook{Title: "Notebook User1 Private", Blocks: NotebookBlocks{blocks[1]}, Public: false}, user1.ID),
+		notebookByUser(&Notebook{Title: "Notebook User2 Public", Blocks: NotebookBlocks{blocks[2], blocks[5]}, Public: true}, user2.ID),
+		notebookByUser(&Notebook{Title: "Notebook User2 Private", Blocks: NotebookBlocks{blocks[3]}, Public: false}, user2.ID),
+		notebookByOrg(&Notebook{Title: "Notebook Org Public", Blocks: NotebookBlocks{}, Public: true}, user1.ID, org.ID),
+		notebookByOrg(&Notebook{Title: "Notebook Org Private", Blocks: NotebookBlocks{}, Public: false}, user1.ID, org.ID),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -227,6 +246,14 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	getNotebookIDs := func(indices ...int) []int64 {
+		ids := make([]int64, 0, len(indices))
+		for _, idx := range indices {
+			ids = append(ids, createdNotebooks[idx].ID)
+		}
+		return ids
+	}
+
 	tests := []struct {
 		name            string
 		userID          int32
@@ -240,31 +267,40 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{First: 4},
 			opts:            ListNotebooksOptions{},
-			wantNotebookIDs: getNotebookIDs(createdNotebooks[:3]),
-			wantCount:       3,
+			wantNotebookIDs: getNotebookIDs(0, 1, 2, 4),
+			wantCount:       5,
+		},
+		{
+			// User2 should not have access to the private org notebook
+			name:            "get all user2 accessible notebooks",
+			userID:          user2.ID,
+			pageOpts:        ListNotebooksPageOptions{First: 4},
+			opts:            ListNotebooksOptions{},
+			wantNotebookIDs: getNotebookIDs(0, 2, 3, 4),
+			wantCount:       4,
 		},
 		{
 			name:            "get notebooks page",
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 1, First: 2},
 			opts:            ListNotebooksOptions{},
-			wantNotebookIDs: getNotebookIDs(createdNotebooks[1:3]),
-			wantCount:       3,
+			wantNotebookIDs: getNotebookIDs(1, 2),
+			wantCount:       5,
 		},
 		{
 			name:            "get notebooks page with options",
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 1, First: 1},
 			opts:            ListNotebooksOptions{CreatorUserID: user1.ID},
-			wantNotebookIDs: getNotebookIDs(createdNotebooks[1:2]),
-			wantCount:       2,
+			wantNotebookIDs: getNotebookIDs(1),
+			wantCount:       4,
 		},
 		{
 			name:            "get user2 notebooks as user1",
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{CreatorUserID: user2.ID},
-			wantNotebookIDs: getNotebookIDs(createdNotebooks[2:3]),
+			wantNotebookIDs: getNotebookIDs(2),
 			wantCount:       1,
 		},
 		{
@@ -272,23 +308,23 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "public"},
-			wantNotebookIDs: []int64{createdNotebooks[0].ID, createdNotebooks[2].ID},
-			wantCount:       2,
+			wantNotebookIDs: getNotebookIDs(0, 2, 4),
+			wantCount:       3,
 		},
 		{
 			name:            "query notebooks by title and creator user id",
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "public", CreatorUserID: user1.ID},
-			wantNotebookIDs: []int64{createdNotebooks[0].ID},
-			wantCount:       1,
+			wantNotebookIDs: getNotebookIDs(0, 4),
+			wantCount:       2,
 		},
 		{
 			name:            "query notebook blocks by prefix",
 			userID:          user2.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "lor"},
-			wantNotebookIDs: []int64{createdNotebooks[0].ID},
+			wantNotebookIDs: getNotebookIDs(0),
 			wantCount:       1,
 		},
 		{
@@ -296,7 +332,7 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			userID:          user2.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "ADIPISC"},
-			wantNotebookIDs: []int64{createdNotebooks[0].ID},
+			wantNotebookIDs: getNotebookIDs(0),
 			wantCount:       1,
 		},
 		{
@@ -304,7 +340,7 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			userID:          user2.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "auc od"},
-			wantNotebookIDs: []int64{createdNotebooks[2].ID},
+			wantNotebookIDs: getNotebookIDs(2),
 			wantCount:       1,
 		},
 		{
@@ -312,7 +348,7 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			userID:          user2.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "client/web/file.tsx"},
-			wantNotebookIDs: getNotebookIDs(createdNotebooks[2:]),
+			wantNotebookIDs: getNotebookIDs(2, 3),
 			wantCount:       2,
 		},
 		{
@@ -320,32 +356,57 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{First: 4},
 			opts:            ListNotebooksOptions{OrderBy: NotebooksOrderByUpdatedAt, OrderByDescending: false},
-			wantNotebookIDs: []int64{createdNotebooks[1].ID, createdNotebooks[0].ID, createdNotebooks[2].ID},
-			wantCount:       3,
+			wantNotebookIDs: getNotebookIDs(1, 4, 5, 0),
+			wantCount:       5,
 		},
 		{
 			name:            "order by updated at descending",
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{First: 4},
 			opts:            ListNotebooksOptions{OrderBy: NotebooksOrderByUpdatedAt, OrderByDescending: true},
-			wantNotebookIDs: []int64{createdNotebooks[2].ID, createdNotebooks[0].ID, createdNotebooks[1].ID},
-			wantCount:       3,
+			wantNotebookIDs: getNotebookIDs(2, 0, 5, 4),
+			wantCount:       5,
 		},
 		{
 			name:            "order by notebook stars descending",
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{First: 2},
 			opts:            ListNotebooksOptions{OrderBy: NotebooksOrderByStarCount, OrderByDescending: true},
-			wantNotebookIDs: []int64{createdNotebooks[2].ID, createdNotebooks[0].ID},
-			wantCount:       3,
+			wantNotebookIDs: getNotebookIDs(2, 0),
+			wantCount:       5,
 		},
 		{
 			name:            "filter notebooks if user has starred them",
 			userID:          user1.ID,
 			pageOpts:        ListNotebooksPageOptions{First: 4},
 			opts:            ListNotebooksOptions{StarredByUserID: user1.ID},
-			wantNotebookIDs: []int64{createdNotebooks[0].ID, createdNotebooks[2].ID},
+			wantNotebookIDs: getNotebookIDs(0, 2),
 			wantCount:       2,
+		},
+		{
+			name:            "filter notebooks by user namespace",
+			userID:          user1.ID,
+			pageOpts:        ListNotebooksPageOptions{First: 2},
+			opts:            ListNotebooksOptions{NamespaceUserID: user1.ID},
+			wantNotebookIDs: getNotebookIDs(0, 1),
+			wantCount:       2,
+		},
+		{
+			name:            "user1 filter notebooks by org namespace",
+			userID:          user1.ID,
+			pageOpts:        ListNotebooksPageOptions{First: 2},
+			opts:            ListNotebooksOptions{NamespaceOrgID: org.ID},
+			wantNotebookIDs: getNotebookIDs(4, 5),
+			wantCount:       2,
+		},
+		{
+			// User2 is not a member of the org
+			name:            "user2 filter notebooks by org namespace",
+			userID:          user2.ID,
+			pageOpts:        ListNotebooksPageOptions{First: 2},
+			opts:            ListNotebooksOptions{NamespaceOrgID: org.ID},
+			wantNotebookIDs: getNotebookIDs(4),
+			wantCount:       1,
 		},
 	}
 
@@ -356,7 +417,10 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			gotNotebookIDs := getNotebookIDs(gotNotebooks)
+			gotNotebookIDs := make([]int64, 0, len(gotNotebooks))
+			for _, notebook := range gotNotebooks {
+				gotNotebookIDs = append(gotNotebookIDs, notebook.ID)
+			}
 			if !reflect.DeepEqual(tt.wantNotebookIDs, gotNotebookIDs) {
 				t.Fatalf("wanted %+v ids, got %+v", tt.wantNotebookIDs, gotNotebookIDs)
 			}
@@ -384,7 +448,7 @@ func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
 	}
 
 	blocks := NotebookBlocks{{ID: "1", Type: NotebookQueryBlockType}}
-	notebook := &Notebook{Title: "Notebook Title", Blocks: blocks, Public: true, CreatorUserID: user.ID}
+	notebook := notebookByUser(&Notebook{Title: "Notebook Title", Blocks: blocks, Public: true}, user.ID)
 	_, err = n.CreateNotebook(ctx, notebook)
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -400,6 +464,8 @@ func TestNotebookPermissions(t *testing.T) {
 	db := dbtest.NewDB(t)
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
+	o := database.Orgs(db)
+	om := database.OrgMembers(db)
 	n := Notebooks(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -411,9 +477,21 @@ func TestNotebookPermissions(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
+	displayName := "My Org"
+	org, err := o.Create(internalCtx, "myorg", &displayName)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	_, err = om.Create(internalCtx, org.ID, user1.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
 	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
-		{Title: "Notebook User1 Public", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user1.ID},
-		{Title: "Notebook User1 Private", Blocks: NotebookBlocks{}, Public: false, CreatorUserID: user1.ID},
+		notebookByUser(&Notebook{Title: "Notebook User1 Public", Blocks: NotebookBlocks{}, Public: true}, user1.ID),
+		notebookByUser(&Notebook{Title: "Notebook User1 Private", Blocks: NotebookBlocks{}, Public: false}, user1.ID),
+		notebookByOrg(&Notebook{Title: "Notebook User1 Org Public", Blocks: NotebookBlocks{}, Public: true}, user1.ID, org.ID),
+		notebookByOrg(&Notebook{Title: "Notebook User1 Org Private", Blocks: NotebookBlocks{}, Public: false}, user1.ID, org.ID),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -431,6 +509,11 @@ func TestNotebookPermissions(t *testing.T) {
 		{name: "user2 get user1 public notebook", notebookID: createdNotebooks[0].ID, userID: user2.ID, wantErr: nil},
 		// User2 *cannot* access a private notebook from a different user (User1)
 		{name: "user2 get user1 private notebook", notebookID: createdNotebooks[1].ID, userID: user2.ID, wantErr: &ErrNotebookNotFound},
+		{name: "user2 get org public notebook", notebookID: createdNotebooks[2].ID, userID: user2.ID, wantErr: nil},
+		// User1 is a member of the org
+		{name: "user1 get org private notebook", notebookID: createdNotebooks[3].ID, userID: user1.ID, wantErr: nil},
+		// User2 is not a member of the org
+		{name: "user2 get org private notebook", notebookID: createdNotebooks[3].ID, userID: user2.ID, wantErr: &ErrNotebookNotFound},
 	}
 
 	for _, tt := range tests {
@@ -464,8 +547,8 @@ func TestListingNotebookStars(t *testing.T) {
 	}
 
 	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
-		{Title: "Notebook1", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user1.ID},
-		{Title: "Notebook2", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user2.ID},
+		notebookByUser(&Notebook{Title: "Notebook1", Blocks: NotebookBlocks{}, Public: true}, user1.ID),
+		notebookByUser(&Notebook{Title: "Notebook2", Blocks: NotebookBlocks{}, Public: true}, user2.ID),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -545,8 +628,8 @@ func TestCreatingAndDeletingNotebookStars(t *testing.T) {
 	}
 
 	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
-		{Title: "Notebook", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user.ID},
-		{Title: "Notebook", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user.ID},
+		notebookByUser(&Notebook{Title: "Notebook", Blocks: NotebookBlocks{}, Public: true}, user.ID),
+		notebookByUser(&Notebook{Title: "Notebook", Blocks: NotebookBlocks{}, Public: true}, user.ID),
 	})
 	if err != nil {
 		t.Fatal(err)

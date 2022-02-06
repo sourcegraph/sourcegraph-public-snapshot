@@ -1623,6 +1623,11 @@ type PermsMetrics struct {
 	ReposWithStalePerms int64
 	// The seconds between repositories with oldest and the most up-to-date permissions.
 	ReposPermsGapSeconds float64
+	// The number of repositories with stale sub-repo permissions.
+	SubReposWithStalePerms int64
+	// The seconds between repositories with oldest and the most up-to-date sub-repo
+	// permissions.
+	SubReposPermsGapSeconds float64
 }
 
 // Metrics returns calculated metrics values by querying the database. The "staleDur"
@@ -1690,6 +1695,37 @@ WHERE perms.repo_id IN
 		return nil, errors.Wrap(err, "repos perms gap seconds")
 	}
 	m.ReposPermsGapSeconds = seconds.Float64
+
+	q = sqlf.Sprintf(`
+SELECT COUNT(*) FROM sub_repo_permissions AS perms
+WHERE perms.repo_id IN
+	(
+		SELECT repo.id FROM repo
+		WHERE
+			repo.deleted_at IS NULL
+		AND repo.private = TRUE
+	)
+AND perms.updated_at <= %s
+`, stale)
+	if err := s.execute(ctx, q, &m.SubReposWithStalePerms); err != nil {
+		return nil, errors.Wrap(err, "repos with stale sub-repo perms")
+	}
+
+	q = sqlf.Sprintf(`
+SELECT EXTRACT(EPOCH FROM (MAX(perms.updated_at) - MIN(perms.updated_at)))
+FROM sub_repo_permissions AS perms
+WHERE perms.repo_id IN
+	(
+		SELECT repo.id FROM repo
+		WHERE
+			repo.deleted_at IS NULL
+		AND repo.private = TRUE
+	)
+`)
+	if err := s.execute(ctx, q, &seconds); err != nil {
+		return nil, errors.Wrap(err, "sub-repo perms gap seconds")
+	}
+	m.SubReposPermsGapSeconds = seconds.Float64
 
 	return m, nil
 }

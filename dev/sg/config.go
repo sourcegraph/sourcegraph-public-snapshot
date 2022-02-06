@@ -109,13 +109,21 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 	return merged
 }
 
+type check struct {
+	Name        string `yaml:"-"`
+	Cmd         string `yaml:"cmd"`
+	FailMessage string `yaml:"failMessage"`
+
+	CheckFunc string `yaml:"checkFunc"`
+}
+
 type Config struct {
 	Env               map[string]string      `yaml:"env"`
 	Commands          map[string]run.Command `yaml:"commands"`
 	Commandsets       map[string]*Commandset `yaml:"commandsets"`
 	DefaultCommandset string                 `yaml:"defaultCommandset"`
 	Tests             map[string]run.Command `yaml:"tests"`
-	Checks            map[string]run.Check   `yaml:"checks"`
+	Checks            map[string]check       `yaml:"checks"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver

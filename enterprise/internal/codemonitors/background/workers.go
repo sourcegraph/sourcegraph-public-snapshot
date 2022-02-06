@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -163,6 +164,10 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+	// SECURITY: set the actor to the user that owns the code monitor.
+	// For all downstream actions (specifically executing searches),
+	// we should run as the user who owns the code monitor.
+	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
 
 	flags, err := r.db.FeatureFlags().GetUserFlags(ctx, m.UserID)
 	if err != nil {
@@ -177,21 +182,15 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	)
 	if hasRepoAware {
 		newQuery = q.QueryString
-		results, err = search(ctx, newQuery, m.UserID, &m.ID)
+		results, err = search(ctx, newQuery, &m.ID)
 	} else {
 		newQuery = newQueryWithAfterFilter(q)
-		results, err = search(ctx, newQuery, m.UserID, nil)
+		results, err = search(ctx, newQuery, nil)
 	}
 	if err != nil {
 		return errors.Wrap(err, "run search")
 	}
 
-	if len(results.Results) > 0 {
-		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
-		if err != nil {
-			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
-		}
-	}
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, err)
 	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
@@ -203,6 +202,13 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, results.Results)
 	if err != nil {
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
+	}
+
+	if len(results.Results) > 0 {
+		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
+		if err != nil {
+			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
+		}
 	}
 	return nil
 }

@@ -36,7 +36,7 @@ interface UserNodeProps {
 
     /** Called when the user is updated by an action in this list item. */
     onDidUpdate?: (didRemoveSelf: boolean) => void
-    onRemoveOnlyMember?: () => void
+    blockRemoveOnlyMember?: () => boolean
     history: H.History
 }
 
@@ -68,10 +68,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             this.removes
                 .pipe(
                     filter(() => {
-                        if (this.props.org.hasOneMember) {
-                            if (this.props.onRemoveOnlyMember) {
-                                this.props.onRemoveOnlyMember()
-                            }
+                        if (this.props.org.hasOneMember && this.props.blockRemoveOnlyMember?.()) {
                             return false
                         }
                         return window.confirm(
@@ -214,7 +211,13 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
             },
             authenticatedUser: this.props.authenticatedUser,
             onDidUpdate: this.onDidUpdateUser,
-            onRemoveOnlyMember: () => this.setState({ onlyMemberRemovalAttempted: true }),
+            blockRemoveOnlyMember: () => {
+                if (!this.props.authenticatedUser.siteAdmin) {
+                    this.setState({ onlyMemberRemovalAttempted: true })
+                    return true
+                }
+                return false
+            },
 
             history: this.props.history,
         }

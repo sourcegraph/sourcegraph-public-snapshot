@@ -9,7 +9,7 @@ const { add } = storiesOf('search-ui/SyntaxHighlightedSearchQuery', module).addP
     chromatic: { viewports: [480] },
 })
 
-add('Examples', () => (
+add('SyntaxHighlightedSearchQuery', () => (
     <BrandedStory>
         {() => (
             <p>
