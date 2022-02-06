@@ -939,16 +939,19 @@ func (r *searchResolver) toSearchJob(q query.Q) (run.Job, error) {
 		Options: repoOptions,
 	})
 
-	job := run.NewLimitJob(
-		maxResults,
-		run.NewTimeoutJob(
-			args.Timeout,
-			run.NewJobWithOptional(
-				run.NewParallelJob(requiredJobs...),
-				run.NewParallelJob(optionalJobs...),
-			),
-		),
+	job := run.NewJobWithOptional(
+		run.NewParallelJob(requiredJobs...),
+		run.NewParallelJob(optionalJobs...),
 	)
+
+	// If and/or jobs are not enabled, set limit and timeout here.
+	// If the feature is enabled, this will be set in toEvaluateJob.
+	if !r.SearchInputs.Features.GetBoolOr("cc-and-or-jobs", false) {
+		job = run.NewLimitJob(
+			maxResults,
+			run.NewTimeoutJob(args.Timeout, job),
+		)
+	}
 
 	checker := authz.DefaultSubRepoPermsChecker
 	if authz.SubRepoEnabled(checker) {
