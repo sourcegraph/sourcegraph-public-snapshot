@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"regexp/syntax"
 	"strings"
 
@@ -23,8 +24,19 @@ func run(ctx context.Context, rgBaseArgs []string, node query.Node, parameters [
 
 	var paths []string
 	// look for git directories matching repoParams
-	if len(plan.RepoParameters) > 0 {
-		return fmt.Errorf("not implemented")
+	if len(plan.RepoInclude) > 0 || len(plan.RepoExclude) > 0 {
+		repos, err := walkRepos()
+		if err != nil {
+			return fmt.Errorf("failed to find repositories: %w", err)
+		}
+		paths = filterRepos(repos, plan.RepoInclude, plan.RepoExclude)
+	}
+
+	if len(plan.RipGrepArgs) == 0 {
+		for _, name := range paths {
+			fmt.Println(name)
+		}
+		return nil
 	}
 
 	var args []string
@@ -39,7 +51,8 @@ func run(ctx context.Context, rgBaseArgs []string, node query.Node, parameters [
 }
 
 type Plan struct {
-	RepoParameters []query.Parameter
+	RepoInclude []*regexp.Regexp
+	RepoExclude []*regexp.Regexp
 
 	RipGrepArgs []string
 }
@@ -53,12 +66,20 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 	}
 
 	var args []string
-	var repoParams []query.Parameter
+	var repoInclude, repoExclude []*regexp.Regexp
 
 	for _, p := range parameters {
 		switch p.Field {
 		case query.FieldRepo:
-			repoParams = append(repoParams, p)
+			re, err := regexp.Compile(p.Value)
+			if err != nil {
+				return nil, fmt.Errorf("failed to compile repo regexp %q: %w", p.Value, err)
+			}
+			if p.Negated {
+				repoExclude = append(repoExclude, re)
+			} else {
+				repoInclude = append(repoInclude, re)
+			}
 
 		case query.FieldFile:
 			// TODO would be nice if we could change our query parser to
@@ -93,13 +114,15 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 
 	if pattern != "" {
 		args = append(args, "--", pattern)
-	} else {
+	} else if len(args) > 0 {
+		// if args is empty we are doing a repo search.
 		args = append(args, "--files")
 	}
 
 	return &Plan{
-		RepoParameters: repoParams,
-		RipGrepArgs:    args,
+		RepoInclude: repoInclude,
+		RepoExclude: repoExclude,
+		RipGrepArgs: args,
 	}, nil
 }
 
