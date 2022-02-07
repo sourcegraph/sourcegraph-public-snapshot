@@ -114,8 +114,9 @@ export const InvitePane: React.FunctionComponent<Props> = ({
             <div className={styles.titleDescription}>
                 <h3>Introduce friends and colleagues to Sourcegraph</h3>
                 <p className="text-muted mb-4">
-                    We’ve selected a few collaborators from your repositories in case you wanted to level them up with
-                    Sourcegraph’s powerful code search.
+                    We’ve selected a few collaborators you might want to invite to Sourcegraph. These users won’t be
+                    able to see your code unless they have access to it on the code host and also add that code to
+                    Sourcegraph.
                 </p>
             </div>
             {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
