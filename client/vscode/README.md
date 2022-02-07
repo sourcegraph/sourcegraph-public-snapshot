@@ -65,12 +65,11 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 
 ## Keyboard Shortcuts:
 
-| Description                               | Mac                                          | Linux / Windows                               |
-| ----------------------------------------- | -------------------------------------------- | --------------------------------------------- |
-| Open Sourcegraph Search Tab               | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> |
-| Open File in Sourcegraph Cloud            | <kbd>Option</kbd>+<kbd>A</kbd>               | <kbd>Alt</kbd>+<kbd>A</kbd>                   |
-| Search Selected Text in Sourcegraph       | <kbd>Option</kbd>+<kbd>S</kbd>               | <kbd>Alt</kbd>+<kbd>S</kbd>                   |
-| Search Selected Text in Sourcegraph Cloud | <kbd>Option</kbd>+<kbd>Q</kbd>               | <kbd>Alt</kbd>+<kbd>Q</kbd>                   |
+| Description                                  | Mac                                          | Linux / Windows                               |
+| -------------------------------------------- | -------------------------------------------- | --------------------------------------------- |
+| Open Sourcegraph Search Tab/Search Selection | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> |
+| Open File in Sourcegraph Cloud               | <kbd>Option</kbd>+<kbd>A</kbd>               | <kbd>Alt</kbd>+<kbd>A</kbd>                   |
+| Search Selected Text in Sourcegraph Cloud    | <kbd>Option</kbd>+<kbd>S</kbd>               | <kbd>Alt</kbd>+<kbd>S</kbd>                   |
 
 ## Extension Settings
 
