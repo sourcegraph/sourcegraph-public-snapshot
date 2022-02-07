@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp/syntax"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"golang.org/x/sync/errgroup"
@@ -42,8 +45,10 @@ type Plan struct {
 }
 
 func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
-	pattern, ok := node.(query.Pattern)
-	if !ok {
+	pattern := ""
+	if p, ok := node.(query.Pattern); ok {
+		pattern = p.Value
+	} else if node != nil {
 		return nil, fmt.Errorf("only supports pattern queries, got %T: %s", node, node)
 	}
 
@@ -56,7 +61,13 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 			repoParams = append(repoParams, p)
 
 		case query.FieldFile:
-			return nil, fmt.Errorf("need to implement regex to glob for file: patterns")
+			// TODO would be nice if we could change our query parser to
+			// instead take in globs.
+			glob, err := regexpToGlob(p)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert file regex %q to ripgrep glob: %w", p.Value, err)
+			}
+			args = append(args, "--glob", glob)
 
 		case query.FieldCase:
 			switch p.Value {
@@ -80,8 +91,8 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 		}
 	}
 
-	if pattern.Value != "" {
-		args = append(args, "--", pattern.Value)
+	if pattern != "" {
+		args = append(args, "--", pattern)
 	} else {
 		args = append(args, "--files")
 	}
@@ -90,6 +101,74 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 		RepoParameters: repoParams,
 		RipGrepArgs:    args,
 	}, nil
+}
+
+// regexpToGlob attempts to convert the regex to a glob for ripgrep. However,
+// there is a mismatch between the two, so this is done more as a heuristic to
+// try and match user intention.
+func regexpToGlob(p query.Parameter) (string, error) {
+	concat, err := syntax.Parse(p.Value, syntax.Perl)
+	if err != nil {
+		return "", err
+	}
+
+	// We have a very naive implementation. It basically just looks for
+	// ^literal$ where the anchors are optional.
+
+	// Pretend we always have a concat to simplify later code.
+	if concat.Op != syntax.OpConcat {
+		concat = &syntax.Regexp{
+			Op:  syntax.OpConcat,
+			Sub: []*syntax.Regexp{concat},
+		}
+	}
+
+	literal := ""
+	hasBegin := false
+	hasEnd := false
+	for i, re := range concat.Sub {
+		switch {
+		case i == 0 && re.Op == syntax.OpBeginLine:
+			hasBegin = true
+		case re.Op == syntax.OpLiteral:
+			if literal != "" {
+				return "", fmt.Errorf("only expected one literal")
+			}
+			literal = string(re.Rune)
+		case i == len(concat.Sub)-1 && (re.Op == syntax.OpEndLine || re.Op == syntax.OpEndText):
+			hasEnd = true
+		default:
+			return "", fmt.Errorf("do not know how to convert %v into glob", re)
+		}
+	}
+
+	if literal == "" {
+		return "", errors.New("missing literal")
+	}
+
+	e := func(b bool, s string) string {
+		if b {
+			return s
+		}
+		return ""
+	}
+
+	return e(p.Negated, "!") + e(!hasBegin, "**") + globLiteralEscape(literal) + e(!hasEnd, "**"), nil
+}
+
+// globLiteralEscape escapes s based on the rules described in the manpage
+// GITIGNORE(5) and RG(1)'s --glob section.
+func globLiteralEscape(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		switch r {
+		case '!', '[', ']', '{', '}', '*', '?':
+			b.WriteByte('\\')
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }
 
 func parse(q string) (query.Plan, error) {
@@ -124,7 +203,12 @@ func main() {
 
 	queryIdx := len(os.Args) - 1
 	err := do(os.Args[1:queryIdx], os.Args[queryIdx])
-	if err != nil {
+
+	// rg has well defined exit codes, so pass them on
+	var execErr *exec.ExitError
+	if errors.As(err, &execErr) {
+		os.Exit(execErr.ExitCode())
+	} else if err != nil {
 		log.Fatal(err)
 	}
 }
