@@ -60,9 +60,11 @@ $notFinished = $currentIterationItems | Where-Object { $_.Fields['Status'] -ne '
 
 $message = "
 Beep bop, this is your friendly iteration bot, with some fresh stats to help with our next iteration planning! :spiral_calendar_pad:
+
 *$($currentMilestone.Title) (ending today)*
 Sum of finished issues: :large_blue_circle: *$($stats.Sum)* | :desktop_computer: Frontend: $($frontendStats.Sum) | :database: Backend: $($backendStats.Sum)
 _$($stats.Count) issues, average size $($stats.Average.ToString('#.##')), smallest $($stats.Minimum), largest $($stats.Maximum)_
+
 :issue: Not finished: :large_yellow_circle: $($notFinished.Sum) ($($notFinished.Count) issues)
 :grey_question: Not sized: $($notSized.Count) issues
 "
