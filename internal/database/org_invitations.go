@@ -27,6 +27,7 @@ type OrgInvitation struct {
 	RespondedAt     *time.Time
 	ResponseType    *bool // accepted (true), rejected (false), no response (nil)
 	RevokedAt       *time.Time
+	IsVerifiedEmail bool // returns true if the current user has verified email that matches the invite
 }
 
 // Pending reports whether the invitation is pending (i.e., can be responded to by the recipient

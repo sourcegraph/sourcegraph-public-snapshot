@@ -60,6 +60,12 @@ func (r *organizationInvitationResolver) Recipient(ctx context.Context) (*UserRe
 	}
 	return UserByIDInt32(ctx, r.db, r.v.RecipientUserID)
 }
+func (r *organizationInvitationResolver) RecipientEmail() (*string, error) {
+	if r.v.RecipientEmail == "" {
+		return nil, nil
+	}
+	return &r.v.RecipientEmail, nil
+}
 func (r *organizationInvitationResolver) CreatedAt() DateTime { return DateTime{Time: r.v.CreatedAt} }
 func (r *organizationInvitationResolver) NotifiedAt() *DateTime {
 	return DateTimeOrNil(r.v.NotifiedAt)
@@ -102,6 +108,10 @@ func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*strin
 
 func (r *organizationInvitationResolver) RevokedAt() *DateTime {
 	return DateTimeOrNil(r.v.RevokedAt)
+}
+
+func (r *organizationInvitationResolver) IsVerifiedEmail() *bool {
+	return &r.v.IsVerifiedEmail
 }
 
 func strptr(s string) *string { return &s }

@@ -69,19 +69,22 @@ type orgInvitationClaims struct {
 func (r *inviteUserToOrganizationResult) SentInvitationEmail() bool { return r.sentInvitationEmail }
 func (r *inviteUserToOrganizationResult) InvitationURL() string     { return r.invitationURL }
 
-func checkEmails(ctx context.Context, db database.DB, inviteEmail string) error {
+func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, error) {
 	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	emails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: user.ID,
 	})
+	if err != nil {
+		return false, err
+	}
 
 	containsEmail := func(userEmails []*database.UserEmail, email string) *database.UserEmail {
 		for _, userEmail := range userEmails {
-			if email == userEmail.Email == nil {
+			if email == userEmail.Email {
 				return userEmail
 			}
 		}
@@ -91,13 +94,18 @@ func checkEmails(ctx context.Context, db database.DB, inviteEmail string) error 
 
 	emailMatch := containsEmail(emails, inviteEmail)
 	if emailMatch == nil {
-		return errors.New("your email address does not match the records on the invitation.")
+		var emailAddresses []string
+		for _, userEmail := range emails {
+			emailAddresses = append(emailAddresses, userEmail.Email)
+		}
+		return false, errors.Newf("your email addresses %v do not match the email address on the invitation.", emailAddresses)
 	} else if emailMatch.VerifiedAt == nil {
 		// set email address as verified if not already
-		db.UserEmails().SetVerified(ctx, user.ID, inviteEmail, true)
+		// db.UserEmails().SetVerified(ctx, user.ID, inviteEmail, true)
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
@@ -128,10 +136,11 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 			return nil, database.NewOrgInvitationNotFoundError(claims.InvitationID)
 		}
 		if invite.RecipientEmail != "" {
-			err = checkEmails(ctx, r.db, invite.RecipientEmail)
+			willVerify, err := checkEmail(ctx, r.db, invite.RecipientEmail)
 			if err != nil {
 				return nil, err
 			}
+			invite.IsVerifiedEmail = !willVerify
 		}
 
 		return NewOrganizationInvitationResolver(r.db, invite), nil
@@ -249,6 +258,24 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		// noop
 	default:
 		return nil, errors.Errorf("invalid OrganizationInvitationResponseType value %q", args.ResponseType)
+	}
+
+	invitation, err := r.db.OrgInvitations().GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Mark the email as verified if needed
+	if invitation.RecipientEmail != "" {
+		// 🚨 SECURITY: This fails if the org invitation's recipient email is not the one given
+		shouldMarkAsVerified, err := checkEmail(ctx, r.db, invitation.RecipientEmail)
+		if err != nil {
+			return nil, err
+		}
+		if shouldMarkAsVerified && accept {
+			// ignore errors here as this is a best-effort action
+			r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
+		}
 	}
 
 	// 🚨 SECURITY: This fails if the org invitation's recipient is not the one given (or if the
@@ -379,10 +406,6 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipi
 	if !orgInvitationConfigDefined() {
 		return "", errors.New(SIGNING_KEY_MESSAGE)
 	}
-	aud := recipientEmail
-	if aud == "" {
-		aud = strconv.FormatInt(int64(recipientID), 10)
-	}
 	config := conf.SiteConfig().OrganizationInvitations
 
 	expiryTime := time.Duration(config.ExpiryTime)
@@ -392,7 +415,6 @@ func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipi
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &orgInvitationClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Audience:  jwt.ClaimStrings{aud},
 			Issuer:    globals.ExternalURL().String(),
 			ExpiresAt: jwt.NewNumericDate(timeNow().Add(expiryTime * time.Hour)), // TODO: store expiry in DB
 			Subject:   strconv.FormatInt(int64(orgID), 10),
@@ -436,22 +458,37 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 
 	var fromName string
 	if sender.DisplayName != "" {
-		fromName = sender.DisplayName
+		fromName = fmt.Sprintf("%s (@%s)", sender.DisplayName, sender.Username)
 	} else {
-		fromName = sender.Username
+		fromName = fmt.Sprintf("@%s", sender.Username)
 	}
+
+	var orgName string
+	if org.DisplayName != nil {
+		orgName = *org.DisplayName
+	} else {
+		orgName = org.Name
+	}
+
+	var expiry = 2
 
 	return txemail.Send(ctx, txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
 		Data: struct {
-			FromName string
-			OrgName  string
-			URL      string
+			FromName        string
+			FromDisplayName string
+			FromUserName    string
+			OrgName         string
+			InvitationUrl   string
+			ExpiryDays      int
 		}{
-			FromName: fromName,
-			OrgName:  org.Name,
-			URL:      invitationURL,
+			FromName:        fromName,
+			FromDisplayName: sender.DisplayName,
+			FromUserName:    sender.Username,
+			OrgName:         orgName,
+			InvitationUrl:   invitationURL,
+			ExpiryDays:      expiry,
 		},
 	})
 }
@@ -461,16 +498,61 @@ var emailTemplates = txemail.MustValidate(txtypes.Templates{
 	Text: `
 {{.FromName}} invited you to join the {{.OrgName}} organization on Sourcegraph.
 
-To accept the invitation, follow this link:
+New to Sourcegraph? Sourcegraph helps your team to learn and understand your codebase quickly, and share code via links, speeding up team collaboration even while apart.
 
-  {{.URL}}
+Visit this link in your browser to accept the invite: {{.InvitationUrl}}
+
+This link will expire in {{.ExpiryDays}} days. You are receiving this email because @{{.FromUserName}} invited you to an organization on Sourcegraph Cloud.
+
+
+To see our Terms of Service, please visit this link: https://about.sourcegraph.com/terms
+To see our Privacy Policy, please visit this link: https://about.sourcegraph.com/privacy
+
+Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
 `,
 	HTML: `
-<p>
-  <strong>{{.FromName}}</strong> invited you to join the
-  <strong>{{.OrgName}}</strong> organization on Sourcegraph.
-</p>
-
-<p><strong><a href="{{.URL}}">Join {{.OrgName}}</a></strong></p>
+<html>
+<head>
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <style>
+    body { color: #343a4d; background: #fff; padding: 20px; font-size: 16px; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji; }
+    .logo { height: 34px; margin-bottom: 15px; }
+    a { color: #0b70db; text-decoration: none; background-color: transparent; }
+    a:hover { color: #0c7bf0; text-decoration: underline; }
+    a.btn { display: inline-block; color: #fff; background-color: #0b70db; padding: 8px 16px; border-radius: 3px; font-weight: 600; }
+    a.btn:hover { color: #fff; background-color: #0864c6; text-decoration:none; }
+    .smaller { font-size: 14px; }
+    small { color: #5e6e8c; font-size: 12px; }
+    .mtm { margin-top: 10px; }
+    .mtl { margin-top: 20px; }
+    .mtxl { margin-top: 30px; }
+  </style>
+</head>
+<body style="font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;">
+  <img class="logo" src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light-small.png" alt="Sourcegraph logo">
+  <p>
+    <strong>{{.FromDisplayName}}</strong> (@{{.FromUserName}}) invited you to join the <strong>{{.OrgName}}</strong> organization on Sourcegraph.
+  </p>
+  <p class="mtxl">
+    <strong>New to Sourcegraph?</strong> Sourcegraph helps your team to learn and understand your codebase quickly, and share code via links, speeding up team collaboration even while apart.
+  </p>
+  <p>
+    <a class="btn mtm" href="{{.InvitationUrl}}">Accept invite</a>
+  </p>
+  <p class="smaller">Or visit this link in your browser: <a href="{{.InvitationUrl}}">{{.InvitationUrl}}</a></p>
+  <small>
+  <p class="mtl">
+    This link will expire in {{.ExpiryDays}} days. You are receiving this email because @{{.FromUserName}} invited you to an organization on Sourcegraph Cloud.
+  </p>
+  <p class="mtl">
+    <a href="https://about.sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;
+    <a href="https://about.sourcegraph.com/privacy">Privacy</a>&nbsp;&#8226;&nbsp;
+    <a href="">Security</a>
+  </p>
+  <p>Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA</p>
+  </small>
+</body>
+</html>
 `,
 })

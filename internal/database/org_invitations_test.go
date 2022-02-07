@@ -60,16 +60,16 @@ func TestOrgInvitations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	oi1, err := OrgInvitations(db).Create(ctx, org1.ID, sender.ID, recipient.ID)
+	oi1, err := OrgInvitations(db).Create(ctx, org1.ID, sender.ID, recipient.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	oi2, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient.ID)
+	oi2, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	oi3, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient2.ID)
+	oi3, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient2.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestOrgInvitations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	oi4, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient2.ID)
+	oi4, err := OrgInvitations(db).Create(ctx, org2.ID, sender.ID, recipient2.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +258,7 @@ func TestOrgInvitations(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		oi3, err := OrgInvitations(db).Create(ctx, org3.ID, sender.ID, recipient.ID)
+		oi3, err := OrgInvitations(db).Create(ctx, org3.ID, sender.ID, recipient.ID, "")
 		if err != nil {
 			t.Fatal(err)
 		}
