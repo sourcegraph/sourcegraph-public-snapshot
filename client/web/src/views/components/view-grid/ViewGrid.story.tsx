@@ -15,7 +15,7 @@ import * as View from '../view'
 import { ViewGrid } from './ViewGrid'
 
 export default {
-    title: 'web/views/view-grid',
+    title: 'web/views',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 } as Meta
 

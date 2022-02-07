@@ -21,9 +21,10 @@ type RepositoryFetcher interface {
 }
 
 type repositoryFetcher struct {
-	gitserverClient gitserver.GitserverClient
-	fetchSem        chan int
-	operations      *operations
+	gitserverClient     gitserver.GitserverClient
+	fetchSem            chan int
+	operations          *operations
+	maxTotalPathsLength int
 }
 
 type ParseRequest struct {
@@ -36,11 +37,12 @@ type parseRequestOrError struct {
 	Err          error
 }
 
-func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maximumConcurrentFetches int, observationContext *observation.Context) RepositoryFetcher {
+func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maximumConcurrentFetches int, maxTotalPathsLength int, observationContext *observation.Context) RepositoryFetcher {
 	return &repositoryFetcher{
-		gitserverClient: gitserverClient,
-		fetchSem:        make(chan int, maximumConcurrentFetches),
-		operations:      newOperations(observationContext),
+		gitserverClient:     gitserverClient,
+		fetchSem:            make(chan int, maximumConcurrentFetches),
+		operations:          newOperations(observationContext),
+		maxTotalPathsLength: maxTotalPathsLength,
 	}
 }
 
@@ -79,13 +81,59 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 	f.operations.fetching.Inc()
 	defer f.operations.fetching.Dec()
 
-	rc, err := f.gitserverClient.FetchTar(ctx, args.Repo, args.CommitID, paths)
-	if err != nil {
-		return errors.Wrap(err, "gitserverClient.FetchTar")
-	}
-	defer rc.Close()
+	fetchAndRead := func(paths []string) error {
+		rc, err := f.gitserverClient.FetchTar(ctx, args.Repo, args.CommitID, paths)
+		if err != nil {
+			return errors.Wrap(err, "gitserverClient.FetchTar")
+		}
+		defer rc.Close()
 
-	return readTar(ctx, tar.NewReader(rc), callback, trace)
+		err = readTar(ctx, tar.NewReader(rc), callback, trace)
+		if err != nil {
+			return errors.Wrap(err, "readTar")
+		}
+
+		return nil
+	}
+
+	if len(paths) == 0 {
+		// Full archive
+		return fetchAndRead(nil)
+	}
+
+	// Partial archive
+	for _, pathBatch := range batchByTotalLength(paths, f.maxTotalPathsLength) {
+		err = fetchAndRead(pathBatch)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// batchByTotalLength returns batches of paths where each batch contains at most maxTotalLength
+// characters, except when a single path exceeds the soft max, in which case that long path will be put
+// into its own batch.
+func batchByTotalLength(paths []string, maxTotalLength int) [][]string {
+	batches := [][]string{}
+	currentBatch := []string{}
+	currentLength := 0
+
+	for _, path := range paths {
+		if len(currentBatch) > 0 && currentLength+len(path) > maxTotalLength {
+			batches = append(batches, currentBatch)
+			currentBatch = []string{}
+			currentLength = 0
+		}
+
+		currentBatch = append(currentBatch, path)
+		currentLength += len(path)
+	}
+
+	batches = append(batches, currentBatch)
+
+	return batches
 }
 
 func (f *repositoryFetcher) limitConcurrentFetches(ctx context.Context) (func(), error) {

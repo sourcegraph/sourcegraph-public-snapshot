@@ -27,6 +27,13 @@ func main() {
 
 	config := ci.NewConfig(time.Now())
 
+	// For the time being, we are running main builds in // of the normal builds in
+	// the stateless agents queue, in order to observe its stability.
+	if buildkite.FeatureFlags.StatelessBuild {
+		// We do not want to trigger any deployment.
+		config.RunType = ci.MainDryRun
+	}
+
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
 		panic(err)
