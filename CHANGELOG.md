@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- A new `src batch remote` command has been added to run a batch spec on a Sourcegraph instance that has Server Side Batch Changes enabled. [#671](https://github.com/sourcegraph/src-cli/pull/671)
+
 ### Changed
 
 ### Fixed

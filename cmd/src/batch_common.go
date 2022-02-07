@@ -30,22 +30,56 @@ import (
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 
-type batchExecuteFlags struct {
+// batchExecutionFlags are common to batch changes that are executed both
+// locally and remotely.
+type batchExecutionFlags struct {
 	allowUnsupported bool
 	allowIgnored     bool
 	api              *api.Flags
-	apply            bool
-	cacheDir         string
-	tempDir          string
 	clearCache       bool
-	file             string
-	keepLogs         bool
 	namespace        string
-	parallelism      int
-	timeout          time.Duration
-	workspace        string
-	cleanArchives    bool
-	skipErrors       bool
+}
+
+func newBatchExecutionFlags(flagSet *flag.FlagSet) *batchExecutionFlags {
+	bef := &batchExecutionFlags{
+		api: api.NewFlags(flagSet),
+	}
+
+	flagSet.BoolVar(
+		&bef.allowUnsupported, "allow-unsupported", false,
+		"Allow unsupported code hosts.",
+	)
+	flagSet.BoolVar(
+		&bef.clearCache, "clear-cache", false,
+		"If true, clears the execution cache and executes all steps anew.",
+	)
+	flagSet.BoolVar(
+		&bef.allowIgnored, "force-override-ignore", false,
+		"Do not ignore repositories that have a .batchignore file.",
+	)
+	flagSet.StringVar(
+		&bef.namespace, "namespace", "",
+		"The user or organization namespace to place the batch change within. Default is the currently authenticated user.",
+	)
+	flagSet.StringVar(&bef.namespace, "n", "", "Alias for -namespace.")
+
+	return bef
+}
+
+// batchExecuteFlags are used when executing batch changes locally.
+type batchExecuteFlags struct {
+	*batchExecutionFlags
+
+	apply         bool
+	cacheDir      string
+	tempDir       string
+	file          string
+	keepLogs      bool
+	parallelism   int
+	timeout       time.Duration
+	workspace     string
+	cleanArchives bool
+	skipErrors    bool
 
 	// EXPERIMENTAL
 	textOnly bool
@@ -53,21 +87,13 @@ type batchExecuteFlags struct {
 
 func newBatchExecuteFlags(flagSet *flag.FlagSet, workspaceExecution bool, cacheDir, tempDir string) *batchExecuteFlags {
 	caf := &batchExecuteFlags{
-		api: api.NewFlags(flagSet),
+		batchExecutionFlags: newBatchExecutionFlags(flagSet),
 	}
 
 	if !workspaceExecution {
 		flagSet.BoolVar(
 			&caf.textOnly, "text-only", false,
 			"INTERNAL USE ONLY. EXPERIMENTAL. Switches off the TUI to only print JSON lines.",
-		)
-		flagSet.BoolVar(
-			&caf.allowUnsupported, "allow-unsupported", false,
-			"Allow unsupported code hosts.",
-		)
-		flagSet.BoolVar(
-			&caf.allowIgnored, "force-override-ignore", false,
-			"Do not ignore repositories that have a .batchignore file.",
 		)
 		flagSet.BoolVar(
 			&caf.apply, "apply", false,
@@ -77,20 +103,11 @@ func newBatchExecuteFlags(flagSet *flag.FlagSet, workspaceExecution bool, cacheD
 			&caf.keepLogs, "keep-logs", false,
 			"Retain logs after executing steps.",
 		)
-		flagSet.StringVar(
-			&caf.namespace, "namespace", "",
-			"The user or organization namespace to place the batch change within. Default is the currently authenticated user.",
-		)
-		flagSet.StringVar(&caf.namespace, "n", "", "Alias for -namespace.")
 	}
 
 	flagSet.StringVar(
 		&caf.cacheDir, "cache", cacheDir,
 		"Directory for caching results and repository archives.",
-	)
-	flagSet.BoolVar(
-		&caf.clearCache, "clear-cache", false,
-		"If true, clears the execution cache and executes all steps anew.",
 	)
 	flagSet.StringVar(
 		&caf.tempDir, "tmp", tempDir,

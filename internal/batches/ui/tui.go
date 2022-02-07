@@ -224,8 +224,36 @@ func (ui *TUI) ApplyingBatchSpecSuccess(batchChangeURL string) {
 	block.Writef("%s", batchChangeURL)
 }
 
+func (ui *TUI) SendingBatchSpec() {
+	ui.pending = batchCreatePending(ui.Out, "Sending batch spec")
+}
+
+func (ui *TUI) SendingBatchSpecSuccess() {
+	batchCompletePending(ui.pending, "Sending batch spec")
+}
+
+func (ui *TUI) ResolvingWorkspaces() {
+	ui.pending = batchCreatePending(ui.Out, "Resolving workspaces")
+}
+
+func (ui *TUI) ResolvingWorkspacesSuccess() {
+	batchCompletePending(ui.pending, "Resolving workspaces")
+}
+
+func (ui *TUI) ExecutingBatchSpec() {
+	ui.pending = batchCreatePending(ui.Out, "Executing batch spec")
+}
+
+func (ui *TUI) ExecutingBatchSpecSuccess() {
+	batchCompletePending(ui.pending, "Executing batch spec")
+}
+
 func (ui *TUI) ExecutionError(err error) {
 	printExecutionError(ui.Out, err)
+}
+
+func (ui *TUI) RemoteSuccess(url string) {
+	ui.Out.WriteLine(output.Line(output.EmojiLightbulb, output.Fg256Color(12), "Executing at: "+url))
 }
 
 // prettyPrintBatchUnlicensedError introspects the given error returned when

@@ -20,6 +20,7 @@ The commands are:
 	                      change
 	new                   creates a new batch spec YAML file
 	preview               creates a batch spec to be previewed or applied
+	remote                creates server side batch changes
 	repos,repositories    queries the exact repositories that a batch spec will
 	                      apply to
 	validate              validates a batch spec
