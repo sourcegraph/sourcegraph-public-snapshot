@@ -41,7 +41,7 @@ Sourcegraph also accepts filters to narrow down search results, such as `repo`, 
 For example, you can search for "auth provider" in a Go repository with a search like this one:
 
 ```
-repo:sourcegraph/sourcegraph lang:go auto provider`
+repo:sourcegraph/sourcegraph lang:go auth provider
 ```
 
 ![Lang search gif](https://storage.googleapis.com/sourcegraph-assets/VS%20Marketplace/sourcegraph_search.gif)

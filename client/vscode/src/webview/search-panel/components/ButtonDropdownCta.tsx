@@ -19,6 +19,7 @@ export interface ButtonDropdownCtaProps extends TelemetryProps {
     returnTo: string
     onToggle?: () => void
     className?: string
+    instanceURL: string
 }
 
 export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> = ({
@@ -32,6 +33,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     returnTo,
     onToggle,
     className,
+    instanceURL,
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
@@ -51,6 +53,8 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDropdownOpen])
+
+    const signUpURL = new URL(`/sign-up?src=${source}&returnTo=${encodeURIComponent(returnTo)}`, instanceURL)
 
     return (
         <ButtonDropdown className="menu-nav-item" direction="down" isOpen={isDropdownOpen} toggle={toggleDropdownOpen}>
@@ -77,12 +81,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                         <div className={classNames('text-muted', styles.copyText)}>{copyText}</div>
                     </div>
                 </div>
-                <Button
-                    to={`/sign-up?src=${source}&returnTo=${encodeURIComponent(returnTo)}`}
-                    onClick={onClick}
-                    variant="primary"
-                    as={Link}
-                >
+                <Button to={signUpURL.href} onClick={onClick} variant="primary" as={Link}>
                     Sign up for Sourcegraph
                 </Button>
             </DropdownMenu>
