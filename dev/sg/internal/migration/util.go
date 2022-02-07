@@ -93,7 +93,7 @@ func parseVersions(lines []string, migrationsDir string) []int {
 			rawVersion = strings.TrimPrefix(rawVersion, prefix)
 		}
 
-		// Remove trailing filepath (if dir) or namae prefix (if old migration)
+		// Remove trailing filepath (if dir) or name prefix (if old migration)
 		for _, separator := range separatorsToSplitBy {
 			rawVersion = strings.Split(rawVersion, separator)[0]
 		}
