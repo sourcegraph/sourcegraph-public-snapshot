@@ -178,7 +178,10 @@ export async function gitRemoteUrlWithReplacements(
     log?.appendLine(`${stdoutBefore} became ${stdout}`)
     return stdout
 }
-//
+
+/**
+ * Uses editor endpoint to construct sourcegraph file URL
+ */
 export function getSourcegraphFileUrl(
     SourcegraphUrl: string,
     remoteURL: string,
@@ -186,8 +189,7 @@ export function getSourcegraphFileUrl(
     fileRelative: string,
     editor: TextEditor
 ): string {
-    // Use editor endpoint to construct sourcegraph file URL
-    const fileUrl =
+    return (
         `${SourcegraphUrl}-/editor` +
         `?remote_url=${encodeURIComponent(remoteURL)}` +
         `&branch=${encodeURIComponent(branch)}` +
@@ -198,7 +200,7 @@ export function getSourcegraphFileUrl(
         `&start_col=${encodeURIComponent(String(editor.selection.start.character))}` +
         `&end_row=${encodeURIComponent(String(editor.selection.end.line))}` +
         `&end_col=${encodeURIComponent(String(editor.selection.end.character))}`
-    return fileUrl
+    )
 }
 
 function getRemoteUrlReplacements(): Record<string, string> {
