@@ -22,6 +22,8 @@
     "onFileSystem:sourcegraph",
     "onLanguage:sourcegraph",
     "onCommand:sourcegraph.search",
+    "onCommand:sourcegraph.openInBrowser",
+    "onCommand:sourcegraph.copyFileLink",
     "onCommand:sourcegraph.selectionSearchWeb",
     "onCommand:sourcegraph.openFile",
     "onView:sourcegraph.searchSidebar",
