@@ -195,15 +195,15 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	}
 
 	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
-
-	var lineRange string
+	q := u.Query()
 	if of.startRow == of.endRow && of.startCol == of.endCol {
-		lineRange = fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1)
+		q.Add(fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1), "")
 	} else {
-		lineRange = fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1)
+		q.Add(fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1), "")
 	}
-
-	return u.String() + lineRange, nil
+	r.addTracking(q)
+	u.RawQuery = q.Encode()
+	return u.String(), nil
 }
 
 // openFile returns the redirect URL for the pre-validated request.
