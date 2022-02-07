@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -197,12 +198,18 @@ type ListBatchSpecWorkspacesOpts struct {
 	Cursor      int64
 	BatchSpecID int64
 	IDs         []int64
+
+	State                 btypes.BatchSpecWorkspaceExecutionJobState
+	OnlyWithoutExecution  bool
+	OnlyCachedOrCompleted bool
+	TextSearch            []search.TextSearchTerm
 }
 
-func (opts ListBatchSpecWorkspacesOpts) SQLConds(forCount bool) *sqlf.Query {
+func (opts ListBatchSpecWorkspacesOpts) SQLConds(forCount bool) (where *sqlf.Query, joinStatements *sqlf.Query) {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
+	joins := []*sqlf.Query{}
 
 	if len(opts.IDs) != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id = ANY(%s)", pq.Array(opts.IDs)))
@@ -216,7 +223,41 @@ func (opts ListBatchSpecWorkspacesOpts) SQLConds(forCount bool) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id >= %s", opts.Cursor))
 	}
 
-	return sqlf.Join(preds, "\n AND ")
+	joinedExecution := false
+	ensureJoinExecution := func() {
+		if joinedExecution {
+			return
+		}
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_spec_workspace_execution_jobs ON batch_spec_workspace_execution_jobs.batch_spec_workspace_id = batch_spec_workspaces.id"))
+		joinedExecution = true
+	}
+
+	if opts.State != "" {
+		ensureJoinExecution()
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state = %s", opts.State))
+	}
+
+	if opts.OnlyWithoutExecution {
+		ensureJoinExecution()
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id IS NULL"))
+	}
+
+	if opts.OnlyCachedOrCompleted {
+		ensureJoinExecution()
+		preds = append(preds, sqlf.Sprintf("(batch_spec_workspaces.cached_result_found OR batch_spec_workspace_execution_jobs.state = %s)", btypes.BatchSpecWorkspaceExecutionJobStateCompleted))
+	}
+
+	if len(opts.TextSearch) != 0 {
+		for _, term := range opts.TextSearch {
+			preds = append(preds, textSearchTermToClause(
+				term,
+				// TODO: Add more terms here later.
+				sqlf.Sprintf("repo.name"),
+			))
+		}
+	}
+
+	return sqlf.Join(preds, "\n AND "), sqlf.Join(joins, "\n")
 }
 
 // ListBatchSpecWorkspaces lists batch spec workspaces with the given filters.
@@ -248,15 +289,18 @@ var listBatchSpecWorkspacesQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_job.go:ListBatchSpecWorkspaces
 SELECT %s FROM batch_spec_workspaces
 INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+%s
 WHERE %s
 ORDER BY id ASC
 `
 
 func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query {
+	where, joins := opts.SQLConds(false)
 	return sqlf.Sprintf(
 		listBatchSpecWorkspacesQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(BatchSpecWorkspaceColums.ToSqlf(), ", "),
-		opts.SQLConds(false),
+		joins,
+		where,
 	)
 }
 
@@ -278,13 +322,16 @@ SELECT
 FROM
 	batch_spec_workspaces
 INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+%s
 WHERE %s
 `
 
 func countBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query {
+	where, joins := opts.SQLConds(true)
 	return sqlf.Sprintf(
 		countBatchSpecWorkspacesQueryFmtstr+opts.LimitOpts.ToDB(),
-		opts.SQLConds(true),
+		joins,
+		where,
 	)
 }
 

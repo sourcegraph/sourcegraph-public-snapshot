@@ -26,6 +26,7 @@ import {
     RetryBatchSpecExecutionResult,
     RetryBatchSpecExecutionVariables,
     BatchSpecWorkspaceListFields,
+    BatchSpecWorkspaceState,
 } from '../../../graphql-operations'
 
 const batchSpecWorkspaceFieldsFragment = gql`
@@ -327,13 +328,19 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
     )
 
 const BATCH_SPEC_WORKSPACES = gql`
-    query BatchSpecWorkspaces($node: ID!, $first: Int, $after: String) {
+    query BatchSpecWorkspaces(
+        $node: ID!
+        $first: Int
+        $after: String
+        $search: String
+        $state: BatchSpecWorkspaceState
+    ) {
         node(id: $node) {
             __typename
             ... on BatchSpec {
                 id
                 workspaceResolution {
-                    workspaces(first: $first, after: $after) {
+                    workspaces(first: $first, after: $after, search: $search, state: $state) {
                         ...BatchSpecWorkspacesConnectionFields
                     }
                 }
@@ -376,7 +383,9 @@ const BATCH_SPEC_WORKSPACES = gql`
 `
 
 export const useWorkspacesListConnection = (
-    batchSpecID: Scalars['ID']
+    batchSpecID: Scalars['ID'],
+    search: string | null,
+    state: BatchSpecWorkspaceState | null
 ): UseConnectionResult<BatchSpecWorkspaceListFields> =>
     useConnection<BatchSpecWorkspacesResult, BatchSpecWorkspacesVariables, BatchSpecWorkspaceListFields>({
         query: BATCH_SPEC_WORKSPACES,
@@ -384,6 +393,8 @@ export const useWorkspacesListConnection = (
             node: batchSpecID,
             after: null,
             first: 20,
+            search,
+            state,
         },
         options: {
             useURL: true,
