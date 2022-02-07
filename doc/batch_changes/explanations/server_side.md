@@ -21,7 +21,7 @@ all users of the Sourcegraph instance can get started with no additional setup r
 Make sure that
 
 - [Executors are deployed and are online](../../admin/deploy_executors.md).
-- The feature flag `experimentalFeatures.batchChangesExecution` is [set to `enabled` in the site-config](../../admin/config/site_config.md).
+- The feature flag `experimentalFeatures.batchChangesExecution` is set to `enabled` in the global config or for specific users.
 
 ## Explanations
 
@@ -32,10 +32,9 @@ Make sure that
 
 This feature is experimental. In particular, it comes with the following limitations, that we plan to resolve before GA.
 
-- Server-side Batch Changes is only available for self-hosted and managed deployments. It is not available on Sourcegraph Cloud.
+- Server-side Batch Changes is only available for self-hosted deployments. It is not available on Sourcegraph Cloud and on managed instances.
 - The server side batch changes UX is work in progress and will change a lot before the GA release.
 - Documentation is minimal and will change a lot before the GA release.
-- Batch change execution is not heavily optimized.
 - Executors can only be deployed using Terraform (AWS or GCP) or using pre-built binaries (see [deploying executors](../../admin/deploy_executors.md)).
 
 Server-side Batch Changes has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.
