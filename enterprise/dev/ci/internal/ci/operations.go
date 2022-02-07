@@ -132,18 +132,21 @@ func addTerraformLint(pipeline *bk.Pipeline) {
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":clipboard: Misc Linters",
+		withYarnCache(),
 		bk.Cmd("./dev/check/all.sh"))
 }
 
 // yarn ~41s + ~30s
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
 }
 
 // yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
 }
 
@@ -164,8 +167,10 @@ func addTsLint(pipeline *bk.Pipeline) {
 	// - eslint 137s
 	// - stylelint 7s
 	pipeline.AddStep(":eslint: Typescript eslint",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":stylelint: Stylelint",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh all:stylelint"))
 }
 
@@ -173,12 +178,14 @@ func addTsLint(pipeline *bk.Pipeline) {
 func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp build
 	pipeline.AddStep(":webpack::globe_with_meridians: Build",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", ""))
 
 	// Webapp enterprise build
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"),
@@ -188,6 +195,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-test.sh client/web"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
@@ -198,6 +206,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
+			withYarnCache(),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
@@ -214,6 +223,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 
 	// Browser extension unit tests
 	pipeline.AddStep(":jest::chrome: Test browser extension",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
@@ -221,10 +231,14 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 func clientIntegrationTests(pipeline *bk.Pipeline) {
 	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
-	skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
+	// TODO check with Valery about this. Because we're running stateless agents,
+	// this runs on a fresh instance and the hooks are not present at all, which
+	// breaks the step.
+	// skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
 
 	// Build web application used for integration tests to share it between multiple parallel steps.
 	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
+		withYarnCache(),
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("COVERAGE_INSTRUMENT", "true"),
@@ -244,6 +258,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		puppeteerFinalizeDependencies[i] = bk.DependsOn(stepKey)
 
 		pipeline.AddStep(stepLabel,
+			withYarnCache(),
 			bk.Key(stepKey),
 			bk.DependsOn(prepStepKey),
 			bk.DisableManualRetry("The Percy build is finalized even if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
@@ -259,7 +274,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		// just retry a few times.
 		bk.AutomaticRetry(3),
 		// Finalize just uses a remote package.
-		skipGitCloneStep,
+		// skipGitCloneStep,
 		bk.Cmd("npx @percy/cli build:finalize"),
 	}
 
@@ -270,6 +285,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
+			withYarnCache(),
 			bk.AutomaticRetry(3),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
@@ -295,17 +311,20 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 func frontendTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest: Test shared client code",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-test.sh client/shared"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 
 	// Wildcard tests
 	pipeline.AddStep(":jest: Test wildcard client code",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-test.sh client/wildcard"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
 func addBrandedTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest: Test branded client code",
+		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-test.sh client/branded"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
@@ -396,6 +415,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
+			withYarnCache(),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
@@ -415,17 +435,20 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome: Extension release",
+		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser -s run build"),
 		bk.Cmd("yarn --cwd client/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
+		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser release:firefox"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: NPM Release",
+		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser -s run build"),
 		bk.Cmd("yarn --cwd client/browser release:npm"))
