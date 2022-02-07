@@ -538,9 +538,9 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
 
             const pageSearchForm = document.querySelector<HTMLFormElement>('.application-main form.js-site-search-form')
             const pageSearchInput = pageSearchForm?.querySelector<HTMLInputElement>("input.form-control[name='q']")
-            const pageSearchFormSubmitButton = [
-                ...document.querySelectorAll<HTMLButtonElement>(".application-main button[type='submit']"),
-            ].find(button => button.form === pageSearchForm)
+            const pageSearchFormSubmitButton = pageSearchForm?.parentElement?.parentElement?.querySelector(
+                "button[type='submit']"
+            )
 
             if (pageSearchInput && pageSearchFormSubmitButton) {
                 const buttonContainer = document.createElement('div')
