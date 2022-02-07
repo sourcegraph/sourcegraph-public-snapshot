@@ -13,6 +13,15 @@ func TestParseSymbol(t *testing.T) {
 	}
 	tests := []test{
 		{Symbol: "local a", Expected: newLocalSymbol("a")},
+		{Symbol: "a b c d method().", Expected: &Symbol{
+			Scheme: "a",
+			Package: &Package{
+				Manager: "b",
+				Name:    "c",
+				Version: "d",
+			},
+			Descriptors: []*Descriptor{{Name: "method", Suffix: Descriptor_Method}},
+		}},
 		{
 			Symbol: "lsif-java maven package 1.0.0 java/io/File#Entry.method(+1).(param)[TypeParam]",
 			Expected: &Symbol{

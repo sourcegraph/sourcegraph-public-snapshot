@@ -139,9 +139,12 @@ func (s *symbolParser) parseDescriptor() (*Descriptor, error) {
 		s.index++
 		switch suffix {
 		case '(':
-			disambiguator, err := s.acceptIdentifier("method disambiguator")
-			if err != nil {
-				return nil, err
+			disambiguator := ""
+			if s.peekNext() != ')' {
+				disambiguator, err = s.acceptIdentifier("method disambiguator")
+				if err != nil {
+					return nil, err
+				}
 			}
 			err = s.acceptCharacter(')', "closing method")
 			if err != nil {
@@ -207,7 +210,7 @@ func (s *symbolParser) acceptEscapedIdentifier(what string, escapeCharacter rune
 		}
 		s.index++
 	}
-	return "", s.error(fmt.Sprintf("reached end of symbol while parsing <%s>, expected a '%v' character", what, escapeCharacter))
+	return "", s.error(fmt.Sprintf("reached end of symbol while parsing <%s>, expected a '%v' character", what, string(escapeCharacter)))
 }
 
 func (s *symbolParser) acceptCharacter(r rune, what string) error {

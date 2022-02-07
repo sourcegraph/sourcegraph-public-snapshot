@@ -1,0 +1,19 @@
+ definition local1
+#           ^^^^^^ definition local 1
+#           documentation signature of local1
+ definition local2
+#           ^^^^^^ definition local 2
+#           documentation signature of local2
+ definition local3
+#           ^^^^^^ definition local 3
+#           documentation signature of local3
+ definition local4 implements local1 references local2 type_defines local3
+#           ^^^^^^ definition local 4
+#           documentation signature of local4
+#           relationship local 1 implementation
+#           relationship local 2 reference
+#           relationship local 3 type_definition
+#                             ^^^^^^ reference local 1
+#                                               ^^^^^^ reference local 2
+#                                                                   ^^^^^^ reference local 3
+ 
