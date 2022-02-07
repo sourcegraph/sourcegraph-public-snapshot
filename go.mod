@@ -27,6 +27,7 @@ require (
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
+	github.com/cockroachdb/errors v1.8.6
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
@@ -179,7 +180,6 @@ require (
 	cloud.google.com/go/iam v0.1.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
-	github.com/cockroachdb/errors v1.8.6 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.3 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
