@@ -31,7 +31,6 @@
     "onWebviewPanel:sourcegraphSearch"
   ],
   "main": "./dist/node/extension.js",
-  "browser": "./dist/webworker/extension.js",
   "contributes": {
     "commands": [
       {
