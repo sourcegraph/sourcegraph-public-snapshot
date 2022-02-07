@@ -83,12 +83,12 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             isFloating={false}
             storageKey={SIZE_STORAGE_KEY}
         >
-            <div className="d-flex flex-column w-100">
+            <div className="d-flex flex-column w-100 h-100 overflow-hidden">
                 {props.showOnboardingTour && (
                     <OnboardingTour className="mb-1 mr-3" telemetryService={props.telemetryService} />
                 )}
                 <Tabs
-                    className="w-100 h-100 test-repo-revision-sidebar pr-3"
+                    className="w-100 flex-1 overflow-auto test-repo-revision-sidebar pr-3"
                     defaultIndex={tabIndex}
                     onChange={handleTabsChange}
                 >

@@ -25,7 +25,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
-import { Button, useObservable, Panel } from '@sourcegraph/wildcard'
+import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import styles from './TabbedPanel.module.scss'
 import { registerPanelToolbarContributions } from './views/contributions'
@@ -321,19 +321,6 @@ export const TabbedPanel = React.memo<Props>(props => {
         </Tabs>
     )
 })
-
-/** A wrapper around Panel that makes it resizable. */
-export const ResizablePanel: React.FunctionComponent<Props> = props => (
-    <Panel
-        className={styles.resizablePanel}
-        isFloating={false}
-        position="bottom"
-        defaultSize={350}
-        storageKey="panel-size"
-    >
-        <TabbedPanel {...props} />
-    </Panel>
-)
 
 /**
  * Temporary solution to code intel extensions all contributing the same panel actions.

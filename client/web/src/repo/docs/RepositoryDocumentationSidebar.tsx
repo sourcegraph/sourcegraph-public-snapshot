@@ -150,8 +150,15 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <Panel defaultSize={384} position="right" storageKey={SIZE_STORAGE_KEY}>
-            <div className="repository-documentation-sidebar d-flex flex-column w-100 border-right">
+        <Panel
+            className={styles.panel}
+            handleClassName={styles.panelHandle}
+            defaultSize={384}
+            position="left"
+            isFloating={false}
+            storageKey={SIZE_STORAGE_KEY}
+        >
+            <div className="repository-documentation-sidebar d-flex flex-column w-100 h-100 overflow-hidden border-right">
                 <div className="d-flex flex-0 mx-3">
                     <Button
                         onClick={handleSidebarToggle}

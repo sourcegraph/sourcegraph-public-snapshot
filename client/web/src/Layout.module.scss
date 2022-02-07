@@ -9,3 +9,10 @@
     // with global React Portal UI such a Reach modals or Shepherd search onboarding tour.
     isolation: isolate;
 }
+
+.resizable-panel {
+    isolation: isolate;
+    min-height: 6rem;
+    max-height: calc(100% - 3rem);
+    width: 100%;
+}

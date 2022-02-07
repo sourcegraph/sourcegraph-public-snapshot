@@ -2,7 +2,7 @@ import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { ResizablePanel } from '@sourcegraph/branded/src/components/TabbedPanel/TabbedPanel'
+import { TabbedPanel } from '@sourcegraph/branded/src/components/TabbedPanel'
 import { SearchContextProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
@@ -20,7 +20,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isMacPlatform } from '@sourcegraph/shared/src/util/browserDetection'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
@@ -272,12 +272,20 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             </ErrorBoundary>
             {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
                 props.location.pathname !== PageRoutes.SignIn && (
-                    <ResizablePanel
-                        {...props}
-                        {...themeProps}
-                        repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                    />
+                    <Panel
+                        className={styles.resizablePanel}
+                        isFloating={false}
+                        position="bottom"
+                        defaultSize={350}
+                        storageKey="panel-size"
+                    >
+                        <TabbedPanel
+                            {...props}
+                            {...themeProps}
+                            repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
+                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                        />
+                    </Panel>
                 )}
             <GlobalContributions
                 key={3}
