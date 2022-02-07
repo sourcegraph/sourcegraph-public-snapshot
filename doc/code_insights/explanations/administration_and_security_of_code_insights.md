@@ -29,7 +29,7 @@ A user can view an insight if at least one of the following is true:
 1. The user created the insight.
 2. The user has permission to view a dashboard that the insight is on.
 
-In most cases, permissions can be thought of as belonging to a dashboard. Dashboards have 3 permission levels:
+Except for the singular, non-transferable creator's permission noted in case 1 above, permissions can be thought of as belonging to a dashboard. Dashboards have 3 permission levels:
 
 - User: only this specific user can view this dashboard.
 - Organization: only users within this organization can view this dashboard.
@@ -38,3 +38,5 @@ In most cases, permissions can be thought of as belonging to a dashboard. Dashbo
 ### Changing permission levels
 
 Because there are no separate read/write permissions and no dashboard owners, any user who can view a dashboard can change its permission level or add/remove insights from the dashboard. The only way to guarantee continued access to an insight that you did not create is to add it to a private dashboard.
+
+If a user gets deleted, any insights they created will still be visible to other users via the dashboards they appear on. However, if one of these insights is removed from all dashboards, it will no longer be accessible.
