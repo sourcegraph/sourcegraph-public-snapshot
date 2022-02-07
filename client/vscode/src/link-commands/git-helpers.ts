@@ -3,6 +3,7 @@ import * as path from 'path'
 import execa from 'execa'
 import vscode, { TextEditor } from 'vscode'
 
+import { version } from '../../package.json'
 import { log } from '../log'
 
 interface RepositoryInfo extends Branch, RemoteName {
@@ -178,7 +179,9 @@ export async function gitRemoteUrlWithReplacements(
     return stdout
 }
 
-// Debt: this is broken, use the editor endpoint.
+/**
+ * Uses editor endpoint to construct sourcegraph file URL
+ */
 export function getSourcegraphFileUrl(
     SourcegraphUrl: string,
     remoteURL: string,
@@ -186,16 +189,18 @@ export function getSourcegraphFileUrl(
     fileRelative: string,
     editor: TextEditor
 ): string {
-    // construct final url
-    const repoName = remoteURL.replace('https://', '').replace('git@', '').replace(new RegExp('.git$'), '')
-    log.appendLine(`repoName: ${repoName}, remoteURL: ${remoteURL}`)
-    const finalUrl = `${SourcegraphUrl}/${encodeURIComponent(repoName)}@${encodeURIComponent(
-        branch
-    )}/-/blob/${encodeURIComponent(fileRelative)}?L${encodeURIComponent(
-        String(editor.selection.start.line + 1)
-    )}:${encodeURIComponent(String(editor.selection.end.line + 1))}`
-
-    return finalUrl
+    return (
+        `${SourcegraphUrl}-/editor` +
+        `?remote_url=${encodeURIComponent(remoteURL)}` +
+        `&branch=${encodeURIComponent(branch)}` +
+        `&file=${encodeURIComponent(fileRelative)}` +
+        `&editor=${encodeURIComponent('VSCode')}` +
+        `&version=${encodeURIComponent(version)}` +
+        `&start_row=${encodeURIComponent(String(editor.selection.start.line))}` +
+        `&start_col=${encodeURIComponent(String(editor.selection.start.character))}` +
+        `&end_row=${encodeURIComponent(String(editor.selection.end.line))}` +
+        `&end_col=${encodeURIComponent(String(editor.selection.end.character))}`
+    )
 }
 
 function getRemoteUrlReplacements(): Record<string, string> {
