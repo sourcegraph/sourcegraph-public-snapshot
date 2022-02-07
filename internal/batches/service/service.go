@@ -198,6 +198,9 @@ func (svc *Service) EnsureDockerImages(
 	if parallelism < 1 {
 		parallelism = 1
 	}
+	if parallelism > total {
+		parallelism = total
+	}
 	var wg sync.WaitGroup
 	for i := 0; i < parallelism; i++ {
 		wg.Add(1)
