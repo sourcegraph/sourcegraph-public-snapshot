@@ -6,7 +6,8 @@ import (
 	"strconv"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/errors"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
