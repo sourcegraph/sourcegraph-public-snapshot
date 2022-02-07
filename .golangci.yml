@@ -21,9 +21,13 @@ linters-settings:
     list-type: blacklist
     include-go-root: true
     packages-with-error-message:
-      - errors: 'Use github.com/cockroachdb/errors instead'
-      - github.com/pkg/errors: 'Use github.com/cockroachdb/errors instead'
+      # Deprecated packages
       - io/ioutil: 'The ioutil package has been deprecated'
+      # Blacklisted error packages
+      - errors: 'Use github.com/sourcegraph/sourcegraph/internal/errors instead'
+      - github.com/pkg/errors: 'Use github.com/sourcegraph/sourcegraph/internal/errors instead'
+      - github.com/cockroachdb/errors: 'Use github.com/sourcegraph/sourcegraph/internal/errors instead'
+      - github.com/hashicorp/go-multierror: 'Use github.com/sourcegraph/sourcegraph/internal/errors instead'
   gocritic:
     disabled-checks:
       - appendAssign # Too many false positives
@@ -61,3 +65,38 @@ run:
   skip-files:
     # Auto-generated with depguard and forbidigo failures
     - schema/schema.go
+
+    # Imports blacklisted errors
+    # Unfortunately golangci-lint doesn't really like multiple go.mod files, so
+    # whenever we reference a file here it's relative to its containing workspace.
+    # These values are under the ./lib module.
+    - errors/cockroach.go
+    - errors/multierror.go
+
+    # These are all projects with distinct go.mod files that can't import lib
+    # due to not knowing an absolute path to the user's sourcegraph directory
+    # and go mod replace directives not accepting relative paths.
+    #
+    # We should remove the go.mod files in these directories and share the set
+    # of dependencies in the root module (which has access to the colocated lib)
+    # like we did with sg. That seemed very successful!
+
+    # In ./dev/bkstats
+    - main.go
+    # In ./dev/depgraph
+    - internal/graph/graph.go
+    - internal/lints/lint.go
+    - summary.go
+    - trace_internal.go
+    - trace.go
+    # In ./enterprise/dev/insight-data-gen
+    - main.go
+    # In ./internal/cmd/progress-bot
+    - main.go
+    # In ./internal/cmd/resources-report
+    - aws.go
+    - gcp.go
+    - main.go
+    - resource.go
+    - sheets.go
+    - slack.go

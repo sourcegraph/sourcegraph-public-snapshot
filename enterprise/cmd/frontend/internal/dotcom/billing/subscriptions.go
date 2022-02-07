@@ -1,10 +1,10 @@
 package billing
 
 import (
-	"github.com/cockroachdb/errors"
 	"github.com/stripe/stripe-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ToSubscriptionItemsParams converts a value of GraphQL type ProductSubscriptionInput into a

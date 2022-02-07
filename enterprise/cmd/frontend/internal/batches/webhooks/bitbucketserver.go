@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	gh "github.com/google/go-github/v28/github"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -18,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -52,7 +51,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	prs, ev := h.convertEvent(e)
 
-	m := new(multierror.Error)
+	m := new(errors.MultiError)
 	for _, pr := range prs {
 		if pr == (PR{}) {
 			log15.Warn("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
@@ -61,7 +60,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
-			m = multierror.Append(m, err)
+			m = errors.Append(m, err)
 		}
 	}
 	if m.ErrorOrNil() != nil {

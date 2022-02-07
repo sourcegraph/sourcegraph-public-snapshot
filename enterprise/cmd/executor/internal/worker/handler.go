@@ -8,9 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
@@ -19,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type handler struct {
@@ -91,7 +90,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		flushErr := logger.Flush()
 		if flushErr != nil {
 			if err != nil {
-				err = multierror.Append(err, flushErr)
+				err = errors.Append(err, flushErr)
 			} else {
 				err = flushErr
 			}
@@ -178,7 +177,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		// cancellation error we don't want to skip cleaning up the resources that we've
 		// allocated for the current task.
 		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
-			err = multierror.Append(err, teardownErr)
+			err = errors.Append(err, teardownErr)
 		}
 	}()
 

@@ -22,8 +22,9 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/rehttp"
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHeadersMiddleware(t *testing.T) {

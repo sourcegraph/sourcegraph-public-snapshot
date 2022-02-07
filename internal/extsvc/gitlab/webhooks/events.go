@@ -3,9 +3,8 @@ package webhooks
 import (
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // EventCommon contains fields that are common to all webhook event types.

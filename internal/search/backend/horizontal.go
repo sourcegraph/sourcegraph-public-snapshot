@@ -10,17 +10,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/stream"
-	"github.com/hashicorp/go-multierror"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -114,9 +113,9 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		}(endpoint, c)
 	}
 
-	var errs multierror.Error
+	var errs errors.MultiError
 	for i := 0; i < cap(ch); i++ {
-		multierror.Append(&errs, <-ch)
+		errors.Append(&errs, <-ch)
 	}
 
 	if err := errs.ErrorOrNil(); err != nil {

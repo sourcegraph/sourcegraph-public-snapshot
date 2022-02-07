@@ -4,9 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Store is an expiring key/value store backed by a managed blob store.

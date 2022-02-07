@@ -3,9 +3,10 @@ package resolvers
 import (
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newRealDashboardID(arg int64) dashboardID {

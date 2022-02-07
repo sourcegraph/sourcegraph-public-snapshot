@@ -6,8 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/hexops/autogold"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func collectLabels(nodes []Node) (result labels) {

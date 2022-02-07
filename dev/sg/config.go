@@ -4,10 +4,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/cockroachdb/errors"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func ParseConfigFile(name string) (*Config, error) {

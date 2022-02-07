@@ -3,9 +3,8 @@ package gitlaboauth
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // unexported key type prevents collisions

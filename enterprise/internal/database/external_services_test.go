@@ -7,15 +7,14 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1308,7 +1307,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			if err == nil {
 				have = append(have, "<nil>")
 			} else {
-				var errs *multierror.Error
+				var errs *errors.MultiError
 				if errors.As(err, &errs) {
 					for _, err := range errs.Errors {
 						have = append(have, err.Error())

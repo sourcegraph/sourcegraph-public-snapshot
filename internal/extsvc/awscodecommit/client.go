@@ -8,9 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	codecommittypes "github.com/aws/aws-sdk-go-v2/service/codecommit/types"
 	"github.com/aws/smithy-go"
-	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Client is a AWS CodeCommit API client.

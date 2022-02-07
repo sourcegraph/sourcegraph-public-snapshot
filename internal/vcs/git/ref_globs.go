@@ -3,8 +3,9 @@ package git
 import (
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RefGlob describes a glob pattern that either includes or excludes refs. Exactly 1 of the fields

@@ -4,12 +4,11 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type TemporarySettingsStore interface {

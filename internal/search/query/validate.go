@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // IsBasic returns whether a query is a basic query. A basic query is one which

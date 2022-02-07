@@ -7,14 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
-
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewComputeStreamHandler is an http handler which streams back compute results.

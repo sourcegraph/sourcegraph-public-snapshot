@@ -11,13 +11,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v31/github"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/oauth2"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newGHEClient(ctx context.Context, baseURL, uploadURL, token string) (*github.Client, error) {

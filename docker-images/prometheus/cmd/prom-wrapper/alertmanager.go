@@ -8,12 +8,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
 	"github.com/prometheus/alertmanager/api/v2/client/general"
 	amconfig "github.com/prometheus/alertmanager/config"
 	"github.com/prometheus/common/model"
 	"gopkg.in/yaml.v2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Prefix to serve alertmanager on. If you change this, make sure you update prometheus.yml as well

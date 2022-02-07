@@ -3,8 +3,8 @@ package git
 import (
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Changes are the changes made to files in a repository.

@@ -13,12 +13,12 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // initGitRepository initializes a new Git repository and runs cmds in a new

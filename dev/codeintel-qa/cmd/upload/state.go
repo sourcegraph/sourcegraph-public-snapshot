@@ -8,9 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // monitor periodically polls Sourcegraph via the GraphQL API for the status of each

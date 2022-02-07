@@ -10,8 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var uploadPackArgs = []string{

@@ -1,6 +1,6 @@
 package notebooks
 
-import "github.com/cockroachdb/errors"
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 func validateNotebookBlock(block NotebookBlock) error {
 	if block.Type != NotebookQueryBlockType && block.Type != NotebookMarkdownBlockType && block.Type != NotebookFileBlockType {

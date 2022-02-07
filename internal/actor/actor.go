@@ -8,10 +8,9 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Actor represents an agent that accesses resources. It can represent an anonymous user, an

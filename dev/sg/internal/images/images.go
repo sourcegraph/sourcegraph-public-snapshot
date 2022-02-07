@@ -8,15 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/opencontainers/go-digest"
-
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
-
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var seenImageRepos = map[string]imageRepository{}

@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var ravenClient *raven.Client

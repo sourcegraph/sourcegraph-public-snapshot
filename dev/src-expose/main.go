@@ -11,9 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/ffcli"
 	"gopkg.in/yaml.v2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var errSilent = errors.New("silent error")

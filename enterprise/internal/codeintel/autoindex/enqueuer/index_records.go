@@ -3,11 +3,11 @@ package enqueuer
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error)

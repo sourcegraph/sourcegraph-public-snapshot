@@ -9,10 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"golang.org/x/time/rate"
@@ -31,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1871,9 +1870,9 @@ func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T)
 			}
 
 			if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
-				me, ok := err.(*multierror.Error)
+				me, ok := err.(*errors.MultiError)
 				if !ok {
-					t.Fatalf("Expected multierror.Error, got: %T", err)
+					t.Fatalf("Expected error.MultiError, got: %T", err)
 				}
 				actualErr := me.Errors[0]
 

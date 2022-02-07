@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/jsonx"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Unmarshal unmarshals the JSON using a fault-tolerant parser that allows comments and trailing

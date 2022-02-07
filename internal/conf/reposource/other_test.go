@@ -3,8 +3,7 @@ package reposource
 import (
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

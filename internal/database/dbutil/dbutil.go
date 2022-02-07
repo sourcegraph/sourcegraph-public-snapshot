@@ -8,8 +8,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgconn"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A DB captures the essential method of a sql.DB: QueryContext.

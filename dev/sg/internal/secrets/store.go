@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (

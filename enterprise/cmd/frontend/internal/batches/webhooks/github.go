@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	gh "github.com/google/go-github/v28/github"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -54,7 +54,7 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 // handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
 // it's registered to handle in GitHubWebhook.Register
 func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
-	m := new(multierror.Error)
+	m := new(errors.MultiError)
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.E
 
 		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
-			m = multierror.Append(m, err)
+			m = errors.Append(m, err)
 		}
 	}
 	return m.ErrorOrNil()

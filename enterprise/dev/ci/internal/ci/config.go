@@ -8,11 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Config is the set of configuration parameters that determine the structure of the CI build. These
@@ -161,7 +159,7 @@ func (c Config) ensureCommit() error {
 			found = true
 			break
 		}
-		errs = multierror.Append(errs, errors.Errorf("%v | Output: %q", err, string(output)))
+		errs = errors.Append(errs, errors.Errorf("%v | Output: %q", err, string(output)))
 	}
 	if !found {
 		fmt.Printf("This branch %q at commit %s does not include any of these commits: %s.\n", c.Branch, c.Commit, strings.Join(c.MustIncludeCommit, ", "))

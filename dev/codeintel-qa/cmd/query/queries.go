@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // buildQueries returns a channel that is fed all of the test functions that should be invoked

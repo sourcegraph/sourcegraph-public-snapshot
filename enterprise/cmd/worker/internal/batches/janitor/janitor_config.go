@@ -1,10 +1,9 @@
 package janitor
 
 import (
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type janitorConfig struct {
@@ -21,8 +20,8 @@ func (c *janitorConfig) Load() {
 }
 
 func (c *janitorConfig) Validate() error {
-	var errs *multierror.Error
-	errs = multierror.Append(errs, c.BaseConfig.Validate())
-	errs = multierror.Append(errs, c.MetricsConfig.Validate())
+	var errs *errors.MultiError
+	errs = errors.Append(errs, c.BaseConfig.Validate())
+	errs = errors.Append(errs, c.MetricsConfig.Validate())
 	return errs.ErrorOrNil()
 }

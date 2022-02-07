@@ -9,9 +9,10 @@ import (
 	"io/fs"
 	"log"
 
-	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming

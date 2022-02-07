@@ -9,8 +9,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -18,6 +16,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // testDatabasePool handles creating and reusing migrated database instances
@@ -461,25 +460,25 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*schemas
 		return err
 	}
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	for _, tdb := range oldTDBs {
 		mdbs, err := listMigratedDBs(ctx, tx, tdb.ID)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 			continue
 		}
 
 		for _, mdb := range mdbs {
 			err = deleteMigratedDB(ctx, t.DB, tx, mdb)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 				continue
 			}
 		}
 
 		err = deleteTemplateDB(ctx, t.DB, tx, tdb)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 	}
 

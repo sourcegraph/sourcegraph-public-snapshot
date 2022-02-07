@@ -9,10 +9,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // sshAgent speaks the ssh-agent protocol and can be used by gitserver

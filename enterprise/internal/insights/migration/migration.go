@@ -8,20 +8,17 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type migrationBatch string
@@ -129,7 +126,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 	for _, job := range jobs {
 		err := m.performMigrationForRow(ctx, jobStoreTx, *job)
 		if err != nil {
-			errs = multierror.Append(err)
+			errs = errors.Append(err)
 		}
 	}
 
@@ -238,20 +235,20 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		}
 
 		count, err := m.migrateLangStatsInsights(ctx, langStatsInsights)
-		insightMigrationErrors = multierror.Append(insightMigrationErrors, err)
+		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
 		count, err = m.migrateInsights(ctx, frontendInsights, frontend)
-		insightMigrationErrors = multierror.Append(insightMigrationErrors, err)
+		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
 		count, err = m.migrateInsights(ctx, backendInsights, backend)
-		insightMigrationErrors = multierror.Append(insightMigrationErrors, err)
+		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
 		err = jobStoreTx.UpdateMigratedInsights(ctx, job.UserId, job.OrgId, migratedInsightsCount)
 		if err != nil {
-			return multierror.Append(insightMigrationErrors, err)
+			return errors.Append(insightMigrationErrors, err)
 		}
 		if totalInsights != migratedInsightsCount {
 			return insightMigrationErrors

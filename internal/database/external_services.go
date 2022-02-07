@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
@@ -30,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -417,13 +416,13 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		return nil, errors.Wrap(err, "unable to validate config against schema")
 	}
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	for _, err := range res.Errors() {
 		e := err.String()
 		// Remove `(root): ` from error formatting since these errors are
 		// presented to users.
 		e = strings.TrimPrefix(e, "(root): ")
-		errs = multierror.Append(errs, errors.New(e))
+		errs = errors.Append(errs, errors.New(e))
 	}
 
 	// Extra validation not based on JSON Schema.
@@ -471,7 +470,7 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		err = validateOtherExternalServiceConnection(&c)
 	}
 
-	return normalized, multierror.Append(errs, err).ErrorOrNil()
+	return normalized, errors.Append(errs, err).ErrorOrNil()
 }
 
 // Neither our JSON schema library nor the Monaco editor we use supports
@@ -504,45 +503,45 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 }
 
 func (e *externalServiceStore) validateGitHubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
-	err := new(multierror.Error)
+	err := new(errors.MultiError)
 	for _, validate := range e.gitHubValidators {
-		err = multierror.Append(err, validate(c))
+		err = errors.Append(err, validate(c))
 	}
 
 	if c.Token == "" && c.GithubAppInstallationID == "" {
-		err = multierror.Append(err, errors.New("at least one of token or githubAppInstallationID must be set"))
+		err = errors.Append(err, errors.New("at least one of token or githubAppInstallationID must be set"))
 	}
 	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
-		err = multierror.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
+		err = errors.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}
 
-	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitHub, c))
+	err = errors.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitHub, c))
 
 	return err.ErrorOrNil()
 }
 
 func (e *externalServiceStore) validateGitLabConnection(ctx context.Context, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
-	err := new(multierror.Error)
+	err := new(errors.MultiError)
 	for _, validate := range e.gitLabValidators {
-		err = multierror.Append(err, validate(c, ps))
+		err = errors.Append(err, validate(c, ps))
 	}
 
-	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitLab, c))
+	err = errors.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindGitLab, c))
 
 	return err.ErrorOrNil()
 }
 
 func (e *externalServiceStore) validateBitbucketServerConnection(ctx context.Context, id int64, c *schema.BitbucketServerConnection) error {
-	err := new(multierror.Error)
+	err := new(errors.MultiError)
 	for _, validate := range e.bitbucketServerValidators {
-		err = multierror.Append(err, validate(c))
+		err = errors.Append(err, validate(c))
 	}
 
 	if c.Repos == nil && c.RepositoryQuery == nil {
-		err = multierror.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
+		err = errors.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
 	}
 
-	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketServer, c))
+	err = errors.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindBitbucketServer, c))
 
 	return err.ErrorOrNil()
 }
@@ -552,16 +551,16 @@ func (e *externalServiceStore) validateBitbucketCloudConnection(ctx context.Cont
 }
 
 func (e *externalServiceStore) validatePerforceConnection(ctx context.Context, id int64, c *schema.PerforceConnection) error {
-	err := new(multierror.Error)
+	err := new(errors.MultiError)
 	for _, validate := range e.perforceValidators {
-		err = multierror.Append(err, validate(c))
+		err = errors.Append(err, validate(c))
 	}
 
 	if c.Depots == nil {
-		err = multierror.Append(err, errors.New("depots must be set"))
+		err = errors.Append(err, errors.New("depots must be set"))
 	}
 
-	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindPerforce, c))
+	err = errors.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindPerforce, c))
 
 	return err.ErrorOrNil()
 }

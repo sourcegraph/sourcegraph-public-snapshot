@@ -3,8 +3,9 @@ package dbconn
 import (
 	"database/sql"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ConnectInternal connects to the given data source and return the handle.
@@ -31,7 +32,7 @@ func ConnectInternal(dsn, appName, dbName string) (_ *sql.DB, err error) {
 	defer func() {
 		if err != nil {
 			if closeErr := db.Close(); closeErr != nil {
-				err = multierror.Append(err, closeErr)
+				err = errors.Append(err, closeErr)
 			}
 		}
 	}()

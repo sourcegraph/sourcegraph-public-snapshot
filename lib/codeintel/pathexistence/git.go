@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitFunc func(args ...string) (string, error)

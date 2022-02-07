@@ -5,10 +5,9 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
-
 	jsonutil "github.com/sourcegraph/sourcegraph/lib/batches/json"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrHeadBaseMismatch is returned by (*ChangesetSpec).UnmarshalValidate() if

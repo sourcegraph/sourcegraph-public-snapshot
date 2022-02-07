@@ -5,7 +5,6 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/goware/urlx"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

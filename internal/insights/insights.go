@@ -8,12 +8,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Loader will load insights from some persistent storage.
@@ -175,7 +174,7 @@ func GetIntegratedInsights(ctx context.Context, db dbutil.DB) ([]SearchInsight, 
 		var raw map[string]json.RawMessage
 		raw, err = FilterSettingJson(setting.Contents, prefix)
 		if err != nil {
-			multi = multierror.Append(multi, err)
+			multi = errors.Append(multi, err)
 			continue
 		}
 
@@ -184,7 +183,7 @@ func GetIntegratedInsights(ctx context.Context, db dbutil.DB) ([]SearchInsight, 
 			temp, err := unmarshalIntegrated(val)
 			if err != nil {
 				// this isn't actually a total failure case, we could have partially parsed this dictionary.
-				multi = multierror.Append(multi, err)
+				multi = errors.Append(multi, err)
 			}
 			results = append(results, temp.Insights(perms)...)
 		}
@@ -214,7 +213,7 @@ func unmarshalIntegrated(raw json.RawMessage) (IntegratedInsights, error) {
 	for id, body := range dict {
 		var temp SearchInsight
 		if err := json.Unmarshal(body, &temp); err != nil {
-			multi = multierror.Append(multi, err)
+			multi = errors.Append(multi, err)
 			continue
 		}
 		result[id] = temp
@@ -320,7 +319,7 @@ func DiscoverDashboardsInSettings(ctx context.Context, db dbutil.DB) ([]SettingD
 		var raw map[string]json.RawMessage
 		raw, err := FilterSettingJson(setting.Contents, prefix)
 		if err != nil {
-			multi = multierror.Append(multi, err)
+			multi = errors.Append(multi, err)
 			continue
 		}
 		for _, val := range raw {
@@ -328,7 +327,7 @@ func DiscoverDashboardsInSettings(ctx context.Context, db dbutil.DB) ([]SettingD
 			temp, err := unmarshalDashboard(val)
 			if err != nil {
 				// this isn't actually a total failure case, we could have partially parsed this dictionary.
-				multi = multierror.Append(multi, err)
+				multi = errors.Append(multi, err)
 			}
 			results = append(results, temp.Dashboards(perms)...)
 		}
@@ -371,7 +370,7 @@ func unmarshalDashboard(raw json.RawMessage) (IntegratedDashboards, error) {
 	for id, body := range dict {
 		var temp SettingDashboard
 		if err := json.Unmarshal(body, &temp); err != nil {
-			multi = multierror.Append(multi, err)
+			multi = errors.Append(multi, err)
 			continue
 		}
 		result[id] = temp

@@ -6,11 +6,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type orphanedVMJanitor struct {
@@ -59,7 +59,7 @@ func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
 		log15.Info("Removing orphaned VM", "id", id)
 
 		if removeErr := exec.CommandContext(ctx, "ignite", "rm", "-f", id).Run(); removeErr != nil {
-			err = multierror.Append(err, removeErr)
+			err = errors.Append(err, removeErr)
 		} else {
 			j.metrics.numVMsRemoved.Inc()
 		}

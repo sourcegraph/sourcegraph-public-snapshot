@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/opentracing/opentracing-go"
-
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const computeSearchQuery = `

@@ -16,10 +16,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/cockroachdb/errors"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type noopPublicKey struct{}

@@ -7,16 +7,15 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-
-	"github.com/sourcegraph/sourcegraph/lib/output"
-
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (

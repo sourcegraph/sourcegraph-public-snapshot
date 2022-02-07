@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/lib/pq"
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewFastDB returns a clean database that will be deleted
@@ -176,7 +176,7 @@ func newPoolFromURL(u *url.URL) (_ *testDatabasePool, err error) {
 	}
 	defer func() {
 		if closeErr := db.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
+			err = errors.Append(err, closeErr)
 		}
 	}()
 

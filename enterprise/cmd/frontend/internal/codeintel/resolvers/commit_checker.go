@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type cachedCommitChecker struct {

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"gopkg.in/yaml.v2"
 )
 

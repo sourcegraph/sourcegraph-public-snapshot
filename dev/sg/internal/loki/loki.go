@@ -11,9 +11,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const pushEndpoint = "/loki/api/v1/push"

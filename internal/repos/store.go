@@ -7,8 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -22,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -213,10 +212,10 @@ func (s *Store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		return nil, errors.Wrap(err, "failed to list external service repo ids")
 	}
 
-	var errs multierror.Error
+	var errs errors.MultiError
 	for _, id := range toDelete {
 		if err = s.DeleteExternalServiceRepo(ctx, svc, api.RepoID(id)); err != nil {
-			multierror.Append(&errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
+			errors.Append(&errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
 		} else {
 			deleted = append(deleted, api.RepoID(id))
 		}

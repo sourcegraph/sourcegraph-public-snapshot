@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GetMergeRequestPipelines retrieves the pipelines that have been executed as

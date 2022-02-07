@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var once sync.Once

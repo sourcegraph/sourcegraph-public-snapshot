@@ -8,10 +8,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/cockroachdb/errors"
 	"github.com/slack-go/slack"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func sendSlackNotification(ctx context.Context, url string, args actionArgs) error {

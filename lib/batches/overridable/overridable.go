@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // allPattern is used to define default rules for the simple scalar case.

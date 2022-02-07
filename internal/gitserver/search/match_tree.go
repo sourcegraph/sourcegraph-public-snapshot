@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"unicode/utf8"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ToMatchTree converts a protocol.SearchQuery into its equivalent MatchTree.

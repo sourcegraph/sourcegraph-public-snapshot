@@ -3,7 +3,7 @@ package main
 import (
 	"syscall"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // This whole file probably needs work to handle things like being run on different OSes

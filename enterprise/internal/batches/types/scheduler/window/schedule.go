@@ -3,8 +3,9 @@ package window
 import (
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"go.uber.org/ratelimit"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrZeroSchedule indicates a Schedule that has a zero rate limit, and for

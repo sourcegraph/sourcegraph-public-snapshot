@@ -13,9 +13,8 @@ import (
 
 	"golang.org/x/net/context/ctxhttp"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func FetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {

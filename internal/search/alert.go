@@ -7,9 +7,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Alert struct {

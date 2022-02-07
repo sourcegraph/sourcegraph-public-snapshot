@@ -15,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/golang/groupcache/lru"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Stat returns a FileInfo describing the named file at commit.

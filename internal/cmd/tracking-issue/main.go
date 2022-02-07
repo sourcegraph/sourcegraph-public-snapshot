@@ -9,9 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/machinebox/graphql"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (

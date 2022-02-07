@@ -5,9 +5,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/hashicorp/go-multierror"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRunWorkersN(t *testing.T) {
@@ -32,7 +32,7 @@ func TestRunWorkersN(t *testing.T) {
 		return nil
 	}))
 
-	var e *multierror.Error
+	var e *errors.MultiError
 	if err == nil || !errors.As(err, &e) {
 		t.Errorf("unexpected error wrapper: %v", err)
 	}

@@ -7,20 +7,15 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
@@ -73,7 +68,7 @@ func discoverAndEnqueueInsights(
 	}
 	err = enqueue(ctx, recordingSeries, store.RecordMode, insightStore.StampRecording, queryRunnerEnqueueJob)
 	if err != nil {
-		multi = multierror.Append(multi, err)
+		multi = errors.Append(multi, err)
 	}
 
 	log15.Info("enqueuing indexed insight snapshots")
@@ -83,7 +78,7 @@ func discoverAndEnqueueInsights(
 	}
 	err = enqueue(ctx, snapshotSeries, store.SnapshotMode, insightStore.StampSnapshot, queryRunnerEnqueueJob)
 	if err != nil {
-		multi = multierror.Append(multi, err)
+		multi = errors.Append(multi, err)
 	}
 
 	return multi
@@ -116,7 +111,7 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 			PersistMode: string(mode),
 		})
 		if err != nil {
-			multi = multierror.Append(multi, errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID))
+			multi = errors.Append(multi, errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID))
 			continue
 		}
 
@@ -124,7 +119,7 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 		// at-least-once semantics by waiting until the queue transaction is complete and without error.
 		_, err = stampFunc(ctx, series)
 		if err != nil {
-			multi = multierror.Append(multi, errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID))
+			multi = errors.Append(multi, errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID))
 			continue // might as well try the other insights and just skip this one
 		}
 		log15.Info("queued global search for insight recording", "series_id", series.SeriesID)

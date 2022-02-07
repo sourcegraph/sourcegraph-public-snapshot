@@ -6,17 +6,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/graph-gophers/graphql-go/errors"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-
-	"github.com/golang-jwt/jwt/v4"
-
-	stderrors "github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

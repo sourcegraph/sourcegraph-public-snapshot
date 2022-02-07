@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Decoder decodes streaming events from a Server Sent Event stream. We only

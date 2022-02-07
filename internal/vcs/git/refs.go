@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/avelino/slugify"
-	"github.com/cockroachdb/errors"
 	"github.com/rainycape/unidecode"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // HumanReadableBranchName returns a human readable branch name from the

@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -14,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type IndexScheduler struct {
@@ -98,7 +97,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) (err error) {
 			if err == nil {
 				err = repositoryErr
 			} else {
-				err = multierror.Append(err, repositoryErr)
+				err = errors.Append(err, repositoryErr)
 			}
 		}
 	}

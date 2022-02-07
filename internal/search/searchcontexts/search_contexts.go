@@ -7,8 +7,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -26,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -203,13 +202,13 @@ func validateSearchContextQuery(contextQuery string) error {
 	}
 
 	q := plan.ToParseTree()
-	errs := new(multierror.Error)
+	errs := new(errors.MultiError)
 
 	query.VisitParameter(q, func(field, value string, negated bool, a query.Annotation) {
 		switch field {
 		case query.FieldRepo:
 			if a.Labels.IsSet(query.IsPredicate) {
-				errs = multierror.Append(errs,
+				errs = errors.Append(errs,
 					errors.Errorf("unsupported repo field predicate in search context query: %q", value))
 				return
 			}
@@ -218,7 +217,7 @@ func validateSearchContextQuery(contextQuery string) error {
 
 			for _, rev := range revs {
 				if rev.RevSpec == "" {
-					errs = multierror.Append(errs,
+					errs = errors.Append(errs,
 						errors.Errorf("unsupported rev glob in search context query: %q", value))
 					return
 				}
@@ -226,7 +225,7 @@ func validateSearchContextQuery(contextQuery string) error {
 
 			_, err := regexp.Compile(repoRegex)
 			if err != nil {
-				errs = multierror.Append(errs,
+				errs = errors.Append(errs,
 					errors.Errorf("repo field regex %q is invalid: %v", value, err))
 				return
 			}
@@ -239,14 +238,14 @@ func validateSearchContextQuery(contextQuery string) error {
 		case query.FieldLang:
 
 		default:
-			errs = multierror.Append(errs,
+			errs = errors.Append(errs,
 				errors.Errorf("unsupported field in search context query: %q", field))
 		}
 	})
 
 	query.VisitPattern(q, func(value string, negated bool, a query.Annotation) {
 		if value != "" {
-			errs = multierror.Append(errs,
+			errs = errors.Append(errs,
 				errors.Errorf("unsupported pattern in search context query: %q", value))
 		}
 	})

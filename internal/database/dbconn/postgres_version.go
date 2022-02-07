@@ -4,9 +4,8 @@ import (
 	"database/sql"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var versionPattern = lazyregexp.New(`^PostgreSQL (\d+)\.`)

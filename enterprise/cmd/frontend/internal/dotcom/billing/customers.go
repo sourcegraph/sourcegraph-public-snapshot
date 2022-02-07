@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GetOrAssignUserCustomerID returns the billing customer ID associated with the user. If no billing
