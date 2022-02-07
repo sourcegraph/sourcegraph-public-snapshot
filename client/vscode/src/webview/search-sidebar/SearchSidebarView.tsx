@@ -11,7 +11,7 @@ import {
 } from '@sourcegraph/search'
 import { SearchSidebar } from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebar'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../platform/context'
@@ -19,10 +19,12 @@ import { WebviewPageProps } from '../platform/context'
 import styles from './SearchSidebarView.module.scss'
 
 interface SearchSidebarViewProps
-    extends Pick<WebviewPageProps, 'settingsCascade' | 'platformContext' | 'extensionCoreAPI'> {}
+    extends Pick<WebviewPageProps, 'settingsCascade' | 'platformContext' | 'extensionCoreAPI'> {
+    filters?: Filter[] | undefined
+}
 
 export const SearchSidebarView: React.FunctionComponent<SearchSidebarViewProps> = React.memo(
-    ({ settingsCascade, platformContext, extensionCoreAPI }) => {
+    ({ settingsCascade, platformContext, extensionCoreAPI, filters }) => {
         const useSearchQueryState: SearchQueryStateStore = useMemo(
             () =>
                 create<SearchQueryState>((set, get) => ({
@@ -115,6 +117,7 @@ export const SearchSidebarView: React.FunctionComponent<SearchSidebarViewProps> 
                     settingsCascade={settingsCascade}
                     telemetryService={platformContext.telemetryService}
                     className={styles.sidebarContainer}
+                    filters={filters}
                     // Debt: no selected search context spec
                 />
             </SearchQueryStateStoreProvider>
