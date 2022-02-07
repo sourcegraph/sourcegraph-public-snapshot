@@ -25,7 +25,9 @@ export default {
     title: 'web/search/results/sidebar/Revisions',
     component: Revisions,
     argTypes: { onFilterClick: { action: 'onFilterClick' } },
-    disableSnapshot: false,
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 } as Meta
 
 const examples: (RevisionsProps & Partial<Pick<MockedProviderProps, 'mocks'>> & { title: string })[] = [
