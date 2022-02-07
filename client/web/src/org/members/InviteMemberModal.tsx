@@ -55,18 +55,11 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
 
     useEffect(() => {
         if (data) {
-            eventLogger.log('OrgMemberInvited')
             onInviteSent({ username: userNameOrEmail, inviteResult: data })
             setUsernameOrEmail('')
             onDismiss()
         }
     }, [data, onDismiss, setUsernameOrEmail, onInviteSent, userNameOrEmail])
-
-    useEffect(() => {
-        if (error) {
-            eventLogger.log('OrgMemberInviteFailed')
-        }
-    }, [error])
 
     const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setUsernameOrEmail(event.currentTarget.value)
@@ -78,13 +71,18 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
         }
 
         eventLogger.log('InviteOrgMemberClicked', isEmail)
-        await inviteUserToOrganization({
-            variables: {
-                organization: orgId,
-                username: isEmail ? '' : userNameOrEmail,
-                email: isEmail ? userNameOrEmail : '',
-            },
-        })
+        try {
+            await inviteUserToOrganization({
+                variables: {
+                    organization: orgId,
+                    username: isEmail ? '' : userNameOrEmail,
+                    email: isEmail ? userNameOrEmail : '',
+                },
+            })
+            eventLogger.log('OrgMemberInvited')
+        } catch {
+            eventLogger.log('OrgMemberInviteFailed')
+        }
     }, [userNameOrEmail, orgId, inviteUserToOrganization, isEmail])
 
     const debounceInviteUser = debounce(inviteUser, 500, { leading: true })
