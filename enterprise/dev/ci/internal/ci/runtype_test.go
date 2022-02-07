@@ -51,6 +51,15 @@ func TestComputeRunType(t *testing.T) {
 			},
 		},
 		want: BextNightly,
+	}, {
+		name: "release nightly",
+		args: args{
+			branch: "main",
+			env: map[string]string{
+				"RELEASE_NIGHTLY": "true",
+			},
+		},
+		want: ReleaseNightly,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

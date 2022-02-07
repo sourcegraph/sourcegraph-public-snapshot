@@ -121,6 +121,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
+	case ReleaseNightly:
+		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
+
 	case BackendIntegrationTests:
 		ops.Append(
 			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
