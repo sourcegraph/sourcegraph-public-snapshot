@@ -1,4 +1,3 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
@@ -20,7 +19,7 @@ import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { Button, useLocalStorage, Link } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Link, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
@@ -472,7 +471,7 @@ export interface SearchReferenceProps extends TelemetryProps, Pick<SearchQuerySt
 
 const SearchReference = React.memo(
     (props: SearchReferenceProps): ReactElement => {
-        const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
+        const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
         const { setQueryState, telemetryService } = props
         const filter = props.filter.trim()
@@ -533,8 +532,8 @@ const SearchReference = React.memo(
                 {hasFilter ? (
                     filterList
                 ) : (
-                    <Tabs index={selectedTab} onChange={setSelectedTab}>
-                        <TabList className={styles.tablist}>
+                    <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
+                        <TabList>
                             <Tab>Common</Tab>
                             <Tab>All filters</Tab>
                             <Tab>Operators</Tab>

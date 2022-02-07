@@ -6,9 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func do() error {

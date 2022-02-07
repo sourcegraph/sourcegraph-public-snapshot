@@ -6,13 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewJobWithOptional creates a combinator job from a required job and an
@@ -53,8 +51,8 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 
 	var (
 		maxAlerter    search.MaxAlerter
-		optionalGroup multierror.Group
-		requiredGroup multierror.Group
+		optionalGroup errors.Group
+		requiredGroup errors.Group
 	)
 	requiredGroup.Go(func() error {
 		alert, err := r.required.Run(ctx, db, s)
@@ -67,9 +65,9 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 		return err
 	})
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	if err := requiredGroup.Wait(); err != nil {
-		errs = multierror.Append(errs, err)
+		errs = errors.Append(errs, err)
 	}
 	tr.LazyPrintf("required group completed")
 
@@ -80,7 +78,7 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 	time.AfterFunc(budget-elapsed, cancel)
 
 	if err := optionalGroup.Wait(); err != nil {
-		errs = multierror.Append(errs, err)
+		errs = errors.Append(errs, err)
 	}
 	tr.LazyPrintf("optional group completed")
 
@@ -118,7 +116,7 @@ func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender
 	}()
 
 	var (
-		g          multierror.Group
+		g          errors.Group
 		maxAlerter search.MaxAlerter
 	)
 	for _, job := range p {

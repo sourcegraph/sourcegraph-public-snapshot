@@ -3,8 +3,6 @@ package run
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/semaphore"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewAndJob creates a job that will run each of its child jobs and only
@@ -38,7 +37,7 @@ func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sende
 	}()
 
 	var (
-		g           multierror.Group
+		g           errors.Group
 		maxAlerter  search.MaxAlerter
 		limitHit    atomic.Bool
 		sentResults atomic.Bool
@@ -132,7 +131,7 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 
 	var (
 		maxAlerter search.MaxAlerter
-		g          multierror.Group
+		g          errors.Group
 		sem        = semaphore.NewWeighted(16)
 		merger     = result.NewMerger(len(j.children))
 	)

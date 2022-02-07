@@ -4,7 +4,7 @@ package apitest
 import (
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Response struct {

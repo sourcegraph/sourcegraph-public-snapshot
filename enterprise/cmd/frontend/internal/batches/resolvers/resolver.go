@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -29,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Resolver is the GraphQL resolver of all things related to batch changes.
@@ -444,7 +443,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 }
 
 func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *service.UiPublicationStates) error {
-	var errs *multierror.Error
+	var errs *errors.MultiError
 
 	if in != nil && *in != nil {
 		for _, state := range *in {
@@ -454,7 +453,7 @@ func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublication
 			}
 
 			if err := opts.Add(id, state.PublicationState); err != nil {
-				errs = multierror.Append(errs, err)
+				errs = errors.Append(errs, err)
 			}
 		}
 

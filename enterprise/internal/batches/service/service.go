@@ -7,9 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"gopkg.in/yaml.v2"
 
@@ -29,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrNameNotUnique is returned by CreateEmptyBatchChange if the combination of name and
@@ -1114,7 +1113,7 @@ func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64)
 		return nonValidationErr
 	}
 
-	errs := &multierror.Error{ErrorFormat: formatChangesetSpecHeadRefConflicts}
+	errs := &errors.MultiError{ErrorFormat: formatChangesetSpecHeadRefConflicts}
 	for _, c := range conflicts {
 		conflictErr := &changesetSpecHeadRefConflict{count: c.Count, headRef: c.HeadRef}
 
@@ -1122,7 +1121,7 @@ func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64)
 		if repo, ok := accessibleReposByID[c.RepoID]; ok {
 			conflictErr.repo = repo
 		}
-		errs = multierror.Append(errs, conflictErr)
+		errs = errors.Append(errs, conflictErr)
 	}
 
 	return errs.ErrorOrNil()
@@ -1248,12 +1247,12 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 		return errors.Wrap(err, "loading batch spec workspace execution jobs")
 	}
 
-	var errs *multierror.Error
+	var errs *errors.MultiError
 	jobIDs := make([]int64, len(jobs))
 
 	for i, j := range jobs {
 		if !j.State.Retryable() {
-			errs = multierror.Append(errs, errors.Newf("job %d not retryable", j.ID))
+			errs = errors.Append(errs, errors.Newf("job %d not retryable", j.ID))
 		}
 		jobIDs[i] = j.ID
 	}

@@ -7,14 +7,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type gcsStore struct {
@@ -107,7 +106,7 @@ func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64
 	writer := s.client.Bucket(s.bucket).Object(key).NewWriter(ctx)
 	defer func() {
 		if closeErr := writer.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "failed to close writer"))
+			err = errors.Append(err, errors.Wrap(closeErr, "failed to close writer"))
 		}
 
 		cancel()
