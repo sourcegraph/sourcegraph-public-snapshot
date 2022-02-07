@@ -66,15 +66,15 @@ func main() {
 }
 
 func previewPipeline(w io.Writer, c ci.Config, pipeline *buildkite.Pipeline) {
-	fmt.Fprintf(w, "Detected run type:\n\t%s\n", c.RunType.String())
-	fmt.Fprintf(w, "Detected diffs:\n\t%s\n", c.Diff.String())
-	fmt.Fprintf(w, "Computed build steps:\n")
+	fmt.Fprintf(w, "- **Detected run type:** %s\n", c.RunType.String())
+	fmt.Fprintf(w, "- **Detected diffs:** %s\n", c.Diff.String())
+	fmt.Fprintf(w, "- **Computed build steps:**\n")
 	printPipeline(w, "", pipeline)
 }
 
 func printPipeline(w io.Writer, prefix string, pipeline *buildkite.Pipeline) {
 	if pipeline.Group.Group != "" {
-		fmt.Fprintf(w, "%s%s\n", prefix, pipeline.Group.Group)
+		fmt.Fprintf(w, "%s- **%s**\n", prefix, pipeline.Group.Group)
 	}
 	for _, raw := range pipeline.Steps {
 		switch v := raw.(type) {
@@ -87,13 +87,14 @@ func printPipeline(w io.Writer, prefix string, pipeline *buildkite.Pipeline) {
 }
 
 func printStep(w io.Writer, prefix string, step *buildkite.Step) {
-	fmt.Fprintf(w, "%s\t%s\n", prefix, step.Label)
+	fmt.Fprintf(w, "%s\t- %s", prefix, step.Label)
 	switch {
 	case len(step.DependsOn) > 5:
-		fmt.Fprintf(w, "%s\t\t→ depends on %s, ... (%d more steps)\n", prefix, strings.Join(step.DependsOn[0:5], ", "), len(step.DependsOn)-5)
+		fmt.Fprintf(w, " → _depends on %s, ... (%d more steps)_", strings.Join(step.DependsOn[0:5], ", "), len(step.DependsOn)-5)
 	case len(step.DependsOn) > 0:
-		fmt.Fprintf(w, "%s\t\t→ depends on %s\n", prefix, strings.Join(step.DependsOn, " "))
+		fmt.Fprintf(w, " → _depends on %s_", strings.Join(step.DependsOn, " "))
 	}
+	fmt.Fprintln(w)
 }
 
 var emojiRegexp = regexp.MustCompile(`:(\S*):`)

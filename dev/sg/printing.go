@@ -37,6 +37,7 @@ func writePrettyMarkdown(str string) error {
 		glamour.WithAutoStyle(),
 		// wrap output at specific width
 		glamour.WithWordWrap(120),
+		glamour.WithEmoji(),
 	)
 	if err != nil {
 		return err
