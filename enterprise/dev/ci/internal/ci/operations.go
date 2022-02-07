@@ -28,9 +28,8 @@ type CoreTestOperationsOptions struct {
 // notably, this is what is used to define operations that run on PRs. Please read the
 // following notes:
 //
-// - changedFiles can be nil to run all tests.
-// - opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding flags,
-// and not as a condition for adding steps or commands.
+// - opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding
+//   flags and not as a condition for adding steps or commands.
 // - be careful not to add duplicate steps.
 //
 // If the conditions for the addition of an operation cannot be expressed using the above

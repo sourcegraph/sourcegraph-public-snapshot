@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,13 +15,14 @@ export default {
     parameters: {
         chromatic: {
             viewports: [576, 978, 1440],
+            disableSnapshot: false,
         },
     },
 } as Meta
 
 const API = new CodeInsightsGqlBackend({} as any)
 
-export const InsightIntroPageExample = () => (
+export const IntroPage: Story = () => (
     <CodeInsightsBackendContext.Provider value={API}>
         <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
     </CodeInsightsBackendContext.Provider>

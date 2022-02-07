@@ -18,12 +18,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -41,26 +43,6 @@ var (
 	}
 )
 
-type userContextKey struct{}
-type userContext struct {
-	shellPath       string
-	shellConfigPath string
-}
-
-func buildUserContext(userContext userContext, ctx context.Context) context.Context {
-	return context.WithValue(ctx, userContextKey{}, userContext)
-}
-
-func getUserShellPath(ctx context.Context) string {
-	v := ctx.Value(userContextKey{}).(userContext)
-	return v.shellPath
-}
-
-func getUserShellConfigPath(ctx context.Context) string {
-	v := ctx.Value(userContextKey{}).(userContext)
-	return v.shellConfigPath
-}
-
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
@@ -72,20 +54,17 @@ func setupExec(ctx context.Context, args []string) error {
 		currentOS = overridesOS
 	}
 
-	// extract user environment general informations
-	shellPath, shellConfigPath, err := guessUserShell()
+	ctx, err := usershell.Context(ctx)
 	if err != nil {
 		return err
 	}
-	userContext := userContext{shellPath: shellPath, shellConfigPath: shellConfigPath}
-	ctx = buildUserContext(userContext, ctx)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
 			writeOrangeLinef("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(getUserShellPath(ctx)))
+			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(usershell.ShellPath(ctx)))
 			os.Exit(0)
 		}
 	}()
@@ -291,7 +270,7 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 				check: checkCommandOutputContains("asdf", "version"),
 				instructionsCommandsBuilder: stringCommandBuilder(func(ctx context.Context) string {
 					// Uses `&&` to avoid appending the shell config on failed installations attempts.
-					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + getUserShellConfigPath(ctx)
+					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + usershell.ShellConfigPath(ctx)
 				}),
 			},
 		},
@@ -916,6 +895,77 @@ func removeEntry(s []int, val int) (result []int) {
 	return result
 }
 
+func checkGitVersion(versionConstraint string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		out, err := combinedSourceExec(ctx, "git version")
+		if err != nil {
+			return errors.Wrapf(err, "failed to run 'git version'")
+		}
+
+		elems := strings.Split(string(out), " ")
+		if len(elems) != 3 {
+			return errors.Newf("unexpected output from git server: %s", out)
+		}
+
+		trimmed := strings.TrimSpace(elems[2])
+		return checkVersion("git", trimmed, versionConstraint)
+	}
+}
+
+func checkGoVersion(versionConstraint string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		cmd := "go version"
+		out, err := combinedSourceExec(ctx, "go version")
+		if err != nil {
+			return errors.Wrapf(err, "failed to run %q", cmd)
+		}
+
+		elems := strings.Split(string(out), " ")
+		if len(elems) != 4 {
+			return errors.Newf("unexpected output from %q: %s", out)
+		}
+
+		haveVersion := strings.TrimLeft(elems[2], "go")
+
+		return checkVersion("go", haveVersion, versionConstraint)
+	}
+}
+
+func checkYarnVersion(versionConstraint string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		cmd := "yarn --version"
+		out, err := combinedSourceExec(ctx, cmd)
+		if err != nil {
+			return errors.Wrapf(err, "failed to run %q", cmd)
+		}
+
+		elems := strings.Split(string(out), "\n")
+		if len(elems) == 0 {
+			return errors.Newf("no output from %q", cmd)
+		}
+
+		trimmed := strings.TrimSpace(elems[0])
+		return checkVersion("yarn", trimmed, versionConstraint)
+	}
+}
+
+func checkVersion(cmdName, haveVersion, versionConstraint string) error {
+	c, err := semver.NewConstraint(versionConstraint)
+	if err != nil {
+		return err
+	}
+
+	version, err := semver.NewVersion(haveVersion)
+	if err != nil {
+		return errors.Newf("cannot decode version in %q: %w", haveVersion, err)
+	}
+
+	if !c.Check(version) {
+		return errors.Newf("version %q from %q does not match constraint %q", haveVersion, cmdName, versionConstraint)
+	}
+	return nil
+}
+
 func checkCommandOutputContains(cmd, contains string) func(context.Context) error {
 	return func(ctx context.Context) error {
 		out, _ := combinedSourceExec(ctx, cmd)
@@ -965,34 +1015,12 @@ func checkFileContains(fileName, content string) func(context.Context) error {
 	}
 }
 
-func guessUserShell() (string, string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", "", err
-	}
-	// Look up which shell the user is using, because that's most likely the
-	// one that has all the environment correctly setup.
-	shell, ok := os.LookupEnv("SHELL")
-	var shellrc string
-	if !ok {
-		// If we can't find the shell in the environment, we fall back to `bash`
-		shell = "bash"
-	}
-	switch {
-	case strings.Contains(shell, "bash"):
-		shellrc = ".bashrc"
-	case strings.Contains(shell, "zsh"):
-		shellrc = ".zshrc"
-	}
-	return shell, filepath.Join(home, shellrc), nil
-}
-
 // execFreshShell returns a command wrapped in a new shell process, enabling
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
 func execFreshShell(ctx context.Context, cmd string) *exec.Cmd {
-	command := fmt.Sprintf("source %s || true; %s", getUserShellConfigPath(ctx), cmd)
-	return exec.CommandContext(ctx, getUserShellPath(ctx), "-c", command)
+	command := fmt.Sprintf("source %s || true; %s", usershell.ShellConfigPath(ctx), cmd)
+	return exec.CommandContext(ctx, usershell.ShellPath(ctx), "-c", command)
 }
 
 // combinedSourceExec runs a command in a fresh shell environment,
