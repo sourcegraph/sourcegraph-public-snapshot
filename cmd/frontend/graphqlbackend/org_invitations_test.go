@@ -43,7 +43,7 @@ func mockDefaultSiteConfig() {
 
 func TestCreateJWT(t *testing.T) {
 	t.Run("Fails when signingKey is not configured in site config", func(t *testing.T) {
-		_, err := createInvitationJWT(1, 1, 1, 1, "foo@bar.baz")
+		_, err := createInvitationJWT(1, 1, 1)
 
 		expectedError := "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
 		if err == nil || err.Error() != expectedError {
@@ -54,7 +54,7 @@ func TestCreateJWT(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
 
-		token, err := createInvitationJWT(1, 2, 3, 4, "")
+		token, err := createInvitationJWT(1, 2, 3)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +79,7 @@ func TestCreateJWT(t *testing.T) {
 		if !ok {
 			t.Fatalf("parsed JWT claims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.Audience[0] != "4" {
+		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 {
 			t.Fatalf("claims from JWT do not match expectations %v", claims)
 		}
 	})
@@ -129,7 +129,7 @@ func TestOrgInvitationURL(t *testing.T) {
 		if !ok {
 			t.Fatalf("parsed JWT claims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.Audience[0] != "foo@bar.baz" {
+		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 {
 			t.Fatalf("claims from JWT do not match expectations %v", claims)
 		}
 	})
@@ -290,7 +290,7 @@ func TestInvitationByToken(t *testing.T) {
 	t.Run("Returns invitation URL in the response", func(t *testing.T) {
 		mockSiteConfigSigningKey()
 		defer mockDefaultSiteConfig()
-		token, err := createInvitationJWT(1, 1, 1, 2, "")
+		token, err := createInvitationJWT(1, 1, 1)
 		if err != nil {
 			t.Fatal(err)
 		}

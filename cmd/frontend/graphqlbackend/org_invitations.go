@@ -276,10 +276,12 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 			// ignore errors here as this is a best-effort action
 			r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
 		}
+	} else if invitation.RecipientUserID > 0 && invitation.RecipientUserID != a.UID {
+		// 🚨 SECURITY: Fail if the org invitation's recipient is not the one given
+		return nil, database.NewOrgInvitationNotFoundError(id)
 	}
 
-	// 🚨 SECURITY: This fails if the org invitation's recipient is not the one given (or if the
-	// invitation is otherwise invalid), so we do not need to separately perform that check.
+	// 🚨 SECURITY: This fails if the invitation is invalid
 	orgID, err := r.db.OrgInvitations().Respond(ctx, id, a.UID, accept)
 	if err != nil {
 		return nil, err
@@ -391,7 +393,7 @@ func orgInvitationURLLegacy(org *types.Org, relative bool) string {
 }
 
 func orgInvitationURL(orgID int32, invitationID int64, senderID int32, recipientID int32, recipientEmail string, relative bool) (string, error) {
-	token, err := createInvitationJWT(orgID, invitationID, senderID, recipientID, recipientEmail)
+	token, err := createInvitationJWT(orgID, invitationID, senderID)
 	if err != nil {
 		return "", err
 	}
@@ -402,7 +404,7 @@ func orgInvitationURL(orgID int32, invitationID int64, senderID int32, recipient
 	return globals.ExternalURL().ResolveReference(&url.URL{Path: path}).String(), nil
 }
 
-func createInvitationJWT(orgID int32, invitationID int64, senderID int32, recipientID int32, recipientEmail string) (string, error) {
+func createInvitationJWT(orgID int32, invitationID int64, senderID int32) (string, error) {
 	if !orgInvitationConfigDefined() {
 		return "", errors.New(SIGNING_KEY_MESSAGE)
 	}

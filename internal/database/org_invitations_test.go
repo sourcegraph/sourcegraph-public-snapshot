@@ -217,11 +217,6 @@ func TestOrgInvitations(t *testing.T) {
 			t.Errorf("got %d, want %d", got.ID, oi.ID)
 		}
 
-		// Try responding with the wrong recipient user ID, which should fail.
-		if _, err := OrgInvitations(db).Respond(ctx, oi.ID, 12345 /* invalid user */, accepted); !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
-		}
-
 		if orgID, err := OrgInvitations(db).Respond(ctx, oi.ID, oi.RecipientUserID, accepted); err != nil {
 			t.Fatal(err)
 		} else if want := oi.OrgID; orgID != want {
@@ -249,7 +244,7 @@ func TestOrgInvitations(t *testing.T) {
 	t.Run("Respond true", func(t *testing.T) {
 		testRespond(t, oi1, true)
 	})
-	t.Run("Respond true", func(t *testing.T) {
+	t.Run("Respond false", func(t *testing.T) {
 		testRespond(t, oi2, false)
 	})
 

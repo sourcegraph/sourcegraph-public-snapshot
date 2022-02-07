@@ -20,7 +20,7 @@ import styles from './OrgInvitationPage.module.scss'
 
 interface Props extends RouteComponentProps<{ token: string }> {
     authenticatedUser: AuthenticatedUser
-    className: string
+    className?: string
 }
 
 interface RespondToOrgInvitationResult {
