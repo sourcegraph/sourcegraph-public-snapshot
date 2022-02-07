@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -159,6 +160,14 @@ func TestServicePermissionLevels(t *testing.T) {
 				_, err := svc.ReplaceBatchSpecInput(currentUserCtx, ReplaceBatchSpecInputOpts{
 					BatchSpecRandID: batchSpec.RandID,
 					RawSpec:         ct.TestRawBatchSpecYAML,
+				})
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("UpsertBatchSpecInput", func(t *testing.T) {
+				_, err := svc.UpsertBatchSpecInput(currentUserCtx, UpsertBatchSpecInputOpts{
+					RawSpec:         ct.TestRawBatchSpecYAML,
+					NamespaceUserID: tc.batchChangeAuthor,
 				})
 				tc.assertFunc(t, err)
 			})
@@ -1530,6 +1539,48 @@ func TestService(t *testing.T) {
 			if !strings.Contains(err.Error(), "Invalid type. Expected: string, given: boolean") {
 				t.Fatalf("wrong error message: %s", err)
 			}
+		})
+	})
+
+	t.Run("UpsertBatchSpecInput", func(t *testing.T) {
+		t.Run("new spec", func(t *testing.T) {
+			newSpec, err := svc.UpsertBatchSpecInput(ctx, UpsertBatchSpecInputOpts{
+				RawSpec:         ct.TestRawBatchSpecYAML,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Nil(t, err)
+			assert.True(t, newSpec.CreatedFromRaw)
+
+			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
+				BatchSpecID: newSpec.ID,
+			})
+			assert.Nil(t, err)
+			assert.Equal(t, btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State)
+		})
+
+		t.Run("replaced spec", func(t *testing.T) {
+			oldSpec, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
+				RawSpec:         ct.TestRawBatchSpecYAML,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Nil(t, err)
+			assert.True(t, oldSpec.CreatedFromRaw)
+
+			newSpec, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
+				RawSpec:         ct.TestRawBatchSpecYAML,
+				NamespaceUserID: admin.ID,
+			})
+			assert.Nil(t, err)
+			assert.True(t, newSpec.CreatedFromRaw)
+			assert.Equal(t, oldSpec.RandID, newSpec.RandID)
+			assert.Equal(t, oldSpec.NamespaceUserID, newSpec.NamespaceUserID)
+			assert.Equal(t, oldSpec.NamespaceOrgID, newSpec.NamespaceOrgID)
+
+			// Check that the replaced batch spec was really deleted.
+			_, err = s.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+				ID: oldSpec.ID,
+			})
+			assert.Equal(t, store.ErrNoResults, err)
 		})
 	})
 
