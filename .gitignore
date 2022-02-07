@@ -158,3 +158,6 @@ sitemap_query.db
 
 # CI annotations lock
 .annotate.lock
+
+# Buildkite analytics files
+jest-junit.xml
