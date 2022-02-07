@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"regexp/syntax"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"golang.org/x/sync/errgroup"
 )
@@ -27,7 +27,7 @@ func run(ctx context.Context, rgBaseArgs []string, node query.Node, parameters [
 	if len(plan.RepoInclude) > 0 || len(plan.RepoExclude) > 0 {
 		repos, err := walkRepos()
 		if err != nil {
-			return fmt.Errorf("failed to find repositories: %w", err)
+			return errors.Errorf("failed to find repositories: %w", err)
 		}
 		paths = filterRepos(repos, plan.RepoInclude, plan.RepoExclude)
 	}
@@ -62,7 +62,7 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 	if p, ok := node.(query.Pattern); ok {
 		pattern = p.Value
 	} else if node != nil {
-		return nil, fmt.Errorf("only supports pattern queries, got %T: %s", node, node)
+		return nil, errors.Errorf("only supports pattern queries, got %T: %s", node, node)
 	}
 
 	var args []string
@@ -73,7 +73,7 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 		case query.FieldRepo:
 			re, err := regexp.Compile(p.Value)
 			if err != nil {
-				return nil, fmt.Errorf("failed to compile repo regexp %q: %w", p.Value, err)
+				return nil, errors.Errorf("failed to compile repo regexp %q: %w", p.Value, err)
 			}
 			if p.Negated {
 				repoExclude = append(repoExclude, re)
@@ -86,7 +86,7 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 			// instead take in globs.
 			glob, err := regexpToGlob(p)
 			if err != nil {
-				return nil, fmt.Errorf("failed to convert file regex %q to ripgrep glob: %w", p.Value, err)
+				return nil, errors.Errorf("failed to convert file regex %q to ripgrep glob: %w", p.Value, err)
 			}
 			args = append(args, "--glob", glob)
 
@@ -97,7 +97,7 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 			case "no":
 				args = append(args, "--ignore-case")
 			default:
-				return nil, fmt.Errorf("unknown case value: %s", p)
+				return nil, errors.Errorf("unknown case value: %s", p)
 			}
 
 		case query.FieldLang:
@@ -108,7 +108,7 @@ func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
 			}
 
 		default:
-			return nil, fmt.Errorf("unsupported field: %s", p)
+			return nil, errors.Errorf("unsupported field: %s", p)
 		}
 	}
 
@@ -155,13 +155,13 @@ func regexpToGlob(p query.Parameter) (string, error) {
 			hasBegin = true
 		case re.Op == syntax.OpLiteral:
 			if literal != "" {
-				return "", fmt.Errorf("only expected one literal")
+				return "", errors.Errorf("only expected one literal")
 			}
 			literal = string(re.Rune)
 		case i == len(concat.Sub)-1 && (re.Op == syntax.OpEndLine || re.Op == syntax.OpEndText):
 			hasEnd = true
 		default:
-			return "", fmt.Errorf("do not know how to convert %v into glob", re)
+			return "", errors.Errorf("do not know how to convert %v into glob", re)
 		}
 	}
 
