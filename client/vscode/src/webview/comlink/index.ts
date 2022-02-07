@@ -50,3 +50,7 @@ export function isNestedConnection(value: unknown): value is NestedConnectionDat
 export function isProxyMarked(value: unknown): value is Comlink.ProxyMarked {
     return isObject(value) && (value as Comlink.ProxyMarked)[Comlink.proxyMarker]
 }
+
+export function isUnsubscribable(value: object): value is { unsubscribe: () => unknown } {
+    return hasProperty('unsubscribe')(value) && typeof value.unsubscribe === 'function'
+}
