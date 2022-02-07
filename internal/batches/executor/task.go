@@ -27,8 +27,6 @@ type Task struct {
 	// TODO(mrnugget): this should just be a single BatchSpec field instead, if
 	// we can make it work with caching
 	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
-	Template              *batcheslib.ChangesetTemplate   `json:"-"`
-	TransformChanges      *batcheslib.TransformChanges    `json:"-"`
 
 	Archive repozip.Archive `json:"-"`
 

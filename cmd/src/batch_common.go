@@ -18,6 +18,7 @@ import (
 	"github.com/mattn/go-isatty"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
@@ -342,7 +343,14 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	})
 
 	ui.CheckingCache()
-	tasks := svc.BuildTasks(ctx, batchSpec, workspaces)
+	tasks := svc.BuildTasks(
+		ctx,
+		&template.BatchChangeAttributes{
+			Name:        batchSpec.Name,
+			Description: batchSpec.Description,
+		},
+		workspaces,
+	)
 	var (
 		specs         []*batcheslib.ChangesetSpec
 		uncachedTasks []*executor.Task
@@ -351,7 +359,8 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		coord.ClearCache(ctx, tasks)
 		uncachedTasks = tasks
 	} else {
-		uncachedTasks, specs, err = coord.CheckCache(ctx, tasks)
+		// Check the cache for completely cached executions.
+		uncachedTasks, specs, err = coord.CheckCache(ctx, batchSpec, tasks)
 		if err != nil {
 			return err
 		}
@@ -359,7 +368,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	ui.CheckingCacheSuccess(len(specs), len(uncachedTasks))
 
 	taskExecUI := ui.ExecutingTasks(*verbose, opts.flags.parallelism)
-	freshSpecs, logFiles, execErr := coord.Execute(ctx, uncachedTasks, batchSpec, taskExecUI)
+	freshSpecs, logFiles, execErr := coord.ExecuteAndBuildSpecs(ctx, batchSpec, uncachedTasks, taskExecUI)
 	// Add external changeset specs.
 	importedSpecs, importErr := svc.CreateImportChangesetSpecs(ctx, batchSpec)
 	var errs *multierror.Error

@@ -17,6 +17,7 @@ import (
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
+	templatelib "github.com/sourcegraph/sourcegraph/lib/batches/template"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
@@ -277,8 +278,8 @@ func (svc *Service) DetermineWorkspaces(ctx context.Context, repos []*graphql.Re
 	return findWorkspaces(ctx, spec, svc, repos)
 }
 
-func (svc *Service) BuildTasks(ctx context.Context, spec *batcheslib.BatchSpec, workspaces []RepoWorkspace) []*executor.Task {
-	return buildTasks(ctx, spec, workspaces)
+func (svc *Service) BuildTasks(ctx context.Context, attributes *templatelib.BatchChangeAttributes, workspaces []RepoWorkspace) []*executor.Task {
+	return buildTasks(ctx, attributes, workspaces)
 }
 
 func (svc *Service) NewCoordinator(opts executor.NewCoordinatorOpts) *executor.Coordinator {

@@ -269,8 +269,6 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			// Set attributes on Task which would be set by the TaskBuilder
 			for _, t := range tc.tasks {
-				t.TransformChanges = tc.batchSpec.TransformChanges
-				t.Template = tc.batchSpec.ChangesetTemplate
 				t.BatchChangeAttributes = &template.BatchChangeAttributes{
 					Name:        tc.batchSpec.Name,
 					Description: tc.batchSpec.Description,
@@ -291,7 +289,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			// the batch spec. We'll run this multiple times to cover both the
 			// cache and non-cache code paths.
 			execute := func(t *testing.T) {
-				specs, _, err := coord.Execute(ctx, tc.tasks, tc.batchSpec, newDummyTaskExecutionUI())
+				specs, _, err := coord.ExecuteAndBuildSpecs(ctx, tc.batchSpec, tc.tasks, newDummyTaskExecutionUI())
 				if tc.wantErrInclude == "" {
 					if err != nil {
 						t.Fatalf("execution failed: %s", err)
@@ -385,8 +383,10 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	// Build Coordinator
 	coord := &Coordinator{cache: cache, exec: executor, logManager: logManager}
 
+	batchSpec := &batcheslib.BatchSpec{ChangesetTemplate: testChangesetTemplate}
+
 	// First execution. Make sure that the Task executes all steps.
-	execAndEnsure(t, coord, executor, task, assertNoCachedResult(t))
+	execAndEnsure(t, coord, executor, batchSpec, task, assertNoCachedResult(t))
 	// We now expect the cache to have 1+N entries: 1 for the complete task, N
 	// for the steps.
 	wantCacheSize := len(task.Steps) + 1
@@ -399,7 +399,7 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	task.Steps[1].Run = `echo "two modified"`
 	// Re-execution should start with the diff produced by steps[0] as the
 	// start state from which steps[1] is then re-executed.
-	execAndEnsure(t, coord, executor, task, assertCachedResultForStep(t, 0))
+	execAndEnsure(t, coord, executor, batchSpec, task, assertCachedResultForStep(t, 0))
 	// Cache now contains old entries, plus another "complete task" entry and
 	// two entries for newly executed steps.
 	wantCacheSize += 1 + 2
@@ -411,7 +411,7 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	// Change the 3rd step's definition:
 	task.Steps[2].Run = `echo "three modified"`
 	// Re-execution should use the diff from steps[1] as start state
-	execAndEnsure(t, coord, executor, task, assertCachedResultForStep(t, 1))
+	execAndEnsure(t, coord, executor, batchSpec, task, assertCachedResultForStep(t, 1))
 	// Cache now contains old entries, plus another "complete task" entry and
 	// a single new step entry
 	wantCacheSize += 1 + 1
@@ -425,7 +425,7 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 		t.Fatal(err)
 	}
 	// We don't want any cached results set on the task:
-	execAndEnsure(t, coord, executor, task, assertNoCachedResult(t))
+	execAndEnsure(t, coord, executor, batchSpec, task, assertNoCachedResult(t))
 	// Cache should have the same number of entries: the cached step results should
 	// have been cleared (the complete-task-result is cleared in another
 	// code path) and the same amount of cached entries has been added.
@@ -434,24 +434,20 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 
 // execAndEnsure executes the given Task with the given cache and dummyExecutor
 // in a new Coordinator, setting cb as the startCallback on the executor.
-func execAndEnsure(t *testing.T, coord *Coordinator, exec *dummyExecutor, task *Task, cb startCallback) {
+func execAndEnsure(t *testing.T, coord *Coordinator, exec *dummyExecutor, batchSpec *batcheslib.BatchSpec, task *Task, cb startCallback) {
 	t.Helper()
-
-	batchSpec := &batcheslib.BatchSpec{ChangesetTemplate: testChangesetTemplate}
-	// Set the ChangesetTemplate on Task
-	task.Template = batchSpec.ChangesetTemplate
 
 	// Setup the callback
 	exec.startCb = cb
 
 	// Check cache
-	uncached, cachedSpecs, err := coord.CheckCache(context.Background(), []*Task{task})
+	uncached, cachedSpecs, err := coord.CheckCache(context.Background(), batchSpec, []*Task{task})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Execute
-	freshSpecs, _, err := coord.Execute(context.Background(), uncached, batchSpec, newDummyTaskExecutionUI())
+	freshSpecs, _, err := coord.ExecuteAndBuildSpecs(context.Background(), batchSpec, uncached, newDummyTaskExecutionUI())
 	if err != nil {
 		t.Fatalf("execution of task failed: %s", err)
 	}

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -86,9 +85,9 @@ func NewCoordinator(opts NewCoordinatorOpts) *Coordinator {
 // CheckCache checks whether the internal ExecutionCache contains
 // ChangesetSpecs for the given Tasks. If cached ChangesetSpecs exist, those
 // are returned, otherwise the Task, to be executed later.
-func (c *Coordinator) CheckCache(ctx context.Context, tasks []*Task) (uncached []*Task, specs []*batcheslib.ChangesetSpec, err error) {
+func (c *Coordinator) CheckCache(ctx context.Context, batchSpec *batcheslib.BatchSpec, tasks []*Task) (uncached []*Task, specs []*batcheslib.ChangesetSpec, err error) {
 	for _, t := range tasks {
-		cachedSpecs, found, err := c.checkCacheForTask(ctx, t)
+		cachedSpecs, found, err := c.checkCacheForTask(ctx, batchSpec, t)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -134,7 +133,7 @@ func (c *Coordinator) ClearCache(ctx context.Context, tasks []*Task) error {
 	return nil
 }
 
-func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs []*batcheslib.ChangesetSpec, found bool, err error) {
+func (c *Coordinator) checkCacheForTask(ctx context.Context, batchSpec *batcheslib.BatchSpec, task *Task) (specs []*batcheslib.ChangesetSpec, found bool, err error) {
 	globalEnv := os.Environ()
 
 	// Check if the task is cached.
@@ -164,7 +163,7 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs 
 		return specs, true, nil
 	}
 
-	specs, err = c.buildChangesetSpecs(task, result)
+	specs, err = c.buildChangesetSpecs(task, batchSpec, result)
 	if err != nil {
 		return specs, false, err
 	}
@@ -172,7 +171,7 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs 
 	return specs, true, nil
 }
 
-func (c Coordinator) buildChangesetSpecs(task *Task, result execution.Result) ([]*batcheslib.ChangesetSpec, error) {
+func (c Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.BatchSpec, result execution.Result) ([]*batcheslib.ChangesetSpec, error) {
 	input := &batcheslib.ChangesetSpecInput{
 		Repository: batcheslib.Repository{
 			ID:          task.Repository.ID,
@@ -182,8 +181,8 @@ func (c Coordinator) buildChangesetSpecs(task *Task, result execution.Result) ([
 			BaseRev:     task.Repository.Rev(),
 		},
 		BatchChangeAttributes: task.BatchChangeAttributes,
-		Template:              task.Template,
-		TransformChanges:      task.TransformChanges,
+		Template:              batchSpec.ChangesetTemplate,
+		TransformChanges:      batchSpec.TransformChanges,
 
 		Result: execution.Result{
 			Diff:         result.Diff,
@@ -222,21 +221,27 @@ func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task, glo
 	return nil
 }
 
-func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResult, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, error) {
+func (c *Coordinator) writeCache(ctx context.Context, taskResult taskResult, ui TaskExecutionUI) error {
 	// Add to the cache, even if no diff was produced.
 	globalEnv := os.Environ()
 	cacheKey := taskResult.task.cacheKey(globalEnv)
 	if err := c.cache.Set(ctx, cacheKey, taskResult.result); err != nil {
-		return nil, errors.Wrapf(err, "caching result for %q", taskResult.task.Repository.Name)
+		return errors.Wrapf(err, "caching result for %q", taskResult.task.Repository.Name)
 	}
 
 	// Save the per-step results
 	for _, stepResult := range taskResult.stepResults {
 		key := cacheKeyForStep(cacheKey, stepResult.StepIndex)
 		if err := c.cache.SetStepResult(ctx, key, stepResult); err != nil {
-			return nil, errors.Wrapf(err, "caching result for step %d in %q", stepResult.StepIndex, taskResult.task.Repository.Name)
+			return errors.Wrapf(err, "caching result for step %d in %q", stepResult.StepIndex, taskResult.task.Repository.Name)
 		}
 	}
+
+	return nil
+}
+
+func (c *Coordinator) writeCacheAndBuildSpecs(ctx context.Context, batchSpec *batcheslib.BatchSpec, taskResult taskResult, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, error) {
+	c.writeCache(ctx, taskResult, ui)
 
 	// If the steps didn't result in any diff, we don't need to create a
 	// changeset spec that's displayed to the user and send to the server.
@@ -245,7 +250,7 @@ func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResu
 	}
 
 	// Build the changeset specs.
-	specs, err := c.buildChangesetSpecs(taskResult.task, taskResult.result)
+	specs, err := c.buildChangesetSpecs(taskResult.task, batchSpec, taskResult.result)
 	if err != nil {
 		return nil, err
 	}
@@ -254,31 +259,30 @@ func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResu
 	return specs, nil
 }
 
-// Execute executes the given Tasks and the importChangeset statements in the
-// given spec. It regularly calls the executionProgressPrinter with the
-// current TaskStatuses.
-func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batcheslib.BatchSpec, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, []string, error) {
-	var (
-		specs []*batcheslib.ChangesetSpec
-		errs  *multierror.Error
-	)
+// Execute executes the given tasks. It calls the ui on updates.
+func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, ui TaskExecutionUI) error {
+	results, err := c.doExecute(ctx, tasks, ui)
 
-	ui.Start(tasks)
-
-	// Run executor
-	c.exec.Start(ctx, tasks, ui)
-	results, err := c.exec.Wait(ctx)
-	if err != nil {
-		if c.opts.SkipErrors {
-			errs = multierror.Append(errs, err)
-		} else {
-			return nil, nil, err
+	// Write results to cache.
+	for _, taskResult := range results {
+		if cacheErr := c.writeCache(ctx, taskResult, ui); cacheErr != nil {
+			return cacheErr
 		}
 	}
 
+	return err
+}
+
+// ExecuteAndBuildSpecs executes the given tasks and builds changeset specs for the results.
+// It calls the ui on updates.
+func (c *Coordinator) ExecuteAndBuildSpecs(ctx context.Context, batchSpec *batcheslib.BatchSpec, tasks []*Task, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, []string, error) {
+	results, errs := c.doExecute(ctx, tasks, ui)
+
+	var specs []*batcheslib.ChangesetSpec
+
 	// Write results to cache, build ChangesetSpecs if possible and add to list.
 	for _, taskResult := range results {
-		taskSpecs, err := c.cacheAndBuildSpec(ctx, taskResult, ui)
+		taskSpecs, err := c.writeCacheAndBuildSpecs(ctx, batchSpec, taskResult, ui)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -286,5 +290,13 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batchesl
 		specs = append(specs, taskSpecs...)
 	}
 
-	return specs, c.logManager.LogFiles(), errs.ErrorOrNil()
+	return specs, c.logManager.LogFiles(), errs
+}
+
+func (c *Coordinator) doExecute(ctx context.Context, tasks []*Task, ui TaskExecutionUI) (results []taskResult, err error) {
+	ui.Start(tasks)
+
+	// Run executor
+	c.exec.Start(ctx, tasks, ui)
+	return c.exec.Wait(ctx)
 }
