@@ -866,6 +866,10 @@ type GitLabWebhook struct {
 type GithubAppCloud struct {
 	// AppID description: The app ID of the GitHub App for Sourcegraph Cloud.
 	AppID string `json:"appID,omitempty"`
+	// ClientID description: The Client ID of the GitHub App, accessible from https://github.com/settings/apps .
+	ClientID string `json:"clientID,omitempty"`
+	// ClientSecret description: The Client Secret of the GitHub App, accessible from https://github.com/settings/apps .
+	ClientSecret string `json:"clientSecret,omitempty"`
 	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph Cloud.
 	PrivateKey string `json:"privateKey,omitempty"`
 	// Slug description: The slug of the GitHub App for Sourcegraph Cloud.

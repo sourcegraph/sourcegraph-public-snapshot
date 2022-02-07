@@ -70,6 +70,8 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool   `json:"sourcegraphDotComMode"`
 	GitHubAppCloudSlug    string `json:"githubAppCloudSlug"`
+	GitHubAppClientID     string `json:"githubAppClientID"`
+	GitHubAppClientSecret string `json:"githubAppClientSecret"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -143,8 +145,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	}
 
 	var githubAppCloudSlug string
+	var githubAppClientID string
 	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
 		githubAppCloudSlug = siteConfig.Dotcom.GithubAppCloud.Slug
+		githubAppClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -174,6 +178,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		GitHubAppCloudSlug:    githubAppCloudSlug,
+		GitHubAppClientID:     githubAppClientID,
+		GitHubAppClientSecret: githubAppClientSecret,
 
 		BillingPublishableKey: BillingPublishableKey,
 

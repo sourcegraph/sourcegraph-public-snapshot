@@ -1103,6 +1103,14 @@
             "privateKey": {
               "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
               "type": "string"
+            },
+            "clientID": {
+              "type": "string",
+              "description": "The Client ID of the GitHub App, accessible from https://github.com/settings/apps ."
+            },
+            "clientSecret": {
+              "type": "string",
+              "description": "The Client Secret of the GitHub App, accessible from https://github.com/settings/apps ."
             }
           }
         }
