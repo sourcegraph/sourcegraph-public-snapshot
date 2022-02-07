@@ -3,27 +3,38 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 )
 
 var preview bool
 var wantYaml bool
+var docs bool
 
 func init() {
 	flag.BoolVar(&preview, "preview", false, "Preview the pipeline steps")
 	flag.BoolVar(&wantYaml, "yaml", false, "Use YAML instead of JSON")
+	flag.BoolVar(&docs, "docs", false, "Render generated documentation")
 }
 
 func main() {
 	flag.Parse()
+
+	if docs {
+		renderPipelineDocs(os.Stdout)
+		return
+	}
 
 	config := ci.NewConfig(time.Now())
 
@@ -82,5 +93,90 @@ func printStep(w io.Writer, prefix string, step *buildkite.Step) {
 		fmt.Fprintf(w, "%s\t\t→ depends on %s, ... (%d more steps)\n", prefix, strings.Join(step.DependsOn[0:5], ", "), len(step.DependsOn)-5)
 	case len(step.DependsOn) > 0:
 		fmt.Fprintf(w, "%s\t\t→ depends on %s\n", prefix, strings.Join(step.DependsOn, " "))
+	}
+}
+
+var emojiRegexp = regexp.MustCompile(`:(\S*):`)
+
+func trimEmoji(s string) string {
+	return strings.TrimSpace(emojiRegexp.ReplaceAllString(s, ""))
+}
+
+func renderPipelineDocs(w io.Writer) {
+	fmt.Fprintln(w, "# Pipeline reference")
+	fmt.Fprintln(w, "\n## Run types")
+
+	// Introduce pull request builds first
+	fmt.Fprintf(w, "\n### %s\n\n", ci.PullRequest.String())
+	fmt.Fprintln(w, "The default run type.")
+	changed.ForEachDiffType(func(diff changed.Diff) {
+		pipeline, err := ci.GeneratePipeline(ci.Config{
+			RunType: ci.PullRequest,
+			Diff:    diff,
+		})
+		if err != nil {
+			log.Fatalf("Generating pipeline for diff %q: %s", diff, err)
+		}
+		fmt.Fprintf(w, "\n- Pipeline for `%s` changes:\n", diff)
+		for _, raw := range pipeline.Steps {
+			printStepSummary(w, raw)
+		}
+	})
+
+	// Introduce the others
+	for rt := ci.PullRequest + 1; rt < ci.None; rt += 1 {
+		fmt.Fprintf(w, "\n### %s\n\n", rt.String())
+		if m := rt.Matcher(); m == nil {
+			fmt.Fprintln(w, "No matcher defined")
+		} else {
+			conditions := []string{}
+			if m.Branch != "" {
+				matchName := fmt.Sprintf("`%s`", m.Branch)
+				if m.BranchRegexp {
+					matchName += " (regexp)"
+				}
+				if m.BranchExact {
+					matchName += " (exact)"
+				}
+				conditions = append(conditions, fmt.Sprintf("branches matching %s", matchName))
+			}
+			if m.TagPrefix != "" {
+				conditions = append(conditions, fmt.Sprintf("tags starting with `%s`", m.TagPrefix))
+			}
+			if len(m.EnvIncludes) > 0 {
+				env, _ := json.Marshal(m.EnvIncludes)
+				conditions = append(conditions, fmt.Sprintf("environment including `%s`", string(env)))
+			}
+			fmt.Fprintf(w, "The run type for %s.\n", strings.Join(conditions, ", "))
+
+			pipeline, err := ci.GeneratePipeline(ci.Config{
+				RunType: ci.PullRequest,
+				Diff:    changed.All,
+				Branch:  m.Branch,
+			})
+			if err != nil {
+				log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
+			}
+			fmt.Fprintln(w, "\n- Default pipeline:")
+			for _, raw := range pipeline.Steps {
+				printStepSummary(w, raw)
+			}
+		}
+	}
+}
+
+func printStepSummary(w io.Writer, rawStep interface{}) {
+	switch v := rawStep.(type) {
+	case *buildkite.Step:
+		fmt.Fprintf(w, "  - %s\n", trimEmoji(v.Label))
+	case *buildkite.Pipeline:
+		var steps []string
+		for _, step := range v.Steps {
+			s, ok := step.(*buildkite.Step)
+			if ok {
+				steps = append(steps, trimEmoji(s.Label))
+			}
+		}
+		fmt.Fprintf(w, "  - **%s**: %s\n", v.Group.Group, strings.Join(steps, ", "))
 	}
 }
