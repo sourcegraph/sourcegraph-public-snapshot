@@ -91,7 +91,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
 
                 <Container>
                     {loading && <LoadingSpinner />}
-                    {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
+                    {data && <div>Pending invites list goes here. Not implemented yet.</div>}
                     {error && (
                         <ErrorAlert
                             className="mt-2"
