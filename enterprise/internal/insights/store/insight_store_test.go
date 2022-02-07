@@ -1722,3 +1722,14 @@ func TestGetReferenceCount(t *testing.T) {
 		autogold.Want("ReferenceCount", referenceCount).Equal(t, 0)
 	})
 }
+
+func TestGetSoftDeletedSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+}
