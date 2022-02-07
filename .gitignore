@@ -160,3 +160,6 @@ sitemap_query.db
 .annotate
 .annotate.lock
 annotations/
+
+# Buildkite analytics files
+jest-junit.xml
