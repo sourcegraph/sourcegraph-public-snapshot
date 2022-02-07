@@ -1,12 +1,14 @@
-# Testing principles
+# Testing principles and guidelines
+
+<span class="badge badge-note">SOC2/GN-105</span>
 
 This file documents how we test code at Sourcegraph.
 
-Related pages: [How to run tests](../how-to/testing.md) | [Testing Go code](languages/testing_go_code.md) | [Testing web code](testing_web_code.md) | [Continuous integration](continuous_integration.md)
+Related pages: [How to write and run tests](../how-to/testing.md) | [Testing Go code](languages/testing_go_code.md) | [Testing web code](testing_web_code.md) | [Continuous integration](continuous_integration.md)
 
 ## Philosophy
 
-We rely on automated testing to ensure the quality of our product.
+We rely on automated testing to ensure the quality of our product. Our goal is to ensure that our product and code work, and that all reasonable effort has been taken to reduce the risk of a security-related incident associated to Sourcegraph.
 
 Any addition or change to our codebase should be covered by an appropriate amount of automated tests to ensure that:
 
@@ -17,35 +19,15 @@ A good automated test suite increases the velocity of our team because it allows
 
 Engineers should budget an appropriate amount of time for writing tests when making iteration plans.
 
-### Types of tests
+## Types of tests
 
-<span class="badge badge-note">SOC2/GN-105</span>
-
-In order to ensure we are true to our [philosphy](#philosophy), we have various implementations of testing for our code base.
-
-This includes, but is not limited to:
+In order to ensure we are true to our [philosphy](#philosophy), we have various implementations of testing for our code base. This includes, but is not limited to:
 
 - Image vulnerability scanning
 - Infrastructure as code static analyses
-- Unit, integration and end-to-end tests as outlined in the [testing-pyrmid](#testing-pyramid)
+- [Unit](#unit-tests), [integration](#integration-tests), [end-to-end](#end-to-end-tests-e2e), and [visual](#visual-testing) tests
 
-Our goal is to ensure that our product and code work, and that all reasonable effort has been taken to reduce the risk of a security-related incident associated to Sourcegraph.
-
-Also see [continuous integration](continuous_integration.md) and [internal infrastructure testing](https://handbook.sourcegraph.com/departments/product-engineering/engineering/tools/infrastructure/dev).
-
-## Failures on the `main` branch
-
-**A red `main` build is not okay and must be fixed.** Consecutive failed builds on the `main` branch means that [the releasability contract is broken](https://handbook.sourcegraph.com/engineering/continuous_releasability#continuous-releasability-contract), and that we cannot confidently ship that revision to our customers nor have it deployed in the Cloud environment.
-
-## Flaky tests
-
-**We do not tolerate flaky tests of any kind.** Any engineer that sees a flaky test in [continuous integration](./continuous_integration.md) should immediately [disable the flaky test](continuous_integration.md#flaky-tests).
-
-Why are flaky tests undesirable? Because these tests stop being an informative signal that the engineering team can rely on, and if we keep them around then we eventually train ourselves to ignore them and become blind to their results. This can hide real problems under the cover of flakiness.
-
-Other kinds of flakes include [flaky steps](continuous_integration.md#flaky-steps) and [flaky infrastructure](continuous_integration.md#laky-infrastructure)
-
-## Testing pyramid
+The testing pyramid is a helpful way to determine the most appropriate type of test when deciding how to test a change:
 
 ![Testing pyramid](testing-pyramid.svg)
 
@@ -109,11 +91,19 @@ We use [Chromatic Storybook](https://www.chromatic.com/) to detect visual change
 
 We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph features during browser-based tests (client integration tests and end-to-end tests). You may need permissions to update screenshots if your feature introduces visual changes. Post a message in #dev-chat that you need access to Percy, and someone will add you to our organization (you will also receive an invitation via e-mail). Once you've been invited to the Sourcegraph organization and created a Percy account, you should then link it to your GitHub account.
 
+## Failures on the `main` branch
+
+**A red `main` build is not okay and must be fixed.** Consecutive failed builds on the `main` branch means that [the releasability contract is broken](https://handbook.sourcegraph.com/engineering/continuous_releasability#continuous-releasability-contract), and that we cannot confidently ship that revision to our customers nor have it deployed in the Cloud environment.
+
+## Flaky tests
+
+**We do not tolerate flaky tests of any kind.** Any engineer that sees a flaky test in [continuous integration](./continuous_integration.md) should immediately [disable the flaky test](continuous_integration.md#flaky-tests).
+
+Why are flaky tests undesirable? Because these tests stop being an informative signal that the engineering team can rely on, and if we keep them around then we eventually train ourselves to ignore them and become blind to their results. This can hide real problems under the cover of flakiness.
+
+Other kinds of flakes include [flaky steps](continuous_integration.md#flaky-steps) and [flaky infrastructure](continuous_integration.md#laky-infrastructure)
+
 ## Ownership
 
 - [DevX Team](https://handbook.sourcegraph.com/engineering/enablement/dev-experience) owns build and test infrastructure.
 - [Frontend Platform Team](https://handbook.sourcegraph.com/engineering/enablement/frontend-platform) owns any tests that are driven through the browser.
-
-## Conventions
-
-- **Naming tests in Go code.** We strive to follow the same naming convention for Go test functions as described for [naming example functions in the Go testing package](https://golang.org/pkg/testing/#hdr-Examples).
