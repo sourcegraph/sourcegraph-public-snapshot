@@ -547,8 +547,7 @@ Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA
   </p>
   <p class="mtl">
     <a href="https://about.sourcegraph.com/terms">Terms</a>&nbsp;&#8226;&nbsp;
-    <a href="https://about.sourcegraph.com/privacy">Privacy</a>&nbsp;&#8226;&nbsp;
-    <a href="">Security</a>
+    <a href="https://about.sourcegraph.com/privacy">Privacy</a>
   </p>
   <p>Sourcegraph, 981 Mission St, San Francisco, CA 94103, USA</p>
   </small>
