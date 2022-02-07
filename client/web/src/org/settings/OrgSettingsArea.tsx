@@ -19,7 +19,7 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE } from '../backend'
 
 import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
-import { OrgSettingsMembersPage } from './members/OrgSettingsMembersPage'
+import { OrgSettingsMembersPage } from './members-v1/OrgSettingsMembersPage'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
 
