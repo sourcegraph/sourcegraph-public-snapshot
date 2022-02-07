@@ -700,6 +700,11 @@
       "type": "boolean",
       "default": false
     },
+    "authz.refreshInterval": {
+      "description": "Time interval (in seconds) between requests to refresh oauth token scopes",
+      "type": "integer",
+      "default": 5
+    },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -251,4 +252,11 @@ func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types
 		return nil, nil
 	}
 	return providers[0], nil
+}
+
+func ParseInterval(interval int) time.Duration {
+	if interval == 0 {
+		return 5 * time.Second
+	}
+	return time.Duration(interval) * time.Second
 }
