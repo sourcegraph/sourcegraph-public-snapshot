@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Commands(ctx context.Context, globalEnv map[string]string, fixOSXFirewall bool, verbose bool, cmds ...Command) error {
+func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewall bool, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -76,34 +76,8 @@ func Commands(ctx context.Context, globalEnv map[string]string, fixOSXFirewall b
 		}(cmd, chs[i])
 	}
 
-	postInstallCB := func() error {
-		if fixOSXFirewall {
-			fwCmdPath := "/usr/libexec/ApplicationFirewall/socketfilterfw"
-			stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, "You may be prompted to enter your password to add exceptions to the firewall."))
-			fcmd := exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "off")
-			err = fcmd.Run()
-			if err != nil {
-				return err
-			}
-			for _, cmd := range cmds {
-				if strings.HasPrefix(cmd.Cmd, ".bin/") {
-					fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--add", filepath.Join(root, cmd.Cmd))
-					err = fcmd.Run()
-					if err != nil {
-						return err
-					}
-				}
-			}
-			fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "on")
-			err = fcmd.Run()
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	err = waitForInstallation(cmdNames, installed, failures, okayToStart, postInstallCB)
+	postInstall := newPostInstall(ctx, cmds, addToMacOSFirewall)
+	err = waitForInstallation(cmdNames, installed, failures, okayToStart, postInstall)
 	if err != nil {
 		return err
 	}
@@ -115,6 +89,42 @@ func Commands(ctx context.Context, globalEnv map[string]string, fixOSXFirewall b
 		printCmdError(stdout.Out, failure.cmdName, failure.err)
 		return failure
 	default:
+		return nil
+	}
+}
+
+func newPostInstall(ctx context.Context, cmds []Command, addToMacOSFirewall bool) func() error {
+	if !addToMacOSFirewall {
+		return func() error { return nil }
+	}
+
+	return func() error {
+		root, err := root.RepositoryRoot()
+		if err != nil {
+			return err
+		}
+
+		fwCmdPath := "/usr/libexec/ApplicationFirewall/socketfilterfw"
+		stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, "You may be prompted to enter your password to add exceptions to the firewall."))
+		fcmd := exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "off")
+		err = fcmd.Run()
+		if err != nil {
+			return err
+		}
+		for _, cmd := range cmds {
+			if strings.HasPrefix(cmd.Cmd, ".bin/") {
+				fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--add", filepath.Join(root, cmd.Cmd))
+				err = fcmd.Run()
+				if err != nil {
+					return err
+				}
+			}
+		}
+		fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "on")
+		err = fcmd.Run()
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 }
