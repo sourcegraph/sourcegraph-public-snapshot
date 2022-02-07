@@ -78,7 +78,7 @@ func writeMigrationFiles(contents map[string]string) (err error) {
 }
 
 // parseVersions takes a list of filepaths (the output of some git command) and a base
-// migrations directory and returns the veresions of migrations present in the list.
+// migrations directory and returns the versions of migrations present in the list.
 func parseVersions(lines []string, migrationsDir string) []int {
 	var (
 		pathSeparator       = string(os.PathSeparator)
