@@ -75,9 +75,9 @@ SELECT COUNT(*) FILTER ( WHERE recent_usage_by_user.created_month = DATE_TRUNC('
 	}, nil
 }
 
-func GetCTAMetrics(ctx context.Context, db database.DB) (*types.CTAMetrics, error) {
+func GetCTAUsage(ctx context.Context, db database.DB) (*types.CTAUsage, error) {
 	const query = `
- -- source: internal/usagestats/growth.go:GetCTAMetrics
+ -- source: internal/usagestats/growth.go:GetCTAUsage
  WITH data_by_month AS (
      SELECT name,
             user_id,
@@ -149,7 +149,7 @@ func GetCTAMetrics(ctx context.Context, db database.DB) (*types.CTAMetrics, erro
 		return nil, err
 	}
 
-	return &types.CTAMetrics{
+	return &types.CTAUsage{
 		UserCountWhoSawBextCtaOnFilePage:       userCountWhoSawBextCtaOnFilePage,
 		UserCountWhoClickedBextCtaOnFilePage:   userCountWhoClickedBextCtaOnFilePage,
 		UserCountWhoSawBextCtaOnSearchPage:     userCountWhoSawBextCtaOnSearchPage,

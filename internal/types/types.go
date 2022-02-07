@@ -1035,9 +1035,9 @@ type GrowthStatistics struct {
 	RetainedUsers    int32
 }
 
-// CTAMetrics represents the total number of CTAs displayed and clicked
+// CTAUsage represents the total number of CTAs displayed and clicked
 // on the "search result" and "file" pages over the current month.
-type CTAMetrics struct {
+type CTAUsage struct {
 	UserCountWhoSawBextCtaOnFilePage       int32
 	UserCountWhoClickedBextCtaOnFilePage   int32
 	UserCountWhoSawBextCtaOnSearchPage     int32
