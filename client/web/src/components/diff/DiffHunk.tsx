@@ -71,7 +71,6 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                     .filter(decoration => decoration.isWholeLine)
                     .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
                     .reduce((style, decoration) => ({ ...style, ...decoration }), {})
-
                 return (
                     <tr
                         key={index}
