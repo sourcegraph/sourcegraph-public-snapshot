@@ -512,8 +512,8 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
                 label="Search on Sourcegraph"
                 title="Search on Sourcegraph to get hover tooltips, go to definition and more"
                 ariaLabel="Search on Sourcegraph to get hover tooltips, go to definition and more"
-                className={classNames('btn', 'm-auto', styles.sourcegraphIconButton, className)}
-                iconClassName={classNames(styles.icon)}
+                className={classNames('btn', 'm-auto', className)}
+                iconClassName={classNames('mr-1', 'v-align-middle', styles.icon)}
                 href={sourcegraphSearchURL.href}
                 onClick={event => {
                     const searchQuery = buildSourcegraphQuery(getSearchQuery())

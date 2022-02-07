@@ -62,14 +62,6 @@
     top: 0.33rem !important; /* !important to override default close button `top` */
 }
 
-.sourcegraph-icon-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 4px;
-    width: fit-content;
-}
-
 /* Blob view
  * Make sure only our code view toolbar shrinks and wraps,
  * not GitHub's UI groups */
