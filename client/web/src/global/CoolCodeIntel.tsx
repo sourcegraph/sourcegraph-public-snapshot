@@ -3,6 +3,7 @@ import { createMemoryHistory } from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
+import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
@@ -189,6 +190,14 @@ export const ReferencesList: React.FunctionComponent<
                 </div>
                 {activeLocation !== undefined && (
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
+                        <CardHeader className={classNames('pl-1', styles.referencesSideBlobFilename)}>
+                            <h4>
+                                {activeLocation.resource.path}{' '}
+                                <Link to={activeLocation.url}>
+                                    <OpenInAppIcon className="icon-inline" />
+                                </Link>
+                            </h4>
+                        </CardHeader>
                         <SideBlob
                             {...props}
                             history={history}
@@ -417,14 +426,13 @@ export const SideBlob: React.FunctionComponent<
         <Blob
             {...props}
             onTokenClick={(token: CoolClickedToken) => {
-                console.log('sideblob token', token)
                 if (props.onTokenClick) {
                     props.onTokenClick(token)
                 }
             }}
             disableStatusBar={true}
             wrapCode={true}
-            className={styles.referencesSideBlob}
+            className={styles.referencesSideBlobCode}
             blobInfo={{
                 content: props.activeLocation.resource.content,
                 html,
