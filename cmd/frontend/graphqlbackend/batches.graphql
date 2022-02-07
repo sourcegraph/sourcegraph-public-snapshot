@@ -1831,8 +1831,20 @@ type BatchSpecWorkspaceResolution {
     workspaces(
         first: Int = 50
         after: String
+        """
+        Not implemented.
+        """
         orderBy: WorkspacesSortOrder
+        """
+        Search for workspaces matching this query. Queries may include quoted substrings
+        to match phrases, and words may be preceded by - to negate them.
+        Currently, this supports searching repository names only.
+        """
         search: String
+        """
+        Filter workspaces by given state.
+        """
+        state: BatchSpecWorkspaceState
     ): BatchSpecWorkspaceConnection!
 
     """

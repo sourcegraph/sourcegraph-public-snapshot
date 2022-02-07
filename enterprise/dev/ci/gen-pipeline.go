@@ -27,6 +27,13 @@ func main() {
 
 	config := ci.NewConfig(time.Now())
 
+	// For the time being, we are running main builds in // of the normal builds in
+	// the stateless agents queue, in order to observe its stability.
+	if buildkite.FeatureFlags.StatelessBuild {
+		// We do not want to trigger any deployment.
+		config.RunType = ci.MainDryRun
+	}
+
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
 		panic(err)
@@ -49,25 +56,7 @@ func main() {
 
 func previewPipeline(w io.Writer, c ci.Config, pipeline *buildkite.Pipeline) {
 	fmt.Fprintf(w, "Detected run type:\n\t%s\n", c.RunType.String())
-	fmt.Fprintf(w, "Detected changed files (%d):\n", len(c.ChangedFiles))
-	for _, f := range c.ChangedFiles {
-		fmt.Fprintf(w, "\t%s\n", f)
-	}
-
-	fmt.Fprintln(w, "Detected changes:")
-	for affects, doesAffects := range map[string]bool{
-		"Go":                           c.ChangedFiles.AffectsGo(),
-		"Client":                       c.ChangedFiles.AffectsClient(),
-		"Docs":                         c.ChangedFiles.AffectsDocs(),
-		"Dockerfiles":                  c.ChangedFiles.AffectsDockerfiles(),
-		"GraphQL":                      c.ChangedFiles.AffectsGraphQL(),
-		"CI scripts":                   c.ChangedFiles.AffectsCIScripts(),
-		"Terraform":                    c.ChangedFiles.AffectsTerraformFiles(),
-		"ExecutorDockerRegistryMirror": c.ChangedFiles.AffectsExecutorDockerRegistryMirror(),
-	} {
-		fmt.Fprintf(w, "\tAffects %s: %t\n", affects, doesAffects)
-	}
-
+	fmt.Fprintf(w, "Detected diffs:\n\t%s\n", c.Diff.String())
 	fmt.Fprintf(w, "Computed build steps:\n")
 	printPipeline(w, "", pipeline)
 }

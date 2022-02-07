@@ -315,7 +315,7 @@ type RepoSubsetTextSearch struct {
 	RepoOpts search.RepoOptions
 }
 
-func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoSubsetTextSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -323,7 +323,7 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream s
 	}()
 
 	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
-	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err
@@ -352,7 +352,7 @@ type RepoUniverseTextSearch struct {
 	UserID      int32
 }
 
-func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoUniverseTextSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -375,7 +375,7 @@ func (t *RepoUniverseTextSearch) Run(ctx context.Context, db database.DB, stream
 	g.Go(func() error {
 		return zoektutil.DoZoektSearchGlobal(ctx, t.ZoektArgs, stream)
 	})
-	return g.Wait()
+	return nil, g.Wait()
 }
 
 func (*RepoUniverseTextSearch) Name() string {

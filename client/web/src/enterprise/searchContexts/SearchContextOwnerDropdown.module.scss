@@ -14,3 +14,10 @@
         }
     }
 }
+.muted-active-item {
+    &:active {
+        > :global(.text-muted) {
+            --text-muted: var(--white);
+        }
+    }
+}

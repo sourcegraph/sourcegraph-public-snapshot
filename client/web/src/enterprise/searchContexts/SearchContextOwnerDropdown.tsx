@@ -62,7 +62,10 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                 <MenuDownIcon className="icon-inline" size={18} />
             </MenuButton>
             <MenuList>
-                <MenuItem onSelect={() => setSelectedNamespace(selectedUserNamespace)}>
+                <MenuItem
+                    onSelect={() => setSelectedNamespace(selectedUserNamespace)}
+                    className={styles.mutedActiveItem}
+                >
                     @{authenticatedUser.username} <span className="text-muted">(you)</span>
                 </MenuItem>
                 {authenticatedUser.organizations.nodes.map(org => (
@@ -76,7 +79,10 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                 {authenticatedUser.siteAdmin && (
                     <>
                         <MenuDivider />
-                        <MenuItem onSelect={() => setSelectedNamespace({ id: null, type: 'global-owner', name: '' })}>
+                        <MenuItem
+                            onSelect={() => setSelectedNamespace({ id: null, type: 'global-owner', name: '' })}
+                            className={styles.mutedActiveItem}
+                        >
                             <div>Global owner</div>
                             <div className="text-muted">Available to everyone.</div>
                         </MenuItem>

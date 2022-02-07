@@ -158,7 +158,7 @@ type StructuralSearch struct {
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (err error) {
+func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "StructuralSearch", "")
 	defer func() {
 		tr.SetError(err)
@@ -166,7 +166,7 @@ func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream strea
 	}()
 
 	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
-	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
 		if err != nil {
 			return err

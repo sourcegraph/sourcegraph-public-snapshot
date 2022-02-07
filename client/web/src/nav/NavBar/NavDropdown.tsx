@@ -46,8 +46,10 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
             switch (event.key) {
                 case 'Enter': {
                     history.push(toggleItem.path)
+                    event.preventDefault()
                     return
                 }
+                case 'ArrowUp':
                 case 'ArrowDown': {
                     if (!isDropdownOpen) {
                         setIsDropdownOpen(true)
