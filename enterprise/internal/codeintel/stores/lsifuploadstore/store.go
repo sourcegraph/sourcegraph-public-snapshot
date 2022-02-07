@@ -18,7 +18,7 @@ func New(ctx context.Context, observationContext *observation.Context) (uploadst
 		return nil, err
 	}
 
-	c := &uploadstore.Config{
+	c := uploadstore.Config{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,
 		Bucket:       conf.Bucket,

@@ -35,7 +35,7 @@ type GCSConfig struct {
 }
 
 // newGCSFromConfig creates a new store backed by GCP storage.
-func newGCSFromConfig(ctx context.Context, config *Config, operations *Operations) (Store, error) {
+func newGCSFromConfig(ctx context.Context, config Config, operations *Operations) (Store, error) {
 	client, err := storage.NewClient(ctx, gcsClientOptions(config.GCS)...)
 	if err != nil {
 		return nil, err
