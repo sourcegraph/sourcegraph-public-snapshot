@@ -12,3 +12,6 @@ Notebooks are currently in public [Beta](https://sourcegraph.com/notebooks?order
 We're still actively developing Notebooks while in Beta and we'd love your [feedback and bugs](mailto:feedback@sourcegraph.com) so we can make them better.
 
 - [Quickstart](quickstart.md)
+
+## Explanations
+- Sharing Notebooks
