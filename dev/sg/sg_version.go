@@ -46,8 +46,12 @@ func versionExec(ctx context.Context, args []string) error {
 
 func changelogExec(ctx context.Context, args []string) error {
 	logArgs := []string{
+		// Format nicely
 		"log", "--pretty=%C(reset)%s %C(dim)%h by %an, %ar",
 		"--color=always",
+		// Filter out stuff we don't want
+		"--no-merges",
+		// Limit entries
 		fmt.Sprintf("--max-count=%d", *versionChangelogEntries),
 	}
 	var title string
