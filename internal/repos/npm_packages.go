@@ -38,7 +38,12 @@ func NewNPMPackagesSource(svc *types.ExternalService) (*NPMPackagesSource, error
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return &NPMPackagesSource{svc: svc, connection: c /*dbStore initialized in SetDB */, client: npm.NewHTTPClient(c.Registry, c.RateLimit)}, nil
+	return &NPMPackagesSource{
+		svc:        svc,
+		connection: c,
+		/*dbStore initialized in SetDB */
+		client: npm.NewHTTPClient(c.Registry, c.RateLimit, c.Credentials),
+	}, nil
 }
 
 var _ Source = &NPMPackagesSource{}

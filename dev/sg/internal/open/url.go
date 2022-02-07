@@ -1,9 +1,10 @@
 package open
 
 import (
-	"fmt"
 	"os/exec"
 	"runtime"
+
+	"github.com/cockroachdb/errors"
 )
 
 func URL(url string) error {
@@ -16,7 +17,7 @@ func URL(url string) error {
 	case "darwin":
 		err = exec.Command("open", url).Start()
 	default:
-		err = fmt.Errorf("unsupported platform")
+		err = errors.Newf("unsupported platform")
 	}
 	return err
 }

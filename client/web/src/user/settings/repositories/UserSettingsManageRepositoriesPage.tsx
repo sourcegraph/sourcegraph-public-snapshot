@@ -902,11 +902,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={fetchingRepos === 'loading'}
-                    className="btn btn-primary test-goto-add-external-service-page mr-2"
+                    className="test-goto-add-external-service-page mr-2"
                     alwaysShowLabel={true}
                     type="submit"
                     label={fetchingRepos ? 'Saving...' : 'Save'}
                     disabled={fetchingRepos === 'loading' || !didRepoSelectionChange()}
+                    variant="primary"
                 />
 
                 <Button

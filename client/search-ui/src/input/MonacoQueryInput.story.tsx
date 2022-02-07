@@ -6,7 +6,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 
 import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
 
-const { add } = storiesOf('search-ui/search/input/MonacoQueryInput', module)
+const { add } = storiesOf('search-ui/input/MonacoQueryInput', module)
     .addParameters({ chromatic: { viewports: [700] } })
     .addDecorator(story => (
         <div className="p-3" style={{ height: 'calc(34px + 1rem + 1rem)', display: 'flex' }}>
@@ -27,10 +27,6 @@ const defaultProps: MonacoQueryInputProps = {
     onHandleFuzzyFinder: () => {},
 }
 
-add(
-    'default',
-    () => (
-        <BrandedStory>{props => <MonacoQueryInput {...defaultProps} isLightTheme={props.isLightTheme} />}</BrandedStory>
-    ),
-    {}
-)
+add('MonacoQueryInput', () => (
+    <BrandedStory>{props => <MonacoQueryInput {...defaultProps} isLightTheme={props.isLightTheme} />}</BrandedStory>
+))

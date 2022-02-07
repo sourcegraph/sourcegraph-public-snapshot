@@ -331,4 +331,35 @@ message Occurrence {
   repeated string override_documentation = 4;
   // (optional) What syntax highlighting class should be used for this range?
   SyntaxKind syntax_kind = 5;
+  // Diagnostics that have been reported for this specific range.
+  repeated Diagnostic diagnostics = 6;
+}
+
+// Represents a diagnostic, such as a compiler error or warning, which should be
+// reported for a document.
+message Diagnostic {
+  // Should this diagnostic be reported as an error, warning, info, or hint?
+  Severity severity = 1;
+  // Code of this diagnostic, which might appear in the user interface.
+  string code = 2;
+  // Message of this diagnostic.
+  string message = 3;
+  // Human-readable string describing the source of this diagnostic, e.g.
+  // 'typescript' or 'super lint'.
+  string source = 4;
+  repeated DiagnosticTag tags = 5;
+}
+
+enum Severity {
+    UnspecifiedSeverity = 0;
+    Error = 1;
+    Warning = 2;
+    Information = 3;
+    Hint = 4;
+}
+
+enum DiagnosticTag {
+    UnspecifiedDiagnosticTag = 0;
+    Unnecessary = 1;
+    Deprecated = 2;
 }

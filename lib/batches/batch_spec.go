@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/env"
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
 )
 
@@ -149,7 +150,7 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 			for _, e := range multiErr.Errors {
 				// In case of `name` we try to make the error message more user-friendly.
 				if strings.Contains(e.Error(), "name: Does not match pattern") {
-					newMultiError = multierror.Append(newMultiError, NewValidationError(fmt.Errorf("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.")))
+					newMultiError = multierror.Append(newMultiError, NewValidationError(errors.Newf("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.")))
 				} else {
 					newMultiError = multierror.Append(newMultiError, NewValidationError(e))
 				}
@@ -186,7 +187,7 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 	if !opts.AllowConditionalExec {
 		for i, step := range spec.Steps {
 			if step.IfCondition() != "" {
-				errs = multierror.Append(errs, NewValidationError(fmt.Errorf(
+				errs = multierror.Append(errs, NewValidationError(errors.Newf(
 					"step %d in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version",
 					i+1,
 				)))
@@ -222,4 +223,41 @@ func (e BatchSpecValidationError) Error() string {
 
 func IsValidationError(err error) bool {
 	return errors.HasType(err, &BatchSpecValidationError{})
+}
+
+// SkippedStepsForRepo calculates the steps required to run on the given repo.
+func SkippedStepsForRepo(spec *BatchSpec, repoName string, fileMatches []string) (skipped map[int32]struct{}, err error) {
+	skipped = map[int32]struct{}{}
+
+	for idx, step := range spec.Steps {
+		// If no if condition is given, just go ahead and add the step to the list.
+		if step.IfCondition() == "" {
+			continue
+		}
+
+		batchChange := template.BatchChangeAttributes{
+			Name:        spec.Name,
+			Description: spec.Description,
+		}
+		// TODO: This step ctx is incomplete, is this allowed?
+		// We can at least optimize further here and do more static evaluation
+		// when we have a cached result for the previous step.
+		stepCtx := &template.StepContext{
+			Repository: template.Repository{
+				Name:        repoName,
+				FileMatches: fileMatches,
+			},
+			BatchChange: batchChange,
+		}
+		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
+		if err != nil {
+			return nil, err
+		}
+
+		if static && !boolVal {
+			skipped[int32(idx)] = struct{}{}
+		}
+	}
+
+	return skipped, nil
 }

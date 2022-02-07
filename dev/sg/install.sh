@@ -105,3 +105,5 @@ fi
 
 echo "                                                  "
 echo "                  Happy hacking!"
+echo
+echo "  Run 'sg version changelog' to see what has changed."

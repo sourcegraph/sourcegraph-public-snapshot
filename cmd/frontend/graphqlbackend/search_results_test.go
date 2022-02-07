@@ -65,7 +65,7 @@ func TestSearchResults(t *testing.T) {
 				t.Fatal("unexpected result type:", match)
 			}
 		}
-		// dedup results since we expect our clients to do dedupping
+		// dedupe results since we expect our clients to do dedupping
 		if len(resultDescriptions) > 1 {
 			sort.Strings(resultDescriptions)
 			dedup := resultDescriptions[:1]
@@ -473,7 +473,7 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	type fields struct {
 		results             []result.Match
 		searchResultsCommon streaming.Stats
-		alert               *searchAlert
+		alert               *search.Alert
 	}
 	tests := []struct {
 		name   string
@@ -564,121 +564,51 @@ func TestCompareSearchResults(t *testing.T) {
 	}
 
 	tests := []struct {
-		name              string
-		a                 *result.FileMatch
-		b                 *result.FileMatch
-		exactFilePatterns map[string]struct{}
-		aIsLess           bool
+		name    string
+		a       *result.FileMatch
+		b       *result.FileMatch
+		aIsLess bool
 	}{
 		{
-			name:              "prefer exact match",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           false,
+			name:    "alphabetical order",
+			a:       makeResult("arepo", "afile"),
+			b:       makeResult("arepo", "bfile"),
+			aIsLess: true,
 		},
 		{
-			name:              "reverse a and b",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("arepo", "afile"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
+			name:    "same length, different files",
+			a:       makeResult("arepo", "bfile"),
+			b:       makeResult("arepo", "afile"),
+			aIsLess: false,
 		},
 		{
-			name:              "alphabetical order if exactFilePatterns is empty",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "file"),
-			exactFilePatterns: map[string]struct{}{},
-			aIsLess:           true,
+			name:    "different repo, no exact patterns",
+			a:       makeResult("arepo", "file"),
+			b:       makeResult("brepo", "afile"),
+			aIsLess: true,
 		},
 		{
-			name:              "alphabetical order if exactFilePatterns is nil",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "bfile"),
-			exactFilePatterns: nil,
-			aIsLess:           true,
+			name:    "repo matches only",
+			a:       makeResult("arepo", ""),
+			b:       makeResult("brepo", ""),
+			aIsLess: true,
 		},
 		{
-			name:              "same length, different files",
-			a:                 makeResult("arepo", "bfile"),
-			b:                 makeResult("arepo", "afile"),
-			exactFilePatterns: nil,
-			aIsLess:           false,
+			name:    "repo match and file match, same repo",
+			a:       makeResult("arepo", "file"),
+			b:       makeResult("arepo", ""),
+			aIsLess: false,
 		},
 		{
-			name:              "exact matches with different length",
-			a:                 makeResult("arepo", "adir1/file"),
-			b:                 makeResult("arepo", "dir1/file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           false,
-		},
-		{
-			name:              "exact matches with same length",
-			a:                 makeResult("arepo", "dir2/file"),
-			b:                 makeResult("arepo", "dir1/file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           false,
-		},
-		{
-			name:              "no match",
-			a:                 makeResult("arepo", "afile"),
-			b:                 makeResult("arepo", "bfile"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
-		},
-		{
-			name:              "different repo, 1 exact match",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("brepo", "afile"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
-		},
-		{
-			name:              "different repo, no exact patterns",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("brepo", "afile"),
-			exactFilePatterns: nil,
-			aIsLess:           true,
-		},
-		{
-			name:              "different repo, 2 exact matches",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("brepo", "file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
-		},
-		{
-			name:              "repo matches only",
-			a:                 makeResult("arepo", ""),
-			b:                 makeResult("brepo", ""),
-			exactFilePatterns: nil,
-			aIsLess:           true,
-		},
-		{
-			name:              "repo match and file match, same repo",
-			a:                 makeResult("arepo", "file"),
-			b:                 makeResult("arepo", ""),
-			exactFilePatterns: nil,
-			aIsLess:           false,
-		},
-		{
-			name:              "repo match and file match, different repos",
-			a:                 makeResult("arepo", ""),
-			b:                 makeResult("brepo", "file"),
-			exactFilePatterns: nil,
-			aIsLess:           true,
-		},
-		{
-			name:              "prefer repo matches",
-			a:                 makeResult("arepo", ""),
-			b:                 makeResult("brepo", "file"),
-			exactFilePatterns: map[string]struct{}{"file": {}},
-			aIsLess:           true,
+			name:    "repo match and file match, different repos",
+			a:       makeResult("arepo", ""),
+			b:       makeResult("brepo", "file"),
+			aIsLess: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run("test", func(t *testing.T) {
-			if got := compareSearchResults(tt.a, tt.b, tt.exactFilePatterns); got != tt.aIsLess {
+			if got := tt.a.Key().Less(tt.b.Key()); got != tt.aIsLess {
 				t.Errorf("compareSearchResults() = %v, aIsLess %v", got, tt.aIsLess)
 			}
 		})
@@ -749,9 +679,6 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			srp := authz.NewMockSubRepoPermissionChecker()
-			srp.EnabledFunc.SetDefaultReturn(false)
-
 			resolver := &searchResolver{
 				db: db,
 				SearchInputs: &run.SearchInputs{
@@ -820,9 +747,6 @@ func TestSearchContext(t *testing.T) {
 			db := database.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.NamespacesFunc.SetDefaultReturn(ns)
-
-			srp := authz.NewMockSubRepoPermissionChecker()
-			srp.EnabledFunc.SetDefaultReturn(false)
 
 			resolver := searchResolver{
 				SearchInputs: &run.SearchInputs{
@@ -915,6 +839,99 @@ func TestIsContextError(t *testing.T) {
 		t.Run(c.err.Error(), func(t *testing.T) {
 			if got := isContextError(ctx, c.err); got != c.want {
 				t.Fatalf("wanted %t, got %t", c.want, got)
+			}
+		})
+	}
+}
+
+// Detailed filtering tests are below in TestSubRepoFilterFunc, this test is more
+// of an integration test to ensure that things are threaded through correctly
+// from the resolver
+func TestSubRepoFiltering(t *testing.T) {
+	tts := []struct {
+		name        string
+		searchQuery string
+		wantCount   int
+		checker     func() authz.SubRepoPermissionChecker
+	}{
+		{
+			name:        "simple search without filtering",
+			searchQuery: "foo",
+			wantCount:   3,
+		},
+		{
+			name:        "simple search with filtering",
+			searchQuery: "foo ",
+			wantCount:   2,
+			checker: func() authz.SubRepoPermissionChecker {
+				checker := authz.NewMockSubRepoPermissionChecker()
+				checker.EnabledFunc.SetDefaultHook(func() bool {
+					return true
+				})
+				// We'll just block the third file
+				checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+					if strings.Contains(content.Path, "3") {
+						return authz.None, nil
+					}
+					return authz.Read, nil
+				})
+				return checker
+			},
+		},
+	}
+
+	zoektFileMatches := generateZoektMatches(3)
+	mockZoekt := &searchbackend.FakeSearcher{
+		Repos: []*zoekt.RepoListEntry{},
+		Result: &zoekt.SearchResult{
+			Files: zoektFileMatches,
+		},
+	}
+
+	for _, tt := range tts {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.checker != nil {
+				old := authz.DefaultSubRepoPermsChecker
+				t.Cleanup(func() { authz.DefaultSubRepoPermsChecker = old })
+				authz.DefaultSubRepoPermsChecker = tt.checker()
+			}
+
+			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repos := database.NewMockRepoStore()
+			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
+			repos.CountFunc.SetDefaultReturn(0, nil)
+
+			db := database.NewMockDB()
+			db.ReposFunc.SetDefaultReturn(repos)
+			db.EventLogsFunc.SetDefaultHook(func() database.EventLogStore {
+				return database.NewMockEventLogStore()
+			})
+
+			resolver := searchResolver{
+				SearchInputs: &run.SearchInputs{
+					Plan:         p,
+					Query:        p.ToParseTree(),
+					UserSettings: &schema.Settings{},
+				},
+				zoekt: mockZoekt,
+				db:    db,
+			}
+
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{
+				UID: 1,
+			})
+			rr, err := resolver.Results(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(rr.Matches) != tt.wantCount {
+				t.Fatalf("Want %d matches, got %d", tt.wantCount, len(rr.Matches))
 			}
 		})
 	}

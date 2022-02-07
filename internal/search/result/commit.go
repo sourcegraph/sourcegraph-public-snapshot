@@ -31,6 +31,10 @@ type CommitMatch struct {
 	// MessagePreview and DiffPreview are mutually exclusive. Only one should be set
 	MessagePreview *MatchedString
 	DiffPreview    *MatchedString
+
+	// ModifiedFiles will include the list of files modified in the commit when
+	// sub-repo permissions filtering has been enabled.
+	ModifiedFiles []string
 }
 
 func (c *CommitMatch) Body() MatchedString {
@@ -136,9 +140,10 @@ func (r *CommitMatch) Key() Key {
 		typeRank = rankDiffMatch
 	}
 	return Key{
-		TypeRank: typeRank,
-		Repo:     r.Repo.Name,
-		Commit:   r.Commit.ID,
+		TypeRank:   typeRank,
+		Repo:       r.Repo.Name,
+		AuthorDate: &r.Commit.Author.Date,
+		Commit:     r.Commit.ID,
 	}
 }
 

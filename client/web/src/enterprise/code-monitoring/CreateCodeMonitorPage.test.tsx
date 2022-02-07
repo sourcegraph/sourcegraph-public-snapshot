@@ -122,6 +122,6 @@ describe('CreateCodeMonitorPage', () => {
     test('Actions area button is disabled while trigger is incomplete', () => {
         renderWithRouter(<CreateCodeMonitorPage {...props} />)
         const actionButton = screen.getByTestId('form-action-toggle-email')
-        expect(actionButton).toHaveClass('disabled')
+        expect(actionButton).toBeDisabled()
     })
 })

@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
@@ -35,8 +34,10 @@ var (
 		LongHelp:   cliutil.ConstructLongHelp(),
 	}
 
-	upCommand   = cliutil.Up("sg migration", runMigration, stdout.Out)
-	downCommand = cliutil.Down("sg migration", runMigration, stdout.Out)
+	upCommand     = cliutil.Up("sg migration", runMigration, stdout.Out)
+	upToCommand   = cliutil.UpTo("sg migration", runMigration, stdout.Out)
+	UndoCommand   = cliutil.Undo("sg migration", runMigration, stdout.Out)
+	downToCommand = cliutil.DownTo("sg migration", runMigration, stdout.Out)
 
 	migrationSquashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
 	migrationSquashDatabaseNameFlag = migrationSquashFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance")
@@ -61,7 +62,9 @@ var (
 		Subcommands: []*ffcli.Command{
 			migrationAddCommand,
 			upCommand,
-			downCommand,
+			upToCommand,
+			UndoCommand,
+			downToCommand,
 			migrationSquashCommand,
 		},
 	}
@@ -69,7 +72,7 @@ var (
 
 func runMigration(ctx context.Context, options runner.Options) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext))
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
 
 	return connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(schemas.SchemaNames), "sg", storeFactory).Run(ctx, options)
@@ -95,14 +98,15 @@ func migrationAddExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	upFile, downFile, err := migration.RunAdd(database, migrationName)
+	upFile, downFile, metadataFile, err := migration.Add(database, migrationName)
 	if err != nil {
 		return err
 	}
 
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files created"))
-	block.Writef("Up migration: %s", upFile)
-	block.Writef("Down migration: %s", downFile)
+	block.Writef("Up query file: %s", upFile)
+	block.Writef("Down query file: %s", downFile)
+	block.Writef("Metadata file: %s", metadataFile)
 	block.Close()
 
 	return nil
@@ -145,5 +149,5 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1)
 	stdout.Out.Writef("Squashing migration files defined up through %s", commit)
 
-	return squash.Run(database, commit)
+	return migration.Squash(database, commit)
 }

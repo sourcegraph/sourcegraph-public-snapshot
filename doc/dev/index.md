@@ -175,6 +175,10 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
 - [Adding or changing Buildkite secrets](how-to/adding_buildkite_secrets.md)
 
+### Executors
+
+- [How to deploy a new executor image](how-to/deploy_executor_image.md)
+
 ## [Contributing](./contributing/index.md)
 
 - [Project setup and CI checks for frontend issues](./contributing/frontend_contribution.md).

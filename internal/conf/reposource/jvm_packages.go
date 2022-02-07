@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -91,7 +93,7 @@ func (d MavenDependency) LsifJavaDependencies() []string {
 func ParseMavenDependency(dependency string) (MavenDependency, error) {
 	parts := strings.Split(dependency, ":")
 	if len(parts) < 3 {
-		return MavenDependency{}, fmt.Errorf("dependency %q must contain at least two colon ':' characters", dependency)
+		return MavenDependency{}, errors.Newf("dependency %q must contain at least two colon ':' characters", dependency)
 	}
 	version := parts[2]
 
@@ -111,7 +113,7 @@ func ParseMavenModule(urlPath string) (MavenModule, error) {
 	}
 	parts := strings.SplitN(strings.TrimPrefix(urlPath, "maven/"), "/", 2)
 	if len(parts) != 2 {
-		return MavenModule{}, fmt.Errorf("failed to parse a maven module from the path %s", urlPath)
+		return MavenModule{}, errors.Newf("failed to parse a maven module from the path %s", urlPath)
 	}
 
 	return MavenModule{

@@ -5,6 +5,7 @@ exports[`FeedbackText render a FeedbackText 1`] = `
   <p>
     Questions/feedback? Contact us at 
     <a
+      class=""
       href="https://twitter.com/sourcegraph"
       rel="noopener noreferrer"
       target="_blank"
@@ -13,6 +14,7 @@ exports[`FeedbackText render a FeedbackText 1`] = `
     </a>
      or 
     <a
+      class=""
       href="mailto:support@sourcegraph.com"
       rel="noopener noreferrer"
       target="_blank"
@@ -21,6 +23,7 @@ exports[`FeedbackText render a FeedbackText 1`] = `
     </a>
     , or file issues on our 
     <a
+      class=""
       href="https://github.com/sourcegraph/issues/issues"
       rel="noopener noreferrer"
       target="_blank"
@@ -37,6 +40,7 @@ exports[`FeedbackText render feedbackText with footer 1`] = `
   <p>
     Questions/feedback? Contact us at 
     <a
+      class=""
       href="https://twitter.com/sourcegraph"
       rel="noopener noreferrer"
       target="_blank"
@@ -45,6 +49,7 @@ exports[`FeedbackText render feedbackText with footer 1`] = `
     </a>
      or 
     <a
+      class=""
       href="mailto:support@sourcegraph.com"
       rel="noopener noreferrer"
       target="_blank"
@@ -53,6 +58,7 @@ exports[`FeedbackText render feedbackText with footer 1`] = `
     </a>
     , or file issues on our 
     <a
+      class=""
       href="https://github.com/sourcegraph/issues/issues"
       rel="noopener noreferrer"
       target="_blank"
@@ -69,6 +75,7 @@ exports[`FeedbackText render feedbackText with header 1`] = `
   <p>
     This is a header text Contact us at 
     <a
+      class=""
       href="https://twitter.com/sourcegraph"
       rel="noopener noreferrer"
       target="_blank"
@@ -77,6 +84,7 @@ exports[`FeedbackText render feedbackText with header 1`] = `
     </a>
      or 
     <a
+      class=""
       href="mailto:support@sourcegraph.com"
       rel="noopener noreferrer"
       target="_blank"
@@ -85,6 +93,7 @@ exports[`FeedbackText render feedbackText with header 1`] = `
     </a>
     , or file issues on our 
     <a
+      class=""
       href="https://github.com/sourcegraph/issues/issues"
       rel="noopener noreferrer"
       target="_blank"

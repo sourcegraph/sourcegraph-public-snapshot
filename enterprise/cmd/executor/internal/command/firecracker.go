@@ -35,7 +35,9 @@ func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Op
 
 	innerCommand := strings.Join(rawOrDockerCommand.Command, " ")
 	if len(rawOrDockerCommand.Env) > 0 {
-		innerCommand = fmt.Sprintf("%s %s", strings.Join(rawOrDockerCommand.Env, " "), innerCommand)
+		// If we have env vars that are arguments to the command we need to escape them
+		quotedEnv := quoteEnv(rawOrDockerCommand.Env)
+		innerCommand = fmt.Sprintf("%s %s", strings.Join(quotedEnv, " "), innerCommand)
 	}
 	if rawOrDockerCommand.Dir != "" {
 		innerCommand = fmt.Sprintf("cd %s && %s", rawOrDockerCommand.Dir, innerCommand)

@@ -47,6 +47,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         >
           Tags restrict a license. Please refer to 
           <a
+            class=""
             href="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer"
           >
             How to create a license key for a new prospect or new customer
@@ -107,31 +108,31 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         >
           Set to 
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             7 days
           </button>
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             14 days
           </button>
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             30 days
           </button>
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             60 days
           </button>
           <button
-            class="btn btn-link btn-sm p-0 mr-2"
+            class="btn btnLink btnSm p-0 mr-2"
             type="button"
           >
             1 year
@@ -139,7 +140,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         </small>
       </div>
       <button
-        class="btn btn-primary"
+        class="btn btnPrimary"
         type="submit"
       >
         Generate license

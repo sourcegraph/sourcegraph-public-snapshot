@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -43,19 +42,6 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				"a.go",
 				"a/b/horse.go",
 				"a/b/c.go",
-			},
-			Steps: []batcheslib.Step{
-				{
-					Run:       "complex command that changes code",
-					Container: "alpine:3",
-					Files: map[string]string{
-						"/tmp/foobar.go": "package main",
-					},
-					Outputs: map[string]batcheslib.Output{
-						"myOutput": {Value: `${{ step.stdout }}`},
-					},
-					If: `${{ eq repository.name "github.com/sourcegraph/sourcegraph" }}`,
-				},
 			},
 			OnlyFetchWorkspace: true,
 			Unsupported:        true,
@@ -256,29 +242,25 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		}{
 			{
 				batchSpec:   &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: false},
-				workspace:   &btypes.BatchSpecWorkspace{Ignored: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				workspace:   &btypes.BatchSpecWorkspace{Ignored: true},
 				wantSkipped: true,
 			},
 			{
 				batchSpec:   &btypes.BatchSpec{AllowIgnored: true, AllowUnsupported: false},
-				workspace:   &btypes.BatchSpecWorkspace{Ignored: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				workspace:   &btypes.BatchSpecWorkspace{Ignored: true},
 				wantSkipped: false,
 			},
 			{
 				batchSpec:   &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: false},
-				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true},
 				wantSkipped: true,
 			},
 			{
 				batchSpec:   &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: true},
-				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true},
 				wantSkipped: false,
 			},
-			{
-				batchSpec:   &btypes.BatchSpec{AllowIgnored: true, AllowUnsupported: true},
-				workspace:   &btypes.BatchSpecWorkspace{Steps: []batcheslib.Step{}},
-				wantSkipped: true,
-			},
+			// TODO: Add test that workspace with no steps to be executed is skipped properly.
 		}
 
 		for _, tt := range tests {

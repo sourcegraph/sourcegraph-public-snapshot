@@ -22,11 +22,11 @@ type configurationPolicyResolver struct {
 	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, op *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, errTracer *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		db:                  db,
 		configurationPolicy: configurationPolicy,
-		errTracer:           op,
+		errTracer:           errTracer,
 	}
 }
 

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
 )
 
@@ -56,7 +58,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 			numUploadsCompleted := 0
 			for _, uploadState := range data.uploadStates {
 				if uploadState.state == "ERRORED" {
-					return fmt.Errorf("failed to process (%s)", uploadState.failure)
+					return errors.Newf("failed to process (%s)", uploadState.failure)
 				}
 
 				if uploadState.state == "COMPLETED" {
@@ -73,7 +75,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 						fmt.Printf("[%5s] %s Finished processing index for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, uploadState.upload.commit[:7])
 					}
 				} else if uploadState.state != "QUEUED" && uploadState.state != "PROCESSING" {
-					return fmt.Errorf("unexpected state '%s'", uploadState.state)
+					return errors.Newf("unexpected state '%s'", uploadState.state)
 				}
 			}
 

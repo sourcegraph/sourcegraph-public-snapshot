@@ -10,9 +10,9 @@ import { ListNotebooksResult } from '../../../graphql-operations'
 
 import { SearchNotebooksListPage } from './SearchNotebooksListPage'
 
-const { add } = storiesOf('web/search/notebook/SearchNotebooksListPage', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const { add } = storiesOf('web/search/notebook/SearchNotebooksListPage', module)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    .addParameters({ chromatic: { disableSnapshots: false } })
 
 const now = new Date()
 
@@ -31,6 +31,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                 viewerHasStarred: true,
                 stars: { totalCount: 123 },
                 creator: { __typename: 'User', username: 'user1' },
+                namespace: { id: '1' },
                 blocks: [
                     { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
                     { __typename: 'QueryBlock', id: '2', queryInput: 'query' },
@@ -47,6 +48,7 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
                 viewerHasStarred: true,
                 stars: { totalCount: 123 },
                 creator: { __typename: 'User', username: 'user2' },
+                namespace: { id: '2' },
                 blocks: [{ __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' }],
             },
         ],

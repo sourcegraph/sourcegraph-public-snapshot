@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/require"
 
+	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -16,17 +17,17 @@ import (
 func TestActionRunner(t *testing.T) {
 	tests := []struct {
 		name               string
-		numResults         int
+		results            cmtypes.CommitSearchResults
 		wantNumResultsText string
 	}{
 		{
 			name:               "5 results",
-			numResults:         5,
+			results:            make(cmtypes.CommitSearchResults, 5),
 			wantNumResultsText: "There were 5 new search results for your query",
 		},
 		{
 			name:               "1 result",
-			numResults:         1,
+			results:            make(cmtypes.CommitSearchResults, 1),
 			wantNumResultsText: "There was 1 new search result for your query",
 		},
 	}
@@ -66,7 +67,7 @@ func TestActionRunner(t *testing.T) {
 			require.Len(t, triggerJobs, 1)
 			triggerEventID := triggerJobs[0].ID
 
-			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.numResults)
+			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.results)
 			require.NoError(t, err)
 
 			_, err = ts.EnqueueActionJobsForMonitor(ctx, 1, triggerEventID)

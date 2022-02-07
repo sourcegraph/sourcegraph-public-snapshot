@@ -4,7 +4,7 @@
 }
 
 .separator {
-    /* stylelint-disable-next-line declaration-property-unit-whitelist */
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     width: 1px;
     height: 1.125rem;
     margin: 0 0.5rem 0 0.375rem;
@@ -35,7 +35,7 @@
     }
 
     &:active {
-        /* stylelint-disable-next-line declaration-property-unit-whitelist */
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         border: 2px solid var(--primary);
     }
 
