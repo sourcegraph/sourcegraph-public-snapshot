@@ -27,6 +27,7 @@ import (
 )
 
 var (
+	// The metric generated here will be named as "src_gitlab_requests_total".
 	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
 
 	// Whether debug logging is turned on

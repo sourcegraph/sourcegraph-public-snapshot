@@ -10,13 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 )
 
-// memoryStore implements runner.Store but writes to migration metadata to any
-// underlying persistence layer.
+// memoryStore implements runner.Store but writes to migration metadata are
+// not passed to any underlying persistence layer.
 type memoryStore struct {
-	db         *sql.DB
-	version    int
-	versionSet bool
-	dirty      bool
+	db              *sql.DB
+	appliedVersions []int
+	pendingVersions []int
+	failedVersions  []int
 }
 
 func newMemoryStore(db *sql.DB) runner.Store {
@@ -25,12 +25,24 @@ func newMemoryStore(db *sql.DB) runner.Store {
 	}
 }
 
-func (s *memoryStore) Version(ctx context.Context) (int, bool, bool, error) {
-	return s.version, s.dirty, s.versionSet, nil
+func (s *memoryStore) Transact(ctx context.Context) (runner.Store, error) {
+	return s, nil
 }
 
-func (s *memoryStore) Lock(ctx context.Context) (bool, func(err error) error, error) {
-	return true, func(err error) error { return err }, nil
+func (s *memoryStore) Done(err error) error {
+	return err
+}
+
+func (s *memoryStore) Version(ctx context.Context) (int, bool, bool, error) {
+	if n := len(s.appliedVersions); n > 0 {
+		return s.appliedVersions[n-1], len(s.pendingVersions)+len(s.failedVersions) > 0, true, nil
+	}
+
+	return 0, false, false, nil
+}
+
+func (s *memoryStore) Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, _ error) {
+	return s.appliedVersions, s.pendingVersions, s.failedVersions, nil
 }
 
 func (s *memoryStore) TryLock(ctx context.Context) (bool, func(err error) error, error) {
@@ -45,8 +57,17 @@ func (s *memoryStore) Down(ctx context.Context, migration definition.Definition)
 	return s.exec(ctx, migration, migration.DownQuery)
 }
 
+func (s *memoryStore) WithMigrationLog(_ context.Context, _ definition.Definition, _ bool, f func() error) error {
+	return f()
+}
+
 func (s *memoryStore) exec(ctx context.Context, migration definition.Definition, query *sqlf.Query) error {
 	_, err := s.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
-	s.version, s.dirty, s.versionSet = migration.ID, s.dirty || err != nil, true
-	return err
+	if err != nil {
+		s.failedVersions = append(s.failedVersions, migration.ID)
+		return err
+	}
+
+	s.appliedVersions = append(s.appliedVersions, migration.ID)
+	return nil
 }

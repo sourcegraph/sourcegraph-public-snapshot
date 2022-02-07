@@ -12,6 +12,7 @@ import (
 
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/opencontainers/go-digest"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 
 	"sigs.k8s.io/kustomize/kyaml/kio"
@@ -72,7 +73,7 @@ var conventionalInitContainerPaths = [][]string{
 func findImage(r *yaml.RNode) error {
 	containers, err := r.Pipe(yaml.LookupFirstMatch(yaml.ConventionalContainerPaths))
 	if err != nil {
-		return fmt.Errorf("%v: %s", err, r.GetName())
+		return errors.Newf("%v: %s", err, r.GetName())
 	}
 	initContainers, err := r.Pipe(yaml.LookupFirstMatch(conventionalInitContainerPaths))
 	if err != nil {
@@ -89,7 +90,7 @@ func findImage(r *yaml.RNode) error {
 	var lookupImage = func(node *yaml.RNode) error {
 		image := node.Field("image")
 		if image == nil {
-			return fmt.Errorf("couldn't find image for container %s within %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
+			return errors.Newf("couldn't find image for container %s within %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
 		}
 		s, err := image.Value.String()
 		if err != nil {
@@ -280,11 +281,11 @@ func ParseTag(t string) (*SgImageTag, error) {
 	var err error
 	n := strings.Split(t, "_")
 	if len(n) != 3 {
-		return nil, fmt.Errorf("unable to convert tag: %s", t)
+		return nil, errors.Newf("unable to convert tag: %s", t)
 	}
 	s.buildNum, err = strconv.Atoi(n[0])
 	if err != nil {
-		return nil, fmt.Errorf("unable to convert tag: %v", err)
+		return nil, errors.Newf("unable to convert tag: %v", err)
 	}
 
 	s.date = n[1]
@@ -365,7 +366,7 @@ func (i *imageRepository) fetchAllTags() ([]string, error) {
 		return nil, ErrUnsupportedRegistry
 	}
 	if i.authToken == "" {
-		return nil, fmt.Errorf("missing auth token")
+		return nil, errors.Newf("missing auth token")
 	}
 
 	req, err := http.NewRequest("GET", fmt.Sprintf(dockerImageTagsURL, i.name), nil)

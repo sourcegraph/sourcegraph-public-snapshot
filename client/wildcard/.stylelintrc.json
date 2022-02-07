@@ -1,3 +1,11 @@
 {
-  "extends": ["@sourcegraph/stylelint-config"]
+  "extends": ["../../.stylelintrc.json"],
+  "overrides": [
+    {
+      "files": ["src/global-styles/**/*.scss"],
+      "rules": {
+        "filenames/match-regex": null
+      }
+    }
+  ]
 }

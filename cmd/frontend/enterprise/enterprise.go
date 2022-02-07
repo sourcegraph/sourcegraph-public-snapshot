@@ -22,6 +22,7 @@ type Services struct {
 	NewCodeIntelUploadHandler     NewCodeIntelUploadHandler
 	NewExecutorProxyHandler       NewExecutorProxyHandler
 	NewGitHubAppCloudSetupHandler NewGitHubAppCloudSetupHandler
+	NewComputeStreamHandler       NewComputeStreamHandler
 	AuthzResolver                 graphqlbackend.AuthzResolver
 	BatchChangesResolver          graphqlbackend.BatchChangesResolver
 	CodeIntelResolver             graphqlbackend.CodeIntelResolver
@@ -32,6 +33,7 @@ type Services struct {
 	SearchContextsResolver        graphqlbackend.SearchContextsResolver
 	OrgRepositoryResolver         graphqlbackend.OrgRepositoryResolver
 	NotebooksResolver             graphqlbackend.NotebooksResolver
+	ComputeResolver               graphqlbackend.ComputeResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -47,6 +49,9 @@ type NewExecutorProxyHandler func() http.Handler
 // GitHub App setup URL endpoint.
 type NewGitHubAppCloudSetupHandler func() http.Handler
 
+// NewComputeStreamHandler creates a new handler for the Sourcegraph Compute streaming endpoint.
+type NewComputeStreamHandler func() http.Handler
+
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
@@ -56,6 +61,7 @@ func DefaultServices() Services {
 		NewCodeIntelUploadHandler:     func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		NewExecutorProxyHandler:       func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppCloudSetupHandler: func() http.Handler { return makeNotFoundHandler("Sourcegraph Cloud GitHub App setup") },
+		NewComputeStreamHandler:       func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 	}
 }
 

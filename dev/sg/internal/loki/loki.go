@@ -11,6 +11,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 )
 
@@ -84,7 +86,7 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 		}, nil
 	}
 	if !strings.Contains(cleanedContent, bkTimestampSeparator) {
-		return nil, fmt.Errorf("log content does not contain Buildkite timestamps, denoted by %q", bkTimestampSeparator)
+		return nil, errors.Newf("log content does not contain Buildkite timestamps, denoted by %q", bkTimestampSeparator)
 	}
 	lines := strings.Split(cleanedContent, bkTimestampSeparator)
 
@@ -100,7 +102,7 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 
 		tsMatches := timestamp.FindStringSubmatch(line)
 		if len(tsMatches) == 0 {
-			return nil, fmt.Errorf("no timestamp on line %q", line)
+			return nil, errors.Newf("no timestamp on line %q", line)
 		}
 
 		line = strings.TrimSpace(strings.Replace(line, tsMatches[0], "", 1))
@@ -158,7 +160,7 @@ func (c *Client) PushStreams(ctx context.Context, streams []*Stream) error {
 		if strings.Contains(string(b), "entry out of order") {
 			return nil
 		}
-		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(b))
+		return errors.Newf("unexpected status code %d: %s", resp.StatusCode, string(b))
 	}
 	return nil
 }

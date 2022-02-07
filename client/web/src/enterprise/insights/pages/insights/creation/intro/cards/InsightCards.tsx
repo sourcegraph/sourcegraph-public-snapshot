@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link, CardBody, Card } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsightChart,
@@ -29,7 +29,9 @@ const InsightCard: React.FunctionComponent<InsightCardProps> = props => {
         >
             {children}
 
-            <div className="btn btn-sm btn-secondary mt-3 w-100">Create</div>
+            <Button as="div" className="mt-3 w-100" variant="secondary" size="sm">
+                Create
+            </Button>
         </Card>
     )
 }

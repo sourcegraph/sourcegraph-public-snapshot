@@ -14,7 +14,7 @@ type ViewCardElementProps = React.DetailedHTMLProps<Omit<React.HTMLAttributes<HT
 
 export interface ViewCardProps extends ViewCardElementProps {
     title?: string
-    subtitle?: string
+    subtitle?: ReactNode
     innerRef?: React.Ref<HTMLElement>
 
     /**
@@ -35,7 +35,6 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
         <Card
             as="section"
             {...otherProps}
-            /* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */
             tabIndex={0}
             ref={innerRef}
             className={classNames(otherProps.className, styles.view)}
@@ -47,20 +46,21 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
                             <h4 title={title} className={styles.title}>
                                 {title}
                             </h4>
-                            {subtitle}
+
+                            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */}
+                            <div
+                                // View component usually is rendered within a view grid component. To suppress
+                                // bad click that lead to card DnD events in view grid we stop event bubbling for
+                                // clicks.
+                                onClick={stopPropagation}
+                                onMouseDown={stopPropagation}
+                                className={styles.action}
+                            >
+                                {actions}
+                            </div>
                         </div>
 
-                        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */}
-                        <div
-                            // View component usually is rendered within a view grid component. To suppress
-                            // bad click that lead to card DnD events in view grid we stop event bubbling for
-                            // clicks.
-                            onClick={stopPropagation}
-                            onMouseDown={stopPropagation}
-                            className={styles.action}
-                        >
-                            {actions}
-                        </div>
+                        <div className={styles.subtitle}>{subtitle}</div>
                     </header>
                 )}
 

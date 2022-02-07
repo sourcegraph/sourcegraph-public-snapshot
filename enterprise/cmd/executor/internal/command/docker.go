@@ -33,7 +33,8 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options) com
 			dockerResourceFlags(options.ResourceOptions),
 			dockerVolumeFlags(dir, spec.ScriptPath),
 			dockerWorkingdirectoryFlags(spec.Dir),
-			dockerEnvFlags(spec.Env),
+			// If the env vars will be part of the command line args, we need to quote them
+			dockerEnvFlags(quoteEnv(spec.Env)),
 			dockerEntrypointFlags(),
 			spec.Image,
 			filepath.Join("/data", ScriptsPath, spec.ScriptPath),

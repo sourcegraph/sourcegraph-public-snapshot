@@ -9,7 +9,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="mb-2"
     >
       <a
-        class="btn btn-link btn-sm"
+        class="btn btnLink btnSm"
         href="/site-admin/dotcom/product/subscriptions"
       >
         <arrowlefticon
@@ -25,7 +25,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="mb-3"
     >
       <button
-        class="btn btn-danger"
+        class="btn btnDanger"
         type="button"
       >
         Archive
@@ -120,7 +120,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   class="d-flex align-items-center"
                 >
                   <button
-                    class="btn btn-secondary btn-sm"
+                    class="btn btnSecondary btnSm"
                     type="button"
                   >
                     Link billing subscription
@@ -157,7 +157,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       >
         Licenses
         <button
-          class="btn btn-primary btn-sm"
+          class="btn btnPrimary btnSm"
           type="button"
         >
           <addicon
@@ -238,7 +238,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   class="input-group-append"
                 >
                   <button
-                    class="btn btn-secondary"
+                    class="btn btnSecondary"
                     type="button"
                   >
                     <svg

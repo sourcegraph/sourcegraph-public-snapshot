@@ -295,7 +295,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 // to the active trace, and a function to be deferred until the end of the operation.
 func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
 	start := time.Now()
-	tr, ctx := op.startTrace(ctx, args)
+	tr, ctx := op.startTrace(ctx)
 
 	event := honey.NoopEvent()
 	snakecaseOpName := toSnakeCase(op.name)
@@ -353,7 +353,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 
 // startTrace creates a new Trace object and returns the wrapped context. This returns
 // an unmodified context and a nil startTrace if no tracer was supplied on the observation context.
-func (op *Operation) startTrace(ctx context.Context, args Args) (*trace.Trace, context.Context) {
+func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Context) {
 	if op.context.Tracer == nil {
 		return nil, ctx
 	}

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -112,23 +111,27 @@ func (r *Resolver) CreateNotebook(ctx context.Context, args graphqlbackend.Creat
 		blocks = append(blocks, *block)
 	}
 
-	createdNotebook, err := notebooks.Notebooks(r.db).CreateNotebook(ctx, &notebooks.Notebook{
+	notebook := &notebooks.Notebook{
 		Title:         notebookInput.Title,
 		Public:        notebookInput.Public,
 		CreatorUserID: user.ID,
+		UpdaterUserID: user.ID,
 		Blocks:        blocks,
-	})
+	}
+	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &notebook.NamespaceUserID, &notebook.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	createdNotebook, err := notebooks.Notebooks(r.db).CreateNotebook(ctx, notebook)
 	if err != nil {
 		return nil, err
 	}
 	return &notebookResolver{createdNotebook, r.db}, nil
-}
-
-func validateNotebookWritePermissionsForUser(notebook *notebooks.Notebook, userID int32) error {
-	if notebook.CreatorUserID != userID {
-		return errors.New("user does not have permissions to update the notebook")
-	}
-	return nil
 }
 
 func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.UpdateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
@@ -148,7 +151,7 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 		return nil, err
 	}
 
-	err = validateNotebookWritePermissionsForUser(notebook, user.ID)
+	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -166,6 +169,17 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 	notebook.Title = notebookInput.Title
 	notebook.Public = notebookInput.Public
 	notebook.Blocks = blocks
+	notebook.UpdaterUserID = user.ID
+	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &notebook.NamespaceUserID, &notebook.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Current user has to have write permissions for both the old and the new namespace.
+	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	updatedNotebook, err := store.UpdateNotebook(ctx, notebook)
 	if err != nil {
@@ -191,7 +205,7 @@ func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.Delet
 		return nil, err
 	}
 
-	err = validateNotebookWritePermissionsForUser(notebook, user.ID)
+	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -263,6 +277,13 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 		OrderByDescending: args.Descending,
 	}
 	pageOpts := notebooks.ListNotebooksPageOptions{First: newArgs.First, After: afterCursor}
+
+	if args.Namespace != nil {
+		err = graphqlbackend.UnmarshalNamespaceID(*args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	store := notebooks.Notebooks(r.db)
 	notebooks, err := store.ListNotebooks(ctx, pageOpts, opts)
@@ -348,6 +369,31 @@ func (r *notebookResolver) Creator(ctx context.Context) (*graphqlbackend.UserRes
 	return graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.CreatorUserID)
 }
 
+func (r *notebookResolver) Updater(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	if r.notebook.UpdaterUserID == 0 {
+		return nil, nil
+	}
+	return graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.UpdaterUserID)
+}
+
+func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
+	if r.notebook.NamespaceUserID != 0 {
+		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalUserID(r.notebook.NamespaceUserID))
+		if err != nil {
+			return nil, err
+		}
+		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
+	}
+	if r.notebook.NamespaceOrgID != 0 {
+		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalOrgID(r.notebook.NamespaceOrgID))
+		if err != nil {
+			return nil, err
+		}
+		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
+	}
+	return nil, nil
+}
+
 func (r *notebookResolver) Public(ctx context.Context) bool {
 	return r.notebook.Public
 }
@@ -360,9 +406,14 @@ func (r *notebookResolver) CreatedAt(ctx context.Context) graphqlbackend.DateTim
 	return graphqlbackend.DateTime{Time: r.notebook.CreatedAt}
 }
 
-func (r *notebookResolver) ViewerCanManage(ctx context.Context) bool {
-	actor := actor.FromContext(ctx)
-	return validateNotebookWritePermissionsForUser(r.notebook, actor.UID) == nil
+func (r *notebookResolver) ViewerCanManage(ctx context.Context) (bool, error) {
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if errors.Is(err, database.ErrNoCurrentUser) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return validateNotebookWritePermissionsForUser(ctx, r.db, r.notebook, user.ID) == nil, nil
 }
 
 func (r *notebookResolver) ViewerHasStarred(ctx context.Context) (bool, error) {

@@ -4,6 +4,7 @@ linters:
   enable:
     - bodyclose
     - depguard
+    - forbidigo
     - gocritic
     - goimports
     - gosimple
@@ -37,8 +38,8 @@ linters-settings:
       - composites
   forbidigo:
     forbid:
-      # Use errors.New instead
-      - 'fmt\.Errorf'
+      # Use errors.Newf instead
+      - '^fmt\.Errorf$'
 
 issues:
   exclude-rules:
@@ -58,4 +59,5 @@ run:
     - node_modules
 
   skip-files:
-    - schema/schema.go # Auto-generated with depguard failures
+    # Auto-generated with depguard and forbidigo failures
+    - schema/schema.go
