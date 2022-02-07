@@ -589,29 +589,32 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
 
         renderSearchResultsPageButtons()
 
-        return new Observable(subscriber => {
-            const mutationObserver = new MutationObserver(mutations => subscriber.next(mutations))
-            mutationObserver.observe(document, { subtree: true, childList: true })
+        let mutationObserver: MutationObserver
+        const subscription = new Subscription(() => mutationObserver?.disconnect())
+        subscription.add(
+            new Observable(subscriber => {
+                mutationObserver = new MutationObserver(mutations => subscriber.next(mutations))
+                mutationObserver.observe(document, { subtree: true, childList: true })
+            })
+                .pipe(
+                    map(() => document.querySelector('.codesearch-results h3')?.textContent?.trim()),
+                    filter(Boolean),
+                    distinctUntilChanged(),
+                    skip(1), // Sourcegraph buttons are already rendered
+                    filter(() => {
+                        const githubResultType = getGithubResultType()
+                        return (
+                            githubResultType === 'repositories' ||
+                            githubResultType === 'commits' ||
+                            githubResultType === 'code' ||
+                            (githubResultType === '' && isGlobalSearchPage())
+                        )
+                    })
+                )
+                .subscribe(() => renderSearchResultsPageButtons())
+        )
 
-            // TODO: ensure it's called when observable is unsubscribed!
-            return () => mutationObserver.disconnect()
-        })
-            .pipe(
-                map(() => document.querySelector('.codesearch-results h3')?.textContent?.trim()),
-                filter(Boolean),
-                distinctUntilChanged(),
-                skip(1), // Sourcegraph buttons are already rendered
-                filter(() => {
-                    const githubResultType = getGithubResultType()
-                    return (
-                        githubResultType === 'repositories' ||
-                        githubResultType === 'commits' ||
-                        githubResultType === 'code' ||
-                        (githubResultType === '' && isGlobalSearchPage())
-                    )
-                })
-            )
-            .subscribe(() => renderSearchResultsPageButtons())
+        return subscription
     }
 
     /* Simple and advanced search pages */
