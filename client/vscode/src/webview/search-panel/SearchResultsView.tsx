@@ -48,6 +48,22 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     const [userQueryState, setUserQueryState] = useState<QueryState>(context.submittedSearchQueryState.queryState)
     const [repoToShow, setRepoToShow] = useState<RepositoryMatch | null>(null)
 
+    // Editor focus.
+    const editorReference = useRef<SearchBoxEditor>()
+    const setEditor = useCallback((editor: SearchBoxEditor) => {
+        editorReference.current = editor
+        setTimeout(() => editor.focus(), 0)
+    }, [])
+
+    // TODO explain
+    useEffect(() => {
+        setFocusSearchBox(() => editorReference.current?.focus())
+
+        return () => {
+            setFocusSearchBox(null)
+        }
+    }, [])
+
     const onChange = useCallback(
         (newState: QueryState) => {
             setUserQueryState(newState)
@@ -109,6 +125,9 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     patternType,
                     version: LATEST_VERSION,
                     trace: undefined,
+                })
+                .then(() => {
+                    editorReference.current?.focus()
                 })
                 .catch(error => {
                     // TODO surface error to users? Errors will typically be caught and
@@ -341,21 +360,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     )
 
     const clearRepositoryToShow = (): void => setRepoToShow(null)
-
-    const editorReference = useRef<SearchBoxEditor>()
-    const setEditor = useCallback((editor: SearchBoxEditor) => {
-        editorReference.current = editor
-        editor.focus()
-    }, [])
-
-    // TODO explain
-    useEffect(() => {
-        setFocusSearchBox(() => editorReference.current?.focus())
-
-        return () => {
-            setFocusSearchBox(null)
-        }
-    }, [])
 
     return (
         <div className={styles.resultsViewLayout}>
