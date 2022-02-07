@@ -1,4 +1,3 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import React from 'react'
 
@@ -8,7 +7,7 @@ import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebarSect
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -141,15 +140,15 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
 
 export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
     ({ repoName, onFilterClick, query, _initialTab }) => {
-        const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
+        const [persistedTabIndex, setPersistedTabIndex] = useTemporarySetting('search.sidebar.revisions.tab')
         const onRevisionFilterClick = (value: string): void =>
             onFilterClick([
                 { type: 'updateOrAppendFilter', field: FilterType.rev, value },
                 { type: 'appendFilter', field: FilterType.repo, value: `^${repoName}$`, unique: true },
             ])
         return (
-            <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
-                <TabList className={styles.sidebarSectionTabsHeader}>
+            <Tabs defaultIndex={_initialTab ?? persistedTabIndex ?? 0} onChange={setPersistedTabIndex}>
+                <TabList>
                     <Tab index={TabIndex.BRANCHES}>Branches</Tab>
                     <Tab index={TabIndex.TAGS}>Tags</Tab>
                 </TabList>

@@ -1,15 +1,14 @@
-import {
-    Tab,
-    TabList,
-    TabPanel,
-    TabPanelProps,
-    TabPanels as BatchChangeTabPanels,
-    Tabs,
-    useTabsContext,
-} from '@reach/tabs'
 import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useEffect, useReducer, useState } from 'react'
+
+import {
+    Tab,
+    TabList,
+    TabPanel as BatchChangeTabPanel,
+    TabPanels as BatchChangeTabPanels,
+    Tabs,
+} from '@sourcegraph/wildcard'
 
 import { resetFilteredConnectionURLQuery } from '../../components/FilteredConnection'
 
@@ -55,7 +54,7 @@ interface BatchChangeTabsProps {
     location: H.Location
 }
 
-const BatchChangeTabs_: React.FunctionComponent<BatchChangeTabsProps> = ({ children, history, location }) => {
+const BatchChangeTabsInternal: React.FunctionComponent<BatchChangeTabsProps> = ({ children, history, location }) => {
     // We are required to track the current tab locally in order to also control it from the URL parameter
     const [tabIndex, setTabIndex] = useState(0)
     const tabNames = useTabNamesContext()
@@ -89,19 +88,19 @@ const BatchChangeTabs_: React.FunctionComponent<BatchChangeTabsProps> = ({ child
     )
 
     return (
-        <Tabs className={styles.batchChangeTabs} index={tabIndex} onChange={onChange}>
+        <Tabs className={styles.batchChangeTabs} index={tabIndex} onChange={onChange} lazy={true}>
             {children}
         </Tabs>
     )
 }
 
-/** Wrapper of ReachUI's `Tabs` with built-in logic for reading and writing to the URL tab parameter */
+/** Wrapper of Wildcards's `Tabs` with built-in logic for reading and writing to the URL tab parameter */
 export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = props => {
     const [state, dispatch] = useReducer(tabsReducer, {})
     return (
         <TabNamesStateContext.Provider value={state}>
             <TabNamesDispatchContext.Provider value={dispatch}>
-                <BatchChangeTabs_ {...props} />
+                <BatchChangeTabsInternal {...props} />
             </TabNamesDispatchContext.Provider>
         </TabNamesStateContext.Provider>
     )
@@ -109,7 +108,14 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = pr
 
 export const BatchChangeTabList: React.FunctionComponent = ({ children }) => (
     <div className="overflow-auto mb-2">
-        <TabList className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">{children}</TabList>
+        <TabList
+            className={classNames(
+                styles.batchChangeTabList,
+                'nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap'
+            )}
+        >
+            {children}
+        </TabList>
     </div>
 )
 
@@ -119,23 +125,13 @@ interface BatchChangeTabProps {
 }
 
 export const BatchChangeTab: React.FunctionComponent<BatchChangeTabProps> = ({ children, index, name }) => {
-    const { selectedIndex } = useTabsContext()
     const dispatch = useTabNamesDispatch()
 
     useEffect(() => {
         dispatch({ tabName: name, tabIndex: index })
     }, [index, name, dispatch])
 
-    return <Tab className={classNames({ active: selectedIndex === index })}>{children}</Tab>
+    return <Tab>{children}</Tab>
 }
 
-/** Wrapper of ReachUI's `TabPanel`, but that only renders its children if the tab is active */
-export const BatchChangeTabPanel: React.FunctionComponent<TabPanelProps & { index: number }> = ({
-    children,
-    index,
-}) => {
-    const { selectedIndex } = useTabsContext()
-    return <TabPanel>{selectedIndex === index ? children : null}</TabPanel>
-}
-
-export { BatchChangeTabPanels }
+export { BatchChangeTabPanels, BatchChangeTabPanel }
