@@ -30,24 +30,18 @@ describe('GitHub', () => {
             directory: __dirname,
         })
 
+        const URLS_TO_MOCK = [
+            'https://collector.github.com/*path',
+            'https://api.github.com/_private/browser/*',
+            'https://github.com/*path/find-definition',
+        ]
         // Requests to other origins that we need to ignore to prevent breaking tests.
-        testContext.server.get('https://collector.githubapp.com/*').intercept((request, response) => {
-            response.sendStatus(200)
-        })
-        testContext.server.any('https://api.github.com/_private/browser/*').intercept((request, response) => {
-            response.sendStatus(200)
-        })
+        for (const urlToMock of URLS_TO_MOCK) {
 
-        testContext.server.any('https://github.com/sourcegraph/jsonrpc2/find-definition').intercept((request, response) => {
-            response.sendStatus(200)
-        })
-
-        testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
-            response
-                .status(200)
-                .setHeader('Access-Control-Allow-Origin', 'https://github.com')
-                .send(JSON.stringify({ private: false }))
-        })
+            testContext.server.any(urlToMock).intercept((request, response) => {
+                response.sendStatus(200)
+            })
+        }
 
         testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
             response
