@@ -80,8 +80,6 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 	if err != nil {
 		return nil, err
 	}
-	if err := backend.CheckExternalServiceAccess(ctx, r.db, externalService.NamespaceUserID, externalService.NamespaceOrgID); err != nil {
-		return nil, err
-	}
+
 	return &externalServiceResolver{db: r.db, externalService: externalService}, nil
 }
