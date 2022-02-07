@@ -3,7 +3,7 @@ import { EMPTY, of } from 'rxjs'
 import { first, switchMap } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { finallyReleaseProxy, wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { SearchSidebarAPI } from '../contract'
@@ -38,22 +38,25 @@ export class SourcegraphHoverProvider implements vscode.HoverProvider {
             })
         )
             .pipe(
+                finallyReleaseProxy(),
                 switchMap(({ isLoading, result }) => {
                     if (isLoading) {
                         return EMPTY
                     }
 
-                    const prefix = result?.aggregatedBadges?.reduce((prefix, badge) => {
-                        if (badge.linkURL) {
-                            return prefix + `[${badge.text}](${badge.linkURL})\n`
-                        }
-                        return prefix + `${badge.text}\n`
-                    }, `![*](${sourcegraphLogoDataURI}) `)
+                    const prefix =
+                        result?.aggregatedBadges?.reduce((prefix, badge) => {
+                            if (badge.linkURL) {
+                                return prefix + `[${badge.text}](${badge.linkURL})\n`
+                            }
+                            return prefix + `${badge.text}\n`
+                        }, `![*](${sourcegraphLogoDataURI}) `) || ''
 
                     return of<vscode.Hover>({
                         contents: [
-                            new vscode.MarkdownString(prefix),
-                            ...(result?.contents ?? []).map(content => new vscode.MarkdownString(content.value)),
+                            ...(result?.contents ?? []).map(
+                                content => new vscode.MarkdownString(prefix + content.value)
+                            ),
                         ],
                     })
                 }),
