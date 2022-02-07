@@ -38,10 +38,10 @@ const logWebpackStats = stats => {
   log(stats.toString(WEBPACK_STATS_OPTIONS))
 }
 
-const targetType = process.env.TARGET_TYPE === 'webworker' ? 'webworker' : 'node'
+const targetType = ['webworker', 'node'].includes(process.env.TARGET_TYPE) ? process.env.targetType : undefined
 
 async function webpack() {
-  const webpackConfig = await createWebpackConfig()
+  const webpackConfig = await createWebpackConfig(targetType)
   const compiler = createWebpackCompiler(webpackConfig)
   /** @type {import('webpack').Stats} */
   const stats = await new Promise((resolve, reject) => {
