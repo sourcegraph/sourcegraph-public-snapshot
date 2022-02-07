@@ -4,7 +4,7 @@ import { trimStart } from 'lodash'
 import React from 'react'
 import { render } from 'react-dom'
 import { defer, Observable, of, Subscription } from 'rxjs'
-import { distinctUntilChanged, filter, map, skip } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -587,8 +587,6 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
             }
         }
 
-        renderSearchResultsPageButtons()
-
         let mutationObserver: MutationObserver
         const subscription = new Subscription(() => mutationObserver?.disconnect())
         subscription.add(
@@ -597,10 +595,10 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
                 mutationObserver.observe(document, { subtree: true, childList: true })
             })
                 .pipe(
+                    startWith(undefined),
                     map(() => document.querySelector('.codesearch-results h3')?.textContent?.trim()),
                     filter(Boolean),
                     distinctUntilChanged(),
-                    skip(1), // Sourcegraph buttons are already rendered
                     filter(() => {
                         const githubResultType = getGithubResultType()
                         return (
