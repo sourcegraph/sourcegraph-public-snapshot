@@ -1,7 +1,6 @@
 # Sourcegraph for Visual Studio Code
 
-[![vs marketplace](https://img.shields.io/vscode-marketplace/v/sourcegraph.sourcegraph.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph) [![downloads](https://img.shields.io/vscode-marketplace/d/sourcegraph.sourcegraph.svg)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph) [![build](https://img.shields.io/github/workflow/status/sourcegraph/sourcegraph-vscode/build/master)](https://github.com/sourcegraph/sourcegraph-vscode/actions?query=branch%3Amaster+workflow%3Abuild) [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
-[![codecov](https://codecov.io/gh/sourcegraph/sourcegraph-vscode/branch/master/graph/badge.svg?token=8TLCsGxBeS)](https://codecov.io/gh/sourcegraph/sourcegraph-vscode)
+[![vs marketplace](https://img.shields.io/vscode-marketplace/v/sourcegraph.sourcegraph.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph) [![downloads](https://img.shields.io/vscode-marketplace/d/sourcegraph.sourcegraph.svg)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
 
 ![Search Gif](https://storage.googleapis.com/sourcegraph-assets/VS%20Marketplace/tableContainer.gif)
 
@@ -17,20 +16,22 @@ You can read more about Sourcegraph on our [website](https://about.sourcegraph.c
 
 ### From the Visual Studio Marketplace:
 
-1. Install Sourcegraph from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph). 
+1. Install Sourcegraph from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph).
 2. Launch VS Code, and click on the Sourcegraph (Wildcard) icon in the VS Code Activity Bar to open the Sourcegraph extension. Alternatively, you can launch the extension by pressing <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> and searching for “Sourcegraph: Open search tab.”
 
 ### From within VS Code:
+
 1. Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
-2.  Search for `Sourcegraph` -> `Install` and `Reload`.
+2. Search for `Sourcegraph` -> `Install` and `Reload`.
 
 ## Using the Sourcegraph extension
 
 To get started and open the Sourcegraph extension, simply click the Sourcegraph (Wildcard) icon in the VS Code Activity Bar.
 
-Sourcegraph functions like any search engine; simply type in your search query, and Sourcegraph will populate search results. 
+Sourcegraph functions like any search engine; simply type in your search query, and Sourcegraph will populate search results.
 
 Sourcegraph offers 3 different ways to search:
+
 1. [Literal search](https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-using-literal-patterns)
 2. [Structural search](https://learn.sourcegraph.com/how-to-search-with-sourcegraph-using-structural-patterns)
 3. [Regular expressions](https://learn.sourcegraph.com/how-to-search-with-sourcegraph-using-regular-expression-patterns)
@@ -64,11 +65,11 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 
 ## Keyboard Shortcuts:
 
-| Description                             | Mac                                          | Linux / Windows                               |
-| --------------------------------------- | -------------------------------------------- | --------------------------------------------- |
-| Open Sourcegraph Search Tab             | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> |
+| Description                               | Mac                                          | Linux / Windows                               |
+| ----------------------------------------- | -------------------------------------------- | --------------------------------------------- |
+| Open Sourcegraph Search Tab               | <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>8</kbd> |
 | Open File in Sourcegraph Cloud            | <kbd>Option</kbd>+<kbd>A</kbd>               | <kbd>Alt</kbd>+<kbd>A</kbd>                   |
-| Search Selected Text in Sourcegraph     | <kbd>Option</kbd>+<kbd>S</kbd>               | <kbd>Alt</kbd>+<kbd>S</kbd>                   |
+| Search Selected Text in Sourcegraph       | <kbd>Option</kbd>+<kbd>S</kbd>               | <kbd>Alt</kbd>+<kbd>S</kbd>                   |
 | Search Selected Text in Sourcegraph Cloud | <kbd>Option</kbd>+<kbd>Q</kbd>               | <kbd>Alt</kbd>+<kbd>Q</kbd>                   |
 
 ## Extension Settings
@@ -77,7 +78,6 @@ This extension contributes the following settings:
 
 - `sourcegraph.url`: Specify your on-premises Sourcegraph instance here, if applicable. For example: `"sourcegraph.url": "https://sourcegraph.com"`
 - `sourcegraph.accessToken`: The access token to query the Sourcegraph API. Required to use this extension with private instances.
-- `sourcegraph.corsURL`: CORS headers are necessary for the extension to fetch data when using VS Code Web with instances on version under 3.35.2.
 - `sourcegraph.remoteUrlReplacements`: Object, where each `key` is replaced by `value` in the remote url.
 - `sourcegraph.defaultBranch`: String to set the name of the default branch. Always open files in the default branch.
 
