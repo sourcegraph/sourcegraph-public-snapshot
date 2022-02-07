@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="132" failures="0" errors="0" time="6.648">
+  <testsuite name="useObservable()" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:04" time="2.515" tests="7">
+    <testcase classname="useObservable() should return the latest value of the given Observable" name="useObservable() should return the latest value of the given Observable" time="0.014">
+    </testcase>
+    <testcase classname="useObservable() should return undefined if the Observable did not emit anything yet" name="useObservable() should return undefined if the Observable did not emit anything yet" time="0.005">
+    </testcase>
+    <testcase classname="useObservable() should throw if the Observable errored" name="useObservable() should throw if the Observable errored" time="0.002">
+    </testcase>
+    <testcase classname="useObservable() should subscribe if component rerenders and observable changed" name="useObservable() should subscribe if component rerenders and observable changed" time="0.002">
+    </testcase>
+    <testcase classname="useObservable() should not subscribe if component rerenders and observable did not change" name="useObservable() should not subscribe if component rerenders and observable did not change" time="0.002">
+    </testcase>
+    <testcase classname="useObservable() should unsubscribe when the component unmounts" name="useObservable() should unsubscribe when the component unmounts" time="0.002">
+    </testcase>
+    <testcase classname="useEventObservable() should emit on the transform function whenever an event was triggered" name="useEventObservable() should emit on the transform function whenever an event was triggered" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="Tabs" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:04" time="2.719" tests="9">
+    <testcase classname="Tabs Main component structure will render tabs children correctly" name="Tabs Main component structure will render tabs children correctly" time="0.075">
+    </testcase>
+    <testcase classname="Tabs Main component structure will render the right amount of &lt;Tab/&gt; components" name="Tabs Main component structure will render the right amount of &lt;Tab/&gt; components" time="0.026">
+    </testcase>
+    <testcase classname="Tabs Main component structure will render the right amount of &lt;TabPanel/&gt; components" name="Tabs Main component structure will render the right amount of &lt;TabPanel/&gt; components" time="0.017">
+    </testcase>
+    <testcase classname="Tabs Main component structure will not render actions prop as a component" name="Tabs Main component structure will not render actions prop as a component" time="0.019">
+    </testcase>
+    <testcase classname="Tabs with actions will render actions prop as a component" name="Tabs with actions will render actions prop as a component" time="0.016">
+    </testcase>
+    <testcase classname="Tabs Lazy = true Tabs with behavior = forceRender will render &lt;TabPanel/&gt; children each time associated &lt;Tab&gt;  is clicked" name="Tabs Lazy = true Tabs with behavior = forceRender will render &lt;TabPanel/&gt; children each time associated &lt;Tab&gt;  is clicked" time="0.029">
+    </testcase>
+    <testcase classname="Tabs Lazy = true Tabs with behavior = memoize will render and keep mounted &lt;TabPanel/&gt; children when &lt;Tab&gt; is clicked" name="Tabs Lazy = true Tabs with behavior = memoize will render and keep mounted &lt;TabPanel/&gt; children when &lt;Tab&gt; is clicked" time="0.027">
+    </testcase>
+    <testcase classname="Tabs Lazy = true Tabs with behavior = memoize will not render and keep unmounted &lt;TabPanel/&gt; children when &lt;Tab&gt; is not selected" name="Tabs Lazy = true Tabs with behavior = memoize will not render and keep unmounted &lt;TabPanel/&gt; children when &lt;Tab&gt; is not selected" time="0.032">
+    </testcase>
+    <testcase classname="Tabs Lazy = false will render all &lt;TabPanel/&gt; children" name="Tabs Lazy = false will render all &lt;TabPanel/&gt; children" time="0.03">
+    </testcase>
+  </testsuite>
+  <testsuite name="&lt;ButtonLink /&gt;" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:04" time="2.794" tests="5">
+    <testcase classname="&lt;ButtonLink /&gt; renders correctly btn classes" name="&lt;ButtonLink /&gt; renders correctly btn classes" time="0.031">
+    </testcase>
+    <testcase classname="&lt;ButtonLink /&gt; renders correctly `disabled`" name="&lt;ButtonLink /&gt; renders correctly `disabled`" time="0.009">
+    </testcase>
+    <testcase classname="&lt;ButtonLink /&gt; renders correctly empty `to`" name="&lt;ButtonLink /&gt; renders correctly empty `to`" time="0.004">
+    </testcase>
+    <testcase classname="&lt;ButtonLink /&gt; renders correctly anchor attributes" name="&lt;ButtonLink /&gt; renders correctly anchor attributes" time="0.006">
+    </testcase>
+    <testcase classname="&lt;ButtonLink /&gt; Should trigger onSelect" name="&lt;ButtonLink /&gt; Should trigger onSelect" time="0.046">
+    </testcase>
+  </testsuite>
+  <testsuite name="Button" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:07" time="0.443" tests="14">
+    <testcase classname="Button renders a simple button correctly" name="Button renders a simple button correctly" time="0.007">
+    </testcase>
+    <testcase classname="Button supports rendering as different elements" name="Button supports rendering as different elements" time="0.004">
+    </testcase>
+    <testcase classname="Button renders a special tooltip sibling if the button is disabled and has a tooltip" name="Button renders a special tooltip sibling if the button is disabled and has a tooltip" time="0.002">
+    </testcase>
+    <testcase classname="Button Renders variant &apos;primary&apos; correctly" name="Button Renders variant &apos;primary&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="Button Renders variant &apos;secondary&apos; correctly" name="Button Renders variant &apos;secondary&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="Button Renders variant &apos;success&apos; correctly" name="Button Renders variant &apos;success&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="Button Renders variant &apos;danger&apos; correctly" name="Button Renders variant &apos;danger&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="Button Renders variant &apos;warning&apos; correctly" name="Button Renders variant &apos;warning&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="Button Renders variant &apos;info&apos; correctly" name="Button Renders variant &apos;info&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="Button Renders variant &apos;merged&apos; correctly" name="Button Renders variant &apos;merged&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="Button Renders variant &apos;link&apos; correctly" name="Button Renders variant &apos;link&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="Button Renders variant &apos;icon&apos; correctly" name="Button Renders variant &apos;icon&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="Button Renders size &apos;sm&apos; correctly" name="Button Renders size &apos;sm&apos; correctly" time="0.001">
+    </testcase>
+    <testcase classname="Button Renders size &apos;lg&apos; correctly" name="Button Renders size &apos;lg&apos; correctly" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="Icon" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:07" time="0.396" tests="1">
+    <testcase classname="Icon renders a simple icon correctly" name="Icon renders a simple icon correctly" time="0.009">
+    </testcase>
+  </testsuite>
+  <testsuite name="TextArea" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:07" time="0.33" tests="1">
+    <testcase classname="TextArea should render correctly" name="TextArea should render correctly" time="0.006">
+    </testcase>
+  </testsuite>
+  <testsuite name="FeedbackBadge" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:07" time="0.358" tests="6">
+    <testcase classname="FeedbackBadge renders a FeedbackBadge" name="FeedbackBadge renders a FeedbackBadge" time="0.004">
+    </testcase>
+    <testcase classname="FeedbackBadge Renders status &apos;experimental&apos; correctly" name="FeedbackBadge Renders status &apos;experimental&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="FeedbackBadge Renders status &apos;prototype&apos; correctly" name="FeedbackBadge Renders status &apos;prototype&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="FeedbackBadge Renders status &apos;beta&apos; correctly" name="FeedbackBadge Renders status &apos;beta&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="FeedbackBadge Renders status &apos;wip&apos; correctly" name="FeedbackBadge Renders status &apos;wip&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="FeedbackBadge Renders status &apos;new&apos; correctly" name="FeedbackBadge Renders status &apos;new&apos; correctly" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="Tooltip" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:07" time="1.017" tests="2">
+    <testcase classname="Tooltip Hoverable Tooltip Shows tooltip properly on hover" name="Tooltip Hoverable Tooltip Shows tooltip properly on hover" time="0.22">
+    </testcase>
+    <testcase classname="Tooltip Hoverable Tooltip Handles multiple tooltips properly" name="Tooltip Hoverable Tooltip Handles multiple tooltips properly" time="0.354">
+    </testcase>
+  </testsuite>
+  <testsuite name="getConstrainedElement" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:08" time="0.309" tests="2">
+    <testcase classname="getConstrainedElement should return correct result with overflowed content" name="getConstrainedElement should return correct result with overflowed content" time="0.001">
+    </testcase>
+    <testcase classname="getConstrainedElement should return correct result with overflowed content" name="getConstrainedElement should return correct result with overflowed content" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Alert" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:08" time="0.353" tests="9">
+    <testcase classname="Alert renders a simple Alert correctly" name="Alert renders a simple Alert correctly" time="0.003">
+    </testcase>
+    <testcase classname="Alert renders variant &apos;primary&apos; correctly" name="Alert renders variant &apos;primary&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="Alert renders variant &apos;secondary&apos; correctly" name="Alert renders variant &apos;secondary&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="Alert renders variant &apos;success&apos; correctly" name="Alert renders variant &apos;success&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="Alert renders variant &apos;danger&apos; correctly" name="Alert renders variant &apos;danger&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="Alert renders variant &apos;warning&apos; correctly" name="Alert renders variant &apos;warning&apos; correctly" time="0.001">
+    </testcase>
+    <testcase classname="Alert renders variant &apos;info&apos; correctly" name="Alert renders variant &apos;info&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="Alert renders variant &apos;merged&apos; correctly" name="Alert renders variant &apos;merged&apos; correctly" time="0.002">
+    </testcase>
+    <testcase classname="Alert renders Alert content correctly" name="Alert renders Alert content correctly" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="Select" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:08" time="0.373" tests="8">
+    <testcase classname="Select native variant renders correctly" name="Select native variant renders correctly" time="0.008">
+    </testcase>
+    <testcase classname="Select native variant renders with message correctly" name="Select native variant renders with message correctly" time="0.004">
+    </testcase>
+    <testcase classname="Select native variant renders with correct styles when invalid" name="Select native variant renders with correct styles when invalid" time="0.005">
+    </testcase>
+    <testcase classname="Select native variant renders with correct styles when valid" name="Select native variant renders with correct styles when valid" time="0.004">
+    </testcase>
+    <testcase classname="Select custom variant renders correctly" name="Select custom variant renders correctly" time="0.003">
+    </testcase>
+    <testcase classname="Select custom variant renders with message correctly" name="Select custom variant renders with message correctly" time="0.003">
+    </testcase>
+    <testcase classname="Select custom variant renders with correct styles when invalid" name="Select custom variant renders with correct styles when invalid" time="0.005">
+    </testcase>
+    <testcase classname="Select custom variant renders with correct styles when valid" name="Select custom variant renders with correct styles when valid" time="0.008">
+    </testcase>
+  </testsuite>
+  <testsuite name="PageSelector" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:04" time="4.09" tests="20">
+    <testcase classname="PageSelector Invalid configuration will error when less than 1 max pages" name="PageSelector Invalid configuration will error when less than 1 max pages" time="0.044">
+    </testcase>
+    <testcase classname="PageSelector Invalid configuration will error when currentPage is less than 1" name="PageSelector Invalid configuration will error when currentPage is less than 1" time="0.007">
+    </testcase>
+    <testcase classname="PageSelector Invalid configuration will error when currentPage is greater than totalPages" name="PageSelector Invalid configuration will error when currentPage is greater than totalPages" time="0.009">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination will render correct elipsis" name="PageSelector Typical pagination will render correct elipsis" time="0.031">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination will render correct pages" name="PageSelector Typical pagination will render correct pages" time="0.381">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination will render correct currently selected page" name="PageSelector Typical pagination will render correct currently selected page" time="0.053">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination will render previous and next buttons" name="PageSelector Typical pagination will render previous and next buttons" time="0.012">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination calls onPageChange correctly when page is individually selected" name="PageSelector Typical pagination calls onPageChange correctly when page is individually selected" time="0.066">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination calls onPageChange correctly when previous button is selected" name="PageSelector Typical pagination calls onPageChange correctly when previous button is selected" time="0.008">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination calls onPageChange correctly when next button is selected" name="PageSelector Typical pagination calls onPageChange correctly when next button is selected" time="0.009">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination when currently selected near middle will render correct elipsis" name="PageSelector Typical pagination when currently selected near middle will render correct elipsis" time="0.01">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination when currently selected near middle will render correct pages" name="PageSelector Typical pagination when currently selected near middle will render correct pages" time="0.231">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination when currently selected near end will render correct elipsis" name="PageSelector Typical pagination when currently selected near end will render correct elipsis" time="0.008">
+    </testcase>
+    <testcase classname="PageSelector Typical pagination when currently selected near end will render correct pages" name="PageSelector Typical pagination when currently selected near end will render correct pages" time="0.26">
+    </testcase>
+    <testcase classname="PageSelector Small pagination will render no elipsis" name="PageSelector Small pagination will render no elipsis" time="0.006">
+    </testcase>
+    <testcase classname="PageSelector Small pagination will render correct pages" name="PageSelector Small pagination will render correct pages" time="0.074">
+    </testcase>
+    <testcase classname="PageSelector Small pagination will render correct currently selected page" name="PageSelector Small pagination will render correct currently selected page" time="0.027">
+    </testcase>
+    <testcase classname="PageSelector Large pagination will render correct elipsis" name="PageSelector Large pagination will render correct elipsis" time="0.007">
+    </testcase>
+    <testcase classname="PageSelector Large pagination will render correct pages" name="PageSelector Large pagination will render correct pages" time="0.259">
+    </testcase>
+    <testcase classname="PageSelector Large pagination will render correct currently selected page" name="PageSelector Large pagination will render correct currently selected page" time="0.045">
+    </testcase>
+  </testsuite>
+  <testsuite name="Text" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:08" time="0.36" tests="2">
+    <testcase classname="Text should render correctly" name="Text should render correctly" time="0.004">
+    </testcase>
+    <testcase classname="Text should render correctly with `as`" name="Text should render correctly with `as`" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="RouterLink" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:08" time="0.366" tests="2">
+    <testcase classname="RouterLink renders router link correctly" name="RouterLink renders router link correctly" time="0.012">
+    </testcase>
+    <testcase classname="RouterLink renders absolute URL correctly " name="RouterLink renders absolute URL correctly " time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="useTimeoutManager()" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:08" time="0.521" tests="4">
+    <testcase classname="useTimeoutManager() should call the callback after specified time elapses" name="useTimeoutManager() should call the callback after specified time elapses" time="0.01">
+    </testcase>
+    <testcase classname="useTimeoutManager() should cancel previous timeout on subsequent invocation" name="useTimeoutManager() should cancel previous timeout on subsequent invocation" time="0.002">
+    </testcase>
+    <testcase classname="useTimeoutManager() should cancel timeout on component unmount" name="useTimeoutManager() should cancel timeout on component unmount" time="0.001">
+    </testcase>
+    <testcase classname="useTimeoutManager() should cancel timeout after calling `cancelTimeout`" name="useTimeoutManager() should cancel timeout after calling `cancelTimeout`" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="Card" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:08" time="0.4" tests="1">
+    <testcase classname="Card renders card correctly" name="Card renders card correctly" time="0.014">
+    </testcase>
+  </testsuite>
+  <testsuite name="PageHeader" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:08" time="0.361" tests="3">
+    <testcase classname="PageHeader renders correctly" name="PageHeader renders correctly" time="0.009">
+    </testcase>
+    <testcase classname="PageHeader renders links correctly" name="PageHeader renders links correctly" time="0.011">
+    </testcase>
+    <testcase classname="PageHeader renders current page correctly" name="PageHeader renders current page correctly" time="0.009">
+    </testcase>
+  </testsuite>
+  <testsuite name="H5" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:08" time="0.464" tests="2">
+    <testcase classname="H5 should render correctly" name="H5 should render correctly" time="0.008">
+    </testcase>
+    <testcase classname="H5 should render correctly with `as`" name="H5 should render correctly with `as`" time="0.009">
+    </testcase>
+  </testsuite>
+  <testsuite name="BaseControlInput" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.401" tests="8">
+    <testcase classname="BaseControlInput radio input renders correctly" name="BaseControlInput radio input renders correctly" time="0.006">
+    </testcase>
+    <testcase classname="BaseControlInput radio input renders with message correctly" name="BaseControlInput radio input renders with message correctly" time="0.006">
+    </testcase>
+    <testcase classname="BaseControlInput radio input renders with correct styles when invalid" name="BaseControlInput radio input renders with correct styles when invalid" time="0.005">
+    </testcase>
+    <testcase classname="BaseControlInput radio input renders with correct styles when valid" name="BaseControlInput radio input renders with correct styles when valid" time="0.005">
+    </testcase>
+    <testcase classname="BaseControlInput checkbox input renders correctly" name="BaseControlInput checkbox input renders correctly" time="0.004">
+    </testcase>
+    <testcase classname="BaseControlInput checkbox input renders with message correctly" name="BaseControlInput checkbox input renders with message correctly" time="0.006">
+    </testcase>
+    <testcase classname="BaseControlInput checkbox input renders with correct styles when invalid" name="BaseControlInput checkbox input renders with correct styles when invalid" time="0.005">
+    </testcase>
+    <testcase classname="BaseControlInput checkbox input renders with correct styles when valid" name="BaseControlInput checkbox input renders with correct styles when valid" time="0.005">
+    </testcase>
+  </testsuite>
+  <testsuite name="FeedbackText" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.412" tests="3">
+    <testcase classname="FeedbackText render a FeedbackText" name="FeedbackText render a FeedbackText" time="0.008">
+    </testcase>
+    <testcase classname="FeedbackText render feedbackText with header" name="FeedbackText render feedbackText with header" time="0.004">
+    </testcase>
+    <testcase classname="FeedbackText render feedbackText with footer" name="FeedbackText render feedbackText with footer" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="Input" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.376" tests="4">
+    <testcase classname="Input renders an input correctly" name="Input renders an input correctly" time="0.006">
+    </testcase>
+    <testcase classname="Input Renders status &apos;loading&apos; correctly" name="Input Renders status &apos;loading&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="Input Renders status &apos;error&apos; correctly" name="Input Renders status &apos;error&apos; correctly" time="0.003">
+    </testcase>
+    <testcase classname="Input Renders status &apos;valid&apos; correctly" name="Input Renders status &apos;valid&apos; correctly" time="0.002">
+    </testcase>
+  </testsuite>
+  <testsuite name="AnchorLink" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.339" tests="1">
+    <testcase classname="AnchorLink renders anchor link correctly" name="AnchorLink renders anchor link correctly" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="H6" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.545" tests="2">
+    <testcase classname="H6 should render correctly" name="H6 should render correctly" time="0.005">
+    </testcase>
+    <testcase classname="H6 should render correctly with `as`" name="H6 should render correctly with `as`" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="H4" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.365" tests="2">
+    <testcase classname="H4 should render correctly" name="H4 should render correctly" time="0.003">
+    </testcase>
+    <testcase classname="H4 should render correctly with `as`" name="H4 should render correctly with `as`" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="H1" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.364" tests="2">
+    <testcase classname="H1 should render correctly" name="H1 should render correctly" time="0.003">
+    </testcase>
+    <testcase classname="H1 should render correctly with `as`" name="H1 should render correctly with `as`" time="0.002">
+    </testcase>
+  </testsuite>
+  <testsuite name="Label" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.33" tests="2">
+    <testcase classname="Label should render correctly" name="Label should render correctly" time="0.003">
+    </testcase>
+    <testcase classname="Label should render correctly with `as`" name="Label should render correctly with `as`" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="Code" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.336" tests="2">
+    <testcase classname="Code renders a simple text code correctly" name="Code renders a simple text code correctly" time="0.006">
+    </testcase>
+    <testcase classname="Code supports rendering as different elements" name="Code supports rendering as different elements" time="0.005">
+    </testcase>
+  </testsuite>
+  <testsuite name="H3" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:09" time="0.471" tests="2">
+    <testcase classname="H3 should render correctly" name="H3 should render correctly" time="0.007">
+    </testcase>
+    <testcase classname="H3 should render correctly with `as`" name="H3 should render correctly with `as`" time="0.009">
+    </testcase>
+  </testsuite>
+  <testsuite name="H2" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:10" time="0.313" tests="2">
+    <testcase classname="H2 should render correctly" name="H2 should render correctly" time="0.004">
+    </testcase>
+    <testcase classname="H2 renders correctly with `as`" name="H2 renders correctly with `as`" time="0.006">
+    </testcase>
+  </testsuite>
+  <testsuite name="rectangle should calculate intersection" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:10" time="0.295" tests="3">
+    <testcase classname="rectangle should calculate intersection with {
+  left: 500,
+  top: 500,
+  width: 200,
+  height: 200,
+  right: 700,
+  bottom: 700
+} and { left: 0, top: 0, width: 600, height: 600, right: 600, bottom: 600 } rectangles" name="rectangle should calculate intersection with {
+  left: 500,
+  top: 500,
+  width: 200,
+  height: 200,
+  right: 700,
+  bottom: 700
+} and { left: 0, top: 0, width: 600, height: 600, right: 600, bottom: 600 } rectangles" time="0.001">
+    </testcase>
+    <testcase classname="rectangle should calculate intersection with { left: 0, top: 0, width: 200, height: 200, right: 200, bottom: 200 } and { left: 10, top: 10, width: 600, height: 600, right: 610, bottom: 610 } rectangles" name="rectangle should calculate intersection with { left: 0, top: 0, width: 200, height: 200, right: 200, bottom: 200 } and { left: 10, top: 10, width: 600, height: 600, right: 610, bottom: 610 } rectangles" time="0">
+    </testcase>
+    <testcase classname="rectangle should calculate intersection with { left: 0, top: 0, width: 200, height: 200, right: 200, bottom: 200 } and {
+  left: 210,
+  top: 210,
+  width: 600,
+  height: 600,
+  right: 810,
+  bottom: 810
+} rectangles" name="rectangle should calculate intersection with { left: 0, top: 0, width: 200, height: 200, right: 200, bottom: 200 } and {
+  left: 210,
+  top: 210,
+  width: 600,
+  height: 600,
+  right: 810,
+  bottom: 810
+} rectangles" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Panel" errors="0" failures="0" skipped="0" timestamp="2022-02-07T13:30:10" time="0.321" tests="1">
+    <testcase classname="Panel renders correctly positioned at page bottom" name="Panel renders correctly positioned at page bottom" time="0.006">
+    </testcase>
+  </testsuite>
+</testsuites>

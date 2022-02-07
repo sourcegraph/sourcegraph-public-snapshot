@@ -12,7 +12,55 @@ yarn gulp generate
 cd "$1"
 echo "--- test"
 
-# Limit the number of workers to prevent the default of 1 worker per core from
-# causing OOM on the buildkite nodes that have 96 CPUs. 4 matches the CPU limits
-# in infrastructure/kubernetes/ci/buildkite/buildkite-agent/buildkite-agent.Deployment.yaml
-yarn -s run test --maxWorkers 4 --verbose --testResultsProcessor jest-junit
+function yarn_test() {
+  export JEST_JUNIT_OUTPUT_NAME="jest-junit.xml"
+
+  set +eo pipefail # so we still get the result if the test failed
+  local test_exit_code
+
+  # Limit the number of workers to prevent the default of 1 worker per core from
+  # causing OOM on the buildkite nodes that have 96 CPUs. 4 matches the CPU limits
+  # in infrastructure/kubernetes/ci/buildkite/buildkite-agent/buildkite-agent.Deployment.yaml
+  yarn -s run test --maxWorkers 4 --verbose --testResultsProcessor jest-junit
+
+  # Save the test exit code so we can return it after submitting the test run to the analytics.
+  test_exit_code="${PIPESTATUS[0]}"
+
+  set -eo pipefail # resume being strict about errors
+
+  # escape xml output properly for JSON
+  local quoted_xml
+  quoted_xml="$(jq -R -s '.' ./$JEST_JUNIT_OUTPUT_NAME)"
+
+  local data
+  data=$(
+    cat <<EOF
+{
+  "format": "junit",
+  "run_env": {
+    "CI": "buildkite",
+    "key": "$BUILDKITE_BUILD_ID",
+    "job_id": "$BUILDKITE_JOB_ID",
+    "branch": "$BUILDKITE_BRANCH",
+    "commit_sha": "$BUILDKITE_COMMIT",
+    "message": "$BUILDKITE_MESSAGE",
+    "url": "$BUILDKITE_BUILD_URL"
+  },
+  "data": $quoted_xml
+}
+EOF
+  )
+
+  echo "$data" | curl \
+    --request POST \
+    --url https://analytics-api.buildkite.com/v1/uploads \
+    --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
+    --header 'Content-Type: application/json' \
+    --data-binary @-
+
+  echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+
+  return "$test_exit_code"
+}
+
+yarn_test
