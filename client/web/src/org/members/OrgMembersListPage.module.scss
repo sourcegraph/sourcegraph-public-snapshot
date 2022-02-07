@@ -1,19 +1,19 @@
-.membersListHeader {
+.members-list-header {
     flex: 1;
 }
 
-.inviteMemberLink {
+.invite-member-link {
     vertical-align: unset;
     display: inline;
     padding: 0;
     font-weight: 800;
 }
 
-.onlyYouContainer {
+.only-you-container {
     border-top: none;
 }
 
-.membersList {
+.members-list {
     padding: 0;
     background-color: var(--color-bg-1);
     border: 1px solid var(--border-color);
@@ -59,14 +59,14 @@
     height: 100%;
 }
 
-.memberMenu {
+.member-menu {
     padding: 0.1rem 0.5rem;
 }
 
-.memberRole {
+.member-role {
     width: 3rem;
 }
 
-.memberActions {
+.member-actions {
     width: 4.5rem;
 }
