@@ -3,7 +3,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Button, Card } from '@sourcegraph/wildcard'
+import { Button, Card, Link } from '@sourcegraph/wildcard'
 
 import { FormInput } from '../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../components/form/hooks/useField'
@@ -126,7 +126,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     <li>Track code smells, ownership, and configurations</li>
                 </ul>
 
-                <Button variant="primary">
+                <Button variant="primary" as={Link} to="/insights/create">
                     <PlusIcon className="icon-inline" /> Create your first insight
                 </Button>
 
