@@ -6,22 +6,30 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"golang.org/x/sync/errgroup"
 )
 
-func run(ctx context.Context, node query.Node, parameters []query.Parameter) error {
+func run(ctx context.Context, rgBaseArgs []string, node query.Node, parameters []query.Parameter) error {
 	pattern, ok := node.(query.Pattern)
 	if !ok {
 		return fmt.Errorf("only supports pattern queries, got %T: %s", node, node)
 	}
 
-	var args []string
+	args := append([]string{}, rgBaseArgs...)
+
 	var repoParams []query.Parameter
 
 	for _, p := range parameters {
 		switch p.Field {
+		case query.FieldRepo:
+			repoParams = append(repoParams, p)
+
+		case query.FieldFile:
+			return fmt.Errorf("need to implement regex to glob for file: patterns")
+
 		case query.FieldCase:
 			switch p.Value {
 			case "yes":
@@ -32,28 +40,28 @@ func run(ctx context.Context, node query.Node, parameters []query.Parameter) err
 				return fmt.Errorf("unknown case value: %s", p)
 			}
 
-		case query.FieldRepo:
-			repoParams = append(repoParams, p)
-
-		// case query.FieldFile:
-		// case	query.FieldFork:
-		// case	query.FieldArchived:
-		// case	query.FieldLang:
-		// case	query.FieldType:
-		// case	query.FieldRepoHasFile:
-		// case	query.FieldRepoHasCommitAfter:
-		// case	query.FieldPatternType:
-		// case	query.FieldContent:
-		// case	query.FieldVisibility:
-		// case	query.FieldRev:
-		// case	query.FieldContext:
+		case query.FieldLang:
+			if p.Negated {
+				args = append(args, "--type-not", p.Value)
+			} else {
+				args = append(args, "--type", p.Value)
+			}
 
 		default:
 			return fmt.Errorf("unsupported field: %s", p)
 		}
 	}
 
-	args = append(args, pattern.Value)
+	if pattern.Value != "" {
+		args = append(args, "--", pattern.Value)
+	} else {
+		args = append(args, "--files")
+	}
+
+	// look for git directories matching repoParams
+	if len(repoParams) > 0 {
+		return fmt.Errorf("not implemented")
+	}
 
 	cmd := exec.CommandContext(ctx, "rg", args...)
 	cmd.Stdout = os.Stdout
@@ -61,7 +69,7 @@ func run(ctx context.Context, node query.Node, parameters []query.Parameter) err
 	return cmd.Run()
 }
 
-func do(q string) error {
+func do(rgArgs []string, q string) error {
 	plan, err := query.Pipeline(
 		query.Init(q, query.SearchTypeRegex),
 	)
@@ -74,7 +82,7 @@ func do(q string) error {
 	for _, p := range plan {
 		p := p
 		wg.Go(func() error {
-			return run(ctx, p.Pattern, p.Parameters)
+			return run(ctx, rgArgs, p.Pattern, p.Parameters)
 		})
 	}
 
@@ -82,7 +90,13 @@ func do(q string) error {
 }
 
 func main() {
-	err := do(os.Args[1])
+	if len(os.Args) <= 1 {
+		fmt.Fprintf(os.Stderr, "USAGE: %s [RIPGREP_OPTIONS] SOURCEGRAPH_QUERY\n", filepath.Base(os.Args[0]))
+		os.Exit(2)
+	}
+
+	queryIdx := len(os.Args) - 1
+	err := do(os.Args[1:queryIdx], os.Args[queryIdx])
 	if err != nil {
 		log.Fatal(err)
 	}
