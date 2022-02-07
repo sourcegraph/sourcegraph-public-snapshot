@@ -195,13 +195,13 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 
 	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
 	q := u.Query()
+	if of.startRow == of.endRow && of.startCol == of.endCol {
+		q.Add(fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1), "")
+	} else {
+		q.Add(fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1), "")
+	}
 	r.addTracking(q)
 	u.RawQuery = q.Encode()
-	if of.startRow == of.endRow && of.startCol == of.endCol {
-		u.Fragment = fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1)
-	} else {
-		u.Fragment = fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1)
-	}
 	return u.String(), nil
 }
 
