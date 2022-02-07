@@ -162,11 +162,15 @@ func TestInviteUserToOrganization(t *testing.T) {
 	orgInvitations := database.NewMockOrgInvitationStore()
 	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1}, nil)
 
+	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
+
 	db := database.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	t.Run("Falls back to legacy URL if site settings not provided", func(t *testing.T) {
 		RunTests(t, []*Test{
@@ -217,7 +221,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImF1ZCI6WyIyIl0sImV4cCI6MTYxMTk2NDgwMH0.Dze7dKGqabpxRxsNz86pvH9BUVsB2cCQdoaJ0EeurGhfnm8GvdhiKHuSbThiBtxS1sHreBxij3WaDZ2KxZe6LQ",
+						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfSUQiOjEsInNlbmRlcl9pZCI6MSwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMSIsImV4cCI6MTYxMTk2NDgwMH0.mYuEtDxbepKH00xRE6qzfXLKivkLAMw0MVXtQ5jaCVVWDPMrQuTU-cNQZjPKN5PDA5gRFj6C10d06nVz5TC63Q",
 						"sentInvitationEmail": false
 					}
 				}
