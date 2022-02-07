@@ -27,6 +27,7 @@ require (
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
+	github.com/charmbracelet/glamour v0.5.0
 	github.com/cockroachdb/errors v1.8.6
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -180,13 +181,21 @@ require (
 	cloud.google.com/go/iam v0.1.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
+	github.com/alecthomas/chroma v0.10.0 // indirect
+	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.3 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
+	github.com/muesli/termenv v0.9.0 // indirect
 	github.com/mwitkow/go-proto-validators v0.3.2 // indirect
+	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
+	github.com/yuin/goldmark v1.4.4 // indirect
+	github.com/yuin/goldmark-emoji v1.0.1 // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
 )
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/charmbracelet/glamour"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -27,4 +29,23 @@ func writeSkippedLinef(fmtStr string, args ...interface{}) {
 
 func writeFingerPointingLinef(fmtStr string, args ...interface{}) {
 	stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
+}
+
+func writePrettyMarkdown(str string) error {
+	r, err := glamour.NewTermRenderer(
+		// detect background color and pick either the default dark or light theme
+		glamour.WithAutoStyle(),
+		// wrap output at specific width
+		glamour.WithWordWrap(120),
+	)
+	if err != nil {
+		return err
+	}
+
+	out, err := r.Render(str)
+	if err != nil {
+		return err
+	}
+	stdout.Out.Write(out)
+	return nil
 }
