@@ -10,12 +10,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/ghodss/yaml"
 )
+
+type featureFlags struct {
+	// StatelessBuild triggers a stateless build by overriding the default queue to send the build on the stateles
+	// agents and forces a MainDryRun type build to avoid impacting normal builds.
+	//
+	// It is meant to test the stateless builds without any side effects.
+	StatelessBuild bool
+}
+
+// FeatureFlags are for experimenting with CI pipeline features. Use sparingly!
+var FeatureFlags = featureFlags{
+	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true",
+}
 
 type Pipeline struct {
 	Env    map[string]string `json:"env,omitempty"`
@@ -71,26 +85,26 @@ func (bo BuildOptions) MarshalYAML() ([]byte, error) {
 // Matches Buildkite pipeline JSON schema:
 // https://github.com/buildkite/pipeline-schema/blob/master/schema.json
 type Step struct {
-	Label                  string                 `json:"label"`
-	Key                    string                 `json:"key,omitempty"`
-	Command                []string               `json:"command,omitempty"`
-	DependsOn              []string               `json:"depends_on,omitempty"`
-	AllowDependencyFailure bool                   `json:"allow_dependency_failure,omitempty"`
-	TimeoutInMinutes       string                 `json:"timeout_in_minutes,omitempty"`
-	Trigger                string                 `json:"trigger,omitempty"`
-	Async                  bool                   `json:"async,omitempty"`
-	Build                  *BuildOptions          `json:"build,omitempty"`
-	Env                    map[string]string      `json:"env,omitempty"`
-	Plugins                map[string]interface{} `json:"plugins,omitempty"`
-	ArtifactPaths          string                 `json:"artifact_paths,omitempty"`
-	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
-	Concurrency            int                    `json:"concurrency,omitempty"`
-	Parallelism            int                    `json:"parallelism,omitempty"`
-	Skip                   string                 `json:"skip,omitempty"`
-	SoftFail               []softFailExitStatus   `json:"soft_fail,omitempty"`
-	Retry                  *RetryOptions          `json:"retry,omitempty"`
-	Agents                 map[string]string      `json:"agents,omitempty"`
-	If                     string                 `json:"if,omitempty"`
+	Label                  string                   `json:"label"`
+	Key                    string                   `json:"key,omitempty"`
+	Command                []string                 `json:"command,omitempty"`
+	DependsOn              []string                 `json:"depends_on,omitempty"`
+	AllowDependencyFailure bool                     `json:"allow_dependency_failure,omitempty"`
+	TimeoutInMinutes       string                   `json:"timeout_in_minutes,omitempty"`
+	Trigger                string                   `json:"trigger,omitempty"`
+	Async                  bool                     `json:"async,omitempty"`
+	Build                  *BuildOptions            `json:"build,omitempty"`
+	Env                    map[string]string        `json:"env,omitempty"`
+	Plugins                []map[string]interface{} `json:"plugins,omitempty"`
+	ArtifactPaths          string                   `json:"artifact_paths,omitempty"`
+	ConcurrencyGroup       string                   `json:"concurrency_group,omitempty"`
+	Concurrency            int                      `json:"concurrency,omitempty"`
+	Parallelism            int                      `json:"parallelism,omitempty"`
+	Skip                   string                   `json:"skip,omitempty"`
+	SoftFail               []softFailExitStatus     `json:"soft_fail,omitempty"`
+	Retry                  *RetryOptions            `json:"retry,omitempty"`
+	Agents                 map[string]string        `json:"agents,omitempty"`
+	If                     string                   `json:"if,omitempty"`
 }
 
 var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
@@ -129,7 +143,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Label:   label,
 		Env:     make(map[string]string),
 		Agents:  make(map[string]string),
-		Plugins: make(map[string]interface{}),
+		Plugins: make([]map[string]interface{}, 0, 0),
 	}
 	for _, opt := range BeforeEveryStepOpts {
 		opt(step)
@@ -147,7 +161,11 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 
 	// Set a default agent queue to assign this job to
 	if len(step.Agents) == 0 {
-		step.Agents["queue"] = "standard"
+		if FeatureFlags.StatelessBuild {
+			step.Agents["queue"] = "job"
+		} else {
+			step.Agents["queue"] = "standard"
+		}
 	}
 
 	p.Steps = append(p.Steps, step)
@@ -357,7 +375,9 @@ func Key(key string) StepOpt {
 
 func Plugin(name string, plugin interface{}) StepOpt {
 	return func(step *Step) {
-		step.Plugins[name] = plugin
+		wrapper := map[string]interface{}{}
+		wrapper[name] = plugin
+		step.Plugins = append(step.Plugins, wrapper)
 	}
 }
 
@@ -381,5 +401,16 @@ func IfReadyForReview() StepOpt {
 func AllowDependencyFailure() StepOpt {
 	return func(step *Step) {
 		step.AllowDependencyFailure = true
+	}
+}
+
+// flattenStepOpts conveniently turns a list of StepOpt into a single StepOpt.
+// It is useful to build helpers that can then be used when defining operations,
+// when the helper wraps multiple stepOpts at once.
+func flattenStepOpts(stepOpts ...StepOpt) StepOpt {
+	return func(step *Step) {
+		for _, stepOpt := range stepOpts {
+			stepOpt(step)
+		}
 	}
 }
