@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -8,6 +9,7 @@ import { CopyableText } from '@sourcegraph/web/src/components/CopyableText'
 import { LoadingSpinner, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
+import { LoaderButton } from '../../../components/LoaderButton'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAvatar } from '../../../user/UserAvatar'
 
@@ -43,13 +45,22 @@ export const InvitePane: React.FunctionComponent<Props> = ({
 
     const [inviteError, setInviteError] = useState<ErrorLike | null>(null)
     const [loadingInvites, setLoadingInvites] = useState<Set<string>>(new Set<string>())
+    const [successfulInvites, setSuccessfulInvites] = useState<Set<string>>(new Set<string>())
+
+    const inviteableCollaborators: InvitableCollaborator[] = useMemo(
+        () =>
+            filteredCollaborators.filter(
+                person => !successfulInvites.has(person.email) && !loadingInvites.has(person.email)
+            ),
+        [filteredCollaborators, loadingInvites, successfulInvites]
+    )
 
     const invitePerson = useCallback(
         async (person: InvitableCollaborator): Promise<void> => {
-            if (loadingInvites.has(person.email)) {
+            if (loadingInvites.has(person.email) || successfulInvites.has(person.email)) {
                 return
             }
-            setLoadingInvites(new Set(loadingInvites.add(person.email)))
+            setLoadingInvites(set => new Set(set).add(person.email))
 
             try {
                 await new Promise(resolve => setTimeout(resolve, 100))
@@ -68,15 +79,19 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                 //     ).toPromise()
                 // )
 
-                const removed = new Set(loadingInvites)
-                removed.delete(person.email)
-                setLoadingInvites(removed)
+                setLoadingInvites(set => {
+                    const removed = new Set(set)
+                    removed.delete(person.email)
+                    return removed
+                })
+                setSuccessfulInvites(set => new Set(set).add(person.email))
+
                 eventLogger.log('UserInvitationsSentEmailInvite')
             } catch (error) {
                 setInviteError(error)
             }
         },
-        [loadingInvites]
+        [loadingInvites, successfulInvites]
     )
     const invitePersonClicked = useCallback(
         (person: InvitableCollaborator) => async (): Promise<void> => {
@@ -84,11 +99,14 @@ export const InvitePane: React.FunctionComponent<Props> = ({
         },
         [invitePerson]
     )
+    const [isInvitingAll, setIsInvitingAll] = useState(false)
     const inviteAllClicked = useCallback(async (): Promise<void> => {
-        for (const person of filteredCollaborators) {
+        setIsInvitingAll(true)
+        for (const person of inviteableCollaborators) {
             await invitePerson(person)
         }
-    }, [invitePerson, filteredCollaborators])
+        setIsInvitingAll(false)
+    }, [invitePerson, inviteableCollaborators])
 
     const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${user.username}`
     return (
@@ -142,6 +160,11 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                                 </div>
                                 {loadingInvites.has(person.email) ? (
                                     <LoadingSpinner inline={true} className={classNames('ml-auto', 'mr-3')} />
+                                ) : successfulInvites.has(person.email) ? (
+                                    <span className="text-muted ml-auto mr-3">
+                                        <CheckCircleIcon className="icon-inline mr-1" />
+                                        Invited
+                                    </span>
                                 ) : (
                                     <Button
                                         variant="secondary"
@@ -166,18 +189,24 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                         </div>
                     )}
                 </div>
-                <Button
+
+                <LoaderButton
+                    loading={isInvitingAll}
                     variant="success"
                     className="d-block ml-auto mb-3 mr-3"
                     onClick={inviteAllClicked}
-                    disabled={isLoadingCollaborators || filteredCollaborators.length === 0}
-                >
-                    Invite{' '}
-                    {isLoadingCollaborators || filteredCollaborators.length === 0
-                        ? ''
-                        : `${filteredCollaborators.length} `}{' '}
-                    users
-                </Button>
+                    alwaysShowLabel={true}
+                    disabled={isLoadingCollaborators || inviteableCollaborators.length === 0 || isInvitingAll}
+                    label={
+                        inviteableCollaborators.length === 0 && filteredCollaborators.length !== 0
+                            ? `Invited ${filteredCollaborators.length} users`
+                            : `${isInvitingAll ? 'Inviting' : 'Invite'} ${
+                                  isLoadingCollaborators || inviteableCollaborators.length === 0
+                                      ? ''
+                                      : `${inviteableCollaborators.length} `
+                              }users`
+                    }
+                />
             </div>
             <div>
                 <header>
