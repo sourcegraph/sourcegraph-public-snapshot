@@ -42,6 +42,10 @@ Usage:
 or
     cat src-validate.yml | src validate [options]
 
+if user is authenticated, user can also run default checks
+
+	src validate [options]
+
 Please visit https://docs.sourcegraph.com/admin/validation for documentation of the validate command.
 
 

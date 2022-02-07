@@ -11,7 +11,7 @@
 | `-clean-archives` | If true, deletes downloaded repository archives after executing batch spec steps. | `true` |
 | `-clear-cache` | If true, clears the execution cache and executes all steps anew. | `false` |
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
-| `-f` | The batch spec file to read. |  |
+| `-f` | The batch spec file to read, or - to read from standard input. |  |
 | `-force-override-ignore` | Do not ignore repositories that have a .batchignore file. | `false` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
@@ -46,7 +46,7 @@ Usage of 'src batch preview':
   -dump-requests
     	Log GraphQL requests and responses to stdout
   -f string
-    	The batch spec file to read.
+    	The batch spec file to read, or - to read from standard input.
   -force-override-ignore
     	Do not ignore repositories that have a .batchignore file.
   -get-curl
@@ -82,11 +82,14 @@ Sourcegraph instance, ready to be previewed and applied.
 
 Usage:
 
-    src batch preview -f FILE [command options]
+    src batch preview [command options] [-f FILE]
+    src batch preview [command options] FILE
 
 Examples:
 
     $ src batch preview -f batch.spec.yaml
+
+    $ src batch preview batch.spec.yaml
 
 
 

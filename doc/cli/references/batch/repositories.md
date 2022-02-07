@@ -7,7 +7,7 @@
 |------|-------------|---------------|
 | `-allow-unsupported` | Allow unsupported code hosts. | `false` |
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
-| `-f` | The batch spec file to read. |  |
+| `-f` | The batch spec file to read, or - to read from standard input. |  |
 | `-force-override-ignore` | Do not ignore repositories that have a .batchignore file. | `false` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
@@ -24,7 +24,7 @@ Usage of 'src batch repositories':
   -dump-requests
     	Log GraphQL requests and responses to stdout
   -f string
-    	The batch spec file to read.
+    	The batch spec file to read, or - to read from standard input.
   -force-override-ignore
     	Do not ignore repositories that have a .batchignore file.
   -get-curl
@@ -41,9 +41,11 @@ apply to.
 
 Usage:
 
-    src batch repositories -f FILE
+    src batch repositories [-f] FILE
 
 Examples:
+
+    $ src batch repositories batch.spec.yaml
 
     $ src batch repositories -f batch.spec.yaml
 

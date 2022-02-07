@@ -9,7 +9,7 @@
 | `-clean-archives` | If true, deletes downloaded repository archives after executing batch spec steps. | `true` |
 | `-clear-cache` | If true, clears the execution cache and executes all steps anew. | `false` |
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
-| `-f` | The batch spec file to read. |  |
+| `-f` | The batch spec file to read, or - to read from standard input. |  |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
 | `-j` | The maximum number of parallel jobs. Default is GOMAXPROCS. | `8` |
@@ -35,7 +35,7 @@ Usage of 'src batch exec':
   -dump-requests
     	Log GraphQL requests and responses to stdout
   -f string
-    	The batch spec file to read.
+    	The batch spec file to read, or - to read from standard input.
   -get-curl
     	Print the curl command for executing this query and exit (WARNING: includes printing your access token!)
   -insecure-skip-verify
