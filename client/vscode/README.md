@@ -2,7 +2,7 @@
 
 [![vs marketplace](https://img.shields.io/vscode-marketplace/v/sourcegraph.sourcegraph.svg?label=vs%20marketplace)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph) [![downloads](https://img.shields.io/vscode-marketplace/d/sourcegraph.sourcegraph.svg)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
 
-![Search Gif](https://storage.googleapis.com/sourcegraph-assets/VS%20Marketplace/tableContainer.gif)
+![Search Gif](https://storage.googleapis.com/sourcegraph-assets/VS%20Marketplace/tableContainer_search.gif)
 
 Sourcegraph’s code search allows you to find & fix things fast across all your code.
 
@@ -44,7 +44,7 @@ For example, you can search for "auth provider" in a Go repository with a search
 repo:sourcegraph/sourcegraph lang:go auto provider`
 ```
 
-![Lang search gif](https://storage.googleapis.com/sourcegraph-assets/VS%20Marketplace/langSearch.gif)
+![Lang search gif](https://storage.googleapis.com/sourcegraph-assets/VS%20Marketplace/sourcegraph_search.gif)
 
 ## Adding and searching your own code
 
