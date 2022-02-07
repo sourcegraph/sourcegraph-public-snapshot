@@ -1,0 +1,5 @@
+# docstring: hello2 is a method
+definition hello2().
+reference hello().
+reference hello2().
+
