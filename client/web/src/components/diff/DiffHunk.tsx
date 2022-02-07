@@ -71,7 +71,6 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                     .filter(decoration => decoration.isWholeLine)
                     .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
                     .reduce((style, decoration) => ({ ...style, ...decoration }), {})
-                console.log(line.html)
 
                 return (
                     <tr
@@ -89,13 +88,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                         {lineNumbers && (
                             <>
                                 {line.kind !== DiffHunkLineType.ADDED ? (
-                                    <td
-                                        className={styles.num}
-                                        data-line={oldLine - 1}
-                                        data-part="base"
-                                        id={oldAnchor}
-                                        data-hunk-num=""
-                                    >
+                                    <td className={styles.num} data-line={oldLine - 1} data-part="base" id={oldAnchor}>
                                         {persistLines && (
                                             <Link className={styles.numLine} to={{ hash: oldAnchor }}>
                                                 {oldLine - 1}
