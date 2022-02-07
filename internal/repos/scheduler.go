@@ -789,12 +789,10 @@ func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 			update.Interval = interval
 		}
 
-		if conf.ExperimentalFeatures().EnableRepoUpdateIntervalJitter {
-			// Add a jitter of 5% on either side of the interval to avoid
-			// repos getting updated at the same time.
-			delta := int64(update.Interval) / 20
-			update.Interval = update.Interval + time.Duration(s.randGenerator.Int63n(2*delta)-delta)
-		}
+		// Add a jitter of 5% on either side of the interval to avoid
+		// repos getting updated at the same time.
+		delta := int64(update.Interval) / 20
+		update.Interval = update.Interval + time.Duration(s.randGenerator.Int63n(2*delta)-delta)
 
 		update.Due = timeNow().Add(update.Interval)
 		log15.Debug("updated repo", "repo", repo.Name, "due", update.Due.Sub(timeNow()))
