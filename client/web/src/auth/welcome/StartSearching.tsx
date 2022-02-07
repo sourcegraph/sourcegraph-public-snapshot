@@ -10,13 +10,14 @@ import { AuthenticatedUser } from '../../auth'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { LogoAscii } from '../LogoAscii'
-import { getPostSignUpEvent, RepoSelectionMode } from '../PostSignUpPage'
+import { getPostSignUpEvent, RepoSelectionMode, FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps'
 import { Terminal, TerminalTitle, TerminalLine, TerminalDetails, TerminalProgress } from '../Terminal'
 import { useExternalServices } from '../useExternalServices'
 import { useRepoCloningStatus } from '../useRepoCloningStatus'
 import { selectedReposVar, useSaveSelectedRepos, MinSelectedRepo } from '../useSelectedRepos'
 
+import { Footer } from './Footer'
 import styles from './StartSearching.module.scss'
 
 interface StartSearching {
@@ -26,6 +27,7 @@ interface StartSearching {
     setSelectedSearchContextSpec: (spec: string) => void
     onError: (error: ErrorLike) => void
     className?: string
+    onFinish: FinishWelcomeFlow
 }
 
 const SIXTY_SECONDS = 60000
@@ -74,6 +76,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     setSelectedSearchContextSpec,
     onError,
     className,
+    onFinish,
 }) => {
     const { externalServices, errorServices, loadingServices } = useExternalServices(user.id)
     const saveSelectedRepos = useSaveSelectedRepos()
@@ -146,99 +149,103 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
 
     const inviteURL = `${window.context.externalURL}?invitedBy=${user.username}`
     return (
-        <div className="m5-5 d-flex">
-            <div className={classNames(className, 'mx-2')}>
-                <div className={styles.titleDescription}>
-                    <h3>Introduce your friends to Sourcegraph</h3>
-                    <p className="text-muted mb-4">
-                        Help your friends and co-workers level up with powerful code search.
-                    </p>
+        <div>
+            <div className="m5-5 d-flex">
+                <div className={classNames(className, 'mx-2')}>
+                    <div className={styles.titleDescription}>
+                        <h3>Introduce your friends to Sourcegraph</h3>
+                        <p className="text-muted mb-4">
+                            Help your friends and co-workers level up with powerful code search.
+                        </p>
+                    </div>
+                    <div className="border overflow-hidden rounded">
+                        <header>
+                            <div className="py-3 px-4 d-flex justify-content-between align-items-center">
+                                <h4 className="m-0">Invite by sending a link</h4>
+                            </div>
+                        </header>
+                        <CopyableText className="mb-3 ml-3 mr-3 flex-1" text={inviteURL} size={inviteURL.length} />
+                    </div>
                 </div>
-                <div className="border overflow-hidden rounded">
-                    <header>
-                        <div className="py-3 px-4 d-flex justify-content-between align-items-center">
-                            <h4 className="m-0">Invite by sending a link</h4>
-                        </div>
-                    </header>
-                    <CopyableText className="mb-3 ml-3 mr-3 flex-1" text={inviteURL} size={inviteURL.length} />
+                <div className={classNames(className, 'mx-2')}>
+                    <div className={styles.titleDescription}>
+                        <h3>Fetching repositories...</h3>
+                        <p className="text-muted mb-4">
+                            We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first
+                            search!
+                        </p>
+                    </div>
+                    <div className="border overflow-hidden rounded">
+                        <header>
+                            <div className="py-3 px-4 d-flex justify-content-between align-items-center">
+                                <h4 className="m-0">Activity log</h4>
+                                <small className="m-0 text-muted">{statusSummary}</small>
+                            </div>
+                        </header>
+                        <Terminal>
+                            {!isDoneCloning && (
+                                <TerminalLine>
+                                    <code className={classNames('mb-2', styles.loading)}>Cloning Repositories</code>
+                                </TerminalLine>
+                            )}
+                            {isLoading && (
+                                <TerminalLine>
+                                    <TerminalTitle>
+                                        <code className={classNames('mb-2', styles.loading)}>Loading</code>
+                                    </TerminalTitle>
+                                </TerminalLine>
+                            )}
+                            {fetchError && (
+                                <TerminalLine>
+                                    <TerminalTitle>
+                                        <code className="mb-2">Unexpected error</code>
+                                    </TerminalTitle>
+                                </TerminalLine>
+                            )}
+                            {!isLoading &&
+                                !isDoneCloning &&
+                                cloningStatusLines?.map(({ id, title, details, progress }) => (
+                                    <div key={id} className="mb-2">
+                                        <TerminalLine>
+                                            <TerminalTitle>{title}</TerminalTitle>
+                                        </TerminalLine>
+                                        <TerminalLine>
+                                            <TerminalDetails>{details}</TerminalDetails>
+                                        </TerminalLine>
+                                        <TerminalLine>
+                                            <TerminalProgress character="#" progress={progress} />
+                                        </TerminalLine>
+                                    </div>
+                                ))}
+                            {isDoneCloning && (
+                                <>
+                                    <TerminalLine>
+                                        <TerminalTitle>Done!</TerminalTitle>
+                                    </TerminalLine>
+                                    <TerminalLine>
+                                        <LogoAscii />
+                                    </TerminalLine>
+                                </>
+                            )}
+                        </Terminal>
+                    </div>
+                    {showAlert && (
+                        <Alert className="mt-4" variant="warning">
+                            Cloning your repositories is taking a long time. You can wait for cloning to finish, or{' '}
+                            <Link to={PageRoutes.Search} onClick={trackBannerClick}>
+                                continue to Sourcegraph now
+                            </Link>{' '}
+                            while cloning continues in the background. Note that you can only search repos that have
+                            finished cloning. Check status at any time in{' '}
+                            <Link to="user/settings/repositories" onClick={trackBannerClick}>
+                                Settings → Repositories
+                            </Link>
+                            .
+                        </Alert>
+                    )}
                 </div>
             </div>
-            <div className={classNames(className, 'mx-2')}>
-                <div className={styles.titleDescription}>
-                    <h3>Fetching repositories...</h3>
-                    <p className="text-muted mb-4">
-                        We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
-                    </p>
-                </div>
-                <div className="border overflow-hidden rounded">
-                    <header>
-                        <div className="py-3 px-4 d-flex justify-content-between align-items-center">
-                            <h4 className="m-0">Activity log</h4>
-                            <small className="m-0 text-muted">{statusSummary}</small>
-                        </div>
-                    </header>
-                    <Terminal>
-                        {!isDoneCloning && (
-                            <TerminalLine>
-                                <code className={classNames('mb-2', styles.loading)}>Cloning Repositories</code>
-                            </TerminalLine>
-                        )}
-                        {isLoading && (
-                            <TerminalLine>
-                                <TerminalTitle>
-                                    <code className={classNames('mb-2', styles.loading)}>Loading</code>
-                                </TerminalTitle>
-                            </TerminalLine>
-                        )}
-                        {fetchError && (
-                            <TerminalLine>
-                                <TerminalTitle>
-                                    <code className="mb-2">Unexpected error</code>
-                                </TerminalTitle>
-                            </TerminalLine>
-                        )}
-                        {!isLoading &&
-                            !isDoneCloning &&
-                            cloningStatusLines?.map(({ id, title, details, progress }) => (
-                                <div key={id} className="mb-2">
-                                    <TerminalLine>
-                                        <TerminalTitle>{title}</TerminalTitle>
-                                    </TerminalLine>
-                                    <TerminalLine>
-                                        <TerminalDetails>{details}</TerminalDetails>
-                                    </TerminalLine>
-                                    <TerminalLine>
-                                        <TerminalProgress character="#" progress={progress} />
-                                    </TerminalLine>
-                                </div>
-                            ))}
-                        {isDoneCloning && (
-                            <>
-                                <TerminalLine>
-                                    <TerminalTitle>Done!</TerminalTitle>
-                                </TerminalLine>
-                                <TerminalLine>
-                                    <LogoAscii />
-                                </TerminalLine>
-                            </>
-                        )}
-                    </Terminal>
-                </div>
-                {showAlert && (
-                    <Alert className="mt-4" variant="warning">
-                        Cloning your repositories is taking a long time. You can wait for cloning to finish, or{' '}
-                        <Link to={PageRoutes.Search} onClick={trackBannerClick}>
-                            continue to Sourcegraph now
-                        </Link>{' '}
-                        while cloning continues in the background. Note that you can only search repos that have
-                        finished cloning. Check status at any time in{' '}
-                        <Link to="user/settings/repositories" onClick={trackBannerClick}>
-                            Settings → Repositories
-                        </Link>
-                        .
-                    </Alert>
-                )}
-            </div>
+            <Footer onFinish={onFinish} />
         </div>
     )
 }
