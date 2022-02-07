@@ -294,16 +294,35 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     </ul>
                 </li>
                 <li>
-                    CTA metrics
+                    CTA usage data
                     <ul>
-                        <li>Total number of users who viewed the "install browser extension" CTA on the file page</li>
-                        <li>Total number of users who clicked the "install browser extension" CTA on the file page</li>
-                        <li>Total number of users who viewed the "install browser extension" CTA on the search page</li>
-                        <li>Total number of users who clicked the "install browser extension" CTA on the search page</li>
-                        <li>Total number of views of the "install browser extension" CTA on the file page</li>
-                        <li>Total number of clicks on the "install browser extension" CTA on the file page</li>
-                        <li>Total number of views of the "install browser extension" CTA on the search page</li>
-                        <li>Total number of clicks on the "install browser extension" CTA on the search page</li>
+                        <li>
+                            Browser extension
+                            <ul>
+                                <li>
+                                    Total number of users who viewed the "install browser extension" CTA on the file
+                                    page
+                                </li>
+                                <li>
+                                    Total number of users who clicked the "install browser extension" CTA on the file
+                                    page
+                                </li>
+                                <li>
+                                    Total number of users who viewed the "install browser extension" CTA on the search
+                                    page
+                                </li>
+                                <li>
+                                    Total number of users who clicked the "install browser extension" CTA on the search
+                                    page
+                                </li>
+                                <li>Total number of views of the "install browser extension" CTA on the file page</li>
+                                <li>Total number of clicks on the "install browser extension" CTA on the file page</li>
+                                <li>Total number of views of the "install browser extension" CTA on the search page</li>
+                                <li>
+                                    Total number of clicks on the "install browser extension" CTA on the search page
+                                </li>
+                            </ul>
+                        </li>
                     </ul>
                 </li>
             </ul>
