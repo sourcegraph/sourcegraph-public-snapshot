@@ -13,13 +13,41 @@ import (
 )
 
 func run(ctx context.Context, rgBaseArgs []string, node query.Node, parameters []query.Parameter) error {
-	pattern, ok := node.(query.Pattern)
-	if !ok {
-		return fmt.Errorf("only supports pattern queries, got %T: %s", node, node)
+	plan, err := plan(node, parameters)
+	if err != nil {
+		return err
 	}
 
-	args := append([]string{}, rgBaseArgs...)
+	var paths []string
+	// look for git directories matching repoParams
+	if len(plan.RepoParameters) > 0 {
+		return fmt.Errorf("not implemented")
+	}
 
+	var args []string
+	args = append(args, rgBaseArgs...)
+	args = append(args, plan.RipGrepArgs...)
+	args = append(args, paths...)
+
+	cmd := exec.CommandContext(ctx, "rg", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+type Plan struct {
+	RepoParameters []query.Parameter
+
+	RipGrepArgs []string
+}
+
+func plan(node query.Node, parameters []query.Parameter) (*Plan, error) {
+	pattern, ok := node.(query.Pattern)
+	if !ok {
+		return nil, fmt.Errorf("only supports pattern queries, got %T: %s", node, node)
+	}
+
+	var args []string
 	var repoParams []query.Parameter
 
 	for _, p := range parameters {
@@ -28,7 +56,7 @@ func run(ctx context.Context, rgBaseArgs []string, node query.Node, parameters [
 			repoParams = append(repoParams, p)
 
 		case query.FieldFile:
-			return fmt.Errorf("need to implement regex to glob for file: patterns")
+			return nil, fmt.Errorf("need to implement regex to glob for file: patterns")
 
 		case query.FieldCase:
 			switch p.Value {
@@ -37,7 +65,7 @@ func run(ctx context.Context, rgBaseArgs []string, node query.Node, parameters [
 			case "no":
 				args = append(args, "--ignore-case")
 			default:
-				return fmt.Errorf("unknown case value: %s", p)
+				return nil, fmt.Errorf("unknown case value: %s", p)
 			}
 
 		case query.FieldLang:
@@ -48,7 +76,7 @@ func run(ctx context.Context, rgBaseArgs []string, node query.Node, parameters [
 			}
 
 		default:
-			return fmt.Errorf("unsupported field: %s", p)
+			return nil, fmt.Errorf("unsupported field: %s", p)
 		}
 	}
 
@@ -58,21 +86,20 @@ func run(ctx context.Context, rgBaseArgs []string, node query.Node, parameters [
 		args = append(args, "--files")
 	}
 
-	// look for git directories matching repoParams
-	if len(repoParams) > 0 {
-		return fmt.Errorf("not implemented")
-	}
+	return &Plan{
+		RepoParameters: repoParams,
+		RipGrepArgs:    args,
+	}, nil
+}
 
-	cmd := exec.CommandContext(ctx, "rg", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+func parse(q string) (query.Plan, error) {
+	return query.Pipeline(
+		query.Init(q, query.SearchTypeRegex),
+	)
 }
 
 func do(rgArgs []string, q string) error {
-	plan, err := query.Pipeline(
-		query.Init(q, query.SearchTypeRegex),
-	)
+	plan, err := parse(q)
 	if err != nil {
 		return err
 	}
