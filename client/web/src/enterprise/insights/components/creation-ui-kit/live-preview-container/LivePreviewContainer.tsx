@@ -18,19 +18,23 @@ const LINE_CHART_SETTINGS = {
 }
 
 export interface LivePreviewContainerProps {
-    onUpdateClick: () => void
     loading: boolean
     disabled: boolean
-    className?: string
+    livePreviewControls?: boolean
     chartContentClassName?: string
     dataOrError: ChartContent | Error | undefined
     defaultMock: ChartContent
     mockMessage: ReactNode
+    title?: string
     description?: ReactNode
+    className?: string
+    onUpdateClick: () => void
 }
 
 export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContainerProps>): ReactElement {
     const {
+        title = '',
+        livePreviewControls = true,
         disabled,
         loading,
         dataOrError,
@@ -44,14 +48,16 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
 
     return (
         <aside className={classNames(styles.livePreview, className)}>
-            <div className="d-flex align-items-center mb-1">
-                Live preview
-                <Button disabled={disabled} variant="icon" className="ml-1" onClick={onUpdateClick}>
-                    <RefreshIcon size="1rem" />
-                </Button>
-            </div>
+            {livePreviewControls && (
+                <div className="d-flex align-items-center mb-1">
+                    Live preview
+                    <Button disabled={disabled} variant="icon" className="ml-1" onClick={onUpdateClick}>
+                        <RefreshIcon size="1rem" />
+                    </Button>
+                </div>
+            )}
 
-            <View.Root className={classNames(chartContentClassName, 'flex-grow-1')}>
+            <View.Root title={title} className={classNames(chartContentClassName, 'flex-grow-1')}>
                 {loading ? (
                     <View.LoadingContent text="Loading code insight" />
                 ) : isErrorLike(dataOrError) ? (
