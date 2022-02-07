@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback } from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
@@ -15,8 +16,11 @@ import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAvatar } from '../OrgAvatar'
 
+import styles from './OrgInvitationPage.module.scss'
+
 interface Props extends RouteComponentProps<{ token: string }> {
     authenticatedUser: AuthenticatedUser
+    className: string
 }
 
 interface RespondToOrgInvitationResult {
@@ -67,7 +71,7 @@ export const INVITATION_BY_TOKEN = gql`
 /**
  * Displays the organization invitation for the user, based on the token in the invite URL.
  */
-export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticatedUser, history, match }) => {
+export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticatedUser, className, history, match }) => {
     const token = match.params.token
 
     const { data: inviteData, loading: inviteLoading, error: inviteError } = useQuery<InviteResult, InviteVariables>(
@@ -125,7 +129,10 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
         <>
             <PageTitle title={`Invitation to Organization ${orgName || ''}`} />
             {orgName && sender && (
-                <ModalPage icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}>
+                <ModalPage
+                    className={classNames(styles.orgInvitationPage, className)}
+                    icon={<OrgAvatar org={orgName} className="mt-3 mb-4" size="lg" />}
+                >
                     <Form className="text-center pr-4 pl-4 pb-4">
                         <h3>You've been invited to join the {orgDisplayName} organization.</h3>
                         <div className="mt-4">
@@ -161,7 +168,7 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
                 </ModalPage>
             )}
             {error && (
-                <ModalPage className="p-4">
+                <ModalPage className={classNames(styles.orgInvitationPage, className, 'p-4')}>
                     <h3>You've been invited to join an organization.</h3>
                     <Alert variant="danger" className="mt-3">
                         Error: {error}
