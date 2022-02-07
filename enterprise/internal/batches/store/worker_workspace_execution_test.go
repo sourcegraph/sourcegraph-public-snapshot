@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -18,6 +17,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {

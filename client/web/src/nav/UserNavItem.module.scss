@@ -1,3 +1,8 @@
+:root {
+    --nav-link-padding-y: 0.5rem;
+    --nav-link-padding-x: 1rem;
+}
+
 @keyframes tooltip-fade-in-out {
     0% {
         opacity: 0;
@@ -69,4 +74,9 @@
 .avatar {
     height: 1.5rem;
     width: 1.5rem;
+}
+
+.nav-link {
+    padding: var(--nav-link-padding-y) var(--nav-link-padding-x);
+    border: none;
 }

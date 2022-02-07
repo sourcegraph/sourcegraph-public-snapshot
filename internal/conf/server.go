@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ConfigurationSource provides direct access to read and write to the

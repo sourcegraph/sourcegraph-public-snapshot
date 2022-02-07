@@ -15,6 +15,7 @@
     }
 }
 .muted-active-item {
+    &:focus,
     &:active {
         > :global(.text-muted) {
             --text-muted: var(--white);

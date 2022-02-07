@@ -3,10 +3,10 @@ package resolvers
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // DocumentationDefinitions returns the list of source locations that define the symbol found at

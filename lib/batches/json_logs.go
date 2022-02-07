@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type LogEvent struct {

@@ -4,11 +4,10 @@ import (
 	"context"
 	"os"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var MockStatusMessages func(context.Context, *types.User) ([]StatusMessage, error)

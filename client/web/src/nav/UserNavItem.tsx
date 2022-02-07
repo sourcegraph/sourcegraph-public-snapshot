@@ -120,7 +120,10 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 <>
                     <MenuButton
                         variant="link"
-                        className="d-flex align-items-center text-decoration-none test-user-nav-item-toggle"
+                        className={classNames(
+                            'd-flex align-items-center text-decoration-none test-user-nav-item-toggle',
+                            styles.navLink
+                        )}
                     >
                         <div className="position-relative">
                             <div className="align-items-center d-flex">

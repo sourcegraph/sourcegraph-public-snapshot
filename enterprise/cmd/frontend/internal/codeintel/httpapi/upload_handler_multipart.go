@@ -9,12 +9,12 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // handleEnqueueMultipartSetup handles the first request in a multipart upload. This creates a

@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sergi/go-diff/diffmatchpatch"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {

@@ -3,10 +3,9 @@ package resolvers
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func validateNotebookWritePermissionsForUser(ctx context.Context, db database.DB, notebook *notebooks.Notebook, userID int32) error {

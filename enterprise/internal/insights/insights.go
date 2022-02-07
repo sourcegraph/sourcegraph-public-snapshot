@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
@@ -19,6 +17,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // IsEnabled tells if code insights are enabled or not.

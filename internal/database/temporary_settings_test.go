@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestTemporarySettingsStore(t *testing.T) {
