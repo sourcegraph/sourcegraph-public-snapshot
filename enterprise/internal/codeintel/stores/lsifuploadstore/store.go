@@ -7,17 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
-var conf = &Config{}
-
-func init() {
-	conf.Load()
-}
-
-func New(ctx context.Context, observationContext *observation.Context) (uploadstore.Store, error) {
-	if err := conf.Validate(); err != nil {
-		return nil, err
-	}
-
+func New(ctx context.Context, conf *Config, observationContext *observation.Context) (uploadstore.Store, error) {
 	c := uploadstore.Config{
 		Backend:      conf.Backend,
 		ManageBucket: conf.ManageBucket,

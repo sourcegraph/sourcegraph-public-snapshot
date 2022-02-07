@@ -5,25 +5,29 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 type Config struct {
 	env.BaseConfig
 
-	WorkerPollInterval time.Duration
-	WorkerConcurrency  int
-	WorkerBudget       int64
+	WorkerPollInterval    time.Duration
+	WorkerConcurrency     int
+	WorkerBudget          int64
+	LSIFUploadStoreConfig lsifuploadstore.Config
 }
 
 func (c *Config) Load() {
 	c.WorkerPollInterval = c.GetInterval("PRECISE_CODE_INTEL_WORKER_POLL_INTERVAL", "1s", "Interval between queries to the upload queue.")
 	c.WorkerConcurrency = c.GetInt("PRECISE_CODE_INTEL_WORKER_CONCURRENCY", "1", "The maximum number of indexes that can be processed concurrently.")
 	c.WorkerBudget = int64(c.GetInt("PRECISE_CODE_INTEL_WORKER_BUDGET", "0", "The amount of compressed input data (in bytes) a worker can process concurrently. Zero acts as an infinite budget."))
+	c.LSIFUploadStoreConfig.Load()
 }
 
 func (c *Config) Validate() error {
 	var errs *multierror.Error
 	errs = multierror.Append(errs, c.BaseConfig.Validate())
+	errs = multierror.Append(errs, c.LSIFUploadStoreConfig.Validate())
 	return errs.ErrorOrNil()
 }
