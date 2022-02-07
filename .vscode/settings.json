@@ -31,7 +31,6 @@
       "url": "/schema/site.schema.json",
     },
   ],
-  "editor.formatOnSave": true,
   "go.useLanguageServer": true,
   "gopls": {
     "local": "github.com/sourcegraph/sourcegraph",
