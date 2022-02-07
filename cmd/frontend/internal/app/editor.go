@@ -184,6 +184,7 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 		// URL. We want them to actually read this error message.
 		return "", errors.Errorf("git remote URL %q not supported", of.remoteURL)
 	}
+
 	inputRev, beExplicit := of.revision, true
 	if inputRev == "" {
 		inputRev, beExplicit = of.branch, false
