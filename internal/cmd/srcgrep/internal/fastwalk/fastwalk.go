@@ -15,11 +15,12 @@
 package fastwalk
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // traverseLink is a sentinel error for fastWalk, similar to filepath.SkipDir.
