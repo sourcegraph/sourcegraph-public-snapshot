@@ -175,7 +175,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
-                    {executionEnabled ? (
+                    {!executionEnabled ? (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
