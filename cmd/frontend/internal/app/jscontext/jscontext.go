@@ -179,7 +179,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		GitHubAppCloudSlug:    githubAppCloudSlug,
 		GitHubAppClientID:     githubAppClientID,
-		GitHubAppClientSecret: githubAppClientSecret,
 
 		BillingPublishableKey: BillingPublishableKey,
 

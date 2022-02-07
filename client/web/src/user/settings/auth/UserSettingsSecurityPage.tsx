@@ -5,7 +5,7 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, asError } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
 import { Container, PageHeader, LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -17,8 +17,11 @@ import {
     ExternalServiceKind,
     ExternalAccountFields,
     MinExternalAccountsVariables,
+    OrgFeatureFlagValueResult,
+    OrgFeatureFlagValueVariables,
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE } from '../../../org/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword, createPassword } from '../backend'
 
@@ -51,6 +54,7 @@ interface State {
     loading?: boolean
     saved?: boolean
     accounts: { fetched?: MinExternalAccount[]; lastRemoved?: string }
+    githubApp: { fetched?: boolean; enabled?: boolean }
     oldPassword: string
     newPassword: string
     newPasswordConfirmation: string
@@ -80,6 +84,32 @@ const fetchUserExternalAccountsByType = async (username: string): Promise<MinExt
     return result.user.externalAccounts.nodes
 }
 
+const determineGitHubAppFromOrgs = async (orgIDs: string[]): Promise<boolean> => {
+    const orgFeatureFlagPromises = [] as Promise<GraphQLResult<OrgFeatureFlagValueResult>>[]
+
+    for (const orgID of orgIDs) {
+        const result = requestGraphQL<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+            GET_ORG_FEATURE_FLAG_VALUE,
+            { orgID, flagName: ORG_CODE_FEATURE_FLAG_NAME }
+        ).toPromise()
+
+        orgFeatureFlagPromises.push(result)
+    }
+
+    const orgFeatureFlagResults = await Promise.all(orgFeatureFlagPromises)
+
+    for (const featureFlagResult of orgFeatureFlagResults) {
+        const result = dataOrThrowErrors(featureFlagResult)
+
+        if (result.organizationFeatureFlagValue === true) {
+            return true
+        }
+    }
+
+    // if no feature flags were enables, GitHub App is not enabled for any orgs
+    return false
+}
+
 const accountsByType = (accounts: MinExternalAccount[]): ExternalAccountsByType =>
     accounts.reduce((accumulator: ExternalAccountsByType, account) => {
         accumulator[account.serviceType as ServiceType] = account
@@ -92,6 +122,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
         newPassword: '',
         newPasswordConfirmation: '',
         accounts: {},
+        githubApp: {},
     }
 
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
@@ -171,9 +202,20 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
             })
     }
 
+    private determineGitHubApp = (): void => {
+        determineGitHubAppFromOrgs(this.props.authenticatedUser.organizations.nodes.map(org => org.id))
+            .then(enabled => {
+                this.setState({ githubApp: { fetched: true, enabled } })
+            })
+            .catch(error => {
+                this.setState({ error: asError(error) })
+            })
+    }
+
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsPassword')
         this.fetchAccounts()
+        this.determineGitHubApp()
     }
 
     public componentWillUnmount(): void {
@@ -225,7 +267,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 )}
 
                 {/* fetched external accounts */}
-                {this.state.accounts.fetched && (
+                {this.state.accounts.fetched && this.state.githubApp.fetched && (
                     <Container>
                         <ExternalAccountsSignIn
                             supported={[ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB]}
@@ -233,6 +275,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                             authProviders={this.authProvidersByType}
                             onDidError={this.handleError}
                             onDidRemove={this.onAccountRemoval}
+                            isGitHubAppEnabled={this.state.githubApp.enabled}
                         />
                     </Container>
                 )}

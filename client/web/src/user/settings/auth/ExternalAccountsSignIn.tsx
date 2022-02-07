@@ -43,6 +43,7 @@ interface Props {
     authProviders: AuthProvidersByType
     onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
+    isGitHubAppEnabled?: boolean
 }
 
 const getNormalizedAccount = (accounts: ExternalAccountsByType, kind: ExternalServiceKind): NormalizedMinAccount => {
@@ -105,6 +106,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
     authProviders,
     onDidRemove,
     onDidError,
+    isGitHubAppEnabled = false,
 }) => (
     <>
         {accounts && (
@@ -116,6 +118,12 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
                     // if auth provider for this account doesn't exist -
                     // don't display the account as an option
                     if (authProvider) {
+                        if (kind === ExternalServiceKind.GITHUB && isGitHubAppEnabled) {
+                            authProvider.authenticationURL = `https://github.com/login/oauth/authorize?client_id=${
+                                window.context.githubAppClientID
+                            }&redirect_uri=${encodeURIComponent(`${window.context.externalURL}/.auth/github/callback`)}`
+                        }
+
                         const account = getNormalizedAccount(accounts, kind)
 
                         return (
