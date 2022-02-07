@@ -1,6 +1,9 @@
-import React, { useState } from 'react'
-import { Link, LinkProps } from 'react-router-dom'
+import copy from 'copy-to-clipboard'
+import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
+import React, { MouseEvent, useState } from 'react'
+import { Link } from 'react-router-dom'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import {
     Button,
     Card,
@@ -12,6 +15,7 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
+    TooltipController,
 } from '@sourcegraph/wildcard'
 
 import { InsightType } from '../../../../core/types'
@@ -70,13 +74,7 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
     return (
         <TabPanel className={styles.cards}>
             {templates.slice(0, maxNumberOfCards).map(template => (
-                <Card key={template.title} as={TemplateCardBody} to={getTemplateURL(template)} className={styles.card}>
-                    <CardTitle>{template.title}</CardTitle>
-                    <CardText className="flex-grow-1">{template.description}</CardText>
-                    <Button variant="secondary" outline={true} className="mr-auto">
-                        Use this template
-                    </Button>
-                </Card>
+                <TemplateCard key={template.title} template={template} />
             ))}
 
             {hasMoreLessButton && (
@@ -93,8 +91,71 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
     )
 }
 
-interface TemplateCardBodyProps extends LinkProps {}
+interface TemplateCardProps {
+    template: Template
+}
 
-export const TemplateCardBody: React.FunctionComponent<TemplateCardBodyProps> = props => (
-    <CardBody as={Link} {...props} />
-)
+const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
+    const { template } = props
+
+    const series =
+        template.type === InsightType.SearchBased
+            ? template.templateValues.series ?? []
+            : [{ query: template.templateValues.groupSearchQuery }]
+
+    return (
+        <Card as={CardBody} className={styles.card}>
+            <CardTitle>{template.title}</CardTitle>
+            <CardText>{template.description}</CardText>
+
+            <div className={styles.queries}>
+                {series.map(line => line.query && <QueryPanel key={line.query} query={line.query} />)}
+            </div>
+
+            <Button as={Link} to={getTemplateURL(template)} variant="secondary" outline={true} className="mr-auto">
+                Use this template
+            </Button>
+        </Card>
+    )
+}
+
+interface QueryPanelProps {
+    query: string
+}
+
+const copyTooltip = 'Copy query'
+const copyCompletedTooltip = 'Copied!'
+
+const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
+    const { query } = props
+
+    const [currentCopyTooltip, setCurrentCopyTooltip] = useState(copyTooltip)
+
+    const onCopy = (event: MouseEvent<HTMLButtonElement>): void => {
+        copy(query)
+        setCurrentCopyTooltip(copyCompletedTooltip)
+        setTimeout(() => setCurrentCopyTooltip(copyTooltip), 1000)
+
+        requestAnimationFrame(() => {
+            TooltipController.forceUpdate()
+        })
+
+        event.preventDefault()
+    }
+
+    return (
+        <span className={styles.query}>
+            <SyntaxHighlightedSearchQuery query={query} />
+            <Button
+                className={styles.copyButton}
+                onClick={onCopy}
+                data-tooltip={currentCopyTooltip}
+                data-placement="top"
+                aria-label="Copy Docker command to clipboard"
+                variant="icon"
+            >
+                <ContentCopyIcon size="1rem" className="icon-inline" />
+            </Button>
+        </span>
+    )
+}

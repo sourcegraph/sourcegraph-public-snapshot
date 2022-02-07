@@ -43,7 +43,7 @@ export const TEMPLATE_SECTIONS: TemplateSection[] = [
                 templateValues: {
                     title: 'Terraform versions',
                     groupSearchQuery:
-                        'repoapp.terraform.io/(.*)\\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no',
+                        'repo:app.terraform.io/(.*)\\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no',
                 },
             },
             {
