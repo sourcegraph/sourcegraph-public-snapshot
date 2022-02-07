@@ -139,6 +139,11 @@ export function removeSearchStackEntry(entryToDelete: SearchStackEntry): void {
     })
 }
 
+export function removeAllSearchStackEntries(): void {
+    persistSession([])
+    useSearchStackState.setState({ entries: [] })
+}
+
 function restoreSession(storage: Storage): SearchStackEntry[] {
     return JSON.parse(storage.getItem(SEARCH_STACK_SESSION_KEY) ?? '[]')
 }
