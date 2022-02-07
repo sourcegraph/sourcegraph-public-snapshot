@@ -38,6 +38,17 @@ describe('GitHub', () => {
             response.sendStatus(200)
         })
 
+        testContext.server.any('https://github.com/sourcegraph/jsonrpc2/find-definition').intercept((request, response) => {
+            response.sendStatus(200)
+        })
+
+        testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
+            response
+                .status(200)
+                .setHeader('Access-Control-Allow-Origin', 'https://github.com')
+                .send(JSON.stringify({ private: false }))
+        })
+
         testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
             response
                 .status(200)
@@ -172,7 +183,7 @@ describe('GitHub', () => {
             throw new Error(`Found no line with number ${lineNumber}`)
         }
 
-        const [token] = await line.$x('//span[text()="CallOption"]')
+        const [token] = await line.$x('.//span[text()="CallOption"]')
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
             selector: ' [data-testid="hover-overlay-content"] > p',
@@ -181,6 +192,8 @@ describe('GitHub', () => {
                 timeout: 6000,
             },
         })
+
+        // await driver.page.waitForTimeout(100000)
     })
 
     describe('Pull request pages', () => {

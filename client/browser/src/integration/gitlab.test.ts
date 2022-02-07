@@ -166,7 +166,7 @@ describe('GitLab', () => {
             throw new Error(`Found no line with number ${lineNumber}`)
         }
 
-        const [token] = await line.$x('//span[text()="CallOption"]')
+        const [token] = await line.$x('.//span[text()="CallOption"]')
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
             selector: '[data-testid="hover-overlay-content"] > p',
