@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestCTAMetricsUsageStatistics(t *testing.T) {
+func TestCTAUsageUsageStatistics(t *testing.T) {
 	ctx := context.Background()
 
 	defer func() {
@@ -45,12 +45,12 @@ func TestCTAMetricsUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, err := GetCTAMetrics(ctx, db)
+	have, err := GetCTAUsage(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := &types.CTAMetrics{
+	want := &types.CTAUsage{
 		UserCountWhoSawBextCtaOnFilePage:       1,
 		UserCountWhoClickedBextCtaOnFilePage:   1,
 		UserCountWhoSawBextCtaOnSearchPage:     1,

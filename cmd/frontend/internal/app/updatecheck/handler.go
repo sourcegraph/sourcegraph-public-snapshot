@@ -181,7 +181,7 @@ type pingRequest struct {
 	// AutomationUsage (campaigns) is deprecated, but here so we can receive pings from older instances
 	AutomationUsage     json.RawMessage `json:"automationUsage"`
 	GrowthStatistics    json.RawMessage `json:"growthStatistics"`
-	CTAMetrics          json.RawMessage `json:"ctaMetrics"`
+	CTAUsage            json.RawMessage `json:"ctaUsage"`
 	SavedSearches       json.RawMessage `json:"savedSearches"`
 	HomepagePanels      json.RawMessage `json:"homepagePanels"`
 	SearchOnboarding    json.RawMessage `json:"searchOnboarding"`
@@ -291,7 +291,7 @@ type pingPayload struct {
 	NewCodeIntelUsage    json.RawMessage `json:"new_code_intel_usage"`
 	SearchUsage          json.RawMessage `json:"search_usage"`
 	GrowthStatistics     json.RawMessage `json:"growth_statistics"`
-	CTAMetrics           json.RawMessage `json:"cta_metrics"`
+	CTAUsage             json.RawMessage `json:"cta_usage"`
 	SavedSearches        json.RawMessage `json:"saved_searches"`
 	HomepagePanels       json.RawMessage `json:"homepage_panels"`
 	RetentionStatistics  json.RawMessage `json:"retention_statistics"`
@@ -375,7 +375,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		NewCodeIntelUsage:    codeIntelUsage,
 		SearchUsage:          searchUsage,
 		GrowthStatistics:     pr.GrowthStatistics,
-		CTAMetrics:           pr.CTAMetrics,
+		CTAUsage:             pr.CTAUsage,
 		SavedSearches:        pr.SavedSearches,
 		HomepagePanels:       pr.HomepagePanels,
 		RetentionStatistics:  pr.RetentionStatistics,
