@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/Masterminds/semver"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -468,6 +471,27 @@ func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 			bk.Async(true),
 			bk.Build(buildOptions),
 		)
+	}
+}
+
+func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		version := semver.MustParse(minimumUpgradeableVersion)
+		for _, branch := range []string{
+			// Most recent major.minor
+			fmt.Sprintf("%d.%d", version.Major(), version.Minor()),
+			// The previous major.minor-1
+			fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1),
+		} {
+			pipeline.AddTrigger(fmt.Sprintf(":stethoscope: Trigger %s release branch healthcheck build", branch),
+				bk.Trigger("sourcegraph"),
+				bk.Async(false),
+				bk.Build(bk.BuildOptions{
+					Branch:  branch,
+					Message: time.Now().Format(time.RFC1123) + " healthcheck build",
+				}),
+			)
+		}
 	}
 }
 

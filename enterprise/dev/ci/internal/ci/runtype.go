@@ -16,7 +16,8 @@ const (
 
 	// Nightly builds - must be first because they take precedence
 
-	BextNightly // browser extension nightly build
+	ReleaseNightly // release branch nightly healthcheck builds
+	BextNightly    // browser extension nightly build
 
 	// Release branches
 
@@ -67,6 +68,12 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 // Matcher returns the requirements for a build to be considered of this RunType.
 func (t RunType) Matcher() *RunTypeMatcher {
 	switch t {
+	case ReleaseNightly:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"RELEASE_NIGHTLY": "true",
+			},
+		}
 	case BextNightly:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
@@ -130,6 +137,8 @@ func (t RunType) String() string {
 	case PullRequest:
 		return "Pull request"
 
+	case ReleaseNightly:
+		return "Release branch nightly healthcheck build"
 	case BextNightly:
 		return "Browser extension nightly release build"
 

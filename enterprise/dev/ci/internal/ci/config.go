@@ -61,7 +61,8 @@ func NewConfig(now time.Time) Config {
 		tag    = os.Getenv("BUILDKITE_TAG")
 		// evaluates what type of pipeline run this is
 		runType = computeRunType(tag, branch, map[string]string{
-			"BEXT_NIGHTLY": os.Getenv("BEXT_NIGHTLY"),
+			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
+			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
