@@ -190,7 +190,7 @@ export function getSourcegraphFileUrl(
     editor: TextEditor
 ): string {
     return (
-        `${SourcegraphUrl}-/editor` +
+        `${SourcegraphUrl}/-/editor` +
         `?remote_url=${encodeURIComponent(remoteURL)}` +
         `&branch=${encodeURIComponent(branch)}` +
         `&file=${encodeURIComponent(fileRelative)}` +
