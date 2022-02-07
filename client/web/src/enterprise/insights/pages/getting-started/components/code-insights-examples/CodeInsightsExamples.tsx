@@ -3,6 +3,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
@@ -48,26 +49,26 @@ type Content = Omit<LineChartContentType<any, string>, 'chart' | 'series'> & { s
 
 const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
     data: [
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: 200 },
-        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null },
-        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190 },
-        { x: 1588965700286, a: 123, b: 170 },
+        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 88, b: 410 },
+        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 95, b: 410 },
+        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 110, b: 315 },
+        { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 160, b: 180 },
+        { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: 310, b: 90 },
+        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 520, b: 45 },
+        { x: 1588965700286, a: 700, b: 10 },
     ],
     series: [
         {
             dataKey: 'a',
-            name: 'A metric',
-            stroke: DATA_SERIES_COLORS.BLUE,
-            query: 'file:README archived:no fork:no',
+            name: 'CSS Modules',
+            stroke: DATA_SERIES_COLORS.GREEN,
+            query: 'type:file lang:scss file:module.scss patterntype:regexp archived:no fork:no',
         },
         {
             dataKey: 'b',
-            name: 'B metric',
-            stroke: DATA_SERIES_COLORS.ORANGE,
-            query: '-file:README archived:no fork:no',
+            name: 'Global CSS',
+            stroke: DATA_SERIES_COLORS.RED,
+            query: 'type:file lang:scss -file:module.scss patterntype:regexp archived:no fork:no',
         },
     ],
     xAxis: {
@@ -78,8 +79,8 @@ const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
 }
 
 const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
-    title: 'Repos with READMEs / without READMEs',
-    allRepos: true,
+    title: 'Migration to CSS modules',
+    repositories: 'repo:github.com/awesomeOrg/examplerepo',
     series: SEARCH_INSIGHT_EXAMPLES_DATA.series,
 })
 
@@ -88,8 +89,8 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
 
     return (
         <View.Root
-            title="Repos with READMEs / without READMEs"
-            subtitle={<InlineCodeBlock className="mt-1">All repositories</InlineCodeBlock>}
+            title="Migration to CSS modules"
+            subtitle={<InlineCodeBlock query="repo:github.com/awesomeOrg/examplerepo" className="mt-1" />}
             className={classNames(className)}
             actions={
                 <Button
@@ -114,8 +115,10 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
             <LegendBlock className={styles.legend}>
                 {SEARCH_INSIGHT_EXAMPLES_DATA.series.map(line => (
                     <LegendItem key={line.dataKey.toString()} color={getLineStroke<any>(line)}>
-                        <span className="flex-shrink-0 mr-2">{line.name}</span>
-                        <InlineCodeBlock>{line.query}</InlineCodeBlock>
+                        <span className={classNames(styles.legendMigrationItem, 'flex-shrink-0 mr-2')}>
+                            {line.name}
+                        </span>
+                        <InlineCodeBlock query={line.query} />
                     </LegendItem>
                 ))}
             </LegendBlock>
@@ -126,24 +129,44 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
 const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
     chart: 'line' as const,
     data: [
-        { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 20, b: 200 },
-        { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 40, b: 177 },
-        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 110, b: 150 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 105, b: 165 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 160, b: 100 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 184, b: 85 },
-        { x: 1588965700286, a: 200, b: 50 },
+        { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
+        { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 60, f: 20 },
+        { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
+        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
+        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
+        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
+        { x: 1588965700286, a: 200, b: 160, c: 150, d: 75, e: 45, f: 20 },
     ],
     series: [
         {
             dataKey: 'a',
-            name: 'Go 1.11',
-            stroke: 'var(--oc-indigo-7)',
+            name: '17.3.1',
+            stroke: DATA_SERIES_COLORS.ORANGE,
         },
         {
             dataKey: 'b',
-            name: 'Go 1.12',
-            stroke: 'var(--oc-orange-7)',
+            name: '17.3.0',
+            stroke: DATA_SERIES_COLORS.BLUE,
+        },
+        {
+            dataKey: 'c',
+            name: '17.2.0',
+            stroke: DATA_SERIES_COLORS.RED,
+        },
+        {
+            dataKey: 'd',
+            name: '17.1.1',
+            stroke: DATA_SERIES_COLORS.GREEN,
+        },
+        {
+            dataKey: 'e',
+            name: '17.1.0',
+            stroke: DATA_SERIES_COLORS.CYAN,
+        },
+        {
+            dataKey: 'e',
+            name: '17.0.1',
+            stroke: DATA_SERIES_COLORS.GRAPE,
         },
     ],
     xAxis: {
@@ -154,9 +177,9 @@ const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
 }
 
 const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
-    title: 'Node.js versions (present or most popular)',
-    repositories: 'github.com/awesomeOrg/examplerepo',
-    groupSearchQuery: 'nvm install ([0-9]+\\.[0-9]+) archived:no fork:no',
+    title: 'Terraform versions (present or most popular)',
+    allRepos: true,
+    groupSearchQuery: 'app.terraform.io/(.*)\\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no',
 })
 
 const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
@@ -164,8 +187,8 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
 
     return (
         <View.Root
-            title="Node.js versions (present or most popular)"
-            subtitle={<InlineCodeBlock className="mt-1">repo:github.com/awesomeOrg/examplerepo</InlineCodeBlock>}
+            title="Terraform versions (present or most popular)"
+            subtitle={<InlineCodeBlock query="All repositories" className="mt-1" />}
             actions={
                 <Button
                     as={Link}
@@ -196,11 +219,18 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
                     ))}
                 </LegendBlock>
             </div>
-            <InlineCodeBlock className="mt-2">nvm install ([0-9]+\.[0-9]+) archived:no fork:no</InlineCodeBlock>
+            <InlineCodeBlock
+                query="app.terraform.io/(.*)\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no"
+                className="mt-2"
+            />
         </View.Root>
     )
 }
 
-const InlineCodeBlock: React.FunctionComponent<React.HTMLAttributes<HTMLElement>> = props => (
-    <code className={classNames(styles.code, props.className)}>{props.children}</code>
+interface InlineCodeBlockProps extends React.HTMLAttributes<HTMLElement> {
+    query: string
+}
+
+const InlineCodeBlock: React.FunctionComponent<InlineCodeBlockProps> = props => (
+    <SyntaxHighlightedSearchQuery query={props.query ?? ''} className={classNames(styles.code, props.className)} />
 )

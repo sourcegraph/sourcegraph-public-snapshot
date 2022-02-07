@@ -67,12 +67,12 @@ export const LegendBlock: React.FunctionComponent<React.HTMLAttributes<HTMLUList
     <ul className={classNames(styles.legendList, props.className)}>{props.children}</ul>
 )
 
-interface LegendItem {
+interface LegendItemProps extends React.LiHTMLAttributes<HTMLLIElement> {
     color: string
 }
 
-export const LegendItem: React.FunctionComponent<LegendItem> = props => (
-    <li className={styles.legendItem}>
+export const LegendItem: React.FunctionComponent<LegendItemProps> = props => (
+    <li className={classNames(props.className, styles.legendItem)}>
         <div
             /* eslint-disable-next-line react/forbid-dom-props */
             style={{ backgroundColor: props.color }}
