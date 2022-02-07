@@ -87,7 +87,13 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                         {lineNumbers && (
                             <>
                                 {line.kind !== DiffHunkLineType.ADDED ? (
-                                    <td className={styles.num} data-line={oldLine - 1} data-part="base" id={oldAnchor}>
+                                    <td
+                                        className={styles.num}
+                                        data-line={oldLine - 1}
+                                        data-part="base"
+                                        id={oldAnchor}
+                                        data-hunk-num=" "
+                                    >
                                         {persistLines && (
                                             <Link className={styles.numLine} to={{ hash: oldAnchor }}>
                                                 {oldLine - 1}
@@ -130,6 +136,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                 return (
                                     <React.Fragment key={index}>
+                                        {' '}
                                         <LinkOrSpan
                                             to={decoration.after.linkURL}
                                             data-tooltip={decoration.after.hoverMessage}

@@ -9,7 +9,6 @@ const { add } = storiesOf('web/batches/DotcomGettingStartedPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
-            viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
         },
     })
