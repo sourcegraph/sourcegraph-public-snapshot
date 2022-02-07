@@ -26,7 +26,7 @@ Markdown blocks support all the Markdown features you'd expect, including render
 Code blocks are another special block type that allow you show a file range from any file on Sourcegraph. You can use the interface to fill in the range you want, or just select a code block and paste in a valid Sourcegraph URL to have the inputs auto-filled.
 
 
-<video controls autoplay width="675" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/notebooks/notebooks_code_block.mp4" type="video/mp4">
+<video controls autoplay src="https://storage.googleapis.com/sourcegraph-assets/docs/images/notebooks/notebooks_code_block.mp4" type="video/mp4">
 </video>
 
 ![](https://storage.googleapis.com/sourcegraph-assets/docs/images/notebooks/notebooks_code_block.mp4)
