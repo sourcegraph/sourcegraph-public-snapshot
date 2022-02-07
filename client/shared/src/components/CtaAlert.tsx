@@ -29,7 +29,7 @@ export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
             'pr-5',
             'flex-md-row',
             'flex-column',
-            props.className || null
+            props.className
         )}
     >
         <div className="mr-md-3">{props.icon}</div>
