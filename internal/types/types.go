@@ -1035,19 +1035,6 @@ type GrowthStatistics struct {
 	RetainedUsers    int32
 }
 
-// CTAUsage represents the total number of CTAs displayed and clicked
-// on the "search result" and "file" pages over the current month.
-type CTAUsage struct {
-	UserCountWhoSawBextCtaOnFilePage       int32
-	UserCountWhoClickedBextCtaOnFilePage   int32
-	UserCountWhoSawBextCtaOnSearchPage     int32
-	UserCountWhoClickedBextCtaOnSearchPage int32
-	BextCtaDisplaysOnFilePage              int32
-	BextCtaClicksOnFilePage                int32
-	BextCtaDisplaysOnSearchPage            int32
-	BextCtaClicksOnSearchPage              int32
-}
-
 // SavedSearches represents the total number of saved searches, users
 // using saved searches, and usage of saved searches.
 type SavedSearches struct {
