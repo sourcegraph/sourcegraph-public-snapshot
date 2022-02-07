@@ -37,7 +37,7 @@ var (
 	migrationRevertFlagSet = flag.NewFlagSet("sg migration revert", flag.ExitOnError)
 	revertCommand          = &ffcli.Command{
 		Name:       "revert",
-		ShortUsage: fmt.Sprintf("sg migration revert <commit>", db.DefaultDatabase.Name),
+		ShortUsage: "sg migration revert <commit>",
 		ShortHelp:  "Revert the migrations defined on the given commit",
 		FlagSet:    migrationRevertFlagSet,
 		Exec:       migrationRevertExec,
