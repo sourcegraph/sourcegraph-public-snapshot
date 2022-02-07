@@ -27,7 +27,6 @@ export const Default: Story = () => (
         description="Description"
         cta={{ label: 'Label', href: '#' }}
         icon={<ExtensionRadialGradientIcon />}
-        className=""
         onClose={() => {}}
     />
 )

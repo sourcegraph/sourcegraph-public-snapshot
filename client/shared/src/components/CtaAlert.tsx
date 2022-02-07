@@ -15,7 +15,7 @@ export interface CtaAlertProps {
         onClick?: () => void
     }
     icon: React.ReactNode
-    className: string
+    className?: string
     onClose: () => void
 }
 

@@ -6,7 +6,7 @@ import { ExtensionRadialGradientIcon } from '../../components/CtaIcons'
 import { eventLogger } from '../../tracking/eventLogger'
 
 interface Props {
-    className: string
+    className?: string
     onAlertDismissed: () => void
 }
 

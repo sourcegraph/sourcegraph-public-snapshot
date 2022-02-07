@@ -10,7 +10,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
 
 export interface NativeIntegrationAlertProps {
-    className: string
+    className?: string
     onAlertDismissed: () => void
     externalURLs: ExternalLinkFields[]
 }

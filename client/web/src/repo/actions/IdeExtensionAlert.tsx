@@ -8,7 +8,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import styles from './IdeExtensionAlert.module.scss'
 
 interface Props {
-    className: string
+    className?: string
     onAlertDismissed: () => void
 }
 
