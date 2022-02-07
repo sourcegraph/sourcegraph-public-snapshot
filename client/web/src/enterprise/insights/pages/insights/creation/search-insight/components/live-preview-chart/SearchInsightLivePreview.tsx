@@ -7,7 +7,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import { LivePreviewContainer } from '../../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
 import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit/sanitizers/repositories'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
+import { SearchBasedInsightSeries } from '../../../../../../core/types'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { EditableDataSeries, InsightStep } from '../../types'
 import { getSanitizedLine } from '../../utils/insight-sanitizer'
@@ -35,6 +35,9 @@ export interface SearchInsightLivePreviewProps {
     step: InsightStep
 
     isAllReposMode: boolean
+
+    withLivePreviewControls?: boolean
+    title?: string
 }
 
 /**
@@ -42,7 +45,17 @@ export interface SearchInsightLivePreviewProps {
  * from creation UI form.
  */
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
-    const { series, repositories, step, stepValue, disabled = false, isAllReposMode, className } = props
+    const {
+        series,
+        repositories,
+        step,
+        stepValue,
+        disabled = false,
+        isAllReposMode,
+        title,
+        withLivePreviewControls = true,
+        className,
+    } = props
 
     const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
 
@@ -95,7 +108,9 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         <LivePreviewContainer
             dataOrError={dataOrError}
             loading={loading}
+            title={title}
             disabled={disabled}
+            livePreviewControls={withLivePreviewControls}
             defaultMock={DEFAULT_MOCK_CHART_CONTENT}
             mockMessage={
                 isAllReposMode ? (
@@ -114,7 +129,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
                     : null
             }
             className={className}
-            chartContentClassName="pt-4"
+            chartContentClassName={title ? '' : 'pt-4'}
             onUpdateClick={() => setLastPreviewVersion(version => version + 1)}
         />
     )

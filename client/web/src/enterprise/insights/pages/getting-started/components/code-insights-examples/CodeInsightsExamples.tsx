@@ -14,6 +14,7 @@ import {
 } from '../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
 import { encodeCaptureInsightURL } from '../../../insights/creation/capture-group'
 import { DATA_SERIES_COLORS, encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
+import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
 import styles from './CodeInsightsExamples.module.scss'
 
@@ -90,7 +91,13 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
     return (
         <View.Root
             title="Migration to CSS modules"
-            subtitle={<InlineCodeBlock query="repo:github.com/awesomeOrg/examplerepo" className="mt-1" />}
+            subtitle={
+                <CodeInsightsQueryBlock
+                    as={SyntaxHighlightedSearchQuery}
+                    query="repo:github.com/awesomeOrg/examplerepo"
+                    className="mt-1"
+                />
+            }
             className={classNames(className)}
             actions={
                 <Button
@@ -118,7 +125,7 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
                         <span className={classNames(styles.legendMigrationItem, 'flex-shrink-0 mr-2')}>
                             {line.name}
                         </span>
-                        <InlineCodeBlock query={line.query} />
+                        <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={line.query} />
                     </LegendItem>
                 ))}
             </LegendBlock>
@@ -188,7 +195,9 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
     return (
         <View.Root
             title="Terraform versions (present or most popular)"
-            subtitle={<InlineCodeBlock query="All repositories" className="mt-1" />}
+            subtitle={
+                <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query="All repositories" className="mt-1" />
+            }
             actions={
                 <Button
                     as={Link}
@@ -219,18 +228,11 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
                     ))}
                 </LegendBlock>
             </div>
-            <InlineCodeBlock
+            <CodeInsightsQueryBlock
+                as={SyntaxHighlightedSearchQuery}
                 query="app.terraform.io/(.*)\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no"
                 className="mt-2"
             />
         </View.Root>
     )
 }
-
-interface InlineCodeBlockProps extends React.HTMLAttributes<HTMLElement> {
-    query: string
-}
-
-const InlineCodeBlock: React.FunctionComponent<InlineCodeBlockProps> = props => (
-    <SyntaxHighlightedSearchQuery query={props.query ?? ''} className={classNames(styles.code, props.className)} />
-)

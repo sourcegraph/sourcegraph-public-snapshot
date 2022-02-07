@@ -21,6 +21,7 @@ import {
 import { InsightType } from '../../../../core/types'
 import { encodeCaptureInsightURL } from '../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
+import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
 import styles from './CodeInsightsTemplates.module.scss'
 import { Template, TEMPLATE_SECTIONS } from './constants'
@@ -144,7 +145,7 @@ const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
     }
 
     return (
-        <span className={styles.query}>
+        <CodeInsightsQueryBlock className={styles.query}>
             <SyntaxHighlightedSearchQuery query={query} />
             <Button
                 className={styles.copyButton}
@@ -156,6 +157,6 @@ const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
             >
                 <ContentCopyIcon size="1rem" className="icon-inline" />
             </Button>
-        </span>
+        </CodeInsightsQueryBlock>
     )
 }

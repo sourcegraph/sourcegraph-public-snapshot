@@ -54,7 +54,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<React.HTMLAttributes
                             <FeedbackPromptContent
                                 closePrompt={() => setVisibility(false)}
                                 textPrefix="Code Insights: "
-                                routeMatch="/insights/dashboards"
+                                routeMatch="/insights/about"
                             />
                         </PopoverContent>
                     </Popover>
