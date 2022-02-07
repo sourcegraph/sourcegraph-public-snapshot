@@ -31,8 +31,11 @@ func TestPlan(t *testing.T) {
 		Query: "foo r:bar",
 		Args:  []string{"--", "foo"},
 	}, {
-		Query: "foo", // TODO f:bar
-		Args:  []string{"--", "foo"},
+		Query: "foo f:bar",
+		Args:  []string{"--glob", "**bar**", "--", "foo"},
+	}, {
+		Query: `foo -f:_test\.go$`,
+		Args:  []string{"--glob", "!**_test.go", "--", "foo"},
 	}, {
 		Query: "foo case:no",
 		Args:  []string{"--ignore-case", "--", "foo"},
