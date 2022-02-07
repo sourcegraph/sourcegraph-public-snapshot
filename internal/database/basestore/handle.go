@@ -4,9 +4,8 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TransactableHandle is a wrapper around a database connection that provides nested transactions
@@ -113,14 +112,14 @@ func tryUnwrap(db dbutil.DB) dbutil.DB {
 
 // combineErrors returns a multierror containing all fo the non-nil error parameter values.
 // This method should be used over multierror when it is not guaranteed that the original
-// error was non-nil (multierror.Append creates a non-nil error even if it is empty).
+// error was non-nil (errors.Append creates a non-nil error even if it is empty).
 func combineErrors(errs ...error) (err error) {
 	for _, e := range errs {
 		if e != nil {
 			if err == nil {
 				err = e
 			} else {
-				err = multierror.Append(err, e)
+				err = errors.Append(err, e)
 			}
 		}
 	}
