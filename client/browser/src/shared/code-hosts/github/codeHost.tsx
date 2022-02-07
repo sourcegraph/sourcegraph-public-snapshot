@@ -4,7 +4,7 @@ import { trimStart } from 'lodash'
 import React from 'react'
 import { render } from 'react-dom'
 import { defer, Observable, of, Subscription } from 'rxjs'
-import { distinctUntilChanged, filter, map } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, skip } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
@@ -435,47 +435,65 @@ const isSearchPage = (): boolean => isGlobalSearchPage() || isRepoSearchPage()
 const isSearchResultsPage = (): boolean =>
     Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
 
-const getSourcegraphResultType = (): 'repo' | 'commit' | '' => {
+type GithubResultType =
+    | 'repositories'
+    | 'code'
+    | 'commits'
+    | 'issues'
+    | 'discussions'
+    | 'packages'
+    | 'marketplace'
+    | 'topics'
+    | 'wikis'
+    | 'users'
+
+const getGithubResultType = (): GithubResultType | '' => {
     const githubResultType = new URLSearchParams(window.location.search).get('type')
 
-    if (!githubResultType) {
-        return isGlobalSearchPage ? 'repo' : ''
-    }
-    if (githubResultType.toLowerCase() === 'repositories') {
-        return 'repo'
-    }
+    return githubResultType ? (githubResultType.toLowerCase() as GithubResultType) : ''
+}
 
-    if (githubResultType.toLowerCase() === 'commits') {
-        return 'commit'
-    }
+type SourcegraphResultType = 'repo' | 'commit'
 
-    return ''
+const getSourcegraphResultType = (): SourcegraphResultType | '' => {
+    const githubResultType = getGithubResultType()
+
+    switch (githubResultType) {
+        case 'repositories':
+            return 'repo'
+        case 'commits':
+            return 'commit'
+        case 'code':
+            return ''
+        default:
+            return isGlobalSearchPage() ? 'repo' : ''
+    }
 }
 
 const getSourcegraphResultLanguage = (): string | null => new URLSearchParams(window.location.search).get('l')
 
+const buildSourcegraphQuery = (searchTerms: string[]): string => {
+    const queryParameters = searchTerms.filter(Boolean)
+    const sourcegraphResultType = getSourcegraphResultType()
+    const resultsLanguage = getSourcegraphResultLanguage()
+
+    if (sourcegraphResultType) {
+        queryParameters.push(`type:${sourcegraphResultType}`)
+    }
+
+    if (resultsLanguage) {
+        queryParameters.push(`lang:${encodeURIComponent(resultsLanguage)}`)
+    }
+
+    return queryParameters.join('+')
+}
+
 /**
- * Adds "Search in Sourcegraph buttons" to GitHub search pages
+ * Adds "Search on Sourcegraph buttons" to GitHub search pages
  */
 function enhanceSearchPage(sourcegraphURL: string): Subscription {
     if (!isSearchPage()) {
         return new Subscription()
-    }
-
-    const buildSourcegraphQuery = (searchTerms: string[]): string => {
-        const queryParameters = searchTerms.filter(Boolean)
-        const sourcegraphResultType = getSourcegraphResultType()
-        const resultsLanguage = getSourcegraphResultLanguage()
-
-        if (sourcegraphResultType) {
-            queryParameters.push(`type:${sourcegraphResultType}`)
-        }
-
-        if (resultsLanguage) {
-            queryParameters.push(`lang:${encodeURIComponent(resultsLanguage)}`)
-        }
-
-        return queryParameters.join('+')
     }
 
     const renderSourcegraphButton = ({
@@ -487,10 +505,6 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
         className?: string
         getSearchQuery: () => string[]
     }): void => {
-        if (!isSearchPage() || container.querySelector(`.${styles.sourcegraphIconButton}`)) {
-            return
-        }
-
         const sourcegraphSearchURL = new URL('/search', sourcegraphURL)
 
         render(
@@ -573,24 +587,31 @@ function enhanceSearchPage(sourcegraphURL: string): Subscription {
             }
         }
 
+        renderSearchResultsPageButtons()
+
         return new Observable(subscriber => {
-            const locationChangeObserver = new MutationObserver(mutations => subscriber.next(mutations))
-            locationChangeObserver.observe(document, { subtree: true, childList: true })
+            const mutationObserver = new MutationObserver(mutations => subscriber.next(mutations))
+            mutationObserver.observe(document, { subtree: true, childList: true })
 
             // TODO: ensure it's called when observable is unsubscribed!
-            return () => locationChangeObserver.disconnect()
+            return () => mutationObserver.disconnect()
         })
             .pipe(
                 map(() => document.querySelector('.codesearch-results h3')?.textContent?.trim()),
                 filter(Boolean),
-                distinctUntilChanged()
+                distinctUntilChanged(),
+                skip(1), // Sourcegraph buttons are already rendered
+                filter(() => {
+                    const githubResultType = getGithubResultType()
+                    return (
+                        githubResultType === 'repositories' ||
+                        githubResultType === 'commits' ||
+                        githubResultType === 'code' ||
+                        (githubResultType === '' && isGlobalSearchPage())
+                    )
+                })
             )
-            .subscribe(entries => {
-                renderSearchResultsPageButtons()
-                // 1. Ensure Sourcegraph buttons are rendered
-                // 2. Update language and type query params
-                console.log(entries)
-            })
+            .subscribe(() => renderSearchResultsPageButtons())
     }
 
     /* Simple and advanced search pages */
