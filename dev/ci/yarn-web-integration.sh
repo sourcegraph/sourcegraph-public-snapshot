@@ -8,15 +8,15 @@ tar -xf client.tar.gz -C .
 
 echo "--- Yarn install in root"
 # mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --frozen-lockfile --network-timeout 60000
+pnpm --frozen-lockfile
 
 echo "--- Run integration test suite"
 # Word splittinng is intentional here. $1 contains a string with test files separated by a space.
 # shellcheck disable=SC2086
-yarn percy exec --parallel yarn cover-integration:base $1
+pnpm percy exec --parallel pnpm cover-integration:base $1
 
 echo "--- Process NYC report"
-yarn nyc report -r json
+pnpm nyc report -r json
 
 echo "--- Upload coverage report"
 dev/ci/codecov.sh -c -F typescript -F integration

@@ -6,7 +6,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 echo "--- Check static SVGs for optimizations"
 
 # mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network --frozen-lockfile --ignore-scripts
+pnpm --frozen-lockfile --ignore-scripts
 
 echo "Checking for potential SVG optimizations"
 

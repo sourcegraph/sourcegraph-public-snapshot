@@ -31,12 +31,12 @@
     "test-lighthouse": "SOURCEGRAPH_API_URL=https://sourcegraph.com lhci collect && lhci open",
     "test-e2e": "TS_NODE_PROJECT=client/web/src/end-to-end/tsconfig.json mocha ./client/web/src/end-to-end/end-to-end.test.ts",
     "cover-e2e": "nyc --hook-require=false --silent=true yarn test-e2e",
-    "storybook": "yarn workspace @sourcegraph/storybook run start",
+    "storybook": "pnpm run -w @sourcegraph/storybook run start",
     "storybook:dll": "yarn workspace @sourcegraph/storybook run start:dll",
     "storybook:branded": "yarn workspace @sourcegraph/branded run storybook",
     "storybook:browser": "yarn workspace @sourcegraph/browser run storybook",
     "storybook:shared": "yarn workspace @sourcegraph/shared run storybook",
-    "storybook:web": "yarn workspace @sourcegraph/web run storybook",
+    "storybook:web": "pnpm run -w @sourcegraph/web run storybook",
     "storybook:search-ui": "yarn workspace @sourcegraph/search-ui run storybook",
     "storybook:wildcard": "yarn workspace @sourcegraph/wildcard run storybook",
     "build-storybook": "yarn workspace @sourcegraph/storybook run build",
@@ -85,13 +85,6 @@
       "browser/build",
       "ui",
       "**/assets"
-    ]
-  },
-  "workspaces": {
-    "packages": [
-      "lib/codeintel/lsif_typed",
-      "client/*",
-      "client/sandboxes/*"
     ]
   },
   "devDependencies": {
@@ -435,6 +428,5 @@
     "history": "4.5.1",
     "cssnano": "4.1.10",
     "webpack": "5"
-  },
-  "version": "0.0.0"
+  }
 }
