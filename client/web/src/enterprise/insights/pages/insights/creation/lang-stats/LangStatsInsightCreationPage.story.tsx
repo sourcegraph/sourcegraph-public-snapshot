@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'
 import React from 'react'
@@ -17,15 +17,18 @@ import {
 } from '../../../../mocks/settings-cascade'
 
 import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
-import { LangStatsInsightCreationPage } from './LangStatsInsightCreationPage'
+import { LangStatsInsightCreationPage as LangStatsInsightCreationPageComponent } from './LangStatsInsightCreationPage'
 
-const { add } = storiesOf('web/insights/CreateLangStatsInsightPageProps', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+export default {
+    title: 'web/insights/creation-ui/LangStatsInsightCreationPage',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
         chromatic: {
             viewports: [576, 1440],
+            disableSnapshot: false,
         },
-    })
+    },
+} as Meta
 
 function sleep(delay: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, delay))
@@ -65,9 +68,9 @@ const SUBJECTS = [
     createGlobalSubject('Global'),
 ] as SupportedInsightSubject[]
 
-add('Page', () => (
+export const LangStatsInsightCreationPage: Story = () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
-        <LangStatsInsightCreationPage
+        <LangStatsInsightCreationPageComponent
             subjects={SUBJECTS}
             visibility="user_test_id"
             telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -76,4 +79,4 @@ add('Page', () => (
             onCancel={noop}
         />
     </CodeInsightsBackendContext.Provider>
-))
+)

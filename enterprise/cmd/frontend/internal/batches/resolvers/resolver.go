@@ -388,7 +388,7 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 		return nil, err
 	}
 
-	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex}, nil
+	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex, batchSpec: spec.Spec}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,7 +21,7 @@ import (
 // the optional job a short additional amount of time (currently 100ms) before
 // canceling the optional job.
 func NewJobWithOptional(required Job, optional Job) Job {
-	if _, ok := optional.(*emptyJob); ok {
+	if _, ok := optional.(*noopJob); ok {
 		return required
 	}
 	return &JobWithOptional{
@@ -91,7 +92,7 @@ func (r *JobWithOptional) Run(ctx context.Context, db database.DB, s streaming.S
 // if any of the child jobs failed.
 func NewParallelJob(children ...Job) Job {
 	if len(children) == 0 {
-		return &emptyJob{}
+		return &noopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
@@ -134,7 +135,7 @@ func (p ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender
 // NewTimeoutJob creates a new job that is canceled after the
 // timeout is hit. The timer starts with `Run()` is called.
 func NewTimeoutJob(timeout time.Duration, child Job) Job {
-	if _, ok := child.(*emptyJob); ok {
+	if _, ok := child.(*noopJob); ok {
 		return child
 	}
 	return &TimeoutJob{
@@ -170,7 +171,7 @@ func (t *TimeoutJob) Name() string {
 // is incremented by the number of results in that event, and if it reaches
 // the limit, the context is canceled.
 func NewLimitJob(limit int, child Job) Job {
-	if _, ok := child.(*emptyJob); ok {
+	if _, ok := child.(*noopJob); ok {
 		return child
 	}
 	return &LimitJob{
@@ -194,17 +195,27 @@ func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) 
 	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
 	defer cancel()
 
-	return l.child.Run(ctx, db, s)
+	alert, err := l.child.Run(ctx, db, s)
+	if errors.Is(err, context.Canceled) {
+		// Ignore context canceled errors
+		err = nil
+	}
+	return alert, err
+
 }
 
 func (l *LimitJob) Name() string {
 	return fmt.Sprintf("LimitJob{%s}", l.child.Name())
 }
 
-type emptyJob struct{}
+func NewNoopJob() *noopJob {
+	return &noopJob{}
+}
 
-func (e *emptyJob) Run(context.Context, database.DB, streaming.Sender) (*search.Alert, error) {
+type noopJob struct{}
+
+func (e *noopJob) Run(context.Context, database.DB, streaming.Sender) (*search.Alert, error) {
 	return nil, nil
 }
 
-func (e *emptyJob) Name() string { return "EmptyJob" }
+func (e *noopJob) Name() string { return "EmptyJob" }

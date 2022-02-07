@@ -6,7 +6,7 @@ import { WebStory } from '../../../../../../../../../components/WebStory'
 import { ScrollBox } from './ScrollBox'
 
 export default {
-    title: 'web/views/scroll-box',
+    title: 'web/views',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 } as Meta
 

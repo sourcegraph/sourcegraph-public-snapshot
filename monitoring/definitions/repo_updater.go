@@ -207,7 +207,7 @@ func RepoUpdater() *monitoring.Container {
 							Name:              "sched_error",
 							Description:       "repositories schedule error rate",
 							Query:             `max(rate(src_repoupdater_sched_error[1m]))`,
-							Critical:          monitoring.Alert().GreaterOrEqual(1, nil).For(15 * time.Minute),
+							Critical:          monitoring.Alert().GreaterOrEqual(1, nil).For(25 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs for errors",

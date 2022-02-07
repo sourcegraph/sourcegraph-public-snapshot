@@ -43,6 +43,8 @@ type ListNotebooksOptions struct {
 	Query             string
 	CreatorUserID     int32
 	StarredByUserID   int32
+	NamespaceUserID   int32
+	NamespaceOrgID    int32
 	OrderBy           NotebooksOrderByOption
 	OrderByDescending bool
 }
@@ -93,12 +95,14 @@ func (s *notebooksStore) Transact(ctx context.Context) (*notebooksStore, error) 
 }
 
 const notebooksPermissionsConditionFmtStr = `(
-    -- Bypass permission check
-    %s
-    -- Happy path of public notebooks
-    OR notebooks.public
-    -- Private notebooks are available only to its creator
-    OR (notebooks.creator_user_id IS NOT NULL AND notebooks.creator_user_id = %d)
+	-- Bypass permission check
+	%s
+	-- Happy path of public notebooks
+	OR notebooks.public
+	-- Private notebooks are available only to its creator
+	OR (notebooks.namespace_user_id IS NOT NULL AND notebooks.namespace_user_id = %d)
+	-- Private org notebooks are available only to its members
+	OR (notebooks.namespace_org_id IS NOT NULL AND EXISTS (SELECT FROM org_members om WHERE om.org_id = notebooks.namespace_org_id AND om.user_id = %d))
 )`
 
 var notebookColumns = []*sqlf.Query{
@@ -107,6 +111,9 @@ var notebookColumns = []*sqlf.Query{
 	sqlf.Sprintf("notebooks.blocks"),
 	sqlf.Sprintf("notebooks.public"),
 	sqlf.Sprintf("notebooks.creator_user_id"),
+	sqlf.Sprintf("notebooks.updater_user_id"),
+	sqlf.Sprintf("notebooks.namespace_user_id"),
+	sqlf.Sprintf("notebooks.namespace_org_id"),
 	sqlf.Sprintf("notebooks.created_at"),
 	sqlf.Sprintf("notebooks.updated_at"),
 }
@@ -118,7 +125,7 @@ func notebooksPermissionsCondition(ctx context.Context) *sqlf.Query {
 	if !bypassPermissionsCheck && a.IsAuthenticated() {
 		authenticatedUserID = a.UID
 	}
-	return sqlf.Sprintf(notebooksPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID)
+	return sqlf.Sprintf(notebooksPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID, authenticatedUserID)
 }
 
 const listNotebooksFmtStr = `
@@ -183,6 +190,9 @@ func scanNotebook(scanner dbutil.Scanner) (*Notebook, error) {
 		&n.Blocks,
 		&n.Public,
 		&dbutil.NullInt32{N: &n.CreatorUserID},
+		&dbutil.NullInt32{N: &n.UpdaterUserID},
+		&dbutil.NullInt32{N: &n.NamespaceUserID},
+		&dbutil.NullInt32{N: &n.NamespaceOrgID},
 		&n.CreatedAt,
 		&n.UpdatedAt,
 	)
@@ -218,10 +228,20 @@ func toPostgresTextSearchQuery(query string) string {
 	return strings.Join(prefixTokens, " & ")
 }
 
-func getNotebooksQueryCondition(opts ListNotebooksOptions) *sqlf.Query {
+func getNotebooksQueryCondition(opts ListNotebooksOptions) (*sqlf.Query, error) {
+	if opts.NamespaceUserID != 0 && opts.NamespaceOrgID != 0 {
+		return nil, errors.New("notebook list options NamespaceUserID and NamespaceOrgID are mutually exclusive")
+	}
+
 	conds := []*sqlf.Query{}
 	if opts.CreatorUserID != 0 {
 		conds = append(conds, sqlf.Sprintf("notebooks.creator_user_id = %d", opts.CreatorUserID))
+	}
+	if opts.NamespaceUserID != 0 {
+		conds = append(conds, sqlf.Sprintf("notebooks.namespace_user_id = %d", opts.NamespaceUserID))
+	}
+	if opts.NamespaceOrgID != 0 {
+		conds = append(conds, sqlf.Sprintf("notebooks.namespace_org_id = %d", opts.NamespaceOrgID))
 	}
 	if opts.StarredByUserID != 0 {
 		conds = append(conds, sqlf.Sprintf("notebook_stars.user_id = %d", opts.StarredByUserID))
@@ -236,17 +256,21 @@ func getNotebooksQueryCondition(opts ListNotebooksOptions) *sqlf.Query {
 		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
 		conds = append(conds, sqlf.Sprintf("1 = 1"))
 	}
-	return sqlf.Join(conds, "\n AND")
+	return sqlf.Join(conds, "\n AND"), nil
 }
 
 func (s *notebooksStore) ListNotebooks(ctx context.Context, pageOpts ListNotebooksPageOptions, opts ListNotebooksOptions) ([]*Notebook, error) {
+	queryCondition, err := getNotebooksQueryCondition(opts)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := s.Query(ctx,
 		sqlf.Sprintf(
 			listNotebooksFmtStr,
 			sqlf.Join(notebookColumns, ","),
 			getNotebooksJoins(opts),
 			notebooksPermissionsCondition(ctx),
-			getNotebooksQueryCondition(opts),
+			queryCondition,
 			getNotebooksGroupByClause(opts),
 			getNotebooksOrderByClause(opts.OrderBy, opts.OrderByDescending),
 			pageOpts.First,
@@ -261,13 +285,17 @@ func (s *notebooksStore) ListNotebooks(ctx context.Context, pageOpts ListNoteboo
 }
 
 func (s *notebooksStore) CountNotebooks(ctx context.Context, opts ListNotebooksOptions) (int64, error) {
+	queryCondition, err := getNotebooksQueryCondition(opts)
+	if err != nil {
+		return -1, err
+	}
 	var count int64
-	err := s.QueryRow(ctx,
+	err = s.QueryRow(ctx,
 		sqlf.Sprintf(
 			countNotebooksFmtStr,
 			getNotebooksJoins(opts),
 			notebooksPermissionsCondition(ctx),
-			getNotebooksQueryCondition(opts),
+			queryCondition,
 		),
 	).Scan(&count)
 	if err != nil {
@@ -304,7 +332,7 @@ func (s *notebooksStore) GetNotebook(ctx context.Context, id int64) (*Notebook, 
 }
 
 const insertNotebookFmtStr = `
-INSERT INTO notebooks (title, blocks, public, creator_user_id) VALUES (%s, %s, %s, %s)
+INSERT INTO notebooks (title, blocks, public, creator_user_id, updater_user_id, namespace_user_id, namespace_org_id) VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -315,7 +343,17 @@ func (s *notebooksStore) CreateNotebook(ctx context.Context, n *Notebook) (*Note
 	}
 	row := s.QueryRow(
 		ctx,
-		sqlf.Sprintf(insertNotebookFmtStr, n.Title, n.Blocks, n.Public, nullInt32Column(n.CreatorUserID), sqlf.Join(notebookColumns, ",")),
+		sqlf.Sprintf(
+			insertNotebookFmtStr,
+			n.Title,
+			n.Blocks,
+			n.Public,
+			nullInt32Column(n.CreatorUserID),
+			nullInt32Column(n.UpdaterUserID),
+			nullInt32Column(n.NamespaceUserID),
+			nullInt32Column(n.NamespaceOrgID),
+			sqlf.Join(notebookColumns, ","),
+		),
 	)
 	return scanNotebook(row)
 }
@@ -333,6 +371,9 @@ SET
 	title = %s,
 	blocks = %s,
 	public = %s,
+	updater_user_id = %d,
+	namespace_user_id = %d,
+	namespace_org_id = %d,
 	updated_at = now()
 WHERE id = %d
 RETURNING %s
@@ -346,7 +387,17 @@ func (s *notebooksStore) UpdateNotebook(ctx context.Context, n *Notebook) (*Note
 	}
 	row := s.QueryRow(
 		ctx,
-		sqlf.Sprintf(updateNotebookFmtStr, n.Title, n.Blocks, n.Public, n.ID, sqlf.Join(notebookColumns, ",")),
+		sqlf.Sprintf(
+			updateNotebookFmtStr,
+			n.Title,
+			n.Blocks,
+			n.Public,
+			nullInt32Column(n.UpdaterUserID),
+			nullInt32Column(n.NamespaceUserID),
+			nullInt32Column(n.NamespaceOrgID),
+			n.ID,
+			sqlf.Join(notebookColumns, ","),
+		),
 	)
 	return scanNotebook(row)
 }

@@ -92,8 +92,9 @@ const executableWorkspaceJobsConditionFmtstr = `
 	AND
 	(batch_specs.allow_unsupported OR NOT batch_spec_workspaces.unsupported)
 	AND
-	jsonb_array_length(batch_spec_workspaces.steps) > 0
-	AND
+	-- TODO: Reimplement this. It was broken already, so no regression from the current state.
+	-- NOT batch_spec_workspaces.skipped
+	-- AND
 	batch_spec_workspaces.cached_result_found IS FALSE
 )`
 
