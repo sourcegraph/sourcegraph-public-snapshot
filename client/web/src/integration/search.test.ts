@@ -1,5 +1,4 @@
 import expect from 'expect'
-import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { SearchGraphQlOperations } from '@sourcegraph/search'
@@ -63,15 +62,15 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
 
 describe('Search', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
+            currentTest: testContext.currentTest!,
             directory: __dirname,
         })
         testContext.overrideGraphQL({

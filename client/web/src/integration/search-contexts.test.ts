@@ -1,7 +1,6 @@
 import { subDays } from 'date-fns'
 import expect from 'expect'
 import { range } from 'lodash'
-import { test } from 'mocha'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
@@ -22,15 +21,15 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
 
 describe('Search contexts', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
+            currentTest: testContext.currentTest!,
             directory: __dirname,
         })
         testContext.overrideGraphQL(testContextForSearchContexts)

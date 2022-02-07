@@ -6,7 +6,7 @@ import FSPersister from '@pollyjs/persister-fs'
 import { GraphQLError } from 'graphql'
 import { snakeCase } from 'lodash'
 import * as mime from 'mime-types'
-import { Test } from 'mocha'
+import {} from 'jest'
 import { readFile, mkdir } from 'mz/fs'
 import pTimeout from 'p-timeout'
 import * as prettier from 'prettier'
@@ -85,12 +85,6 @@ export interface IntegrationTestOptions {
     driver: Driver
 
     /**
-     * The value of `this.currentTest` in the `beforeEach()` hook.
-     * Make sure the hook function is not an arrow function to access it.
-     */
-    currentTest: Test
-
-    /**
      * The directory (value of `__dirname`) of the test file.
      */
     directory: string
@@ -106,11 +100,11 @@ export const createSharedIntegrationTestContext = async <
     TGraphQlOperationNames extends string
 >({
     driver,
-    currentTest,
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
-    const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
+    const currentTestTitle = expect.getState().currentTestName
+    const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTestTitle))
     if (pollyMode === 'record') {
         await mkdir(recordingsDirectory, { recursive: true })
     }
@@ -118,7 +112,7 @@ export const createSharedIntegrationTestContext = async <
     const cdpAdapterOptions: CdpAdapterOptions = {
         browser: driver.browser,
     }
-    const polly = new Polly(snakeCase(currentTest.title), {
+    const polly = new Polly(snakeCase(currentTestTitle), {
         adapters: [CdpAdapter.id],
         adapterOptions: {
             [CdpAdapter.id]: cdpAdapterOptions,
@@ -145,12 +139,12 @@ export const createSharedIntegrationTestContext = async <
 
     // Fail the test in the case a request handler threw an error,
     // e.g. because a request had no mock defined.
-    const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
-    subscriptions.add(
-        cdpAdapter.errors.subscribe(error => {
-            currentTest.emit('error', error)
-        })
-    )
+    // const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
+    // subscriptions.add(
+    //     cdpAdapter.errors.subscribe(error => {
+    //         currentTest.emit('error', error)
+    //     })
+    // )
 
     // Let browser handle data: URIs
     server.get('data:*rest').passthrough()

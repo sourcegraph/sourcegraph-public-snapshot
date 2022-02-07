@@ -18,16 +18,16 @@ describe('[VISUAL] Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
 
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
 
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
+            currentTest: testContext.currentTest!,
             directory: __dirname,
         })
     })

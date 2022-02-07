@@ -10,15 +10,15 @@ import { commonWebGraphQlResults } from './graphQlResults'
 
 describe('User profile page', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
+            currentTest: testContext.currentTest!,
             directory: __dirname,
         })
     })

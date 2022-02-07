@@ -1,23 +1,20 @@
 import * as path from 'path'
 
-import { afterEach } from 'mocha'
 import { mkdir } from 'mz/fs'
 import * as puppeteer from 'puppeteer'
 
 /**
- * Registers an `afterEach` hook (for use with Mocha) that takes a screenshot of
+ * Registers an `afterEach` hook that takes a screenshot of
  * the browser when a test fails. It is used by e2e and integration tests.
  */
 export function afterEachSaveScreenshotIfFailed(getPage: () => puppeteer.Page): void {
-    afterEach('Save screenshot', async function () {
-        if (this.currentTest && this.currentTest.state === 'failed') {
-            await takeScreenshot({
-                page: getPage(),
-                repoRootDir: path.resolve(__dirname, '..', '..', '..', '..'),
-                screenshotDir: path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
-                testName: this.currentTest.fullTitle(),
-            })
-        }
+    afterEach(async () => {
+        await takeScreenshot({
+            page: getPage(),
+            repoRootDir: path.resolve(__dirname, '..', '..', '..', '..'),
+            screenshotDir: path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
+            testName: expect.getState().currentTestName,
+        })
     })
 }
 
