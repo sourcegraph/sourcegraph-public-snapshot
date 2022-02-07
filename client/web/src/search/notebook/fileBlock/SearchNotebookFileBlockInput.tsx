@@ -7,7 +7,7 @@ import {
     ComboboxList,
 } from '@reach/combobox'
 import classNames from 'classnames'
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 
 import { isModifierKeyPressed } from '../useBlockShortcuts'
 
@@ -103,11 +103,6 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         }
     }
 
-    const hasSingleExactMatchingSuggestion = useMemo(
-        () => suggestions !== undefined && suggestions.length === 1 && suggestions[0] === inputValue,
-        [suggestions, inputValue]
-    )
-
     return (
         <Combobox openOnFocus={true} onSelect={onSelect} className={className} onKeyDown={onKeyDown}>
             <ComboboxInput
@@ -127,8 +122,9 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
                 onPaste={event => event.stopPropagation()}
                 data-testid={dataTestId}
             />
-            {/* Only show suggestions popover for the latest input value and if it does not contain a single exact match. */}
-            {suggestions && value === inputValue && !hasSingleExactMatchingSuggestion && (
+            {/* Only show suggestions popover for the latest input value and if it does not contain an exact match.
+                This is to prevent opening the suggestions popover when a file URL is pasted into the file block. */}
+            {suggestions && value === inputValue && !suggestions.includes(inputValue) && (
                 <ComboboxPopover ref={popoverReference} className={styles.suggestionsPopover}>
                     <ComboboxList className={styles.suggestionsList}>
                         {suggestions.map(suggestion => (
