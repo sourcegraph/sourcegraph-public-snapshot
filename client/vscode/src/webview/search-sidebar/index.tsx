@@ -3,10 +3,12 @@ import '../platform/polyfills'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { render } from 'react-dom'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
@@ -39,8 +41,13 @@ setLinkComponent(AnchorLink)
 const themes = adaptSourcegraphThemeToEditorTheme()
 
 const Main: React.FC = () => {
-    // TODO: make sure we only rerender on necessary changes
+    // Debt: make sure we only rerender on necessary changes
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
+
+    const [filters, setFilters] = useState<Filter[] | undefined>(undefined)
+    useDeepCompareEffectNoCheck(() => {
+        setFilters(state?.context.searchResults?.filters)
+    }, [state?.context.searchResults?.filters])
 
     const authenticatedUser = useObservable(
         useMemo(() => wrapRemoteObservable(extensionCoreAPI.getAuthenticatedUser()), [])
@@ -55,7 +62,7 @@ const Main: React.FC = () => {
     )
     // Do not block rendering on settings unless we observe UI jitter
 
-    // TODO: If init is taking too long, show a message.
+    // Debt: If init is taking too long, show a message.
     // Also check if anything has errored out.
 
     // If any of the remote values have yet to load.
@@ -99,6 +106,7 @@ const Main: React.FC = () => {
                 platformContext={platformContext}
                 extensionCoreAPI={extensionCoreAPI}
                 settingsCascade={settingsCascade}
+                filters={filters}
             />
             {!authenticatedUser && <AuthSidebarView {...webviewPageProps} stateStatus={state.status} />}
         </>
