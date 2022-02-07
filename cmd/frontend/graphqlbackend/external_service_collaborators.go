@@ -37,7 +37,10 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	}
 	githubCfg, ok := cfg.(*schema.GitHubConnection)
 	if !ok {
-		return nil, errors.Wrap(err, "contributors API only supported with GitHub")
+		// We only support GitHub for now as that's the most popular / important.
+		// Don't return an error, just an empty list, because e.g. that's what you want if we just
+		// can't find any collaborators.
+		return []*invitableCollaboratorResolver{}, nil
 	}
 	baseURL, err := url.Parse(githubCfg.Url)
 	if err != nil {
